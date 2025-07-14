@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,18 +15,16 @@ import com.agnitas.emm.core.mailing.bean.impl.MailingRecipientStatRowImpl;
 import com.agnitas.emm.core.mailing.dao.MailingRecipientsDao;
 import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.beans.impl.RecipientImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.impl.RecipientImpl;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
@@ -42,16 +40,14 @@ import java.util.stream.Collectors;
 
 public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements MailingRecipientsDao {
 
-    private static final Logger logger = LogManager.getLogger(MailingRecipientsDaoImpl.class);
-
     @Override
     public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int maxCompanyRecipients,
-                                                                           int mailingId, int companyId) throws Exception {
+                                                                           int mailingId, int companyId) {
         int pageNumber = filter.getPage();
         int pageSize = filter.getNumberOfRows();
         Set<String> columns = getColumnsForSelect(recipientsFields);
 
-        final int mailingListId = selectInt(logger, "SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
+        final int mailingListId = selectInt("SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
         final List<Object> params = new ArrayList<>();
 
         // Keep the order of requested columns
@@ -85,7 +81,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
                 "customer_id", "receive_time", "open_time", "openings", "click_time", "clicks", "bounce_time", "optout_time"
         ));
 
-        List<MailingRecipientStatRow> recipients = select(logger, selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
+        List<MailingRecipientStatRow> recipients = select(selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
         PaginatedListImpl<MailingRecipientStatRow> list = new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, "", filter.ascending());
 
         if (filter.isUiFiltersSet()) {
@@ -106,7 +102,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
     @Override
     public SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int mailingId, int companyId) {
         final List<Object> params = new ArrayList<>();
-        final int mailingListId = selectInt(logger, "SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
+        final int mailingListId = selectInt("SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
         final Set<String> columns = getColumnsForSelect(recipientsFields);
 
         String selectSql =
@@ -225,7 +221,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
         params.add(BindingEntry.UserType.TestVIP.getTypeCode());
 
         String filterConditions = filter == null ? "" : applyOverviewFilters(filter, params, true);
-        return selectInt(logger, String.format("SELECT COUNT(*) FROM (%s) sel %s", subSel, filterConditions), params.toArray());
+        return selectInt(String.format("SELECT COUNT(*) FROM (%s) sel %s", subSel, filterConditions), params.toArray());
     }
 
     private String createJoinStatementWithMailingRecipientsFiltering(List<MailingRecipientType> types, List<Object> params, int companyId, int mailingId) {

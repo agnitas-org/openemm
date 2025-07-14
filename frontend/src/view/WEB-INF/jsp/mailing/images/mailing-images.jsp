@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.beans.MailingComponentType" %>
+<%@ page import="com.agnitas.beans.MailingComponentType" %>
 <%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -19,8 +19,9 @@
 
 <c:set var="MAILING_COMPONENT_IMAGE_TYPE" value="<%= MailingComponentType.Image %>" scope="request"/>
 <c:set var="MAILING_COMPONENT_HOSTED_IMAGE_TYPE" value="<%= MailingComponentType.HostedImage %>" scope="request"/>
-<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE %>" scope="page"/>
-<c:set var="isDarkmode" value="${emmLayoutBase.themeType eq DARK_MODE_THEME_TYPE}"/>
+<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK %>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE_2" value="<%= EmmLayoutBase.ThemeType.DARK_CONTRAST%>" scope="page"/>
+<c:set var="isDarkmode" value="${emmLayoutBase.themeType eq DARK_MODE_THEME_TYPE or emmLayoutBase.themeType eq DARK_MODE_THEME_TYPE_2}"/>
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 

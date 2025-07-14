@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,22 +23,32 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.FileResponseBody;
-import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Pollable;
+import jakarta.servlet.http.HttpSession;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.FileResponseBody;
+import com.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.ActivityLogExportWorker;
-import org.agnitas.service.UserActivityLogExportWorker;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.service.ActivityLogExportWorker;
+import com.agnitas.service.UserActivityLogExportWorker;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -47,16 +57,6 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Pollable;
-
-import jakarta.servlet.http.HttpSession;
 
 public abstract class AbstractUserActivityLogController {
 
@@ -106,7 +106,7 @@ public abstract class AbstractUserActivityLogController {
         argumentsMap.put("dateTo.date", form.getDateTo().getDate());
         argumentsMap.put("description", form.getDescription());
 
-        PollingUid pollingUid = PollingUid.builder(session.getId(), getUserActivityLogKey())
+        PollingUid pollingUid = PollingUid.builder(session.getId(), this.getClass().getName())
                 .arguments(argumentsMap.values().toArray(ArrayUtils.EMPTY_OBJECT_ARRAY))
                 .build();
 
@@ -134,7 +134,7 @@ public abstract class AbstractUserActivityLogController {
 
         Map<String, Object> argumentsMap = filter.toMap();
 
-        PollingUid pollingUid = PollingUid.builder(session.getId(), getUserActivityLogKey())
+        PollingUid pollingUid = PollingUid.builder(session.getId(), this.getClass().getName())
                 .arguments(argumentsMap.values().toArray(ArrayUtils.EMPTY_OBJECT_ARRAY))
                 .build();
 
@@ -145,30 +145,27 @@ public abstract class AbstractUserActivityLogController {
     protected abstract List<AdminEntry> getAdminEntries(Admin admin);
 
     protected void prepareModelAttributesForListPage(Model model, Admin admin) {
-        model.addAttribute("localeTableFormat", admin.getDateTimeFormat());
-
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("adminDateFormat", admin.getDateFormat());
-        } else {
-            AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+        if (!admin.isRedesignedUiUsed()) {
+            model.addAttribute("localeTableFormat", admin.getDateTimeFormat());
         }
 
-        model.addAttribute("defaultDate", LocalDate.now().format(admin.getDateFormatter()));
+        if (!admin.isRedesignedUiUsed()) {
+            AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+            model.addAttribute("defaultDate", LocalDate.now().format(admin.getDateFormatter()));
+        }
     }
-
-    protected abstract String getUserActivityLogKey();
 
     protected abstract void syncNumberOfRows(PaginationForm form);
 
-    protected abstract PaginatedListImpl<?> preparePaginatedList(UserActivityLogForm form, List<AdminEntry> admins, Admin admin) throws Exception;
-    protected abstract PaginatedListImpl<?> preparePaginatedListRedesigned(UserActivityLogFilterBase filter, List<AdminEntry> admins, Admin admin) throws Exception;
+    protected abstract PaginatedListImpl<?> preparePaginatedList(UserActivityLogForm form, List<AdminEntry> admins, Admin admin);
+    protected abstract PaginatedListImpl<?> preparePaginatedListRedesigned(UserActivityLogFilterBase filter, List<AdminEntry> admins, Admin admin);
 
     protected abstract String redirectToListPage();
     protected abstract String redirectToRedesignedListPage();
 
     protected abstract String getListViewName();
 
-    public ResponseEntity<StreamingResponseBody> downloadLogs(Admin admin, UserActivityLogForm form, UserActivityLogService.UserType type) throws Exception {
+    public ResponseEntity<StreamingResponseBody> downloadLogs(Admin admin, UserActivityLogForm form, UserActivityLogService.UserType type) {
         File exportTempFile = createTempExportFile();
 
         UserActivityLogExportWorker exportWorker = createExportWorker(admin, form, exportTempFile, type);
@@ -181,7 +178,7 @@ public abstract class AbstractUserActivityLogController {
                 .body(new FileResponseBody(exportTempFile, true));
     }
 
-    public ResponseEntity<StreamingResponseBody> downloadLogsRedesigned(Admin admin, UserActivityLogFilterBase filter, UserActivityLogService.UserType type) throws Exception {
+    public ResponseEntity<FileSystemResource> downloadLogsRedesigned(Admin admin, UserActivityLogFilterBase filter, UserActivityLogService.UserType type) {
         File exportTempFile = createTempExportFile();
 
         ActivityLogExportWorker exportWorker = createExportWorkerRedesigned(admin, filter, exportTempFile, type);
@@ -191,7 +188,7 @@ public abstract class AbstractUserActivityLogController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment;filename=\"%s\"", getExportFileName(type)))
                 .contentLength(exportTempFile.length())
                 .contentType(MediaType.parseMediaType(HttpUtils.CONTENT_TYPE_CSV))
-                .body(new FileResponseBody(exportTempFile, true));
+                .body(new DeleteFileAfterSuccessReadResource(exportTempFile));
     }
 
     private File createTempExportFile() {
@@ -207,12 +204,11 @@ public abstract class AbstractUserActivityLogController {
         LocalDate localDateFrom = form.getDateFrom().get(LocalDate.now(), datePickerFormatter);
         LocalDate localDateTo = form.getDateTo().get(LocalDate.now(), datePickerFormatter);
 
-        ZoneId zoneId = AgnUtils.getZoneId(admin);
         List<AdminEntry> admins = adminService.getAdminEntriesForUserActivityLog(admin);
 
         return exportWorkerFactory.getBuilderInstance()
-                .setFromDate(DateUtilities.toDate(localDateFrom, zoneId))
-                .setToDate(DateUtilities.toDate(localDateTo, zoneId))
+                .setFromDate(DateUtilities.toDate(localDateFrom, admin.getZoneId()))
+                .setToDate(DateUtilities.toDate(localDateTo, admin.getZoneId()))
                 .setFilterDescription(form.getDescription())
                 .setFilterAction(form.getUserAction())
                 .setFilterAdminUserName(form.getUsername())
@@ -253,5 +249,10 @@ public abstract class AbstractUserActivityLogController {
                 filePrefix,
                 new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date())
         );
+    }
+
+    protected Date getCurrentDate(Admin admin) {
+        final ZoneId zoneId = admin.getZoneId();
+        return DateUtilities.toDate(LocalDate.now(zoneId), zoneId);
     }
 }

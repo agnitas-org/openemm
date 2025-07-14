@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
+<%@ page import="com.agnitas.emm.core.admin.enums.UiLayoutType" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -9,7 +10,6 @@
 <%--@elvariable id="adminForm" type="com.agnitas.emm.core.admin.form.AdminForm"--%>
 <%--@elvariable id="createdCompanies" type="java.util.List"--%>
 <%--@elvariable id="adminGroups" type="java.util.List"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="PASSWORD_POLICY" type="java.lang.String"--%>
 <%--@elvariable id="availableTimeZones" type="java.util.List"--%>
 <%--@elvariable id="layouts" type="java.util.List"--%>
@@ -59,8 +59,8 @@
                     <div class="row">
                         <div class="col">
                             <label class="form-label" for="password">
-                                <mvc:message code="password"/> *
-                                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/${isRestfulUser ? 'restfuluser' : 'settings'}/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
+                                <mvc:message code="password.new"/> *
+                                <a href="#" class="icon icon-question-circle" data-help="${isRestfulUser ? 'restfuluser' : 'settings'}/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
                             </label>
                             <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" data-rule="${PASSWORD_POLICY}"/>
                         </div>
@@ -73,16 +73,17 @@
                         </c:if>
                     </div>
                 </div>
-                <emm:ShowByPermission token="admin.setgroup">
-                    <div class="col-12">
-                        <label class="form-label" for="groupIDs"><mvc:message code="settings.Usergroup"/></label>
-                        <mvc:select path="groupIDs" id="groupIDs" cssClass="form-control" multiple="true" data-sort="alphabetic">
-                            <c:forEach var="adminGroup" items="${adminGroups}">
-                                <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
-                            </c:forEach>
-                        </mvc:select>
-                    </div>
-                </emm:ShowByPermission>
+
+                <div class="col-12">
+                    <label class="form-label" for="groupIDs"><mvc:message code="settings.Usergroup"/></label>
+                    <mvc:select path="groupIDs" id="groupIDs" cssClass="form-control" multiple="true" data-sort="alphabetic"
+                                readonly="${not emm:permissionAllowed('admin.setgroup', pageContext.request)}">
+                        <c:forEach var="adminGroup" items="${adminGroups}">
+                            <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
+
                 <div class="col-12">
                     <div class="row">
                         <c:if test="${not isRestfulUser}">
@@ -160,6 +161,14 @@
                     <label class="form-label" for="layoutBaseId"><mvc:message code="Layout"/></label>
                     <mvc:select cssClass="form-control js-select" path="layoutBaseId" size="1" id="layoutBaseId">
                         <mvc:options itemLabel="shortname" itemValue="id" items="${layouts}"/>
+                    </mvc:select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="uiLayoutType"><mvc:message code="gui.layout"/></label>
+                    <mvc:select path="uiLayoutType" id="uiLayoutType" cssClass="form-control js-select">
+                        <c:forEach var="layoutType" items="${UiLayoutType.values()}">
+                            <mvc:option value="${layoutType}"><mvc:message code="${layoutType.messageKey}"/></mvc:option>
+                        </c:forEach>
                     </mvc:select>
                 </div>
                 <div class="col-12">

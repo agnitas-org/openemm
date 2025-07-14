@@ -1,13 +1,11 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="importWizardSteps" type="com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps"--%>
-<%--@elvariable id="parsedContentJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="parsedContentJson" type="org.json.JSONArray"--%>
 
 <c:set var="step" value="5"/>
 <c:url var="backUrl" value="/recipient/import/wizard/step/${importWizardSteps.missingFieldsStepNeeded ? 'verifyMissingFields.action' : 'mapping.action?back=true'}"/>
@@ -20,18 +18,18 @@
                 <%@ include file="fragments/import-wizard-steps-navigation.jspf" %>
             </div>
         </div>
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <div class="notification-simple notification-simple--lg notification-simple--info">
                 <span>
                     <mvc:message code="import.csv_analysis"/>
-                    <a href="#" type="button" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_4/CsvAnalysis.xml"></a>
+                    <a href="#" type="button" class="icon icon-question-circle" data-help="importwizard/step_4/CsvAnalysis.xml"></a>
                 </span>
             </div>
 
             <div class="table-wrapper">
                 <div class="table-wrapper__header"></div>
                 <div class="table-wrapper__body">
-                    <table class="table table--borderless h-100">
+                    <table class="table table--borderless">
                         <thead>
                         <tr>
                             <th><mvc:message code="csv_used_column"/></th>
@@ -41,32 +39,26 @@
                         </thead>
                         <tbody>
                         <tr>
-                            <td>
-                                <div class="d-flex flex-column h-100">
-                                    <c:forEach var="column" items="${importWizardSteps.helper.csvAllColumns}">
-                                        <c:if test="${column.active}">
-                                            <p class="py-2">${column.name}</p>
-                                        </c:if>
-                                    </c:forEach>
-                                </div>
+                            <td class="align-top">
+                                <c:forEach var="column" items="${importWizardSteps.helper.csvAllColumns}">
+                                    <c:if test="${column.active}">
+                                        <div class="py-2">${column.name}</div>
+                                    </c:if>
+                                </c:forEach>
                             </td>
-                            <td>
-                                <div class="d-flex flex-column h-100">
-                                    <c:forEach var="column" items="${importWizardSteps.helper.csvAllColumns}">
-                                        <c:if test="${!column.active}">
-                                            <p class="py-2">${column.name}</p>
-                                        </c:if>
-                                    </c:forEach>
-                                </div>
+                            <td class="align-top">
+                                <c:forEach var="column" items="${importWizardSteps.helper.csvAllColumns}">
+                                    <c:if test="${!column.active}">
+                                        <div class="py-2">${column.name}</div>
+                                    </c:if>
+                                </c:forEach>
                             </td>
-                            <td>
-                                <div class="d-flex flex-column h-100">
-                                    <c:forEach var="column" items="${importWizardSteps.helper.dbAllColumns}">
-                                        <c:if test="${!column.value.active}">
-                                            <p class="py-2">${column.value.name}</p>
-                                        </c:if>
-                                    </c:forEach>
-                                </div>
+                            <td class="align-top">
+                                <c:forEach var="column" items="${importWizardSteps.helper.dbAllColumns}">
+                                    <c:if test="${!column.value.active}">
+                                        <div class="py-2">${column.value.name}</div>
+                                    </c:if>
+                                </c:forEach>
                             </td>
                         </tr>
                         </tbody>
@@ -99,7 +91,7 @@
                                 </c:if>
                             </c:forEach>
                         ],
-                        "data": ${emm:toJson(parsedContentJson)}
+                        "data": ${parsedContentJson}
                     }
                 </c:set>
                 <script id="csv-preview" type="application/json">

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,12 +20,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
-import org.agnitas.service.UserFormExporter;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.service.UserFormExporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -48,8 +46,8 @@ import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
-import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,28 +68,24 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	private UserFormExporter userFormExporter;
 	private CompanyTokenService companyTokenService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
 	public void setUserFormDao(UserFormDao userFormDao) {
 		this.userFormDao = userFormDao;
 	}
 
-	@Required
 	public void setUserFormExporter(UserFormExporter userFormExporter) {
 		this.userFormExporter = userFormExporter;
 	}
 	
-	@Required
 	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
 		this.companyTokenService = companyTokenService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -122,7 +116,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object getUserForm(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_SHOW)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_SHOW.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_SHOW + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
@@ -146,7 +140,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		} else if (restfulContext.length == 1) {
 			// Export a single userform
 			if (!admin.permissionAllowed(Permission.FORMS_EXPORT)) {
-				throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_EXPORT.toString() + "'");
+				throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_EXPORT + "'");
 			}
 			
 			String requestedUserFormKeyValue = restfulContext[0];
@@ -177,7 +171,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object deleteUserForm(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_DELETE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_DELETE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_DELETE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
@@ -209,7 +203,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createNewUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_IMPORT)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_IMPORT.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_IMPORT + "'");
 		}
 		
 		RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 0);
@@ -255,7 +249,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		}
 		
 		if (!admin.permissionAllowed(Permission.FORMS_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_CHANGE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_CHANGE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
@@ -310,7 +304,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	private void fillUserformObject(Admin admin, UserForm userForm, JsonObject jsonObject) throws RestfulClientException, Exception {
+	private void fillUserformObject(Admin admin, UserForm userForm, JsonObject jsonObject) throws Exception {
 		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
 		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
 		
@@ -418,10 +412,10 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 					throw new RestfulClientException("Invalid data type for 'active'. Boolean expected");
 				}
 			} else if ("links".equals(entry.getKey())) {
-				Map<String, ComTrackableUserFormLink> trackableLinks = new HashMap<>();
+				Map<String, TrackableUserFormLink> trackableLinks = new HashMap<>();
 				for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 					JsonObject linkJsonObject = (JsonObject) linkObject;
-					ComTrackableUserFormLink trackableLink = new ComTrackableUserFormLinkImpl();
+					TrackableUserFormLink trackableLink = new TrackableUserFormLinkImpl();
 					trackableLink.setShortname((String) linkJsonObject.get("name"));
 					String fullUrl = (String) linkJsonObject.get("url");
 					fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", admin.getCompany().getRdirDomain());

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,28 +10,28 @@
 
 package com.agnitas.emm.core.import_profile.component;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ImportProcessAction;
-import com.agnitas.dao.ImportProcessActionDao;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.CheckForDuplicates;
-import org.agnitas.util.importvalues.DateFormat;
-import org.agnitas.util.importvalues.ImportMode;
-import org.agnitas.util.importvalues.MailType;
-import org.agnitas.util.importvalues.NullValuesAction;
-import org.agnitas.util.importvalues.Separator;
-import org.agnitas.util.importvalues.TextRecognitionChar;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import static com.agnitas.util.UserActivityUtil.addChangedFieldLog;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ImportProcessAction;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.dao.EmmActionDao;
+import com.agnitas.dao.ImportProcessActionDao;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.CheckForDuplicates;
+import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.MailType;
+import com.agnitas.util.importvalues.NullValuesAction;
+import com.agnitas.util.importvalues.Separator;
+import com.agnitas.util.importvalues.TextRecognitionChar;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ImportProfileChangesDetector {
@@ -86,34 +86,22 @@ public class ImportProfileChangesDetector {
     }
 
     private String getSeparatorChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newSeparator = String.valueOf(Separator.getSeparatorById(newImport.getSeparator()).getValueChar());
-            String oldSeparator = String.valueOf(Separator.getSeparatorById(oldImport.getSeparator()).getValueChar());
-            return addChangedFieldLog("Separator", newSeparator, oldSeparator);
-        } catch (Exception e) {
-            return "";
-        }
+        String newSeparator = String.valueOf(Separator.getSeparatorById(newImport.getSeparator()).getValueChar());
+        String oldSeparator = String.valueOf(Separator.getSeparatorById(oldImport.getSeparator()).getValueChar());
+        return addChangedFieldLog("Separator", newSeparator, oldSeparator);
     }
 
     private String getCharsetChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newCharset = Charset.getCharsetById(newImport.getCharset()).getCharsetName();
-            String oldCharset = Charset.getCharsetById(oldImport.getCharset()).getCharsetName();
+        String newCharset = Charset.getCharsetById(newImport.getCharset()).getCharsetName();
+        String oldCharset = Charset.getCharsetById(oldImport.getCharset()).getCharsetName();
 
-            return addChangedFieldLog("Charset", newCharset, oldCharset);
-        } catch (Exception e) {
-            return "";
-        }
+        return addChangedFieldLog("Charset", newCharset, oldCharset);
     }
 
     private String getRecognitionCharacterChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newTextRecognitionChar = TextRecognitionChar.getTextRecognitionCharById(newImport.getTextRecognitionChar()).getValueString();
-            String oldTextRecognitionChar = TextRecognitionChar.getTextRecognitionCharById(oldImport.getTextRecognitionChar()).getValueString();
-            return addChangedFieldLog("Recognition character", newTextRecognitionChar, oldTextRecognitionChar);
-        } catch (Exception e) {
-            return "";
-        }
+        String newTextRecognitionChar = TextRecognitionChar.getTextRecognitionCharById(newImport.getTextRecognitionChar()).getValueString();
+        String oldTextRecognitionChar = TextRecognitionChar.getTextRecognitionCharById(oldImport.getTextRecognitionChar()).getValueString();
+        return addChangedFieldLog("Recognition character", newTextRecognitionChar, oldTextRecognitionChar);
     }
 
     private String getDateFormatChangesLog(ImportProfile oldImport, ImportProfile newImport) {
@@ -128,47 +116,31 @@ public class ImportProfileChangesDetector {
     }
 
     private String getImportModeChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newImportMode = ImportMode.getFromInt(newImport.getImportMode()).getMessageKey();
-            String oldImportMode = ImportMode.getFromInt(oldImport.getImportMode()).getMessageKey();
-            return addChangedFieldLog("Mode", newImportMode, oldImportMode);
-        } catch (Exception e) {
-            return "";
-        }
+        String newImportMode = ImportMode.getFromInt(newImport.getImportMode()).getMessageKey();
+        String oldImportMode = ImportMode.getFromInt(oldImport.getImportMode()).getMessageKey();
+        return addChangedFieldLog("Mode", newImportMode, oldImportMode);
     }
 
     private String getNullValuesActionChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newNullValueAction = NullValuesAction.getFromInt(newImport.getNullValuesAction()).getMessageKey();
-            String oldNullValueAction = NullValuesAction.getFromInt(oldImport.getNullValuesAction()).getMessageKey();
-            return addChangedFieldLog("Null values action", newNullValueAction, oldNullValueAction);
-        } catch (Exception e) {
-            return "";
-        }
+        String newNullValueAction = NullValuesAction.getFromInt(newImport.getNullValuesAction()).getMessageKey();
+        String oldNullValueAction = NullValuesAction.getFromInt(oldImport.getNullValuesAction()).getMessageKey();
+        return addChangedFieldLog("Null values action", newNullValueAction, oldNullValueAction);
     }
 
     private String getDuplicatesCheckChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newDuplicatesCheck = CheckForDuplicates.getFromInt(newImport.getCheckForDuplicates()).getMessageKey();
-            String oldDuplicatesCheck = CheckForDuplicates.getFromInt(oldImport.getCheckForDuplicates()).getMessageKey();
-            return addChangedFieldLog("Duplicates check", newDuplicatesCheck, oldDuplicatesCheck);
-        } catch (Exception e) {
-            return "";
-        }
+        String newDuplicatesCheck = CheckForDuplicates.getFromInt(newImport.getCheckForDuplicates()).getMessageKey();
+        String oldDuplicatesCheck = CheckForDuplicates.getFromInt(oldImport.getCheckForDuplicates()).getMessageKey();
+        return addChangedFieldLog("Duplicates check", newDuplicatesCheck, oldDuplicatesCheck);
     }
 
     private String getDefaultMailingTypeChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newDefaultMailingType = MailType.getFromInt(newImport.getDefaultMailType()).getMessageKey();
-            String oldDefaultMailingType = MailType.getFromInt(oldImport.getDefaultMailType()).getMessageKey();
-            return addChangedFieldLog("Default mailing type", newDefaultMailingType, oldDefaultMailingType);
-        } catch (Exception e) {
-            return "";
-        }
+        String newDefaultMailingType = MailType.getFromInt(newImport.getDefaultMailType()).getMessageKey();
+        String oldDefaultMailingType = MailType.getFromInt(oldImport.getDefaultMailType()).getMessageKey();
+        return addChangedFieldLog("Default mailing type", newDefaultMailingType, oldDefaultMailingType);
     }
 
     private String getGendersValue(Map<?, ?> gendersMapping) {
-        return gendersMapping.size() != 0 ? gendersMapping.toString() : "\"no mapping\"";
+        return !gendersMapping.isEmpty() ? gendersMapping.toString() : "\"no mapping\"";
     }
 
     private String buildUpdateRecipientMsg(boolean value) {

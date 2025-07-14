@@ -1,4 +1,4 @@
-AGN.Lib.Controller.new('target-group-view', function ($scope) {
+AGN.Lib.Controller.new('target-group-view', function () {
 
   const Form = AGN.Lib.Form;
   const ScheduleTimeTable = AGN.Lib.ScheduleTimeTable;
@@ -19,11 +19,11 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
   this.addAction({change: 'toggle-editor-tab'}, function () {
     const $el = this.el;
     const isChecked = $el.is(':checked');
-    const form = Form.get($el);
+    $el.prop('checked', !isChecked); // change switch to previous state (it will be changed after form submit)
 
+    const form = Form.get($el);
     if (!form.validate({skip_empty: true})) {
-      $el.prop('checked', !isChecked);
-      return false;
+      return;
     }
 
     form.setValueOnce('viewFormat', isChecked ? 'EQL' : 'QUERY_BUILDER');
@@ -42,10 +42,7 @@ AGN.Lib.Controller.new('target-group-view', function ($scope) {
   });
 
   function handleEqlErrorDetails(details) {
-    const eqlEditor = AGN.Lib.Editor.get($('#eql')).editor;
-
-    eqlEditor.focus();
-    eqlEditor.gotoLine(details.line, details.column);
+    AGN.Lib.Editor.get($('#eql')).goToLine(details.line, details.column);
   }
 
   // Scheduler

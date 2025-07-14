@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,8 +11,8 @@
 package com.agnitas.emm.core.profilefields.form;
 
 import com.agnitas.beans.ProfileFieldMode;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.web.forms.FormSearchParams;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.web.forms.FormSearchParams;
 
 public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFieldForm> {
 
@@ -21,6 +21,7 @@ public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFie
     private String description;
     private DbColumnType.SimpleDataType type;
     private ProfileFieldMode mode;
+    private Boolean historized;
 
     @Override
     public void storeParams(ProfileFieldForm form) {
@@ -29,6 +30,7 @@ public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFie
         this.type = form.getFilterType();
         this.mode = form.getFilterMode();
         this.description = form.getFilterDescription();
+        this.historized = form.getHistorized();
     }
 
     @Override
@@ -38,6 +40,7 @@ public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFie
         form.setFilterType(this.type);
         form.setFilterMode(this.mode);
         form.setFilterDescription(this.description);
+        form.setHistorized(this.historized);
     }
 
     @Override
@@ -47,5 +50,6 @@ public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFie
         description = null;
         type = null;
         mode = null;
+        historized = null;
     }
 }

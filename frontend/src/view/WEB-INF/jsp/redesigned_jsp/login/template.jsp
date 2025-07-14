@@ -1,5 +1,5 @@
 <%@ page import="java.util.Enumeration" %>
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
@@ -59,12 +59,10 @@
             <div class="login-form__content">
                 <c:if test="${backToLogin}">
                     <div class="login-form__nav">
-                        <c:if test="${backToLogin}">
-                            <a href="${loginUrl}" class="d-flex gap-1 align-items-center">
-                                <i class="icon icon-caret-left"></i>
-                                <mvc:message code="logon.back" />
-                            </a>
-                        </c:if>
+                        <a href="${loginUrl}" class="d-flex gap-1 align-items-center">
+                            <i class="icon icon-caret-left"></i>
+                            <mvc:message code="logon.back" />
+                        </a>
                     </div>
                 </c:if>
 
@@ -73,7 +71,7 @@
         </c:if>
 
         <div id="popups" data-popups-options="useTabs: false, collapse: false, removeEmptyContainer: false">
-            <tiles:insertTemplate template="/WEB-INF/jsp/messages.jsp" />
+            <tiles:insertTemplate template="/WEB-INF/jsp/redesigned_jsp/page-template/messages.jsp" />
         </div>
     </div>
 

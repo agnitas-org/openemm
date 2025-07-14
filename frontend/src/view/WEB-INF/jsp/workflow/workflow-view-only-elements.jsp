@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
@@ -249,14 +249,14 @@
     <script type="application/javascript">
         jQuery(window).on('load', function() {
              function loading() {
-               if (window.status == 'initializerPdfFinished') {
+               if (window.waitStatus == 'initializerPdfFinished') {
                  var images = jQuery('.node .node-image');
                  if (images.length > 0) {
                    images
                      .imagesLoaded()
-                     .always(function(){window.status = "wmLoadFinished";});
+                     .always(function(){window.waitStatus = "wmLoadFinished";});
                  } else {
-                   window.status = "wmLoadFinished";
+                   window.waitStatus = "wmLoadFinished";
                  }
                } else {
                  window.setTimeout(loading, 100);
@@ -265,7 +265,7 @@
              loading();
              return false;
         }).on('error', function (e) {
-          window.status = "wmLoadFinished";
+          window.waitStatus = "wmLoadFinished";
           return false;
         });
     </script>

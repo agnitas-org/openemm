@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,12 +15,12 @@ import java.time.Month;
 
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import org.agnitas.web.forms.FormDateTime;
+import com.agnitas.web.forms.FormDateTime;
 import org.apache.commons.lang3.StringUtils;
 
 public class MailingStatisticForm {
     
-    private static final int DEFAULT_MAX_DOMAIN = 5;
+    public static final int DEFAULT_MAX_DOMAIN = 5;
     
     private String shortname;
 
@@ -71,6 +71,7 @@ public class MailingStatisticForm {
     private int urlID;
     private String description;
     private boolean show10HoursTab;
+    private boolean ignoreAutoOptSummary;
 
     public String getShortname() {
         return shortname;
@@ -225,5 +226,13 @@ public class MailingStatisticForm {
 
     public void setShow10HoursTab(boolean show10HoursTab) {
         this.show10HoursTab = show10HoursTab;
+    }
+
+    public boolean isIgnoreAutoOptSummary() {
+        return ignoreAutoOptSummary;
+    }
+
+    public void setIgnoreAutoOptSummary(boolean ignoreAutoOptSummary) {
+        this.ignoreAutoOptSummary = ignoreAutoOptSummary;
     }
 }

@@ -27,7 +27,11 @@
 
   Controller.newExtended = function (name, baseName, func) {
     Controller.new(name, instance => {
-      new Controller(AGN.Opt.Controllers[baseName]); // invoke base controller
+      const baseController = AGN.Opt.Controllers[baseName];
+      if (baseController) {
+        new Controller(baseController);
+      }
+
       _.bind(func, instance)(instance);
     })
   }

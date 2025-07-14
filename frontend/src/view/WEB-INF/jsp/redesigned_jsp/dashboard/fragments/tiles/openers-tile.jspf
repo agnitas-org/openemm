@@ -13,7 +13,7 @@
                 </div>
             </c:if>
         </div>
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <c:choose>
                 <c:when test="${mailingsAvailable}">
                     <div class="flex-grow-1 min-h-0">

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,8 +20,8 @@ import java.util.Set;
 
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class MailingOverviewForm extends PaginationForm {

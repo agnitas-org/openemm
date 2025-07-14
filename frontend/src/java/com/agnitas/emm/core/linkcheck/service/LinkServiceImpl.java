@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,8 @@
 */
 
 package com.agnitas.emm.core.linkcheck.service;
+
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -20,45 +22,26 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import org.agnitas.backend.AgnTag;
-import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.beans.TagDetails;
-import org.agnitas.beans.impl.TagDetailsImpl;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.PubID;
-import org.agnitas.util.TimeoutLRUMap;
-import org.agnitas.util.UnclosedTagException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.impl.TrackableLinkImpl;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.service.HashTagEvaluationService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkWarning.WarningType;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.Caret;
@@ -66,7 +49,18 @@ import com.agnitas.util.DeepTrackingToken;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.util.StringUtil;
 import com.agnitas.util.backend.Decrypt;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import com.agnitas.backend.AgnTag;
+import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.beans.TagDetails;
+import com.agnitas.beans.impl.TagDetailsImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.PubID;
+import com.agnitas.util.UnclosedTagException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class LinkServiceImpl implements LinkService {
 	
@@ -81,7 +75,6 @@ public class LinkServiceImpl implements LinkService {
 	private static final Pattern TITLE_PATTERN = Pattern.compile("\\s+title\\s*=\\s*((\"[ 0-9A-Z_.+-]+\")|('[ 0-9A-Z_.+-]+')|([0-9A-Z_.+-]+))", Pattern.CASE_INSENSITIVE);
 	private static final String RDIRLINK_SEARCH_STRING = "r.html?uid=";
 	private static final Pattern INVALID_HREF_WITH_WHITESPACE_PATTERN = Pattern.compile("\\shref\\s*=\\s*(\"|')\\s", Pattern.CASE_INSENSITIVE);
-	private static final Pattern INVALID_SRC_WITH_WHITESPACE_PATTERN = Pattern.compile("\\ssrc\\s*=\\s*(\"|')\\s", Pattern.CASE_INSENSITIVE);
     private static final int MAX_LINK_LENGTH = 2000;
 	
 	/**
@@ -126,79 +119,52 @@ public class LinkServiceImpl implements LinkService {
 	
 	private ConfigService configService;
 	
-	private ExtensibleUIDService extensibleUIDService;
-
 	private AgnTagService agnTagService;
 
-	private ComCompanyDao companyDao;
+	private CompanyDao companyDao;
 	
 	private MailingDao mailingDao;
 	
-	private ComMailingParameterDao mailingParameterDao;
+	private MailingParameterDao mailingParameterDao;
 	
 	private HashTagEvaluationService hashTagEvaluationService;
 	
-	private ComWorkflowService workflowService;
+	private WorkflowService workflowService;
 	
-    private ComTargetService targetService;
+    private TargetService targetService;
 
-	/**
-	 * Map cache from mailingID to baseUrl
-	 */
-	private TimeoutLRUMap<Integer, String> baseUrlCache = null;
-
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
-	public void setExtensibleUIDService(ExtensibleUIDService extensibleUIDService) {
-		this.extensibleUIDService = extensibleUIDService;
-	}
-
-	@Required
 	public void setAgnTagService(AgnTagService agnTagService) {
 		this.agnTagService = agnTagService;
 	}
 
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 	
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	
-	@Required
-	public void setMailingParameterDao(ComMailingParameterDao mailingParameterDao) {
+	public void setMailingParameterDao(MailingParameterDao mailingParameterDao) {
 		this.mailingParameterDao = mailingParameterDao;
 	}
 	
-	@Required
-	public void setWorkflowService(ComWorkflowService workflowService) {
+	public void setWorkflowService(WorkflowService workflowService) {
 		this.workflowService = workflowService;
 	}
     
-	@Required
-    public void setTargetService(ComTargetService targetService) {
+    public void setTargetService(TargetService targetService) {
         this.targetService = targetService;
     }
 	
-    @Required
 	public final void setHashTagEvaluationService(final HashTagEvaluationService service) {
 		this.hashTagEvaluationService = Objects.requireNonNull(service, "HashTagEvaluationSerice is null");
 	}
 	
-	private TimeoutLRUMap<Integer, String> getBaseUrlCache() {
-		if (baseUrlCache == null) {
-			baseUrlCache = new TimeoutLRUMap<>(configService.getIntegerValue(ConfigValue.RedirectKeysMaxCache), configService.getIntegerValue(ConfigValue.RedirectKeysMaxCacheTimeMillis));
-		}
-		return baseUrlCache;
-	}
-
 	@Override
 	public String personalizeLink(final TrackableLink link, final String agnUidString, final int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encryptedStaticValueMap) {
 		final String fullUrlWithHashTags = link.getFullUrl();
@@ -321,7 +287,7 @@ public class LinkServiceImpl implements LinkService {
 				// TODO Move to own hashtag classes and add to hashtag registry
 				try {
 					String paramName = hashTagContent.substring(hashTagContent.indexOf(':') + 1);
-					ComMailingParameter parameter = mailingParameterDao.getParameterByName(paramName, link.getMailingID(), link.getCompanyID());
+					MailingParameter parameter = mailingParameterDao.getParameterByName(paramName, link.getMailingID(), link.getCompanyID());
 					
 					if (parameter != null && parameter.getValue() != null) {
 						hashTagReplacement = parameter.getValue();
@@ -771,43 +737,6 @@ public class LinkServiceImpl implements LinkService {
 		return text;
 	}
 
-	@Override
-	public String encodeTagStringLinkTracking(int companyID, int mailingID, int linkID, int customerID) {
-		String rdirDomain = getBaseUrlCache().get(mailingID);
-		if (rdirDomain == null) {
-			try {
-				rdirDomain = mailingDao.getMailingRdirDomain(mailingID, companyID);
-				getBaseUrlCache().put(mailingID, rdirDomain);
-			} catch (Exception e) {
-				logger.error("encodeTagStringLinkTracking", e);
-				return "";
-			}
-		}
-
-		try {
-			final int licenseID = configService.getLicenseID();
-		
-			final ComExtensibleUID uid = UIDFactory.from(licenseID, companyID, customerID, mailingID, linkID);
-
-			String uidString;
-			try {
-				uidString = extensibleUIDService.buildUIDString(uid);
-			} catch (UIDStringBuilderException | RequiredInformationMissingException e) {
-				logger.error("makeUIDString", e);
-				uidString = "";
-			}
-
-			if (configService.getBooleanValue(ConfigValue.UseRdirContextLinks, companyID)) {
-				return rdirDomain + "/r/" + uidString;
-			} else {
-				return rdirDomain + "/r.html?uid=" + uidString;
-			}
-		} catch (Exception e) {
-			logger.error("Exception in UID", e);
-			return "";
-		}
-	}
-
 	/**
 	 * Create DeepTrackingData-Tuple
 	 * First = deepTracking Http-Url Params
@@ -954,16 +883,6 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	@Override
-	public Integer getLineNumberOfFirstInvalidSrcLink(String text) {
-		Matcher matcher = INVALID_SRC_WITH_WHITESPACE_PATTERN.matcher(text);
-		if (matcher.find()) {
-			return AgnUtils.getLineNumberOfTextposition(text, matcher.start());
-		} else {
-			return null;
-		}
-	}
-
 	public static String getTextWithReplacedAgnTags(String text, String replaceTo) {
 		String textWithReplacements = text;
 		
@@ -1015,7 +934,45 @@ public class LinkServiceImpl implements LinkService {
 		return null;
 	}
 
-    @Override
+	@Override
+	public String replaceLinks(String content, Map<String, String> replacementsMap) {
+		StringBuilder changedContent = new StringBuilder(content);
+		AtomicInteger accumulatedDiff = new AtomicInteger(0);
+
+		findAllLinks(content, (start, end) -> {
+			String url = content.substring(start, end);
+			String replacement = replacementsMap.get(url);
+
+			if (replacement != null) {
+                changedContent.replace(start + accumulatedDiff.get(), end + accumulatedDiff.get(), replacement);
+				accumulatedDiff.addAndGet(replacement.length() - url.length());
+			}
+		});
+
+		return changedContent.toString();
+	}
+
+	@Override
+	public String addNumbersToLinks(Map<String, Integer> linksCounters, List<String> newLinks, String originContent) {
+		StringBuilder changedContent = new StringBuilder(originContent);
+		AtomicInteger accumulatedDiff = new AtomicInteger(0);
+
+		findAllLinks(originContent, (start, end) -> {
+			String linkUrlToReplace = originContent.substring(start, end);
+			Integer count = linksCounters.get(linkUrlToReplace);
+
+			if (count != null){
+				String linkNumber = "#" + count;
+				changedContent.insert(end + accumulatedDiff.get(), linkNumber);
+				accumulatedDiff.addAndGet(linkNumber.length());
+				linksCounters.put(linkUrlToReplace, count + 1);
+				newLinks.add(linkUrlToReplace + linkNumber);
+			}
+		});
+		return changedContent.toString();
+	}
+
+	@Override
     public List<LinkProperty> getDefaultExtensions(int companyId) {
         String defaultExtension = configService.getValue(ConfigValue.DefaultLinkExtension, companyId);
         return LinkUtils.parseLinkExtension(defaultExtension);

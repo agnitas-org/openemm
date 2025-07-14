@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,17 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.TrackableLinkDao;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mailtracking.service.event.OnLinkClickedHandler;
@@ -57,7 +55,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	}
 	
 	@Override
-	public final void trackLinkClick(final ComExtensibleUID uid, final String remoteAddress, final DeviceClass deviceClass, final int deviceID, final int clientID) {
+	public final void trackLinkClick(final ExtensibleUID uid, final String remoteAddress, final DeviceClass deviceClass, final int deviceID, final int clientID) {
 		if(uid == null) {
 			logger.warn("No UID!", new Exception("No UID"));	// Create Exception to log stack trace
 		} else {
@@ -128,7 +126,6 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	 * 
 	 * @param dao DAO handling trackable links
 	 */
-	@Required
 	public final void setTrackableLinkDao(final TrackableLinkDao dao) {
 		this.trackableLinkDao = Objects.requireNonNull(dao, "Trackable link DAO cannot be null");
 	}
@@ -138,7 +135,6 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	 * 
 	 * @param service configuration service
 	 */
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
@@ -148,7 +144,6 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	 * 
 	 * @param cache cache for mailing content types
 	 */
-	@Required
 	public final void setMailingContentTypeCache(final MailingContentTypeCache cache) {
 		this.mailingContentTypeCache = Objects.requireNonNull(cache, "Content type cache cannot be null");
 	}
@@ -167,12 +162,10 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 		}
 	}
 	
-	@Required
 	public final void setRecipientFactory(final RecipientFactory factory) {
 		this.recipientFactory = Objects.requireNonNull(factory, "recipientFactory is null");
 	}
 	
-	@Required
 	public final void setRecipientService(final RecipientService service) {
 		this.recipientService = Objects.requireNonNull(service, "recipientService is null");
 	}

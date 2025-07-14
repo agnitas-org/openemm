@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" %>
 <%@ page session="false" buffer="none" %>
 <%@ page import="org.eclipse.birt.report.presentation.aggregation.IFragment" %>
-<%@page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -24,12 +24,12 @@
                         <TD CLASS="birtviewer_dialog_tab_selected" NOWRAP>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
                             <%=
-                            ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.tab.field", locale )
+                            EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.tab.field", locale )
                             %>
                         </TD>
                         <TD CLASS="birtviewer_dialog_tab_normal">
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.tab.filter", locale )%>
+                            <%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.tab.filter", locale )%>
                         </TD>
                     </TR>
                 </TABLE>
@@ -44,12 +44,12 @@
                             <TR>
                                 <TD>
                                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                    <%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.availablecolumn", locale )%>
+                                    <%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.availablecolumn", locale )%>
                                 </TD>
                                 <TD></TD>
                                 <TD>
                                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                    <%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.selectedcolumn", locale )%>
+                                    <%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.selectedcolumn", locale )%>
                                 </TD>
                             </TR>
                             <TR>
@@ -95,7 +95,7 @@
                             <TR>
                                 <TD COLSPAN="3" STYLE="font-size:7pt">
                                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                    <%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.format", locale )%>
+                                    <%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.format", locale )%>
                                 </TD>
                             </TR>
                             <TR HEIGHT="5px"><TD></TD></TR>

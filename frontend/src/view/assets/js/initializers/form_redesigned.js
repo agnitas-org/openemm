@@ -2,7 +2,7 @@
 
   const Form = AGN.Lib.Form;
 
-  AGN.Lib.CoreInitializer.new('form', ['select', 'switchable-input'], function($scope = $(document)) {
+  AGN.Lib.CoreInitializer.new('form', ['select', 'switchable-input', 'switchable-tile'], function($scope = $(document)) {
     $scope.find('form input[type=text], form input[type=password]').on("keyup keypress", function(e) {
       const code = e.keyCode || e.which;
       if (code === 13) {

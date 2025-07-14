@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,10 +15,10 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.dao.MailingDao;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.preview.PreviewHelper;
+import com.agnitas.preview.Page;
+import com.agnitas.preview.Preview;
+import com.agnitas.preview.PreviewFactory;
+import com.agnitas.preview.PreviewHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +27,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingPa
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 import com.agnitas.messages.I18nString;
 
@@ -71,7 +71,7 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 
 		int customerID = ((Number) params.get("customerID")).intValue();
 		int mailingID = ((Number) params.get("mailingID")).intValue();
-		ComExtensibleUID uid = (ComExtensibleUID) params.get ("_uid");
+		ExtensibleUID uid = (ExtensibleUID) params.get ("_uid");
 		long sendDate = uid != null ? uid.getSendDate () : 0L;
 
 		// check for mobile device

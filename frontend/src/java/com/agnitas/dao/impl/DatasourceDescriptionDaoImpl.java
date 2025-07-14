@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,19 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.emm.core.datasource.bean.DataSource;
-import com.agnitas.emm.core.datasource.bean.impl.DataSourceImpl;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.factory.DatasourceDescriptionFactory;
-import org.agnitas.dao.SourceGroupType;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -31,15 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.emm.core.datasource.bean.DataSource;
+import com.agnitas.emm.core.datasource.bean.impl.DataSourceImpl;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.factory.DatasourceDescriptionFactory;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import org.springframework.jdbc.core.RowMapper;
+
 public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implements DatasourceDescriptionDao {
-	
-	private static final Logger logger = LogManager.getLogger(DatasourceDescriptionDaoImpl.class);
 	
 	private static Map<String, Integer> sourceGroupTypeIdCache = null;
 
     private DatasourceDescriptionFactory datasourceDescriptionFactory;
 
-    @Required
     public void setDatasourceDescriptionFactory(DatasourceDescriptionFactory datasourceDescriptionFactory) {
         this.datasourceDescriptionFactory = datasourceDescriptionFactory;
     }
@@ -47,7 +40,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     private int getSourceGroupTypeId(SourceGroupType sourceGroupType) {
     	if (sourceGroupTypeIdCache == null) {
     		Map<String, Integer> sourceGroupTypeIdCacheTemp = new HashMap<>();
-    		for (Map<String, Object> row : select(logger, "SELECT * FROM sourcegroup_tbl")) {
+    		for (Map<String, Object> row : select("SELECT * FROM sourcegroup_tbl")) {
     			sourceGroupTypeIdCacheTemp.put((String) row.get("sourcegroup_type"), ((Number) row.get("sourcegroup_id")).intValue());
     		}
     		sourceGroupTypeIdCache = Collections.unmodifiableMap(sourceGroupTypeIdCacheTemp);
@@ -59,10 +52,10 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     	}
     }
     
-    private SourceGroupType getSourceGroupTypeById(int id) throws Exception {
+    private SourceGroupType getSourceGroupTypeById(int id) {
     	if (sourceGroupTypeIdCache == null) {
     		Map<String, Integer> sourceGroupTypeIdCacheTemp = new HashMap<>();
-    		for (Map<String, Object> row : select(logger, "SELECT * FROM sourcegroup_tbl")) {
+    		for (Map<String, Object> row : select("SELECT * FROM sourcegroup_tbl")) {
     			sourceGroupTypeIdCacheTemp.put((String) row.get("sourcegroup_type"), ((Number) row.get("sourcegroup_id")).intValue());
     		}
     		sourceGroupTypeIdCache = Collections.unmodifiableMap(sourceGroupTypeIdCacheTemp);
@@ -72,7 +65,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     			return SourceGroupType.getUserSourceGroupType(entry.getKey());
     		}
     	}
-    	throw new Exception("Unknown sourcegrouptypeid: " + id);
+    	throw new IllegalStateException("Unknown sourcegrouptypeid: " + id);
     }
     
     /**
@@ -82,11 +75,11 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     public DatasourceDescription getByDescription(SourceGroupType sourceGroupType, int companyID, String description) {
     	int sourceGroupId = getSourceGroupTypeId(sourceGroupType);
     	if (sourceGroupId <= 0) {
-    		throw new RuntimeException("Unknown sourcegrouptypename: " + sourceGroupType.name());
+    		throw new IllegalArgumentException("Unknown sourcegrouptypename: " + sourceGroupType.name());
     	} else {
 	        String sql = "SELECT datasource_id, company_id, sourcegroup_id, description, url, desc2, timestamp FROM datasource_description_tbl WHERE sourcegroup_id = ? AND company_id IN (0, ?) AND description = ? ORDER BY company_id DESC, datasource_id DESC";
-	        List<DatasourceDescription> resultList = select(logger, sql, new DatasourceDescription_RowMapper(), sourceGroupId, companyID, description);
-	        if (resultList.size() > 0) {
+	        List<DatasourceDescription> resultList = select(sql, new DatasourceDescription_RowMapper(), sourceGroupId, companyID, description);
+	        if (!resultList.isEmpty()) {
 	        	return resultList.get(0);
 	        } else {
 	        	return null;
@@ -101,20 +94,20 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     	validateDescription2(dsDescription.getDescription2());
     	
         String sql = "SELECT COUNT(*) FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?";
-        int numberOfExistingItems = selectInt(logger, sql, dsDescription.getId(), dsDescription.getCompanyID());
+        int numberOfExistingItems = selectInt(sql, dsDescription.getId(), dsDescription.getCompanyID());
         if (numberOfExistingItems > 0) {
         	int sourceGroupId = getSourceGroupTypeId(dsDescription.getSourceGroupType());
             sql = "UPDATE datasource_description_tbl SET sourcegroup_id = ?, description = ?, url = ?, desc2 = ? WHERE datasource_id = ? AND company_id = ?";
-            update(logger, sql, sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2(), dsDescription.getId(), dsDescription.getCompanyID());
+            update(sql, sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2(), dsDescription.getId(), dsDescription.getCompanyID());
         } else {
         	int sourceGroupId = getSourceGroupTypeId(dsDescription.getSourceGroupType());
             int newDatasourceID;
             if (isOracleDB()) {
-            	newDatasourceID = selectInt(logger, "SELECT datasource_description_tbl_seq.NEXTVAL FROM DUAL");
+            	newDatasourceID = selectInt("SELECT datasource_description_tbl_seq.NEXTVAL FROM DUAL");
                 sql = "INSERT INTO datasource_description_tbl (datasource_id, company_id, sourcegroup_id, description, url, desc2, timestamp) VALUES (?, ?, ?, ?, ?, ?, SYSDATE)";
-                update(logger, sql, newDatasourceID, dsDescription.getCompanyID(), sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2());
+                update(sql, newDatasourceID, dsDescription.getCompanyID(), sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2());
             } else {
-            	newDatasourceID = insertIntoAutoincrementMysqlTable(logger,
+            	newDatasourceID = insertIntoAutoincrementMysqlTable(
         			"datasource_id",
         			"INSERT INTO datasource_description_tbl (company_id, sourcegroup_id, description, url, desc2, timestamp) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
         			dsDescription.getCompanyID(), sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2());
@@ -127,7 +120,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	@Override
 	public boolean delete(int dataSourceId, int companyId) {
 		if(dataSourceId > 0) {
-			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?", dataSourceId, companyId);
+			int rowAffected = update("DELETE FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?", dataSourceId, companyId);
 			return rowAffected > 0;
 		}
 		
@@ -137,11 +130,11 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	@Override
 	public boolean deleteByCompanyID(int companyId) {
 		if (companyId > 0) {
-			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE company_id = ?", companyId);
+			int rowAffected = update("DELETE FROM datasource_description_tbl WHERE company_id = ?", companyId);
 			if (rowAffected > 0) {
 				return true;
 			} else {
-				return selectInt(logger, "SELECT COUNT(*) FROM datasource_description_tbl WHERE company_id = ?", companyId) == 0;
+				return selectInt("SELECT COUNT(*) FROM datasource_description_tbl WHERE company_id = ?", companyId) == 0;
 			}
 		}
 		
@@ -151,11 +144,11 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	@Override
 	public boolean resetByCompanyID(int companyId) {
 		if (companyId > 0) {
-			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE company_id = ? AND datasource_id NOT IN (SELECT default_datasource_id FROM company_tbl WHERE company_id = ?)", companyId, companyId);
+			int rowAffected = update("DELETE FROM datasource_description_tbl WHERE company_id = ? AND datasource_id NOT IN (SELECT default_datasource_id FROM company_tbl WHERE company_id = ?)", companyId, companyId);
 			if (rowAffected > 0) {
 				return true;
 			} else {
-				return selectInt(logger, "SELECT COUNT(*) FROM datasource_description_tbl WHERE company_id = ? AND datasource_id NOT IN (SELECT default_datasource_id FROM company_tbl WHERE company_id = ?)", companyId, companyId) == 0;
+				return selectInt("SELECT COUNT(*) FROM datasource_description_tbl WHERE company_id = ? AND datasource_id NOT IN (SELECT default_datasource_id FROM company_tbl WHERE company_id = ?)", companyId, companyId) == 0;
 			}
 		}
 		
@@ -163,15 +156,15 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	}
 
     @Override
-    public List<DataSource> getDataSources(final int companyId) {
+    public List<DataSource> getDataSources(int companyId) {
 		String query = "SELECT d.datasource_id, d.description, d.timestamp, s.sourcegroup_type, CASE WHEN s.sourcegroup_type = ? THEN wsu.username END AS extra_data " +
 				"FROM datasource_description_tbl d JOIN sourcegroup_tbl s on d.sourcegroup_id = s.sourcegroup_id " +
 				"LEFT JOIN webservice_user_tbl wsu ON wsu.default_data_source_id = d.datasource_id WHERE d.company_id IN (0, ?)";
 
-		return select(logger, query, new DataSourceRowMapper(), SourceGroupType.SoapWebservices.getStorageString(), companyId);
+		return select(query, new DataSourceRowMapper(), SourceGroupType.SoapWebservices.getStorageString(), companyId);
     }
 	
-	protected class DatasourceDescription_RowMapper implements RowMapper<DatasourceDescription> {
+	private class DatasourceDescription_RowMapper implements RowMapper<DatasourceDescription> {
 		@Override
 		public DatasourceDescription mapRow(ResultSet resultSet, int row) throws SQLException {
 			try {
@@ -190,7 +183,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 		}
 	}
 
-	protected static class DataSourceRowMapper implements RowMapper<DataSource> {
+	private class DataSourceRowMapper implements RowMapper<DataSource> {
 		@Override
 		public DataSource mapRow(ResultSet resultSet, int row) throws SQLException {
             DataSource datasource = new DataSourceImpl();
@@ -199,12 +192,9 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 			datasource.setTimestamp(resultSet.getTimestamp("timestamp"));
 			datasource.setExtraData(resultSet.getString("extra_data"));
 
-			String sourceGroupType = resultSet.getString("sourcegroup_type");
-			try {
-                datasource.setSourceGroupType(SourceGroupType.getUserSourceGroupType(sourceGroupType));
-            } catch (Exception e) {
-                logger.error("Source group by code: {} not found!", sourceGroupType);
-            }
+            datasource.setSourceGroupType(
+					SourceGroupType.getUserSourceGroupType(resultSet.getString("sourcegroup_type"))
+			);
 
             return datasource;
 		}
@@ -212,26 +202,26 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 
 	private void validateDescription(String description) {
 		if (description != null && description.length() > 1000) {
-			throw new RuntimeException("Value for datasource_description_tbl.description is to long (Maximum: 1000, Current: " + description.length() + ")");
+			throw new IllegalArgumentException("Value for datasource_description_tbl.description is to long (Maximum: 1000, Current: " + description.length() + ")");
 		}
 	}
 
 	private void validateDescription2(String description2) {
 		if (description2 != null && description2.length() > 500) {
-			throw new RuntimeException("Value for datasource_description_tbl.desc2 is to long (Maximum: 500, Current: " + description2.length() + ")");
+			throw new IllegalArgumentException("Value for datasource_description_tbl.desc2 is to long (Maximum: 500, Current: " + description2.length() + ")");
 		}
 	}
 
 	@Override
 	public DatasourceDescription getDatasourceDescription(int datasourceId) {
 		String query = "SELECT " + getJoinedDataSourceColumns() + " FROM datasource_description_tbl WHERE datasource_id = ?";
-		return selectObjectDefaultNull(logger, query, new DatasourceDescription_RowMapper(), datasourceId);
+		return selectObjectDefaultNull(query, new DatasourceDescription_RowMapper(), datasourceId);
 	}
 
 	@Override
 	public DatasourceDescription getDatasourceDescription(int datasourceId, int companyId) {
 		String query = "SELECT " + getJoinedDataSourceColumns() + " FROM datasource_description_tbl WHERE datasource_id = ? and company_id = ?";
-		return selectObjectDefaultNull(logger, query, new DatasourceDescription_RowMapper(), datasourceId, companyId);
+		return selectObjectDefaultNull(query, new DatasourceDescription_RowMapper(), datasourceId, companyId);
     }
 
 	private String getJoinedDataSourceColumns() {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,16 +19,16 @@ import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.RecipientDao;
 
 public class SubscriberLimitCheckImpl implements SubscriberLimitCheck {
 	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(SubscriberLimitCheckImpl.class);
 
 	private final ConfigService configService;
-	private final ComRecipientDao recipientDao;
+	private final RecipientDao recipientDao;
 
-	public SubscriberLimitCheckImpl(final ConfigService configService, final ComRecipientDao recipientDao) {
+	public SubscriberLimitCheckImpl(final ConfigService configService, final RecipientDao recipientDao) {
 		this.configService = Objects.requireNonNull(configService, "configService");
 		this.recipientDao = Objects.requireNonNull(recipientDao, "recipientDao");
 	}

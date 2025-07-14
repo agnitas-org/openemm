@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,9 +16,32 @@ import java.util.List;
 import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 
 import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+
+// Order of ConfigValues: (defined in EMM-8856)
+/**
+ * 1. System (system.url, ApplicationVersion, Saltfile, Cache, ...)
+ * 2. License
+ * 3. Demo clients
+ * 4. General client settings (e.g. retention periods)
+ * 5. Login & Security
+ * 6. Web services
+ *   1. SOAP
+ *   2. REST
+ * 7. Features
+ *   1. Mailing
+ *     1. Links
+ *     2. Inbox
+ *     3. Mailing sending
+ *   2. Recipients
+ *     1. Import
+ *     2. Export
+ *   3. Statistics
+ *   4. Forms & Actions
+ */
+// Always define possible values for ConfigValues (EMM-5662) as well as needed unit (minutes, days, ....)
 
 /**
  * For internal detailed documentation see:
@@ -94,12 +117,7 @@ public class ConfigValue {
 	/** if "true" than a target group assigned to an action based mailing is used, otherwise not */
 	public static final ConfigValue CampaignEnableTargetGroups = new ConfigValue("campaign-enable-target-groups", "false");
 
-    public static final ConfigValue UseWkhtmltox = new ConfigValue("useWkhtmltox", "false");
-	/** Installation path of html to pdf converter application **/
-	public static final ConfigValue WkhtmlToPdfToolPath = new ConfigValue("system.wkhtmltopdf", "/usr/bin/wkhtmltopdf");
-	/** Installation path of html to image converter application **/
-	public static final ConfigValue WkhtmlToImageToolPath = new ConfigValue("system.wkhtmltoimage", "/usr/bin/wkhtmltoimage");
-	
+	public static final ConfigValue UseJoditEditor = new ConfigValue("useJoditEditor", "false");
 	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "true");
 	public static final ConfigValue UseLatestAceEditor = new ConfigValue("useLatestAceEditor", "true");
 
@@ -176,7 +194,7 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:134.0) Gecko/20100101 Firefox/134.0");
 
 	public static final ConfigValue InboxPreview_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue InboxPreview_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
@@ -359,13 +377,13 @@ public class ConfigValue {
 	public static final ConfigValue ExpireDeliveryTracking = new ConfigValue("expire.deliverytracking", "30");
 	
 	/** Default expire date (currently 3 years) */
-	public static final ConfigValue DefaultExpireDays = new ConfigValue("expire.default", "1100");
+	public static final ConfigValue DefaultExpireDays = new ConfigValue("expire.default", "1460");
 
 	/** Maximum value for age of entries in statistic tables **/
-	public static final ConfigValue ExpireStatisticsMax = new ConfigValue("expire.statistics.max", "1100");
+	public static final ConfigValue ExpireStatisticsMax = new ConfigValue("expire.statistics.max", "1460");
 
 	/** Maximum value for age of entries in success tables **/
-	public static final ConfigValue ExpireSuccessMax = new ConfigValue("expire.SuccessMax", "1100");
+	public static final ConfigValue ExpireSuccessMax = new ConfigValue("expire.SuccessMax", "1460");
 
 	/** Default value for age of entries in success tables **/
 	public static final ConfigValue ExpireSuccessDefault = new ConfigValue("expire.SuccessDef", "180");
@@ -437,10 +455,14 @@ public class ConfigValue {
 	/** Maximum cachetime of Cdn */
 	public static final ConfigValue CdnMaxCacheTimeMillis = new ConfigValue("cdn.maxCacheTimeMillis", "300000");
 	
-	/** Maximum cachesize of Mailgun */
+	/** Maximum cachesize used for IntelliAD settings and lightweighted mailing objects (unit: amount)
+	 *
+	 * the name of this config value has historic reasons as in ancient times this had been the
+	 * number of cached mailgun instances for speed up processing  action based mailings
+	 **/
 	public static final ConfigValue MailgunMaxCache = new ConfigValue("mailgun.maxCache", "100");
 
-	/** Maximum cachetime of Mailgun */
+	/** Maximum cachetime, used by the same services as MailgunMaxCache (unit: miliseconds) */
 	public static final ConfigValue MailgunMaxCacheTimeMillis = new ConfigValue("mailgun.maxCacheTimeMillis", "300000");
 	
 	/** Maximum cachesize of RdirMailingIds */
@@ -501,12 +523,12 @@ public class ConfigValue {
 	//Hold data of deactivated feature for 60 days
 	public static final ConfigValue FeatureDataCleanupPeriod = new ConfigValue("cleanup.feature_data", "60");
 
-	/** Fill the fields "lastopen_date" and "lastclick_date" in customer table. Watchout: These fields may not exist **/
+	/** Fill the fields "lastopen_date" and "lastclick_date" in customer table in realtime (opposed to nightly batch job). Watchout: These fields may not exist **/
 	public static final ConfigValue WriteCustomerOpenOrClickField = new ConfigValue("measure.writecustomeropenorclickfield");
 
-	/** Expiration in days for executed AutoImports without intervalpattern **/
+	/** Expiration in days for executed AutoImports without intervalpattern (used by DBCleaner to remove those auto imports) **/
 	public static final ConfigValue AutoImport_Expire = new ConfigValue("import.AutoImport.Expire", "30");
-	/** Expiration in days for executed AutoExports without intervalpattern **/
+	/** Expiration in days for executed AutoExports without intervalpattern (used by DBCleaner to remove those auto exports)**/
 	public static final ConfigValue AutoExport_Expire = new ConfigValue("export.AutoExport.Expire", "30");
 
 	public static final ConfigValue MailingUndo_Expire = new ConfigValue("mailing.undo.expire", "60");
@@ -515,6 +537,10 @@ public class ConfigValue {
 	/** Delete import files after successful (auto-)import **/
 	public static final ConfigValue DeleteSuccessfullyImportedFiles = new ConfigValue("import.importfiles.delete");
 
+	/** Used in DBCleaner to Delete records from recvlimit_XX_tbl; if lower than 31, no deletion takes place (unit: days)
+	 *
+	 * had been part of EMM-1204 and never been used in real production environment
+	 **/
 	public static final ConfigValue ExpireRecv = new ConfigValue("expire-recv", "0");
 	public static final ConfigValue DefaultLinkExtension = new ConfigValue("DefaultLinkExtension");
 	public static final ConfigValue PrefillCheckboxSendDuplicateCheck = new ConfigValue("prefillCheckboxSendDuplicateCheck", "false");
@@ -559,6 +585,7 @@ public class ConfigValue {
 	/** Enables anonymization of all recipients independently of their tracking veto setting. */
 	public static final ConfigValue AnonymizeAllRecipients = new ConfigValue("recipient.trackingVeto.anonymizeAllRecipients", "false");
 
+	/** settings for company admin to monitor who exports data at what times */
 	public static final ConfigValue ExportAlwaysInformEmail = new ConfigValue("exportalwaysinformemail");
 
 	/** Name of fullview form. Default is <i>fullview</i>. */
@@ -576,30 +603,34 @@ public class ConfigValue {
 	/** Retention time in seconds for caches Restful API invocation costs. */
 	public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
 
-	/**
-	 * Special value to prevent reactivation on recipients in reatful/send method. See BAUR-948 for documentation
-	 */
-	public static final ConfigValue RestfulDisableForcedReactivation = new ConfigValue("restful.disableForcedReactivation", "false");
-
 	public static final ConfigValue CleanRecipientsWithoutBinding = new ConfigValue("cleanup.deleteRecipientsWithoutBinding", "false");
+
+	/** TODO: Was bedeutet hier der Wert "-1"? */
 	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "-1");
 	public static final ConfigValue CleanTrackingData = new ConfigValue("cleanup.deleteTrackingData", "-1");
 	public static final ConfigValue DeleteRecipients = new ConfigValue("cleanup.deleteRecipients", "-1");
+
 	public static final ConfigValue DeleteBindingStepsize = new ConfigValue("mailinglist.deleteBindings", "10000");
 	
 	/**
 	 * Values allowed: none, warning, error
 	 */
-	public static final ConfigValue SendMailingWithoutDkimCheck = new ConfigValue("SendMailingWithoutDkimCheck", "none");
+	public static final ConfigValue SendMailingWithoutDkimCheck = new ConfigValue("SendMailingWithoutDkimCheck", "warning");
 
+	/** TODO: kommentieren */
 	public static final ConfigValue RecipientEmailInUseWarning = new ConfigValue("recipient.emailInUseWarning", "true");
 
+	/** TODO: kommentieren */
 	public static final ConfigValue AllowEmailWithWhitespace = new ConfigValue("AllowEmailWithWhitespace", "false");
+	/** TODO: kommentieren */
 	public static final ConfigValue AllowEmptyEmail = new ConfigValue("AllowEmptyEmail", "false");
 	
 	public static final ConfigValue ForceSteppingBlocksize = new ConfigValue("force.steppingBlocksize", "false");
+
+	/** value of "0" lets backend decide on (dynamic) blocksize */
 	public static final ConfigValue DefaultBlocksizeValue = new ConfigValue("default.blocksize.value", "0");
 
+	/** build statistics with History Customer Binding Table instead of Customer Binding Table (takes longer) */
 	public static final ConfigValue UseBindingHistoryForRecipientStatistics = new ConfigValue("UseBindingHistoryForRecipientStatistics", "false");
 	/**
 	 * Switch for new layoutBuilder
@@ -625,13 +656,17 @@ public class ConfigValue {
 	 */
 	public static final ConfigValue UploadMaximumSizeBytes = new ConfigValue("UploadMaximumSizeBytes", "67108864");
 
+	/** measure data volume generated by (mail) images */
 	public static final ConfigValue ImageTrafficMeasuring = new ConfigValue("ImageTrafficMeasuring", "true");
 
+	/** permit editing of config values via system status page */
 	public static final ConfigValue EditableConfigValues = new ConfigValue("EditableConfigValues", "");
 	
 	public static final ConfigValue SessionHijackingPrevention = new ConfigValue("security.sessionHijackingPrevention", "enabled");
-	
+
+	/** unused legacy value? */
 	public static final ConfigValue MaximumNumberOfEntriesForColumnDrop = new ConfigValue("recipient.MaximumNumberOfEntriesForColumnDrop", "750000");
+	/** low value to be on the safe side, can possibly be set to higher values like 1000000 or 1500000 */
 	public static final ConfigValue MaximumNumberOfEntriesForDefaultValueChange = new ConfigValue("recipient.MaximumNumberOfEntriesForDefaultValueChange", "750000");
 	
 	public static final ConfigValue UpdateInformationLink = new ConfigValue("UpdateInformationLink", "https://www.agnitas.de");
@@ -647,12 +682,16 @@ public class ConfigValue {
 	
 	public static final ConfigValue EnableCleanFindLastNewsletterEntries = new ConfigValue("cleanup.findLastNewsletter.removeOutdatedEntries", "true");
 	public static final ConfigValue FindLastNewsletterEntryRetentionDays = new ConfigValue("cleanup.findLastNewsletter.entriesRetentionDays", "30");
-	
+
+	/** unnormalized email addresses are not trimmed and not converted to lowercase */
 	public static final ConfigValue AllowUnnormalizedEmails = new ConfigValue("AllowUnnormalizedEmails", "false");
 
+	/** default value for selection of test run options (no limitation, target, recipient or self) */
 	public static final ConfigValue DefaultTestRunOption = new ConfigValue("default.test.run.option", String.valueOf(TestRunOption.NO_LIMITATION.getId()));
 
 	public static final ConfigValue ResponseInbox_RetentionDays = new ConfigValue("responseInbox.retentationDays", "7");
+
+	public static final ConfigValue DB_Snapshot_TableNamingPattern = new ConfigValue("db.snapshot.tableNamingPattern", "^(?!ref_)(?!.*\\d.*\\d)([^0-9]*|[^0-9]*1[^0-9]*)$");
 	
 	/** All config values related to Facebook. */
 	public static final class Facebook {
@@ -750,31 +789,6 @@ public class ConfigValue {
 		/** Server application key (subject part) for sending push notifications. */
 		public static final ConfigValue PushNotificationVapidSubject =  new ConfigValue("webpush.vapid.subject");
 
-		
-		
-		// --- Legacy send service configuration
-		/** Base directory to store notifications to be enqueued. */
-		public static final ConfigValue PushNotificationFileSinkBaseDirectory = new ConfigValue("webpush.filesink_basedir");
-		
-		/** Base directory to store send results. */
-		public static final ConfigValue PushNotificationResultBaseDirectory = new ConfigValue("webpush.result_basedir");
-		
-		/** SFTP host for data transfer to push sending service. */
-		public static final ConfigValue PushNotificationSftpHost = new ConfigValue("webpush.sftp.host");
-		
-		/** User name of SFTP host on push sending server. */
-		public static final ConfigValue PushNotificationSftpUser = new ConfigValue("webpush.sftp.user");
-		
-		/** Path on SFTP host of push sending server for data exchange. */
-		public static final ConfigValue PushNotificationSftpBasePath = new ConfigValue("webpush.sftp.basepath");
-		
-		/** SSH key file for connecting to SFTP service on push sending server. */
-		public static final ConfigValue PushNotificationSftpSshKeyFile = new ConfigValue("webpush.sftp.sshkey.file");
-		
-		/** Encrypted passphrase for SSH key file to connect to SFTP service on push sending server. */
-		public static final ConfigValue PushNotificationSftpEncryptedSshKeyPassphrase = new ConfigValue("webpush.sftp.sshkey.passphrase_encrypted");
-		
-		
 		// --- Postman send service configuration
 		/** SFTP host name for Postman. */
 		public static final ConfigValue WebpushPostmanSftpHost = new ConfigValue("webpush.postman.sftp.host");
@@ -790,7 +804,8 @@ public class ConfigValue {
 		
 		/** Remote directory on SFTP to write push notifications for sending. */
 		public static final ConfigValue WebpushPostmanSftpRemoteDispatcherMessageDirectory = new ConfigValue("webpush.postman.dispatcher.messageDirectory");
-		
+
+		/** Remote directory on SFTP to read delivery results from. */
 		public static final ConfigValue WebpushPostmanSftpRemoteDispatcherResponseDirectory = new ConfigValue("webpush.postman.dispatcher.responseDirectory");
 	}
 	
@@ -800,6 +815,8 @@ public class ConfigValue {
 		public static final ConfigValue IntermediatePageConfirmParameterValue = new ConfigValue("honeypot.intermediatePage.confirmParameter.value", "1");
 		public static final ConfigValue TrackingPeriodDays = new ConfigValue("honeypot.tracking.periodDays", "30");
 		public static final ConfigValue TaggingThreshold = new ConfigValue("honeypot.tagging.threshold", "5");
+		public static final ConfigValue TrackCIDR = new ConfigValue("honeypot.cidr.track", "false");
+		public static final ConfigValue UseCIDR = new ConfigValue("honeypot.cidr.use", "false");
 	}
 	
 	/**
@@ -859,11 +876,14 @@ public class ConfigValue {
 	
 	/**
 	 * Collection of config value for development purpose only.
-	 * 
+	 *
+	 * <p>
 	 * All of these keys will be removed after successful rollout.
+	 * </p>
 	 */
 	public static final class Development {
-		public static final ConfigValue WebPushUseNewPostman = new ConfigValue("development.webpush.useNewPostman", "false");
+		public static final ConfigValue UseLocalPreview = new ConfigValue("development.preview.local", "false");
+		// No development keys at the moment
 	}
 	
 	// Backend configuration values
@@ -957,7 +977,7 @@ public class ConfigValue {
 	 */
 	public static final ConfigValue MiaEnabled = new ConfigValue("mia:is-enabled", "false");
 
-	public static final ConfigValue ExpireStatistics = new ConfigValue("expire.statistics", "1100");
+	public static final ConfigValue ExpireStatistics = new ConfigValue("expire.statistics", "1460");
 
 	public static final ConfigValue ExpireSuccess = new ConfigValue("expire.success", "180");
 
@@ -979,7 +999,7 @@ public class ConfigValue {
 	public static final ConfigValue OnlineHelpLanguages = new ConfigValue("onlinehelp.languages", "de;en;fr");
 
 	/**
-	 * New RDIR link pattern.
+	 * use RDIR link pattern rdir-domain.com/uq/[agnUID]/uq.html instead of rdir-domain.com/uq.html?uid=[agnUID]
 	 * When old pattern is completely removed, also check "statLabelAdjuster.js" and remove "uid=" detection
 	 */
 	public static final ConfigValue UseRdirContextLinks = new ConfigValue("rdir.UseRdirContextLinks", "false");
@@ -1013,21 +1033,25 @@ public class ConfigValue {
 	public static final ConfigValue UpsellingInfoUrlEnglish = new ConfigValue("upselling.moreInfo.url.en");
 	public static final ConfigValue UpsellingInfoUrlGerman = new ConfigValue("upselling.moreInfo.url.de");
 
+	/** max line size for imports using primary key field which is not indexed */
 	public static final ConfigValue MaximumContentLinesForUnindexedImport = new ConfigValue("import.maximumContentLinesForUnindexedImport", "-1");
 
 	public static final ConfigValue SendPasswordChangedNotification = new ConfigValue("notifications.sendPasswordChanged", "true");
 	public static final ConfigValue SendEncryptedMailings = new ConfigValue("company.mailingEncryptedSendingDefault", "false");
 
+	/** if enabled, mailtrack_XX_tbl are not written during initial mail generation, but after successful handing over the mail to the MTA */
 	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
 
 	/** Length of token to identify companies. */
 	public static final ConfigValue CompanyTokenLength = new ConfigValue("company.tokenLength", "32");
-	
+
+	/** "same site policy" for deeptracking cookie can be "none" (cross-site use allowed), "lax" and "strict" (cookies only sent to requests from same domain) */
 	public static final ConfigValue DeepTrackingCookieSameSitePolicy = new ConfigValue("deeptracking.cookie.sameSitePolicy", null);
 
 	/** Default setting how long the deep tracking cookie is living (in seconds, needed for rdir) */
 	public static final ConfigValue DeepTrackingCookieExpire = new ConfigValue("deeptracking.cookie.expire", "-1");
 
+	/** no use found in any project */
 	public static final ConfigValue RefreshBounceloadAddresses = new ConfigValue("RefreshBounceloadAddresses", "true");
 
 	public static final ConfigValue DbMaximumDeadlockRetries = new ConfigValue("database.MaximumDeadlockRetries", "3");
@@ -1037,8 +1061,10 @@ public class ConfigValue {
 	
 	public static final ConfigValue SlowConnectionThresholdKbps = new ConfigValue("slowConnectionThresholdKbps", "750");
 
+	/** Use ApacheTikaUtils to detect mimetype by file content (not by file name extension), takes longer */
 	public static final ConfigValue UseAdvancedFileContentTypeDetection = new ConfigValue("upload.useAdvancedFileContentTypeDetection", "false");
 
+	/** period for which recipient statistics can be selected in the GUI */
 	public static final ConfigValue MaximumRecipientDetailPeriodDays = new ConfigValue("statistics.maximumRecipientDetailPeriodDays", "180");
 
 	/**
@@ -1072,13 +1098,18 @@ public class ConfigValue {
 	public static final ConfigValue LoginTotpTokenCookieHttpsOnly = new ConfigValue("logon.totp.cookie.httpsOnly", "true");
 
 	/**
-	 * Check profilefields values of well known data types like german plz, when entered via webforms
+	 * Configuration if login to UI by username and password is enabled.
 	 */
+	public static final ConfigValue LogonAllowUILoginByUsernameAndPassword = new ConfigValue("logon.ui.allowLoginByUsernameAndPassword", "true");
+
+	/** Checks profile field value of well known data type "plz" (German format only), when entered via webforms -> code and property should be removed */
 	public static final ConfigValue CheckWellKnownProfileFields = new ConfigValue("CheckWellKnownProfileFields", "false");
 
+	/** cache for properties of recipients fields for every company */
 	public static final ConfigValue RecipientFieldsMaxCache = new ConfigValue("recipientFields.maxCache", "100");
 	public static final ConfigValue RecipientFieldsMaxCacheTimeMillis = new ConfigValue("recipientFields.maxCacheTimeMillis", "300000");
 
+	/** new service classes for recipient fields replacing legacy code implementations -> should be removed after EMM-8436 is finished */
 	public static final ConfigValue UseRecipientFieldService = new ConfigValue("UseRecipientFieldService", "true");
 	
 	public static final ConfigValue WorkflowPauseExpirationHours = new ConfigValue("workflow.pause.expire.hours", "2");
@@ -1089,37 +1120,46 @@ public class ConfigValue {
 	
 	public static final ConfigValue TextGeneratorUrl = new ConfigValue("TextGeneratorUrl");
 	public static final ConfigValue TextGeneratorApiKey = new ConfigValue("TextGeneratorApiKey");
-	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel");
+	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel", "gpt-4o-mini");
 	
 	public static final ConfigValue ImageGeneratorUrl = new ConfigValue("ImageGeneratorUrl");
 	public static final ConfigValue ImageGeneratorApiKey = new ConfigValue("ImageGeneratorApiKey");
+	/** right now "dall-e-3" is hard coded as fallback in class ContentCreationServiceImpl */
 	public static final ConfigValue ImageGeneratorModel = new ConfigValue("ImageGeneratorModel");
 	public static final ConfigValue ImageGeneratorQuotaLimitPerDay = new ConfigValue("ImageGeneratorQuotaLimitPerDay", "10");
 
 	public static final ConfigValue RestfulJwtSecret = new ConfigValue("RestfulJwtSecret");
 	public static final ConfigValue RestfulJwtValidityMinutes = new ConfigValue("RestfulJwtValidityMinutes", "60");
 
-	/**
-	 * Maximum duration an import may be active before the kill button is shown in server status page
-	 */
+	/** Maximum duration an import may be active before the kill button is shown in server status page */
 	public static final ConfigValue MaxUserImportDurationMinutes = new ConfigValue("MaxUserImportDurationMinutes", "60");
 
+	/** property should be removed (see EMM-10763) */
 	public static final ConfigValue InitialTestVipEmailAddress = new ConfigValue("system.InitialTestVipEmailAddress");
-	
+	/** property should be removed (see EMM-10764) */
 	public static final ConfigValue EmmXPressMasterClient = new ConfigValue("system.EmmXPressMasterClient");
 
 	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
 
+	/** monthly pre-aggregated binding type data for recipient statistics will be kept for 5 years by default */
 	public static final ConfigValue RecipientDistributionStatExpirationYears = new ConfigValue("expire.recipientDistributionStat.years", "5");
 
+	/** if set, recipient overview in GUI shows only active recipients by default */
 	public static ConfigValue FilterRecipientsOverviewForActiveRecipients = new ConfigValue("recipients.overview.filterForActive", "false");
+
 	public static ConfigValue CleanAdminAndTestRecipientsActivities = new ConfigValue("recipients.adminAndTest.cleanActivity", "false");
 
 	public static ConfigValue IndividualLinkTrackingForAllMailings = new ConfigValue("mailings.individualLinkTracking", "false");
 
 	public static final ConfigValue MailingMinimumApprovals = new ConfigValue("mailing.minimum.approvals", "1");
+	/** if set, does not cut number of shown entries for less clutter by default, but shows all entries */
 	public static final ConfigValue DashboardCalendarShowALlEntries = new ConfigValue("dashboard.calendar.showAllEntries", "false");
+
+	/** used by ProfileImportWorker to identify values that will be interpreted as unknown gender (gender = 2) */
 	public static final ConfigValue GenderUnknownDefaultValues = new ConfigValue("gender.unknown.defaultValues", "unknown;diverse;kein;keine;keine Angabe;none;other;divers;unbekannt;andere");
+
+	/** secret value used by WidgetServiceImpl to encode payload like mailinglist and mailing ID to avoid tampering by hackers */
+	public static final ConfigValue WidgetTokenSecret = new ConfigValue("system.widget.token.secret");
 
 	private final String name;
 	private final String defaultValue;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,43 +10,67 @@
 
 package com.agnitas.service.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.Target;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.dao.MailingDao;
+import com.agnitas.beans.factory.DynamicTagContentFactory;
+import com.agnitas.beans.factory.DynamicTagFactory;
 import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.dao.EmmActionDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.MailingContentService;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserMessageException;
+import com.agnitas.util.AgnTagUtils;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DynTagException;
 import com.agnitas.util.Tag;
 import com.agnitas.util.Tag.TagType;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.factory.DynamicTagContentFactory;
-import org.agnitas.beans.factory.DynamicTagFactory;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.UserMessageException;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DynTagException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,23 +81,6 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class MailingContentServiceImpl implements MailingContentService, ApplicationContextAware {
     private static final Logger logger = LogManager.getLogger(MailingContentServiceImpl.class);
@@ -86,7 +93,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     protected final ExtendedDefaultConversionService conversionService;
 	protected final DynamicTagContentFactory dynamicTagContentFactory;
     protected final DynamicTagFactory dynamicTagFactory;
-    protected final ComMailingBaseService mailingBaseService;
+    protected final MailingBaseService mailingBaseService;
     protected final AgnTagService agnTagService;
     protected final DynamicTagDao dynamicTagDao;
     protected final MailingDao mailingDao;
@@ -95,20 +102,26 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     protected final MailingService mailingService;
     protected final UserActivityLogService userActivityLogService;
     private final DynTagChainValidator dynTagChainValidator;
-    
+    private final ExtendedConversionService extendedConversionService;
+    private final TargetService targetService;
+    private final AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
+
     public MailingContentServiceImpl(
-            ExtendedDefaultConversionService conversionService,
-            DynamicTagContentFactory dynamicTagContentFactory,
-            DynamicTagFactory dynamicTagFactory,
-            ComMailingBaseService mailingBaseService,
-            AgnTagService agnTagService,
-            DynamicTagDao dynamicTagDao,
-            MailingDao mailingDao,
-            EmmActionDao actionDao,
-            LinkService linkService,
-            MailingService mailingService,
-            UserActivityLogService userActivityLogService,
-            DynTagChainValidator dynTagChainValidator) {
+        ExtendedDefaultConversionService conversionService,
+        DynamicTagContentFactory dynamicTagContentFactory,
+        DynamicTagFactory dynamicTagFactory,
+        MailingBaseService mailingBaseService,
+        AgnTagService agnTagService,
+        DynamicTagDao dynamicTagDao,
+        MailingDao mailingDao,
+        EmmActionDao actionDao,
+        LinkService linkService,
+        MailingService mailingService,
+        UserActivityLogService userActivityLogService,
+        DynTagChainValidator dynTagChainValidator,
+        ExtendedConversionService extendedConversionService,
+        TargetService targetService,
+        AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory) {
         this.conversionService = conversionService;
 		this.dynamicTagContentFactory = dynamicTagContentFactory;
 		this.dynamicTagFactory = dynamicTagFactory;
@@ -121,6 +134,9 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         this.mailingService = mailingService;
         this.userActivityLogService = userActivityLogService;
         this.dynTagChainValidator = dynTagChainValidator;
+        this.extendedConversionService = extendedConversionService;
+        this.targetService = targetService;
+        this.agnDynTagGroupResolverFactory = agnDynTagGroupResolverFactory;
     }
 
 	@Override
@@ -268,7 +284,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
             return;
         }
         mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
-        mailingService.saveMailingWithNewContent(mailing, hasNoCleanPermission(admin));
+        mailingService.saveMailingWithNewContent(mailing, admin);
         mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.EDIT, null);
         mailingService.removeApproval(mailing.getId(), admin);
         userActions.forEach(ua -> userActivityLogService.writeUserActivityLog(admin, ua));
@@ -327,7 +343,6 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         return getUserActions(oldDynTag, newDynTag, mailing);
     }
 
-    // TODO: EMMGUI-714: remove when old design will be removed
     @Override
     public ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, Admin admin, Popups popups) throws Exception {
         DynamicTag oldDynamicTag = mailing.getDynamicTagById(dynTagDto.getId());
@@ -352,9 +367,8 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
 
         dynamicTagDao.markNamesAsDeleted(mailing.getId(), dynNamesForDeletion);
 
-        boolean hasNoCleanPermission = admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP);
         mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
-        mailingService.saveMailingWithNewContent(mailing, hasNoCleanPermission);
+        mailingService.saveMailingWithNewContent(mailing, admin);
         mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.EDIT, null);
         mailingService.removeApproval(mailing.getId(), admin);
 
@@ -378,11 +392,11 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
 	public void buildDependencies(int mailingID, int companyID) throws Exception {
 		Mailing storedMailing = mailingDao.getMailing(mailingID, companyID);
 		storedMailing.buildDependencies(true, applicationContext);
-        mailingService.saveMailingWithNewContent(storedMailing, false);
+        mailingService.saveMailingWithNewContent(storedMailing);
 	}
 
 	@Override
-	public final List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(final ComTarget target) {
+	public final List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(final Target target) {
 		return this.dynamicTagDao.listContentBlocksUsingTargetGroup(target.getId(), target.getCompanyID());
 	}
     
@@ -725,5 +739,62 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         clonedDynContent.setMailingID(dynTagDto.getMailingId());
 
         return clonedDynContent;
+    }
+
+    @Override
+    public Map<String, DynTagDto> loadDynTags(Mailing mailing, Locale locale) {
+        Map<String, DynamicTag> tags = mailing.getDynTags();
+
+        // Grid mailing should not expose its internals (dynamic tags representing building blocks) for editing.
+        if (mailing.isGridMailing()) {
+            clearBuildingBlocksFromTags(mailing, tags);
+        }
+
+        Map<String, DynTagDto> dynTags = new HashMap<>();
+
+        for (Map.Entry<String, DynamicTag> tagEntry : tags.entrySet()) {
+            DynamicTag dynTag = tagEntry.getValue();
+            DynTagDto dynTagDto = extendedConversionService.convert(dynTag, DynTagDto.class);
+            dynTagDto.setPreviewText(getDyntagPreviewText(dynTagDto, locale));
+            dynTags.put(tagEntry.getKey(), dynTagDto);
+        }
+
+        dynTags.values().forEach(tag -> tag.setTargetGroupNames(getDynTagTargetIds(mailing, tag, locale)));
+        return dynTags;
+    }
+
+    private static String getDyntagPreviewText(DynTagDto dynTagDto, Locale locale) {
+        if (CollectionUtils.isEmpty(dynTagDto.getContentBlocks())) {
+            return I18nString.getLocaleString("GWUA.noContent", locale);
+        }
+        return dynTagDto.getContentBlocks().get(0).getContent().replaceAll("</?[^>]+(>|$)", "");
+    }
+
+    private List<String> getDynTagTargetIds(Mailing mailing, DynTagDto tag, Locale locale) {
+        return tag.getContentBlocks().stream()
+            .map(DynContentDto::getTargetId)
+            .map(id -> targetService.getTargetName(id, mailing.getCompanyID(), locale))
+            .toList();
+    }
+
+    private void clearBuildingBlocksFromTags(Mailing mailing, Map<String, DynamicTag> dynTags) {
+        MailingComponent htmlComponent = mailing.getComponents().get("agnHtml");
+        if (htmlComponent != null) {
+            for (String name : getAgnTags(htmlComponent.getEmmBlock(), mailing.getCompanyID())) {
+                dynTags.remove(name);
+                findTocItemDynNames(name, dynTags.keySet()).forEach(dynTags::remove);
+            }
+        }
+    }
+
+    private List<String> findTocItemDynNames(String dynName, Collection<String> dynNames) {
+        return dynNames.stream()
+            .filter(n -> n.startsWith(dynName + AgnUtils.TOC_ITEM_SUFFIX))
+            .toList();
+    }
+
+
+    private List<String> getAgnTags(String content, int companyId) {
+        return agnTagService.getDynTagsNames(content, agnDynTagGroupResolverFactory.create(companyId, 0));
     }
  }

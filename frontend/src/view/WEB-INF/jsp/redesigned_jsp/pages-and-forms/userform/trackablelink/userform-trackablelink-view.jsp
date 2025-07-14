@@ -31,7 +31,7 @@
             <div class="modal-body grid" style="--bs-columns: 1">
                 <div>
                     <label class="form-label" for="link-url"><mvc:message code="URL" /></label>
-                    <input type="text" name="url" id="link-url" class="form-control" readonly="readonly" value="${form.url}"/>
+                    <textarea type="text" name="url" id="link-url" class="form-control" readonly rows="1">${form.url}</textarea>
                 </div>
 
                 <div>
@@ -50,7 +50,7 @@
                 <emm:ShowByPermission token="mailing.extend_trackable_links">
                     <div class="tile">
                         <div class="tile-header p-2 border-bottom">
-                            <span class="text-dark fw-medium"><mvc:message code="mailing.trackablelinks.extensions.add"/></span>
+                            <h3 class="tile-title tile-title--grey"><mvc:message code="mailing.trackablelinks.extensions.add"/></h3>
                         </div>
                         <div class="tile-body p-2">
                             <div id="link-extensions" data-trackable-link-extensions>
@@ -65,7 +65,7 @@
                                         <div class="col d-flex">
                                             <a href="#"
                                                data-add-default-extensions
-                                               class="col flex-grow-1 btn btn-inverse text-nowrap px-1">
+                                               class="col flex-grow-1 btn btn-secondary text-nowrap px-1">
                                                 <i class="icon icon-plus"></i>
                                                 <mvc:message code="AddDefaultProperties"/>
                                             </a>

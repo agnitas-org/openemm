@@ -1,4 +1,5 @@
 (() => {
+  const Form = AGN.Lib.Form;
 
   $(document).on('click', '[data-evaluate-loader]', function (e) {
     const $el = $(this);
@@ -10,10 +11,14 @@
       xhr: showProgress,
       url: $el.prop('href'),
       type: 'POST',
-      data: $el.is('[data-form-target]') ? AGN.Lib.Form.get($($el.data('form-target'))).params() : ''
+      data: $el.is('[data-form-target]') ? Form.get($($el.data('form-target'))).params() : ''
     }).done(resp => {
       if (typeof resp === 'object') {
-        downloadFile(resp.data);
+        if (resp.success === false) {
+          AGN.Lib.JsonMessages(resp.popups);
+        } else {
+          downloadFile(resp.data, $el);
+        }
       } else {
         AGN.Lib.Page.render(resp)
       }
@@ -36,11 +41,18 @@
     return $el.data('evaluate-loader') || 'evaluate-loader-template';
   }
 
-  function downloadFile(url) {
+  function downloadFile(url, $el) {
+    const $form = Form.getWrapper($el);
+    const wasDirty = $form.dirty('isDirty');
+    $form.dirty('setAsClean'); // prevent dirty alert
+
     const unloadHandler = window.onbeforeunload;
     window.onbeforeunload = null;
     window.location = AGN.url(url);
     window.onbeforeunload = unloadHandler;
-  }
 
+    if (wasDirty) {
+      $form.dirty('setAsDirty');
+    }
+  }
 })();

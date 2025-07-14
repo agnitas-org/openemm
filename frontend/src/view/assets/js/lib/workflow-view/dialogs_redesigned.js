@@ -1,4 +1,4 @@
-(function() {
+(() => {
   const Def = AGN.Lib.WM.Definitions;
   const Confirm = AGN.Lib.Confirm;
 
@@ -9,15 +9,15 @@
     confirmMailingDataTransfer: confirmMailingDataTransfer,
     confirmOwnWorkflowExpanding: confirmOwnWorkflowExpanding,
     createAutoOpt: createAutoOpt,
+    createSplit: createSplit,
     confirmCopy: confirmCopy,
     connectionNotAllowed: connectionNotAllowed,
-    createMailing: createMailing,
     mailingInUseDialog: mailingInUseDialog,
     simpleDialog: simpleDialog,
   };
 
   function activationDialog(mailings, isUnpause) {
-    const confirm = Confirm.createFromTemplate({ rows: mailings.length }, 'activate-campaign-dialog');
+    const confirm = Confirm.from('activate-campaign-dialog', { rows: mailings.length });
     if (!isUnpause) {
       createDialogMailingsTable(mailings);
     }
@@ -76,6 +76,10 @@
   function createAutoOpt() {
     return Confirm.from('create-auto-opt-modal');
   }
+
+  function createSplit() {
+    return Confirm.from('create-split-modal');
+  }
   
   function confirmTestingStartStop(isStartTesting) {
     return Confirm.from('testing-modal', {startTesting: isStartTesting, shortname: Def.shortname});
@@ -93,10 +97,6 @@
 
   function simpleDialog(title, message, btnText = t('defaults.ok')) {
     return Confirm.from('workflow-simple-dialog-modal', {title, message, btnText});
-  }
-
-  function createMailing() {
-    return Confirm.from('create-mailing-modal');
   }
 
   AGN.Lib.WM.Dialogs = Dialogs;

@@ -84,7 +84,7 @@ AGN.Lib.Controller.new('notification-global-stat', function () {
         }
 
         const colors = [
-          $browserChart.css('--chart-very-dark-blue-color'),
+          $browserChart.css('--chart-darkest-blue-color'),
           $browserChart.css('--chart-dark-blue-color'),
           $browserChart.css('--chart-blue-color'),
           $browserChart.css('--chart-light-blue-color'),
@@ -166,8 +166,8 @@ AGN.Lib.Controller.new('notification-global-stat', function () {
               {
                 label: data1[0],
                 data: data1.slice(1),
-                borderColor: $progressChart.css('--chart-very-dark-blue-color'),
-                backgroundColor: $progressChart.css('--chart-very-dark-blue-color'),
+                borderColor: $progressChart.css('--chart-darkest-blue-color'),
+                backgroundColor: $progressChart.css('--chart-darkest-blue-color'),
                 pointRadius: pointRadius
               },
               {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,25 +21,22 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.impl.ColumnMappingImpl;
-import org.agnitas.service.ImportException;
-import org.agnitas.service.ImportMethod;
-import org.agnitas.service.UpdateMethod;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.CsvReader;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.TempFileInputStream;
-import org.agnitas.util.ZipUtilities;
-import org.agnitas.util.importvalues.CheckForDuplicates;
-import org.agnitas.util.importvalues.DateFormat;
-import org.agnitas.util.importvalues.TextRecognitionChar;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.impl.ColumnMappingImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.CsvReader;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.TempFileInputStream;
+import com.agnitas.util.ZipUtilities;
+import com.agnitas.util.importvalues.CheckForDuplicates;
+import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
+import com.agnitas.emm.core.referencetable.beans.ReferenceTable;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
@@ -300,7 +297,7 @@ public class CsvImportExportDescription {
 	}
 
 	// TODO: move to service layer
-	public void prepareColumnMapping(ComReferenceTable table, CaseInsensitiveMap<String, DbColumnType> structure, File importFile) throws Exception {
+	public void prepareColumnMapping(ReferenceTable table, CaseInsensitiveMap<String, DbColumnType> structure, File importFile) throws Exception {
 		List<String> importDataColumns;
 		if ("JSON".equalsIgnoreCase(datatype)) {
 			importDataColumns = new ArrayList<>();
@@ -542,11 +539,8 @@ public class CsvImportExportDescription {
 		output.append("Zipped: " + zipped + "\n");
 		output.append("EncryptedZip: " + (zipPassword != null) + "\n");
 		output.append("Separator: " + delimiter + "\n");
-		try {
-			output.append("TextRecognitionChar: " + TextRecognitionChar.getTextRecognitionCharByChar(stringQuote).name() + "\n");
-		} catch (Exception e) {
-			output.append("TextRecognitionChar: Invalid (\"" + e.getMessage() + "\")\n");
-		}
+		output.append("TextRecognitionChar: " + TextRecognitionChar.getTextRecognitionCharByChar(stringQuote).name() + "\n");
+
 		try {
 			output.append("ImportMethod: " + importMethod.name() + "\n");
 		} catch (Exception e) {

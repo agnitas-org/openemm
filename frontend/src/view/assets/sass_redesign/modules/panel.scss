@@ -103,9 +103,17 @@ Variation of panel to display some status. Contains an icon, title, and addition
 }
 
 .panel--statistics {
+  --statistics-panel-bg: #{$dark-blue};
+
   color: $white;
-  background-color: $dark-blue;
+  background-color: var(--statistics-panel-bg);
   gap: $gap-x-sm;
+}
+
+@include contrast-themes {
+  .panel--statistics {
+    --statistics-panel-bg: #{$con-blue};
+  }
 }
 
 .panel--status {
@@ -124,7 +132,7 @@ Variation of panel to display some status. Contains an icon, title, and addition
       color: $black;
       flex-grow: 1;
       height: 100%;
-      background: var(--main-bg-color);
+      background: $body-bg-var;
       border-bottom-left-radius: $border-radius;
       border-top-right-radius: $border-radius;
       display: flex;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,33 +10,47 @@
 
 package com.agnitas.emm.core.target.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
+import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.common.ObjectUserType;
 import com.agnitas.emm.core.target.form.TargetForm;
 import com.agnitas.emm.core.target.form.TargetListFormSearchParams;
-import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.GuiConstants;
+import com.agnitas.web.forms.BulkActionForm;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.SimpleActionForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,35 +69,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
 public class TargetController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(TargetController.class);
     private static final String TARGETS_LIST_REDIRECT = "redirect:/target/list.action?restoreSort=true";
     private static final String TARGET_DELETE_ERROR_MSG = "error.target.delete";
 
-    protected final ComTargetService targetService;
+    protected final TargetService targetService;
     private final WebStorage webStorage;
-    private final ComBirtReportDao birtReportDao;
+    private final BirtReportDao birtReportDao;
     private final UserActivityLogService userActivityLogService;
 
-    public TargetController(ComTargetService targetService, WebStorage webStorage,
+    public TargetController(TargetService targetService, WebStorage webStorage,
                             UserActivityLogService userActivityLogService,
-                            ComBirtReportDao birtReportDao) {
+                            BirtReportDao birtReportDao) {
         this.webStorage = webStorage;
         this.birtReportDao = birtReportDao;
         this.targetService = targetService;
@@ -101,22 +100,23 @@ public class TargetController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute TargetForm targetForm, @ModelAttribute TargetListFormSearchParams searchParams, @RequestParam(required = false) boolean restoreSort,
-                       Admin admin, Model model) {
-        if (isRedesignedUiUsed(admin)) {
+    public String list(@ModelAttribute TargetForm targetForm, @ModelAttribute TargetListFormSearchParams searchParams,
+                       @RequestParam(required = false) Boolean restoreSort, Admin admin, Model model) {
+        if (admin.isRedesignedUiUsed()) {
             FormUtils.syncSearchParams(searchParams, targetForm, true);
             FormUtils.syncPaginationData(webStorage, WebStorage.TARGET_OVERVIEW, targetForm, restoreSort);
         } else {
             FormUtils.updateSortingState(webStorage, WebStorage.TARGET_OVERVIEW, targetForm, restoreSort);
             prepareListParameters(targetForm, admin);
         }
-        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
         addListModelAttrs(targetForm, admin, model);
         return "targets_list";
     }
 
     protected void addListModelAttrs(TargetForm targetForm, Admin admin, Model model) { // overridden in extended class
+        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+
         model.addAttribute("isSearchEnabled", targetService.isBasicFullTextSearchSupported());
         model.addAttribute("targetComplexities", targetService.getTargetComplexities(admin.getCompanyID()));
         model.addAttribute("targetEntries", getPaginatedTargetGroupsOverview(targetForm, admin));
@@ -149,7 +149,7 @@ public class TargetController implements XssCheckAware {
     public String confirmBulkDelete(@ModelAttribute("form") BulkActionForm form, Popups popups, Admin admin, Model model) {
         validateSelectedIds(form.getBulkIds());
 
-        if (isRedesignedUiUsed(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             ServiceResult<List<String>> result = targetService.getTargetNamesForDeletion(form.getBulkIds(), admin);
             popups.addPopups(result);
 
@@ -163,13 +163,9 @@ public class TargetController implements XssCheckAware {
         return "targets_bulk_delete_confirm";
     }
 
-    private static boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
     @PostMapping("/bulk/delete.action")
     public String bulkDelete(@ModelAttribute("form") BulkActionForm form, Admin admin, Popups popups) {
-        if (isRedesignedUiUsed(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             List<Integer> ids = targetService.bulkDeleteRedesigned(new HashSet<>(form.getBulkIds()), admin);
             if (CollectionUtils.isNotEmpty(ids)) {
                 popups.success(SELECTION_DELETED_MSG);
@@ -207,7 +203,7 @@ public class TargetController implements XssCheckAware {
     public String confirmDelete(@PathVariable int id, Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, Popups popups, Model model) {
         final int companyId = admin.getCompanyID();
         try {
-            final ComTarget targetGroup = targetService.getTargetGroup(id, companyId);
+            final Target targetGroup = targetService.getTargetGroup(id, companyId);
             simpleActionForm.setId(targetGroup.getId());
             simpleActionForm.setShortname(targetGroup.getTargetName());
 
@@ -307,7 +303,7 @@ public class TargetController implements XssCheckAware {
                 .setSearchDescription(form.getSearchDescription())
                 .setCreationDate(form.getSearchCreationDate())
                 .setChangeDate(form.getSearchChangeDate())
-                .setRedesignedUiUsed(isRedesignedUiUsed(admin))
+                .setRedesignedUiUsed(admin.isRedesignedUiUsed())
                 .setDeleted(form.isShowDeleted())
                 .setPageNumber(form.getPage())
                 .setPageSize(form.getNumberOfRows())
@@ -348,12 +344,12 @@ public class TargetController implements XssCheckAware {
     }
 
     private void loadDependentBirtReports(int targetId, Popups popups, Admin admin, Model model) {
-        final List<ComLightweightBirtReport> affectedReports = birtReportDao.getLightweightBirtReportsBySelectedTarget(admin.getCompanyID(), targetId);
+        final List<LightweightBirtReport> affectedReports = birtReportDao.getLightweightBirtReportsBySelectedTarget(admin.getCompanyID(), targetId);
         if (CollectionUtils.isNotEmpty(affectedReports)) {
-            if (isRedesignedUiUsed(admin)) {
+            if (admin.isRedesignedUiUsed()) {
                 List<ObjectUsage> usages = affectedReports.stream()
                         .map(r -> new ObjectUsage(ObjectUserType.BIRT_REPORT, r.getId(), r.getShortname()))
-                        .collect(Collectors.toList());
+                        .toList();
 
                 popups.warning(new ObjectUsages(usages).toMessage("warning.target.delete.affectedBirtReports", admin.getLocale()));
             } else {

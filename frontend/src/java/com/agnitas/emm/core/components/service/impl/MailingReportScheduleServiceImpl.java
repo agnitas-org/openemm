@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,19 +13,19 @@ package com.agnitas.emm.core.components.service.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.bean.BirtReport;
+import com.agnitas.emm.core.birtreport.bean.impl.BirtReportMailingSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtreport.dto.PeriodType;
 import com.agnitas.emm.core.birtreport.dto.PredefinedType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.components.service.MailingReportScheduleService;
 import com.agnitas.messages.I18nString;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +37,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.SORT_NAME;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.SORT_NAME;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.GENERAL_INFO_GROUP;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CONVERSION_RATE;
+import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.mailingStatisticProps;
 
 public class MailingReportScheduleServiceImpl implements MailingReportScheduleService {
 
@@ -50,10 +52,10 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
     );
 
     private final BirtReportFactory birtReportFactory;
-    private final ComBirtReportService birtReportService;
+    private final BirtReportService birtReportService;
 
     @Autowired
-    public MailingReportScheduleServiceImpl(BirtReportFactory birtReportFactory, ComBirtReportService birtReportService) {
+    public MailingReportScheduleServiceImpl(BirtReportFactory birtReportFactory, BirtReportService birtReportService) {
         this.birtReportFactory = birtReportFactory;
         this.birtReportService = birtReportService;
     }
@@ -62,17 +64,17 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
      * Creates and setup report with mailing type @see {@link ReportSettingsType#MAILING}
      * <p>
      * report settings don't consider because:
-     * "send_date" and "end_date" are not used by {@link ComBirtReport#isTriggeredByMailing()} reports
+     * "send_date" and "end_date" are not used by {@link BirtReport#isTriggeredByMailing()} reports
      * "creation_date" is set by DB
      * "activation_date" is set when saving activated report
      * <p>
-     * Report settings should contains 'predefineMailing' @see {@link ComBirtReportSettings#PREDEFINED_ID_KEY} prop to be included in send report's list
-     * Keep in mind, 'selectedMailings' prop will be overwritten by @see {@link ComBirtReportService#getReportsToSend(int, List, List)}
+     * Report settings should contains 'predefineMailing' @see {@link BirtReportSettings#PREDEFINED_ID_KEY} prop to be included in send report's list
+     * Keep in mind, 'selectedMailings' prop will be overwritten by @see {@link BirtReportService#getReportsToSend(int, List, List)}
      */
     @Override
-    public void scheduleNewReport(List<String> emails, Admin admin, Mailing mailing, Date sendDate, BirtReportType reportType) throws Exception {
+    public void scheduleNewReport(List<String> emails, Admin admin, Mailing mailing, Date sendDate, BirtReportType reportType) {
         // Create the report itself
-        ComBirtReport report = birtReportFactory.createReport();
+        BirtReport report = birtReportFactory.createReport();
 
         Date mailingSendDate;
         if (sendDate != null) {
@@ -105,7 +107,7 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
         birtReportService.insert(report);
     }
 
-    private void setupReportData(ComBirtReport report, BirtReportType reportType, Date endDate, Mailing mailing,
+    private void setupReportData(BirtReport report, BirtReportType reportType, Date endDate, Mailing mailing,
                                  Admin admin, List<String> emails) {
         report.setReportType(reportType.getKey());
         report.setActiveTab(ReportSettingsType.MAILING.getKey()); // Used by UI only?
@@ -115,7 +117,7 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
         report.setCompanyID(admin.getCompanyID());
         report.setShortname(buildReportName(reportType, mailing, admin.getLocale()));
         report.setReportActive(1);
-        report.setFormat(ComBirtReport.FORMAT_PDF_INDEX);
+        report.setFormat(BirtReport.FORMAT_PDF_INDEX);
         report.setEmailRecipientList(emails);
         report.setEmailSubject(buildReportEmailSubject(admin.getLocale()));
         report.setEmailDescription(buildReportEmailBody(mailing, admin.getLocale()));
@@ -125,9 +127,10 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
         }
     }
 
-    private void setupMailingReportSettings(ComBirtReportMailingSettings reportMailingSettings, int mailingId) {
+    private void setupMailingReportSettings(BirtReportMailingSettings reportMailingSettings, int mailingId) {
         // Create report parameters
         List<BirtReportSettingsUtils.Properties> figures = new ArrayList<>();
+        figures.addAll(mailingStatisticProps.get(GENERAL_INFO_GROUP));
         figures.addAll(BirtReportSettingsUtils.MAILING_FORMATS_GROUP);
         figures.addAll(BirtReportSettingsUtils.MAILING_OPENER_GROUP);
         figures.addAll(BirtReportSettingsUtils.MAILING_GENERAL_GROUP);
@@ -138,17 +141,17 @@ public class MailingReportScheduleServiceImpl implements MailingReportScheduleSe
             reportMailingSettings.setReportSetting(figure.getPropName(), isActive);
         });
 
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.ENABLED_KEY, true);
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.MAILING_FILTER_KEY, FilterType.FILTER_MAILING.getKey());
-        reportMailingSettings.setReportSetting(ComBirtReportMailingSettings.MAILING_GENERAL_TYPES_KEY, ComBirtReportMailingSettings.MAILING_NORMAL);
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.MAILING_TYPE_KEY, BirtReportSettingsUtils.MAILINGS_CUSTOM);
-        reportMailingSettings.setReportSetting(ComBirtReportMailingSettings.PERIOD_TYPE_KEY, PeriodType.DATE_RANGE_WEEK.getKey());
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.PREDEFINED_MAILINGS_KEY, PredefinedType.PREDEFINED_LAST_ONE.getValue());
+        reportMailingSettings.setReportSetting(BirtReportSettings.ENABLED_KEY, true);
+        reportMailingSettings.setReportSetting(BirtReportSettings.MAILING_FILTER_KEY, FilterType.FILTER_MAILING.getKey());
+        reportMailingSettings.setReportSetting(BirtReportMailingSettings.MAILING_GENERAL_TYPES_KEY, BirtReportMailingSettings.MAILING_NORMAL);
+        reportMailingSettings.setReportSetting(BirtReportSettings.MAILING_TYPE_KEY, BirtReportSettingsUtils.MAILINGS_CUSTOM);
+        reportMailingSettings.setReportSetting(BirtReportMailingSettings.PERIOD_TYPE_KEY, PeriodType.DATE_RANGE_WEEK.getKey());
+        reportMailingSettings.setReportSetting(BirtReportSettings.PREDEFINED_MAILINGS_KEY, PredefinedType.PREDEFINED_LAST_ONE.getValue());
 
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.PREDEFINED_ID_KEY, mailingId);
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.MAILINGS_KEY, Integer.toString(mailingId));
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.TARGETS_KEY, "");
-        reportMailingSettings.setReportSetting(ComBirtReportSettings.SORT_MAILINGS_KEY, SORT_NAME);
+        reportMailingSettings.setReportSetting(BirtReportSettings.PREDEFINED_ID_KEY, mailingId);
+        reportMailingSettings.setReportSetting(BirtReportSettings.MAILINGS_KEY, Integer.toString(mailingId));
+        reportMailingSettings.setReportSetting(BirtReportSettings.TARGETS_KEY, "");
+        reportMailingSettings.setReportSetting(BirtReportSettings.SORT_MAILINGS_KEY, SORT_NAME);
     }
 
     private String buildReportName(BirtReportType reportType, Mailing mailing, Locale locale) {

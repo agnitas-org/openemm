@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
 
-import org.agnitas.web.forms.WorkflowParameters;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
 
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 
 public class MailingSettingsOptions {
 
@@ -27,11 +27,12 @@ public class MailingSettingsOptions {
     private boolean isNew;
     private boolean activeOrSent;
     private boolean forCopy;
+    private boolean isCopying;
     private boolean isTemplate;
     private boolean forFollowUp;
     private boolean worldSend;
     private String sessionId;
-    private List<ComMailingParameter> mailingParams;
+    private List<MailingParameter> mailingParams;
     private WorkflowParameters workflowParams;
 
     public static Builder builder() {
@@ -78,6 +79,10 @@ public class MailingSettingsOptions {
         return forCopy;
     }
 
+    public boolean isCopying() {
+        return isCopying;
+    }
+
     public boolean isForFollowUp() {
         return forFollowUp;
     }
@@ -86,7 +91,7 @@ public class MailingSettingsOptions {
         return worldSend;
     }
 
-    public List<ComMailingParameter> getMailingParams() {
+    public List<MailingParameter> getMailingParams() {
         return mailingParams;
     }
 
@@ -160,8 +165,13 @@ public class MailingSettingsOptions {
             options.worldSend = worldSend;
             return this;
         }
+
+        public Builder setIsCopying(boolean isCopying) {
+            options.isCopying = isCopying;
+            return this;
+        }
         
-        public Builder setMailingParams(List<ComMailingParameter> mailingParams) {
+        public Builder setMailingParams(List<MailingParameter> mailingParams) {
             options.mailingParams = mailingParams;
             return this;
         }

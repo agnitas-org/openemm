@@ -5,7 +5,7 @@
 
 <%--@elvariable id="bounceFilterForm" type="com.agnitas.emm.core.bounce.form.BounceFilterForm"--%>
 <%--@elvariable id="userFormList" type="java.util.List<com.agnitas.userform.bean.UserForm>"--%>
-<%--@elvariable id="mailingLists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailingLists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="actionBasedMailings" type="java.util.List<org.agnitas.emm.core.mailing.beans.LightweightMailing>"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="filterEmailAddressDefault" type="java.lang.String"--%>

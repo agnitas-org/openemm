@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,18 +24,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.TagDetails;
-import org.agnitas.beans.factory.DynamicTagFactory;
-import org.agnitas.dao.TagDao;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.DynTagException;
-import org.agnitas.util.MissingEndTagException;
-import org.agnitas.util.UnclosedTagException;
+import com.agnitas.beans.TagDetails;
+import com.agnitas.beans.factory.DynamicTagFactory;
+import com.agnitas.dao.TagDao;
+import com.agnitas.util.AgnTagUtils;
+import com.agnitas.util.DynTagException;
+import com.agnitas.util.MissingEndTagException;
+import com.agnitas.util.UnclosedTagException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagDto;
 import com.agnitas.beans.Admin;
@@ -382,27 +380,22 @@ public class AgnTagServiceImpl implements AgnTagService {
         }
     }
 
-    @Required
     public void setDynamicTagFactory(DynamicTagFactory dynamicTagFactory) {
         this.dynamicTagFactory = dynamicTagFactory;
     }
 
-    @Required
     public void setTagDetailsFactory(TagDetailsFactory tagDetailsFactory) {
         this.tagDetailsFactory = tagDetailsFactory;
     }
 
-    @Required
     public void setAgnTagResolverFactory(AgnTagResolverFactory agnTagResolverFactory) {
         this.agnTagResolverFactory = agnTagResolverFactory;
     }
 
-    @Required
     public void setTagDao(TagDao tagDao) {
         this.tagDao = tagDao;
     }
 
-    @Required
     public void setAgnTagAttributeResolverRegistry(AgnTagAttributeResolverRegistry agnTagAttributeResolverRegistry) {
         this.agnTagAttributeResolverRegistry = agnTagAttributeResolverRegistry;
     }

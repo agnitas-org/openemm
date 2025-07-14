@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,7 @@ public class ClickedInMailingRuleConverter extends GenericMailingRelatedRuleConv
     private static final String ANY_LINK_VALUE = "-1";
 
     @Override
-    protected String convertMailingRule(QueryBuilderRuleNode ruleNode, int companyId) throws QueryBuilderToEqlConversionException {
+    protected String convertMailingRule(QueryBuilderRuleNode ruleNode, int companyId) {
         Object[] values = QueryBuilderUtil.getRuleNodeValueAsArray(ruleNode);
         String linkIdValue = values[1].toString();
         if (ANY_LINK_VALUE.equals(linkIdValue)) {

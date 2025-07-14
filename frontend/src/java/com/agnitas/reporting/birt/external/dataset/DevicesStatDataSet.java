@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPENERS;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPENERS_INDEX;
 import static com.agnitas.reporting.birt.external.utils.BirtReporUtils.BirtReportFigure.CLICKER_DEVICES;
 import static com.agnitas.reporting.birt.external.utils.BirtReporUtils.BirtReportFigure.OPENERS_DEVICES;
-import static org.agnitas.util.DbUtilities.isTautologicWhereClause;
+import static com.agnitas.util.DbUtilities.isTautologicWhereClause;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,13 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.emm.core.birtstatistics.device.bean.DeviceStatisticType;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.messages.I18nString;
@@ -42,24 +35,17 @@ import com.agnitas.reporting.birt.external.beans.DevicesStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.MailingDevicesStatRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class DevicesStatDataSet extends BIRTDataSet {
-	private static final transient Logger logger = LogManager.getLogger(DevicesStatDataSet.class);
 
 	private static final int FILTER_WITHIN_DAYS = 90;
 
 	/**
 	 * Get openers device statistic data for selected mailings and is used in mailing_statistic.rptdesign and mailing_statistic_csv.rptdesign
-	 */
-	/**
-	 *
-	 * @param companyId
-	 * @param selectedTargets
-	 * @param selectedMailings
-	 * @param devicesMax
-	 * @param language
-	 * @return
-	 * @throws Exception
 	 */
 	public List<MailingDevicesStatRow> getMailingReportDevicesStat(int companyId, String selectedTargets,
 																   String hiddenTargetIdStr, String selectedMailings, String figuresOptions,
@@ -193,7 +179,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 															  int categoryIndex, String category, List<LightTarget> targets) {
 		final List<MailingDevicesStatRow> statistic = new ArrayList<>();
 
-		query(logger, sql, resultSet -> {
+		query(sql, resultSet -> {
 			int targetIndex = 0;
 			for (LightTarget target : targets) {
 				MailingDevicesStatRow row = new MailingDevicesStatRow();
@@ -257,7 +243,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 					.append(" IN (").append(customerIdSubSelect).append(")");
 		}
 
-		return select(logger, sqlBuilder.toString(), Integer.class, parameters.toArray());
+		return select(sqlBuilder.toString(), Integer.class, parameters.toArray());
 	}
 
 	private String getTargetCase(String tableIdentifier, String customerIdSubSelect, String targetName) {
@@ -398,7 +384,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 		}
 		
 		if (StringUtils.isNotEmpty(sql)) {
-			rows = select(logger, sql, new DeviceStatisticRowMapper(unknownDeviceName), sqlParameters.toArray());
+			rows = select(sql, new DeviceStatisticRowMapper(unknownDeviceName), sqlParameters.toArray());
 		}
 
 		if (CollectionUtils.isNotEmpty(rows)) {
@@ -429,7 +415,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 		
 		addMailingAndCustomerClause(sqlBuilder, parameters, "", mailingIdSubSelect, mailingListId, customerIdSubSelect);
 		
-		return select(logger, sqlBuilder.toString(), Integer.class, parameters.toArray());
+		return select(sqlBuilder.toString(), Integer.class, parameters.toArray());
 	}
 	
 	private String generateUserClientSQL(int companyId, Date limitDate, String mailingIdSubSelect, int mailingListId, String customerIdSubSelect, int devicesMax, List<Object> sqlParameters) {
@@ -627,7 +613,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 		String deviceMailingSQL = generateDeviceMailingSQL(companyId, mailingId, null, devicesMax, sqlParameters);
 
 		// Add data for BIRT pie charts for "All Subscribers" only
-		List<Map<String, Object>> chartStat = select(logger, deviceMailingSQL, sqlParameters.toArray());
+		List<Map<String, Object>> chartStat = select(deviceMailingSQL, sqlParameters.toArray());
 		for (Map<String, Object> row : chartStat) {
 			MailingDevicesStatRow devRow = new MailingDevicesStatRow();
 			devRow.setCategoryIndex(0);
@@ -636,9 +622,9 @@ public class DevicesStatDataSet extends BIRTDataSet {
 				deviceName = unknownDeviceName;
 			}
 			devRow.setDeviceName(deviceName);
-			devRow.setOpeningsCount(((Number) row.get("openings")).intValue());
-			devRow.setClicksCount(((Number) row.get("clicks")).intValue());
-			devRow.setDeviceClassId(((Number) row.get("device_class_id")).intValue());
+			devRow.setOpeningsCount(toInt(row.get("openings")));
+			devRow.setClicksCount(toInt(row.get("clicks")));
+			devRow.setDeviceClassId(toInt(row.get("device_class_id")));
 
 			returnList.add(devRow);
 		}
@@ -649,7 +635,7 @@ public class DevicesStatDataSet extends BIRTDataSet {
 			DeviceMailingStatisticRowMapper rowMapper = new DeviceMailingStatisticRowMapper(mailingId, unknownDeviceName, tgIdx, targets.get(tgIdx).getName());
 			String targetDeviceStat = generateDeviceMailingSQL(companyId, mailingId, targets.get(tgIdx).getTargetSQL(), devicesMax, targetSqlParameters);
 
-			List<MailingDevicesStatRow> devicesStatRowsByTarget = select(logger, targetDeviceStat, rowMapper, targetSqlParameters.toArray());
+			List<MailingDevicesStatRow> devicesStatRowsByTarget = select(targetDeviceStat, rowMapper, targetSqlParameters.toArray());
 
 			int totalSubscribers = totals.get(tgIdx);
 			if (totalSubscribers != 0) {

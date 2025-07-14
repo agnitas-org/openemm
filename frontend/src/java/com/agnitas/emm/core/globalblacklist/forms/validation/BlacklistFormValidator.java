@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,11 +29,11 @@ public class BlacklistFormValidator {
 		final String email = form.getEmail();
 		
 		if (StringUtils.isEmpty(email)) {
-			popups.field("email", "error.email.empty");
+			popups.alert("error.email.empty");
 			return false;
 		}
 		if(!BlacklistEmailPatternValidator.validateEmailPattern(email)) {
-			popups.field("email", "error.invalid.email");
+			popups.alert("error.invalid.email");
 			return false;
 		}
 		
@@ -43,7 +43,7 @@ public class BlacklistFormValidator {
 	private boolean validateReason(final BlacklistForm form, final Popups popups) {
 		final String reason = form.getReason();
 		if(StringUtils.length(reason) > REASON_MAX_LENGTH) {
-			popups.field("reason", "error.reason.tooLong", REASON_MAX_LENGTH);
+			popups.alert("error.reason.tooLong", REASON_MAX_LENGTH);
 			return false;
 		}
 		return true;

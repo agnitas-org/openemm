@@ -13,7 +13,7 @@
                 </div>
             </c:if>
         </div>
-        <div class="tile-body ${mailingsAvailable ? "has-chart" : ""}">
+        <div class="tile-body">
             <c:choose>
                 <c:when test="${mailingsAvailable}">
                     <canvas class="h-100 clickable" data-action="open-mailing-statistics">

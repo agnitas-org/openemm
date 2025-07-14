@@ -9,20 +9,15 @@
   border-radius: 4px;
   cursor: pointer;
   @include flex-center;
-  color: $campaign-empty-icon-color;
+  color: var(--workflow-node-empty-image-color);
 
   .node-image {
     height: $campaign-icon-height;
   }
   
-  &.under-edit {
-    .node-image {
-      color: $dark-blue;
-
-      body.dark-theme & {
-        color: $light-blue;
-      }
-    }
+  &.under-edit .node-image {
+    color: var(--workflow-node-editing-image-color);
+    --workflow-node-bg: var(--workflow-node-editing-bg);
   }
   
   .node-image {
@@ -30,12 +25,14 @@
   }
   
   &.active {
-    color: $campaign-icon-color;
+    color: var(--workflow-node-active-image-color);
+    --workflow-node-bg: var(--workflow-node-hover-bg);
   }
 
   &:hover {
     z-index: 13; /* be careful modifying this, synchronize with JS: Z_INDEX_ICON_HOVER */
-    color: $campaign-focused-icon-color;
+    color: var(--workflow-node-hover-color);
+    --workflow-node-bg: var(--workflow-node-hover-bg);
   }
 
   &:hover:not(.jtk-drag-hover):not(.jtk-dragged) .node-connect-button,
@@ -44,7 +41,7 @@
   }
 
   &.ui-selected, &.ui-selecting {
-    color: $campaign-focused-icon-color;
+    color: var(--workflow-node-hover-color);
   }
 
   &.js-collision-detected {
@@ -87,5 +84,5 @@
 
 .node.jtk-drag-hover,
 .node.jtk-drag-selected.jtk-drag-active {
-  color: $yellow !important;
+  color: $warning-var !important;
 }

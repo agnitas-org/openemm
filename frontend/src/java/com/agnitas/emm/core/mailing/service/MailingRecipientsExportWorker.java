@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,9 +14,11 @@ import com.agnitas.emm.core.components.service.MailingRecipientsService;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
 import com.agnitas.messages.I18nString;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.service.GenericExportWorker;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.web.MailingRecipientsAdditionalColumn;
+import com.agnitas.service.GenericExportWorker;
+import com.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class MailingRecipientsExportWorker extends GenericExportWorker {
+
+    private static final Logger logger = LogManager.getLogger(MailingRecipientsExportWorker.class);
 
     private int companyID;
     private int mailingID;
@@ -58,7 +62,7 @@ public class MailingRecipientsExportWorker extends GenericExportWorker {
     }
 
     @Override
-    public GenericExportWorker call() throws Exception {
+    public GenericExportWorker call() {
         try {
             List<String> csvheaders = new ArrayList<>(filter.getSelectedFields());
             csvheaders.removeAll(MailingRecipientsAdditionalColumn.getColumns());
@@ -98,6 +102,7 @@ public class MailingRecipientsExportWorker extends GenericExportWorker {
                 remoteFile = new RemoteFile(remoteFile.getRemoteFilePath(), new File(exportFile), remoteFile.getDownloadDurationMillis());
             }
         } catch (Exception e) {
+            logger.error("Error in MailingRecipientsExportWorker: {}", e.getMessage(), e);
             error = e;
         }
 

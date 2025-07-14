@@ -13,15 +13,14 @@
 @import "image-editor";
 @import "systempage";
 @import "userform-images-overview";
-@import "blacklist-overview";
 @import "recipient/_.scss";
 @import "component-upload";
 @import "system-status-overview";
-@import "mailing-overview";
 @import "system-status-external-view";
 @import "target-detail-view";
 @import "login";
 @import "layout-builder";
-@import "administration/_.scss";
+@import "permissions";
 @import "campaign/editor/_.scss";
 @import "upselling-modal";
+@import "loader-modal";

@@ -1,16 +1,16 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.ecs.EcsModeType" %>
 <%@ page import="com.agnitas.emm.core.mobile.bean.DeviceClass" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="templateId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailing" type="com.agnitas.beans.Mailing"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.ecs.form.EcsHeatmapForm"--%>
 <%--@elvariable id="heatmapRecipients" type="java.util.Map<java.lang.Integer, java.lang.String>"--%>
-<%--@elvariable id="rangeColors" type="java.util.List<org.agnitas.ecs.backend.beans.ClickStatColor>"--%>
-<%--@elvariable id="previewWidth" type="org.agnitas.ecs.EcsPreviewSize"--%>
+<%--@elvariable id="rangeColors" type="java.util.List<com.agnitas.ecs.backend.beans.ClickStatColor>"--%>
+<%--@elvariable id="previewWidth" type="com.agnitas.ecs.EcsPreviewSize"--%>
 
 <c:set var="DESKTOP_DEVICE" value="<%= DeviceClass.DESKTOP.getId() %>"/>
 <c:set var="MOBILE_DEVICE" value="<%= DeviceClass.MOBILE.getId() %>"/>
@@ -27,14 +27,14 @@
             <div class="tile-controls">
                 <c:if test="${form.recipientId > 0}">
                     <c:url var="exportUrl" value="/mailing/${mailing.id}/heatmap/export.action"/>
-                    <a href="#" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code='export.message.pdf'/>"
+                    <a href="#" class="btn btn-icon btn-secondary" data-tooltip="<mvc:message code='export.message.pdf'/>"
                        data-prevent-load data-form-url="${exportUrl}" data-form-submit-static>
                         <i class="icon icon-file-pdf"></i>
                     </a>
                 </c:if>
 
                 <div class="dropdown">
-                    <button class="btn btn-sm-horizontal btn-inverse dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    <button class="btn btn-sm-horizontal btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         <i class="icon icon-eye"></i>
                         <mvc:message code="default.View"/>
                     </button>
@@ -77,13 +77,13 @@
                     </mvc:select>
                 </div>
                 <div class="col-auto d-flex flex-column">
-                    <label for="colorDescription" class="form-label">
+                    <label class="form-label">
                         <mvc:message code="ecs.ColorCoding"/>
                     </label>
 
                     <div class="d-flex gap-2 flex-grow-1">
                         <c:forEach var="color" items="${rangeColors}" varStatus="rowCounter">
-                            <div class="d-flex align-items-center gap-1">
+                            <div class="hstack gap-1">
                                 <span class="square-badge" style="background:${color.color};"></span>
                                 <span><mvc:message code="Heatmap.max"/>&nbsp;${color.rangeEnd}%</span>
                             </div>
@@ -93,8 +93,10 @@
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
+        <div class="tile-body js-scrollable" data-controller="iframe-progress" data-initializer="iframe-progress">
             <c:if test="${form.recipientId > 0}">
+                <div id="preview-progress" class="progress loop w-100" style="display:none;"></div>
+
                 <div class="flex-center">
                     <div class="flex-center flex-grow-1">
                         <c:url var="heatmapURL" value="/mailing/${mailing.id}/heatmap/preview.action">
@@ -103,8 +105,8 @@
                             <c:param name="deviceType" value="${form.deviceType}"/>
                         </c:url>
 
-                        <iframe src="${heatmapURL}" class="default-iframe js-simple-iframe"
-                                data-height-extra="20" data-max-width="${previewWidth}" style="width: ${previewWidth}px">
+                        <iframe src="${heatmapURL}" class="default-iframe js-simple-iframe" data-max-width="${previewWidth}"
+                                style="width: ${previewWidth}px; height: 0">
                         </iframe>
                     </div>
                 </div>

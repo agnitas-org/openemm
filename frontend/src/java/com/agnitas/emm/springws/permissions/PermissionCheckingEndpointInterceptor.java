@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,9 +14,9 @@ package com.agnitas.emm.springws.permissions;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
-import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
-import org.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
+import com.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,12 +51,12 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 	}
 
 	@Override
-	public final void afterCompletion(final MessageContext messageContext, final Object endpoint, final Exception arg2) throws Exception {
+	public void afterCompletion(MessageContext messageContext, Object endpoint, Exception arg2) {
 		// Nothing to do
 	}
 
 	@Override
-	public final boolean handleFault(final MessageContext messageContext, final Object endpoint) throws Exception {
+	public boolean handleFault(MessageContext messageContext, Object endpoint) {
 		return true;
 	}
 
@@ -96,7 +96,7 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 	}
 
 	@Override
-	public final boolean handleResponse(final MessageContext messageContext, final Object endpoint) throws Exception {
+	public boolean handleResponse(MessageContext messageContext, Object endpoint) {
 		return true;
 	}
 

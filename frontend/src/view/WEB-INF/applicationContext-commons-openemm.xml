@@ -213,7 +213,7 @@
 	
 	<bean id="PermissionFilter" class="com.agnitas.emm.core.admin.service.OpenemmPermissionFilter" />
 
-	<bean id="RecipientQueryBuilder" class="org.agnitas.service.impl.RecipientQueryBuilderImpl">
+	<bean id="RecipientQueryBuilder" class="com.agnitas.service.impl.RecipientQueryBuilderImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="targetDao" ref="TargetDao" />
 		<property name="eqlFacade" ref="EqlFacade" />

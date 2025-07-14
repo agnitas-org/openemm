@@ -8,7 +8,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
-<%--@elvariable id="actionListJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="actionListJson" type="org.json.JSONArray"--%>
 
 <c:set var="active" value="<%= ActivenessStatus.ACTIVE %>"/>
 <c:set var="inactive" value="<%= ActivenessStatus.INACTIVE %>"/>
@@ -81,7 +81,9 @@
         </button>
     </div>
 
-    <c:forEach var="entry" items="${actionListJson}">
+    <c:set var="actionsList" value="${actionListJson.toList()}" />
+
+    <c:forEach var="entry" items="${actionsList}">
         <c:url var="viewLink" value="/action/${entry['id']}/view.action"/>
         <c:set target="${entry}" property="show" value="${viewLink}"/>
 
@@ -170,7 +172,7 @@
                     "hide": ${not isDeletionAllowed}
                 }
             ],
-            "data": ${actionListJson}
+            "data": ${emm:toJson(actionsList)}
         }
     </script>
 </div>

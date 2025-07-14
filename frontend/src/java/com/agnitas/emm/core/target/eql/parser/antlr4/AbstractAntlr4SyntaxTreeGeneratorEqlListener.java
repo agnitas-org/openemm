@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -115,7 +115,7 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 	
 	/** Configuration of parser. */
 	private final EqlParserConfiguration parserConfiguration;
-	
+
 	/**
 	 * Creates a new instance with given parser configuration.
 	 * 
@@ -492,7 +492,8 @@ abstract class AbstractAntlr4SyntaxTreeGeneratorEqlListener implements EqlTreeGe
 
 	@Override
 	public void exitSimpleProfilefieldName(SimpleProfilefieldNameContext ctx) {
-		ProfileFieldAtomEqlNode node = new ProfileFieldAtomEqlNode(ctx.IDENTIFIER().getText(), Antlr4BasedCodeLocation.fromParserRuleContext(ctx));
+		TerminalNode field = ctx.TIMESTAMP() != null ? ctx.TIMESTAMP() : ctx.IDENTIFIER();
+		ProfileFieldAtomEqlNode node = new ProfileFieldAtomEqlNode(field.getText(), Antlr4BasedCodeLocation.fromParserRuleContext(ctx));
 
 		nodeStack.push(node);
 	}

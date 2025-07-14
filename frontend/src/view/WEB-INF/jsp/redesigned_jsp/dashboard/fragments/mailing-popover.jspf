@@ -1,0 +1,60 @@
+
+<script id="calendar-mailing-popover-content" type="text/x-mustache-template">
+    <div>
+        <div>
+            <h1 class="tile-title">{{= shortname }}</h1>
+
+            <div class="tile-body hstack gap-2">
+                <img src="{{- thumbnailUrl }}" alt="" class="popover__thumbnail">
+
+                <div class="d-flex flex-column">
+                    {{ if (subject) { }}
+                        <div>
+                            <span><i class="icon icon-pen"></i><mvc:message code="mailing.Subject"/></span>
+                            <p class="text-truncate">{{= subject }}</p>
+                        </div>
+                    {{ } }}
+                    {{ if (description) { }}
+                        <div>
+                            <span><i class="icon icon-align-left"></i><mvc:message code="Description"/></span>
+                            <p class="text-truncate">{{= description }}</p>
+                        </div>
+                    {{ } }}
+                    {{ if (mailinglist) { }}
+                        <div>
+                            <span><i class="icon icon-list"></i><mvc:message code="Mailinglist"/></span>
+                            <p class="text-truncate">{{= mailinglist }}</p>
+                        </div>
+                    {{ } }}
+                    {{ if (sendDate) { }}
+                        <div>
+                            <span><i class="icon icon-calendar-day"></i><mvc:message code="mailing.senddate"/></span>
+                            <p class="text-truncate">{{- sendDate }}</p>
+                        </div>
+                    {{ } }}
+                </div>
+                {{ if (isSent) { }}
+                    <div>
+                        <div>
+                            <span class="text-capitalize"><i class="icon icon-paper-plane"></i><mvc:message code="send_mails"/></span>
+                            <p>{{- sentCount }}</p>
+                        </div>
+                        <div>
+                            <span><i class="icon icon-eye"></i><mvc:message code="statistic.opener"/></span>
+                            <p>{{- openers }}</p>
+                        </div>
+                        <div>
+                            <span><i class="icon icon-mouse-pointer"></i><mvc:message code="statistic.clicker"/></span>
+                            <p>{{- clickers }}</p>
+                        </div>
+                    </div>
+                {{ } }}
+            </div>
+        </div>
+        {{ if (showLoader) { }}
+            <div class="mailing-popover-loader">
+                <i class="icon icon-spinner icon-pulse"></i>
+            </div>
+        {{ } }}
+    </div>
+</script>

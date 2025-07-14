@@ -65,12 +65,13 @@ $calendar-day-diameter: 35px;
 }
 
 .calendar-day--selectable {
-  background-color: var(--calendar-selectable-cell-bg-color);
+  color: var(--calendar-selectable-cell-color);
+  background-color: var(--calendar-selectable-cell-bg);
 }
 
 .calendar-day--today {
-  color: $white;
-  background-color: $primary;
+  color: var(--calendar-today-color);
+  background-color: var(--calendar-today-bg);
 }
 
 .calendar-day--selected {
@@ -82,7 +83,7 @@ $calendar-day-diameter: 35px;
   color: var(--calendar-other-month-color);
 
   &.calendar-day--selectable {
-    background: var(--calendar-other-month-selectable-bg-color);
+    background: var(--calendar-other-month-selectable-bg);
     border: 1px solid var(--calendar-other-month-selectable-border-color);
     color: var(--calendar-other-month-selectable-color);
   }

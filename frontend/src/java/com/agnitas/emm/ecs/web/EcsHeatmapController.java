@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,10 +10,18 @@
 
 package com.agnitas.emm.ecs.web;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.ecs.EcsModeType;
@@ -24,16 +32,15 @@ import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import cz.vutbr.web.domassign.DeclarationMap;
-import org.agnitas.ecs.EcsPreviewSize;
-import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
+import com.agnitas.ecs.EcsPreviewSize;
+import com.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HtmlUtils;
-import org.agnitas.util.HttpUtils;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.UserActivityUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,19 +55,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
-import org.w3c.dom.Document;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Controller
 @PermissionMapping("heatmap")
@@ -78,7 +72,7 @@ public class EcsHeatmapController implements XssCheckAware {
             "}\n";
 
     private final EcsService ecsService;
-    private final ComMailingBaseService mailingBaseService;
+    private final MailingBaseService mailingBaseService;
     private final GridServiceWrapper gridService;
     private final EmbeddedClickStatService embeddedClickStatService;
     private final ConfigService configService;
@@ -86,7 +80,7 @@ public class EcsHeatmapController implements XssCheckAware {
     private final MaildropService maildropService;
     private final MailinglistApprovalService mailinglistApprovalService;
 
-    public EcsHeatmapController(EcsService ecsService, ComMailingBaseService mailingBaseService, GridServiceWrapper gridService, ConfigService configService,
+    public EcsHeatmapController(EcsService ecsService, MailingBaseService mailingBaseService, GridServiceWrapper gridService, ConfigService configService,
                                 EmbeddedClickStatService embeddedClickStatService, UserActivityLogService userActivityLogService, MaildropService maildropService,
                                 MailinglistApprovalService mailinglistApprovalService) {
         this.ecsService = ecsService;
@@ -129,30 +123,24 @@ public class EcsHeatmapController implements XssCheckAware {
     }
 
     @RequestMapping("/mailing/{mailingId:\\d+}/heatmap/preview.action")
-    public String preview(Admin admin, Model model, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form, Popups popups) {
-        try {
-            int recipientId = form.getRecipientId();
-            int viewMode = form.getViewMode();
+    public String preview(Admin admin, Model model, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) {
+        int recipientId = form.getRecipientId();
+        int viewMode = form.getViewMode();
 
-            if (mailingId > 0 && recipientId > 0) {
-                model.addAttribute("previewAsString", previewAsString(mailingId, form));
+        if (mailingId > 0 && recipientId > 0) {
+            model.addAttribute("previewAsString", previewAsString(mailingId, form));
 
-                if (viewMode != EcsModeType.PURE_MAILING.getId()) {
-                    model.addAttribute("heatmapInfo", embeddedClickStatService.getStatsInfo(viewMode, mailingId, admin.getCompanyID(), form.getDeviceType()));
-                }
-            } else if (mailingId > 0) {
-                model.addAttribute("isEmptyRecipientError", false);
-            } else {
-                logger.error("EmbeddedClickStatView: Parameters error (not enough parameters to show EmbeddedClickStat View)");
-                model.addAttribute("isEmptyParamsError", true);
+            if (viewMode != EcsModeType.PURE_MAILING.getId()) {
+                model.addAttribute("heatmapInfo", embeddedClickStatService.getStatsInfo(viewMode, mailingId, admin.getCompanyID(), form.getDeviceType()));
             }
-
-            return "ecs_preview";
-        } catch (Exception e) {
-            popups.alert("Error");
+        } else if (mailingId > 0) {
+            model.addAttribute("isEmptyRecipientError", false);
+        } else {
+            logger.error("EmbeddedClickStatView: Parameters error (not enough parameters to show EmbeddedClickStat View)");
+            model.addAttribute("isEmptyParamsError", true);
         }
 
-        return "messages";
+        return "ecs_preview";
     }
 
     @PostMapping("/mailing/{mailingId:\\d+}/heatmap/export.action")
@@ -165,7 +153,6 @@ public class EcsHeatmapController implements XssCheckAware {
                 mailingName,
                 I18nString.getLocaleString("ecs.Heatmap", admin.getLocale()),
                 new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()));
-        HttpUtils.getContentDispositionAttachment(filename);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(filename))
@@ -208,37 +195,6 @@ public class EcsHeatmapController implements XssCheckAware {
         } else {
             mailingContent = styles + mailingContent;
         }
-
-        // The following block is a workaround for media queries processing bug of wkhtmltopdf tool (see GWUA-1086)
-        if (previewSize != null) {
-            // For PDF rendering
-            final String media = "print";
-
-            try {
-                Document document = HtmlUtils.parseDocument(mailingContent, StandardCharsets.UTF_8.name());
-
-                URL base = null;
-                try {
-                    base = new URL(configService.getValue(ConfigValue.SystemUrl));
-                } catch (MalformedURLException e) {
-                    logger.error("Error occurred: {}", e.getMessage(), e);
-                }
-
-                DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, StandardCharsets.UTF_8.name(), base);
-                HtmlUtils.StylesEmbeddingOptions options = HtmlUtils.stylesEmbeddingOptionsBuilder()
-                        .setEncoding(StandardCharsets.UTF_8)
-                        .setBaseUrl(base)
-                        .setMediaType(media)
-                        .setEscapeAgnTags(true)
-                        .setPrettyPrint(false)
-                        .build();
-
-                mailingContent = HtmlUtils.embedStyles(document, declarationMap, options);
-            } catch (Exception e) {
-                logger.error("Error occurred: {}", e.getMessage(), e);
-            }
-        }
-
         return mailingContent;
     }
 
@@ -250,13 +206,7 @@ public class EcsHeatmapController implements XssCheckAware {
         return "<style>\n" + String.format(CSS_STYLES, previewSize.getWidth()) + "</style>\n";
     }
 
-    protected void writeUserActivityLog(Admin admin, UserAction userAction) {
-        if (Objects.nonNull(userActivityLogService)) {
-            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-        } else {
-            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-            logger.info(String.format("Userlog: %s %s %s", admin.getUsername(), userAction.getAction(),
-                    userAction.getDescription()));
-        }
+    private void writeUserActivityLog(Admin admin, UserAction userAction) {
+        UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
     }
 }

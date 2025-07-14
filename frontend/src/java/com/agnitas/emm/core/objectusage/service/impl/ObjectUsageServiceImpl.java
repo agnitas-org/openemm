@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,35 +10,32 @@
 
 package com.agnitas.emm.core.objectusage.service.impl;
 
-import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
-import com.agnitas.emm.core.profilefields.ProfileFieldException;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
-import com.agnitas.emm.core.target.service.ReferencedItemsService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.target.service.ReferencedItemsService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 
 /**
  * Implementation of {@link ObjectUsageService} interface.
  */
 public class ObjectUsageServiceImpl implements ObjectUsageService {
 	
-	private static final Logger LOGGER = LogManager.getLogger(ObjectUsageServiceImpl.class);
-
 	/** Service to detect objects referencing target groups. */
 	protected ReferencedItemsService referencedItemsService;
 	
-	/** Service service handling profile fields. */
 	private ProfileFieldService profileFieldService;
 
-    private ComWorkflowService workflowService;
+    private WorkflowService workflowService;
+
+	private EmmActionService emmActionService;
 
 	@Override
 	public ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID) {
@@ -63,22 +60,16 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	}
 
 	@Override
-	public final ObjectUsages listUsageOfProfileFieldByDatabaseName(final int companyID, final String databaseName) {
-		try {
-		    String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, databaseName);
-			return new ObjectUsages(findUsagesOfProfileField(companyID, visibleName, databaseName));
-		} catch (final ProfileFieldException e) {
-			if (LOGGER.isInfoEnabled()) {
-				LOGGER.info(String.format("No profile field with database name '%s'", databaseName));
-			}
-			return ObjectUsages.empty();
-		}
+	public ObjectUsages listUsageOfProfileFieldByDatabaseName(int companyID, String databaseName) {
+		String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, databaseName);
+		return new ObjectUsages(findUsagesOfProfileField(companyID, visibleName, databaseName));
 	}
 
 	protected List<ObjectUsage> findUsagesOfProfileField(int companyID, String visibleName, String databaseName) {
 		List<ObjectUsage> usages = new ArrayList<>();
 		usages.addAll(collectWorkflowUsagesOfProfileField(companyID, databaseName));
 		usages.addAll(listUsageOfProfileFieldByVisibleName(companyID, visibleName));
+		usages.addAll(collectTriggerUsagesOfProfileField(databaseName, companyID));
 
 		return usages;
 	}
@@ -88,16 +79,13 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
                 .workflowToObjectUsage(workflowService.getActiveWorkflowsDependentOnProfileField(column, companyID));
     }
 
-	@Override
-	public final ObjectUsages listUsageOfLink(final int companyID, final int linkID) {
-		final List<ObjectUsage> list = new ArrayList<>();
-		
-		list.addAll(ObjectUsageServiceHelper.targetGroupsToObjectUsage(this.referencedItemsService.listTargetGroupsReferencingLink(companyID, linkID)));
-		// TODO List other objects referencing to mailings here
-
-		return new ObjectUsages(list);
+	private List<ObjectUsage> collectTriggerUsagesOfProfileField(String column, int companyID) {
+        return emmActionService.findActionsUsingProfileField(column, companyID)
+				.stream()
+				.map(id -> new ObjectUsage(ObjectUserType.TRIGGER, id, emmActionService.getEmmActionName(id, companyID)))
+				.toList();
 	}
-	
+
 	@Override
 	public ObjectUsages listUsageOfReferenceTable(int companyID, int tableID) {
 		// Implemented in extended class
@@ -125,7 +113,6 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	 * 
 	 * @param service service to detect objects referencing target groups
 	 */
-	@Required
 	public final void setTargetGroupReferencedItemsService(final ReferencedItemsService service) {
 		this.referencedItemsService = Objects.requireNonNull(service,"Target group referenced items service is null");
 	}
@@ -135,7 +122,6 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	 * 
 	 * @param service service handling profile fields
 	 */
-	@Required
 	public final void setProfileFieldService(final ProfileFieldService service) {
 		this.profileFieldService = Objects.requireNonNull(service, "ProfileFieldService is null");
 	}
@@ -145,8 +131,11 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
    	 *
    	 * @param workflowService service handling workflows
    	 */
-   	@Required
-   	public final void setWorkflowService(final ComWorkflowService workflowService) {
-   		this.workflowService = Objects.requireNonNull(workflowService, "ComWorkflowService is null");
+	public final void setWorkflowService(final WorkflowService workflowService) {
+   		this.workflowService = Objects.requireNonNull(workflowService, "WorkflowService is null");
    	}
+
+	public void setEmmActionService(EmmActionService emmActionService) {
+		this.emmActionService = emmActionService;
+	}
 }

@@ -86,7 +86,7 @@
         comment: '',
         recipients: [],
         deadline: false,
-        plannedSendDate: date + ' 08:00'
+        plannedSendDate: moment(date, 'DD-MM-YYYY').format(window.adminDateFormat.toUpperCase()) + ' 08:00'
       }
     }
 

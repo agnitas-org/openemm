@@ -8,16 +8,14 @@
         </div>
     </div>
 
-    <div class="tile-body js-scrollable">
-        <div class="row g-3">
-            <c:forEach var="dbVersion" items="${serverStatus.dbVersionStatuses}">
-                <c:set var="isOkVersionStatus" value="${dbVersion.status}" />
+    <div class="tile-body vstack gap-3 js-scrollable">
+        <c:forEach var="dbVersion" items="${serverStatus.dbVersionStatuses}">
+            <c:set var="isOkVersionStatus" value="${dbVersion.status}" />
 
-                <div class="col-12 d-flex align-items-center gap-1">
-                    <span class="status-badge status.${isOkVersionStatus ? 'success' : 'error'}" data-tooltip="${isOkVersionStatus ? 'OK' : 'Missing'}"></span>
-                    <p>${dbVersion.version}</p>
-                </div>
-            </c:forEach>
-        </div>
+            <div class="hstack gap-1">
+                <span class="status-badge status.${isOkVersionStatus ? 'success' : 'error'}" data-tooltip="${isOkVersionStatus ? 'OK' : 'Missing'}"></span>
+                <p>${dbVersion.version}</p>
+            </div>
+        </c:forEach>
     </div>
 </div>

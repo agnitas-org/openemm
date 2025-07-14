@@ -22,4 +22,4 @@ $(document).on('click', '.js-close-error', function(e) {
   }
   // window.errorAppearead = false;
   $(this).closest('.backdrop').remove();
-})
+});

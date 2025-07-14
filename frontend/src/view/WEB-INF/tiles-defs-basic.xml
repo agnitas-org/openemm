@@ -1434,4 +1434,20 @@
 		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list-setup.jsp" type="template"/>
 	</definition>
 
+	<!-- Webhook administration -->
+	<definition name="webhooks_disabled" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhooks-disabled.jsp" type="template"/>
+		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhooks-disabled-setup.jsp" type="template"/>
+	</definition>
+
+	<definition name="webhooks_list" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhooks-list.jsp" type="template"/>
+		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhooks-list-setup.jsp" type="template"/>
+	</definition>
+
+	<definition name="webhook_view" extends="base">
+		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhook-view.jsp" type="template"/>
+		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhook-view-setup.jsp" type="template"/>
+	</definition>
+
 </tiles-definitions>

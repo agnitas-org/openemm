@@ -1,0 +1,30 @@
+
+.permission-categories {
+  @extend .bordered-box-sm;
+  display: grid;
+  gap: $gap-sm;
+}
+
+.permission-categories__btn {
+  @extend .btn;
+  @extend .btn-secondary;
+  @extend .justify-content-between;
+
+  border-radius: $border-radius-sm;
+  padding: $gap-sm;
+
+  span {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+  }
+
+  .permissions-counter {
+    font-weight: $font-weight-normal;
+  }
+
+  &.disabled {
+    color: var(--base-disabled-color);
+    background-color: var(--base-disabled-bg);
+    opacity: 1;
+  }
+}

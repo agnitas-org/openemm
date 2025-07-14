@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,39 +14,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 /**
  * @deprecated Use RecipientFieldService instead
  */
 @Deprecated
 public interface ColumnInfoService {
-	ProfileField getColumnInfo(int companyID, String column) throws Exception;
+	ProfileField getColumnInfo(int companyID, String column);
 	
-	List<ProfileField> getColumnInfos(int companyID) throws Exception;
+	List<ProfileField> getColumnInfos(int companyID);
 	
-	List<ProfileField> getColumnInfos(int companyID, int adminID) throws Exception;
+	List<ProfileField> getColumnInfos(int companyID, int adminID);
 
-	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID);
 	
-	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID, int adminID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID, int adminID);
 	
-	ProfileField getColumnInfo(int companyID, String column, int adminID) throws Exception;
+	ProfileField getColumnInfo(int companyID, String column, int adminID);
 	
-	List<ProfileField> getComColumnInfos(int companyID) throws Exception;
+	List<ProfileField> getComColumnInfos(int companyID);
 
-    List<ProfileField> getComColumnInfos(int companyID, int adminID) throws Exception;
+    List<ProfileField> getComColumnInfos(int companyID, int adminID);
 
-    List<ProfileField> getComColumnInfos(int companyID, int adminID, boolean customSorting) throws Exception;
+    List<ProfileField> getComColumnInfos(int companyID, int adminID, boolean customSorting);
 
-	List<ProfileField> getHistorizedComColumnInfos(int companyID) throws Exception;
-
-    CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(int companyID) throws Exception;
-    
-	CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(int companyID, int adminId) throws Exception;
+	List<ProfileField> getHistorizedComColumnInfos(int companyID);
 
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 

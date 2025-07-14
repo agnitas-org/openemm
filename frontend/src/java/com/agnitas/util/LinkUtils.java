@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,8 +23,9 @@ import java.util.regex.Pattern;
 
 import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
 
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Tuple;
+import com.agnitas.beans.AbstractTrackableLink;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Tuple;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -32,7 +33,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty.PropertyType;
 
 import bsh.StringUtil;
@@ -126,7 +126,7 @@ public class LinkUtils {
      * This method extends the full url of this link with its link extensions for display purposes.
      * User or mailing data is not used, so hash-tags will be left empty.
      * For usage of user and mailing data in correct replacements of hash-tags use,
-     * use the methods of corresponding actions like "ComMailingContentAction"
+     * use the methods of corresponding actions like "MailingContentController"
      *
      * Caution:
      * This is used by JSP-Files
@@ -187,7 +187,7 @@ public class LinkUtils {
 		}
 	}
 
-	public static void extendTrackableLink(TrackableLink link, String defaultExtensionString) {
+	public static void extendTrackableLink(AbstractTrackableLink link, String defaultExtensionString) {
 		if (StringUtils.isNotBlank(defaultExtensionString)) {
 			if (defaultExtensionString.startsWith("?")) {
 				defaultExtensionString = defaultExtensionString.substring(1);

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,12 +10,10 @@
 
 package org.agnitas.emm.core.commons.util;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.DateRowMapper;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.DateRowMapper;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -27,8 +25,6 @@ import java.util.Map;
  */
 public class CompanyInfoDao extends BaseDaoImpl {
 
-	private static final Logger logger = LogManager.getLogger(CompanyInfoDao.class);
-	
 	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
 		String sql;
 		if (isOracleDB()) {
@@ -37,7 +33,7 @@ public class CompanyInfoDao extends BaseDaoImpl {
 			sql = "SELECT cname, company_id, hostname, cvalue FROM company_info_tbl WHERE hostname IS NULL OR TRIM(hostname) = '' OR hostname = ? ORDER BY cname, company_id, hostname";
 		}
 		
-		List<Map<String, Object>> results = select(logger, sql, AgnUtils.getHostName());
+		List<Map<String, Object>> results = select(sql, AgnUtils.getHostName());
 		Map<String, Map<Integer, String>> returnMap = new HashMap<>();
 		for (Map<String, Object> resultRow : results) {
 			String configValueName = (String) resultRow.get("cname");
@@ -66,7 +62,7 @@ public class CompanyInfoDao extends BaseDaoImpl {
 
 	public Date getChangeDate(ConfigValue configValue, int companyID) {
 		String query = "SELECT timestamp FROM company_info_tbl WHERE company_id = ? AND cname = ?";
-		return selectObjectDefaultNull(logger, query, DateRowMapper.INSTANCE, companyID, configValue.getName());
+		return selectObjectDefaultNull(query, DateRowMapper.INSTANCE, companyID, configValue.getName());
 	}
 	
 	public final void writeConfigValue(final int companyID, final String name, final String value, final String description) {
@@ -79,24 +75,24 @@ public class CompanyInfoDao extends BaseDaoImpl {
 	
 	private int updateExistingValue(final int companyID, final String name, final String value, final String description) {
 		final String sql = "UPDATE company_info_tbl SET cvalue = ?, description = ?, timestamp = CURRENT_TIMESTAMP WHERE company_id = ? AND cname = ?";
-		return update(logger, sql, value, description, companyID, name);
+		return update(sql, value, description, companyID, name);
 	}
 	
 	private void insertNewValue(final int companyID, final String name, final String value, final String description) {
 		final String sql = "INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
-		update(logger, sql, companyID, name, value, description);
+		update(sql, companyID, name, value, description);
 	}
 
 	public void deleteValue(final int companyID, final String configValueName) {
 		final String sql = "DELETE FROM company_info_tbl WHERE company_id = ? AND cname = ?";
-		update(logger, sql, companyID, configValueName);
+		update(sql, companyID, configValueName);
 	}
 
 	public String getDescription(String name, int companyID) {
-		return selectWithDefaultValue(logger, "SELECT description FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
+		return selectWithDefaultValue("SELECT description FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
 	}
 	
 	public String getValue(String name, int companyID) {
-		return selectWithDefaultValue(logger, "SELECT cvalue FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
+		return selectWithDefaultValue("SELECT cvalue FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
 	}
 }

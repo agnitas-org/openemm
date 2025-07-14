@@ -69,7 +69,7 @@
 			<TimeBasedTriggeringPolicy />
 		</RollingFile>
 		
-		<RollingFile name="MEDIAPOOL_TIMING_LOG" fileName="${sys:user.home}/logs/webapps/timing.mediapool.log" filePattern="${sys:user.home}/logs/webapps/timing.mediapool.log.%d{yyyy-MM-dd}">
+		<RollingFile name="TIMING_LOG" fileName="${sys:user.home}/logs/webapps/timing.log" filePattern="${sys:user.home}/logs/webapps/timing.log.%d{yyyy-MM-dd}">
 			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
 			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
 			<TimeBasedTriggeringPolicy />
@@ -117,7 +117,7 @@
 			<AppenderRef ref="WS_MESSAGELOGFILE" />
 		</Logger>
 		
-		<Logger name="com.agnitas.dao.impl.ComTargetDaoImpl" level="info">
+		<Logger name="com.agnitas.dao.impl.TargetDaoImpl" level="info">
 			<AppenderRef ref="EQLLOGFILE" />
 		</Logger>
 		
@@ -146,7 +146,7 @@
 		</Logger>
 		
 		<Logger name="com.agnitas.dev.logging.TimingLogger" level="debug">
-			<AppenderRef ref="MEDIAPOOL_TIMING_LOG" />
+			<AppenderRef ref="TIMING_LOG" />
 		</Logger>
 	</Loggers>
 </Configuration>

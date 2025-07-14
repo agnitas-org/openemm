@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,9 +18,7 @@ import java.util.stream.Collectors;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
@@ -73,10 +71,8 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	 * @param companyId company ID
 	 * 
 	 * @return  list of profile fields to be included in history
-	 * 
-	 * @throws Exception on errors during processing
 	 */
-	protected List<ProfileField> listProfileFieldsForHistory(int companyId) throws Exception {
+	protected List<ProfileField> listProfileFieldsForHistory(int companyId) {
 		List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
 
 		return Optional.ofNullable(allFields).orElse(Collections.emptyList()).stream()
@@ -94,7 +90,7 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	}
 	
 	@Override
-	public List<ComRecipientHistory> listProfileFieldHistory(int recipientID, int companyId) throws RecipientProfileHistoryException {
+	public List<RecipientHistory> listProfileFieldHistory(int recipientID, int companyId) throws RecipientProfileHistoryException {
 		if (!isProfileFieldHistoryEnabled(companyId)) {
 			logger.error(String.format("Profile field history not enabled for company %d", companyId));
 			
@@ -110,7 +106,6 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	 *
 	 * @param profileHistoryDao DAO for writing profile field history data
 	 */
-	@Required
 	public void setRecipientProfileHistoryDao(final RecipientProfileHistoryDao profileHistoryDao) {
 		this.profileHistoryDao = profileHistoryDao;
 	}
@@ -120,7 +115,6 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	 *
 	 * @param configService service accessing configuration data
 	 */
-	@Required
 	public void setConfigService(final ConfigService configService) {
 		this.configService = configService;
 	}
@@ -130,12 +124,10 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	 *
 	 * @param profileFieldDao DAO accessing profile field data
 	 */
-	@Required
 	public void setProfileFieldDao(final ProfileFieldDao profileFieldDao) {
 		this.profileFieldDao = profileFieldDao;
 	}
 
-	@Required
 	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
 		this.recipientFieldService = recipientFieldService;
 	}

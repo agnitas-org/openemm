@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
@@ -39,6 +39,9 @@
 <script id="workflow-node" type="text/x-mustache-template">
     <%-- Toggle 'active' class to toggle active/inactive node images --%>
     <div class="node" rel="popover">
+        <div class="node-comment-image">
+            <svg><use href="${iconSpriteLocation}#comment"></use></svg>
+        </div>
         <svg class="node-image">
             <use href="${iconSpriteLocation.concat('#')}{{- type }}"></use>
         </svg>
@@ -74,7 +77,7 @@
             "initializerFinishStatus": "initializerPdfFinished",
             "icons": ${workflowForm.workflowSchema},
             "workflowId": ${workflowForm.workflowId},
-            "shortname": "${workflowForm.shortname}",
+            "shortname": ${emm:toJson(workflowForm.shortname)},
             "constants": {
                 "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
                 "startTypeDate": "<%= WorkflowStart.WorkflowStartType.DATE %>",
@@ -173,14 +176,14 @@
     <script type="application/javascript">
       jQuery(window).on('load', function() {
         function loading() {
-          if (window.status == 'initializerPdfFinished') {
+          if (window.waitStatus === 'initializerPdfFinished') {
             var images = jQuery('.node .node-image');
             if (images.length > 0) {
               images
                 .imagesLoaded()
-                .always(function(){window.status = "wmLoadFinished";});
+                .always(function(){window.waitStatus = "wmLoadFinished";});
             } else {
-              window.status = "wmLoadFinished";
+              window.waitStatus = "wmLoadFinished";
             }
           } else {
             window.setTimeout(loading, 100);
@@ -189,7 +192,7 @@
         loading();
         return false;
       }).on('error', function (e) {
-        window.status = "wmLoadFinished";
+        window.waitStatus = "wmLoadFinished";
         return false;
       });
     </script>

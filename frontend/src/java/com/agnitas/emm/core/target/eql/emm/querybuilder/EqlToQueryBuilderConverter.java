@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,11 +15,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
@@ -30,8 +25,10 @@ import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFacto
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
-
-import net.sf.json.JSONSerializer;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 /**
  * Converts EQL code to QueryBuilder rules in JSON format.
@@ -85,7 +82,7 @@ public class EqlToQueryBuilderConverter {
 					validateProfileFields(groupNode, profileFields, emmProfileFieldResolverFactory.newInstance(companyId));
 				}
 
-				return JSONSerializer.toJSON(groupNode).toString();
+				return new JSONObject(groupNode).toString();
 			} else {
 				return "{\"condition\":\"AND\",\"rules\":[]}";
 			}
@@ -106,10 +103,10 @@ public class EqlToQueryBuilderConverter {
 
 	private void validateProfileFields(QueryBuilderGroupNode group, Set<String> profileFields, EmmProfileFieldResolver resolver) throws ProfileFieldResolveException, EqlToQueryBuilderConversionException {
 		for (QueryBuilderBaseNode node : group.getRules()) {
-			if (node instanceof QueryBuilderGroupNode) {
-				validateProfileFields((QueryBuilderGroupNode) node, profileFields, resolver);
-			} else if (node instanceof QueryBuilderRuleNode) {
-				validateProfileFields((QueryBuilderRuleNode) node, profileFields, resolver);
+			if (node instanceof QueryBuilderGroupNode groupNode) {
+				validateProfileFields(groupNode, profileFields, resolver);
+			} else if (node instanceof QueryBuilderRuleNode ruleNode) {
+				validateProfileFields(ruleNode, profileFields, resolver);
 			} else {
 				throw new RuntimeException("Unsupported QB node type: " + node.getClass());
 			}
@@ -144,12 +141,10 @@ public class EqlToQueryBuilderConverter {
 		}
 	}
 
-	@Required
 	public void setConfiguration(EqlToQueryBuilderParserConfiguration configuration) {
 		this.configuration = configuration;
 	}
 
-	@Required
 	public void setEmmProfileFieldResolverFactory(EmmProfileFieldResolverFactory emmProfileFieldResolverFactory) {
 		this.emmProfileFieldResolverFactory = emmProfileFieldResolverFactory;
 	}

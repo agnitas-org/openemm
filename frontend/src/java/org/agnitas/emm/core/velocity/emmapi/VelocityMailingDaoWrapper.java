@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -52,10 +52,10 @@ public final class VelocityMailingDaoWrapper implements VelocityMailingDao {
 	}
 
 	@Override
-	public final int saveMailing(final Mailing mailing, final boolean preserveTrackableLinks, final boolean errorTolerant) throws Exception {
+	public int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant) {
 		this.companyAccessCheck.checkCompanyAccess(mailing.getCompanyID(), this.runningCompanyId);
 		
-		return this.mailingDao.saveMailing(mailing, preserveTrackableLinks, errorTolerant);
+		return this.mailingDao.saveMailing(mailing, preserveTrackableLinks, errorTolerant, false);
 	}
 
 }

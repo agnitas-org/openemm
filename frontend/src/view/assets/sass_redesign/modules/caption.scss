@@ -12,14 +12,17 @@ figure {
 }
 
 figcaption {
+  --caption-bg: #{$x-light-grey};
+  --caption-color: #{$gray-600};
+
   display: flex;
   justify-content: space-between;
   text-align: right;
   padding: 6px $gap-sm;
   font-size: $font-size-sm;
   text-wrap: nowrap;
-  color: var(--text-gray-color);
-  background-color: var(--caption-bg-color);
+  color: var(--caption-color);
+  background-color: var(--caption-bg);
   border-top: $border-default;
   @include border-bottom-radius();
   i {
@@ -27,5 +30,26 @@ figcaption {
   }
   @include media-breakpoint-down(lg) {
     display: none;
+  }
+}
+
+@include color-mode(dark) {
+  figcaption {
+    --caption-bg: #{$body-bg-dark};
+    --caption-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  figcaption {
+    --caption-bg: #{$con-grey};
+    --caption-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  figcaption {
+    --caption-bg: #{$dark-grey};
+    --caption-color: #{$white};
   }
 }

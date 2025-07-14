@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.beans.ColumnMapping" %>
+<%@ page import="com.agnitas.beans.ColumnMapping" %>
 
 <script id="column-mapping-table-row" type="text/x-mustache-template">
 	<tr data-mapping-row="{{= index}}">

@@ -4,13 +4,10 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
-<%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
+<%--@elvariable id="mailinglist" type="com.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="randomInactiveFeaturePackage" type="com.agnitas.emm.premium.bean.FeaturePackage"--%>
-<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="layout" type="java.lang.String"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <div id="dashboard-tiles" class="tiles-container" data-controller="dashboard" data-initializer="dashboard-view">
 
@@ -43,7 +40,7 @@
 
 <script id="dashboard-tiles-selection-modal" type="text/x-mustache-template">
     <div id="choose-tile-modal" class="modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="dashboard.tile.add"/></h1>
@@ -78,9 +75,9 @@
                             {{ if (tile.variants.length > 1) { }}
                             <div class="tile-name d-flex justify-content-between">
                                 <b>{{- tile.name }}</b>
-                                <label class="icon-switch icon-switch--sm">
+                                <label class="switch switch--sm">
                                     <input type="checkbox" id="switch-{{- tile.id }}-tile">
-                                    <i class="colon-icon"><span class="colon-icon__dot"></span><span class="colon-icon__dot"></span></i>
+                                    <i class="colon-icon align-items-center"><span class="colon-icon__dot"></span><span class="colon-icon__dot"></span></i>
                                     <i class="colon-icon" style="transform: rotate(90deg)"><span class="colon-icon__dot"></span><span class="colon-icon__dot"></span></i>
                                 </label>
                             </div>
@@ -194,7 +191,7 @@
 <script id="calendar-mailing-popover-content" type="text/x-mustache-template">
     <div class="d-flex flex-column align-items-center">
 
-        <img src="{{- thumbnailUrl }}" alt="" width="200px">
+        <img src="{{- thumbnailUrl }}" alt="" class="popover__thumbnail">
 
         <div class="d-flex flex-column gap-2 mt-2 w-100 fs-3">
             {{ if (subject) { }}
@@ -224,3 +221,5 @@
         </div>
     </div>
 </script>
+
+<%@ include file="fragments/news-fragments.jspf"%>

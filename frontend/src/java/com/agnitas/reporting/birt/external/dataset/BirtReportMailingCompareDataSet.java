@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,24 +24,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.reporting.birt.external.beans.BirtReportCompareStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import com.agnitas.reporting.birt.external.utils.FormatTools;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class BirtReportMailingCompareDataSet extends BIRTDataSet {
-	private static final Logger logger = LogManager.getLogger(BirtReportMailingCompareDataSet.class);
 
     private Map<Integer, Integer> categoriesByTable = new HashMap<>();
 
@@ -81,7 +76,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         categoriesByTable.put(CommonKeys.SENT_OFFLINE_HTML_INDEX, 6);
     }
     
-    public static class CompareStatRowRowMapper implements RowMapper<BirtReportCompareStatRow> {
+    public class CompareStatRowRowMapper implements RowMapper<BirtReportCompareStatRow> {
 		@Override
 		public BirtReportCompareStatRow mapRow(ResultSet resultSet, int index) throws SQLException {
 	        try {
@@ -247,13 +242,13 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
 		String query = "SELECT mailing_id, SUM(no_of_mailings) mails_sent, mailtype FROM mailing_account_tbl WHERE mailing_id IN (" +
 				StringUtils.join(mailingIds, ',') + ") AND status_field = 'W' and mailtype is not null AND company_id = ? GROUP BY mailtype, mailing_id";
-		List<Map<String, Object>> resultList = select(logger, query, companyId);
+		List<Map<String, Object>> resultList = select(query, companyId);
 
         // Map which contains values for mail types "2" and "3" calculation as Offline-HTML mail type
         Map<Integer, BirtReportCompareStatRow> offlineHtmlValues = new HashMap<>();
 
 		for (Map<String, Object> map : resultList) {
-			int mailtype = ((Number) map.get("mailtype")).intValue();
+			int mailtype = toInt(map.get("mailtype"));
 			int categoryIndex = 0;
 			String category = "";
 			if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.HTML)) {
@@ -268,8 +263,8 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
             }
 
 			if (categoryIndex != 0) {
-				int mailingId = ((Number) map.get("mailing_id")).intValue();
-				int mailsSent = ((Number) map.get("mails_sent")).intValue();
+				int mailingId = toInt(map.get("mailing_id"));
+				int mailsSent = toInt(map.get("mails_sent"));
 
                 // use special scenario for Offline-HTML mails calculation
                 if (categoryIndex == CommonKeys.SENT_OFFLINE_HTML_INDEX) {
@@ -336,20 +331,20 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 			+ " LEFT JOIN mailing_account_tbl ma ON ma.mailing_id = mail.mailing_id AND ma.status_field NOT IN ('A', 'T')"
 			+ " WHERE mail.mailing_id IN (" + StringUtils.join(mailingIds, ", ") + ") AND mail.company_id = ?"
 			+ " GROUP BY mail.shortname, mail.mailing_id";
-        List<Map<String, Object>> resultList = select(logger, query, companyId);
+        List<Map<String, Object>> resultList = select(query, companyId);
         for (Map<String, Object> map : resultList) {
             String mailingName = (String) map.get("mailing_name");
             Date sendDate = (Date) map.get("send_date");
             Date scheduledSendTime = (Date) map.get("scheduled_send_time");
-            int mailingId = ((Number) map.get("mailing_id")).intValue();
-            updateEmbedded(logger, "UPDATE tmp_report_aggregation_" + tempTableID + "_tbl SET mailing_name = ?, send_date = ?, scheduled_send_time = ?, assigned_targets = ? where mailing_id = ?",
+            int mailingId = toInt(map.get("mailing_id"));
+            updateEmbedded("UPDATE tmp_report_aggregation_" + tempTableID + "_tbl SET mailing_name = ?, send_date = ?, scheduled_send_time = ?, assigned_targets = ? where mailing_id = ?",
             	mailingName, sendDate, scheduledSendTime, mailingTargets.get(mailingId), mailingId);
         }
 	}
 
 	private int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger,
+		executeEmbedded(
 			"CREATE TABLE tmp_report_aggregation_" + tempTableID + "_tbl ("
 				+ "category VARCHAR(200),"
 				+ " category_index INTEGER,"
@@ -371,18 +366,18 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 		String insert = "INSERT INTO tmp_report_aggregation_" + tempTableID + "_tbl " +
 				"(category, category_index, targetgroup, targetgroup_index, value, rate, mailing_id, mailing_name, send_date, scheduled_send_time, assigned_targets) " +
 				"VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		updateEmbedded(logger, insert, statRow.getCategory(), statRow.getCategoryindex(), statRow.getTargetgroup(),
+		updateEmbedded(insert, statRow.getCategory(), statRow.getCategoryindex(), statRow.getTargetgroup(),
                 statRow.getTargetgroupindex(), statRow.getCount(), statRow.getRate(), statRow.getMailingId(),
                 statRow.getMailingName(), statRow.getSendDate(), statRow.getScheduledSendTime(), statRow.getAssignedTargets());
 	}
 
 	private List<BirtReportCompareStatRow> getResultsFromTempTable(int tempTableID) throws Exception {
 		String query = "SELECT * FROM tmp_report_aggregation_" + tempTableID + "_tbl ORDER BY category_index, targetgroup_index ";
-		return selectEmbedded(logger, query, new CompareStatRowRowMapper());
+		return selectEmbedded(query, new CompareStatRowRowMapper());
 	}
 
     private Map<Map<Integer, Integer>, Map<Integer, BirtReportCompareStatRow>> getCategoriesData(String query, List<Integer> categories, int blockNumber) throws Exception {
-        List<BirtReportCompareStatRow> block = selectEmbedded(logger, query.replace("?", StringUtils.join(categories.toArray(), ", ")), new CompareStatRowRowMapper());
+        List<BirtReportCompareStatRow> block = selectEmbedded(query.replace("?", StringUtils.join(categories.toArray(), ", ")), new CompareStatRowRowMapper());
         Map<Map<Integer, Integer>, Map<Integer, BirtReportCompareStatRow>> categoriesData = new HashMap<>();
         for (int i = 0; i < block.size(); i++) {
             Map<Integer, Integer> key = new HashMap<>();
@@ -550,19 +545,4 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
         return data;
     }
-
-    public String getPredefineMailingName(int mailingFilter, int predefineMailingId, int companyId) {
-        String sql;
-        if (FilterType.FILTER_ARCHIVE.getKey() == mailingFilter) {
-            sql = "select shortname from campaign_tbl where campaign_id = ? and company_id = ?";
-        } else if (FilterType.FILTER_MAILINGLIST.getKey() == mailingFilter) {
-            sql = "select shortname from mailinglist_tbl where mailinglist_id = ? and company_id = ?";
-        } else if (FilterType.FILTER_TARGET.getKey() == mailingFilter) {
-            sql = "SELECT target_shortname FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
-        } else {
-            return "";
-        }
-        return select(logger, sql, String.class, predefineMailingId, companyId);
-    }
-
 }

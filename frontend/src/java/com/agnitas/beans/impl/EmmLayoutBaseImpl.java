@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,73 +30,73 @@ public class EmmLayoutBaseImpl implements EmmLayoutBase {
 		this.cssURL = baseUrl + "/styles";
 		this.jsURL = baseUrl + "/js";
 
-		this.themeType = ThemeType.STANDARD;
+		this.themeType = ThemeType.LIGHT;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#getId()
+	 * @see com.agnitas.beans.EmmBaseLayout#getId()
 	 */
 	@Override
 	public int getId() {
 		return id;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#setId(int)
+	 * @see com.agnitas.beans.EmmBaseLayout#setId(int)
 	 */
 	@Override
 	public void setId(int id) {
 		this.id = id;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#getBaseURL()
+	 * @see com.agnitas.beans.EmmBaseLayout#getBaseURL()
 	 */
 	@Override
 	public String getBaseURL() {
 		return baseURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#setBaseURL(java.lang.String)
+	 * @see com.agnitas.beans.EmmBaseLayout#setBaseURL(java.lang.String)
 	 */
 	@Override
 	public void setBaseURL(String baseURL) {
 		this.baseURL = baseURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#getImageURL()
+	 * @see com.agnitas.beans.EmmBaseLayout#getImageURL()
 	 */
 	@Override
 	public String getImagesURL() {
 		return imagesURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#setImageURL(java.lang.String)
+	 * @see com.agnitas.beans.EmmBaseLayout#setImageURL(java.lang.String)
 	 */
 	@Override
 	public void setImagesURL(String imageURL) {
 		this.imagesURL = imageURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#getCssURL()
+	 * @see com.agnitas.beans.EmmBaseLayout#getCssURL()
 	 */
 	@Override
 	public String getCssURL() {
 		return cssURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#setCssURL(java.lang.String)
+	 * @see com.agnitas.beans.EmmBaseLayout#setCssURL(java.lang.String)
 	 */
 	@Override
 	public void setCssURL(String cssURL) {
 		this.cssURL = cssURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#getJsURL()
+	 * @see com.agnitas.beans.EmmBaseLayout#getJsURL()
 	 */
 	@Override
 	public String getJsURL() {
 		return jsURL;
 	}
 	/* (non-Javadoc)
-	 * @see org.agnitas.beans.EmmBaseLayout#setJsURL(java.lang.String)
+	 * @see com.agnitas.beans.EmmBaseLayout#setJsURL(java.lang.String)
 	 */
 	@Override
 	public void setJsURL(String jsURL) {

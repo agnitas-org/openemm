@@ -1,7 +1,4 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jspf --%>
-<%@ page import="org.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jspf --%>
-<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jspf--%>
 
 <%@ page import="com.agnitas.emm.core.action.operations.ActionOperationType" %>
 <%@ page import="com.agnitas.emm.core.action.bean.EmmActionDependency" %>
@@ -13,8 +10,7 @@
 
 <%--@elvariable id="operationList" type="java.util.List"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionForm"--%>
-<%--@elvariable id="eventBasedMailings" type="java.util.List<org.agnitas.beans.Campaign>"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="eventBasedMailings" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
@@ -48,42 +44,40 @@
                 <div class="tile-header">
                     <h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
                 </div>
-                <div class="tile-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label" for="shortname">
-                                <mvc:message var="nameMsg" code="default.Name"/>
-                                ${nameMsg}*
+                <div class="tile-body vstack gap-3">
+                    <div>
+                        <label class="form-label" for="shortname">
+                            <mvc:message var="nameMsg" code="default.Name"/>
+                            ${nameMsg}*
+                        </label>
+
+                        <mvc:text path="shortname" id="shortname" maxlength="50" size="42" cssClass="form-control" placeholder="${nameMsg}" />
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="type"><mvc:message code="Usage"/></label>
+                        <mvc:select path="type" id="type" cssClass="form-control js-select">
+                            <mvc:option value="0"><mvc:message code="actionType.link"/></mvc:option>
+                            <mvc:option value="1"><mvc:message code="actionType.form"/></mvc:option>
+                            <mvc:option value="9"><mvc:message code="actionType.all"/></mvc:option>
+                        </mvc:select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="description">
+                            <mvc:message var="descriptionMsg" code="Description"/>
+                            ${descriptionMsg}
+                        </label>
+                        <mvc:textarea path="description" id="description" cssClass="form-control" rows="1" placeholder="${descriptionMsg}"/>
+                    </div>
+
+                    <div>
+                        <div class="form-check form-switch">
+                            <mvc:checkbox path="advertising" id="advertising" cssClass="form-check-input" role="switch"/>
+                            <label class="form-label form-check-label" for="advertising">
+                                <mvc:message code="mailing.contentType.advertising"/>
+                                <a href="#" class="icon icon-question-circle" data-help="actions/AdvertisingMsg.xml"></a>
                             </label>
-
-                            <mvc:text path="shortname" id="shortname" maxlength="50" size="42" cssClass="form-control" placeholder="${nameMsg}" />
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label" for="type"><mvc:message code="Usage"/></label>
-                            <mvc:select path="type" id="type" cssClass="form-control js-select">
-                                <mvc:option value="0"><mvc:message code="actionType.link"/></mvc:option>
-                                <mvc:option value="1"><mvc:message code="actionType.form"/></mvc:option>
-                                <mvc:option value="9"><mvc:message code="actionType.all"/></mvc:option>
-                            </mvc:select>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label" for="description">
-                                <mvc:message var="descriptionMsg" code="Description"/>
-                                ${descriptionMsg}
-                            </label>
-                            <mvc:textarea path="description" id="description" cssClass="form-control" rows="1" placeholder="${descriptionMsg}"/>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="form-check form-switch">
-                                <mvc:checkbox path="advertising" id="advertising" cssClass="form-check-input" role="switch"/>
-                                <label class="form-label form-check-label" for="advertising">
-                                    <mvc:message code="mailing.contentType.advertising"/>
-                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/actions/AdvertisingMsg.xml"></a>
-                                </label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -137,34 +131,30 @@
                 <h1 class="tile-title text-truncate"><mvc:message code="Steps"/></h1>
             </div>
             <div class="tile-body js-scrollable">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div id="module-list" class="row g-3">
-                            <%-- Loads by JS --%>
-                        </div>
+                <div class="vstack gap-3">
+                    <div id="module-list" class="row g-3">
+                        <%-- Loads by JS --%>
                     </div>
-                    <div class="col-12">
-                        <div class="tile tile--md">
-                            <div class="tile-header">
-                                <h2 class="tile-title text-truncate"><mvc:message code="dashboard.tile.add" /></h2>
+                    <div class="tile tile--md">
+                        <div class="tile-header">
+                            <h2 class="tile-title text-truncate"><mvc:message code="dashboard.tile.add" /></h2>
 
-                                <emm:ShowByPermission token="actions.change">
-                                    <div class="tile-controls">
-                                        <button class="btn btn-primary btn-icon" type="button" data-action="add-new-module">
-                                            <i class="icon icon-plus"></i>
-                                        </button>
-                                    </div>
-                                </emm:ShowByPermission>
-                            </div>
+                            <emm:ShowByPermission token="actions.change">
+                                <div class="tile-controls">
+                                    <button class="btn btn-primary btn-icon" type="button" data-action="add-new-module">
+                                        <i class="icon icon-plus"></i>
+                                    </button>
+                                </div>
+                            </emm:ShowByPermission>
+                        </div>
 
-                            <div class="tile-body border-top">
-                                <label class="form-label" for="moduleName"><mvc:message code="default.Type"/></label>
-                                <select id="moduleName" class="form-control js-select">
-                                    <c:forEach  items="${operationList}" var="module">
-                                        <option value="${module.name}"><mvc:message code="action.op.${module.name}"/></option>
-                                    </c:forEach>
-                                </select>
-                            </div>
+                        <div class="tile-body border-top">
+                            <label class="form-label" for="moduleName"><mvc:message code="default.Type"/></label>
+                            <select id="moduleName" class="form-control js-select">
+                                <c:forEach  items="${operationList}" var="module">
+                                    <option value="${module.name}"><mvc:message code="action.op.${module.name}"/></option>
+                                </c:forEach>
+                            </select>
                         </div>
                     </div>
                 </div>

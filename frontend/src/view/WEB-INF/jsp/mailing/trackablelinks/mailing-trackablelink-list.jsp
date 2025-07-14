@@ -1,6 +1,6 @@
 <%@page import="com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
-<%@ page import="org.agnitas.beans.BaseTrackableLink" %>
+<%@ page import="com.agnitas.beans.BaseTrackableLink" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="tiles"   uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -15,11 +15,11 @@
 <%--@elvariable id="isTrackingOnEveryPositionAvailable" type="java.lang.Boolean"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="originalUrls" type="java.util.Map<java.lang.Integer, java.lang.String>"--%>
-<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+<%--@elvariable id="notFormActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
 <%--@elvariable id="link" type="com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm"--%>
 <%--@elvariable id="trackableLinksForm" type="com.agnitas.emm.core.trackablelinks.form.TrackableLinksForm"--%>
 <%--@elvariable id="defaultExtensions" type="java.util.List<com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty>"--%>
-<%--@elvariable id="paginatedTrackableLinks" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm>"--%>
+<%--@elvariable id="paginatedTrackableLinks" type="com.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm>"--%>
 
 <c:set var="TRACKABLE_NONE"      value="<%= LinkTrackingMode.NONE.getMode() %>"/>
 <c:set var="TRACKABLE_ONLY_TEXT" value="<%= LinkTrackingMode.TEXT_ONLY.getMode() %>"/>

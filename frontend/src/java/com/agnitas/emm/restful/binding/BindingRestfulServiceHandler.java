@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,8 +11,8 @@
 package com.agnitas.emm.restful.binding;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -35,20 +35,18 @@ import com.agnitas.json.JsonReader.JsonToken;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.impl.BindingEntryImpl;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.Constants;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,44 +65,38 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "binding";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComRecipientDao recipientDao;
-	private ComBindingEntryDao bindingEntryDao;
+	private RecipientDao recipientDao;
+	private BindingEntryDao bindingEntryDao;
 	private MailinglistDao mailinglistDao;
 	private EmmActionService emmActionService;
 	private ConfigService configService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
+	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 	
-	@Required
-	public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
+	public void setBindingEntryDao(BindingEntryDao bindingEntryDao) {
 		this.bindingEntryDao = bindingEntryDao;
 	}
 	
-	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
 	}
 	
-	@Required
 	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -605,8 +597,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 								}
 							} else if ("user_type".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof String) {
-									String userType = (String) entry.getValue();
+								if (entry.getValue() != null && entry.getValue() instanceof String userType) {
 									try {
 										UserType.getUserTypeByString(userType);
 									} catch(Exception e) {
@@ -927,8 +918,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 								}
 							} else if ("user_type".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof String) {
-									String userType = (String) entry.getValue();
+								if (entry.getValue() != null && entry.getValue() instanceof String userType) {
 									try {
 										UserType.getUserTypeByString(userType);
 									} catch(Exception e) {

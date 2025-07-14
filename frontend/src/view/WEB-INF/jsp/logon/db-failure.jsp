@@ -6,8 +6,8 @@
 
 <%--@elvariable id="supportEmergencyUrl" type="java.lang.String"--%>
 
-<c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500.svg"/>
-<c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500.png"/>
+<c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500_old.svg"/>
+<c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500_old.png"/>
 
 <html>
     <head>

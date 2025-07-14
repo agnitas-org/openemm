@@ -44,7 +44,7 @@
                 <h1 class="tile-title text-truncate"><mvc:message code="grid.mediapool.categories" /></h1>
             </div>
             <div class="tile-body js-scrollable">
-                <ul class="d-flex flex-column gap-2 h-100">
+                <ul class="vstack gap-2 h-100">
                     <c:forEach var="category" items="${categories}">
                         <c:set var="categoryEntries" value="${entries.get(category)}" />
                         <c:set var="entriesCount" value="${fn:length(categoryEntries)}" />
@@ -77,10 +77,10 @@
                                                 <mvc:message code="default.list.entry.select" />
                                             </p>
                                             <div class="bulk-actions__controls">
-                                                <a href="#" class="icon-btn text-primary" data-tooltip="<mvc:message code="button.Replace" />" data-action="bulk-replace">
+                                                <a href="#" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code="button.Replace" />" data-action="bulk-replace">
                                                     <i class="icon icon-pen"></i>
                                                 </a>
-                                                <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="button.Delete" />" data-action="bulk-delete">
+                                                <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="button.Delete" />" data-action="bulk-delete">
                                                     <i class="icon icon-trash-alt"></i>
                                                 </a>
                                             </div>
@@ -110,10 +110,6 @@
         <script id="address-management-${AddressManagementCategory.RECIPIENTS}" type="application/json">
             {
                 "columns": [
-                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn"
-                  },
                   {
                     "headerName": "<mvc:message code="recipient.Salutation" />",
                     "editable": false,
@@ -155,10 +151,6 @@
         <script id="address-management-${AddressManagementCategory.IMPORT_PROFILES}" type="application/json">
             {
                 "columns": [
-                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn"
-                  },
                   {
                     "headerName": "<mvc:message code="default.Name" />",
                     "editable": false,
@@ -180,10 +172,6 @@
         <script id="address-management-${AddressManagementCategory.REPORTS}" type="application/json">
             {
                 "columns": [
-                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn"
-                  },
                   {
                     "headerName": "<mvc:message code="default.Name" />",
                     "editable": false,
@@ -218,10 +206,6 @@
         <script id="address-management-${AddressManagementCategory.USERS}" type="application/json">
             {
                 "columns": [
-                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn"
-                  },
                   {
                     "headerName": "<mvc:message code="logon.username" />",
                     "editable": false,
@@ -269,10 +253,6 @@
         <script id="address-management-${AddressManagementCategory.TECHNICAL_CONTACTS}" type="application/json">
             {
                 "columns": [
-                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn"
-                  },
                   {
                     "headerName": "<mvc:message code="settings.Company" />",
                     "editable": false,
@@ -320,13 +300,13 @@
 </script>
 
 <script id="delete-entry-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="button.Delete"/>" data-action="delete-entry" data-entry-id="{{- id }}" data-entry-cid="{{- companyId }}">
+    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="button.Delete"/>" data-action="delete-entry" data-entry-id="{{- id }}" data-entry-cid="{{- companyId }}">
         <i class="icon icon-trash-alt"></i>
     </a>
 </script>
 
 <script id="email-replace-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-primary" data-tooltip="<mvc:message code="button.Replace"/>" data-action="single-replace" data-entry-id="{{- id }}" data-entry-cid="{{- companyId }}">
+    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code="button.Replace"/>" data-action="single-replace" data-entry-id="{{- id }}" data-entry-cid="{{- companyId }}">
         <i class="icon icon-pen"></i>
     </a>
 </script>
@@ -360,7 +340,7 @@
 
 <script id="confirm-single-delete-modal" type="text/x-mustache-template">
     <div class="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -402,7 +382,7 @@
 
 <script id="confirm-bulk-delete-modal" type="text/x-mustache-template">
     <div class="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -444,7 +424,7 @@
 
 <script id="confirm-delete-all-modal" type="text/x-mustache-template">
     <div class="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="button.delete.entries"/></h1>

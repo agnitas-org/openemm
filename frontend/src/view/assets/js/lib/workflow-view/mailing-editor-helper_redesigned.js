@@ -1,7 +1,9 @@
-(function () {
+(() => {
+
   const Def = AGN.Lib.WM.Definitions;
   const Node = AGN.Lib.WM.Node;
   const EditorsHelper = AGN.Lib.WM.EditorsHelper;
+  const NodeTitleHelper = AGN.Lib.WM.NodeTitleHelper;
   const Utils = AGN.Lib.WM.Utils;
   const Messages = AGN.Lib.Messages;
   const Dialogs = AGN.Lib.WM.Dialogs;
@@ -126,16 +128,23 @@
       const $link = $(this.getMailingLink(mailingId));
       $link.addClass('btn btn-icon btn-primary');
       $(this.containerId + ' #mailing_create_edit_link').html($link);
+      AGN.Lib.CoreInitializer.run('tooltip', $link);
     };
 
     this.getMailingLink = function (mailingId) {
       if (!mailingId || mailingId === '0') {
-        return '<a href="#" data-action="mailing-editor-new"><i class="icon icon-plus"></i></a>';
+        return `<a href="#" data-action="mailing-editor-new" data-tooltip="${t('workflow.mailing.new')}">
+                    <i class="icon icon-plus"></i>
+                </a>`;
       }
       if (!Utils.checkActivation()) {
-        return '<a href="#" data-action="mailing-editor-edit"><i class="icon icon-pen"></i></a>';
+        return `<a href="#" data-action="mailing-editor-edit" data-tooltip="${t('workflow.mailing.edit')}">
+                    <i class="icon icon-pen"></i>
+                </a>`;
       }
-      return `<a href="${AGN.url('/mailing/' + mailingId + '/settings.action')}"><i class="icon icon-pen"></i></a>`;
+      return `<a href="${AGN.url(`/mailing/${mailingId}/settings.action`)}" data-tooltip="${t('workflow.mailing.edit')}">
+                <i class="icon icon-pen"></i>
+              </a>`;
     }
 
     this.showSecurityQuestion = function () {
@@ -150,11 +159,11 @@
             this.mailingId = this.prevMailingId || 0;
             this.mailingSelect().selectValue(this.prevMailingId);
           });
-        
+
         const $modal = $('.modal');
         const confirm = AGN.Lib.Confirm.get($modal);
         $modal.on('modal:close', () => confirm.negative());
-        
+
         return false;
       }
       return true;
@@ -266,26 +275,47 @@
       return $(this.formNameJId + ' select[name="' + selector + '"] option[value=' + val + ']');
     };
 
-    this.createNewMailing = function () {
+    this.createNewMailing = function (successCallback = _.noop) {
+      AGN.Lib.Messaging.unsubscribe('workflow:mailingCreated');
+
       if (!checkHasMailinglist(this.node)) {
         Messages.warn('error.workflow.notAddedMailingList');
         return;
       }
-      if ([Def.NODE_TYPE_MAILING_MEDIATYPE_POST, Def.NODE_TYPE_MAILING_MEDIATYPE_SMS].includes(this.node.type)) {
-        this.openSelectTemplateToCreateMailingView(Def.constants.forwards.MAILING_CREATE_STANDARD.url);
-      } else {
-        this.openSelectTemplateToCreateMailingView('/mailing/create.action');
+
+      let url = '/mailing/create.action';
+      if (this.node.type === Def.NODE_TYPE_MAILING_MEDIATYPE_POST) {
+        url = '/mailing/new.action';
+      } else if (this.node.type === Def.NODE_TYPE_MAILING_MEDIATYPE_SMS) {
+        url = Def.constants.forwards.MAILING_CREATE_STANDARD.url;
       }
+
+      this.openSelectTemplateToCreateMailingView(url, {mediaType: this.mediaType || 0});
+
+      AGN.Lib.Messaging.subscribe('workflow:mailingCreated', ({mailingId, mailingName}) => {
+        successCallback(mailingId, mailingName);
+
+        this.node.getData().mailingId = mailingId;
+        NodeTitleHelper.addMailingName(mailingId, mailingName);
+        NodeTitleHelper.updateTitle(this.node, true, true);
+
+        EditorsHelper.saveCurrentEditorWithUndo();
+        AGN.Lib.Messages.defaultSaved();
+      });
     };
 
-    this.openSelectTemplateToCreateMailingView = function (url) {
-      return $.get(AGN.url(url), {
+    this.openSelectTemplateToCreateMailingView = function (url, params = {}) {
+      return $.get(AGN.url(url), _.extend({
         workflowId: Def.workflowId,
         workflowForwardParams: this._getCreateMailingForwardParams()
-      }).done(resp => AGN.Lib.Page.render(resp));
+      }, params)).done(resp => AGN.Lib.Page.render(resp));
     }
 
     function checkHasMailinglist(node) {
+      return getMailingListId(node) > 0;
+    }
+
+    function getMailingListId(node) {
       let mailinglistId = 0;
       EditorsHelper.curEditingNode = node;
       EditorsHelper.forEachPreviousNode(function (prevNode) {
@@ -294,7 +324,7 @@
           return false;
         }
       })
-      return mailinglistId > 0;
+      return mailinglistId;
     }
 
     this._getCreateMailingForwardParams = function () {
@@ -303,10 +333,9 @@
         nodeId: EditorsHelper.curEditingNode.getId(),
         elementId: encodeURIComponent(elemSelector),
         mailingType: this.mailingType,
+        workflowMailinglistId: getMailingListId(this.node)
       }
-      if (this.mediaType) {
-        params.mediaType = this.mediaType;
-      }
+
       if (this.mailingType === this.MAILING_TYPE_FOLLOWUP) {
         params.workflowFollowUpParentMailing = this.node.data.baseMailingId;
         params.workflowFollowUpDecisionCriterion = this.node.data.decisionCriterion;
@@ -321,16 +350,13 @@
 
     this.processCopyAndEditMailingForward = function (mailingId, forwardName, formNameJId, selectNameJId) {
       $('#forwardTargetItemId').val(mailingId);
-      const additionalParams = ['mailingType=' + self.mailingType];
+      const additionalParams = ['preventUxUpdateParamsCheck=true', 'mailingType=' + self.mailingType];
       if (this.mailingType === this.MAILING_TYPE_FOLLOWUP) {
         additionalParams.push('workflowFollowUpParentMailing=' + this.node.data.baseMailingId);
         additionalParams.push('workflowFollowUpDecisionCriterion=' + this.node.data.decisionCriterion);
       }
-      if (additionalParams.length > 0) {
-        EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, submitWorkflowForm, additionalParams.join(';'));
-      } else {
-        EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, submitWorkflowForm);
-      }
+
+      EditorsHelper.processForward(forwardName, formNameJId + ' ' + selectNameJId, submitWorkflowForm, additionalParams.join(';'));
     };
 
     this.editMailing = function (forwardName) {
@@ -371,9 +397,11 @@
      * otherwise executes {@code successCallback}
      */
     this.checkDifferentMailingLists = function (mailingId, successCallback, failedCallback) {
-      $
-        .get(AGN.url(`/workflow/mailing/${mailingId}/info.action`))
-        .done(mailingContent => {
+      $.ajax({
+        url: AGN.url(`/workflow/mailing/${mailingId}/info.action`),
+        method: 'GET',
+        async: false,
+        success: mailingContent => {
           var chain = EditorsHelper.getFirstIncomingChain();
           this.configuredMailingData = collectIncomingMailingData(chain);
           this.nodesChain = chain;
@@ -388,7 +416,8 @@
           } else {
             successCallback(mailingContent);
           }
-        });
+        }
+      });
     };
 
     var collectIncomingMailingData = function (chain) {
@@ -877,11 +906,11 @@
     this.$mailingSelect = function () {
       return $(this.formNameJId + ' ' + this.selectNameJId);
     }
-    
+
     this.mailingSelect = function () {
       return Select.get(this.$mailingSelect());
     }
-    
+
     this.validateEditor = function (save) {
       var errorsFound = false;
       // validate delivery settings
@@ -898,6 +927,28 @@
           errorsFound = true;
         }
       }
+
+      if ($(`${this.containerId} .security-notifications-settings`).exists()) {
+        if ($(`${this.containerId} [name="enableNotifications"]`).is(':checked')) {
+          const clearanceEmails = $(`${this.containerId} [name="clearanceEmails"]`).val();
+          const $clearanceThreshold = $(`${this.containerId} [name="clearanceThreshold"]`);
+          const clearanceThreshold = $clearanceThreshold.val();
+
+          if (!clearanceEmails.length || clearanceEmails.every(email => email.trim() === '')) {
+            Messages.warn('error.workflow.emptyEmail');
+            errorsFound = true;
+          } else if (!AGN.Lib.Helpers.isValidEmails(clearanceEmails)) {
+            Messages.warn('error.workflow.wrongEmail');
+            errorsFound = true;
+          }
+
+          if (clearanceThreshold !== '' && clearanceThreshold <= 0) {
+            Messages.warn('error.workflow.notPositiveNumber', $clearanceThreshold.parent().text().trim());
+            errorsFound = true;
+          }
+        }
+      }
+
       // validate that mailing is selected
       var mailingSelector = $(this.formNameJId + ' ' + this.selectNameJId);
       if (mailingSelector.val() <= 0) {

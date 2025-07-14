@@ -7,7 +7,7 @@
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
-<%--@elvariable id="templateMailingBases" type="java.util.List<org.agnitas.beans.MailingBase>"--%>
+<%--@elvariable id="templateMailingBases" type="java.util.List<com.agnitas.beans.MailingBase>"--%>
 
 <mvc:form servletRelativeAction="/mailing/new.action?keepForward=${workflowId > 0}" method="GET" data-form="resource">
     <div class="tile" data-sizing="container">
@@ -72,7 +72,7 @@
                                         <c:url var="previewImageSrc" value="assets/core/images/facelift/post_thumbnail.jpg"/>
                                     </c:when>
                                     <c:when test="${template.previewComponentId eq 0}">
-                                        <c:url var="previewImageSrc" value="/assets/core/images/facelift/no_preview.png"/>
+                                        <c:url var="previewImageSrc" value="/assets/core/images/facelift/no_preview_old.png"/>
                                     </c:when>
                                     <c:otherwise>
                                         <c:url var="previewImageSrc" value="/sc?compID=${template.previewComponentId}"/>

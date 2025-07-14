@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.dao.FollowUpType" %>
+<%@ page import="com.agnitas.emm.common.FollowUpType" %>
 
 <c:set var="TYPE_FOLLOWUP_NON_OPENER" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey() %>"/>
 <c:set var="TYPE_FOLLOWUP_NON_CLICKER" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey() %>"/>

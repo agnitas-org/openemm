@@ -1,13 +1,13 @@
 <%@ page import="com.agnitas.emm.core.datasource.enums.DataSourceType" %>
-<%@ page import="org.agnitas.dao.SourceGroupType" %>
+<%@ page import="com.agnitas.emm.core.datasource.enums.SourceGroupType" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="datasources" type="net.sf.json.JSONArray"--%>
-<%--@elvariable id="datasourceForm" type="com.agnitas.emm.core.datasource.form.DatasourceForm"--%>
+<%--@elvariable id="datasources" type="org.json.JSONArray"--%>
+<%--@elvariable id="datasourceForm" type="com.agnitas.web.forms.PaginationForm"--%>
 
 <mvc:message var="datasourceIdMsg" code="recipient.DatasourceId" />
 <mvc:message var="descriptionMsg"  code="Description" />
@@ -24,7 +24,7 @@
     </script>
     
     <div id="table-tile" class="tile" data-editable-tile="main">
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <div class="notification-simple notification-simple--info">
                 <p><mvc:message code="recipient.datasource.info"/></p>
             </div>
@@ -52,7 +52,7 @@
                                 "field": "description",
                                 "headerName": "${descriptionMsg}",
                                 "cellStyle": {"user-select": "text"},
-                                "editable": false,
+                                "type": "textCaseInsensitiveColumn",
                                 "cellRenderer": "NotEscapedStringCellRenderer"
                             },
                             {
@@ -66,6 +66,7 @@
                             {
                                 "headerName": "${timestampMsg}",
                                 "editable": false,
+                                "sort": "desc",
                                 "field": "timestamp",
                                 "type": "dateColumn",
                                 "suppressSizeToFit": true
@@ -78,45 +79,43 @@
             </div>
         </div>
     </div>
-    <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
+    <div id="filter-tile" class="tile" data-toggle-tile="" data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="id-filter">${datasourceIdMsg}</label>
-                    <input type="number" id="id-filter" class="form-control" placeholder="${datasourceIdMsg}" pattern="\d+"/>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label class="form-label" for="id-filter">${datasourceIdMsg}</label>
+                <input type="number" id="id-filter" class="form-control" placeholder="${datasourceIdMsg}" pattern="\d+"/>
+            </div>
+            <div>
+                <label class="form-label" for="description-filter">${descriptionMsg}</label>
+                <input type="text" id="description-filter" class="form-control" placeholder="${descriptionMsg}"/>
+            </div>
+            <div data-date-range>
+                <label class="form-label" for="timestamp-from-filter">${timestampMsg}</label>
+                <div class="date-picker-container mb-1">
+                    <input type="text" id="timestamp-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
                 </div>
-                <div class="col-12">
-                    <label class="form-label" for="description-filter">${descriptionMsg}</label>
-                    <input type="text" id="description-filter" class="form-control" placeholder="${descriptionMsg}"/>
+                <div class="date-picker-container">
+                    <input type="text" id="timestamp-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
                 </div>
-                <div class="col-12" data-date-range>
-                    <label class="form-label" for="timestamp-from-filter">${timestampMsg}</label>
-                    <div class="date-picker-container mb-1">
-                        <input type="text" id="timestamp-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
-                    </div>
-                    <div class="date-picker-container">
-                        <input type="text" id="timestamp-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <label for="type-filter" class="form-label">${typeMsg}</label>
-                    <select id="type-filter" class="form-control">
-                        <option value=""><mvc:message code="default.All"/></option>
-                        <c:forEach var="type" items="${DataSourceType.values()}">
-                            <option value="${type}"><mvc:message code="${type.messageKey}" /></option>
-                        </c:forEach>
-                    </select>
-                </div>
+            </div>
+            <div>
+                <label for="type-filter" class="form-label">${typeMsg}</label>
+                <select id="type-filter" class="form-control">
+                    <option value=""><mvc:message code="default.All"/></option>
+                    <c:forEach var="type" items="${DataSourceType.values()}">
+                        <option value="${type}"><mvc:message code="${type.messageKey}" /></option>
+                    </c:forEach>
+                </select>
             </div>
         </div>
     </div>

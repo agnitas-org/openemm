@@ -2,8 +2,11 @@
 $pageBtnWidth: 30px;
 
 .table-wrapper__footer {
+  --table-footer-color: var(--table-head-text-color);
+  --table-footer-bg: var(--table-head-bg);
+
   padding: $table-spacing / 2 $table-spacing;
-  background-color: var(--table-head-bg-color);
+  background-color: var(--table-footer-bg);
 
   min-height: 40px;
 
@@ -18,9 +21,9 @@ $pageBtnWidth: 30px;
   justify-content: space-between;
   align-items: center;
 
-  @for $i from 2 through $pagesCount {
-    &--pages-#{$i} {
-      @container (max-width: #{380px + ($pageBtnWidth * ($i - 2))}) {
+  @for $i from 6 through $pagesCount + 4 {
+    &:has(li:nth-child(#{$i})) {
+      @container (max-width: #{260px + ($pageBtnWidth * ($i - 2))}) {
         flex-direction: column;
         gap: $table-spacing + $gap-x-sm;
         min-height: min-content;
@@ -29,21 +32,32 @@ $pageBtnWidth: 30px;
   }
 }
 
+@include color-mode(dark) {
+  .table-wrapper__footer {
+    --table-footer-color: #{$light-grey};
+    --table-footer-bg: var(--table-head-bg);
+  }
+}
+
 .table-wrapper__rows-selection {
   @include flex-row($gap-x-sm);
   align-items: center;
 
   @include font(clamp(13px, 2vw, $font-size-base));
-  color: var(--table-footer-text-color);
+  color: var(--table-footer-color);
 
   span {
     white-space: nowrap;
   }
 
-  --input-icon-color: var(--table-head-text-color);
-  --select2-selection-color: var(--table-head-text-color);
+  .select2-container {
+    --select2-selection-color: var(--table-head-text-color);
+    --select2-icon-color: var(--table-head-text-color);
+  }
+}
 
-  .dark-theme & {
-    --select-dropdown-bg-color: var(--table-head-bg-color);
+@include color-mode(dark) {
+  .table-wrapper__rows-selection .select2-container {
+    --select-dropdown-bg: var(--table-footer-bg);
   }
 }

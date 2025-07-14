@@ -47,10 +47,6 @@
     }
 
     static from(template, conf = {}, deferred) {
-      return Confirm.createFromTemplate(conf, template, deferred);
-    }
-
-    static createFromTemplate(conf, template, deferred) {
       const modal = AGN.Lib.Modal.fromTemplate(template, conf);
 
       const confirm = new Confirm(modal, deferred);

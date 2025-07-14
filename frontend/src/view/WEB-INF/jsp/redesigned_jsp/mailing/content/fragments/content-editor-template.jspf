@@ -1,6 +1,4 @@
 
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
-
 <script id="content-editor-template" type="text/x-mustache-template">
     {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
     {{var disabled = isEditableMailing ? '' : 'disabled="disabled"';}}
@@ -11,10 +9,6 @@
         <div class="tile-header">
             <h1 class="tile-title">
                 <span class="text-truncate">{{- dynTag.name }}</span>
-                {{ if (usedInSmsContent) { }}
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/SmsCharacters.xml"
-                       data-help-config="#gsm-7-bit-chars"></a>
-                {{ } }}
             </h1>
         </div>
         <div id="enlargeable-settings" class="tile-body" data-multi-editor>
@@ -24,7 +18,7 @@
                     <ul class="tile-title-controls gap-1">
                         <emm:HideByPermission token="mailing.editor.hide.html">
                             <li>
-                                <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#tab-content-html">
+                                <a href="#" class="btn btn-icon btn-secondary active" data-toggle-tab="#tab-content-html">
                                     <i class="icon icon-code"></i>
                                 </a>
                             </li>
@@ -32,7 +26,7 @@
                         <emm:HideByPermission token="mailing.editor.hide">
                             {{ if (showHTMLEditor) { }}
                             <li>
-                                <a href="#" class="btn btn-icon btn-inverse" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
+                                <a href="#" class="btn btn-icon btn-secondary" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
                                     <i class="icon icon-font"></i>
                                 </a>
                             </li>
@@ -68,7 +62,7 @@
                                       class="form-control js-editor js-wysiwyg hidden"
                                       {{ usedInSmsContent ? print(`data-action="validate-sms-content" data-feedback-anchor=".tile-body"`) : print('') }}
                                       data-show-char-counter="tile-footer"
-                                      data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                      data-editor-options="toolbarType: ${emm:getWysiwygToolbarType(pageContext.request, 'EMC')}, showAiTextGeneration: {{- isContentGenerationAllowed }}, isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                       {{- readonly }}></textarea>
                         </div>
                         
@@ -84,7 +78,7 @@
                 <div id="targets-order-box">
                     <label class="form-label" for="targets-order">
                         <mvc:message code="Target"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/content/Order.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="mailing/content/Order.xml"></a>
                     </label>
                     <div id="targets-order" class="droppable-area">
                         <%-- targets populated with js mailing-content-editor-controller.js:initDynContent--%>
@@ -106,7 +100,7 @@
                 <div> <%-- Interest group--%>
                     <label class="form-label" for="interest_groups">
                         <mvc:message code="interestgroup"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/content/Interest.xml" tabindex="-1" type="button"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="mailing/content/Interest.xml" tabindex="-1" type="button"></a>
                     </label>
                     <select id="interest_groups" class="form-control js-select">
                         <option value="">--</option>
@@ -122,7 +116,7 @@
 
 <script id="mailing-target-content-template" type="text/x-mustache-template">
     <div id="{{-id}}" class="d-flex gap-1 target-row w-100">
-        <a href="#" class="btn btn-icon btn-inverse target-row-handle">
+        <a href="#" class="btn btn-icon btn-secondary target-row-handle">
             <i class="icon icon-arrows-alt"></i>
         </a>
         <select class="form-control js-select" data-action="change-target">

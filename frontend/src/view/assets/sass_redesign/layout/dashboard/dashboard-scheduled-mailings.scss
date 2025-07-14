@@ -1,15 +1,41 @@
 
+.schedule__day {
+  --shedule-day-date-color: #{$dark-grey};
+  --shedule-day-mailing-color: #{$gray-600};
+}
+
+@include color-mode(dark) {
+  .schedule__day {
+    --shedule-day-date-color: #{$light-grey};
+    --shedule-day-mailing-color: var(--shedule-day-date-color);
+  }
+}
+
+@include color-mode(light-contrast) {
+  .schedule__day {
+    --shedule-day-date-color: #{$con-dark-blue};
+    --shedule-day-mailing-color: var(--shedule-day-date-color);
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .schedule__day {
+    --shedule-day-date-color: #{$white};
+    --shedule-day-mailing-color: var(--shedule-day-date-color);
+  }
+}
+
 .schedule__day-date {
-  color: var(--label-color);
+  color: var(--shedule-day-date-color);
 }
 
 .schedule__day-mailing {
   @include flex-row($gap);
   align-items: center;
-  color: var(--text-gray-color);
+  color: var(--shedule-day-mailing-color);
 
   &:hover {
-    color: var(--text-gray-color);
+    color: var(--shedule-day-mailing-color);
   }
 }
 
@@ -25,7 +51,7 @@
 .schedule__mailing-name {
   @include flex-row($gap-sm);
   align-items: center;
-  color: var(--text-color-default);
+  color: $body-color-var;
 
   .mailing-badge {
     flex: none;

@@ -25,6 +25,7 @@
         zIndex: 1000,
         cursor: 'move',
         scroll: false,
+        appendTo: 'body',
         helper: function (e) { // fix draggable clone dimensions
           const $target = $(e.currentTarget);
           return $target.clone(true).css({'animation': 'none', 'width': $target.width(), 'height': $target.height()});

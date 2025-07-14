@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.web.forms.FormSearchParams" %>
-<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page import="com.agnitas.web.forms.FormSearchParams" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="recipient" type="org.agnitas.emm.core.recipient.dto.RecipientLightDto"--%>
 <%--@elvariable id="isMailTrackingEnabled" type="java.lang.Boolean"--%>
@@ -37,26 +37,10 @@
 </c:url>
 <c:url var="recipientViewLink" value="/recipient/${recipient.customerId}/view.action"/>
 
-
-<c:choose>
-    <c:when test="${not empty recipient.firstname and not empty recipient.lastname}">
-        <c:set var="recipientMention" value="${recipient.firstname} ${recipient.lastname}"/>
-    </c:when>
-    <c:when test="${not empty recipient.firstname}">
-        <c:set var="recipientMention" value="${recipient.firstname}"/>
-    </c:when>
-    <c:when test="${not empty recipient.lastname}">
-        <c:set var="recipientMention" value="${recipient.lastname}"/>
-    </c:when>
-    <c:otherwise>
-        <c:set var="recipientMention" value="${recipient.email}"/>
-    </c:otherwise>
-</c:choose>
-
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="text" value="${recipientMention}"/>
+        <c:set target="${agnBreadcrumb}" property="text" value="${recipient.mention}"/>
         <c:set target="${agnBreadcrumb}" property="url" value="${recipientViewLink}"/>
     </emm:instantiate>
 </emm:instantiate>

@@ -1,7 +1,7 @@
 
 [data-editable-view], body {
   &.edit-mode {
-    .tile {
+    .tile:not(.modal .tile) {
       border-color: transparent;
 
       .tile-header, .tile-body {

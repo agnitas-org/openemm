@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,8 +22,6 @@ public interface VelocityWrapperFactory {
 	 * @param companyId company ID
 	 * 
 	 * @return instance of {@link VelocityWrapper} for given company ID
-	 * 
-	 * @throws Exception on errors creating a new instance
 	 */
-	public VelocityWrapper getWrapper( int companyId) throws Exception;
+	VelocityWrapper getWrapper(int companyId);
 }

@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
+<%--@elvariable id="simpleActionForm" type="com.agnitas.web.forms.SimpleActionForm"--%>
 
 <div class="modal">
     <div class="modal-dialog">

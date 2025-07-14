@@ -113,6 +113,7 @@ Use `.date-time-container` wrapper in order to create combined date & time input
 ;(() => {
 
   const Helpers = AGN.Lib.Helpers;
+  const Template = AGN.Lib.Template;
   const DATA_ATTR_PREFIX = 'agn:datepicker-opt';
 
   AGN.Lib.CoreInitializer.new('datepicker', function ($scope = $(document)) {
@@ -128,6 +129,7 @@ Use `.date-time-container` wrapper in order to create combined date & time input
         dateFormat: window.adminDateFormat,
         showButtonPanel: true,
         showOtherMonths: true,
+        firstDay: 1, // Monday
         weekHeader: t('calendar.common.weekNumber'),
         monthNamesShort: t('date.monthsFull'),
         dayNamesMin: t('date.weekdaysShort'),
@@ -181,8 +183,13 @@ Use `.date-time-container` wrapper in order to create combined date & time input
         $input.data(`${DATA_ATTR_PREFIX}-maxFor`, options.maxFor);
         const updateMaxFor = () => {
           fixRestrictionsAfterManualTextInput(options, $input);
-          const maximum = $input.datepicker('getDate') || options.minDate;
-          $(options.maxFor).datepicker('option', 'maxDate', maximum);
+
+          const maxDate = $input.datepicker('getDate');
+          if (maxDate) {
+            options.maxFor.datepicker('option', 'maxDate', maxDate);
+          } else {
+            resetDependentDateLimits($input);
+          }
         }
         $input.on('change', updateMaxFor);
         updateMaxFor();
@@ -190,10 +197,16 @@ Use `.date-time-container` wrapper in order to create combined date & time input
 
       if (options.minFor) {
         $input.data(`${DATA_ATTR_PREFIX}-minFor`, options.minFor);
+
         const updateMinFor = () => {
           fixRestrictionsAfterManualTextInput(options, $input);
-          const minimum = $input.datepicker('getDate') || options.maxDate;
-          $(options.minFor).datepicker('option', 'minDate', minimum);
+
+          const minDate = $input.datepicker('getDate');
+          if (minDate) {
+            options.minFor.datepicker('option', 'minDate', minDate);
+          } else {
+            resetDependentDateLimits($input);
+          }
         }
         $input.on('change', updateMinFor);
         window.setTimeout(updateMinFor, 100);
@@ -231,22 +244,20 @@ Use `.date-time-container` wrapper in order to create combined date & time input
     function addControlButtons($input) {
       const $buttonsContainer = $('.ui-datepicker-buttonpane');
 
-      $buttonsContainer.append(`
-        <button id="clear-datepicker-btn" class="btn btn-inverse">
-            <i class="icon icon-undo-alt"></i>
-            <span class="text">${t('defaults.reset')}</span>
-        </button>
-      `);
+      $buttonsContainer.append(Template.text('datepicker-btn', {
+        id: 'clear-datepicker-btn',
+        iconClass: 'icon-undo-alt',
+        text: t('defaults.reset')
+      }));
       $buttonsContainer.find('#clear-datepicker-btn').on('click', () => handleClear($input));
 
       // if original 'Today' button not exists, then it means that current date can't be selected by restrictions of minDate/maxDate.
       if ($buttonsContainer.find('.ui-datepicker-current').exists()) {
-        $buttonsContainer.append(`
-            <button id="today-datepicker-btn" class="btn btn-inverse">
-                <i class="icon icon-calendar-alt"></i>
-                <span class="text">${t('defaults.today')}</span>
-            </button>
-        `);
+        $buttonsContainer.append(Template.text('datepicker-btn', {
+          id: 'today-datepicker-btn',
+          iconClass: 'icon-calendar-alt',
+          text: t('defaults.today')
+        }));
         $buttonsContainer.find('#today-datepicker-btn').on('click', () => handleTodayButtonClick($input));
       }
     }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,16 +11,17 @@
 package com.agnitas.emm.util.html;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-
+import com.agnitas.exception.RequestErrorException;
 import net.htmlparser.jericho.Attribute;
 import net.htmlparser.jericho.Attributes;
 import net.htmlparser.jericho.Source;
 import net.htmlparser.jericho.StartTag;
 import net.htmlparser.jericho.Tag;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Code to check a String for forbidden tags and attributes
@@ -35,6 +36,22 @@ public final class HtmlChecker {
 	 * These HTML tags are always forbidden
 	 */
 	private static final String[] ALWAYS_FORBIDDEN_HTML_TAGS = { "applet", "object", "embed", "iframe", "script" };
+
+	public static void checkTags(String value, boolean allowSafeHtmlTags) {
+		checkTags(null, value, allowSafeHtmlTags);
+	}
+
+	public static void checkTags(String field, String value, boolean allowSafeHtmlTags) {
+		try {
+			checkForUnallowedHtmlTags(value, allowSafeHtmlTags);
+		} catch (HtmlCheckerException e) {
+			HtmlCheckerError error = e.getErrors().iterator().next();
+			if (StringUtils.isNotBlank(field) && error instanceof HtmlCheckerForbiddenTagError tagError) {
+				throw new RequestErrorException(Map.of(field, tagError.toMessage()));
+			}
+			throw new RequestErrorException(error.toMessage());
+		}
+    }
 
 	/**
 	 * Check a String for forbidden tags and attributes

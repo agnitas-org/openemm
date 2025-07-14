@@ -1,21 +1,94 @@
 .header {
-  display: flex;
+  @include flex-row($gap);
   justify-content: space-between;
-  gap: $gap;
   min-width: 0;
   align-items: center;
+  position: relative;
 
   padding-inline: $header-spacer;
 
   @include mobile {
     padding-left: $header-spacer;
     padding-right: $header-spacer / 2;
+    justify-content: unset;
+    gap: $gap-sm;
+  }
+
+  @include left-hand {
+    z-index: 1; // hack to display bootstrap dropdown over the tiles
+  }
+
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
+  }
+
+  > .breadcrumbs {
+    @include left-hand {
+      flex-direction: row-reverse;
+
+      .icon-caret-right {
+        @include flipHorizontally;
+      }
+    }
+  }
+
+  .loader {
+    @include desktop {
+      @include center-absolute;
+    }
+
+    @include left-hand {
+      > * {
+        @include flipHorizontally;
+      }
+    }
+
+    @include mobile {
+      @include size(30px);
+      font-size: $font-size-lg;
+      span {
+        display: none;
+      }
+
+      margin-left: auto;
+    }
+  }
+
+  &:has(.loader:not(.hidden)) .header__actions {
+    margin: unset;
+  }
+
+  .switch {
+    background-color: $dark-blue;
+    color: $white;
+    padding: 0;
+    border-radius: $border-radius-sm;
+    border-width: 0;
+
+    i {
+      margin: 0 !important;
+    }
+
+    &:hover {
+      background-color: darken($dark-blue, 10%);
+      border-color: darken($primary, 12%);
+    }
   }
 }
 
 .header__actions {
   @include flex-row($header-spacer);
   align-items: center;
+
+  @include mobile {
+    margin-left: auto;
+  }
+
+  @include left-hand {
+    flex-direction: row-reverse;
+  }
 
   .btn {
     padding: $gap-x-sm - 2 8px;
@@ -48,14 +121,60 @@
         font-size: $font-size-lg;
       }
     }
+  }
+}
 
-    .dark-theme & {
-      @include button-variant(
-              $background: $main-bg-color-dark,
-              $border: $primary,
-              $color: $white
-      );
+@include color-mode(dark) {
+  .header .switch {
+    border-width: 2px;
+    border-color: $primary;
+    i {
+      margin: -1px !important;
     }
+  }
+
+  .header__actions .btn {
+    @include button-variant(
+            $background: $body-bg-dark,
+            $border: $blue,
+            $color: $white
+    );
+  }
+}
+
+@include color-mode(light-contrast) {
+  .header .switch {
+    border-width: 1px;
+    border-color: $con-dark-blue;
+    background-color: transparent;
+    i {
+      margin: -1px !important;
+    }
+  }
+  .header__actions .btn {
+    @include button-variant(
+            $background: $con-dark-blue,
+            $border: transparent,
+            $color: $white
+    );
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .header .switch {
+    border-width: 1px;
+    border-color: $white;
+    background-color: transparent;
+    i {
+      margin: -1px !important;
+    }
+  }
+  .header__actions .btn {
+    @include button-variant(
+            $background: $white,
+            $border: transparent,
+            $color: $con-dark-blue
+    );
   }
 }
 

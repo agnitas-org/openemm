@@ -11,16 +11,14 @@
 
 <c:choose>
     <c:when test="${errorOccurred}">
-        <c:url var="uploadingErrorImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading-error.svg"/>
-
         <div class="modal modal-alert" tabindex="-1">
-            <div class="modal-dialog modal-fullscreen-lg-down">
+            <div class="modal-dialog">
                 <mvc:form cssClass="modal-content" servletRelativeAction="/recipient/import/execute.action" data-form="resource">
                     <div class="modal-header justify-content-center">
-                        <img alt="" src="${uploadingErrorImageSvg}">
+                        <svg><use href="<c:url value="/assets/core/images/facelift/sprite.svg"/>#msgs_msg-uploading-error"></use></svg>
                     </div>
 
-                    <div class="modal-body d-flex flex-column gap-3">
+                    <div class="modal-body vstack gap-3">
                         <h3><mvc:message code="default.loading.stopped"/></h3>
                         <p><mvc:message code="error.importErrorsOccured"/></p>
                     </div>
@@ -30,7 +28,7 @@
                             <c:param name="profileId" value="${profileId}" />
                         </c:url>
 
-                        <a href="${previewLink}" class="btn btn-inverse flex-none" type="button">
+                        <a href="${previewLink}" class="btn btn-secondary flex-none" type="button">
                             <i class="icon icon-angle-left"></i>
                             <span class="text"><mvc:message code="button.Back"/></span>
                         </a>
@@ -48,27 +46,27 @@
             <div class="modal-dialog">
                 <mvc:form cssClass="modal-content" servletRelativeAction="/recipient/import/execute.action" data-form="loading" modelAttribute="form">
                     <mvc:hidden path="profileId" />
-                    <div class="modal-body">
-                        <img alt="" src='<c:url value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>'>
-                        <c:choose>
-                            <c:when test="${currentProgressStatus eq 'IMPORTING_DATA_TO_TMP_TABLE'}">
-                                <p><mvc:message code="import.process"/></p>
-                            </c:when>
-                            <c:otherwise>
-                                <p><mvc:message code="import.progress.detailedItem.${currentProgressStatus}"/></p>
-                            </c:otherwise>
-                        </c:choose>
+                    <div class="modal-header">
+                        <svg><use href="<c:url value="/assets/core/images/facelift/sprite.svg"/>#msgs_msg-uploading"></use></svg>
+                        <h1>
+                            <c:choose>
+                                <c:when test="${currentProgressStatus eq 'IMPORTING_DATA_TO_TMP_TABLE'}">
+                                    <mvc:message code="import.process"/>
+                                </c:when>
+                                <c:otherwise>
+                                    <mvc:message code="import.progress.detailedItem.${currentProgressStatus}"/>
+                                </c:otherwise>
+                            </c:choose>
+                        </h1>
                     </div>
-                    <div class="modal-footer flex-column">
+                    <div class="modal-body d-flex flex-column gap-3">
                         <div class="progress w-100">
-                            <div class="progress-bar-white-bg"></div>
                             <div class="progress-bar"
                                  role="progressbar"
                                  aria-valuenow="${currentProgressStatus.parentStep.ordinal()}"
                                  aria-valuemin="0"
                                  aria-valuemax="${stepsLength}"
                                  style="width: ${(currentProgressStatus.parentStep.ordinal() + 1) / stepsLength * 100}%"></div>
-                            <div class="progress-bar-primary-bg"></div>
                             <div class="percentage">
                                 <mvc:message code="import.steps" arguments="${[currentProgressStatus.parentStep.ordinal() + 1, stepsLength]}"/>
                                 : <mvc:message code="import.progress.step.${currentProgressStatus.parentStep}" />
@@ -77,14 +75,12 @@
 
                         <c:if test="${currentProgressStatus eq 'IMPORTING_DATA_TO_TMP_TABLE'}">
                             <div class="progress w-100">
-                                <div class="progress-bar-white-bg"></div>
                                 <div class="progress-bar"
                                      role="progressbar"
                                      aria-valuenow="${completedPercent}"
                                      aria-valuemin="0"
                                      aria-valuemax="100"
                                      style="width: ${completedPercent}%"></div>
-                                <div class="progress-bar-primary-bg"></div>
                                 <div class="percentage">${completedPercent}%</div>
                             </div>
                         </c:if>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,24 +10,28 @@
 
 package com.agnitas.taglib.message;
 
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+
 import com.agnitas.messages.Message;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
+import org.springframework.web.servlet.LocaleResolver;
 
 public abstract class BaseMessageTag extends BodyTagSupport {
     private static final long serialVersionUID = -6601095892368588653L;
-    
-	protected String type;
+
+    protected String type;
     protected String var;
     private Iterator<?> iterator = null;
 
@@ -40,7 +44,7 @@ public abstract class BaseMessageTag extends BodyTagSupport {
     }
 
     @Override
-    public int doStartTag() throws JspException {
+    public int doStartTag() {
         List<?> messages = getMessages();
         iterator = messages.iterator();
         return processNextMessage();
@@ -86,8 +90,8 @@ public abstract class BaseMessageTag extends BodyTagSupport {
     private String getMessageText(Message message) {
         if (message.isResolvable()) {
             try {
-                MessageSource messageSource = WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext()).getBean(MessageSource.class);
-                return messageSource.getMessage(message.getCode(), message.getArguments(), AgnUtils.getLocale(pageContext));
+                MessageSource messageSource = getApplicationContext().getBean(MessageSource.class);
+                return messageSource.getMessage(message.getCode(), message.getArguments(), detectLocale());
             } catch (NoSuchMessageException e) {
                 return "ERROR: Message not found with code '" + message.getCode() + "'";
             }
@@ -96,13 +100,27 @@ public abstract class BaseMessageTag extends BodyTagSupport {
         return message.getCode();
     }
 
+    private Locale detectLocale() {
+        LocaleResolver localeResolver = getApplicationContext().getBean(LocaleResolver.class);
+
+        if (localeResolver != null && this.pageContext.getRequest() instanceof HttpServletRequest req) {
+            return localeResolver.resolveLocale(req);
+        }
+
+        return AgnUtils.getLocale(this.pageContext);
+    }
+
+    private ApplicationContext getApplicationContext() {
+        return WebApplicationContextUtils.getWebApplicationContext(pageContext.getServletContext());
+    }
+
     protected abstract Message getMessage(Object messageObj);
 
     private void printBodyContent() throws JspException {
         if (bodyContent != null) {
             JspWriter writer = pageContext.getOut();
-            if (writer instanceof BodyContent) {
-                writer = ((BodyContent) writer).getEnclosingWriter();
+            if (writer instanceof BodyContent bodyWriter) {
+                writer = bodyWriter.getEnclosingWriter();
             }
 
             try {

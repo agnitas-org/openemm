@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.util.importvalues.ImportMode" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>

@@ -1,7 +1,7 @@
 (($) => {
 
   const placementFunction = function (balloon, element) {
-    const $balloon = $(balloon);
+    const $balloon = $(balloon.tip);
     const $e = $(element);
 
     const windowTop = $(window).scrollTop();
@@ -36,6 +36,7 @@
   class Popover {
 
     static instances = [];
+    static MARKER_ATTR_NAME = 'agn-popover'
 
     static getOrCreate($el, options) {
       return this.get($el) || this.create($el, options);
@@ -52,11 +53,21 @@
         animation: false,
         content: $el.text(),
         placement: placementFunction,
+        popperConfig: {
+          onFirstUpdate: instance => {
+            const $popover = $(instance.elements.popper);
+            if ($popover.exists()) {
+              new AGN.Lib.Scrollbar($popover, {wheelSpeed: 0.2});
+            }
+          }
+        },
         offset: offsetFunction
       }
 
-      const popover = new bootstrap.Popover($el[0], $.extend(defaultOpts, options));
+      const popover = new bootstrap.Popover($el[0], _.merge(defaultOpts, options));
       this.instances.push(popover);
+
+      $el.attr(Popover.MARKER_ATTR_NAME, '');
 
       return popover;
     }
@@ -100,7 +111,25 @@
         this.instances.splice(index, 1);
       }
 
-      instance?.dispose();
+      if (instance) {
+        $(instance._element).removeAttr(Popover.MARKER_ATTR_NAME);
+        instance.dispose();
+      }
+    }
+
+    static isShown(popover) {
+      return !!popover?.tip;
+    }
+
+    static toggleState($parent, enable = true) {
+      $parent.all(`[${Popover.MARKER_ATTR_NAME}]`).each(function () {
+        const popover = AGN.Lib.Popover.get($(this));
+        if (enable) {
+          popover.enable();
+        } else {
+          popover.disable();
+        }
+      });
     }
   }
 

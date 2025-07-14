@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.26" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.17.0.v202409011308</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>

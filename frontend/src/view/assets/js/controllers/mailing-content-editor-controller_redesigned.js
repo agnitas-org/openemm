@@ -1,3 +1,4 @@
+// todo check usage and remove after ux redesign finished
 AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   // libs
   const Template = AGN.Lib.Template;
@@ -40,9 +41,11 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   }
 
   function addEditorListener($editor) {
-    $editor.on("dynTags:modify", function () {
+    $editor.on("dynTags:modify", function (e, opts) {
       getEditorsContent();
-      $editor.trigger("tile:hide"); // destroy current editors. wysiwyg-events.js
+      if (!opts?.preventEditorHide) {
+        $editor.trigger("tile:hide"); // destroy current editors. wysiwyg-events.js
+      }
     });
     $editor.on("apply-ai-text-on-save", function (e, content) {
       const selectedContentBlockId = getSelectedContentBlockId();
@@ -118,13 +121,17 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     const $aiTextGenerationBlock = $('#tab-content-ai-text-generation');
 
     if ($wysiwygEditorBlock.is(":visible")) {
-      var editor = CKEDITOR.instances['content'];
-      if (editor.status === 'ready') {
-        editor.setData(content)
+      if (window.Jodit) {
+        Jodit.instances['content'].value = content;
       } else {
-        editor.on("instanceReady", function (event) {
-          event.editor.setData(content);
-        });
+        var editor = CKEDITOR.instances['content'];
+        if (editor.status === 'ready') {
+          editor.setData(content)
+        } else {
+          editor.on("instanceReady", function (event) {
+            event.editor.setData(content);
+          });
+        }
       }
     }
     if ($htmlEditorBlock.is(":visible")) {
@@ -135,7 +142,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         cursorPos = null; // select all
       }
       var aceEditor = ace.edit("contentEditor");
-      if($("body").hasClass("dark-theme")) {
+      if(AGN.Lib.Helpers.isDarkTheme()) {
         aceEditor.setTheme("ace/theme/idle_fingers");
       }
       aceEditor.setValue(content, cursorPos);
@@ -157,7 +164,11 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         : ace.edit("contentEditor").getValue();
     }
     if ($wysiwygEditorBlock.is(":visible")) {
-      return CKEDITOR.instances['content'].getData();
+      if (window.Jodit) {
+        return Jodit.instances['content'].value;
+      } else {
+        return CKEDITOR.instances['content'].getData();
+      }
     }
     if ($htmlEditorBlock.is(":visible")) {
       return ace.edit("contentEditor").getValue();
@@ -276,6 +287,9 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   function createNewTag() {
     const targetId = parseInt($targetGroups.val());
     const contentBlock = currentDynTag.createNewContentBlock(targetId);
+    if (!$targetsOrder.find(TARGET_ROW_SELECTOR).exists()) {
+      contentBlock.content = getContentFromEditors();
+    }
     $targetsOrder.append(createTargetRow$(targetId, contentBlock));
     selectContentBlock(contentBlock);
     scrollToTargetsBottom();

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,16 +10,18 @@
 
 package com.agnitas.service;
 
+import com.agnitas.emm.core.mailing.dto.DashboardCalendarWebStorageEntry;
+import com.agnitas.emm.core.mailing.dto.DashboardWebStorageEntry;
 import com.agnitas.emm.core.mailing.dto.MailingOverviewWebStorageEntry;
+import com.agnitas.emm.core.mailing.dto.MailingPreviewWebStorageEntry;
 import com.agnitas.emm.core.target.dto.FilterTypesAndRowsCountWebStorageEntry;
 import com.agnitas.emm.core.target.dto.TargetOverviewWebStorageEntry;
 import com.agnitas.emm.core.trackablelinks.dto.TrackableLinksOverviewWebStorageEntry;
-import org.agnitas.beans.BooleanWebStorageEntry;
-import org.agnitas.beans.RowsCountAndSelectedFieldsWebStorageEntry;
-import org.agnitas.beans.SortingWebStorageEntry;
-import org.agnitas.beans.WebStorageEntry;
+import com.agnitas.beans.BooleanWebStorageEntry;
+import com.agnitas.beans.RowsCountAndSelectedFieldsWebStorageEntry;
+import com.agnitas.beans.SortingWebStorageEntry;
+import com.agnitas.beans.WebStorageEntry;
 import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
-import org.agnitas.service.WebStorageBundle;
 
 import java.util.function.Consumer;
 
@@ -37,11 +39,9 @@ public interface WebStorage {
     WebStorageBundle<SortingWebStorageEntry> RECIPIENT_MAILING_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-mailing-history-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> IMPORT_PROFILE_OVERVIEW = WebStorageBundle.define("import-profile-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> EXPORT_PROFILE_OVERVIEW = WebStorageBundle.define("export-profile-overview", SortingWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> USERFORM_OVERVIEW = WebStorageBundle.define("userform-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> USERFORM_IMAGES_OVERVIEW = WebStorageBundle.define("userform-images-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> MAILING_IMAGES_OVERVIEW = WebStorageBundle.define("mailing-images-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> MAILING_ATTACHMENTS_OVERVIEW = WebStorageBundle.define("mailing-attachments-overview", SortingWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> ACTION_OVERVIEW = WebStorageBundle.define("action-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> USERLOG_OVERVIEW = WebStorageBundle.define("useractivitylog-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> RESTFUL_USERLOG_OVERVIEW = WebStorageBundle.define("restful-useractivitylog-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> SOAP_USERLOG_OVERVIEW = WebStorageBundle.define("soap-useractivitylog-overview", SortingWebStorageEntry.class);
@@ -50,15 +50,14 @@ public interface WebStorage {
     WebStorageBundle<SortingWebStorageEntry> IMPORT_WIZARD_ERRORS_OVERVIEW = WebStorageBundle.define("import-wizard-errors-overview", SortingWebStorageEntry.class);
     // TODO: EMMGUI-714: replace with SortingWebStorageEntry when old design will be removed
     WebStorageBundle<FilterTypesAndRowsCountWebStorageEntry> TARGET_DEPENDENTS_OVERVIEW = WebStorageBundle.define("target-dependents-overview", FilterTypesAndRowsCountWebStorageEntry.class);
+    // TODO: EMMGUI-714: replace with SortingWebStorageEntry when old design will be removed
     WebStorageBundle<FilterTypesAndRowsCountWebStorageEntry> MAILING_SEND_DEPENDENTS_OVERVIEW = WebStorageBundle.define("mailing-send-dependents-overview", FilterTypesAndRowsCountWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> PROFILE_FIELD_DEPENDENTS_OVERVIEW = WebStorageBundle.define("profile-fields-dependents-overview", SortingWebStorageEntry.class);
+    // TODO remove while removing the old UI design EMMGUI-714
     WebStorageBundle<BooleanWebStorageEntry> IS_WIDE_SIDEBAR = WebStorageBundle.define("is-wide-sidebar", BooleanWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> MAILINGLIST_OVERVIEW = WebStorageBundle.define("mailinglist-overview", SortingWebStorageEntry.class);
     WebStorageBundle<TargetOverviewWebStorageEntry> TARGET_OVERVIEW = WebStorageBundle.define("target-overview", TargetOverviewWebStorageEntry.class);
     WebStorageBundle<RowsCountAndSelectedFieldsWebStorageEntry> MAILING_SEPARATE_STATS_OVERVIEW = WebStorageBundle.define("mailing-separate-stats-overview", RowsCountAndSelectedFieldsWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> IMPORT_EXPORT_LOG_OVERVIEW = WebStorageBundle.define("import-export-log-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> PROFILE_FIELD_OVERVIEW = WebStorageBundle.define("profile-field-overview", SortingWebStorageEntry.class);
-    WebStorageBundle<SortingWebStorageEntry> WORKFLOW_OVERVIEW = WebStorageBundle.define("workflow-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> BLACKLIST_OVERVIEW = WebStorageBundle.define("blacklist-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> WS_MANAGER_OVERVIEW = WebStorageBundle.define("ws-manager-overview", SortingWebStorageEntry.class);
     WebStorageBundle<TrackableLinksOverviewWebStorageEntry> TRACKABLE_LINKS = WebStorageBundle.define("trackable-links-overview", TrackableLinksOverviewWebStorageEntry.class);
@@ -66,6 +65,9 @@ public interface WebStorage {
     WebStorageBundle<SortingWebStorageEntry> DATASOURCE_OVERVIEW = WebStorageBundle.define("datasource-overview", SortingWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> BOUNCE_FILTER_OVERVIEW = WebStorageBundle.define("bounce-filter-overview", SortingWebStorageEntry.class);
     WebStorageBundle<RowsCountAndSelectedFieldsWebStorageEntry> MAILING_RECIPIENT_OVERVIEW = WebStorageBundle.define("mailing-recipient-overview", RowsCountAndSelectedFieldsWebStorageEntry.class);
+    WebStorageBundle<MailingPreviewWebStorageEntry> MAILING_PREVIEW = WebStorageBundle.define("mailing-preview", MailingPreviewWebStorageEntry.class);
+    WebStorageBundle<DashboardWebStorageEntry> DASHBOARD = WebStorageBundle.define("dashboard", DashboardWebStorageEntry.class);
+    WebStorageBundle<DashboardCalendarWebStorageEntry> DASHBOARD_CALENDAR = WebStorageBundle.define("dashboard-calendar", DashboardCalendarWebStorageEntry.class);
 
     /**
      * Clear storage, then parse {@code dataAsJson} and store all the recognized bundles in the storage. The {@code dataAsJson}

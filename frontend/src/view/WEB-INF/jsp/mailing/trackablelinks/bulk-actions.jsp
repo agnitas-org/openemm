@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.beans.BaseTrackableLink" %>
+<%@ page import="com.agnitas.beans.BaseTrackableLink" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>

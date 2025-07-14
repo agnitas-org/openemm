@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,8 +14,8 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 import java.util.List;
 import java.util.Set;
@@ -25,6 +25,7 @@ public interface BounceFilterService {
 
     int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
+    // TODO: EMMGUI-714: Remove when deleting old design
     PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int page, int rownums);
 
     PaginatedListImpl<BounceFilterDto> overview(BounceFilterListForm filter);
@@ -33,6 +34,7 @@ public interface BounceFilterService {
 
     BounceFilterDto getBounceFilter(int companyId, int filterId);
 
+    // TODO: EMMGUI-714: Check usages and remove when removing old design
     boolean deleteBounceFilter(int filterId, int companyId);
 
     ServiceResult<UserAction> delete(Set<Integer> ids, int companyId);

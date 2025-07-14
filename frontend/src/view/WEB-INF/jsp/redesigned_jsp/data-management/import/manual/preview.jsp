@@ -5,10 +5,10 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
-<%--@elvariable id="columnsData" type="java.util.List<java.ulit.List<java.lang.String>>"--%>
+<%--@elvariable id="columnsData" type="org.json.JSONArray"--%>
 <%--@elvariable id="columnsNames" type="java.ulit.List<java.lang.String>"--%>
-<%--@elvariable id="enforcedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="enforcedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="possibleToSelectMailinglist" type="java.lang.Boolean"--%>
 
 <c:set var="columnsLength" value="${fn:length(columnsNames)}" />
@@ -22,18 +22,16 @@
         <div class="tile-header">
             <h1 class="tile-title text-truncate"><mvc:message code="import.standard"/></h1>
             <div class="tile-controls">
-                <a href="${backUrl}" type="button" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code="button.Back" />">
+                <a href="${backUrl}" type="button" class="btn btn-icon btn-secondary" data-tooltip="<mvc:message code="button.Back" />">
                     <i class="icon icon-angle-left fs-1"></i>
                 </a>
                 <div class="progress">
-                    <div class="progress-bar-white-bg"></div>
                     <div class="progress-bar"
                          role="progressbar"
                          aria-valuenow="2"
                          aria-valuemin="0"
                          aria-valuemax="2"
                          style="width: 100%"></div>
-                    <div class="progress-bar-primary-bg"></div>
                     <div class="progress-fraction">2/2</div>
                 </div>
                 <button type="button" class="btn btn-sm-horizontal btn-primary" data-form-confirm>
@@ -57,7 +55,7 @@
                 <div class="bordered-box-sm mt-2">
                     <div class="row g-2">
                         <div class="col-12">
-                            <h3 class="text-dark"><mvc:message code="import.SubscribeLists"/></h3>
+                            <h3 class="text-secondary"><mvc:message code="import.SubscribeLists"/></h3>
                         </div>
 
                         <c:choose>

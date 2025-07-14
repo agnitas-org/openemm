@@ -1215,6 +1215,12 @@
             <required>false</required>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>dynamicTags</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
         <dynamic-attributes>true</dynamic-attributes>
     </tag>
 
@@ -2749,6 +2755,39 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
+    <tag>
+        <description>Renders an date range inputs.</description>
+        <name>dateRange</name>
+        <tag-class>com.agnitas.taglib.DateRangeTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <description>Path to property for data binding</description>
+            <name>path</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>Options for datepickers</description>
+            <name>options</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>HTML Standard Attribute</description>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <description>If input group should be displayed in single line</description>
+            <name>inline</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
     </tag>
 
 </taglib>

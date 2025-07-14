@@ -4,7 +4,7 @@
   @include hide-scroll;
   position: relative;
 
-  @include perfect-scrollbar($primary, 8px, 0);
+  @include perfect-scrollbar($blue-var, 8px, 0);
 }
 
 #sidebar__nav-list {
@@ -38,6 +38,12 @@
     position: fixed;
     @include sidebar-tooltip;
     padding: $sidebar-spacer;
+  }
+
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
   }
 }
 

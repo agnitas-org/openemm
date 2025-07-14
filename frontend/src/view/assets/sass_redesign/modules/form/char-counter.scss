@@ -1,13 +1,33 @@
 
 .char-counter {
+  --char-counter-color: #{$dark-grey};
+
   position: relative;
   
   & > * {
-    color: var(--text-dark-gray-color);
+    color: var(--char-counter-color);
     position: absolute;
     top: 0;
     right: 0;
     margin-top: -21px;
     font-size: $font-size-sm;
+  }
+}
+
+@include color-mode(dark) {
+  .char-counter {
+    --char-counter-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .char-counter {
+    --char-counter-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .char-counter {
+    --char-counter-color: #{$white};
   }
 }

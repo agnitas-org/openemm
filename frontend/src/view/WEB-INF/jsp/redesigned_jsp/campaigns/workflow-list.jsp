@@ -5,14 +5,13 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop.WorkflowEndType" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
-<%--@elvariable id="workflowsJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="workflowsJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
 
 <c:set var="STATUSES" value="<%= WorkflowForm.WorkflowStatus.values() %>"/>
@@ -72,13 +71,13 @@
                                     <mvc:message code="default.list.entry.select" />
                                 </p>
                                 <div class="bulk-actions__controls">
-                                    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-workflow">
+                                    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-workflow">
                                         <i class="icon icon-check-circle"></i>
                                     </a>
-                                    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-workflow">
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-workflow">
                                         <i class="icon icon-times-circle"></i>
                                     </a>
-                                    <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.workflow" />" data-bulk-action="delete-workflow" data-action="bulk-delete">
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="bulkAction.delete.workflow" />" data-bulk-action="delete-workflow" data-action="bulk-delete">
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
                                 </div>
@@ -96,11 +95,6 @@
         {
             "columns": [
                 {
-                    "field": "select",
-                    "type": "bulkSelectColumn",
-                    "hide": ${not changeAllowed and not deleteAllowed}
-                },
-                {
                     "headerName": "<mvc:message code='Status'/>",
                     "editable": false,
                     "field": "status",
@@ -113,13 +107,13 @@
                 },
                 {
                     "headerName": "<mvc:message code='default.Name'/>",
-                    "editable": false,
+                    "type": "textCaseInsensitiveColumn",
                     "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "shortname"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
-                    "editable": false,
+                    "type": "textCaseInsensitiveColumn",
                     "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "description"
                 },
@@ -169,83 +163,81 @@
         }
     </script>
 
-    <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
+    <div id="filter-tile" class="tile" data-toggle-tile data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="status-filter"><mvc:message code="Status" /></label>
-                    <select id="status-filter" multiple class="form-control" data-result-template="select2-badge-option">
-                        <c:forEach var="status" items="${STATUSES}">
-                            <c:if test="${status.name ne 'NONE'}">
-                                <c:choose>
-                                    <c:when test="${status.name eq 'failed'}">
-                                        <option value="${status.name}" data-badge-class="campaign.status.failed">Failed</option>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <option value="${status.name}" data-badge-class="campaign.status.${status.name}"><mvc:message code="${status.messageKey}"/></option>
-                                    </c:otherwise>
-                                </c:choose>
-                            </c:if>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="shortname-filter"><mvc:message code="Name"/></label>
-                    <input type="text" id="shortname-filter" class="form-control"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="description-filter"><mvc:message code="Description"/></label>
-                    <input type="text" id="description-filter" class="form-control"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="startDate-filter"><mvc:message code="Start"/></label>
-                    <select id="startDate-filter" multiple class="form-control">
-                        <option value="startDate"><mvc:message code="Date"/></option>
-                        <option value="actionBased"><mvc:message code="workflowlist.actionBased"/></option>
-                        <option value="dateBased"><mvc:message code="workflowlist.dateBased"/></option>
-                    </select>
-                    <div class="mt-1" data-date-range data-show-by-select="#startDate-filter" data-show-by-select-values="startDate">
-                        <div class="date-picker-container mb-1">
-                            <input type="text" id="startDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
-                        </div>
-                        <div class="date-picker-container">
-                            <input type="text" id="startDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
-                        </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label class="form-label" for="status-filter"><mvc:message code="Status" /></label>
+                <select id="status-filter" multiple class="form-control" data-result-template="select2-badge-option">
+                    <c:forEach var="status" items="${STATUSES}">
+                        <c:if test="${status.name ne 'NONE'}">
+                            <c:choose>
+                                <c:when test="${status.name eq 'failed'}">
+                                    <option value="${status.name}" data-badge-class="campaign.status.failed">Failed</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${status.name}" data-badge-class="campaign.status.${status.name}"><mvc:message code="${status.messageKey}"/></option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:if>
+                    </c:forEach>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="shortname-filter"><mvc:message code="Name"/></label>
+                <input type="text" id="shortname-filter" class="form-control"/>
+            </div>
+            <div>
+                <label class="form-label" for="description-filter"><mvc:message code="Description"/></label>
+                <input type="text" id="description-filter" class="form-control"/>
+            </div>
+            <div>
+                <label class="form-label" for="startDate-filter"><mvc:message code="Start"/></label>
+                <select id="startDate-filter" multiple class="form-control">
+                    <option value="startDate"><mvc:message code="Date"/></option>
+                    <option value="actionBased"><mvc:message code="workflowlist.actionBased"/></option>
+                    <option value="dateBased"><mvc:message code="workflowlist.dateBased"/></option>
+                </select>
+                <div class="mt-1" data-date-range data-show-by-select="#startDate-filter" data-show-by-select-values="startDate">
+                    <div class="date-picker-container mb-1">
+                        <input type="text" id="startDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="startDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
                     </div>
                 </div>
-                <div class="col-12">
-                    <label class="form-label" for="stopDate-from-filter"><mvc:message code="report.stopDate"/></label>
-                    <select id="stopDate-filter" multiple class="form-control">
-                        <option value="stopDate"><mvc:message code="Date"/></option>
-                        <option value="automaticEnd"><mvc:message code="workflow.stop.AutomaticEnd"/></option>
-                    </select>
-                    <div class="mt-1" data-date-range data-show-by-select="#stopDate-filter" data-show-by-select-values="stopDate">
-                        <div class="date-picker-container mb-1">
-                            <input type="text" id="stopDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
-                        </div>
-                        <div class="date-picker-container">
-                            <input type="text" id="stopDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
-                        </div>
+            </div>
+            <div>
+                <label class="form-label" for="stopDate-from-filter"><mvc:message code="report.stopDate"/></label>
+                <select id="stopDate-filter" multiple class="form-control">
+                    <option value="stopDate"><mvc:message code="Date"/></option>
+                    <option value="automaticEnd"><mvc:message code="workflow.stop.AutomaticEnd"/></option>
+                </select>
+                <div class="mt-1" data-date-range data-show-by-select="#stopDate-filter" data-show-by-select-values="stopDate">
+                    <div class="date-picker-container mb-1">
+                        <input type="text" id="stopDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker"/>
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="stopDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker"/>
                     </div>
                 </div>
-                <div class="col-12">
-                    <label class="form-label" for="reaction-filter"><mvc:message code="workflow.Reaction" /></label>
-                    <select id="reaction-filter" multiple class="form-control" data-result-template="workflow-reaction-option" data-selection-template="workflow-reaction-option">
-                        <c:forEach var="reactionType" items="${WorkflowReactionType.values()}">
-                            <option value="${reactionType.name}">${reactionType.name}</option>
-                        </c:forEach>
-                    </select>
-                </div>
+            </div>
+            <div>
+                <label class="form-label" for="reaction-filter"><mvc:message code="workflow.Reaction" /></label>
+                <select id="reaction-filter" multiple class="form-control" data-result-template="workflow-reaction-option" data-selection-template="workflow-reaction-option">
+                    <c:forEach var="reactionType" items="${WorkflowReactionType.values()}">
+                        <option value="${reactionType.name}">${reactionType.name}</option>
+                    </c:forEach>
+                </select>
             </div>
         </div>
     </div>
@@ -295,19 +287,19 @@
 </script>
 
 <script id="workflow-delete-btn" type="text/x-mustache-template">
-    <a href="{{= AGN.url('/workflow/bulkDelete.action?bulkIds=' + id) }}" type="button" class="icon-btn text-danger js-data-table-delete" data-tooltip="<mvc:message code="Delete" />">
+    <a href="{{= AGN.url('/workflow/bulkDelete.action?bulkIds=' + id) }}" type="button" class="icon-btn icon-btn--danger js-data-table-delete" data-tooltip="<mvc:message code="Delete" />">
         <i class="icon icon-trash-alt"></i>
     </a>
 </script>
 
 <script id="workflow-activate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
         <i class="icon icon-check-circle"></i>
     </a>
 </script>
 
 <script id="workflow-deactivate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
         <i class="icon icon-times-circle"></i>
     </a>
 </script>

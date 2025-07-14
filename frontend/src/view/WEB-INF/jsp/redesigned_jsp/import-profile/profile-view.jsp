@@ -1,6 +1,6 @@
-<%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
-<%@ page import="org.agnitas.beans.ColumnMapping" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.util.importvalues.ImportMode" %>
+<%@ page import="com.agnitas.beans.ColumnMapping" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -12,20 +12,21 @@
 <%--@elvariable id="genderMappingJoined" type="java.lang.String"--%>
 <%--@elvariable id="isGenderSectionFocused" type="java.lang.Boolean"--%>
 
-<%--@elvariable id="charsets" type="org.agnitas.util.importvalues.Charset[]"--%>
-<%--@elvariable id="delimiters" type="org.agnitas.util.importvalues.TextRecognitionChar[]"--%>
-<%--@elvariable id="dateFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
+<%--@elvariable id="charsets" type="com.agnitas.util.importvalues.Charset[]"--%>
+<%--@elvariable id="delimiters" type="com.agnitas.util.importvalues.TextRecognitionChar[]"--%>
+<%--@elvariable id="dateFormats" type="com.agnitas.util.importvalues.DateFormat[]"--%>
 
 <%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
-<%--@elvariable id="importModes" type="org.agnitas.util.importvalues.ImportMode[]"--%>
+<%--@elvariable id="importModes" type="com.agnitas.util.importvalues.ImportMode[]"--%>
 <%--@elvariable id="availableTimeZones" type="java.lang.String[]"--%>
 <%--@elvariable id="availableImportProfileFields" type="java.util.List<com.agnitas.emm.core.service.RecipientFieldDescription>"--%>
-<%--@elvariable id="checkForDuplicatesValues" type="org.agnitas.util.importvalues.CheckForDuplicates[]"--%>
+<%--@elvariable id="checkForDuplicatesValues" type="com.agnitas.util.importvalues.CheckForDuplicates[]"--%>
 <%--@elvariable id="importProcessActions" type="java.util.List<com.agnitas.beans.ImportProcessAction>"--%>
 
 <%--@elvariable id="profileFields" type="java.util.Map<java.lang.String, com.agnitas.beans.ProfileField>"--%>
-<%--@elvariable id="columnMappings" type="java.util.List<org.agnitas.beans.ColumnMapping>"--%>
+<%--@elvariable id="columnMappings" type="java.util.List<com.agnitas.beans.ColumnMapping>"--%>
 <%--@elvariable id="isEncryptedImportAllowed" type="java.lang.Boolean"--%>
+<%--@elvariable id="isClientForceSendingActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="allowedModesForAllMailinglists" type="java.util.List<java.lang.Integer>"--%>
 
 <c:set var="MAILTYPE_TEXT" value="<%= Recipient.MAILTYPE_TEXT %>"/>
@@ -41,7 +42,8 @@
     <script id="config:import-profile-view" type="application/json">
         {
             "genderMappings": ${emm:toJson(genderMappingJoined)},
-            "availableGenderIntValues": ${emm:toJson(availableGenderIntValues)}
+            "availableGenderIntValues": ${emm:toJson(availableGenderIntValues)},
+            "isClientForceSendingActive": ${isClientForceSendingActive}
         }
     </script>
 
@@ -51,75 +53,61 @@
                 <h1 class="tile-title text-truncate"><mvc:message code="mailing.generalSettings" /></h1>
             </div>
 
-            <div class="tile-body js-scrollable">
+            <div class="tile-body vstack gap-3 js-scrollable">
                 <mvc:hidden path="id" />
 
-                <div class="row g-3">
-                    <div class="col-12">
-                        <label for="profileName" class="form-label">
-                            <mvc:message code="default.Name"/> *
-                        </label>
-                        <mvc:text path="name" cssClass="form-control" id="profileName" maxlength="99" />
-                    </div>
+                <div>
+                    <label for="profileName" class="form-label">
+                        <mvc:message code="default.Name"/> *
+                    </label>
+                    <mvc:text path="name" cssClass="form-control" id="profileName" maxlength="99" />
+                </div>
 
-                    <div class="col-12" data-hide-by-select="#import_mode_select" data-hide-by-select-values="${ImportMode.TO_BLACKLIST.intValue}">
-                        <div class="row g-1">
-                            <div class="col">
-                                <label for="recipient-mailinglists" class="form-label">
-                                    <mvc:message code="recipient.Mailinglists"/>
-                                </label>
-                            </div>
-
-                            <c:if test="${isAllMailinglistsAllowed}">
-                                <div class="col-auto" data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
-                                    <div class="form-check form-switch">
-                                        <mvc:checkbox id="allMalinglistsCheckbox" path="mailinglistsAll" data-action="allMailinglists-toggle" role="switch" cssClass="form-check-input" disabled="${!isAllowedToShowMailinglists}" />
-                                        <label class="form-label form-check-label text-truncate fw-normal" for="allMalinglistsCheckbox">
-                                            <mvc:message code="import.mailinglists.all"/>
-                                        </label>
-                                    </div>
-                                </div>
-                            </c:if>
+                <div data-hide-by-select="#import_mode_select" data-hide-by-select-values="${ImportMode.TO_BLACKLIST.intValue}">
+                    <div class="row g-1">
+                        <div class="col">
+                            <label for="recipient-mailinglists" class="form-label">
+                                <mvc:message code="recipient.Mailinglists"/>
+                            </label>
                         </div>
 
-                        <mvc:select id="recipient-mailinglists" path="selectedMailinglists" cssClass="form-control" multiple="true" disabled="${!isAllowedToShowMailinglists}">
-                            <c:forEach var="mailinglist" items="${availableMailinglists}">
-                                <mvc:option value="${mailinglist.id}">${fn:escapeXml(mailinglist.shortname)}</mvc:option>
-                            </c:forEach>
-                        </mvc:select>
+                        <c:if test="${isAllMailinglistsAllowed}">
+                            <div class="col-auto" data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
+                                <div class="form-check form-switch">
+                                    <mvc:checkbox id="allMalinglistsCheckbox" path="mailinglistsAll" data-action="allMailinglists-toggle" role="switch" cssClass="form-check-input" disabled="${!isAllowedToShowMailinglists}" />
+                                    <label class="form-label form-check-label text-truncate fw-normal" for="allMalinglistsCheckbox">
+                                        <mvc:message code="import.mailinglists.all"/>
+                                    </label>
+                                </div>
+                            </div>
+                        </c:if>
                     </div>
 
-                    <%@ include file="fragments/mediatype_settings.jspf" %>
+                    <mvc:select id="recipient-mailinglists" path="selectedMailinglists" cssClass="form-control" multiple="true" disabled="${!isAllowedToShowMailinglists}">
+                        <c:forEach var="mailinglist" items="${availableMailinglists}">
+                            <mvc:option value="${mailinglist.id}">${fn:escapeXml(mailinglist.shortname)}</mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
 
-                    <div class="col-12">
-                        <label for="import_email" class="form-label text-truncate">
-                            <mvc:message code="import.profile.report.email"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ReportEmail.xml"></a>
-                        </label>
+                <%@ include file="fragments/mediatype_settings.jspf" %>
 
-                        <select name="mailForReport" id="import_email" class="form-control dynamic-tags" multiple placeholder="${emailPlaceholder}">
-                            <c:forEach var="reportEmail" items="${emm:splitString(form.mailForReport)}">
-                                <c:if test="${not empty reportEmail}">
-                                    <option value="${reportEmail}" selected>${reportEmail}</option>
-                                </c:if>
-                            </c:forEach>
-                        </select>
-                    </div>
+                <div>
+                    <label for="import_email" class="form-label text-truncate">
+                        <mvc:message code="import.profile.report.email"/>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/ReportEmail.xml"></a>
+                    </label>
 
-                    <div class="col-12">
-                        <label for="import_error_email" class="form-label text-truncate">
-                            <mvc:message code="error.import.profile.email"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ErrorEmail.xml"></a>
-                        </label>
+                    <mvc:select id="import_email" path="mailForReport" dynamicTags="true" cssClass="form-control" placeholder="${emailPlaceholder}" />
+                </div>
 
-                        <select name="mailForError" id="import_error_email" class="form-control dynamic-tags" multiple placeholder="${emailPlaceholder}">
-                            <c:forEach var="errorEmail" items="${emm:splitString(form.mailForError)}">
-                                <c:if test="${not empty errorEmail}">
-                                    <option value="${errorEmail}" selected>${errorEmail}</option>
-                                </c:if>
-                            </c:forEach>
-                        </select>
-                    </div>
+                <div>
+                    <label for="import_error_email" class="form-label text-truncate">
+                        <mvc:message code="error.import.profile.email"/>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/ErrorEmail.xml"></a>
+                    </label>
+
+                    <mvc:select id="import_error_email" path="mailForError" dynamicTags="true" cssClass="form-control" placeholder="${emailPlaceholder}" />
                 </div>
             </div>
         </div>
@@ -136,7 +124,7 @@
                     <div id="separator-block" class="col">
                         <label for="recipient-import-format-separator" class="form-label">
                             <mvc:message code="import.Separator"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/Separator.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/Separator.xml"></a>
                         </label>
 
                         <mvc:select id="recipient-import-format-separator" path="separator" cssClass="form-control js-select">
@@ -151,7 +139,7 @@
                     <div class="col">
                         <label for="import_decimalseparator" class="form-label text-truncate">
                             <mvc:message code="csv.DecimalSeparator" />
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/DecimalSeparator.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/DecimalSeparator.xml"></a>
                         </label>
                         <mvc:select id="import_decimalseparator" path="decimalSeparator" cssClass="form-control js-select">
                             <mvc:option value=".">.</mvc:option>
@@ -162,7 +150,7 @@
                     <div class="col-6">
                         <label for="recipient-import-format-charset" class="form-label text-truncate">
                             <mvc:message code="mailing.Charset"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/Charset.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/Charset.xml"></a>
                         </label>
 
                         <mvc:select id="recipient-import-format-charset" path="charset" cssClass="form-control js-select">
@@ -173,7 +161,7 @@
                     <div id="text-recognition-block" class="col-6">
                         <label for="recipient-import-format-delimiter" class="form-label text-truncate">
                             <mvc:message code="import.Delimiter"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/Delimiter.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/Delimiter.xml"></a>
                         </label>
 
                         <mvc:select id="recipient-import-format-delimiter" path="textRecognitionChar" cssClass="form-control js-select">
@@ -188,7 +176,7 @@
                     <div class="col-6">
                         <label for="recipient-import-format-dateformat" class="form-label text-truncate">
                             <mvc:message code="import.dateFormat"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/DateFormat.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/DateFormat.xml"></a>
                         </label>
 
                         <mvc:select id="recipient-import-format-dateformat" path="dateFormat" cssClass="form-control js-select">
@@ -199,7 +187,7 @@
                     <div class="col-6">
                         <label for="zipPassword" class="form-label text-truncate">
                             <mvc:message code="import.zipPassword"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/ImportZipped.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/ImportZipped.xml"></a>
                         </label>
 
                         <mvc:text id="zipPassword" path="zipPassword" cssClass="form-control" maxlength="99" />
@@ -221,7 +209,7 @@
                 <div class="col-12">
                     <label for="import_mode_select" class="form-label">
                         <mvc:message code="settings.Mode"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/Mode.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/Mode.xml"></a>
                     </label>
 
                     <mvc:select id="import_mode_select" path="importMode" cssClass="form-control js-select" data-action="change-mode"
@@ -254,7 +242,7 @@
                 <div class="col-12">
                     <label for="import_key_column" class="form-label">
                         <mvc:message code="import.keycolumn"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/KeyColumn.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/KeyColumn.xml"></a>
                     </label>
 
                     <c:choose>
@@ -275,7 +263,7 @@
                             <mvc:checkbox path="shouldCheckForDuplicates" id="checkForDuplicates" role="switch" cssClass="form-check-input"/>
                             <label class="form-label form-check-label text-truncate" for="checkForDuplicates">
                                 <mvc:message code="import.doublechecking"/>
-                                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/Doublechecking.xml"></a>
+                                <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/Doublechecking.xml"></a>
                             </label>
                         </div>
                     </div>
@@ -287,7 +275,7 @@
                             <mvc:checkbox path="updateAllDuplicates" id="import_duplicates" role="switch" cssClass="form-check-input"/>
                             <label class="form-label form-check-label text-truncate" for="import_duplicates">
                                 <mvc:message code="import.profile.updateAllDuplicates"/>
-                                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/UpdateAllDuplicates.xml"></a>
+                                <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/UpdateAllDuplicates.xml"></a>
                             </label>
                         </div>
                     </div>
@@ -296,7 +284,7 @@
                 <div id="mailtype-block" class="col-12">
                     <label for="import_mailingtype" class="form-label">
                         <mvc:message code="recipient.mailingtype"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/MailType.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/MailType.xml"></a>
                     </label>
 
                     <mvc:select id="import_mailingtype" path="defaultMailType" cssClass="form-control js-select">
@@ -309,7 +297,7 @@
                 <div class="col-12">
                     <label for="import_processaction" class="form-label">
                         <mvc:message code="import.processPreImportAction"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_2/ProcessImportAction.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="importwizard/step_2/ProcessImportAction.xml"></a>
                     </label>
 
                     <mvc:select id="import_processaction" path="importProcessActionID" cssClass="form-control" disabled="${!isPreprocessingAllowed}">
@@ -381,7 +369,7 @@
 
                 <c:if test="${not isNewProfile}">
                     <div class="tile-controls">
-                        <button type="button" class="btn btn-inverse btn-icon" data-action="show-column-mappings">
+                        <button type="button" class="btn btn-secondary btn-icon" data-action="show-column-mappings">
                             <i class="icon icon-external-link-alt"></i>
                         </button>
                     </div>

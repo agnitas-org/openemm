@@ -61,7 +61,7 @@ where the suffix [x] is the number of columns. `.form-column` is the same as `.f
 @import "inputs-container";
 @import "collapsable-input";
 @import "editor";
-@import "switch/_.scss";
+@import "switch";
 
 $form-columns-count: 4;
 
@@ -75,7 +75,7 @@ $form-columns-count: 4;
       min-width: 0;
     }
 
-    .btn, .radio-switch {
+    .btn, .switch {
       min-width: min-content;
     }
   }

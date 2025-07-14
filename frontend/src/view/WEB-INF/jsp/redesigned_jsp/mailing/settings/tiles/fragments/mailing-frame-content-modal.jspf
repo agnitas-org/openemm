@@ -1,4 +1,4 @@
-
+<%-- TODO check usage and remove after ux redesign finished --%>
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
 <%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
 
@@ -19,8 +19,8 @@
                         <c:if test="${not isMailingGrid}">
                             {{ if (showHtml) { }}
                             <div class="tile" data-hide-by-checkbox="#text-version-editor-checkbox, #sms-version-editor-checkbox" data-field="validator">
-                                <div class="tile-header px-3 py-2 border-bottom text-dark">
-                                    <h1><mvc:message code="mailing.HTML_Version"/></h1>
+                                <div class="tile-header px-3 py-2 border-bottom">
+                                    <h1 class="tile-title tile-title--grey"><mvc:message code="mailing.HTML_Version"/></h1>
                                     <div class="tile-controls">
                                         <label class="icon-checkbox">
                                             <input type="checkbox" id="html-version-editor-checkbox">
@@ -37,14 +37,14 @@
                                               data-show-char-counter="tile-footer"
                                               data-field-validator="reject-script-element"></textarea>
                                 </div>
-                                <div class="tile-footer text-dark fs-3 bg-transparent border-top d-flex justify-content-between text-nowrap">
+                                <div class="tile-footer text-secondary fs-3 bg-transparent border-top d-flex justify-content-between text-nowrap">
                                     <c:if test="${showDynamicTemplateToggle}">
                                         <div class="form-check form-switch mt-auto overflow-hidden">
                                             <mvc:checkbox cssClass="form-check-input" path="useDynamicTemplate" id="dynamic-template-large" data-sync="#dynamic-template" role="switch" disabled="${isSettingsReadonly}"/>
                                             <label class="form-label form-check-label text-truncate">
                                                 <c:if test="${isTemplate}">
                                                     <mvc:message code="mailing.dynamic_template.preset"/>
-                                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/TemplateUpdateMailingMsg.xml"></a>
+                                                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/TemplateUpdateMailingMsg.xml"></a>
                                                 </c:if>
                                                 <c:if test="${not isTemplate}">
                                                     <mvc:message code="mailing.dynamic_template"/>
@@ -62,8 +62,8 @@
 
                         {{ if (showText) { }}
                         <div class="tile" data-hide-by-checkbox="#html-version-editor-checkbox, #sms-version-editor-checkbox" data-field="validator">
-                            <div class="tile-header px-3 py-2 text-dark border-bottom">
-                                <h1><mvc:message code="Text_Version"/></h1>
+                            <div class="tile-header px-3 py-2 border-bottom">
+                                <h1 class="tile-title tile-title--grey"><mvc:message code="Text_Version"/></h1>
                                 {{ if (showExpandBtn) { }}
                                 <div class="tile-controls">
                                     <label class="icon-checkbox">
@@ -87,11 +87,9 @@
 
                         {{ if (showSms) { }}
                         <div class="tile" data-hide-by-checkbox="#html-version-editor-checkbox, #text-version-editor-checkbox" data-field="validator">
-                            <div class="tile-header px-3 py-2 border-bottom text-dark">
-                                <h1 class="tile-title text-reset">
+                            <div class="tile-header px-3 py-2 border-bottom">
+                                <h1 class="tile-title tile-title--grey">
                                     <span><mvc:message code="mailing.version.sms"/></span>
-                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/SmsCharacters.xml"
-                                       data-help-config="#gsm-7-bit-chars"></a>
                                 </h1>
                                 {{ if (showExpandBtn) { }}
                                 <div class="tile-controls">

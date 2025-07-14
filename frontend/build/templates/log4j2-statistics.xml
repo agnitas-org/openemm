@@ -86,7 +86,7 @@
 			<AppenderRef ref="THIRDPARTYLOGFILE" />
 		</Logger>
 		
-		<Logger name="com.agnitas.dao.impl.ComTargetDaoImpl" level="info">
+		<Logger name="com.agnitas.dao.impl.TargetDaoImpl" level="info">
 			<AppenderRef ref="EQLLOGFILE" />
 		</Logger>
 		

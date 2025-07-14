@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,20 @@
 
 package com.agnitas.emm.core.action.component;
 
+import static com.agnitas.util.UserActivityUtil.addChangedFieldLog;
+import static com.agnitas.util.UserActivityUtil.addSetFieldLog;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.action.bean.ActionSendMailingToUserStatus;
+import com.agnitas.emm.core.action.bean.ArchiveOverviewActionLimitType;
+import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationContentViewParameters;
@@ -26,28 +38,13 @@ import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerPa
 import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.messages.I18nString;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
-import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
-import static org.agnitas.util.UserActivityUtil.addSetFieldLog;
 
 @Component
 public class EmmActionChangesCollector {
-
-    private static final Logger LOGGER = LogManager.getLogger(EmmActionChangesCollector.class);
 
     public String collectChanges(EmmAction newAction, EmmAction oldAction) {
         return StringUtils.join(getChangesDescriptions(newAction, oldAction), '\n');
@@ -135,34 +132,30 @@ public class EmmActionChangesCollector {
 
         String description = "";
 
-        if (newOperation instanceof ActionOperationSendMailingParameters) {
-            description = getSendActionBasedModuleChanges((ActionOperationSendMailingParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationActivateDoubleOptInParameters) {
-            description = getDoubleOptInConfirmationModuleChanges((ActionOperationActivateDoubleOptInParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationContentViewParameters) {
-            description = getContentViewModuleChanges((ActionOperationContentViewParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationExecuteScriptParameters) {
-            description = getExecuteScriptModuleChanges((ActionOperationExecuteScriptParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationGetArchiveListParameters) {
-            description = getArchiveListModuleChanges((ActionOperationGetArchiveListParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationGetArchiveMailingParameters) {
-            description = getShowArchivedMailingModuleChanges((ActionOperationGetArchiveMailingParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationGetCustomerParameters) {
-            description = getLoadRecipientDataModuleChanges((ActionOperationGetCustomerParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationIdentifyCustomerParameters) {
-            description = getIdentifyCustomerModuleChanges((ActionOperationIdentifyCustomerParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationServiceMailParameters) {
-            try {
-                description = getServiceEmailModuleChanges((ActionOperationServiceMailParameters) newOperation, oldOperation);
-            } catch (Exception e) {
-                LOGGER.error("Error occurred while getting service email module changes", e);
-            }
-        } else if (newOperation instanceof ActionOperationSubscribeCustomerParameters) {
-            description = getSubscribeCustomerModuleChanges((ActionOperationSubscribeCustomerParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationUnsubscribeCustomerParameters) {
-            description = getUnsubscribeCustomerModuleChanges((ActionOperationUnsubscribeCustomerParameters) newOperation, oldOperation);
-        } else if (newOperation instanceof ActionOperationUpdateCustomerParameters) {
-            description = getUpdateCustomerModuleChanges((ActionOperationUpdateCustomerParameters) newOperation, oldOperation);
+        if (newOperation instanceof ActionOperationSendMailingParameters sendMailingOperation) {
+            description = getSendActionBasedModuleChanges(sendMailingOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationActivateDoubleOptInParameters activateDoiOperation) {
+            description = getDoubleOptInConfirmationModuleChanges(activateDoiOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationContentViewParameters contentViewOperation) {
+            description = getContentViewModuleChanges(contentViewOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationExecuteScriptParameters executeScriptOperation) {
+            description = getExecuteScriptModuleChanges(executeScriptOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationGetArchiveListParameters archiveListOperation) {
+            description = getArchiveListModuleChanges(archiveListOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationGetArchiveMailingParameters archiveMailingOperation) {
+            description = getShowArchivedMailingModuleChanges(archiveMailingOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationGetCustomerParameters getCustomerOperation) {
+            description = getLoadRecipientDataModuleChanges(getCustomerOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationIdentifyCustomerParameters identifyCustomerOperation) {
+            description = getIdentifyCustomerModuleChanges(identifyCustomerOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationServiceMailParameters serviceMailOperation) {
+            description = getServiceEmailModuleChanges(serviceMailOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationSubscribeCustomerParameters subscribeCustomerOperation) {
+            description = getSubscribeCustomerModuleChanges(subscribeCustomerOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationUnsubscribeCustomerParameters unsubscribeCustomerOperation) {
+            description = getUnsubscribeCustomerModuleChanges(unsubscribeCustomerOperation, oldOperation);
+        } else if (newOperation instanceof ActionOperationUpdateCustomerParameters updateCustomerOperation) {
+            description = getUpdateCustomerModuleChanges(updateCustomerOperation, oldOperation);
         }
 
         if (StringUtils.isBlank(description)) {
@@ -180,20 +173,22 @@ public class EmmActionChangesCollector {
     private String getUpdateCustomerModuleChanges(ActionOperationUpdateCustomerParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationUpdateCustomerParameters) {
-            ActionOperationUpdateCustomerParameters oldOperation = (ActionOperationUpdateCustomerParameters) oldModule;
+        if (oldModule instanceof ActionOperationUpdateCustomerParameters updateCustomerModule) {
+            changes.append(addChangedFieldLog("use tracking point", module.isUseTrack(), updateCustomerModule.isUseTrack()));
 
-            changes.append(addChangedFieldLog("use tracking point", module.isUseTrack(), oldOperation.isUseTrack()));
-
-            if (module.isUseTrack() && module.getTrackingPointId() != oldOperation.getTrackingPointId()) {
-                changes.append(addChangedFieldLog("tracking point", module.getTrackingPointId(), oldOperation.getTrackingPointId()));
+            if (module.isUseTrack() && module.getTrackingPointId() != updateCustomerModule.getTrackingPointId()) {
+                changes.append(addChangedFieldLog("tracking point", module.getTrackingPointId(), updateCustomerModule.getTrackingPointId()));
             }
 
-            changes.append(addChangedFieldLog("column name", module.getColumnName(), oldOperation.getColumnName()));
-            changes.append(addChangedFieldLog("update type", getUpdateCustomerTypeStr(module.getUpdateType()), getUpdateCustomerTypeStr(oldOperation.getUpdateType())));
+            changes.append(addChangedFieldLog("column name", module.getColumnName(), updateCustomerModule.getColumnName()));
+            changes.append(addChangedFieldLog(
+                    "update type",
+                    getUpdateCustomerTypeStr(module.getUpdateType()),
+                    getUpdateCustomerTypeStr(updateCustomerModule.getUpdateType()))
+            );
 
             if (!module.isUseTrack()) {
-                changes.append(addChangedFieldLog("value", module.getUpdateValue(), oldOperation.getUpdateValue()));
+                changes.append(addChangedFieldLog("value", module.getUpdateValue(), updateCustomerModule.getUpdateValue()));
             }
         } else {
             changes.append(addSetFieldLog("use tracking point", module.isUseTrack()));
@@ -216,16 +211,14 @@ public class EmmActionChangesCollector {
     private String getUnsubscribeCustomerModuleChanges(ActionOperationUnsubscribeCustomerParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationUnsubscribeCustomerParameters) {
-            ActionOperationUnsubscribeCustomerParameters oldOperation = (ActionOperationUnsubscribeCustomerParameters) oldModule;
-
-            changes.append(addChangedFieldLog("unsubscribe from mailiglists", module.isAdditionalMailinglists(), oldOperation.isAdditionalMailinglists()));
+        if (oldModule instanceof ActionOperationUnsubscribeCustomerParameters unsubscribeCustomerModule) {
+            changes.append(addChangedFieldLog("unsubscribe from mailiglists", module.isAdditionalMailinglists(), unsubscribeCustomerModule.isAdditionalMailinglists()));
 
             if (module.isAdditionalMailinglists()) {
-                changes.append(addChangedFieldLog("all mailinglists", module.isAllMailinglistsSelected(), oldOperation.isAllMailinglistsSelected()));
+                changes.append(addChangedFieldLog("all mailinglists", module.isAllMailinglistsSelected(), unsubscribeCustomerModule.isAllMailinglistsSelected()));
 
-                if (!module.isAllMailinglistsSelected() && !CollectionUtils.isEqualCollection(module.getMailinglistIds(), oldOperation.getMailinglistIds())) {
-                    changes.append(addChangedFieldLog("mailinglists", joinIds(module.getMailinglistIds()), joinIds(oldOperation.getMailinglistIds())));
+                if (!module.isAllMailinglistsSelected() && !CollectionUtils.isEqualCollection(module.getMailinglistIds(), unsubscribeCustomerModule.getMailinglistIds())) {
+                    changes.append(addChangedFieldLog("mailinglists", joinIds(module.getMailinglistIds()), joinIds(unsubscribeCustomerModule.getMailinglistIds())));
                 }
             }
         } else {
@@ -251,12 +244,10 @@ public class EmmActionChangesCollector {
     private String getSubscribeCustomerModuleChanges(ActionOperationSubscribeCustomerParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationSubscribeCustomerParameters) {
-            ActionOperationSubscribeCustomerParameters oldOperation = (ActionOperationSubscribeCustomerParameters) oldModule;
-
-            changes.append(addChangedFieldLog("use double opt-in", module.isDoubleOptIn(), oldOperation.isDoubleOptIn()))
-                    .append(addChangedFieldLog("duplicates check", module.isDoubleCheck(), oldOperation.isDoubleCheck()))
-                    .append(addChangedFieldLog("key column", module.getKeyColumn(), oldOperation.getKeyColumn()));
+        if (oldModule instanceof ActionOperationSubscribeCustomerParameters subscribeCustomerModule) {
+            changes.append(addChangedFieldLog("use double opt-in", module.isDoubleOptIn(), subscribeCustomerModule.isDoubleOptIn()))
+                    .append(addChangedFieldLog("duplicates check", module.isDoubleCheck(), subscribeCustomerModule.isDoubleCheck()))
+                    .append(addChangedFieldLog("key column", module.getKeyColumn(), subscribeCustomerModule.getKeyColumn()));
         } else {
             changes.append(addSetFieldLog("use double opt-in", module.isDoubleOptIn()))
                     .append(addSetFieldLog("duplicates check", module.isDoubleCheck()))
@@ -266,19 +257,17 @@ public class EmmActionChangesCollector {
         return changes.toString();
     }
 
-    private String getServiceEmailModuleChanges(ActionOperationServiceMailParameters module, AbstractActionOperationParameters oldModule) throws Exception {
+    private String getServiceEmailModuleChanges(ActionOperationServiceMailParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationServiceMailParameters) {
-            ActionOperationServiceMailParameters oldOperation = (ActionOperationServiceMailParameters) oldModule;
-
-            changes.append(addChangedFieldLog("'To' address", module.getToAddress(), oldOperation.getToAddress()))
-                    .append(addChangedFieldLog("'From' address", module.getFromAddress(), oldOperation.getFromAddress()))
-                    .append(addChangedFieldLog("reply address", module.getReplyAddress(), oldOperation.getReplyAddress()))
-                    .append(addChangedFieldLog("subject", module.getSubjectLine(), oldOperation.getSubjectLine()))
-                    .append(addChangedFieldLog("text content", module.getTextMail(), oldOperation.getTextMail()))
-                    .append(addChangedFieldLog("html content", module.getHtmlMail(), oldOperation.getHtmlMail()))
-                    .append(addChangedFieldLog("format", getMailTypeStr(module.getMailtype()), getMailTypeStr(oldOperation.getMailtype())));
+        if (oldModule instanceof ActionOperationServiceMailParameters serviceMailModule) {
+            changes.append(addChangedFieldLog("'To' address", module.getToAddress(), serviceMailModule.getToAddress()))
+                    .append(addChangedFieldLog("'From' address", module.getFromAddress(), serviceMailModule.getFromAddress()))
+                    .append(addChangedFieldLog("reply address", module.getReplyAddress(), serviceMailModule.getReplyAddress()))
+                    .append(addChangedFieldLog("subject", module.getSubjectLine(), serviceMailModule.getSubjectLine()))
+                    .append(addChangedFieldLog("text content", module.getTextMail(), serviceMailModule.getTextMail()))
+                    .append(addChangedFieldLog("html content", module.getHtmlMail(), serviceMailModule.getHtmlMail()))
+                    .append(addChangedFieldLog("format", getMailTypeStr(module.getMailtype()), getMailTypeStr(serviceMailModule.getMailtype())));
         } else {
             changes.append(addSetFieldLog("'To' address", module.getToAddress()))
                     .append(addSetFieldLog("'From' address", module.getFromAddress()))
@@ -295,10 +284,9 @@ public class EmmActionChangesCollector {
     private String getIdentifyCustomerModuleChanges(ActionOperationIdentifyCustomerParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationIdentifyCustomerParameters) {
-            ActionOperationIdentifyCustomerParameters oldOperation = (ActionOperationIdentifyCustomerParameters) oldModule;
-            changes.append(addChangedFieldLog("username column", module.getKeyColumn(), oldOperation.getKeyColumn()))
-                    .append(addChangedFieldLog("password column", module.getPassColumn(), oldOperation.getPassColumn()));
+        if (oldModule instanceof ActionOperationIdentifyCustomerParameters identifyCustomerModule) {
+            changes.append(addChangedFieldLog("username column", module.getKeyColumn(), identifyCustomerModule.getKeyColumn()))
+                    .append(addChangedFieldLog("password column", module.getPassColumn(), identifyCustomerModule.getPassColumn()));
         } else {
             changes.append(addSetFieldLog("username column", module.getKeyColumn()))
                     .append(addSetFieldLog("password column", module.getPassColumn()));
@@ -310,13 +298,11 @@ public class EmmActionChangesCollector {
     private String getSendActionBasedModuleChanges(ActionOperationSendMailingParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationSendMailingParameters) {
-            ActionOperationSendMailingParameters oldOperation = (ActionOperationSendMailingParameters) oldModule;
-
-            changes.append(addChangedFieldLog("bcc emails", module.getBcc(), oldOperation.getBcc()))
-                    .append(addChangedFieldLog("mailingID", module.getMailingID(), oldOperation.getMailingID()))
-                    .append(addChangedFieldLog("delay", module.getDelayMinutes(), oldOperation.getDelayMinutes()))
-                    .append(addChangedFieldLog("user status", getActionUserStatusStr(module.getUserStatusesOption()), getActionUserStatusStr(oldOperation.getUserStatusesOption())));
+        if (oldModule instanceof ActionOperationSendMailingParameters sendMailingModule) {
+            changes.append(addChangedFieldLog("bcc emails", module.getBcc(), sendMailingModule.getBcc()))
+                    .append(addChangedFieldLog("mailingID", module.getMailingID(), sendMailingModule.getMailingID()))
+                    .append(addChangedFieldLog("delay", module.getDelayMinutes(), sendMailingModule.getDelayMinutes()))
+                    .append(addChangedFieldLog("user status", getActionUserStatusStr(module.getUserStatusesOption()), getActionUserStatusStr(sendMailingModule.getUserStatusesOption())));
         } else {
             changes.append(addSetFieldLog("bcc emails", module.getBcc()))
                     .append(addSetFieldLog("mailingID", module.getMailingID()))
@@ -328,12 +314,8 @@ public class EmmActionChangesCollector {
     }
 
     private String getShowArchivedMailingModuleChanges(ActionOperationGetArchiveMailingParameters module, AbstractActionOperationParameters oldModule) {
-        if (oldModule instanceof ActionOperationGetArchiveMailingParameters) {
-            return addChangedFieldLog(
-                    "expire date",
-                    module.getExpireDate(),
-                    ((ActionOperationGetArchiveMailingParameters) oldModule).getExpireDate()
-            );
+        if (oldModule instanceof ActionOperationGetArchiveMailingParameters archiveMailingModule) {
+            return addChangedFieldLog("expire date", module.getExpireDate(), archiveMailingModule.getExpireDate());
         }
 
         return addSetFieldLog("expire date", module.getExpireDate());
@@ -342,11 +324,9 @@ public class EmmActionChangesCollector {
     private String getDoubleOptInConfirmationModuleChanges(ActionOperationActivateDoubleOptInParameters module, AbstractActionOperationParameters oldModule) {
         StringBuilder changes = new StringBuilder();
 
-        if (oldModule instanceof ActionOperationActivateDoubleOptInParameters) {
-            ActionOperationActivateDoubleOptInParameters oldOperation = (ActionOperationActivateDoubleOptInParameters) oldModule;
-
-            changes.append(addChangedFieldLog("media type", getMediaTypeStr(module.getMediaTypeCode()), getMediaTypeStr(oldOperation.getMediaTypeCode())))
-                    .append(addChangedFieldLog("for all mailinglists", module.isForAllLists(), oldOperation.isForAllLists()));
+        if (oldModule instanceof ActionOperationActivateDoubleOptInParameters doiModule) {
+            changes.append(addChangedFieldLog("media type", getMediaTypeStr(module.getMediaTypeCode()), getMediaTypeStr(doiModule.getMediaTypeCode())))
+                    .append(addChangedFieldLog("for all mailinglists", module.isForAllLists(), doiModule.isForAllLists()));
         } else {
             changes.append(addSetFieldLog("media type", getMediaTypeStr(module.getMediaTypeCode())))
                     .append(addSetFieldLog("for all mailinglists", module.isForAllLists()));
@@ -356,22 +336,16 @@ public class EmmActionChangesCollector {
     }
 
     private String getContentViewModuleChanges(ActionOperationContentViewParameters module, AbstractActionOperationParameters oldModule) {
-        if (oldModule instanceof ActionOperationContentViewParameters) {
-            return addChangedFieldLog(
-                    "name of content block",
-                    module.getTagName(),
-                    ((ActionOperationContentViewParameters) oldModule).getTagName()
-            );
+        if (oldModule instanceof ActionOperationContentViewParameters contentViewModule) {
+            return addChangedFieldLog("name of content block", module.getTagName(), contentViewModule.getTagName());
         }
 
         return addSetFieldLog("name of content block", module.getTagName());
     }
 
     private String getLoadRecipientDataModuleChanges(ActionOperationGetCustomerParameters module, AbstractActionOperationParameters oldModule) {
-        if (oldModule instanceof ActionOperationGetCustomerParameters) {
-            ActionOperationGetCustomerParameters oldOperation = (ActionOperationGetCustomerParameters) oldModule;
-
-            if (module.isLoadAlways() != oldOperation.isLoadAlways()) {
+        if (oldModule instanceof ActionOperationGetCustomerParameters getCustomerModule) {
+            if (module.isLoadAlways() != getCustomerModule.isLoadAlways()) {
                 return getBooleanDescription("load always", module.isLoadAlways());
             }
             return "";
@@ -381,21 +355,39 @@ public class EmmActionChangesCollector {
     }
 
     private String getExecuteScriptModuleChanges(ActionOperationExecuteScriptParameters module, AbstractActionOperationParameters oldModule) {
-        if (oldModule instanceof ActionOperationExecuteScriptParameters) {
-            ActionOperationExecuteScriptParameters oldOperation = (ActionOperationExecuteScriptParameters) oldModule;
-            return addChangedFieldLog("script", truncateStr(module.getScript()), truncateStr(oldOperation.getScript()));
+        if (oldModule instanceof ActionOperationExecuteScriptParameters executeScriptModule) {
+            return addChangedFieldLog(
+                    "script",
+                    truncateStr(module.getScript()),
+                    truncateStr(executeScriptModule.getScript())
+            );
         }
 
         return addSetFieldLog("script", truncateStr(module.getScript()));
     }
 
     private String getArchiveListModuleChanges(ActionOperationGetArchiveListParameters module, AbstractActionOperationParameters oldModule) {
-        if (oldModule instanceof ActionOperationGetArchiveListParameters) {
-            ActionOperationGetArchiveListParameters oldOperation = (ActionOperationGetArchiveListParameters) oldModule;
-            return addChangedFieldLog("archiveID", module.getCampaignID(), oldOperation.getCampaignID());
+        StringBuilder changes = new StringBuilder();
+        if (oldModule instanceof ActionOperationGetArchiveListParameters archiveListModule) {
+            changes.append(addChangedFieldLog("archiveID", module.getCampaignID(), archiveListModule.getCampaignID()))
+                    .append(addChangedFieldLog("limitType", getArchiveLimitType(module), getArchiveLimitType(archiveListModule)))
+                    .append(addChangedFieldLog("limitValue", module.getLimitValue(), archiveListModule.getLimitValue()));
+        } else {
+            changes.append(addSetFieldLog("archiveID", module.getCampaignID()))
+                    .append(addSetFieldLog("limitType", getArchiveLimitType(module)))
+                    .append(addSetFieldLog("limitValue", module.getLimitValue()));
         }
 
-        return addSetFieldLog("archiveID", module.getCampaignID());
+        return changes.toString();
+    }
+
+    private String getArchiveLimitType(ActionOperationGetArchiveListParameters module) {
+        ArchiveOverviewActionLimitType limitType = IntEnum.fromId(ArchiveOverviewActionLimitType.class, module.getLimitType());
+        if (limitType == null) {
+            return "";
+        }
+
+        return translate(limitType.getMessageKey());
     }
 
     private String getModuleName(AbstractActionOperationParameters module) {
@@ -403,16 +395,12 @@ public class EmmActionChangesCollector {
     }
 
     private String getTypeAsString(int type) {
-        switch (type) {
-            case EmmAction.TYPE_LINK:
-                return "Links";
-            case EmmAction.TYPE_FORM:
-                return "Forms";
-            case EmmAction.TYPE_ALL:
-                return "Links and forms";
-            default:
-                return "Unknown";
-        }
+        return switch (type) {
+            case EmmAction.TYPE_LINK -> "Links";
+            case EmmAction.TYPE_FORM -> "Forms";
+            case EmmAction.TYPE_ALL -> "Links and forms";
+            default -> "Unknown";
+        };
     }
 
     private String getBooleanDescription(String property, boolean value) {
@@ -435,8 +423,9 @@ public class EmmActionChangesCollector {
         return "";
     }
 
-    private String getMailTypeStr(int code) throws Exception {
-        return translate(MailType.getFromInt(code).getMessageKey());
+    private String getMailTypeStr(int code) {
+        MailType mailType = MailType.getFromInt(code);
+        return translate(mailType.getMessageKey());
     }
 
     private String getMediaTypeStr(int code) {

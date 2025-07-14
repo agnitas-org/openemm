@@ -44,14 +44,10 @@
     </c:choose>
 
     <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
-    <!-- Polyfills for wkhtmltopdf -->
-    <script src="${pageContext.request.contextPath}/js/lib/workflow/hacks-wkhtmltopdf-qt.js"></script>
-    <script src="${pageContext.request.contextPath}/js/lib/workflow/es5-shim-4.5.15.min.js"></script>
-    <script src="${pageContext.request.contextPath}/js/lib/workflow/polyfill-7.12.1.min.js"></script>
 
     <tiles:insertTemplate template="/WEB-INF/jsp/redesigned_jsp/page-template/assets.jsp"/>
 
-<%--here you should put extra css/js links needed for your page--%>
+    <%--here you should put extra css/js links needed for your page--%>
     <tiles:insertAttribute name="head-extra-links"/>
 
     <script>

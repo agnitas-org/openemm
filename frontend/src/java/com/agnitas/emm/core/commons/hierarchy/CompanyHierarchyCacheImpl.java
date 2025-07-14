@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,12 +12,12 @@ package com.agnitas.emm.core.commons.hierarchy;
 
 import java.util.Objects;
 
-import org.agnitas.util.TimeoutLRUMap;
+import com.agnitas.util.TimeoutLRUMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Company;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 
 public class CompanyHierarchyCacheImpl implements CompanyHierarchyCache {
 	
@@ -34,13 +34,13 @@ public class CompanyHierarchyCacheImpl implements CompanyHierarchyCache {
 	private final TimeoutLRUMap<Integer, Integer> companyToRootCompanyMap;
 	
 	/** Company DAO to read missing data into cache. */
-	private final ComCompanyDao companyDao;
+	private final CompanyDao companyDao;
 
-	public CompanyHierarchyCacheImpl(final ComCompanyDao companyDao) {
+	public CompanyHierarchyCacheImpl(final CompanyDao companyDao) {
 		this(DEFAULT_TIMEOUT_MILLIS, DEFAULT_CAPACITY, companyDao);
 	}
 	
-	public CompanyHierarchyCacheImpl(final int timeoutMillis, final int capacity, final ComCompanyDao companyDao) {
+	public CompanyHierarchyCacheImpl(final int timeoutMillis, final int capacity, final CompanyDao companyDao) {
 		this.companyToRootCompanyMap = new TimeoutLRUMap<>(capacity, timeoutMillis);
 		this.companyDao = Objects.requireNonNull(companyDao, "company DAO");
 	}

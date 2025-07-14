@@ -81,7 +81,7 @@ AGN.Lib.Controller.new('recipient-list', function () {
     getQbApi()?.clearErrors();
 
     if (validateQbRules()) {
-      AGN.Lib.Confirm.createFromTemplate({rules: $('#queryBuilderRules').val()}, 'new-targetgroup-modal')
+      AGN.Lib.Confirm.from('new-targetgroup-modal', {rules: $('#queryBuilderRules').val()})
         .done(resp => getForm().updateHtml(resp));
     }
   });
@@ -152,11 +152,13 @@ AGN.Lib.Controller.new('recipient-list', function () {
   function updateQbRulesBasedOnBasicFields() {
     const rules = QUERY_BUILDER_FILTER_FIELDS.map(field => {
       const fieldType = getGenericFieldType(field);
-      const operator = fieldType === 'string' ? 'contains' : 'equal';
+      const operator = fieldType === 'string' ? 'like' : 'equal';
 
       let fieldValue = $getFilterField(field).val().trim();
       if (fieldType === 'number' && fieldValue !== '') {
         fieldValue = Number(fieldValue);
+      } else {
+        fieldValue = fieldValue ? `%${fieldValue}%` : '';
       }
 
       return {id: field, value: fieldValue, operator: operator};

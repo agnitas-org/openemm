@@ -1,9 +1,9 @@
-<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
+<%@ page import="com.agnitas.util.importvalues.ImportMode" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileForm"--%>
 <%--@elvariable id="allowedModesForAllMailinglists" type="java.util.List<java.lang.Integer>"--%>
-<%--@elvariable id="availableMailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="availableMailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="mailinglistsToShow" type="java.util.Set<java.lang.Integer>"--%>
 
 <c:set var="isMailingListSelectionEditable" value="${form.actionForNewRecipients eq 0}"/>

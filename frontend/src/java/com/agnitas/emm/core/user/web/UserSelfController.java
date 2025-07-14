@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,18 +14,18 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.dao.AdminPreferencesDao;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.user.form.UserSelfForm;
 import com.agnitas.emm.core.user.service.UserSelfService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.AdminGroup;
+import com.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
@@ -33,9 +33,9 @@ import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.password.util.PasswordUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,8 +57,8 @@ import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMaili
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingLivePreviewPosition;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingSettingsViewName;
 import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class UserSelfController implements XssCheckAware {
 
@@ -68,19 +68,19 @@ public class UserSelfController implements XssCheckAware {
 
     protected final ConfigService configService;
     private final WebStorage webStorage;
-    private final ComCompanyDao companyDao;
+    private final CompanyDao companyDao;
     private final AdminPreferencesDao adminPreferencesDao;
     private final AdminGroupDao adminGroupDao;
     private final AdminService adminService;
     private final UserActivityLogService userActivityLogService;
     private final PasswordCheck passwordCheck;
     private final EmmLayoutBaseDao layoutBaseDao;
-    private final ComLogonService logonService;
+    private final LogonService logonService;
     private final UserSelfService userSelfService;
 
-    public UserSelfController(WebStorage webStorage, ComCompanyDao companyDao, AdminPreferencesDao adminPreferencesDao, AdminService adminService,
+    public UserSelfController(WebStorage webStorage, CompanyDao companyDao, AdminPreferencesDao adminPreferencesDao, AdminService adminService,
                               AdminGroupDao adminGroupDao, ConfigService configService, UserActivityLogService userActivityLogService, PasswordCheck passwordCheck,
-                              EmmLayoutBaseDao layoutBaseDao, ComLogonService logonService, UserSelfService userSelfService) {
+                              EmmLayoutBaseDao layoutBaseDao, LogonService logonService, UserSelfService userSelfService) {
 
         this.webStorage = webStorage;
         this.companyDao = companyDao;
@@ -113,7 +113,7 @@ public class UserSelfController implements XssCheckAware {
         model.addAttribute("loginTrackingList", loginTrackingList);
         model.addAttribute("availableAdminGroups", adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds()));
         model.addAttribute("availableTimezones", TimeZone.getAvailableIDs());
-        model.addAttribute("availableLayouts", adminService.getEmmLayoutsBase(companyID));
+        model.addAttribute("availableLayouts", adminService.getEmmLayoutsBase(admin));
         model.addAttribute("passwordPolicy", PasswordPolicyUtil.loadCompanyPasswordPolicy(companyID, configService).getPolicyName());
     }
 
@@ -164,6 +164,9 @@ public class UserSelfController implements XssCheckAware {
         admin.setAdminLang(form.getAdminLocale().getLanguage());
         admin.setAdminCountry(form.getAdminLocale().getCountry());
         admin.setLayoutBaseID(form.getLayoutBaseId());
+        if (admin.isRedesignedUiUsed()) {
+            admin.setLayoutType(form.getUiLayoutType());
+        }
         admin.setAdminTimezone(form.getAdminTimezone());
         admin.setGender(form.getGender());
 
@@ -177,14 +180,10 @@ public class UserSelfController implements XssCheckAware {
             admin.setGroups(adminGroups);
         }
 
-        try {
-            adminService.save(admin);
-            if (!adminLangBefore.equals(admin.getAdminLang())
-                || !adminTimeZoneBefore.equals(admin.getAdminTimezone())) {
-                AgnUtils.updateBrowserCacheMarker();
-            }
-        } catch (Exception e) {
-            logger.error("Error occurred during save of admin!", e);
+        adminService.save(admin);
+        if (!adminLangBefore.equals(admin.getAdminLang())
+            || !adminTimeZoneBefore.equals(admin.getAdminTimezone())) {
+            AgnUtils.updateBrowserCacheMarker();
         }
 
         saveNewPreferences(adminPreferences, form);
@@ -272,6 +271,7 @@ public class UserSelfController implements XssCheckAware {
         form.setCompanyName(admin.getCompanyName());
         form.setEmail(admin.getEmail());
         form.setLayoutBaseId(admin.getLayoutBaseID());
+        form.setUiLayoutType(admin.getLayoutType());
         form.setInitialCompanyName(companyDao.getCompany(admin.getCompanyID()).getShortname());
         form.setFirstname(admin.getFirstName());
         form.setEmployeeID(admin.getEmployeeID());

@@ -27,7 +27,7 @@
     animation-fill-mode: backwards;
 
     @include mobile {
-      height: $mobile-view-tile-height;
+      height: 500px;
     }
   }
 
@@ -58,7 +58,7 @@
   }
 }
 
-#dashboard-stop-edit-btn, #dashboard-select-layout-btn {
+li:has(#dashboard-stop-edit-btn), li:has(#dashboard-select-layout-btn) {
   display: none;
   
   body.edit-mode & {

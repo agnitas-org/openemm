@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,15 +10,21 @@
 
 package com.agnitas.emm.core.dyncontent.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.impl.DynamicTagContentImpl;
-import org.agnitas.dao.DynamicTagContentDao;
-import org.agnitas.dao.MailingStatus;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
+import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
+import com.agnitas.emm.common.MailingStatus;
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentInvalid;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentNotExistException;
@@ -27,34 +33,30 @@ import org.agnitas.emm.core.dyncontent.service.DynamicTagContentWithSameOrderAlr
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentWithSameTargetIdAlreadyExist;
 import org.agnitas.emm.core.dynname.service.DynamicTagNameNotExistException;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.target.service.TargetNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.target.exception.TargetNotExistException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
+@Service("dynamicTagContentService")
 public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
 	private static final Logger LOGGER = LogManager.getLogger(DynamicTagContentServiceImpl.class);
 	
 	private final DynamicTagContentDao dynamicTagContentDao;
-	private final MailingDao mailingDao;
-	private final ComTargetDao targetDao;
+	private final MailingService mailingService;
+	private final TargetDao targetDao;
     private final ContentModelValidator contentModelValidator;
     private final ApplicationContext applicationContext;
 
-	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, MailingDao mailingDao, ComTargetDao targetDao,
-										ContentModelValidator contentModelValidator, ApplicationContext applicationContext) {
+	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, MailingService mailingService, TargetDao targetDao,
+                                        ContentModelValidator contentModelValidator, ApplicationContext applicationContext) {
 		this.dynamicTagContentDao = dynamicTagContentDao;
-		this.mailingDao = mailingDao;
+        this.mailingService = mailingService;
 		this.targetDao = targetDao;
 		this.contentModelValidator = contentModelValidator;
 		this.applicationContext = applicationContext;
@@ -82,17 +84,14 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	@Override
 	public List<DynamicTagContent> getContentList(ContentModel model) {
 	    contentModelValidator.assertIsValidToGetList(model);
-		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
+		if (!mailingService.exists(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 		return dynamicTagContentDao.getContentList(model.getCompanyId(), model.getMailingId());
 	}
 
 	protected int addContentImpl(ContentModel model, List<UserAction> userActions) {
-		Mailing mailing = mailingDao.getMailing(model.getMailingId(), model.getCompanyId());
-		if (mailing == null || mailing.getId() == 0) {
-			throw new MailingNotExistException(model.getMailingId(), model.getMailingId());
-		}
+		Mailing mailing = mailingService.getMailing(model.getCompanyId(), model.getMailingId());
 		DynamicTag dynamicTag = mailing.getDynTags().get(model.getBlockName());
 		if (dynamicTag == null) {
 			throw new DynamicTagNameNotExistException();
@@ -112,16 +111,16 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
             }
 		}
         
-        DynamicTagContent aContent = new DynamicTagContentImpl();
-		aContent.setDynNameID(dynamicTag.getId());
-		aContent.setId(0);
-		aContent.setDynName(dynamicTag.getDynName());
-		aContent.setMailingID(model.getMailingId());
-		aContent.setCompanyID(model.getCompanyId());
-		aContent.setDynOrder(model.getOrder());
-		aContent.setTargetID(model.getTargetId());
-		aContent.setDynContent(model.getContent());
-		dynamicTag.addContent(aContent);
+        DynamicTagContent content = new DynamicTagContentImpl();
+		content.setDynNameID(dynamicTag.getId());
+		content.setId(0);
+		content.setDynName(dynamicTag.getDynName());
+		content.setMailingID(model.getMailingId());
+		content.setCompanyID(model.getCompanyId());
+		content.setDynOrder(model.getOrder());
+		content.setTargetID(model.getTargetId());
+		content.setDynContent(model.getContent());
+		dynamicTag.addContent(content);
 
         try {
         	mailing.buildDependencies(false, applicationContext);
@@ -132,7 +131,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
         }
 
 		try {
-			mailingDao.saveMailing(mailing, false, false);
+			mailingService.saveMailingWithNewContent(mailing, false, false, false);
 		} catch (Exception e) {
         	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
         	
@@ -141,7 +140,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
 		String description = dynamicTag.getDynName() +
 				"(" +
-				aContent.getId() +
+				content.getId() +
 				")" +
 				" in the " +
 				(mailing.isIsTemplate() ? "template " : "mailing ") +
@@ -151,7 +150,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 				")";
 		userActions.add(new UserAction("create textblock", description));
 
-		return aContent.getId();
+		return content.getId();
 	}
 		
 	protected void updateContentImpl(ContentModel contentModel, List<UserAction> userActions) {
@@ -171,11 +170,8 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
 		logTimePoint("updateContentImpl -> before // Read existing mailing data");
 		// Read existing mailing data
-		Mailing mailing = mailingDao.getMailing(mailingId, contentModel.getCompanyId());
-		if (mailing == null) {
-			throw new MailingNotExistException(contentModel.getCompanyId(), mailingId);
-		}
-		
+		Mailing mailing = mailingService.getMailing(contentModel.getCompanyId(), mailingId);
+
 		DynamicTag dynamicTag = mailing.getDynTags().get(dynName);
 		// Consistency check of dynamic tag
 		if (dynamicTag == null) {
@@ -258,7 +254,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		logTimePoint("updateContentImpl -> before // Save changes");
 		// Save changes
 		try {
-			mailingDao.saveMailing(mailing, false, false);
+			mailingService.saveMailingWithNewContent(mailing, false, false, false);
 		} catch (Exception e) {
         	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
         	
@@ -304,7 +300,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
     public int addContent(ContentModel model, List<UserAction> userActions) {
 	    contentModelValidator.assertIsValidToAdd(model);
         int contentId = addContentImpl(model, userActions);
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+		mailingService.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT);
         return contentId;
     }
 
@@ -313,7 +309,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 	public boolean deleteContent(ContentModel model, List<UserAction> userActions) {
 	    contentModelValidator.assertIsValidToGetOrDelete(model);
 		boolean res = deleteContentImpl(model, userActions);
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+		mailingService.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT);
         return res;
 	}
 
@@ -325,7 +321,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		logTimePoint("updateContent -> before updateContentImpl");
 		updateContentImpl(model, userActions);
 		logTimePoint("updateContent -> before updateStatus");
-        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
+		mailingService.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT);
 	}
 
 	@Override

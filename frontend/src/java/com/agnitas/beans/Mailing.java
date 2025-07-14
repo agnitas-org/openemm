@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,14 +19,14 @@ import java.util.Vector;
 
 import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.preview.AgnTagError;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.preview.AgnTagError;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface Mailing extends MailingBase {
@@ -99,7 +99,7 @@ public interface Mailing extends MailingBase {
      * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
      */
     @Deprecated
-    boolean triggerMailing(int maildropStatusId) throws Exception;
+    boolean triggerMailing(int maildropStatusId);
 
     /**
      * Setter for property asciiTemplate.
@@ -247,11 +247,11 @@ public interface Mailing extends MailingBase {
 	 */
 	List<LinkProperty> getCommonLinkExtensions();
 	
-	List<ComMailingParameter> getParameters();
+	List<MailingParameter> getParameters();
 
-	void setParameters(List<ComMailingParameter> parameters);
+	void setParameters(List<MailingParameter> parameters);
 	
-	Map<String, List<AgnTagError>> checkAgnTagSyntax(ApplicationContext applicationContext) throws Exception;
+	Map<String, List<AgnTagError>> checkAgnTagSyntax(ApplicationContext applicationContext);
 
     int getPreviewComponentId();
    	void setPreviewComponentId(int previewComponentId);

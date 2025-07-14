@@ -1,22 +1,21 @@
 
-@mixin form-control-validation($color: $light-grey, $border-color: $color) {
+.has-feedback {
+  --feedback-label-color: var(--label-color);
+  --feedback-validation-border-color: #{$border-color-var};
+
   .form-label {
-    color: #{$color};
+    color: var(--feedback-label-color);
   }
   // Set the border and box shadow on specific inputs to match
   .form-control, .select2-container .select2-selection.form-control {
-    border-color: #{$border-color};
+    border-color: var(--feedback-validation-border-color);
     @include border-bottom-radius(0);
   }
-}
-
-.has-feedback {
-  @include form-control-validation("var(--label-color)", $border-color);
 
   .form-control-feedback-message {
-    color: var(--validation-feedback-color);
-    background-color: var(--validation-feedback-bg-color);
-    border: $border-default;
+    color: var(--validation-default-feedback-color);
+    background-color: var(--validation-feedback-bg);
+    border: 1px solid var(--feedback-validation-border-color);
     border-top: none;
   }
 }
@@ -26,17 +25,21 @@
   $color: nth($conf, 2);
 
   .has-#{$state} {
-    @include form-control-validation($color);
+    --feedback-label-color: #{$color};
+    --feedback-validation-border-color: #{$color};
 
     .form-control-feedback-message {
       background-color: $color;
-      color: $white;
-      border-color: $color;
+      color: var(--validation-feedback-color);
     }
   }
 }
 
 .form-control-feedback-message {
+  --validation-feedback-bg: #{$x-light-grey};
+  --validation-feedback-color: #{$white};
+  --validation-default-feedback-color: #{$dark-grey};
+
   @include flex-row($gap-x-sm);
   align-items: center;
   padding: $gap-x-sm $gap-sm;
@@ -44,5 +47,36 @@
 
   &:last-child {
     @include border-bottom-radius;
+  }
+}
+
+@include color-mode(dark) {
+  .form-control-feedback-message {
+    --validation-feedback-bg: #{$body-bg-dark};
+    --validation-default-feedback-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .form-control-feedback-message {
+    --validation-feedback-bg: #{$con-grey};
+    --validation-feedback-color: #{$con-dark-blue};
+  }
+
+  .has-feedback {
+    --feedback-label-color: var(--label-color) !important;
+    --feedback-validation-border-color: #{$border-color-var} !important;
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .form-control-feedback-message {
+    --validation-feedback-bg: #{$dark-grey};
+    --validation-feedback-color: #{$con-dark-blue};
+    --validation-default-feedback-color: #{$white};
+  }
+
+  .has-feedback {
+    --feedback-label-color: var(--label-color) !important;
   }
 }

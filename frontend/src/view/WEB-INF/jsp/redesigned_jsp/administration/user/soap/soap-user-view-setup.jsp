@@ -8,7 +8,7 @@
 
 <c:set var="agnTitleKey" 			      value="settings.webservice.user" 	                                         scope="request" />
 <c:set var="sidemenu_active" 		      value="Administration" 			                                      	 scope="request" />
-<c:set var="sidemenu_sub_active" 	      value="settings.Admin" 			                                      	 scope="request" />
+<c:set var="sidemenu_sub_active" 	      value="UserActivitylog.Users" 			                                 scope="request" />
 <c:set var="agnHighlightKey" 		      value="settings.webservice.user" 	                                         scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	      value="UserActivitylog.Users"	 		                                     scope="request" />
 <c:url var="agnBreadcrumbsRootUrl"        value="/administration/wsmanager/usersRedesigned.action?restoreSort=true"  scope="request" />

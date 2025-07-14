@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,17 +20,25 @@ public interface EmmLayoutBase {
     int LIVEPREVIEW_POSITION_DEACTIVATE = 2;
 
     enum ThemeType {
-    	STANDARD(0),
-		DARK_MODE(1);
+    	LIGHT(0, "light"),
+		DARK(1, "dark"),
+		LIGHT_CONTRAST(2, "light-contrast"),
+		DARK_CONTRAST(3, "dark-contrast");
 
-    	final int code;
+    	private final int code;
+		private final String name;
 
-		ThemeType(final int code) {
+		ThemeType(int code, String name) {
     		this.code = code;
-		}
+            this.name = name;
+        }
 
 		public int getCode() {
     		return this.code;
+		}
+
+		public String getName() {
+			return name;
 		}
 
 		public static ThemeType valueOf(final int code) {

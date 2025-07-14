@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -36,6 +36,7 @@ public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
         popups.setAlert(getMessages(popupsMessages, PopupsImpl.MessageType.ERROR));
         popups.setWarning(getMessages(popupsMessages, PopupsImpl.MessageType.WARNING));
         popups.setInfo(getMessages(popupsMessages, PopupsImpl.MessageType.INFO));
+        popups.setFields(source.getFieldsMessages());
 
         return popups;
     }
@@ -57,6 +58,7 @@ public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
         private List<Message> warning;
         private List<Message> alert;
         private List<Message> info;
+        private List<PopupsImpl.FieldMessage> fields;
 
         public List<Message> getSuccess() {
             return success;
@@ -88,6 +90,14 @@ public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
 
         public void setInfo(List<Message> info) {
             this.info = info;
+        }
+
+        public List<PopupsImpl.FieldMessage> getFields() {
+            return fields;
+        }
+
+        public void setFields(List<PopupsImpl.FieldMessage> fields) {
+            this.fields = fields;
         }
     }
 }

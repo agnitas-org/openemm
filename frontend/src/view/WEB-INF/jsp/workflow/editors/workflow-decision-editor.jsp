@@ -4,7 +4,7 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionCriteria" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>

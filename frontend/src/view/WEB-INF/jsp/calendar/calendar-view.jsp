@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.push.bean.PushNotificationStatus" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>

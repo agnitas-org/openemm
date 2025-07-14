@@ -5,7 +5,7 @@
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
 
-	<bean id="attachmentExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.component.AttachmentExceptionResolver">
+	<bean id="attachmentExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.component.AttachmentExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
 				<ref bean="getAttachmentEndpoint" />
@@ -16,7 +16,7 @@
 		</property>
 	</bean>
 
-    <bean id="blacklistExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.blacklist.BlacklistExceptionResolver">
+    <bean id="blacklistExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.blacklist.BlacklistExceptionResolver">
 		<property name="mappedEndpoints">
 			<list>
 				<ref bean="addBlacklistEndpoint"/>
@@ -25,7 +25,7 @@
 		<property name="order" value="3"/>
 	</bean>
 	
-	<bean id="mailingExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.mailing.MailingExceptionResolver">
+	<bean id="mailingExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.mailing.MailingExceptionResolver">
 		<property name="mappedEndpoints">
 			<list>
 				<ref bean="sendMailingEndpoint"/>
@@ -33,7 +33,7 @@
 		</property>
 	</bean>
 
-    <bean id="mailinglistExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.mailinglist.MailinglistExceptionResolver" >
+    <bean id="mailinglistExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.mailinglist.MailinglistExceptionResolver" >
 		<property name="mappedEndpoints">
 			<list>
 				<ref bean="deleteMailinglistEndpoint"/>
@@ -41,7 +41,7 @@
 		</property>
 	</bean>
 
-	<bean id="bindingExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.binding.BindingExceptionResolver">
+	<bean id="bindingExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.binding.BindingExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
 				<ref bean="setSubscriberBindingWithActionEndpoint" />
@@ -71,7 +71,7 @@
 		</property>
 	</bean>
 
-    <bean id="recipientsExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.recipient.RecipientsExceptionResolver">
+    <bean id="recipientsExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.recipient.RecipientsExceptionResolver">
 		<property name="mappedEndpoints">
 			<list>
 				<ref bean="listSubscribersEndpoint"/>

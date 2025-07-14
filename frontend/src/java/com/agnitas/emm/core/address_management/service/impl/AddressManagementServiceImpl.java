@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,22 +22,21 @@ import com.agnitas.emm.core.address_management.dto.UserAddressManagementDTO;
 import com.agnitas.emm.core.address_management.enums.AddressManagementCategory;
 import com.agnitas.emm.core.address_management.service.AddressManagementService;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.bean.ReportEntry;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.Recipient;
-import org.agnitas.emm.company.service.CompanyService;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.Recipient;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.service.ImportProfileService;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,9 +50,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Service("AddressManagementService")
 public class AddressManagementServiceImpl implements AddressManagementService {
@@ -69,13 +68,13 @@ public class AddressManagementServiceImpl implements AddressManagementService {
     );
 
     private final RecipientService recipientService;
-    private final ComBirtReportService birtReportService;
+    private final BirtReportService birtReportService;
     private final CompanyService companyService;
     private final AdminService adminService;
     private final ImportProfileService importProfileService;
     protected final ExtendedConversionService conversionService;
 
-    public AddressManagementServiceImpl(RecipientService recipientService, ComBirtReportService birtReportService, CompanyService companyService, AdminService adminService,
+    public AddressManagementServiceImpl(RecipientService recipientService, BirtReportService birtReportService, CompanyService companyService, AdminService adminService,
                                         ImportProfileService importProfileService, ExtendedConversionService conversionService) {
         this.recipientService = recipientService;
         this.birtReportService = birtReportService;
@@ -185,7 +184,7 @@ public class AddressManagementServiceImpl implements AddressManagementService {
             entries.addAll(findEntriesByCategory(category, emailPart, companyId)
                     .stream()
                     .map(e -> new AddressManagementEntry(e.getId(), e.getCompanyId(), category))
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         return entries;
@@ -261,10 +260,10 @@ public class AddressManagementServiceImpl implements AddressManagementService {
         List<AddressManagementEntry> successfulHandledEntries = results.entrySet().stream()
                 .filter(e -> e.getValue().isSuccess())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
         if (successfulHandledEntries.isEmpty()) {
-            return ServiceResult.error(results.values().stream().flatMap(r -> r.getErrorMessages().stream()).collect(Collectors.toList()));
+            return ServiceResult.error(results.values().stream().flatMap(r -> r.getErrorMessages().stream()).toList());
         }
 
         if (successfulHandledEntries.size() != entries.size()) {
@@ -285,17 +284,11 @@ public class AddressManagementServiceImpl implements AddressManagementService {
 
         return entries.stream()
                 .filter(e -> e.getCompanyId() == companyId)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private SimpleServiceResult replaceTechnicalContactEmail(String oldEmail, String newEmail, int id) {
-        Company company = null;
-        try {
-            company = companyService.getCompany(id);
-        } catch (UnknownCompanyIdException e) {
-            logger.error("Company with ID: {} not found!", id);
-        }
-
+        Company company = companyService.getCompany(id);
         if (company == null) {
             return SimpleServiceResult.simpleError(Message.of(ERROR_MSG));
         }
@@ -322,7 +315,7 @@ public class AddressManagementServiceImpl implements AddressManagementService {
     }
 
     private SimpleServiceResult replaceEmailForBirtReport(String oldEmail, String newEmail, int id, int companyId) {
-        ComBirtReport report = birtReportService.getBirtReport(id, companyId);
+        BirtReport report = birtReportService.getBirtReport(id, companyId);
         if (report == null) {
             return SimpleServiceResult.simpleError(Message.of(ERROR_MSG));
         }
@@ -341,7 +334,7 @@ public class AddressManagementServiceImpl implements AddressManagementService {
         return emails.stream()
                 .map(email -> StringUtils.containsIgnoreCase(email, oldEmail) ? newEmail : email)
                 .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }

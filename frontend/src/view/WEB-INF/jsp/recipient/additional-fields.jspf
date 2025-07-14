@@ -2,8 +2,8 @@
     <c:set target="${titles}" property="gender" value="recipient.Salutation"/>
     <c:set target="${titles}" property="firstname" value="Firstname"/>
     <c:set target="${titles}" property="lastname" value="Lastname"/>
-    <c:set target="${titles}" property="creation_date" value="default.creationDate"/>
-    <c:set target="${titles}" property="timestamp" value="default.changeDate"/>
+    <%-- c:set target="${titles}" property="creation_date" value="default.creationDate"/--%>
+    <%-- c:set target="${titles}" property="timestamp" value="default.changeDate"/--%>
 </emm:instantiate>
 
 <c:forEach var="field" items="${fieldsMap}">

@@ -27,7 +27,7 @@
 }
 
 #grid-background {
-  background-image: linear-gradient( #bbb, transparent 1px), linear-gradient( 90deg, #bbb, transparent 1px);
+  background-image: linear-gradient(var(--workflow-grid-color), transparent 1px), linear-gradient(90deg, var(--workflow-grid-color), transparent 1px);
   position: absolute;
   @include size(100%);
 }

@@ -13,7 +13,7 @@
 
     .ui-slider-handle {
       @include border(50%);
-      background-color: $border-color;
+      background-color: var(--workflow-slider-handle-color);
       border: 3px solid transparent !important;
       top: 0;
       margin-left: -4px;
@@ -27,7 +27,7 @@
   .zoom-btn {
     @include flex-center;
     padding: 1px 3px;
-    color: var(--label-color);
+    color: var(--workflow-zoom-handle-color);
     font-size: 6px;
     background-color: transparent;
     border: none;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,27 +10,6 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComRdirMailingData;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingContentType;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
-import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
-import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
-import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.service.ListMailingFilter;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.MailingSendStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.util.FulltextSearchInvalidQueryException;
-
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
@@ -38,6 +17,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.RdirMailingData;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
+import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
+import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.MailingDto;
+import com.agnitas.emm.core.mailing.dao.MailingDaoOptions;
+import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
+import com.agnitas.emm.core.mailing.service.ListMailingFilter;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingSendStatus;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.MailingStatus;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
+import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
+import com.agnitas.util.FulltextSearchInvalidQueryException;
 
 public interface MailingDao {
 
@@ -104,12 +110,12 @@ public interface MailingDao {
 
     int getCompanyIdForMailingId(int mailingId);
 	
-	ComRdirMailingData getRdirMailingData(int mailingId);
+	RdirMailingData getRdirMailingData(int mailingId);
 	
 	/**
 	 * returns the base mailing for the given one.
 	 */
-	String getFollowUpFor(int mailingID) throws Exception;
+	String getFollowUpFor(int mailingID);
 	
     PaginatedListImpl<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums);
 
@@ -140,6 +146,8 @@ public interface MailingDao {
 
 	List<MailingBase> getPredefinedNormalMailingsForReports(int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId, Set<Integer> adminAltgIds);
 
+	List<MailingDto> getSentAndScheduled(MailingDaoOptions opts, Admin admin);
+
 	List<Map<String, Object>> getSentAndScheduled(Admin admin, Date startDate, Date endDate, int limit);
 
     List<MailingPopoverInfo> getMailingsCalendarInfo(Set<Integer> mailingIds, Admin admin);
@@ -147,6 +155,8 @@ public interface MailingDao {
     List<Map<String, Object>> getSentAndScheduledLight(Admin admin, Date startDate, Date endDate);
 
 	List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate);
+
+    List<MailingDto> getPlannedMailings(MailingDaoOptions opts, Admin admin);
 
 	List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate, int limit);
 
@@ -206,6 +216,9 @@ public interface MailingDao {
 
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);
 
+	List<MailingDto> getUnsentMailings(Admin admin, boolean planned);
+
+    // Todo EMMGUI-953 check usage and remove after
 	List<CalendarUnsentMailing> getNotSentMailings(Admin admin, boolean planned);
 
     boolean usedInCampaignManager(int mailingId);
@@ -241,12 +254,7 @@ public interface MailingDao {
 
     Map<Integer, String> getMailingNames(Collection<Integer> mailingIds, int companyId);
 
-	/**
-	 * Use {@link #getLightweightMailingsForActionOperationGetArchiveList} instead
-	 */
-	@Deprecated
-	List<Map<String, Object>> getMailingsForActionOperationGetArchiveList(int companyID, int campaignID);
-	List<LightweightMailing> getLightweightMailingsForActionOperationGetArchiveList(int companyID, int campaignID);
+	List<MailingArchiveEntry> listMailingArchive(int campaignId, DateRange sendDate, Integer countLimit, int companyId);
 
 	int getAnyMailingIdForCompany(int companyID);
 
@@ -312,13 +320,13 @@ public interface MailingDao {
 
 	Date getMailingSendDate(int companyID, int mailingID);
 
-	List<LightweightMailing> listAllActionBasedMailingsForMailinglist(int companyID, int mailinglistID);
+	List<LightweightMailingWithMailingList> listAllActionBasedMailingsForMailinglists(Set<Integer> mailinglistsIds, int companyID);
 
 	LightweightMailing getLightweightMailing(int companyId, int mailingId);
 
 	boolean tryToLock(int mailingId, int adminId, int companyId, long duration, TimeUnit durationUnit);
 
-	String getEmailSubject(int companyID, int mailingID) throws Exception;
+	String getEmailSubject(int companyID, int mailingID);
 
 	MailingContentType getMailingContentType(int companyId, int mailingId);
 	
@@ -361,7 +369,7 @@ public interface MailingDao {
 	 *
 	 * @param mailingID Id of the mailing in database
 	 * @param companyID Id of the company that created a mailing
-	 * @return an instance of {@link org.agnitas.beans.impl.MailingSendStatusImpl}
+	 * @return an instance of {@link com.agnitas.beans.impl.MailingSendStatusImpl}
 	 */
 	MailingSendStatus getMailingSendStatus(int mailingID, int companyID);
 
@@ -396,8 +404,7 @@ public interface MailingDao {
 	 *
 	 * @return id of saved mailing
 	 */
-	int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant) throws Exception;
-	int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
+	int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent);
 
 	/**
 	 * Marks mailing as deleted
@@ -574,7 +581,7 @@ public interface MailingDao {
 	 *              Id of the company that created a mailing/template
 	 * @return  true - it's template, false - it's mailing
 	 */
-	boolean checkMailingReferencesTemplate(int templateID, int companyID) throws Exception;
+	boolean checkMailingReferencesTemplate(int templateID, int companyID);
 
 	/**
 	 * Checks the existence of mailing in the database
@@ -599,14 +606,6 @@ public interface MailingDao {
 	 * @return  List of MailingBase bean objects
 	 */
 	PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
-
-	/**
-	 * Loads list of templates of certain company
-	 *
-	 * @param admin current user
-	 * @return List of Mailing bean objects
-	 */
-	List<Mailing> getTemplates(Admin admin);
 
 	/**
 	 * Loads list of non-deleted templates of certain company
@@ -668,17 +667,13 @@ public interface MailingDao {
 
 	String getSQLExpression(String targetExpression);
 
-	List<LightweightMailing> getLightweightIntervalMailings(Admin admin);
+	MailingType getMailingType(int mailingID);
 
-	/**
-	 * returns the mailing-Type for the given mailing.
-	 * eg. 3 means a Follow-Up mailing.
-	 */
-	MailingType getMailingType(int mailingID) throws Exception;
-
-	List<MailingBase> getMailingTemplatesWithPreview(MediaTypes mediaType, Admin admin, String sort, String direction);
+	List<MailingBase> getMailingTemplatesWithPreview(MailingTemplateSelectionFilter filter, Admin admin);
 
 	boolean clearPlanDate(int mailingId, int companyId);
 
 	boolean isTemplate(int mailingId, int companyId);
+
+	boolean isMarkedAsDeleted(int mailingId, int companyID);
 }

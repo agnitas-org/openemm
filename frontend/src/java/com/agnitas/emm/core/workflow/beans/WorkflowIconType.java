@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,7 +30,8 @@ public enum WorkflowIconType implements IntEnum {
 	DATE_BASED_MAILING(Constants.DATE_BASED_MAILING_VALUE, Constants.DATE_BASED_MAILING_ID),
 	FOLLOWUP_MAILING(Constants.FOLLOWUP_MAILING_VALUE, Constants.FOLLOWUP_MAILING_ID),
 	IMPORT(Constants.IMPORT_VALUE, Constants.IMPORT_ID),
-	EXPORT(Constants.EXPORT_VALUE, Constants.EXPORT_ID);
+	EXPORT(Constants.EXPORT_VALUE, Constants.EXPORT_ID),
+	SPLIT(Constants.SPLIT_VALUE, Constants.SPLIT_ID);
 
     private final String name;
     private final int id;
@@ -78,6 +79,7 @@ public enum WorkflowIconType implements IntEnum {
 		public static final String FOLLOWUP_MAILING_VALUE = "followup_mailing";
 		public static final String IMPORT_VALUE = "import";
 		public static final String EXPORT_VALUE = "export";
+        public static final String SPLIT_VALUE   = "split";
 
         public static final int START_ID        = 0;
         public static final int STOP_ID         = 1;
@@ -99,6 +101,6 @@ public enum WorkflowIconType implements IntEnum {
 		public static final int EXPORT_ID    = 18;
 		public static final int MAILING_MEDIATYPE_SMS_ID = 19;
 		public static final int MAILING_MEDIATYPE_POST_ID = 20;
+		public static final int SPLIT_ID = 21;
     }
-
 }

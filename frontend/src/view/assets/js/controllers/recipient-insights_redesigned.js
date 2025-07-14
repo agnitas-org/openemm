@@ -11,11 +11,12 @@ AGN.Lib.Controller.new('recipient-insights', function () {
     'SLEEPER': '#E12E59'
   };
 
-  let customerId;
+  let manualPeriodType;
   let reactionInProgressChart;
 
   this.addDomInitializer('recipient-insights', function () {
-    customerId = this.config.customerId;
+    manualPeriodType = this.config.manualPeriodType;
+
     const data = this.config.insightsData;
     $.i18n.load(this.config.translations);
 
@@ -30,59 +31,38 @@ AGN.Lib.Controller.new('recipient-insights', function () {
     showCustomerPerformance(data.customerPerformanceData);
   });
 
-  this.addAction({change: 'selectReactionProgressPeriod'}, function () {
-    const $el = this.el;
-    const $option = $el.find('option:selected');
-    let min, max;
-
-    switch ($el.val()) {
-      case 'YEAR':
-      case 'MONTH':
-        min = $option.data('min');
-        max = $option.data('max');
-        break;
-
-      case 'CUSTOM':
-        const periodDates = getSelectedPeriodDates();
-        min = periodDates.min;
-        max = periodDates.max;
-        break;
-
-      default:
-        console.error(`Unexpected period type: '${$el.val()}'`);
-        return;
+  this.addAction({change: 'update-period-chart'}, function () {
+    if ($('#reactionProgressPeriod').val() === manualPeriodType && !isPeriodDateRangeSelected()) {
+      return;
     }
 
-    updateReactionInProgressChart(min, max);
+    const form = AGN.Lib.Form.get(this.el);
+    form.jqxhr().done(data => {
+      showReactionsInProgressChart(data);
+      updatePageUrl(form);
+    });
   });
 
-  this.addAction({change: 'period-select'}, function () {
-    const periodDates = getSelectedPeriodDates();
-    updateReactionInProgressChart(periodDates.min, periodDates.max);
-  });
+  function updatePageUrl(form) {
+    const data = form.data();
 
-  function updateReactionInProgressChart(min, max) {
-    if (min && max) {
-      $.ajax(AGN.url('/insights/reactionsInProgress.action'), {
-        type: 'GET',
-        data: {
-          customerId: customerId,
-          min: min,
-          max: max
-        }
-      }).done(data => showReactionsInProgressChart(data));
-    }
+    const url = new URL(window.location.href);
+    Object.keys(data).forEach(param => {
+      url.searchParams.set(param, data[param]);
+    });
+
+    window.history.replaceState({}, "", url);
   }
 
-  function getSelectedPeriodDates() {
-    return {
-      min: $('#reactionProgressMinDate').val(),
-      max: $('#reactionProgressMaxDate').val()
-    }
+  function isPeriodDateRangeSelected() {
+    return !!$('#reactionProgressMinDate').val() && !!$('#reactionProgressMaxDate').val();
   }
 
   function showWeekdayReactionRankChart(data) {
     data = asRankChartData(data);
+
+    rotateWeekDaysToMonday(data.values);
+    rotateWeekDaysToMonday(data.percentages);
 
     const maxValue = Math.max(...data.values);
     const $chart = $('#days-reaction-chart');
@@ -90,12 +70,12 @@ AGN.Lib.Controller.new('recipient-insights', function () {
     new Chart($chart[0].getContext('2d'), {
       type: 'bar',
       data: {
-        labels: t('date.weekdaysShort'),
+        labels: rotateWeekDaysToMonday(t('date.weekdaysShort')),
         datasets: [{
           data: data.values,
           backgroundColor: chartData => {
             const isMaxValue = data.values[chartData.dataIndex] === maxValue;
-            return $chart.css(isMaxValue ? '--chart-very-dark-blue-color' : '--chart-blue-color')
+            return $chart.css(isMaxValue ? '--chart-darkest-blue-color' : '--chart-blue-color')
           },
           categoryPercentage: 0.9,
           minBarLength: 2
@@ -141,6 +121,15 @@ AGN.Lib.Controller.new('recipient-insights', function () {
     });
   }
 
+  function rotateWeekDaysToMonday(weekDays) {
+    const reorderedDays = weekDays.slice(1).concat(weekDays[0]);
+    for (let i = 0; i < weekDays.length; i++) {
+      weekDays[i] = reorderedDays[i];
+    }
+
+    return weekDays;
+  }
+
   function showHourReactionRankChart(data) {
     data = asRankChartData(data);
     const maxValue = Math.max(...data.values);
@@ -155,7 +144,7 @@ AGN.Lib.Controller.new('recipient-insights', function () {
           data: data.values,
           backgroundColor: chartData => {
             const isMaxValue = data.values[chartData.dataIndex] === maxValue;
-            return $chart.css(isMaxValue ? '--chart-very-dark-blue-color' : '--chart-blue-color')
+            return $chart.css(isMaxValue ? '--chart-darkest-blue-color' : '--chart-blue-color')
           },
           categoryPercentage: 0.5,
           minBarLength: 2
@@ -212,7 +201,7 @@ AGN.Lib.Controller.new('recipient-insights', function () {
     const $chart = $('#reaction-device-chart');
 
     const colors = [
-      $chart.css('--chart-very-dark-blue-color'),
+      $chart.css('--chart-darkest-blue-color'),
       $chart.css('--chart-dark-blue-color'),
       $chart.css('--chart-blue-color'),
       $chart.css('--chart-light-blue-color'),
@@ -240,9 +229,7 @@ AGN.Lib.Controller.new('recipient-insights', function () {
   }
 
   function showReactionsInProgressChart(data) {
-    if (reactionInProgressChart) {
-      reactionInProgressChart.destroy();
-    }
+    reactionInProgressChart?.destroy();
 
     const $chart = $('#reaction-progress-chart');
     const categories = [];
@@ -284,8 +271,8 @@ AGN.Lib.Controller.new('recipient-insights', function () {
           {
             label: t('statistic.reactions'),
             data: reactions,
-            borderColor: $chart.css('--chart-very-dark-blue-color'),
-            backgroundColor: $chart.css('--chart-very-dark-blue-color'),
+            borderColor: $chart.css('--chart-darkest-blue-color'),
+            backgroundColor: $chart.css('--chart-darkest-blue-color'),
             pointRadius: pointRadius
           }
         ]

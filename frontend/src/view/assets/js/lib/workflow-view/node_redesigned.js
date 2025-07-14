@@ -63,6 +63,14 @@
       return Def.NODE_TYPES_MAILING.includes(this.getType());
     }
 
+    get isSplitNode() {
+      return this.getType() === Def.NODE_TYPE_SPLIT;
+    }
+
+    get isParameterNode() {
+      return this.getType() === Def.NODE_TYPE_PARAMETER;
+    }
+
     static isMailingNode(node) {
       if (!node) {
         return false;
@@ -357,7 +365,7 @@
 
         case 'mailing':
           data.mailingId = 0;
-          data.skipEmptyBlocks = false;
+          data.skipEmptyBlocks = true;
           data.doubleCheck = true;
           break;
 
@@ -395,6 +403,7 @@
         case Def.NODE_TYPE_SHOPPING_CART_ABANDONERS_LARGE:
         case Def.NODE_TYPE_ANNIVERSARY_MAIL:
         case Def.NODE_TYPE_OWN_WORKFLOW:
+        case Def.NODE_TYPE_SPLIT:
           return true;
 
         default:
@@ -408,7 +417,6 @@
 
       node.setId(object.id);
       node.setCoordinates(object.x, object.y);
-      node.setTitle(object.iconTitle);
       node.setComment(object.iconComment);
       node.setFilled(object.filled);
       node.setEditable(object.editable);
@@ -417,6 +425,13 @@
            Def.NODE_TYPE_BIRTHDAY_WITH_COUPON, Def.NODE_TYPE_WELCOME_TRACK, Def.NODE_TYPE_WELCOME_TRACK_WITH_INCENTIVE,
            Def.NODE_TYPE_SHOPPING_CART_ABANDONERS_SMALL, Def.NODE_TYPE_SHOPPING_CART_ABANDONERS_LARGE, Def.NODE_TYPE_ANNIVERSARY_MAIL].includes(object.type)) {
         node.setExpandable(true);
+      }
+      if (node.isMailingNode() && data.mailingId) {
+        $
+          .get(AGN.url(`/mailing/${data.mailingId}/name.action`))
+          .done(name => node.setTitle(name ? name : object.iconTitle));
+      } else {
+        node.setTitle(object.iconTitle);
       }
 
       delete data['id'];

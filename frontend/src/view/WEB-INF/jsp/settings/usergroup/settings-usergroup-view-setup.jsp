@@ -1,5 +1,5 @@
 <%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>

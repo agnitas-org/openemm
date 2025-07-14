@@ -56,16 +56,60 @@ Use `.input-groups` in order to create `.input-group` stack.
         <span class="input-group-text input-group-text--disabled fw-semibold">Disabled and bold text</span>
         <input type="text" class="form-control fw-semibold" value="text" disabled="">
     </div>
+    <div class="input-group">
+        <span class="input-group-text active fw-semibold">Active</span>
+        <input type="text" class="form-control" value="text">
+    </div>
 </div>
 ```
 
 */
 
+.input-group {
+  --input-group-text-bg: #{$gray-100};
+  --input-group-text-color: #{$black};
+  --input-group-active-bg: #{$blue-var};
+  --input-group-active-color: #{$white};
+}
+
+@include color-mode(dark) {
+  .input-group {
+    --input-group-text-color: #{$dark-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .input-group {
+    --input-group-text-bg: #{$con-grey};
+    --input-group-text-color: #{$con-dark-blue};
+    --input-group-active-bg: #{$con-dark-blue};
+    --input-group-active-color: #{$white};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .input-group {
+    --input-group-text-bg: #{$dark-grey};
+    --input-group-text-color: #{$white};
+    --input-group-active-bg: #{$white};
+    --input-group-active-color: #{$con-dark-blue};
+  }
+}
+
 .input-group-text {
   height: $input-height;
+  background-color: var(--input-group-text-bg);
+  color: var(--input-group-text-color);
 
   &.text-truncate {
     display: block !important;
+  }
+
+  &.active {
+    background-color: var(--input-group-active-bg);
+    border-color: var(--input-group-active-bg);
+    color: var(--input-group-active-color) !important;
+    font-weight: $font-weight-semibold;
   }
 }
 
@@ -82,9 +126,10 @@ Use `.input-groups` in order to create `.input-group` stack.
 }
 
 .input-group-text--disabled, .input-group-text.disabled {
-  background: var(--input-disabled-bg-color);
-  color: var(--input-disabled-color);
-  border-color: $border-color;
+  --input-group-text-color: var(--base-disabled-color);
+  --input-group-text-bg: var(--base-disabled-bg);
+
+  border-color: $border-color-var;
   font-weight: $font-weight-normal;
 }
 
@@ -111,6 +156,9 @@ Use `.input-groups` in order to create `.input-group` stack.
 }
 
 .input-group {
+  --input-group-select2-dropdown-bg: var(--bs-gray-200);
+  --input-group-select2-selection-color: #{$dark-grey};
+
   > .btn:first-child {
     font-weight: $font-weight-normal;
     padding: $gap-x-sm $gap-sm - 1;
@@ -120,12 +168,19 @@ Use `.input-groups` in order to create `.input-group` stack.
     &:nth-child(2) {
       flex-grow: 0;
 
-      --select-dropdown-bg-color: var(--bs-gray-200);
-      --select2-selection-color: #{$dark-grey};
-      --input-icon-color: var(--select2-selection-color);
+      --select-dropdown-bg: var(--input-group-select2-dropdown-bg);
+      --select2-selection-color: var(--input-group-select2-selection-color);
+      --select2-icon-color: var(--select2-selection-color);
 
       .select2-selection.form-control.select2-selection--single {
         @include border-end-radius(0);
+      }
+    }
+
+    // in the middle
+    &:not(:nth-child(2)):not(:last-child) {
+      .select2-selection.form-control.select2-selection--single {
+        border-radius: 0;
       }
     }
 
@@ -134,6 +189,19 @@ Use `.input-groups` in order to create `.input-group` stack.
         @include border-start-radius(0);
       }
     }
+  }
+}
+
+@include color-mode(light-contrast) {
+  .input-group {
+    --input-group-select2-dropdown-bg: #{$con-grey};
+    --input-group-select2-selection-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .input-group {
+    --input-group-select2-selection-color: #{$con-dark-blue};
   }
 }
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,18 +15,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.ExportColumnMapping;
-import org.agnitas.beans.ExportPredef;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.beans.ExportColumnMapping;
+import com.agnitas.beans.ExportPredef;
 
 public final class ExportUtils {
-    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, ColumnInfoService columnInfoService) throws Exception {
+    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, ColumnInfoService columnInfoService) {
     	List<ProfileField> profileFields;
     	if (admin != null) {
     		profileFields = columnInfoService.getComColumnInfos(companyId, admin.getAdminID());
@@ -44,14 +43,7 @@ public final class ExportUtils {
                 .collect(Collectors.toList());
     }
 
-    public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export, int companyId, Admin admin, ColumnInfoService columnInfoService) throws Exception {
-        Set<String> customColumns = getCustomColumnMappingsFromExport(export, companyId, admin, columnInfoService)
-                .stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toSet());
-        return export.getExportColumnMappings().stream()
-                .filter(column -> !customColumns.contains(column.getDbColumn())).collect(Collectors.toList());
-    }
-    
-    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) throws Exception {
+    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) {
     	List<RecipientFieldDescription> profileFields = new ArrayList<>();
         for (RecipientFieldDescription field : recipientFieldService.getRecipientFields(companyId)) {
 			ProfileFieldMode permission;
@@ -75,7 +67,7 @@ public final class ExportUtils {
             .collect(Collectors.toList());
     }
 
-    public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) throws Exception {
+    public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export, int companyId, Admin admin, RecipientFieldService recipientFieldService) {
         Set<String> customColumns = getCustomColumnMappingsFromExport(export, companyId, admin, recipientFieldService)
                 .stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toSet());
         return export.getExportColumnMappings().stream()

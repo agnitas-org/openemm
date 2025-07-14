@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -26,24 +26,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.DateUtil;
-import org.agnitas.service.JobDto;
-import org.agnitas.service.JobQueueService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.ZipUtilities;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComServerStatusDao;
+import com.agnitas.dao.ServerStatusDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
@@ -52,10 +36,24 @@ import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
-
 import jakarta.servlet.ServletContext;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.DateUtil;
+import com.agnitas.service.JobDto;
+import com.agnitas.service.JobQueueService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.ZipUtilities;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ServerStatusServiceImpl implements ServerStatusService {
 	
@@ -67,12 +65,12 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
 	
-	private final ComServerStatusDao serverStatusDao;
+	private final ServerStatusDao serverStatusDao;
 	private final ConfigService configService;
 	private final JobQueueService jobQueueService;
 	private final JavaMailService javaMailService;
 
-	public ServerStatusServiceImpl(ComServerStatusDao serverStatusDao, ConfigService configService, JobQueueService jobQueueService, JavaMailService javaMailService) {
+	public ServerStatusServiceImpl(ServerStatusDao serverStatusDao, ConfigService configService, JobQueueService jobQueueService, JavaMailService javaMailService) {
 		this.serverStatusDao = serverStatusDao;
 		this.configService = configService;
 		this.jobQueueService = jobQueueService;
@@ -86,22 +84,12 @@ public class ServerStatusServiceImpl implements ServerStatusService {
     
     @Override
     public String getDbUrl() {
-		try {
-			return serverStatusDao.getDbUrl();
-		} catch (Exception e) {
-			logger.error("Cannot obtain DB url: ", e);
-			return "";
-		}
+		return serverStatusDao.getDbUrl();
 	}
     
     @Override
     public String getDbVersion() {
-		try {
-			return serverStatusDao.getDbVersion();
-		} catch (Exception e) {
-			logger.error("Cannot obtain DB Version: ", e);
-			return "";
-		}
+		return serverStatusDao.getDbVersion();
 	}
 	
 	@Override
@@ -217,9 +205,6 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		// Tomcat Version
 		status.put("tomcat.version", StringUtils.defaultIfEmpty(AgnUtils.getTomcatVersion(), ERROR));
 		
-		// Wkhtml version
-		status.put("wkhtml.version", StringUtils.defaultString(AgnUtils.getWkhtmlVersion(configService), ERROR));
-
 		// Java Version
 		status.put("java.version", StringUtils.defaultIfEmpty(System.getProperty("java.version"), ERROR));
 		if (StringUtils.isNotBlank(System.getProperty("java.vm.name"))) {
@@ -489,7 +474,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	}
 	
 	@Override
-	public File downloadConfigFile() throws IOException, Exception {
+	public File downloadConfigFile() throws Exception {
 		File zippedFile = File.createTempFile(AgnUtils.getTempDir() + "/ConfigTables_", ".zip");
 		try (ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile)) {
 			String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
@@ -549,7 +534,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 			JSONObject m = new JSONObject();
 			m.put("shortname", statusNames[i]);
 			m.put("value", statusValues[i]);
-			allStatus.add(m);
+			allStatus.put(m);
 			m = null;
 		}
 		
@@ -572,8 +557,8 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	}
 
 	@Override
-	public Version getAvailableUpdateVersion() throws Exception {
-		return getAvailableUpdateVersion("https://www.agnitas.de/download/openemm-version/");
+	public Version getAvailableUpdateVersion(Version currentVersion) throws Exception {
+		return getAvailableUpdateVersion(String.format("https://www.agnitas.de/download/openemm-version-%d.%02d/", currentVersion.getMajorVersion(), currentVersion.getMinorVersion()));
 	}
 
 	protected Version getAvailableUpdateVersion(String url) throws Exception {
@@ -581,8 +566,11 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		try (BufferedReader reader = new BufferedReader(new StringReader(versionData))) {
 			String nextLine;
 			while ((nextLine = reader.readLine()) != null) {
-				if (nextLine.startsWith("frontend:")) {
-					String[] frontendLineParts = nextLine.substring(9).trim().split(" ");
+				if (nextLine.startsWith("emm:")) {
+					String[] frontendLineParts = nextLine.substring(4).trim().split(" ");
+					return new Version(frontendLineParts[0].trim());
+				} else if (nextLine.startsWith("openemm:")) {
+					String[] frontendLineParts = nextLine.substring(8).trim().split(" ");
 					return new Version(frontendLineParts[0].trim());
 				}
 			}

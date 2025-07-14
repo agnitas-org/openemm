@@ -19,11 +19,13 @@ These can exist in text elements or standalone and denote the status of a mailin
 */
 
 $default-status-badges-defs: (
-  success:        (background: $stat-or-badge-dark-green,     icon: $fa-var-check),
-  error:          (background: $stat-or-badge-red,            icon: $fa-var-times),
-  warning:        (background: $yellow,                       icon: $fa-var-times),
-  comment:        (background: $stat-light-blue,              icon: $fa-var-comment),
-  push:           (background: $stat-or-badge-violet-darken,  icon: $fa-var-bell),
+  success:    (background: $badge-dark-green-var,  icon: $fa-var-check),
+  error:      (background: $badge-dark-red-var,    icon: $fa-var-times),
+  warning:    (background: $badge-dark-yellow-var, icon: $fa-var-times),
+  comment:    (background: $stat-light-blue,       icon: $fa-var-comment),
+  push:       (background: $stat-violet,           icon: $fa-var-bell),
+  clipboard:  (background: $stat-darkest-blue,     icon: $fa-var-clipboard-list),
+  auto-opt:   (background: $stat-dark-cyan,        icon: $fa-var-project-diagram),
 );
 
 @mixin default-status-badge($state) {

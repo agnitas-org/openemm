@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,15 +16,13 @@ import java.util.Date;
 import java.util.Map.Entry;
 
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
-import org.agnitas.beans.BlackListEntry;
-import org.agnitas.beans.impl.BlackListEntryImpl;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.beans.BlackListEntry;
+import com.agnitas.beans.impl.BlackListEntryImpl;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -51,20 +49,18 @@ public class BlocklistRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "blocklist";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComBlacklistDao blacklistDao;
+	private BlacklistDao blacklistDao;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
-	public void setBlacklistDao(ComBlacklistDao blacklistDao) {
+	public void setBlacklistDao(BlacklistDao blacklistDao) {
 		this.blacklistDao = blacklistDao;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}

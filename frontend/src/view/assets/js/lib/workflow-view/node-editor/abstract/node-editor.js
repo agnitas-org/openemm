@@ -67,6 +67,10 @@
         EditorsHelper.saveCurrentEditorWithUndo();
       }
     }
+
+    alwaysReadonly(node) {
+      return false;
+    }
   }
   
   AGN.Lib.WM.NodeEditor = NodeEditor;

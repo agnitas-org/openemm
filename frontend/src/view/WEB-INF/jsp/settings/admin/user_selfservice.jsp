@@ -12,7 +12,7 @@
 <%--@elvariable id="passwordPolicy" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="availableLayouts" type="java.util.List<com.agnitas.beans.EmmLayoutBase>"--%>
-<%--@elvariable id="availableAdminGroups" type="java.util.List<org.agnitas.beans.AdminGroup>"--%>
+<%--@elvariable id="availableAdminGroups" type="java.util.List<com.agnitas.beans.AdminGroup>"--%>
 <%--@elvariable id="availableTimezones" type="java.lang.String[]"--%>
 
 <c:set var="LOGIN_STATUS_SUCCESS" value="<%=LoginStatus.SUCCESS.getStatusCode()%>" />

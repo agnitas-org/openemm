@@ -1,5 +1,9 @@
 
 #choose-layout-modal {
+  --layout-tile-bg: #{$light-grey};
+  --layout-grid-hover-bg: #{darken($white, 10%)};
+  --layout-tile-hover-bg: #{darken($light-grey, 10%)};
+
   .col {
     position: relative;
     
@@ -12,7 +16,7 @@
       }
       
       div {
-        background-color: $light-grey;
+        background-color: var(--layout-tile-bg);
       }
     }
   }
@@ -20,10 +24,26 @@
   .col:hover {
     cursor: pointer;
     .grid {
-      background-color: darken($white, 10%);
+      background-color: var(--layout-grid-hover-bg);
       div {
-        background-color: darken($light-grey, 10%);
+        background-color: var(--layout-tile-hover-bg);
       }
     }
+  }
+}
+
+@include color-mode(light-contrast) {
+  #choose-layout-modal {
+    --layout-tile-bg: #{$con-dark-blue};
+    --layout-grid-hover-bg: #{$con-dark-blue};
+    --layout-tile-hover-bg: #{$white};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #choose-layout-modal {
+    --layout-tile-bg: #{$white};
+    --layout-grid-hover-bg: #{$white};
+    --layout-tile-hover-bg: #{$con-dark-blue};
   }
 }

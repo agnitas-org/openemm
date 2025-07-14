@@ -1,9 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-
-<%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionsForm"--%>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="agnTitleKey" 			value="Actions" 			  scope="request"/>
 <c:set var="sidemenu_active" 		value="TriggerManagement" 	  scope="request"/>

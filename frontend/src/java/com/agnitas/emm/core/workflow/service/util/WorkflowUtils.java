@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,10 +12,10 @@ package com.agnitas.emm.core.workflow.service.util;
 
 import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_ACTIVE;
 import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_ID;
-import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
+import static com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper.WORKFLOW_FORWARD_PARAMS;
+import static com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper.WORKFLOW_FORWARD_TARGET_ITEM_ID;
+import static com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper.WORKFLOW_ID;
+import static com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -53,12 +53,12 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStartImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowStopImpl;
 
-import org.agnitas.dao.FollowUpType;
-import org.agnitas.target.ConditionalOperator;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.web.forms.WorkflowParameters;
+import com.agnitas.emm.common.FollowUpType;
+import com.agnitas.emm.core.target.beans.ConditionalOperator;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -84,6 +84,17 @@ public class WorkflowUtils {
 
 	public static final int TESTING_MODE_DEADLINE_DURATION = 15;  // minutes
 	public static final Deadline TESTING_MODE_DEADLINE = new Deadline(TimeUnit.MINUTES.toMillis(TESTING_MODE_DEADLINE_DURATION));
+
+	public static final List<WorkflowIconType> MAILING_ICON_TYPES = List.of(
+			WorkflowIconType.ACTION_BASED_MAILING,
+			WorkflowIconType.MAILING,
+			WorkflowIconType.DATE_BASED_MAILING,
+			WorkflowIconType.FOLLOWUP_MAILING,
+			WorkflowIconType.MAILING_MEDIATYPE_POST,
+			WorkflowIconType.MAILING_MEDIATYPE_SMS);
+	public static final List<Integer> MAILING_ICON_TYPE_IDS = MAILING_ICON_TYPES.stream()
+			.map(WorkflowIconType::getId).toList();
+
 
 	public static Map<ConditionalOperator, String> getOperatorTypeSupportMap() {
 		Map<ConditionalOperator, String> map = new HashMap<>();
@@ -209,20 +220,15 @@ public class WorkflowUtils {
 	}
 
 	public static int getMailingId(WorkflowIcon icon) {
-		if (icon instanceof  WorkflowMailingAware) {
-			return ((WorkflowMailingAware) icon).getMailingId();
+		if (icon instanceof WorkflowMailingAware mailingIcon) {
+			return mailingIcon.getMailingId();
 		} else {
 			return 0;
 		}
 	}
 
     public static boolean isMailingIcon(WorkflowIcon icon) {
-        return icon.getType() == WorkflowIconType.ACTION_BASED_MAILING.getId() ||
-                icon.getType() == WorkflowIconType.MAILING.getId() ||
-                icon.getType() == WorkflowIconType.DATE_BASED_MAILING.getId() ||
-                icon.getType() == WorkflowIconType.FOLLOWUP_MAILING.getId() ||
-				icon.getType() == WorkflowIconType.MAILING_MEDIATYPE_POST.getId() ||
-				icon.getType() == WorkflowIconType.MAILING_MEDIATYPE_SMS.getId();
+        return MAILING_ICON_TYPE_IDS.contains(icon.getType());
     }
 
     public static boolean isStartStopIcon(WorkflowIcon icon) {
@@ -301,8 +307,7 @@ public class WorkflowUtils {
 				return FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey();
 
 			// FIXME: Not supported as followup methods.
-			case BOUGHT:
-			case NOT_BOUGHT:
+			case BOUGHT, NOT_BOUGHT:
 			default:
 				return null;
 		}

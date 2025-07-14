@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.components.service.MailingDependencyService;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,18 +33,17 @@ import java.util.stream.Stream;
 public class MailingDependencyServiceImpl implements MailingDependencyService {
 
     private final BounceFilterService bounceFilterService;
-    private final ComWorkflowService workflowService;
+    private final WorkflowService workflowService;
     private final EmmActionService actionService;
 
     @Autowired
-    public MailingDependencyServiceImpl(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, ComWorkflowService workflowService, EmmActionService actionService) {
+    public MailingDependencyServiceImpl(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, WorkflowService workflowService, EmmActionService actionService) {
         this.bounceFilterService = bounceFilterService;
         this.workflowService = workflowService;
         this.actionService = actionService;
     }
 
     @Override
-    // TODO: EMMGUI-714: remove when old design will be removed
     public List<MailingDependentType> detectActiveFilters(String[] selectedFilters, MailingDependentType... types) {
         if (ArrayUtils.isEmpty(selectedFilters)) {
             return Arrays.asList(types);

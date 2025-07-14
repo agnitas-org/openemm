@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,12 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.util.DateUtilities;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,32 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
 public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
-
-	private static final Logger logger = LogManager.getLogger(MailingOpenersTimeBasedDataSet.class);
 
 	public List<TimeBasedClickStatRow> getData(int tempTableID) throws Exception {
         List<TimeBasedClickStatRow> returnList = new ArrayList<>();
-        List<Map<String, Object>> result = selectEmbedded(logger, "SELECT * FROM " + getTempTableName(tempTableID) + " ORDER BY statistic_date, device_class");
+        List<Map<String, Object>> result = selectEmbedded("SELECT * FROM " + getTempTableName(tempTableID) + " ORDER BY statistic_date, device_class");
         for (Map<String, Object> row : result) {
 			TimeBasedClickStatRow readItem = new TimeBasedClickStatRow();
 			
-			readItem.setClicksNet(((Number) row.get("net")).intValue());
-			readItem.setClicksGross(((Number) row.get("gross")).intValue());
-			readItem.setClicksAnonymous(((Number) row.get("anonymous")).intValue());
+			readItem.setClicksNet(toInt(row.get("net")));
+			readItem.setClicksGross(toInt(row.get("gross")));
+			readItem.setClicksAnonymous(toInt(row.get("anonymous")));
 			readItem.setClickTime((Date) row.get("statistic_date"));
-			readItem.setDeviceClass(DeviceClass.fromId(((Number) row.get("device_class")).intValue()));
+			readItem.setDeviceClass(DeviceClass.fromId(toInt(row.get("device_class"))));
 			readItem.setTargetgroup((String) row.get("target_group"));
-			readItem.setColumnIndex(((Number) row.get("target_group_index")).intValue());
+			readItem.setColumnIndex(toInt(row.get("target_group_index")));
 			
 			returnList.add(readItem);
         }
@@ -51,7 +46,7 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 	}
 	
 	@Override
-	public void dropTempTable(int tempTableID) throws Exception {
+	public void dropTempTable(int tempTableID) {
 		// Do not drop this table.
 		// It is dropped automatically on next call of getCachedTempTable, if it is outdated
 	}
@@ -62,7 +57,7 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 	
 	private int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger,
+		executeEmbedded(
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
 				+ "net INTEGER,"
 				+ " gross INTEGER,"
@@ -79,12 +74,12 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 	public int prepareData(Integer mailingID, Integer companyID, String selectedTargets, String startDateString, String endDateString, Boolean hourly, String recipientType) throws Exception {
 		try {
 			String parameterString = mailingID + "," + companyID + ",[" + selectedTargets + "]," + startDateString + "," + endDateString + "," + hourly + "," + recipientType;
-			int tempTableID = getCachedTempTable(logger, getClass().getSimpleName(), parameterString);
+			int tempTableID = getCachedTempTable(getClass().getSimpleName(), parameterString);
 			if (tempTableID > 0) {
 				return tempTableID;
 			}
 			
-			createBlockEntryInTempTableCache(logger, getClass().getSimpleName(), parameterString);
+			createBlockEntryInTempTableCache(getClass().getSimpleName(), parameterString);
 			
 			tempTableID = createTempTable();
 			
@@ -158,9 +153,9 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 						+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
 						+ recipientTypeSqlPart;
 						    
-						Map<String, Object> row = selectSingleRow(logger, sql, mailingID, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
-						int netValue = ((Number) row.get("net")).intValue();
-						int grossValue = ((Number) row.get("gross")).intValue();
+						Map<String, Object> row = selectSingleRow(sql, mailingID, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
+						int netValue = toInt(row.get("net"));
+						int grossValue = toInt(row.get("gross"));
 
 						String sqlAnonymous = "SELECT"
 							+ " COUNT(*) AS value"
@@ -185,10 +180,10 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 						+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
 						+ recipientTypeSqlPart;
 						
-						Map<String, Object> rowAnonymous = selectSingleRow(logger, sqlAnonymous, mailingID, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
-						int anonymousValue = ((Number) rowAnonymous.get("value")).intValue();
+						Map<String, Object> rowAnonymous = selectSingleRow(sqlAnonymous, mailingID, currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate, deviceClass.getId(), currentStartDate, currentEndDate);
+						int anonymousValue = toInt(rowAnonymous.get("value"));
 						
-						updateEmbedded(logger, "INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						updateEmbedded("INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
 							netValue,
 							grossValue + anonymousValue,
 							anonymousValue,
@@ -216,9 +211,9 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 					+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
 					+ recipientTypeSqlPart;
 					    
-					Map<String, Object> row = selectSingleRow(logger, sql, mailingID, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
-					int netValue = ((Number) row.get("net")).intValue();
-					int grossValue = ((Number) row.get("gross")).intValue();
+					Map<String, Object> row = selectSingleRow(sql, mailingID, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
+					int netValue = toInt(row.get("net"));
+					int grossValue = toInt(row.get("gross"));
 
 					String sqlAnonymous = "SELECT"
 						+ " COUNT(*) AS value"
@@ -236,10 +231,10 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 					+ (StringUtils.isEmpty(targetGroupSql) ? "" : " AND " + targetGroupSql)
 					+ recipientTypeSqlPart;
 					
-					Map<String, Object> rowAnonymous = selectSingleRow(logger, sqlAnonymous, mailingID, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
-					int anonymousValue = ((Number) rowAnonymous.get("value")).intValue();
+					Map<String, Object> rowAnonymous = selectSingleRow(sqlAnonymous, mailingID, currentStartDate, currentEndDate, currentStartDate, currentEndDate);
+					int anonymousValue = toInt(rowAnonymous.get("value"));
 					
-					updateEmbedded(logger, "INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
+					updateEmbedded("INSERT INTO " + getTempTableName(tempTableID) + " (net, gross, anonymous, statistic_date, device_class, target_group, target_group_index) VALUES (?, ?, ?, ?, ?, ?, ?)",
 						netValue,
 						grossValue + anonymousValue,
 						anonymousValue,
@@ -252,7 +247,7 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 				}
 			}
 	        
-	        storeTempTableInCache(logger, getClass().getSimpleName(), parameterString, tempTableID, getTempTableName(tempTableID));
+	        storeTempTableInCache(getClass().getSimpleName(), parameterString, tempTableID, getTempTableName(tempTableID));
 	        
 	        return tempTableID;
 		} catch (Exception e) {

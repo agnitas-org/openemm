@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,6 @@
 
 package com.agnitas.web;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -21,8 +20,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +36,7 @@ import com.agnitas.dao.LayoutDao;
 public class LayoutServlet extends HttpServlet {
 	private static final long serialVersionUID = -6593446000401010425L;
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LayoutServlet.class);
+	private static final Logger logger = LogManager.getLogger(LayoutServlet.class);
 
 	protected LayoutDao layoutDao;
 	
@@ -53,7 +51,7 @@ public class LayoutServlet extends HttpServlet {
 	}
 
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         try {
             if (layoutData == null) {
             	layoutData = getLayoutDao().getLayoutData();

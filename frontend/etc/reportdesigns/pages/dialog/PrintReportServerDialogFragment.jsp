@@ -8,7 +8,7 @@
 				 org.eclipse.birt.report.utility.DataUtil,
 				 org.eclipse.birt.report.utility.PrintUtility,
 				 org.eclipse.birt.report.utility.ParameterAccessor"%>
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -47,11 +47,11 @@
 
             if ( bean.getStatus() == Printer.STATUS_ACCEPTING_JOBS )
             {
-                status = ComBirtResources.getMessage( "birt.viewer.dialog.printserver.status.acceptingjobs", locale ); // TODO: localized key
+                status = EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.status.acceptingjobs", locale ); // TODO: localized key
             }
             else
             {
-                status = ComBirtResources.getMessage( "birt.viewer.dialog.printserver.status.notacceptingjobs", locale ); // TODO: localized key
+                status = EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.status.notacceptingjobs", locale ); // TODO: localized key
             }
             status = DataUtil.trimString( status );
 
@@ -196,7 +196,7 @@
     <TR>
         <TD>
             <INPUT TYPE="checkbox" ID="print_onserver" <%if( !enable ) { %>DISABLED="true"<%}%>/>
-            <%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.onserver", locale )%>
+            <%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.onserver", locale )%>
         </TD>
     </TR>
     <TR HEIGHT="5px"><TD></TD></TR>
@@ -204,21 +204,21 @@
         <TD>
             <TABLE WIDTH="100%" ID="printer_general">
                 <TR>
-                    <TD WIDTH="80px"><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.printer", locale )%></TD>
+                    <TD WIDTH="80px"><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.printer", locale )%></TD>
                     <TD>
                         <SELECT ID="printer" CLASS="birtviewer_printreportserver_dialog_select"></SELECT>
                     </TD>
                 </TR>
                 <TR>
-                    <TD><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.status", locale )%></TD>
+                    <TD><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.status", locale )%></TD>
                     <TD><LABEL ID="printer_status"></LABEL></TD>
                 </TR>
                 <TR>
-                    <TD><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.model", locale )%></TD>
+                    <TD><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.model", locale )%></TD>
                     <TD><LABEL ID="printer_model"></LABEL></TD>
                 </TR>
                 <TR>
-                    <TD><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.description", locale )%></TD>
+                    <TD><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.description", locale )%></TD>
                     <TD><LABEL ID="printer_description"></LABEL></TD>
                 </TR>
             </TABLE>
@@ -226,42 +226,42 @@
     </TR>
     <TR HEIGHT="5px"><TD><HR/></TD></TR>
     <TR>
-        <TD><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings", locale )%></TD>
+        <TD><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings", locale )%></TD>
     </TR>
     <TR>
         <TD>
             <TABLE WIDTH="100%" ID="printer_config">
                 <TR>
                     <TD WIDTH="100px">
-                        <%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.copies", locale )%>
+                        <%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.copies", locale )%>
                     </TD>
                     <TD>
                         <INPUT TYPE="text" CLASS="birtviewer_printreportserver_dialog_input_short" ID="printer_copies"/>
-                        &nbsp;&nbsp;<%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.collate", locale )%>&nbsp;&nbsp;<INPUT TYPE="checkbox" ID="printer_collate"/>
+                        &nbsp;&nbsp;<%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.collate", locale )%>&nbsp;&nbsp;<INPUT TYPE="checkbox" ID="printer_collate"/>
                     </TD>
                 </TR>
                 <TR>
                     <TD>
-                        <%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex", locale )%>
+                        <%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex", locale )%>
                     </TD>
                     <TD>
-                        <INPUT TYPE="radio" ID="printer_duplexSimplex" NAME="printerDuplex"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.simplex", locale )%>
-                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_duplexHorz" NAME="printerDuplex"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.horizontal", locale )%>
-                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_duplexVert" NAME="printerDuplex"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.vertical", locale )%>
-                    </TD>
-                </TR>
-                <TR>
-                    <TD>
-                        <%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode", locale )%>
-                    </TD>
-                    <TD>
-                        <INPUT TYPE="radio" ID="printer_modeBW" NAME="printerMode"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode.bw", locale )%>
-                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_modeColor" NAME="printerMode"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode.color", locale )%>
+                        <INPUT TYPE="radio" ID="printer_duplexSimplex" NAME="printerDuplex"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.simplex", locale )%>
+                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_duplexHorz" NAME="printerDuplex"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.horizontal", locale )%>
+                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_duplexVert" NAME="printerDuplex"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.duplex.vertical", locale )%>
                     </TD>
                 </TR>
                 <TR>
                     <TD>
-                        <%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.pagesize", locale )%>
+                        <%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode", locale )%>
+                    </TD>
+                    <TD>
+                        <INPUT TYPE="radio" ID="printer_modeBW" NAME="printerMode"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode.bw", locale )%>
+                        &nbsp;&nbsp;<INPUT TYPE="radio" ID="printer_modeColor" NAME="printerMode"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.mode.color", locale )%>
+                    </TD>
+                </TR>
+                <TR>
+                    <TD>
+                        <%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.pagesize", locale )%>
                     </TD>
                     <TD>
                         <SELECT ID="printer_mediasize" CLASS="birtviewer_printreportserver_dialog_select"></SELECT>
@@ -276,15 +276,15 @@
             <DIV ID="printServerPageSetting">
                 <TABLE>
                     <TR>
-                        <TD><%=ComBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.print", locale )%></TD>
+                        <TD><%=EmmBirtResources.getMessage( "birt.viewer.dialog.printserver.settings.print", locale )%></TD>
                         <TD STYLE="padding-left:5px">
-                            <INPUT TYPE="radio" ID="printServerPageAll" NAME="printServerPages" CHECKED/><%=ComBirtResources.getMessage( "birt.viewer.dialog.page.all", locale )%>
+                            <INPUT TYPE="radio" ID="printServerPageAll" NAME="printServerPages" CHECKED/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.page.all", locale )%>
                         </TD>
                         <TD STYLE="padding-left:5px">
-                            <INPUT TYPE="radio" ID="printServerPageCurrent" NAME="printServerPages"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.page.current", locale )%>
+                            <INPUT TYPE="radio" ID="printServerPageCurrent" NAME="printServerPages"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.page.current", locale )%>
                         </TD>
                         <TD STYLE="padding-left:5px">
-                            <INPUT TYPE="radio" ID="printServerPageRange" NAME="printServerPages"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.page.range", locale )%>
+                            <INPUT TYPE="radio" ID="printServerPageRange" NAME="printServerPages"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.page.range", locale )%>
                             <INPUT TYPE="text" CLASS="birtviewer_printreportserver_dialog_input" ID="printServerPageRange_input"/>
                         </TD>
                     </TR>
@@ -293,7 +293,7 @@
         </TD>
     </TR>
     <TR>
-        <TD>&nbsp;&nbsp;<%=ComBirtResources.getMessage( "birt.viewer.dialog.page.range.description", locale )%></TD>
+        <TD>&nbsp;&nbsp;<%=EmmBirtResources.getMessage( "birt.viewer.dialog.page.range.description", locale )%></TD>
     </TR>
     <TR HEIGHT="5px"><TD><HR/></TD></TR>
     <TR>
@@ -302,13 +302,13 @@
                 <TABLE>
                     <TR>
                         <TD>
-                            <INPUT TYPE="radio" ID="printServerFitToAuto" NAME="printServerFit" CHECKED/><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoauto", locale )%>
+                            <INPUT TYPE="radio" ID="printServerFitToAuto" NAME="printServerFit" CHECKED/><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoauto", locale )%>
                         </TD>
                         <TD>
-                            <INPUT TYPE="radio" ID="printServerFitToActual" NAME="printServerFit"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.export.pdf.fittoactual", locale )%>
+                            <INPUT TYPE="radio" ID="printServerFitToActual" NAME="printServerFit"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.export.pdf.fittoactual", locale )%>
                         </TD>
                         <TD STYLE="padding-left:5px">
-                            <INPUT TYPE="radio" ID="printServerFitToWhole" NAME="printServerFit"/><%=ComBirtResources.getMessage( "birt.viewer.dialog.export.pdf.fittowhole", locale )%>
+                            <INPUT TYPE="radio" ID="printServerFitToWhole" NAME="printServerFit"/><%=EmmBirtResources.getMessage( "birt.viewer.dialog.export.pdf.fittowhole", locale )%>
                         </TD>
                     <TR>
                 </TABLE>

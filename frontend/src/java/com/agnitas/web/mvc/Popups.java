@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,10 +10,11 @@
 
 package com.agnitas.web.mvc;
 
-import java.io.Serializable;
-
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
+
+import java.io.Serializable;
+import java.util.Locale;
 
 public interface Popups extends Serializable {
     /**
@@ -103,16 +104,7 @@ public interface Popups extends Serializable {
 
     Popups addPopups(ServiceResult<?> serviceResult);
 
-    /**
-     * Add a new form field error popup.
-     *
-     * @param field a field name.
-     * @param popup a popup content representation.
-     * @return self.
-     * @deprecated Use fieldError instead. Recheck field error on ui after replacement
-     */
-    @Deprecated(forRemoval = true)
-    Popups field(String field, Message popup);
+    Popups fieldError(String field, Message popup);
 
     /**
      * Add a new translatable form field error popup.
@@ -121,13 +113,7 @@ public interface Popups extends Serializable {
      * @param code a key of the translatable message.
      * @param arguments an arguments for the translatable message.
      * @return self.
-     * @deprecated Use fieldError instead. Recheck field error on ui after replacement
      */
-    @Deprecated(forRemoval = true)
-    Popups field(String field, String code, Object... arguments);
-
-    Popups fieldError(String field, Message popup);
-
     Popups fieldError(String field, String code, Object... arguments);
 
     /**
@@ -137,7 +123,7 @@ public interface Popups extends Serializable {
      * @param text an exact message.
      * @return self.
      */
-    Popups exactField(String field, String text);
+    Popups exactFieldError(String field, String text);
 
     /**
      * Get a count of added popups.
@@ -175,4 +161,6 @@ public interface Popups extends Serializable {
      * Clear all the added popups.
      */
     void clear();
+
+    String getFullErrorsText(Locale locale);
 }

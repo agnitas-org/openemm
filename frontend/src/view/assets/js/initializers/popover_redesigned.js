@@ -52,14 +52,14 @@ If you want to use some mustache template as content for popover you can do this
 ```
 */
 
-AGN.Lib.CoreInitializer.new('popover', function($scope = $(document)) {
+AGN.Lib.CoreInitializer.new('popover', ['table-row-actions'], function ($scope = $(document)) {
 
   const Popover = AGN.Lib.Popover;
   const ATTR_NAME = 'data-popover';
 
   Popover.validate();
 
-  $scope.all(`[${ATTR_NAME}]`).each(function() {
+  $scope.all(`[${ATTR_NAME}]`).each(function () {
     const $e = $(this);
     const options = $.extend(
       {content: $.trim($e.attr(ATTR_NAME))},
@@ -67,12 +67,49 @@ AGN.Lib.CoreInitializer.new('popover', function($scope = $(document)) {
     );
 
     if (options.templateName) {
-      options.content = AGN.Lib.Template.text(options.templateName);
+      if (options.html) {
+        initContentFunction($e, options);
+      } else {
+        options.content = AGN.Lib.Template.text(options.templateName);
+      }
     }
 
     if (options.content) {
-      Popover.getOrCreate($e, options);
+      const popover = Popover.getOrCreate($e, options);
+
+      if (options.disabled) {
+        popover.disable();
+      }
     }
   });
+
+  function initContentFunction($e, options) {
+    let content = null;
+
+    options.content = () => {
+      if (content) {
+        return content;
+      }
+
+      const $template = AGN.Lib.Template.dom(options.templateName);
+
+      AGN.Lib.Helpers.imagesLoaded($template.all('img'))
+        .done(loadedImages => {
+          content = $template;
+
+          if (loadedImages.length) {
+            const popover = Popover.get($e);
+            if (popover) {
+              popover.setContent();
+              if ($e.is(':hover')) {
+                $e.popover('show');
+              }
+            }
+          }
+        });
+
+      return content;
+    };
+  }
 
 });

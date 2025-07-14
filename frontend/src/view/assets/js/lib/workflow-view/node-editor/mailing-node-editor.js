@@ -1,4 +1,5 @@
-(function () {
+(() => {
+
   const Def = AGN.Lib.WM.Definitions;
   const EditorsHelper = AGN.Lib.WM.EditorsHelper;
 
@@ -30,7 +31,14 @@
     }
 
     createNewMailing() {
-      this.mailingEditorBase.createNewMailing();
+      this.mailingEditorBase.createNewMailing(((mailingId, mailingName) => {
+        this.mailingEditorBase.node.setFilled(true);
+        const mailingSelect = this.mailingEditorBase.mailingSelect();
+
+        mailingSelect.addOption(mailingId, mailingName);
+        mailingSelect.selectOption(mailingId);
+        this.mailingEditorBase.setSelectMailingOptions(mailingId);
+      }));
     }
 
     editMailing() {

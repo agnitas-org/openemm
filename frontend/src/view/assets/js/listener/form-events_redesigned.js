@@ -244,6 +244,7 @@ If the trigger for the directives cannot be placed inside the form, e.g. in case
       this.el.trigger(event);
 
       if (event.isDefaultPrevented()) {
+        this.event.preventDefault();
         return;
       }
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,21 @@
 
 package com.agnitas.emm.core.components.web;
 
+import static com.agnitas.emm.core.Permission.MAILING_CONTENT_CHANGE_ALWAYS;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
@@ -18,30 +33,30 @@ import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.exception.AttachmentDownloadException;
 import com.agnitas.emm.core.components.form.UpdateMailingAttachmentsForm;
 import com.agnitas.emm.core.components.form.UploadMailingAttachmentForm;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.beans.FileResponseBody;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.SimpleActionForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,22 +73,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.agnitas.emm.core.Permission.MAILING_CONTENT_CHANGE_ALWAYS;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 
 @Controller
 @RequestMapping("/mailing")
@@ -82,10 +81,10 @@ public class MailingAttachmentController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(MailingAttachmentController.class);
 
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final MailingService mailingService;
-    private final ComMailingBaseService mailingBaseService;
-    private final ComMailingComponentsService mailingComponentsService;
+    private final MailingBaseService mailingBaseService;
+    private final MailingComponentsService mailingComponentsService;
     private final MaildropService maildropService;
     private final MailingPropertiesRules mailingPropertiesRules;
     private final GridServiceWrapper gridServiceWrapper;
@@ -94,10 +93,10 @@ public class MailingAttachmentController implements XssCheckAware {
     private final MailinglistApprovalService mailinglistApprovalService;
     private final WebStorage webStorage;
 
-    public MailingAttachmentController(ComTargetService targetService,
+    public MailingAttachmentController(TargetService targetService,
                                        MailingService mailingService,
-                                       ComMailingBaseService mailingBaseService,
-                                       ComMailingComponentsService mailingComponentsService,
+                                       MailingBaseService mailingBaseService,
+                                       MailingComponentsService mailingComponentsService,
                                        MaildropService maildropService,
                                        MailingPropertiesRules mailingPropertiesRules,
                                        GridServiceWrapper gridServiceWrapper,
@@ -128,7 +127,7 @@ public class MailingAttachmentController implements XssCheckAware {
     public String list(Admin admin, @PathVariable int mailingId,
                        @ModelAttribute("form") UpdateMailingAttachmentsForm form,
                        @ModelAttribute UploadMailingAttachmentForm uploadMailingAttachmentForm,
-                       @RequestParam(required = false) boolean restoreSort,
+                       @RequestParam(required = false) Boolean restoreSort,
                        Model model) {
         int companyId = admin.getCompanyID();
 
@@ -166,22 +165,17 @@ public class MailingAttachmentController implements XssCheckAware {
             throw new UnsupportedOperationException();
         }
 
-        try {
-            if (mailingEditable(admin, mailingId)) {
-                UploadMailingAttachmentDto attachment = conversionService.convert(form, UploadMailingAttachmentDto.class);
-                SimpleServiceResult result = mailingComponentsService.uploadMailingAttachment(admin, mailingId, attachment);
+        if (mailingEditable(admin, mailingId)) {
+            UploadMailingAttachmentDto attachment = conversionService.convert(form, UploadMailingAttachmentDto.class);
+            SimpleServiceResult result = mailingComponentsService.uploadMailingAttachment(admin, mailingId, attachment);
 
-                popups.addPopups(result);
+            popups.addPopups(result);
 
-                if (result.isSuccess()) {
-                    return redirectToList(mailingId);
-                }
-            } else {
-                popups.alert("status_changed");
+            if (result.isSuccess()) {
+                return redirectToList(mailingId);
             }
-        } catch (Exception e) {
-            logger.error("Uploading attachment failed: ", e);
-            popups.alert(ERROR_MSG);
+        } else {
+            popups.alert("status_changed");
         }
 
         return MESSAGES_VIEW;
@@ -201,25 +195,20 @@ public class MailingAttachmentController implements XssCheckAware {
 
     @PostMapping("/{mailingId:\\d+}/attachment/save.action")
     public String save(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") UpdateMailingAttachmentsForm form, Popups popups) {
-        try {
-            if (isSettingsReadonly(admin, mailingId)) {
-                throw new UnsupportedOperationException();
+        if (isSettingsReadonly(admin, mailingId)) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (mailingEditable(admin, mailingId)) {
+            SimpleServiceResult result = mailingComponentsService.updateMailingAttachments(admin, mailingId, convertUpdateMailingsData(form.getAttachments()));
+
+            popups.addPopups(result);
+
+            if (result.isSuccess()) {
+                return redirectToList(mailingId);
             }
-
-            if (mailingEditable(admin, mailingId)) {
-                SimpleServiceResult result = mailingComponentsService.updateMailingAttachments(admin, mailingId, convertUpdateMailingsData(form.getAttachments()));
-
-                popups.addPopups(result);
-
-                if (result.isSuccess()) {
-                    return redirectToList(mailingId);
-                }
-            } else {
-                popups.alert("status_changed");
-            }
-        } catch (Exception e) {
-            logger.error("Uploading attachment failed: ", e);
-            popups.alert(ERROR_MSG);
+        } else {
+            popups.alert("status_changed");
         }
 
         return MESSAGES_VIEW;
@@ -297,7 +286,7 @@ public class MailingAttachmentController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{mailingId:\\d+}/attachment/bulk/download.action")
-    public ResponseEntity<StreamingResponseBody> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Popups popups) {
+    public ResponseEntity<DeleteFileAfterSuccessReadResource> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Popups popups) {
         File zip = mailingComponentsService.getZipToDownload(bulkIds, mailingId, admin);
         writeUserActivityLog(admin, "download attachments", String.format("downloaded %d attachment(s) as ZIP archive", bulkIds.size()));
 
@@ -306,7 +295,7 @@ public class MailingAttachmentController implements XssCheckAware {
                 .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", downloadFileName))
                 .contentLength(zip.length())
                 .contentType(MediaType.parseMediaType(MediaType.APPLICATION_OCTET_STREAM_VALUE))
-                .body(new FileResponseBody(zip, true));
+                .body(new DeleteFileAfterSuccessReadResource(zip));
     }
 
     private void validateSelectedIds(Set<Integer> ids) {

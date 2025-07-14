@@ -1,3 +1,4 @@
+$assets-path: 'assets/';
 
 @use "../../WEB-INF/node_modules/ag-grid-community/styles" as ag;
 
@@ -12,5 +13,5 @@
 @import "boot/_.scss";
 
 @import "base/_.scss";
-@import "layout/_.scss";
 @import "modules/_.scss";
+@import "layout/_.scss";

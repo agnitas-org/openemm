@@ -10,7 +10,12 @@
 <%--@elvariable id="isMailingEditable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 
-<c:set var="isMailingEditable" value="${isMailingEditable and isMailingExclusiveLockingAcquired}" scope="request"/>
+<c:set var="isNewUx" value="false"/>
+<emm:ShowByPermission token="ux.updates">
+    <c:set var="isNewUx" value="true"/>
+</emm:ShowByPermission>
+
+<c:set var="isMailingEditable" value="${isMailingEditable}" scope="request"/>
 <c:set var="mailingId" value="${form.mailingID}"/>
 
 <c:set var="agnTitleKey"         value="${form.isTemplate ? 'Template' : 'Mailing'}"           scope="request" />

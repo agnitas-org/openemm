@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.core.preview.service;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.form.PreviewForm;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
+import com.agnitas.preview.Page;
 
 import java.util.List;
 
@@ -36,13 +36,13 @@ public interface MailingWebPreviewService {
 
     List<Integer> getAvailablePreviewFormats(Mailing mailing);
 
-    String getPreview(PreviewForm previewForm, int companyId, Admin admin) throws Exception;
+    PreviewResult getPreview(PreviewSettings settings, int companyId, Admin admin) throws Exception;
 
+    @Deprecated
     Page generateBackEndPreview(PreviewForm previewForm);
+
+    Page generateBackEndPreview(PreviewSettings settings);
 
     boolean isPostMailing(Mailing mailing);
 
-    String getMediaQuery(Preview.Size size);
-
-    String getPreviewWidth(Preview.Size size);
 }

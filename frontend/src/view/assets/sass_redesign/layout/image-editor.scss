@@ -1,8 +1,12 @@
 
 #image-editor-modal {
+  .modal-dialog {
+    height: auto;
+  }
 
   .modal-content {
     min-width: 80vw;
+    max-height: unset;
   }
 
   .modal-body {
@@ -17,23 +21,22 @@
 }
 
 .jcrop-handle {
-  background-color: $primary;
+  background-color: var(--resize-handle-bg);
   border: none;
   @include size($gap-sm);
   opacity: 1 !important;
 }
 
 /* Selection Border */
-.jcrop-vline,
-.jcrop-hline {
+.jcrop-vline, .jcrop-hline {
   background: none;
-}
-.jcrop-vline {
-  border-left: 2px dashed $primary;
   opacity: 1 !important;
 }
 
+.jcrop-vline {
+  border-left: 2px dashed var(--resize-handle-bg);
+}
+
 .jcrop-hline {
-  border-top: 2px dashed $primary;
-  opacity: 1 !important;
+  border-top: 2px dashed var(--resize-handle-bg);
 }

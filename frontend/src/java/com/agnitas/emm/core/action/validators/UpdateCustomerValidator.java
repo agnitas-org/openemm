@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,18 +18,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbUtilities;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTrackpointDef;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTrackpointDao;
+import com.agnitas.beans.TrackpointDef;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.TrackpointDao;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.messages.I18nString;
@@ -39,10 +39,10 @@ import com.agnitas.service.SimpleServiceResult;
 @Component
 public class UpdateCustomerValidator implements ActionOperationValidator {
 
-    private ComRecipientDao recipientDao;
-    private ComTrackpointDao trackpointDao;
+    private RecipientDao recipientDao;
+    private TrackpointDao trackpointDao;
 
-    public UpdateCustomerValidator(ComRecipientDao recipientDao, @Autowired(required = false) ComTrackpointDao trackpointDao) {
+    public UpdateCustomerValidator(RecipientDao recipientDao, @Autowired(required = false) TrackpointDao trackpointDao) {
         this.recipientDao = recipientDao;
         this.trackpointDao = trackpointDao;
     }
@@ -55,24 +55,17 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
     @Override
     public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) throws Exception {
         ActionOperationUpdateCustomerParameters operation = (ActionOperationUpdateCustomerParameters) target;
-        DbColumnType dataType;
         List<Message> errors = new ArrayList<>();
-        boolean valid = true;
+        boolean valid;
 
-        try {
-            dataType = recipientDao.getColumnDataType(admin.getCompanyID(), operation.getColumnName());
-        } catch (Exception e) {
-            return new SimpleServiceResult(false, Message.of("error.action.dbAccess"));
-        }
-
-
+        DbColumnType dataType = recipientDao.getColumnDataType(admin.getCompanyID(), operation.getColumnName());
         DbColumnType.SimpleDataType simpleDataType = dataType.getSimpleDataType();
+
         if (operation.isUseTrack()) {
             valid = validateTrackingPoint(admin, operation, simpleDataType, dataType, errors);
         } else {
             valid = validateColumnName(admin, operation, errors, simpleDataType);
         }
-
 
         return new SimpleServiceResult(valid, errors);
     }
@@ -176,22 +169,22 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
             }
         } else {
             if (trackpointDao != null) {
-                ComTrackpointDef trackingPoint = trackpointDao.get(operation.getTrackingPointId(), admin.getCompanyID());
+                TrackpointDef trackingPoint = trackpointDao.get(operation.getTrackingPointId(), admin.getCompanyID());
                 if (trackingPoint == null) {
                     errorMessages.add(Message.of("error.action.dbAccess"));
                 } else {
                     switch (trackingPoint.getType()) {
-                        case ComTrackpointDef.TYPE_ALPHA:
+                        case TrackpointDef.TYPE_ALPHA:
                             if (simpleDataType != DbColumnType.SimpleDataType.Characters) {
                                 errorMessages.add(Message.of("error.action.trackpoint.type", "Alphanumeric", dataType.getTypeName()));
                             }
                             break;
-                        case ComTrackpointDef.TYPE_NUM:
+                        case TrackpointDef.TYPE_NUM:
                             if (simpleDataType != DbColumnType.SimpleDataType.Numeric && simpleDataType != DbColumnType.SimpleDataType.Float) {
                                 errorMessages.add(Message.of("error.action.trackpoint.type", "Numeric", dataType.getTypeName()));
                             }
                             break;
-                        case ComTrackpointDef.TYPE_SIMPLE:
+                        case TrackpointDef.TYPE_SIMPLE:
                             if (simpleDataType != DbColumnType.SimpleDataType.Numeric && simpleDataType != DbColumnType.SimpleDataType.Float) {
                                 errorMessages.add(Message.of("error.action.trackpoint.type", "Simple", dataType.getTypeName()));
                             }

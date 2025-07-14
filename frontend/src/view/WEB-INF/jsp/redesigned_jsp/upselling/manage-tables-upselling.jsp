@@ -24,7 +24,7 @@
                     </c:otherwise>
                 </c:choose>
 
-                <button type="button" class="btn btn-inverse flex-none" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary flex-none" data-bs-dismiss="modal">
                     <i class="icon icon-reply"></i>
                     <span class="text"> <mvc:message code="button.Back"/></span>
                 </button>

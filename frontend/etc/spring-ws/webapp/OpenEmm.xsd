@@ -12,10 +12,10 @@
 	<xs:annotation>
   		<xs:appinfo>
     		<jaxb:schemaBindings>
-      			<jaxb:package name="org.agnitas.emm.springws.jaxb"/>
+      			<jaxb:package name="com.agnitas.emm.springws.jaxb"/>
     		</jaxb:schemaBindings>
     		<jaxb:globalBindings>
-    			<xjc:javaType adapter="org.agnitas.emm.springws.jaxb.DateAdapter"
+    			<xjc:javaType adapter="com.agnitas.emm.springws.jaxb.DateAdapter"
                           name="java.util.Date" xmlType="xs:dateTime" />
     		</jaxb:globalBindings>
   		</xs:appinfo>
@@ -26,7 +26,7 @@
     <!-- 
         <xs:annotation>
             <xs:appinfo>
-                <xjc:javaType adapter="org.agnitas.emm.springws.jaxb.DateISOAdapter"
+                <xjc:javaType adapter="com.agnitas.emm.springws.jaxb.DateISOAdapter"
                               name="java.util.Date"/>
             </xs:appinfo>
         </xs:annotation>

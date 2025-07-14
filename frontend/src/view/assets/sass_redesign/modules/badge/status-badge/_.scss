@@ -32,20 +32,24 @@ extra large |<span class="status-badge status-badge--xl campaign.status.tested">
   }
 
   &--lg {
-    width: 24px !important;
-    height: 24px !important;
+    @include size(24px !important);
     &:before {
       font-size: $font-size-sm;
     }
   }
 
   &--xl {
-    width: 60px;
-    height: 60px;
+    @include size(60px);
     border-radius: $border-radius;
     &:before {
       font-size: 40px;
     }
+  }
+}
+
+@include contrast-themes {
+  .status-badge {
+    -webkit-text-stroke: 1px black;
   }
 }
 

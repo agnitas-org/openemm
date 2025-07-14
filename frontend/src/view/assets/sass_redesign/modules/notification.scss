@@ -74,12 +74,14 @@ $popup-width: 435px;
 $popup-width-mobile: 61px;
 $popups-width: $popup-width + $gap-sm * 2;
 
-html {
+:root {
   --popup-width: #{$popup-width};
-  --popup-width-mobile: #{$popup-width-mobile};
+  --popup-width-mobile: #{$popup-width-mobile - 2px};
 }
 
 .notification-simple {
+  --notification-simple-color: #{$gray-600};
+
   width: 100%;
   padding: $gap-x-sm $gap-sm;
   overflow: hidden;
@@ -91,7 +93,7 @@ html {
 
   border: $border-default;
   border-radius: $border-radius;
-  color: var(--text-gray-color);
+  color: var(--notification-simple-color);
 
   span {
     @extend .text-truncate;
@@ -99,7 +101,25 @@ html {
 
   a {
     font-weight: $font-weight-semibold;
-    color: $primary;
+    color: var(--text-link-color);
+  }
+}
+
+@include color-mode(dark) {
+  .notification-simple {
+    --notification-simple-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .notification-simple {
+    --notification-simple-color: #{$border-color-var};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .notification-simple {
+    --notification-simple-color: #{$white};
   }
 }
 
@@ -141,6 +161,174 @@ html {
   }
 }
 
+.popup {
+  --popup-content-bg: #{$white};
+  --popup-header-color: #{$white};
+  --popup-header-bg: transparent;
+  --popup-border-color: transparent;
+
+  border-radius: $border-radius;
+  border: 1px solid var(--popup-border-color);
+
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+
+  .popup-header {
+    @include font($font-size-md);
+    display: flex;
+    align-items: center;
+    line-height: 100%;
+    height: $notification-header-height;
+    padding-inline: $gap-sm;
+
+    color: var(--popup-header-color);
+    background-color: var(--popup-header-bg);
+
+    @include desktop {
+      .icon-caret-left {
+        display: none;
+      }
+    }
+  }
+
+  .popup-content {
+    background-color: var(--popup-content-bg);
+    color: $body-color-var;
+    padding: $gap-sm;
+
+    border-top: 1px solid var(--popup-border-color);
+
+    @include border-bottom-radius;
+
+    a {
+      color: var(--text-link-color);
+    }
+  }
+
+  .close-icon {
+    cursor: pointer;
+    &:hover, &:focus {
+      opacity: 0.8;
+    }
+  }
+
+  .popup-tabs {
+    display: none;
+  }
+
+  &.has-tabs {
+    .popup-header-icon {
+      display: none;
+    }
+
+    @include mobile {
+      &:not(.expanded) {
+        .popup-header-icon {
+          display: block;
+        }
+      }
+    }
+
+    .popup-tabs {
+      padding: 0;
+      display: flex;
+    }
+
+    .arrow {
+      position: absolute;
+      height: $notification-header-height;
+
+      &-left {
+        top: 0;
+        left: 0;
+      }
+
+      &-right {
+        top: 0;
+        right: 0;
+      }
+    }
+  }
+
+  &:not(.has-carousel) {
+    .arrow {
+      display: none;
+    }
+  }
+
+  &.has-carousel {
+    .popup-tabs {
+      display: inline-flex;
+      transition: 0.2s ease-in-out;
+
+      .popup-tab {
+        flex-grow: 0;
+      }
+    }
+  }
+
+  .popup-tab {
+    // width: controlled with JS;
+    cursor: pointer;
+    height: 100%;
+    @include flex-center;
+    flex-grow: 1;
+
+    color: var(--popup-header-color);
+    background-color: var(--popup-header-bg);
+
+    &.active {
+      @include border-top-radius;
+    }
+
+    &:not(.active) {
+      filter: brightness(80%);
+
+      &:not(:last-child) {
+        border-right: 1px solid var(--popup-header-color);
+      }
+    }
+  }
+
+  &.expanded {
+    .icon-caret-left {
+      transform: rotate(180deg);
+    }
+  }
+
+  @include mobile {
+    &:not(.expanded) {
+      @include collapsed-popup;
+    }
+  }
+}
+
+.popups-bottom-right {
+  right: 0;
+  bottom: 0;
+}
+
+@include color-mode(dark) {
+  .popup {
+    --popup-content-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .popup {
+    --popup-header-color: #{$con-dark-blue};
+    --popup-content-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .popup {
+    --popup-header-color: #{$con-dark-blue};
+    --popup-border-color: #{$border-color-var} !important;
+  }
+}
+
 @mixin notification-simple-variant($state, $color) {
   .notification-simple--#{$state} {
     color: $color;
@@ -149,138 +337,9 @@ html {
 }
 
 @mixin popup-variant($state, $color) {
-  $darken: mix($dark-grey, $color, 20%);
-
-  .popup {
-    @include shadow-variant(light-bottom);
-    border-radius: $border-radius;
-    width: 100%;
-    position: relative;
-
-    &-#{$state} {
-      overflow: hidden;
-
-      .popup-header {
-        @include font($font-size-md);
-        background-color: $color;
-        display: flex;
-        align-items: center;
-        line-height: 100%;
-        color: $white;
-        height: $notification-header-height;
-        padding-inline: $gap-sm;
-
-        @include desktop {
-          .icon-caret-left {
-            display: none;
-          }
-        }
-      }
-
-      .popup-content {
-        background-color: var(--popup-content-bg-color);
-        color: var(--text-color-default);
-        border: 1px solid $color;
-        padding: $gap-sm;
-        @include border-bottom-radius;
-
-        a {
-          color: $primary;
-        }
-      }
-
-      .close-icon {
-        &:hover,
-        &:focus {
-          color: darken($color, 50%);
-        }
-      }
-
-      .popup-tabs {
-        display: none;
-      }
-      
-      &.has-tabs {
-        .popup-header-icon {
-          display: none;
-        }
-
-        @include mobile {
-          &:not(.expanded) {
-            .popup-header-icon {
-              display: block;
-            }
-          }
-        }
-        
-        .popup-tabs {
-          padding: 0;
-          background-color: $darken;
-          display: flex;
-        }
-        
-        .arrow {
-          position: absolute;
-          height: $notification-header-height;
-  
-          &-left {
-            top: 0;
-            left: 0;
-          }
-  
-          &-right {
-            top: 0;
-            right: 0;
-          }
-        }
-      }
-
-      &:not(.has-carousel) {
-        .arrow {
-          display: none;
-        }
-      }
-      
-      &.has-carousel {
-        .popup-tabs {
-          display: inline-flex;
-          transition: 0.2s ease-in-out;
-
-          .popup-tab {
-            flex-grow: 0;
-          }
-        }
-      }
-      
-      .popup-tab {
-        // width: controlled with JS;
-        color: $white;
-        height: 100%;
-        @include flex-center;
-        flex-grow: 1;
-        
-        &:not(.active) {
-          border-right: 1px solid mix($dark-grey, $darken, 20%);
-        }
-        
-        &.active {
-          background-color: $color;
-          @include border-top-radius();
-        }
-      }
-    }
-
-    &.expanded {
-      .icon-caret-left {
-        transform: rotate(180deg);
-      }
-    }
-
-    @include mobile {
-      &:not(.expanded) {
-        @include collapsed-popup();
-      }
-    }
+  .popup-#{$state} {
+    --popup-border-color: #{$color};
+    --popup-header-bg: #{$color};
   }
 }
 
@@ -290,9 +349,4 @@ html {
 
   @include popup-variant($state, $color);
   @include notification-simple-variant($state, $color);
-}
-
-.popups-bottom-right {
-  right: 0;
-  bottom: 0;
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -37,8 +37,10 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private final CsrfTokenRepository tokenRepository;
 
     private static final Pattern PUSH_API_PATTERN = Pattern.compile("^.*/push-api/.*$");
+    private static final Pattern WIDGET__PATTERN = Pattern.compile("^.*/widget/.*$");
     private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
     private static final Pattern SSO_PATTERN = Pattern.compile("^.*/sso(?:Select)?.action$");
+    private static final Pattern FACEBOOK_LEADADS_PATTERN = Pattern.compile("^.*/facebook/leadads/webhook\\.action.*$");
 
     private static final String ERROR_PAGE_URL = "/csrf/error.action";
 
@@ -108,11 +110,20 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     }
 
     private static boolean shouldSkipTokenComparison(HttpServletRequest req) {
-        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req) || isSsoRequest(req);
+        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req)
+                || isSsoRequest(req) || isSentFromWidget(req);
     }
 
     private static boolean isSentFromUserWebForm(HttpServletRequest req) {
         return req.getRequestURI().endsWith("form.action") || req.getRequestURI().endsWith("form.do");
+    }
+
+    private static boolean isSentFromWidget(HttpServletRequest req) {
+        return WIDGET__PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static boolean isFacebookLeadAdsRequest(final HttpServletRequest req) {
+        return FACEBOOK_LEADADS_PATTERN.matcher(req.getRequestURI()).matches();
     }
 
     private static boolean isPushApiRequest(final HttpServletRequest req) {

@@ -1,6 +1,6 @@
 
 .ui-wrapper {
-  outline: 2px dashed $primary !important;
+  outline: 2px dashed var(--resize-handle-bg) !important;
 
   &.ui-resizable-disabled {
     outline: 2px dashed transparent !important;
@@ -21,7 +21,7 @@
   height: $resizable-handle-size;
 
   border-radius: 2px;
-  background-color: $primary;
+  background-color: var(--resize-handle-bg);
 
   &.ui-resizable-nw {
     top: -$resizable-handle-size / 2;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,16 +23,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.permission.bean.PermissionCategory;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.dao.LicenseType;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionInfo;
 import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.permission.bean.PermissionCategory;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.emm.common.LicenseType;
+import org.apache.commons.lang3.StringUtils;
 
 public class PermissionsOverviewData {
     public static final int ROOT_ADMIN_ID = 1;
@@ -203,8 +201,8 @@ public class PermissionsOverviewData {
         }
 
         private boolean isNewPermission(Date creationDate) {
-            LocalDate creationLocalDate = LocalDate.ofInstant(creationDate.toInstant(), AgnUtils.getZoneId(admin));
-            LocalDate currentDateMinus30Days = LocalDate.now(AgnUtils.getZoneId(admin)).minusDays(30);
+            LocalDate creationLocalDate = LocalDate.ofInstant(creationDate.toInstant(), admin.getZoneId());
+            LocalDate currentDateMinus30Days = LocalDate.now(admin.getZoneId()).minusDays(30);
             return creationLocalDate.isAfter(currentDateMinus30Days);
         }
 

@@ -34,6 +34,10 @@
     saveEditor() {
       return EditorsHelper.formToObject(this.formName);
     }
+
+    alwaysReadonly(node) {
+      return this.campaignEditor.isSplitParameterNode(node);
+    }
   }
 
   AGN.Lib.WM.ParameterNodeEditor = ParameterNodeEditor;

@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
 <%@ page contentType="text/html; charset=utf-8"%>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -6,7 +6,7 @@
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="userGroupListForm" type="org.agnitas.web.forms.PaginationForm"--%>
+<%--@elvariable id="userGroupListForm" type="com.agnitas.web.forms.PaginationForm"--%>
 <%--@elvariable id="userGroupList" type="org.displaytag.pagination.PaginatedList"--%>
 <%--@elvariable id="numberOfRows" type="java.lang.Integer"--%>
 

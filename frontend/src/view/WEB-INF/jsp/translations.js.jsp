@@ -27,7 +27,10 @@ window.I18n = {
         autoImportInUse: '<mvc:message javaScriptEscape="true" code="error.workflow.autoImport.used"/>',
         autoExportInUse: '<mvc:message javaScriptEscape="true" code="error.workflow.autoExport.used"/>',
         deadlineIsTooShortForImport: '<mvc:message javaScriptEscape="true" code="error.workflow.autoImport.delay.tooShort" arguments="%s"/>',
-        autoOptimizationDecisionForbidden: '<mvc:message javaScriptEscape="true" code="error.workflow.decision.auto.optimisation" />'
+        autoOptimizationDecisionForbidden: '<mvc:message javaScriptEscape="true" code="error.workflow.decision.auto.optimisation" />',
+        emptyEmail: '<mvc:message javaScriptEscape="true" code="error.email.empty" />',
+        wrongEmail: '<mvc:message javaScriptEscape="true" code="error.email.wrong" />',
+        notPositiveNumber: '<mvc:message javaScriptEscape="true" code="grid.errors.wrong.int" arguments="%s" />'
       },
       delay: {
         60:'<mvc:message javaScriptEscape="true" code="error.delay.60"/>'
@@ -101,7 +104,7 @@ window.I18n = {
       close: '<mvc:message javaScriptEscape="true" code="close" />',
       warning: '<mvc:message javaScriptEscape="true" code="warning" />',
       success: '<mvc:message javaScriptEscape="true" code="default.Success" />',
-      error: '<mvc:message javaScriptEscape="true" code="Error" />',
+      error: '<mvc:message javaScriptEscape="true" code="default.error" />',
       saved: '<mvc:message javaScriptEscape="true" code="default.changes_saved" />',
       yes: '<mvc:message javaScriptEscape="true" code="default.Yes" />',
       no: '<mvc:message javaScriptEscape="true" code="default.No" />',
@@ -131,7 +134,6 @@ window.I18n = {
       value: '<mvc:message javaScriptEscape="true" code="Value"/>',
       description: '<mvc:message javaScriptEscape="true" code="default.description"/>',
       showMore: '<mvc:message javaScriptEscape="true" code="default.more"/>',
-      showMoreNew: '<mvc:message javaScriptEscape="true" code="default.more"/>',
       table: {
         empty: '<mvc:message javaScriptEscape="true" code="noResultsFound"/>',
         editColumns: '<mvc:message  javaScriptEscape="true" code="list.columns.edit" />',
@@ -308,6 +310,7 @@ window.I18n = {
       }
     },
     workflow: {
+      campaign: '<mvc:message javaScriptEscape="true" code="workflow.single"/>',
       reaction: {
         title: '<mvc:message javaScriptEscape="true" code="workflow.Reaction"/>',
         opened: '<mvc:message javaScriptEscape="true" code="statistic.opened"/>',
@@ -382,6 +385,7 @@ window.I18n = {
       },
       mailing: {
         new: '<mvc:message javaScriptEscape="true" code="dashboard.mailing.new"/>',
+        edit: '<mvc:message javaScriptEscape="true" code="mailing.MailingEdit"/>',
         archive: '<mvc:message javaScriptEscape="true" code="mailing.archive"/>',
         copyQuestion: '<mvc:message javaScriptEscape="true" code="workflow.mailing.copyQuestion"/>',
         edit_mailing_link: '<mvc:message javaScriptEscape="true" code="workflow.mailing.editMailingLink"/>',
@@ -469,7 +473,7 @@ window.I18n = {
       },
       session: {
         notification: '<mvc:message javaScriptEscape="true" code="warning.session.expired"/>',
-        expired:'<mvc:message javaScriptEscape="true" code="session.timer.expired"/>',
+        expired:'<mvc:message javaScriptEscape="true" code="session.timer.expired"/>'
       }
     },
     messenger: {
@@ -496,6 +500,7 @@ window.I18n = {
         long_comment: '<mvc:message javaScriptEscape="true" code="calendar.error.longComment"/>',
         empty_recipient_list: '<mvc:message javaScriptEscape="true" code="calendar.error.emptyRecipientList"/>',
         long_recipient_list: '<mvc:message javaScriptEscape="true" code="calendar.error.longRecipientList"/>',
+        reminderInPast: '<mvc:message javaScriptEscape="true" code="error.workflow.reminderDateInPast"/>',
         invalid_email: '<mvc:message javaScriptEscape="true" code="calendar.error.invalidEmail"/>'
       },
       title: {
@@ -690,8 +695,9 @@ window.I18n = {
         canceledAndCopied: '<mvc:message javaScriptEscape="true" code="mailing.status.canceledAndCopied" />',
         disable: '<mvc:message javaScriptEscape="true" code="mailing.status.disable" />',
         edit: '<mvc:message javaScriptEscape="true" code="mailing.status.edit" />',
-        generationFinished: '<mvc:message javaScriptEscape="true" code="mailing.status.generation-finished" />',
+        'generation-finished': '<mvc:message javaScriptEscape="true" code="mailing.status.generation-finished" />',
         inGeneration: '<mvc:message javaScriptEscape="true" code="mailing.status.in-generation" />',
+        'insufficient-vouchers': '<mvc:message javaScriptEscape="true" code="mailing.status.insufficient-vouchers" />',
         new: '<mvc:message javaScriptEscape="true" code="mailing.status.new" />',
         norecipients: '<mvc:message javaScriptEscape="true" code="mailing.status.norecipients" />',
         ready: '<mvc:message javaScriptEscape="true" code="mailing.status.ready" />',
@@ -710,8 +716,21 @@ window.I18n = {
       dialogs: {
         agn_tags: {
           tooltip: '<mvc:message javaScriptEscape="true" code="htmled.agntagsButtonTooltip"/>'
+        },
+        emoji: {
+          groups: {
+            people: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.people"/>',
+            nature: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.nature"/>',
+            food: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.food"/>',
+            travel: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.travel"/>',
+            activities: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.activities"/>',
+            objects: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.objects"/>',
+            symbols: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.symbols"/>',
+            flags: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji.group.flags"/>'
+          }
         }
-      }
+      },
+      emoji: '<mvc:message javaScriptEscape="true" code="GWUA.wysiwyg.emoji" />'
     },
     facebook : {
       leadAds: {
@@ -802,7 +821,36 @@ window.I18n = {
     url: {
         invalid: '<mvc:message javaScriptEscape="true" code="error.linkUrlWrong"/>'
     },
+
+    split: {
+      mailing: '<mvc:message javaScriptEscape="true" code="mailing.listsplit"/>',
+      deleteWorkflowParameterIconWarn: '<mvc:message javaScriptEscape="true" code="warning.workflow.mailing.split.delete"/>',
+      ratio: {
+        "050505050575": '<mvc:message javaScriptEscape="true" code="listsplit.050505050575"/>',
+        "0505050580": '<mvc:message javaScriptEscape="true" code="listsplit.0505050580"/>',
+        "05050585": '<mvc:message javaScriptEscape="true" code="listsplit.05050585"/>',
+        "050590": '<mvc:message javaScriptEscape="true" code="listsplit.050590"/>',
+        "101010101050": '<mvc:message javaScriptEscape="true" code="listsplit.101010101050"/>',
+        "1010101060": '<mvc:message javaScriptEscape="true" code="listsplit.1010101060"/>',
+        "10101070": '<mvc:message javaScriptEscape="true" code="listsplit.10101070"/>',
+        "101080": '<mvc:message javaScriptEscape="true" code="listsplit.101080"/>',
+        "1090": '<mvc:message javaScriptEscape="true" code="listsplit.1090"/>',
+        "151570": '<mvc:message javaScriptEscape="true" code="listsplit.151570"/>',
+        "2080": '<mvc:message javaScriptEscape="true" code="listsplit.2080"/>',
+        "25252525": '<mvc:message javaScriptEscape="true" code="listsplit.25252525"/>',
+        "252550": '<mvc:message javaScriptEscape="true" code="listsplit.252550"/>',
+        "3070": '<mvc:message javaScriptEscape="true" code="listsplit.3070"/>',
+        "333333": '<mvc:message javaScriptEscape="true" code="listsplit.333333"/>',
+        "4060": '<mvc:message javaScriptEscape="true" code="listsplit.4060"/>',
+        "5050": '<mvc:message javaScriptEscape="true" code="listsplit.5050"/>'
+      }
+    },
+
     status: {
       push: '<mvc:message javaScriptEscape="true" code="PushNotification" />'
+    },
+
+    inboxPreview: {
+      canceled: '<mvc:message javaScriptEscape="true" code="GWUA.inbox.preview.canceled"/>'
     }
 };

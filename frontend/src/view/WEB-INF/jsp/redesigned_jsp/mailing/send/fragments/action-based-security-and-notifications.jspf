@@ -2,41 +2,39 @@
 <div class="col-12">
     <div class="tile tile--sm">
         <div class="tile-header">
-            <h3 class="tile-title text-dark"><mvc:message code="mailing.send.security.notification"/></h3>
+            <h3 class="tile-title tile-title--grey"><mvc:message code="mailing.send.security.notification"/></h3>
         </div>
 
-        <div class="tile-body border-top p-3">
-            <div class="row g-3">
-                <div class="col-12">
-                    <div class="form-check form-switch">
-                        <c:url var="switchSendStatusOnErrorOnlyUrl" value="/mailing/ajax/${tmpMailingID}/setStatusOnError.action"/>
+        <div class="tile-body vstack gap-3 border-top p-3">
+            <div>
+                <div class="form-check form-switch">
+                    <c:url var="switchSendStatusOnErrorOnlyUrl" value="/mailing/ajax/${tmpMailingID}/setStatusOnError.action"/>
 
-                        <input id="sendStatusOnErrorOnly-toggle" type="checkbox" class="form-check-input" role="switch"
-                               data-action="sendStatusOnErrorOnly-toggle" data-url="${switchSendStatusOnErrorOnlyUrl}"
-                        ${form.statusmailOnErrorOnly ? "checked" : ""}>
+                    <input id="sendStatusOnErrorOnly-toggle" type="checkbox" class="form-check-input" role="switch"
+                           data-action="sendStatusOnErrorOnly-toggle" data-url="${switchSendStatusOnErrorOnlyUrl}"
+                    ${form.statusmailOnErrorOnly ? "checked" : ""}>
 
-                        <label class="form-label form-check-label text-truncate fw-normal" for="sendStatusOnErrorOnly-toggle">
-                            <mvc:message code="mailing.SendStatusOnErrorOnly" />
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/SendStatusOnErrorOnly.xml"></a>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="col-12" data-initializer="status-mail-recipients">
-                    <script type="application/json" id="config:status-mail-recipients">
-                        {
-                            "recipients": ${emm:toJson(form.statusmailRecipients)}
-                        }
-                    </script>
-
-                    <label for="status-mail-recipient" class="form-label fw-normal">
-                        <mvc:message code="Recipients"/>
-                        <i class="icon icon-question-circle" data-tooltip="<mvc:message code='mailing.SendStatusEmail'/>"></i>
+                    <label class="form-label form-check-label text-truncate fw-normal" for="sendStatusOnErrorOnly-toggle">
+                        <mvc:message code="mailing.SendStatusOnErrorOnly" />
+                        <a href="#" class="icon icon-question-circle" data-help="mailing/SendStatusOnErrorOnly.xml"></a>
                     </label>
+                </div>
+            </div>
 
-                    <div id="status-emails-block" class="row g-1">
-                        <%-- Loads by JS --%>
-                    </div>
+            <div data-initializer="status-mail-recipients">
+                <script type="application/json" id="config:status-mail-recipients">
+                    {
+                        "recipients": ${emm:toJson(form.statusmailRecipients)}
+                    }
+                </script>
+
+                <label for="status-mail-recipient" class="form-label fw-normal">
+                    <mvc:message code="Recipients"/>
+                    <i class="icon icon-question-circle" data-tooltip="<mvc:message code='mailing.SendStatusEmail'/>"></i>
+                </label>
+
+                <div id="status-emails-block" class="row g-1">
+                    <%-- Loads by JS --%>
                 </div>
             </div>
         </div>

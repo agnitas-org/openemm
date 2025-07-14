@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package com.agnitas.emm.core.birtreport.bean.impl;
 import java.util.HashMap;
 
 import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
+import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 import org.apache.logging.log4j.LogManager;
@@ -27,16 +27,16 @@ public class BirtReportFactoryImpl implements BirtReportFactory {
     private static final Logger logger = LogManager.getLogger(BirtReportFactoryImpl.class);
     
     @Override
-    public ComBirtReportSettings createReportSettings(ReportSettingsType type) {
+    public BirtReportSettings createReportSettings(ReportSettingsType type) {
         switch (type) {
             case COMPARISON:
-                return new ComBirtReportComparisonSettings();
+                return new BirtReportComparisonSettings();
             case MAILING:
-                return new ComBirtReportMailingSettings();
+                return new BirtReportMailingSettings();
             case RECIPIENT:
-                return new ComBirtReportRecipientSettings();
+                return new BirtReportRecipientSettings();
             case TOP_DOMAIN:
-                return new ComBirtReportTopDomainsSettings();
+                return new BirtReportTopDomainsSettings();
             default:
         }
         logger.warn("Unsupported birt report settings type: " + type);
@@ -44,11 +44,11 @@ public class BirtReportFactoryImpl implements BirtReportFactory {
     }
     
     @Override
-    public ComBirtReport createReport() {
-        HashMap<ReportSettingsType, ComBirtReportSettings> settings = new HashMap<>();
+    public BirtReport createReport() {
+        HashMap<ReportSettingsType, BirtReportSettings> settings = new HashMap<>();
         for (ReportSettingsType type: ReportSettingsType.values()) {
             settings.put(type, createReportSettings(type));
         }
-        return new ComBirtReportImpl(settings);
+        return new BirtReportImpl(settings);
     }
 }

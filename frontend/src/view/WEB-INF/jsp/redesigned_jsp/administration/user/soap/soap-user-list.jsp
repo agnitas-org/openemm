@@ -1,12 +1,15 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="filter" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter"--%>
+
+<c:set var="deleteAllowed"   value="${emm:permissionAllowed('webservice.user.change', pageContext.request)}" />
+<mvc:message var="deleteMsg" code="settings.admin.delete" />
+<c:url var="deleteUrl"       value="/administration/wsmanager/user/delete.action" />
 
 <div id="soap-users-overview" class="tiles-container flex-column" data-editable-view="${agnEditViewKey}">
     <c:if test="${emm:permissionAllowed('webservice.user.create', pageContext.request)}">
@@ -47,8 +50,8 @@
 
                     <div class="col" data-field="password">
                         <label for="newPassword" class="form-label">
-                            <mvc:message code="password"/>&nbsp;*
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/webserviceuser/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
+                            <mvc:message code="password.new"/>&nbsp;*
+                            <a href="#" class="icon icon-question-circle" data-help="webserviceuser/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
                         </label>
                         <mvc:password path="password" id="newPassword" cssClass="form-control js-password-strength" size="52" maxlength="99" data-field="required" data-rule="${PASSWORD_POLICY}"/>
                     </div>
@@ -73,7 +76,7 @@
     </c:if>
 
     <div class="tiles-block">
-        <mvc:form servletRelativeAction="/administration/wsmanager/usersRedesigned.action" id="table-tile" modelAttribute="filter" cssClass="tile" data-editable-tile="main">
+        <mvc:form servletRelativeAction="/administration/wsmanager/usersRedesigned.action" id="table-tile" modelAttribute="filter" cssClass="tile" data-editable-tile="main" method="GET">
             <script type="application/json" data-initializer="web-storage-persist">
                 {
                     "ws-manager-overview": {
@@ -87,6 +90,18 @@
                     <div class="table-wrapper__header">
                         <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
                         <div class="table-wrapper__controls">
+                            <div class="bulk-actions hidden">
+                                <p class="bulk-actions__selected">
+                                    <span><%-- Updates by JS --%></span>
+                                    <mvc:message code="default.list.entry.select" />
+                                </p>
+                                <div class="bulk-actions__controls">
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-confirm>
+                                        <i class="icon icon-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+
                             <%@include file="../../../common/table/toggle-truncation-btn.jspf" %>
                             <jsp:include page="../../../common/table/entries-label.jsp">
                                 <jsp:param name="filteredEntries" value="${webserviceUserList.fullListSize}"/>
@@ -96,85 +111,96 @@
                     </div>
 
                     <div class="table-wrapper__body">
-                        <agnDisplay:table class="table table--borderless js-table table-hover" id="wsUser"
-                                       name="webserviceUserList" requestURI="/administration/wsmanager/usersRedesigned.action"
-                                       pagesize="${filter.numberOfRows}" excludedParams="*">
+                        <emm:table var="wsUser" modelAttribute="webserviceUserList" cssClass="table table--borderless js-table table-hover">
 
-                            <%@ include file="../../../common/displaytag/displaytag-properties.jspf" %>
+                            <c:if test="${deleteAllowed}">
+                                <c:set var="checkboxSelectAll">
+                                    <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
+                                </c:set>
 
-                            <agnDisplay:column headerClass="js-table-sort" titleKey="logon.username" sortable="true" sortProperty="username">
-                                <span>${wsUser.userName}</span>
-                            </agnDisplay:column>
+                                <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
+                                    <input class="form-check-input" type="checkbox" name="usernames" value="${wsUser.userName}" data-bulk-checkbox />
+                                </emm:column>
+                            </c:if>
 
-                            <agnDisplay:column headerClass="js-table-sort" titleKey="Status" sortable="true" sortProperty="active">
+                            <emm:column titleKey="logon.username" sortable="true" sortProperty="username" property="userName" />
+
+                            <emm:column titleKey="Status" sortable="true" sortProperty="active">
                                 <span><mvc:message code="${wsUser.active ? 'workflow.view.status.active' : 'webserviceuser.not_active'}"/></span>
-                            </agnDisplay:column>
 
-                            <emm:ShowByPermission token="master.companies.show">
-                                <agnDisplay:column headerClass="js-table-sort" titleKey="webserviceuser.company" sortable="true" sortProperty="company_name">
-                                    <span>${wsUser.clientName} (${wsUser.companyId})</span>
-                                </agnDisplay:column>
-                            </emm:ShowByPermission>
-
-                            <agnDisplay:column headerClass="js-table-sort" property="dataSourceId" titleKey="webserviceuser.default_datasource_id" sortable="true" sortProperty="default_data_source_id"/>
-
-                            <agnDisplay:column class="hidden" headerClass="hidden" sortable="false">
                                 <c:url var="viewWsUserLink" value="/administration/wsmanager/user/${wsUser.userName}/view.action"/>
                                 <a href="${viewWsUserLink}" class="hidden" data-view-row="page"></a>
-                            </agnDisplay:column>
-                        </agnDisplay:table>
+                            </emm:column>
+
+                            <emm:ShowByPermission token="master.companies.show">
+                                <emm:column titleKey="webserviceuser.company" sortable="true" sortProperty="company_name">
+                                    <span>${wsUser.clientName} (${wsUser.companyId})</span>
+                                </emm:column>
+                            </emm:ShowByPermission>
+
+                            <emm:column property="dataSourceId" titleKey="webserviceuser.default_datasource_id" sortable="true" sortProperty="default_data_source_id"/>
+
+                            <c:if test="${deleteAllowed}">
+                                <emm:column cssClass="table-actions">
+                                    <div>
+                                        <c:if test="${deleteAllowed}">
+                                            <a href="${deleteUrl}?usernames=${fn:escapeXml(wsUser.userName)}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deleteMsg}">
+                                                <i class="icon icon-trash-alt"></i>
+                                            </a>
+                                        </c:if>
+                                    </div>
+                                </emm:column>
+                            </c:if>
+                        </emm:table>
                     </div>
                 </div>
             </div>
         </mvc:form>
 
         <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/administration/wsmanager/search.action"
-                  modelAttribute="filter" data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
-
+                  modelAttribute="filter" data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
             <div class="tile-header">
                 <h1 class="tile-title">
                     <i class="icon icon-caret-up mobile-visible"></i>
                     <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
                 </h1>
                 <div class="tile-controls">
-                    <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                    <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                     <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
                 </div>
             </div>
 
-            <div class="tile-body js-scrollable">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <mvc:message var="usernameMsg" code="logon.username"/>
-                        <label class="form-label" for="filter-username">${usernameMsg}</label>
-                        <mvc:text id="filter-username" path="username" cssClass="form-control" placeholder="${usernameMsg}"/>
-                    </div>
+            <div class="tile-body vstack gap-3 js-scrollable">
+                <div>
+                    <mvc:message var="usernameMsg" code="logon.username"/>
+                    <label class="form-label" for="filter-username">${usernameMsg}</label>
+                    <mvc:text id="filter-username" path="username" cssClass="form-control" placeholder="${usernameMsg}"/>
+                </div>
 
-                    <div class="col-12">
-                        <label class="form-label" for="filter-status"><mvc:message code="Status"/></label>
-                        <mvc:select id="filter-status" path="status" cssClass="form-control">
-                            <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
-                            <mvc:option value="0"><mvc:message code="webserviceuser.not_active" /></mvc:option>
-                            <mvc:option value="1"><mvc:message code="workflow.view.status.active" /></mvc:option>
+                <div>
+                    <label class="form-label" for="filter-status"><mvc:message code="Status"/></label>
+                    <mvc:select id="filter-status" path="status" cssClass="form-control">
+                        <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
+                        <mvc:option value="0"><mvc:message code="webserviceuser.not_active" /></mvc:option>
+                        <mvc:option value="1"><mvc:message code="workflow.view.status.active" /></mvc:option>
+                    </mvc:select>
+                </div>
+
+                <emm:ShowByPermission token="master.companies.show">
+                    <div>
+                        <label class="form-label" for="filter-client"><mvc:message code="Company"/></label>
+                        <mvc:select id="filter-client" path="companyId" cssClass="form-control" data-sort="alphabetic">
+                            <mvc:option value="" data-no-sort=""><mvc:message code="default.All" /></mvc:option>
+                            <c:forEach var="client" items="${companyList}">
+                                <mvc:option value="${client.companyId}">${client.shortname} (${client.companyId})</mvc:option>
+                            </c:forEach>
                         </mvc:select>
                     </div>
+                </emm:ShowByPermission>
 
-                    <emm:ShowByPermission token="master.companies.show">
-                        <div class="col-12">
-                            <label class="form-label" for="filter-client"><mvc:message code="Company"/></label>
-                            <mvc:select id="filter-client" path="companyId" cssClass="form-control" data-sort="alphabetic">
-                                <mvc:option value="" data-no-sort=""><mvc:message code="default.All" /></mvc:option>
-                                <c:forEach var="client" items="${companyList}">
-                                    <mvc:option value="${client.companyId}">${client.shortname} (${client.companyId})</mvc:option>
-                                </c:forEach>
-                            </mvc:select>
-                        </div>
-                    </emm:ShowByPermission>
-
-                    <div class="col-12">
-                        <label class="form-label" for="filter-datasource"><mvc:message code="webserviceuser.default_datasource_id"/></label>
-                        <mvc:number id="filter-datasource" path="defaultDataSourceId" cssClass="form-control" placeholder="0"/>
-                    </div>
+                <div>
+                    <label class="form-label" for="filter-datasource"><mvc:message code="webserviceuser.default_datasource_id"/></label>
+                    <mvc:number id="filter-datasource" path="defaultDataSourceId" cssClass="form-control" placeholder="0"/>
                 </div>
             </div>
         </mvc:form>

@@ -11,6 +11,8 @@ $preview-item-size: 300px;
 }
 
 .component-upload__preview-wrapper {
+  --upload-file-type-icon-color: #{$dark-grey};
+
   @include size($preview-item-size);
   @include flex-center;
 
@@ -20,6 +22,24 @@ $preview-item-size: 300px;
 
   i {
     font-size: 150px;
-    color: var(--input-icon-color);
+    color: var(--upload-file-type-icon-color);
+  }
+}
+
+@include color-mode(dark) {
+  .component-upload__preview-wrapper {
+    --upload-file-type-icon-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .component-upload__preview-wrapper {
+    --upload-file-type-icon-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .component-upload__preview-wrapper {
+    --upload-file-type-icon-color: #{$white};
   }
 }

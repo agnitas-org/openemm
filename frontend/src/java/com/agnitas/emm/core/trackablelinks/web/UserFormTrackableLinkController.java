@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,12 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
 import java.util.Date;
 import java.util.List;
-
-import com.agnitas.emm.core.userform.form.WebFormStatFrom;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
@@ -40,14 +27,34 @@ import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinkForm;
 import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinksForm;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.WebFormStatFrom;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestContextHolder;
-
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/webform")
@@ -90,10 +97,13 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 			return "userform_trackablelink_list";
 		} catch (Exception e) {
 			logger.error("Gettings user form trackable link list failed!", e);
-			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+			alertError(popups);
 		}
+		return MESSAGES_VIEW;
+	}
 
-		return "messages";
+	private void alertError(Popups popups) {
+		popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
 	}
 
     private void addDefaultExtensionsModelAttr(Model model, int companyId) {
@@ -112,16 +122,16 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		try {
 			List<LinkProperty> commonExtensions = conversionService.convert(form.getCommonExtensions(), ExtensionProperty.class, LinkProperty.class);
 			trackableLinkService.bulkUpdateTrackableLinks(admin, formId, form.getLinks(), form.isTrackable(), commonExtensions);
-			popups.success("default.changes_saved");
+			popups.success(CHANGES_SAVED_MSG);
 
 			return redirectToList(formId);
 
 		} catch (Exception e) {
 			logger.error("Could not bulk save links!", e);
-			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+			alertError(popups);
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
     private String redirectToList(@PathVariable int formId) {
@@ -134,15 +144,15 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		try {
 			List<LinkProperty> extensions = LinkUtils.parseLinkExtension(extensionAsText);
 			trackableLinkService.bulkUpdateTrackableLinksExtensions(admin, formId, extensions);
-			popups.success("default.changes_saved");
+			popups.success(CHANGES_SAVED_MSG);
 
 			return redirectToList(formId);
 		} catch (Exception e) {
 			logger.error("Could not bulk save extensions!", e);
-			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+			alertError(popups);
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	@PostMapping("/{formId:\\d+}/trackablelink/bulkSaveUsage.action")
@@ -150,15 +160,15 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	public String bulkSaveUsage(Admin admin, @PathVariable int formId, @RequestParam("trackable") int trackableValue, Popups popups) {
 		try {
 			trackableLinkService.bulkUpdateTrackableLinksUsage(admin, formId, trackableValue);
-			popups.success("default.changes_saved");
+			popups.success(CHANGES_SAVED_MSG);
 
 			return redirectToList(formId);
 		} catch (Exception e) {
 			logger.error("Could not bulk save extensions!", e);
-			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+			alertError(popups);
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	@GetMapping("/{formId:\\d+}/trackablelink/{linkId:\\d+}/view.action")
@@ -166,8 +176,8 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		FormTrackableLinkDto link = trackableLinkService.getFormTrackableLink(admin, formId, linkId);
 		if (link == null) {
 			logger.error("could not load form/link: {}/{}", formId, linkId);
-			popups.alert("Error");
-			return "messages";
+			popups.alert(ERROR_MSG);
+			return MESSAGES_VIEW;
 		}
 
 		model.addAttribute("form", conversionService.convert(link, FormTrackableLinkForm.class));
@@ -184,38 +194,34 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 			boolean success = trackableLinkService.updateTrackableLink(admin, formId, trackableLinkDto);
 
 			if (success) {
-				popups.success("default.changes_saved");
+				popups.success(CHANGES_SAVED_MSG);
 				return redirectToList(formId);
 			} else {
-				popups.alert("Error");
+				popups.alert(ERROR_MSG);
 			}
 		} catch (Exception e) {
 			logger.error("Could not save link formID/linkID: {}/{}", formId, trackableLinkDto.getId());
-			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+			alertError(popups);
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	// TODO remove while removing the old UI design EMMGUI-714
 	@GetMapping("/{formId:\\d+}/trackablelink/statistic.action")
 	public String statistic(Admin admin, @PathVariable int formId, Model model, Popups popups) {
-		try {
-			UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
-			if (userForm != null) {
-				String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-				String urlWithoutFormat = birtStatisticsService.getUserFormTrackableLinkStatisticUrl(admin, sessionId, formId);
-				model.addAttribute("birtStatisticUrlWithoutFormat", urlWithoutFormat);
+		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
+		if (userForm != null) {
+			String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
+			String urlWithoutFormat = birtStatisticsService.getUserFormTrackableLinkStatisticUrl(admin, sessionId, formId);
+			model.addAttribute("birtStatisticUrlWithoutFormat", urlWithoutFormat);
 
-				model.addAttribute("userFormName", userForm.getName());
-				model.addAttribute("userFormId", userForm.getId());
-			} else {
-				popups.alert("Error");
-			}
-		} catch (Exception e) {
-			logger.error("Could not obtain user form links statistic!", e);
-			popups.alert("Error");
+			model.addAttribute("userFormName", userForm.getName());
+			model.addAttribute("userFormId", userForm.getId());
+		} else {
+			popups.alert(ERROR_MSG);
 		}
+
 		return "userform_userform_stats";
 	}
 
@@ -225,7 +231,7 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@GetMapping("/statistic.action")
-	public String statistic(WebFormStatFrom form, Admin admin, Model model, HttpSession session, Popups popups) throws Exception {
+	public String statistic(WebFormStatFrom form, Admin admin, Model model, HttpSession session, Popups popups) {
 		int formId = form.getFormId();
 		if (form.isAllowedToChoseForm()) { // all forms stat page
 			List<UserForm> webForms = userformService.getUserForms(admin.getCompanyID());

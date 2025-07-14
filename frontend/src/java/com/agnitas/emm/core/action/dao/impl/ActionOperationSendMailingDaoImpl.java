@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,18 +12,14 @@ package com.agnitas.emm.core.action.dao.impl;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
 public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationSendMailingParameters> {
 
-    private static final Logger logger = LogManager.getLogger(ActionOperationSendMailingDaoImpl.class);
-
     @Override
     protected void processGetOperation(ActionOperationSendMailingParameters operation) {
-        Map<String, Object> row = selectSingleRow(logger, "SELECT mailing_id, delay_minutes, bcc, for_active_recipients FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
+        Map<String, Object> row = selectSingleRow("SELECT mailing_id, delay_minutes, bcc, for_active_recipients FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
         operation.setMailingID(((Number) row.get("mailing_id")).intValue());
         operation.setDelayMinutes(((Number) row.get("delay_minutes")).intValue());
         operation.setBcc((String) row.get("bcc"));
@@ -33,7 +29,7 @@ public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDa
     @Override
     @DaoUpdateReturnValueCheck
     protected void processSaveOperation(ActionOperationSendMailingParameters operation) {
-        update(logger, "INSERT INTO actop_send_mailing_tbl (action_operation_id, mailing_id, delay_minutes, bcc, for_active_recipients) VALUES (?,?,?,?,?)",
+        update("INSERT INTO actop_send_mailing_tbl (action_operation_id, mailing_id, delay_minutes, bcc, for_active_recipients) VALUES (?,?,?,?,?)",
                 operation.getId(),
                 operation.getMailingID(),
                 operation.getDelayMinutes(),
@@ -44,7 +40,7 @@ public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDa
     @Override
     @DaoUpdateReturnValueCheck
     protected void processUpdateOperation(ActionOperationSendMailingParameters operation) {
-        update(logger, "UPDATE actop_send_mailing_tbl SET mailing_id=?, delay_minutes=?, bcc=?, for_active_recipients=? WHERE action_operation_id = ?",
+        update("UPDATE actop_send_mailing_tbl SET mailing_id=?, delay_minutes=?, bcc=?, for_active_recipients=? WHERE action_operation_id = ?",
                 operation.getMailingID(),
                 operation.getDelayMinutes(),
                 operation.getBcc(),
@@ -55,6 +51,6 @@ public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDa
     @Override
     @DaoUpdateReturnValueCheck
     protected void processDeleteOperation(ActionOperationSendMailingParameters operation) {
-        update(logger, "DELETE FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
+        update("DELETE FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
     }
 }

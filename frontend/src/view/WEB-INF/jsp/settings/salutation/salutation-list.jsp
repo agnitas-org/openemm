@@ -5,8 +5,8 @@
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.salutation.form.SalutationForm"--%>
-<%--@elvariable id="salutations" type="org.agnitas.beans.impl.PaginatedListImpl<SalutationEntry>"--%>
-<%--@elvariable id="salutation" type="org.agnitas.beans.SalutationEntry"--%>
+<%--@elvariable id="salutations" type="com.agnitas.beans.impl.PaginatedListImpl<SalutationEntry>"--%>
+<%--@elvariable id="salutation" type="com.agnitas.beans.SalutationEntry"--%>
 
 <mvc:form servletRelativeAction="/salutation/list.action" id="form" modelAttribute="form" data-form="resource">
     <script type="application/json" data-initializer="web-storage-persist">

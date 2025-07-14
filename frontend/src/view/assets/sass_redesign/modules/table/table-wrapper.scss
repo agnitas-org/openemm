@@ -55,23 +55,26 @@ This is a full example showcasing what eventually makes up a complete table.
                     entries selected
                 </p>
                 <div class="bulk-actions__controls">
-                    <a href="#" class="icon-btn text-primary">
+                    <a href="#" class="icon-btn icon-btn--primary">
                         <i class="icon icon-file-download"></i>
                     </a>
 
-                    <a href="#" class="icon-btn text-danger">
+                    <a href="#" class="icon-btn icon-btn--danger">
                         <i class="icon icon-trash-alt"></i>
                     </a>
                 </div>
             </div>
 
-            <label class="icon-switch">
-                <input type="checkbox" data-preview-table="#styleguide-full-table" checked="">
-                <i class="icon icon-image"></i>
-                <i class="icon icon-th-list"></i>
-            </label>
+            <div class="switch" data-preview-table="#styleguide-full-table">
+              <input type="radio" id="full-table-preview" name="full-table-example-type" value="preview" />
+              <label for="full-table-preview" class="icon icon-image"></label>
+              <input type="radio" id="full-table-visual-list" name="full-table-example-type" value="visual-list" />
+              <label for="full-table-visual-list" class="icon icon-th-list"></label>
+              <input type="radio" id="full-table-list" name="full-table-example-type" value="list" checked />
+              <label for="full-table-list" class="icon icon-align-justify"></label>
+            </div>
 
-            <button type="button" class="btn btn-inverse" data-toggle-table-truncation="">
+            <button type="button" class="btn" data-toggle-table-truncation="">
                 <i class="icon icon-ellipsis-h"></i>
                 <span>Toggle truncation</span>
             </button>
@@ -87,24 +90,24 @@ This is a full example showcasing what eventually makes up a complete table.
         <table id="styleguide-full-table" class="table table--borderless js-table">
             <thead>
             <tr>
-                <th class="hidden"></th>
                 <th class="mobile-hidden"><input class="form-check-input" type="checkbox" data-bulk-checkboxes=""></th>
+                <th class="thumbnail-header-cell">Image</th>
                 <th class="fit-content mobile-hidden">File type</th>
                 <th>File name</th>
                 <th>Description</th>
                 <th class="fit-content">Creation date</th>
                 <th class="fit-content">Dimensions</th>
                 <th class="fit-content mobile-hidden">Size</th>
-                <th class="table-preview-hidden fit-content mobile-hidden"></th>
+                <th class="table-preview-hidden mobile-hidden"></th>
             </tr>
             </thead>
             <tbody>
             <tr>
-                <td class="thumbnail-cell">
-                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=1" alt="">
-                </td>
                 <td class="mobile-hidden">
                     <input class="form-check-input" type="checkbox" name="bulkIds" value="1" data-bulk-checkbox="">
+                </td>
+                <td class="thumbnail-cell">
+                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=1" alt="">
                 </td>
                 <td>
                     <span class="text-uppercase table-badge">PNG</span>
@@ -129,22 +132,22 @@ This is a full example showcasing what eventually makes up a complete table.
                 </td>
                 <td class="table-actions mobile-hidden">
                     <div>
-                        <a href="#" class="icon-btn text-danger" data-bulk-action="delete">
+                        <a href="#" class="icon-btn icon-btn--danger" data-bulk-action="delete">
                             <i class="icon icon-trash-alt"></i>
                         </a>
 
-                        <a href="#" class="icon-btn text-primary" data-bulk-action="download">
+                        <a href="#" class="icon-btn icon-btn--primary" data-bulk-action="download">
                             <i class="icon icon-file-download"></i>
                         </a>
                     </div>
                 </td>
             </tr>
             <tr>
-                <td class="thumbnail-cell">
-                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=2" alt="">
-                </td>
                 <td class="mobile-hidden">
                     <input class="form-check-input" type="checkbox" name="bulkIds" value="2" data-bulk-checkbox="">
+                </td>
+               <td class="thumbnail-cell">
+                    <img data-display-dimensions="scope: tr" src="https://picsum.photos/200/300?cacheKill=2" alt="">
                 </td>
                 <td>
                     <span class="text-uppercase table-badge">JPG</span>
@@ -169,10 +172,10 @@ This is a full example showcasing what eventually makes up a complete table.
                 </td>
                 <td class="table-actions mobile-hidden">
                     <div>
-                        <a href="#" class="icon-btn text-danger" data-bulk-action="delete">
+                        <a href="#" class="icon-btn icon-btn--danger" data-bulk-action="delete">
                             <i class="icon icon-trash-alt"></i>
                         </a>
-                        <a href="#" class="icon-btn text-primary" data-bulk-action="download">
+                        <a href="#" class="icon-btn icon-btn--primary" data-bulk-action="download">
                             <i class="icon icon-file-download"></i>
                         </a>
                     </div>
@@ -185,7 +188,7 @@ This is a full example showcasing what eventually makes up a complete table.
         <div class="table-wrapper__rows-selection">
             <select name="numberOfRows" class="form-control js-select compact" data-select-options="width: 'auto', dropdownAutoWidth: true">
                 <option value="20">20</option>
-                <option value="50" selected="selected">50</option>
+                <option value="50" selected>50</option>
                 <option value="100">100</option>
             </select>
             <span>rows to display</span>
@@ -267,13 +270,13 @@ parent: tables_03_header
 <div class="table-wrapper">
     <div class="table-wrapper__header">
         <div class="table-wrapper__controls">
-          <label class="icon-switch">
+          <label class="switch">
             <input type="checkbox" checked="">
             <i class="icon icon-image"></i>
             <i class="icon icon-th-list"></i>
           </label>
 
-          <a href="#" type="button" class="btn btn-inverse">
+          <a href="#" type="button" class="btn">
               <i class="icon icon-plus"></i>
               <span class="text">New</span>
           </a>
@@ -314,13 +317,13 @@ Usually the container is given the class `.hidden` and the label with the number
                   <span>entries selected<span>
               </p>
               <div class="bulk-actions__controls">
-                <a href="#" class="icon-btn text-primary">
+                <a href="#" class="icon-btn icon-btn--primary">
                     <i class="icon icon-file-download"></i>
                 </a>
-                <a href="#" class="icon-btn text-primary">
+                <a href="#" class="icon-btn icon-btn--primary">
                     <i class="icon icon-th-list"></i>
                 </a>
-                <a href="#" class="icon-btn text-danger">
+                <a href="#" class="icon-btn icon-btn--danger">
                     <i class="icon icon-trash-alt"></i>
                 </a>
               </div>
@@ -431,6 +434,9 @@ which is located inside the `.table-wrapper__rows-selection` container, as well 
 }
 
 .table-wrapper {
+  --table-wrapper-title-color: #{$dark-blue};
+  --text-truncate-lines: 2;
+
   @include flex-column;
   height: 100%;
   container-type: inline-size;
@@ -454,6 +460,32 @@ which is located inside the `.table-wrapper__rows-selection` container, as well 
 
     @include mobile {
       height: calc(var(--ag-rows-count) * #{$table-row-height} + 99px);
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .table-wrapper {
+    --table-wrapper-title-color: #{$light-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .table-wrapper {
+    --table-wrapper-title-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .table-wrapper {
+    --table-wrapper-title-color: #{$white};
+  }
+}
+
+@include contrast-themes {
+  .table-wrapper {
+    .icon-checkbox, .icon-btn {
+      color: currentColor !important;
     }
   }
 }

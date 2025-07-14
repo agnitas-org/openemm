@@ -9,12 +9,11 @@
 
 .minimap-panner {
   position: absolute;
-  border: 1px solid #f6f6f6;
   border-radius: 3px;
   cursor: move;
-  background-color: $dark-grey;
-  opacity: 0.3;
-  z-index: 48;
+  background-color: var(--workflow-minimap-panner-bg);
+  opacity: var(--workflow-minimap-panner-opacity);
+  z-index: var(--workflow-minimap-panner-z-index);
   transform-origin: 0 0 0;
 }
 
@@ -28,7 +27,7 @@
 }
 
 .miniview-element {
-  background-color: $primary;
+  background-color: var(--workflow-minimap-element-color);
   position: absolute;
 }
 
@@ -38,9 +37,9 @@
   position: absolute;
   z-index: 49;
   padding: 3px;
-  color: var(--label-color);
+  color: var(--workflow-minimap-handle-color);
   &:hover {
-    color: $primary;
+    color: $blue-var;
   }
 }
 
@@ -74,7 +73,7 @@
 }
 
 .minimap-collapse {
-  color: var(--label-color);
+  color: var(--workflow-minimap-handle-color);
   position: absolute;
   top: -4px;
   right: 6px;
@@ -87,7 +86,7 @@
   }
   
   &:hover {
-    color: $primary;
+    color: $blue-var;
   }
 }
 

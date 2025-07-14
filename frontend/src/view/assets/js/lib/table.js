@@ -91,6 +91,7 @@
       suppressPaginationPanel: true,
       onPaginationChanged: function() {
         self.renderPagination();
+        processReadOnlyRows.call(self);
       },
       defaultColDef: {
         headerComponentParams: {
@@ -228,6 +229,20 @@
     this.api.redrawRows();
   };
 
+  function processReadOnlyRows() {
+    if (this.gridOptions.readonlyRowMessage) {
+      this.api.forEachNode((node) => {
+        if (node.data.readonly) {
+          const $row = $(".ag-body-container [row-id=" + node.id + "]");
+          if ($row.length) {
+            $row.addClass('readonly');
+            AGN.Lib.Tooltip.createTip($row, this.gridOptions.readonlyRowMessage);
+          }
+        }
+      });
+    }
+  }
+
   Table.prototype.redraw = function() {
     var columnsToAutoResize = this.columnApi.getAllDisplayedColumns()
       .filter(function(column) { return column.getColDef().suppressSizeToFit === true; })
@@ -238,6 +253,7 @@
     }
 
     this.api.sizeColumnsToFit();
+    processReadOnlyRows.call(this);
   };
 
   Table.get = function($needle) {

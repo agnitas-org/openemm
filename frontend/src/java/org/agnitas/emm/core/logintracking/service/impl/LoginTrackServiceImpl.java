@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import com.agnitas.emm.util.SortDirection;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.util.OneOf;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.logintracking.LoginStatus;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.emm.core.logintracking.bean.LoginTrackData;
@@ -24,13 +24,11 @@ import org.agnitas.emm.core.logintracking.bean.LoginTrackSettings;
 import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
 import org.agnitas.emm.core.logintracking.dao.LoginTrackSettingsDao;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.Const;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.Const;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -61,12 +59,10 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 	 *
 	 * @param dao DAO for login tracking
 	 */
-	@Required
 	public final void setLoginTrackDao(final LoginTrackDao dao) {
 		this.loginTrackDao = Objects.requireNonNull(dao, "LoginTrackDao is null");
 	}
 	
-	@Required
 	public final void setLoginTrackSettingsDao(final LoginTrackSettingsDao dao) {
 		this.settingsDao = Objects.requireNonNull(dao, "Login track settings DAO is null");
 	}
@@ -220,7 +216,6 @@ public class LoginTrackServiceImpl implements LoginTrackService {
 	}
 	
 	@Override
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public boolean unlockBlockedAddressByTrackingId(long blockedAddressId) {
 		final Optional<BlockedAddressData> optionalData = findBlockedAddressByTrackingID(blockedAddressId);
 		

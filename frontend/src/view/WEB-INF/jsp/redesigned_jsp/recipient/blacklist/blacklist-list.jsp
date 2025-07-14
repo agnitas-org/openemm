@@ -1,15 +1,13 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="blacklists" type="java.util.List"--%>
 <%--@elvariable id="blacklistDto" type="com.agnitas.emm.core.globalblacklist.beans.BlacklistDto"--%>
 <%--@elvariable id="blacklistListForm" type="com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter"--%>
-<%--@elvariable id="dateTimeFormat" type="java.text.SimpleDateFormat"--%>
 
 <mvc:message var="deleteMsg" code="blacklist.BlacklistDelete" />
 
@@ -71,7 +69,7 @@
                                         <mvc:message code="default.list.entry.select" />
                                     </p>
                                     <div class="bulk-actions__controls">
-                                        <a href="#" class="icon-btn text-danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-method="GET" data-form-confirm>
+                                        <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-method="GET" data-form-confirm>
                                             <i class="icon icon-trash-alt"></i>
                                         </a>
                                     </div>
@@ -87,47 +85,39 @@
                     </div>
 
                     <div class="table-wrapper__body">
-                        <agnDisplay:table class="table table-hover table--borderless js-table" id="blacklistDto" requestURI="/recipients/blacklist/list.action"
-                                       list="${blacklists}" pagesize="${blacklistListForm.numberOfRows gt 0 ? blacklistListForm.numberOfRows : 0}"
-                                       excludedParams="*">
-
-                            <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+                        <emm:table var="blacklistDto" modelAttribute="blacklists" cssClass="table table-hover table--borderless js-table">
 
                             <c:if test="${deleteAllowed}">
                                 <c:set var="checkboxSelectAll">
                                     <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
                                 </c:set>
 
-                                <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                                <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
                                     <input class="form-check-input" type="checkbox" name="emails" value="${blacklistDto.email}" data-bulk-checkbox />
-                                </agnDisplay:column>
+                                </emm:column>
                             </c:if>
 
-                            <agnDisplay:column titleKey="mailing.MediaType.0" sortable="true" headerClass="js-table-sort" sortProperty="email">
-                                <span>${blacklistDto.email}</span>
+                            <emm:column titleKey="mailing.MediaType.0" sortable="true" property="email" />
+
+                            <emm:column titleKey="blacklist.reason" sortable="true" sortProperty="reason">
+                                <span>${fn:escapeXml(blacklistDto.reason)}</span>
                                 <c:if test="${changeAllowed}">
                                     <a href="#"
                                        data-modal="modal-edit-blacklisted-recipient"
                                        data-modal-set="email: '${blacklistDto.email}', reason: '${blacklistDto.reason}'" data-view-row></a>
                                 </c:if>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="blacklist.reason" sortable="true" headerClass="js-table-sort" sortProperty="reason">
-                                <span>${fn:escapeXml(blacklistDto.reason)}</span>
-                            </agnDisplay:column>
-
-                            <agnDisplay:column property="date" headerClass="js-table-sort fit-content" sortProperty="timestamp" titleKey="CreationDate" sortable="true">
-                                <span><emm:formatDate value="${blacklistDto.date}" format="${dateTimeFormat}"/></span>
-                            </agnDisplay:column>
+                            <emm:column property="date" headerClass="fit-content" sortProperty="timestamp" titleKey="CreationDate" sortable="true" />
 
                             <c:if test="${deleteAllowed}">
-                                <agnDisplay:column headerClass="fit-content">
-                                    <a href="${deleteUrl}?emails=${blacklistDto.email}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
+                                <emm:column>
+                                    <a href="${deleteUrl}?emails=${blacklistDto.email}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deleteMsg}">
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
-                                </agnDisplay:column>
+                                </emm:column>
                             </c:if>
-                        </agnDisplay:table>
+                        </emm:table>
                     </div>
                 </div>
             </div>
@@ -141,34 +131,25 @@
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse"  data-form-clear="#filter-tile" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary"  data-form-clear="#filter-tile" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="filter-email"><mvc:message code="mailing.MediaType.0" /></label>
-                    <mvc:text id="filter-email" path="email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
-                </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label class="form-label" for="filter-email"><mvc:message code="mailing.MediaType.0" /></label>
+                <mvc:text id="filter-email" path="email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-reason"><mvc:message code="blacklist.reason" /></label>
-                    <mvc:text id="filter-reason" path="reason" cssClass="form-control"/>
-                </div>
+            <div>
+                <label class="form-label" for="filter-reason"><mvc:message code="blacklist.reason" /></label>
+                <mvc:text id="filter-reason" path="reason" cssClass="form-control"/>
+            </div>
 
-                <div class="col-12" data-date-range>
-                    <label class="form-label" for="creation-date-from"><mvc:message code="CreationDate"/></label>
-                    <div class="date-picker-container mb-1">
-                        <mvc:message var="fromMsg" code="From" />
-                        <mvc:text id="creation-date-from" path="creationDate.from" placeholder="${fromMsg}" cssClass="form-control js-datepicker"/>
-                    </div>
-                    <div class="date-picker-container">
-                        <mvc:message var="toMsg" code="To" />
-                        <mvc:text path="creationDate.to" placeholder="${toMsg}" cssClass="form-control js-datepicker"/>
-                    </div>
-                </div>
+            <div>
+                <label class="form-label" for="creation-date-from"><mvc:message code="CreationDate"/></label>
+                <mvc:dateRange id="creation-date" path="creationDate" options="maxDate: 0" />
             </div>
         </div>
     </div>

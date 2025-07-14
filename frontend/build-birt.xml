@@ -26,7 +26,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="11" />
+				<property name="javaVersion" value="17" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
@@ -100,10 +100,10 @@
 			<classpath refid="build.containerPath" />
 			<include name="**/DBMessagesResourceFactory.java" />
 			<include name="**/DBMessagesResource.java" />
-			<include name="**/ComMessageDaoImpl.java" />
+			<include name="**/MessageDaoImpl.java" />
 			<include name="**/I18nString.java" />
-			<include name="**/ComBirtResources.java" />
-			<include name="**/ComBirtResourceHandle.java" />
+			<include name="**/EmmBirtResources.java" />
+			<include name="**/BirtResourceHandle.java" />
 			<include name="**/HttpSecurityHeaderFilter.java" />
 		</javac>
 
@@ -111,12 +111,12 @@
 			<fileset dir="${deploydir}${appname}/tmp_javac/javac/emm">
 				<include name="**/DBMessagesResourceFactory.class" />
 				<include name="**/DBMessagesResource.class" />
-				<include name="**/ComMessageDaoImpl.class" />
+				<include name="**/MessageDaoImpl.class" />
 				<include name="**/I18nString.class" />
 				<include name="**/TimeoutLRUMap.class" />
 				<include name="**/TimeoutLRUMap$TimeoutObject.class" />
-				<include name="**/ComBirtResources.class" />
-				<include name="**/ComBirtResourceHandle.class" />
+				<include name="**/EmmBirtResources.class" />
+				<include name="**/BirtResourceHandle.class" />
 				<include name="**/HttpSecurityHeaderFilter.class" />
 			</fileset>
 		</jar>
@@ -282,11 +282,6 @@
 			<replacetoken>${birtSpecificFontsPath}</replacetoken>
 		</replace>
 
-		<!-- Copy fonts -->
-		<copy todir="${deploydir}${appname}/fonts" overwrite="true">
-			<fileset dir="${emmEtcPath}/reportdesigns/fonts"/>
-		</copy>
-
 		<copy todir="${deploydir}${appname}">
 			<fileset dir="${emmEtcPath}/reportdesigns" includes="**/*.rptdesign **/styles.css" />
 		</copy>
@@ -362,7 +357,7 @@
 				<include name="mail.jar" />
 				<include name="quartz-*" />
 				<include name="spring-*" />
-				<include name="bcprov-ext-jdk*" />
+				<include name="bcprov-jdk*" />
 				<include name="ojdbc*" />
 				<include name="quartz-oracle-*" />
 				<include name="mysql-*" />

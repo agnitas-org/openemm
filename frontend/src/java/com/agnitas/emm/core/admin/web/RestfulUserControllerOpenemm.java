@@ -4,14 +4,14 @@ import com.agnitas.emm.core.admin.form.AdminListFormSearchParams;
 import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.service.ComCSVService;
+import com.agnitas.emm.core.logon.service.LogonService;
+import com.agnitas.service.CSVService;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.company.service.CompanyService;
+import com.agnitas.emm.core.company.service.CompanyService;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserActivityLogService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +25,7 @@ public class RestfulUserControllerOpenemm extends RestfulUserController {
 
     public RestfulUserControllerOpenemm(ConfigService configService, AdminService adminService, CompanyService companyService, AdminGroupService adminGroupService,
                                         WebStorage webStorage, UserActivityLogService userActivityLogService, AdminChangesLogService adminChangesLogService,
-                                        ComCSVService csvService, PdfService pdfService, ConversionService conversionService, ComLogonService logonService) {
+                                        CSVService csvService, PdfService pdfService, ConversionService conversionService, LogonService logonService) {
 
         super(configService, adminService, companyService, adminGroupService, webStorage, userActivityLogService,
                 adminChangesLogService, csvService, pdfService, conversionService, logonService);

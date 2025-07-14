@@ -1,5 +1,7 @@
 
 .breadcrumbs {
+  --breadcrumbs-color: #{$dark-blue};
+
   @include flex-wrap(nowrap);
   min-width: 0;
   margin: 0;
@@ -17,7 +19,7 @@
 
     &:last-child {
       min-width: 0;
-      span {
+      span, a {
         @include text-truncate;
       }
     }
@@ -25,5 +27,23 @@
 
   .arrow {
     font-size: $font-size-sm;
+  }
+}
+
+@include color-mode(dark) {
+  .breadcrumbs {
+    --breadcrumbs-color: #{$light-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .breadcrumbs {
+    --breadcrumbs-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .breadcrumbs {
+    --breadcrumbs-color: #{$white};
   }
 }

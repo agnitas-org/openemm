@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,21 +21,19 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.emm.core.hashtag.AbstractColonHashTagWithParameters;
 import com.agnitas.emm.core.hashtag.HashTagContext;
-import com.agnitas.emm.core.hashtag.exception.HashTagException;
 
 public final class AgeHashTag extends AbstractColonHashTagWithParameters {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AgeHashTag.class);
+	private static final Logger LOGGER = LogManager.getLogger(AgeHashTag.class);
 	
 	private static final String COLUMN_PARAMETER = "column";
 	
@@ -48,7 +46,7 @@ public final class AgeHashTag extends AbstractColonHashTagWithParameters {
 	}
 
 	@Override
-	public final String handleWithParametersInternal(final HashTagContext context, final String tagName, final Map<String, String> parameters) throws HashTagException {
+	public String handleWithParametersInternal(HashTagContext context, String tagName, Map<String, String> parameters) {
 		if(!isTagName(tagName) || !parameters.containsKey(COLUMN_PARAMETER)) {
 			if(LOGGER.isInfoEnabled()) {
 				LOGGER.info("Invalid tag name or missing 'column' parameter");
@@ -62,7 +60,7 @@ public final class AgeHashTag extends AbstractColonHashTagWithParameters {
 		return age != null ? Long.toString(age.getYears()) : "";
 	}
 	
-	private final Period age(final HashTagContext context, final Map<String, String> parameters) throws HashTagException {
+	private Period age(HashTagContext context, Map<String, String> parameters) {
 		final String column = parameters.get(COLUMN_PARAMETER);
 		final DateFormat dateFormat = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS); // SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.FULL, SimpleDateFormat.FULL);
 		

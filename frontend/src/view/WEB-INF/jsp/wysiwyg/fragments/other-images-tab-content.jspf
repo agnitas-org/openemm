@@ -2,7 +2,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="images" type="java.util.List<java.lang.String>"--%>
-<%--@elvariable id="uploadedImages" type="java.util.List<org.agnitas.util.Tuple<java.lang.Integer, java.lang.String>>"--%>
+<%--@elvariable id="uploadedImages" type="java.util.List<com.agnitas.util.Tuple<java.lang.Integer, java.lang.String>>"--%>
 
 <div id="other-images-tab">
     <mvc:form>

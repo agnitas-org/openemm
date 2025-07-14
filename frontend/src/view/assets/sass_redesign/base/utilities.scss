@@ -15,6 +15,10 @@
   min-height: 100% !important;
 }
 
+.gap-inherit {
+  gap: inherit !important;
+}
+
 .flex-center {
   @include flex-center;
 }
@@ -33,7 +37,7 @@
   display: none !important;
 }
 
-.mobile-visible {
+.mobile-visible, .mobile-visible + .select2 { // used in tile collapse. tile-events_redesigned.js, tile.scss
   @include desktop {
     display: none !important;
   }
@@ -45,12 +49,16 @@
   }
 }
 
-.bg-light-blue {
-  background-color: $light-blue;
+.full-screen-shown {
+  display: none !important;
+
+  .tile--full-screen & {
+    display: initial !important;
+  }
 }
 
 .bg-disabled {
-  background-color: var(--input-disabled-bg-color);
+  background-color: var(--base-disabled-bg) !important;
 }
 
 .border-left-radius-0 {
@@ -81,6 +89,11 @@
   user-select: none;
 }
 
+.text-truncate-lines {
+  --text-truncate-lines: 2; // default
+  @include text-truncate-lines;
+}
+
 .col-break-line {
   @extend .col-12;
   padding: 0;
@@ -99,4 +112,12 @@
 
 .hide-scroll {
   @include hide-scroll;
+}
+
+.fs-inherit {
+  font-size: inherit !important;
+}
+
+.text-color-default {
+  color: $body-color-var !important;
 }

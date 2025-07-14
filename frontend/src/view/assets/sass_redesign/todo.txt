@@ -30,7 +30,7 @@ check all TODO occurrences about EMMGUI-714
 
 check usage of /js/lib/calendar/localeDate.js and /js/lib/calendar/weekOfYear.js and remove
 
-TODO: remove WEB-INF/jsp/redesigned_jsp/displaytag/displaytag-properties.jspf and move properties to displaytag.properties files (if possible)
+TODO: remove display tag after remove of old design and commons-lang if possible
 
 search for redesign related 'switchDesignUrl' attribute and remove
 
@@ -85,3 +85,12 @@ TODO: replace [data-dismiss] with [data-bs-dismiss] and remove usage where it is
 TODO: remove emojionearea.js lib
 
 TODO: check all usages of 'redesign' word
+
+TODO: remove .dark-theme usages from etc/reportdesigns/styles/redesign_style.css in case if not required
+
+TODO: remove _ActionTestSuite.java and remove every test for old design
+
+TODO: add licenses to scss / js files??
+TODO: icons-defs.svg is still needed?
+
+TODO: remove 'ux' prefix/suffix from the code

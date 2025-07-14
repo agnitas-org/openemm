@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,12 +11,8 @@
 package com.agnitas.emm.core.serverstatus.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.service.JobDto;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
@@ -24,9 +20,10 @@ import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
-
 import jakarta.servlet.ServletContext;
-import net.sf.json.JSONArray;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import com.agnitas.service.JobDto;
+import org.json.JSONArray;
 
 public interface ServerStatusService {
     
@@ -69,11 +66,11 @@ public interface ServerStatusService {
 
 	boolean checkActiveNode();
 
-	Version getAvailableUpdateVersion() throws Exception;
+	Version getAvailableUpdateVersion(Version currentVersion) throws Exception;
 
 	boolean isReportStatusOK();
 
-	File downloadConfigFile() throws IOException, Exception;
+	File downloadConfigFile() throws Exception;
 
 	File getFullTbl(String dbStatement, String tableName) throws Exception;
 

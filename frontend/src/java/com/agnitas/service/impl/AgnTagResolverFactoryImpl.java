@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,12 +20,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.TagDefinition;
-import org.agnitas.beans.TagDetails;
-import org.agnitas.beans.Title;
-import org.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.dao.TagDao;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.TagDefinition;
+import com.agnitas.beans.TagDetails;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.dao.TagDao;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
@@ -35,12 +35,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComTitleDao;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.dao.TitleDao;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
@@ -55,10 +53,10 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
 
     private ExtensibleUIDService extensibleUidService;
 
-    private ComCompanyDao companyDao;
+    private CompanyDao companyDao;
     private RecipientService recipientService;
     private MailingDao mailingDao;
-    private ComTitleDao titleDao;
+    private TitleDao titleDao;
     private TagDao tagDao;
     private ConfigService configService;
     private CompanyTokenService companyTokenService;
@@ -73,47 +71,38 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
         return new AgnTagResolverImpl(companyId, 0, 0, 0);
     }
 
-    @Required
     public final void setRecipientFactory(final RecipientFactory factory) {
         this.recipientFactory = Objects.requireNonNull(factory, "Recipient factory cannot be null");
     }
 
-    @Required
     public final void setExtensibleUidService(final ExtensibleUIDService service) {
         this.extensibleUidService = Objects.requireNonNull(service, "UID service cannot be null");
     }
 
-    @Required
-    public final void setCompanyDao(final ComCompanyDao dao) {
+    public final void setCompanyDao(final CompanyDao dao) {
         this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
     }
 
-    @Required
     public final void setRecipientService(final RecipientService service) {
         this.recipientService = Objects.requireNonNull(service, "Recipient DAO cannot be null");
     }
 
-    @Required
     public final void setMailingDao(final MailingDao dao) {
         this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
     }
 
-    @Required
-    public final void setTitleDao(final ComTitleDao dao) {
+    public final void setTitleDao(final TitleDao dao) {
         this.titleDao = Objects.requireNonNull(dao, "Title DAO cannot be null");
     }
 
-    @Required
     public final void setTagDao(final TagDao dao) {
         this.tagDao = Objects.requireNonNull(dao, "Tag DAO cannot be null");
     }
     
-    @Required
     public final void setConfigService(final ConfigService service) {
     	this.configService = Objects.requireNonNull(service, "Config Service cannot be null");
     }
     
-    @Required
     public final void setCompanyTokenService(final CompanyTokenService service) {
     	this.companyTokenService = Objects.requireNonNull(service, "companyTokenService is null");
     }
@@ -279,7 +268,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
 
         private String getUid() {
         	final int licenseID = configService.getLicenseID();
-            final ComExtensibleUID uid = UIDFactory.from(licenseID, companyId, customerId, mailingId);
+            final ExtensibleUID uid = UIDFactory.from(licenseID, companyId, customerId, mailingId);
 
             try {
                 return extensibleUidService.buildUIDString(uid);

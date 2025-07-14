@@ -115,6 +115,8 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'settings.extended' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailinglists.addresses' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'webhooks.enable' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'webhooks.admin' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 
 -- User/Admin: EMM-Master
 DELETE FROM admin_permission_tbl WHERE admin_id = 1 AND permission_name NOT LIKE '%.migration';
@@ -228,3 +230,5 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restful
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'settings.extended');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailinglists.addresses');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'webhooks.enable');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'webhooks.admin');

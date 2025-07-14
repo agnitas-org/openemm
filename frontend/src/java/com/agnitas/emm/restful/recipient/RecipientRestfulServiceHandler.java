@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,49 +29,49 @@ import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.ImportStatus;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.beans.impl.DatasourceDescriptionImpl;
-import org.agnitas.beans.impl.ImportProfileImpl;
-import org.agnitas.beans.impl.ImportStatusImpl;
-import org.agnitas.beans.impl.RecipientImpl;
-import org.agnitas.beans.impl.ViciousFormDataException;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.dao.SourceGroupType;
-import org.agnitas.dao.UserStatus;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.BindingEntryImpl;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
+import com.agnitas.beans.impl.ImportProfileImpl;
+import com.agnitas.beans.impl.ImportStatusImpl;
+import com.agnitas.beans.impl.RecipientImpl;
+import com.agnitas.beans.impl.ViciousFormDataException;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.emm.common.UserStatus;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
-import org.agnitas.service.ProfileImportWorker;
-import org.agnitas.service.ProfileImportWorkerFactory;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.HttpUtils.RequestMethod;
-import org.agnitas.util.ImportUtils.ImportErrorType;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.CheckForDuplicates;
-import org.agnitas.util.importvalues.DateFormat;
-import org.agnitas.util.importvalues.Gender;
-import org.agnitas.util.importvalues.ImportMode;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.service.ProfileImportWorker;
+import com.agnitas.service.ProfileImportWorkerFactory;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.ImportUtils.ImportErrorType;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.CheckForDuplicates;
+import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.util.importvalues.Gender;
+import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComRecipientMailing;
+import com.agnitas.beans.RecipientMailing;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.FullviewService;
@@ -113,8 +113,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
 	
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComRecipientDao recipientDao;
-	private ComBindingEntryDao bindingEntryDao;
+	private RecipientDao recipientDao;
+	private BindingEntryDao bindingEntryDao;
 	private RecipientFieldService recipientFieldService;
 	private MailinglistDao mailinglistDao;
 	private ProfileImportWorkerFactory profileImportWorkerFactory;
@@ -123,9 +123,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private ConfigService configService;
 	private SubscriberLimitCheck subscriberLimitCheck;
 
-	public RecipientRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, ComRecipientDao recipientDao, ComBindingEntryDao bindingEntryDao, RecipientFieldService recipientFieldService,
-			MailinglistDao mailinglistDao, ProfileImportWorkerFactory profileImportWorkerFactory, DatasourceDescriptionDao datasourceDescriptionDao, FullviewService fullviewService, ConfigService configService,
-			SubscriberLimitCheck subscriberLimitCheck) {
+	public RecipientRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, RecipientDao recipientDao, BindingEntryDao bindingEntryDao, RecipientFieldService recipientFieldService,
+										  MailinglistDao mailinglistDao, ProfileImportWorkerFactory profileImportWorkerFactory, DatasourceDescriptionDao datasourceDescriptionDao, FullviewService fullviewService, ConfigService configService,
+										  SubscriberLimitCheck subscriberLimitCheck) {
 		this.userActivityLogDao = userActivityLogDao;
 		this.recipientDao = recipientDao;
 		this.bindingEntryDao = bindingEntryDao;
@@ -139,7 +139,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -280,13 +280,13 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	public CaseInsensitiveMap<String, RecipientFieldDescription> getVisibleRecipientFieldsMap(int companyID, int adminID) throws Exception {
+	public CaseInsensitiveMap<String, RecipientFieldDescription> getVisibleRecipientFieldsMap(int companyID, int adminID) {
 		return new CaseInsensitiveMap<>(recipientFieldService.getRecipientFields(companyID).stream()
 				.filter(x -> (x.getAdminPermission(adminID) != ProfileFieldMode.NotVisible))
 				.collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
 	}
 	
-	public CaseInsensitiveMap<String, RecipientFieldDescription> getChangeableRecipientFieldsMap(int companyID, int adminID) throws Exception {
+	public CaseInsensitiveMap<String, RecipientFieldDescription> getChangeableRecipientFieldsMap(int companyID, int adminID) {
 		return new CaseInsensitiveMap<>(recipientFieldService.getRecipientFields(companyID).stream()
 				.filter(x -> (x.getAdminPermission(adminID) == ProfileFieldMode.Editable))
 				.collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
@@ -314,7 +314,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private void addReceivedMailingsToCustomer(int companyID, JsonObject customerJsonObject) {
 		int customerID = ((Number) customerJsonObject.get("customer_id")).intValue();
 		JsonArray mailingsJsonArray = new JsonArray();
-		for (ComRecipientMailing mailing : recipientDao.getMailingsDeliveredToRecipient(customerID, companyID)) {
+		for (RecipientMailing mailing : recipientDao.getMailingsDeliveredToRecipient(customerID, companyID)) {
 			JsonObject mailingJsonObject = new JsonObject();
 
 			mailingJsonObject.add("mailing_id", mailing.getMailingId());
@@ -1118,12 +1118,12 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	private void removeTripleDateEntries(Map<String, Object> custParameters) {
-		custParameters.entrySet().removeIf(item -> StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY)
-			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH)
-			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR)
-			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR)
-			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE)
-			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND));
+		custParameters.entrySet().removeIf(item -> StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY)
+			|| StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH)
+			|| StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR)
+			|| StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_HOUR)
+			|| StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE)
+			|| StringUtils.endsWithIgnoreCase(item.getKey(), RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND));
 	}
 
 	private ImportStatus importRecipients(int companyID, Admin admin, ImportMode importMode, String keyColumn, List<Integer> mailingListIdsToAssign, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {

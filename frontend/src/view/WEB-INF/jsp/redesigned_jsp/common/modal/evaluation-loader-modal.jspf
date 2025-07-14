@@ -3,13 +3,14 @@
     <div id="evaluate-loader-modal" class="modal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-body">
-                    <img alt="" src='<c:url value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>'>
-                    <p><mvc:message code="report.calculation.running"/></p>
+                <div class="modal-header">
+                    <svg><use href="<c:url value="/assets/core/images/facelift/sprite.svg"/>#msgs_msg-uploading"></use></svg>
+                    <h1><mvc:message code="report.calculation.running"/></h1>
                 </div>
-                <div class="modal-footer">
-                    <div id="progress-bar"></div>
-                    <strong id="progress-text">0 bytes</strong>
+                <div class="modal-body">
+                    <div class="progress loop">
+                        <div id="progress-text" class="percentage">0 bytes</div>
+                    </div>
                 </div>
             </div>
         </div>

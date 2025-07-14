@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,13 +16,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.target.dao.ReferencedItemsDao;
 import com.agnitas.emm.core.target.eql.referencecollector.ReferencedItemsCollection;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Implementation of {@link ReferencedItemsService} interface.
@@ -81,11 +79,6 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsReferencingLink(final int companyID, final int linkID) {
-		return referencedItemsDao.listTargetGroupsReferencingLink(companyID, linkID);
-	}
-
-	@Override
 	public final List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID) {
 		return referencedItemsDao.listTargetGroupsReferencingAutoImport(companyID, autoImportID);
 	}
@@ -105,7 +98,6 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 	 * 
 	 * @param dao DAO persisting information on referenced items
 	 */
-	@Required
 	public final void setReferencedItemsDao(final ReferencedItemsDao dao) {
 		this.referencedItemsDao = Objects.requireNonNull(dao, "ReferencedItemsDao is null");
 	}

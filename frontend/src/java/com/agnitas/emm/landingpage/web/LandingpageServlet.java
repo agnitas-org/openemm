@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,6 @@ package com.agnitas.emm.landingpage.web;
 
 import java.io.IOException;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +26,7 @@ import com.agnitas.emm.landingpage.service.LandingpageService;
 
 public final class LandingpageServlet extends HttpServlet {
 	
-	private static final transient Logger LOGGER = LogManager.getLogger(LandingpageServlet.class);
+	private static final Logger LOGGER = LogManager.getLogger(LandingpageServlet.class);
 	
 	private LandingpageService landingpageService;
 
@@ -35,12 +34,12 @@ public final class LandingpageServlet extends HttpServlet {
 	private static final long serialVersionUID = -6994372676546100544L;
 
 	@Override
-	protected final void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+	protected final void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
 		redirectToLandingPage(req, resp);
 	}
 
 	@Override
-	protected final void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+	protected final void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
 		redirectToLandingPage(req, resp);
 	}
 	

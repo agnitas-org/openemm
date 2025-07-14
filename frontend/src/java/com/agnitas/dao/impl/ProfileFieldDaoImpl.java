@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,36 +9,6 @@
 */
 
 package com.agnitas.dao.impl;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.ProfileFieldPermission;
-import com.agnitas.beans.impl.ProfileFieldImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
-import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientStandardField;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONException;
-import org.agnitas.beans.LightProfileField;
-import org.agnitas.beans.impl.LightProfileFieldImpl;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,14 +23,38 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.ProfileFieldPermission;
+import com.agnitas.beans.impl.ProfileFieldImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.beans.LightProfileField;
+import com.agnitas.beans.impl.LightProfileFieldImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.TimeoutLRUMap;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.springframework.jdbc.core.RowMapper;
+
 /**
  * @deprecated Use RecipientFieldService instead
  */
 @Deprecated
 public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao {
-	/** The logger. */
-	private static final Logger logger = LogManager.getLogger(ProfileFieldDaoImpl.class);
-	
+
 	/**
 	 * Caching of Profile structure data for 1 Minute
 	 */
@@ -107,7 +101,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	 * 
 	 * @param configService service for accessing configuration data.
 	 */
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -117,29 +110,27 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	 * 
 	 * @param service service handling profile field history
 	 */
-	@Required
 	public void setProfileHistoryService(final RecipientProfileHistoryService service) {
 		this.profileHistoryService = service;
 	}
 	
-	@Required
 	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
 		this.recipientFieldService = recipientFieldService;
 	}
 
 	@Override
-	public ProfileField getProfileField(int companyID, String columnName) throws Exception {
+	public ProfileField getProfileField(int companyID, String columnName) {
 		if (companyID <= 0) {
-			throw new RuntimeException("Invalid companyId for getProfileField");
+			throw new IllegalArgumentException("Invalid companyId for getProfileField");
 		} else if (StringUtils.isBlank(columnName)) {
-			throw new RuntimeException("Invalid empty columnName for getProfileField");
+			throw new IllegalArgumentException("Invalid empty columnName for getProfileField");
 		} else {
 			DbColumnType columnType = DbUtilities.getColumnDataType(getDataSource(), "customer_" + companyID + "_tbl", columnName);
 			if (columnType == null) {
 				return null;
 			} else {
-				List<ProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ProfileField_RowMapper(), companyID, columnName);
-				if (profileFieldList == null || profileFieldList.size() < 1) {
+				List<ProfileField> profileFieldList = select(SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ProfileField_RowMapper(), companyID, columnName);
+				if (profileFieldList == null || profileFieldList.isEmpty()) {
 					ProfileField dbOnlyField = new ProfileFieldImpl();
 					dbOnlyField.setCompanyID(companyID);
 					dbOnlyField.setColumn(columnName);
@@ -155,7 +146,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 
 					return dbOnlyField;
 				} else if (profileFieldList.size() > 1) {
-					throw new RuntimeException("Invalid number of entries found in getProfileField: " + profileFieldList.size());
+					throw new IllegalStateException("Invalid number of entries found in getProfileField: " + profileFieldList.size());
 				} else {
 					ProfileField profileField = profileFieldList.get(0);
 					profileField.setCompanyID(companyID);
@@ -176,7 +167,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
     @Override
-    public ProfileField getProfileField(int companyID, String columnName, int adminID) throws Exception {
+    public ProfileField getProfileField(int companyID, String columnName, int adminID) {
     	if (companyID <= 0) {
 			return null;
 		} else {
@@ -184,7 +175,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
             if (profileField == null) {
             	return null;
             } else {
-            	List<ProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
+            	List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
     				return profileField;
     			} else if (profileFieldPermissionList.size() > 1) {
@@ -199,11 +190,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
     }
 	
 	@Override
-	public ProfileField getProfileFieldByShortname(int companyID, String shortName) throws Exception {
+	public ProfileField getProfileFieldByShortname(int companyID, String shortName) {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ProfileField> profileFieldList = select(logger, SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ProfileField_RowMapper(), companyID, shortName);
+			List<ProfileField> profileFieldList = select(SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ProfileField_RowMapper(), companyID, shortName);
 			if (profileFieldList == null || profileFieldList.size() < 1) {
 				return null;
 			} else if (profileFieldList.size() > 1) {
@@ -228,12 +219,12 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	
 	@Override
     public boolean existWithExactShortname(final int companyID, final String shortName) {
-        return selectInt(logger, "SELECT count(*) FROM customer_field_tbl WHERE company_id = ? AND shortname = ?",
+        return selectInt("SELECT count(*) FROM customer_field_tbl WHERE company_id = ? AND shortname = ?",
                 companyID, shortName) > 0;
     }
 
 	@Override
-	public ProfileField getProfileFieldByShortname(int companyID, String shortName, int adminID) throws Exception {
+	public ProfileField getProfileFieldByShortname(int companyID, String shortName, int adminID) {
 		if (companyID <= 0) {
 			return null;
 		} else {
@@ -241,11 +232,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
             if (profileField == null) {
             	return null;
             } else {
-            	List<ProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
+            	List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
     				return profileField;
     			} else if (profileFieldPermissionList.size() > 1) {
-    				throw new Exception("Invalid number of permission entries found in getProfileFieldByShortname: " + profileFieldPermissionList.size());
+    				throw new IllegalStateException("Invalid number of permission entries found in getProfileFieldByShortname: " + profileFieldPermissionList.size());
     			} else {
     				profileField.setAdminID(adminID);
     				profileField.setModeEdit(profileFieldPermissionList.get(0).getModeEdit());
@@ -256,7 +247,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 	
 	@Override
-	public List<ProfileField> getProfileFields(int companyID) throws Exception {
+	public List<ProfileField> getProfileFields(int companyID) {
 		if (companyID <= 0) {
 			return null;
 		} else {
@@ -275,7 +266,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 	
 	@Override
-	public List<ProfileField> getProfileFields(int companyID, int adminID) throws Exception {
+	public List<ProfileField> getProfileFields(int companyID, int adminID) {
 		List<ProfileField> fields = getComProfileFields(companyID, adminID);
 
 		if (fields == null) {
@@ -286,7 +277,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public List<ProfileField> getComProfileFields(int companyID) throws Exception {
+	public List<ProfileField> getComProfileFields(int companyID) {
 		if (companyID <= 0) {
 			return null;
 		} else {
@@ -301,17 +292,17 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 	
 	@Override
-	public List<ProfileField> getComProfileFields(int companyID, int adminID) throws Exception {
+	public List<ProfileField> getComProfileFields(int companyID, int adminID) {
 		return getComProfileFields(companyID, adminID, false);
 	}
 
 	@Override
-	public List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting) throws Exception {
+	public List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting) {
 		return getComProfileFields(companyID, adminID, customSorting, false);
 	}
 
 	@Override
-	public List<LightProfileField> getLightProfileFields(int companyId) throws Exception {
+	public List<LightProfileField> getLightProfileFields(int companyId) {
 		CaseInsensitiveMap<String, LightProfileField> fieldsMap = getLightProfileFieldsMap(companyId, false);
 
 		if (fieldsMap == null) {
@@ -324,7 +315,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		return fields;
 	}
 
-    public List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting, final boolean noNotNullConstraintCheck) throws Exception {
+    public List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting, boolean noNotNullConstraintCheck) {
 		if (companyID <= 0) {
 			return null;
 		} else {
@@ -345,7 +336,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 	
 	@Override
-	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID) {
 		if (companyID <= 0) {
 			return null;
 		} else {
@@ -361,16 +352,16 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 	
 	@Override
-	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID) {
 		return getComProfileFieldsMap(companyID, true);
 	}
 
 	@Override
-	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, boolean determineDefaultValues) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, boolean determineDefaultValues) {
 		return getComProfileFieldsMap(companyID, determineDefaultValues, false);
 	}
 
-	private CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, @Deprecated boolean determineDefaultValues, boolean excludeNonHistorized) throws Exception {
+	private CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, @Deprecated boolean determineDefaultValues, boolean excludeNonHistorized) {
 		determineDefaultValues = true; // Due to caching, default values must always be determined (see EMM-9446)
 		
 		if (companyID <= 0) {
@@ -384,7 +375,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	
 	            String sqlSelectFields = excludeNonHistorized ? SELECT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY : SELECT_PROFILEFIELDS_BY_COMPANYID;
 				CaseInsensitiveMap<String, ProfileField> customFieldsMap = new CaseInsensitiveMap<>();
-	            for (ProfileField field : select(logger, sqlSelectFields, new ProfileField_RowMapper(), companyID)) {
+	            for (ProfileField field : select(sqlSelectFields, new ProfileField_RowMapper(), companyID)) {
 	                customFieldsMap.put(field.getColumn(), field);
 	            }
 	
@@ -470,7 +461,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		}
 	}
 	
-	private CaseInsensitiveMap<String, LightProfileField> getLightProfileFieldsMap(int companyId, boolean excludeNonHistorized) throws Exception {
+	private CaseInsensitiveMap<String, LightProfileField> getLightProfileFieldsMap(int companyId, boolean excludeNonHistorized) {
 		if (companyId <= 0) {
 			return null;
 		}
@@ -479,7 +470,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 
 		String sqlSelectFields = excludeNonHistorized ? SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY : SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID;
 		CaseInsensitiveMap<String, LightProfileField> customFieldsMap = new CaseInsensitiveMap<>();
-		for (LightProfileField field : select(logger, sqlSelectFields, new LightProfileField_RowMapper(), companyId)) {
+		for (LightProfileField field : select(sqlSelectFields, new LightProfileField_RowMapper(), companyId)) {
 			customFieldsMap.put(field.getColumn(), field);
 		}
 
@@ -507,11 +498,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID) {
 		return getProfileFieldsMap(companyID, adminID, false);
 	}
 	
-	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID, final boolean noNotNullConstraintCheck) throws Exception {
+	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID, final boolean noNotNullConstraintCheck) {
 		if (companyID == 0) {
 			return null;
 		} else {
@@ -526,18 +517,18 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
     @Override
-    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID) throws Exception {
+    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID) {
     	return getComProfileFieldsMap(companyID, adminID, false);
     }
 
-    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID, final boolean noNotNullConstraintCheck) throws Exception {
+    public CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID, boolean noNotNullConstraintCheck) {
         if (companyID <= 0) {
             return null;
         } else {
 			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, noNotNullConstraintCheck);
 			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 			for (ProfileField comProfileField : comProfileFieldMap.values()) {
-				List<ProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
+				List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
     				throw new RuntimeException("Invalid number of permission entries found in getProfileFields: " + profileFieldPermissionList.size());
     			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
@@ -553,11 +544,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
     }
 
     @Override
-    public List<ProfileField> getProfileFieldsWithInterest(int companyID, int adminID) throws Exception {
+    public List<ProfileField> getProfileFieldsWithInterest(int companyID, int adminID) {
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ProfileField> comProfileFieldList = select(logger, SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGINTEREST, new ProfileField_RowMapper(), companyID);
+			List<ProfileField> comProfileFieldList = select(SELECT_PROFILEFIELDS_BY_COMPANYID_HAVINGINTEREST, new ProfileField_RowMapper(), companyID);
 			CaseInsensitiveMap<String, DbColumnType> dbDataTypes = DbUtilities.getColumnDataTypes(getDataSource(), "customer_" + companyID + "_tbl");
 			List<ProfileField> returnList = new ArrayList<>();
 			for (ProfileField comProfileField : comProfileFieldList) {
@@ -576,7 +567,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 					comProfileField.setNumericScale(columnType.getNumericScale());
 					comProfileField.setNullable(columnType.isNullable());
 					
-					List<ProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
+					List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
 	            	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
 	    				throw new RuntimeException("Invalid number of permission entries found in getProfileFieldsWithIndividualSortOrder: " + profileFieldPermissionList.size());
 	    			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
@@ -597,7 +588,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
     }
 
 	@Override
-	public List<ProfileField> getHistorizedProfileFields(int companyID) throws Exception {
+	public List<ProfileField> getHistorizedProfileFields(int companyID) {
 		CaseInsensitiveMap<String, ProfileField> map = getComProfileFieldsMap(companyID, false, true);
 		if (map == null) {
 			return null;
@@ -626,8 +617,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		String[] allowedValues = field.getAllowedValues();
 		String allowedValuesJson = null;
 		if (allowedValues != null) {
-			JSONArray array = new JSONArray();
-			array.addAll(Arrays.asList(allowedValues));
+			JSONArray array = new JSONArray(Arrays.asList(allowedValues));
 			allowedValuesJson = array.toString();
 		}
 
@@ -645,12 +635,12 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			
 			// Shift other entries if needed
 			if (field.getSort() < MAX_SORT_INDEX) {
-				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", field.getSort());
+				update("UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", field.getSort());
 			}
 			
 			// Insert new entry
 			String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
+			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 		} else {
 			// Check if new shortname already exists before a new column is added to dbtable
 			if (!previousProfileField.getShortname().equals(field.getShortname())
@@ -670,22 +660,22 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			if (field.getSort() != previousProfileField.getSort()) {
     			if (field.getSort() < MAX_SORT_INDEX) {
     				if (field.getSort() < previousProfileField.getSort()) {
-    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", field.getSort(), previousProfileField.getSort());
+    					update("UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", field.getSort(), previousProfileField.getSort());
     				} else {
-    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", field.getSort(), previousProfileField.getSort());
+    					update("UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", field.getSort(), previousProfileField.getSort());
     				}
     			} else if (previousProfileField.getSort() < MAX_SORT_INDEX) {
-    				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ?", previousProfileField.getSort());
+    				update("UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ?", previousProfileField.getSort());
     			}
 			}
 			
-			if (selectInt(logger, "SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
+			if (selectInt("SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
     			// Insert new entry for some manually by db-support in db added fields
 				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-    			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
+    			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 			} else {
     			// Update existing entry
-    			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)",
+    			update("UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)",
    					field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn());
 			}
 		}
@@ -694,32 +684,9 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		
 		return true;
     }
-    
-    @Override
-    public boolean mayAdd(int companyID) {
-    	try {
-			if (companyID <= 0) {
-	    		return false;
-	    	} else {
-	    		int maxFields = getMaximumCompanySpecificFieldCount(companyID);
-				int currentFieldCount = getCurrentCompanySpecificFieldCount(companyID);
-				int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID);
-				if (currentFieldCount < maxFields) {
-					return true;
-				} else if (currentFieldCount < maxFields + gracefulExtension) {
-					return true;
-				} else {
-					return false;
-				}
-	    	}
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			return false;
-		}
-	}
 
 	@Override
-	public int getMaximumCompanySpecificFieldCount(int companyID) throws Exception {
+	public int getMaximumCompanySpecificFieldCount(int companyID) {
 		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
 		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
 		if (companyMaxFields >= 0 && (companyMaxFields < systemMaxFields || systemMaxFields < 0)) {
@@ -729,20 +696,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		}
 	}
 	
-	@Override
-	public int getCurrentCompanySpecificFieldCount(int companyID) throws Exception {
-		int currentFieldCount = DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
-		int companySpecificFieldCount = currentFieldCount - RecipientStandardField.getAllRecipientStandardFieldColumnNames().size();
-		
-		// Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
-		for (String fieldName : RecipientFieldService.OLD_SOCIAL_MEDIA_FIELDS) {
-			if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldName)) {
-				companySpecificFieldCount--;
-			}
-		}
-		return companySpecificFieldCount;
-	}
-
 	@Override
 	public boolean addColumnToDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
 		if (companyID <= 0) {
@@ -857,7 +810,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		}
 	}
 
-    private static class ProfileField_RowMapper implements RowMapper<ProfileField> {
+    private class ProfileField_RowMapper implements RowMapper<ProfileField> {
 		@Override
 		public ProfileField mapRow(ResultSet resultSet, int row) throws SQLException {
 			ProfileField readProfileField = new ProfileFieldImpl();
@@ -900,13 +853,13 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			String[] allowedValues = null;
 			if (allowedValuesJson != null) {
 				try {
-					JSONArray array = JSONArray.fromObject(allowedValuesJson);
-					allowedValues = new String[array.size()];
-					for (int i = 0; i < array.size(); i++) {
+					JSONArray array = new JSONArray(allowedValuesJson);
+					allowedValues = new String[array.length()];
+					for (int i = 0; i < array.length(); i++) {
 						allowedValues[i] = array.getString(i);
 					}
 				} catch (JSONException e) {
-					logger.error("Error occurred while parsing JSON: " + e.getMessage(), e);
+					logger.error("Error occurred while parsing allowed values for profile field: '%s' JSON: %s".formatted(readProfileField.getShortname(), allowedValuesJson), e);
 				}
 			}
 			readProfileField.setAllowedValues(allowedValues);
@@ -946,24 +899,24 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) throws Exception {
-		if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", new String[] { fieldname })) {
+	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) {
+		if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			// Field already exists, so a new default value will only take effect on newly inserted entries, which should not take too much time
 			return true;
-		} else {
-			// Field does not exist yet, so a default value which is not empty must be copied in every existing entry, which can take a lot of time
-			return StringUtils.isEmpty(fieldDefault) || selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl") <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
 		}
+
+		// Field does not exist yet, so a default value which is not empty must be copied in every existing entry, which can take a lot of time
+		return StringUtils.isEmpty(fieldDefault) || selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl") <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
 	}
 	
 	@Override
-	public final boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase) throws Exception {
-		return DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", new String[] { fieldNameOnDatabase });
+	public final boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase) {
+		return DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldNameOnDatabase);
 	}
 	
 	@Override
 	public final int countCustomerEntries(final int companyID) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
+		return selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
 	}
 
 	private void doPostProcessing(final int companyID) throws RecipientProfileHistoryException {
@@ -988,13 +941,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			return true;
 		}
 
-		try {
-			return DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyId + "_tbl", column);
-		} catch (Exception e) {
-			logger.fatal("Error occurred: " + e.getMessage(), e);
-		}
-
-		return false;
+		return DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyId + "_tbl", column);
 	}
 
 	@Override
@@ -1010,7 +957,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			return true;
 		}
 
-		return selectInt(logger, sqlCheckIsHistorized, companyId, column.toLowerCase()) > 0;
+		return selectInt(sqlCheckIsHistorized, companyId, column.toLowerCase()) > 0;
 	}
 
 	private String getRecipientTableName(int companyId){
@@ -1019,12 +966,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 
 	@Override
 	public DbColumnType getColumnType(int companyId, String columnName) {
-		String recipientTable = getRecipientTableName(companyId);
-		try {
-			return DbUtilities.getColumnDataType(getDataSource(), recipientTable, columnName);
-		} catch (Exception e) {
+		if (StringUtils.isBlank(columnName)) {
 			return null;
 		}
+
+		return DbUtilities.getColumnDataType(getDataSource(), getRecipientTableName(companyId), columnName);
 	}
 
 	@Override
@@ -1045,7 +991,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	@Override
 	public Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception {
 		Map<Integer, ProfileFieldMode> resultMap = new HashMap<>();
-		List<Map<String, Object>> result = select(logger, "SELECT admin_id, mode_edit FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+		List<Map<String, Object>> result = select("SELECT admin_id, mode_edit FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 		for (Map<String, Object> row : result) {
 			resultMap.put(((Number) row.get("admin_id")).intValue(), ProfileFieldMode.getProfileFieldModeForStorageCode(((Number) row.get("mode_edit")).intValue()));
 		}
@@ -1054,9 +1000,9 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 
 	@Override
 	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
-		boolean profileFieldEntryExists = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", companyID, columnName.toLowerCase()) > 0;
+		boolean profileFieldEntryExists = selectInt("SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", companyID, columnName.toLowerCase()) > 0;
 		if (!profileFieldEntryExists) {
-			update(logger, "INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, mode_edit) VALUES (?, ?, ?, ?, ?, ?)",
+			update("INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, mode_edit) VALUES (?, ?, ?, ?, ?, ?)",
 				companyID,
 				columnName.toLowerCase(),
 				0,
@@ -1067,33 +1013,33 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			columnName = columnName.toLowerCase();
 		} else {
 			// Some old cases of profilefield col_name may be stored in uppercse and cannot be changed because of FK relationships. Therefore use the stored name's letter case.
-			columnName = select(logger, "SELECT col_name FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", String.class, companyID, columnName.toLowerCase());
+			columnName = select("SELECT col_name FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", String.class, companyID, columnName.toLowerCase());
 		}
 		
-		ProfileFieldMode fallbackProfileFieldMode = ProfileFieldMode.getProfileFieldModeForStorageCode(selectIntWithDefaultValue(logger, "SELECT mode_edit FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", ProfileFieldMode.Editable.getStorageCode(), companyID, columnName.toLowerCase()));
+		ProfileFieldMode fallbackProfileFieldMode = ProfileFieldMode.getProfileFieldModeForStorageCode(selectIntWithDefaultValue("SELECT mode_edit FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", ProfileFieldMode.Editable.getStorageCode(), companyID, columnName.toLowerCase()));
 		
 		List<Object[]> parameterList = new ArrayList<>();
 		if (editableUsers != null && fallbackProfileFieldMode != ProfileFieldMode.Editable) {
-			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+			update("DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : editableUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName, adminID, ProfileFieldMode.Editable.getStorageCode() });
 	        }
 		}
 		if (readOnlyUsers != null && fallbackProfileFieldMode != ProfileFieldMode.ReadOnly) {
-			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+			update("DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : readOnlyUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName, adminID, ProfileFieldMode.ReadOnly.getStorageCode() });
 	        }
 		}
 		if (notVisibleUsers != null && fallbackProfileFieldMode != ProfileFieldMode.NotVisible) {
-			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+			update("DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : notVisibleUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName, adminID, ProfileFieldMode.NotVisible.getStorageCode() });
 	        }
 		}
 
 		if (!parameterList.isEmpty()) {
-	        batchupdate(logger, "INSERT INTO customer_field_permission_tbl (company_id, column_name, admin_id, mode_edit) VALUES (?, ?, ?, ?)", parameterList);
+	        batchupdate("INSERT INTO customer_field_permission_tbl (company_id, column_name, admin_id, mode_edit) VALUES (?, ?, ?, ?)", parameterList);
 		}
 		
 		clearProfileStructureCache(companyID);
@@ -1102,7 +1048,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public Set<String> getCustomerColumns(int companyId) throws Exception {
+	public Set<String> getCustomerColumns(int companyId) {
 		return DbUtilities.getColumnDataTypes(dataSource, "customer_" + companyId + "_tbl").keySet();
 	}
 }

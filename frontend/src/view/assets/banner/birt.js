@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Emm Birt JS - nightly build <%= grunt.template.today("dd-mm-yyyy") %>
+   Emm Birt JS - nightly build <%= currentDate %>
    ========================================================================== */
 
 /* License

@@ -1,4 +1,4 @@
-<%@page import="org.agnitas.util.AgnUtils"%>
+<%@page import="com.agnitas.util.AgnUtils"%>
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>

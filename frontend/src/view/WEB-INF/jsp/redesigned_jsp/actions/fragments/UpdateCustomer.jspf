@@ -1,3 +1,4 @@
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <emm:instantiate var="updateCustomerColumnInfo" type="java.util.LinkedHashMap">
     <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
@@ -26,54 +27,52 @@
 </c:set>
 
 <script id="module-UpdateCustomer" type="text/x-mustache-template">
-    {{ var disabledAttr = readonly ? 'disabled' : ''; }}
+    {{ const readonlyAttr = readonly ? 'readonly' : ''; }}
     
-    <div class="tile-body" data-module-content="{{- index}}" data-initializer="update-customer-module">
+    <div class="tile-body vstack gap-3" data-module-content="{{- index}}" data-initializer="update-customer-module">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="UpdateCustomer"/>
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
-        <div class="row g-3">
-            <%@ include file="UpdateCustomer-trackpoint.jspf" %>
+        <%@ include file="UpdateCustomer-trackpoint.jspf" %>
 
-            <div class="col-12">
-                <label class="form-label">
-                    <mvc:message code="Column_Name"/>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/trigger/ProfilefieldMod.xml"></a>
-                </label>
+        <div>
+            <label class="form-label">
+                <mvc:message code="Column_Name"/>
+                <a href="#" class="icon icon-question-circle" data-help="trigger/ProfilefieldMod.xml"></a>
+            </label>
 
-                <div class="row g-1">
-                    <div class="col">
-                        {{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
-                        <select class="form-control js-select" name="modules[].columnName" id="module_{{- index}}.columnName" data-field="required" {{- disabledAttr }}>
-                            {{ if (readonly) { }}
-                                <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>
-                            {{ } else { }}
-                                <option value="">--</option>    
-                                <c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
-                                    <c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.column)}," />
-    
-                                    <c:if test="${not emm:contains(NEVER_SHOWN_PROFILE_FIELDS, SEARCH)}">
-                                        {{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
-                                        <option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
-                                    </c:if>
-                                </c:forEach>
-                            {{ } }}
-                        </select>
-                    </div>
+            <div class="row g-1">
+                <div class="col">
+                    {{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
+                    <select class="form-control js-select" name="modules[].columnName" id="module_{{- index}}.columnName" data-field="required" {{- readonlyAttr }}>
+                        {{ if (readonly) { }}
+                            <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>
+                        {{ } else { }}
+                            <option value="">--</option>
+                            <c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
+                                <c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.column)}," />
 
-                    <div class="col">
-                        <select class="form-control js-select" name="modules[].updateType" id="module_{{- index}}.updateType" {{- disabledAttr }}>
-                            <option value="1" {{ updateType == 1 ? print('selected="selected"') : print('') }}>+</option>
-                            <option value="2" {{ updateType == 2 ? print('selected="selected"') : print('') }}>-</option>
-                            <option value="3" {{ updateType == 3 ? print('selected="selected"') : print('') }}>=</option>
-                        </select>
-                    </div>
+                                <c:if test="${not emm:contains(NEVER_SHOWN_PROFILE_FIELDS, SEARCH)}">
+                                    {{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected' : ''; }}
+                                    <option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
+                                </c:if>
+                            </c:forEach>
+                        {{ } }}
+                    </select>
+                </div>
 
-                    <div class="col">
-                        <input type="text" name="modules[].updateValue" id="module_{{- index}}_updateValue"
-                               class="form-control" data-useTrack-updateValue value="{{- updateValue}}" {{- disabledAttr }}>
-                        <%@ include file="UpdateCustomer-trackpoint-table.jspf" %>
-                    </div>
+                <div class="col">
+                    <select class="form-control js-select" name="modules[].updateType" id="module_{{- index}}.updateType" {{- readonlyAttr }}>
+                        <option value="1" {{ updateType == 1 ? print('selected') : print('') }}>+</option>
+                        <option value="2" {{ updateType == 2 ? print('selected') : print('') }}>-</option>
+                        <option value="3" {{ updateType == 3 ? print('selected') : print('') }}>=</option>
+                    </select>
+                </div>
+
+                <div class="col">
+                    <input type="text" name="modules[].updateValue" id="module_{{- index}}_updateValue"
+                           class="form-control" data-useTrack-updateValue value="{{- updateValue}}" {{- readonlyAttr }}>
+                    <%@ include file="UpdateCustomer-trackpoint-table.jspf" %>
                 </div>
             </div>
         </div>

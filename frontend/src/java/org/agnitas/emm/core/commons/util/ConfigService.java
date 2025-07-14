@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -38,42 +39,18 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.ConfigValue.WebPush;
-import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DataEncryptor;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.ServerCommand.Command;
-import org.agnitas.util.ServerCommand.Server;
-import org.agnitas.util.Systemconfig;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.XmlUtilities;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-
 import com.agnitas.dao.AdminDao;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComServerMessageDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
-import com.agnitas.dao.PermissionDao;
-import com.agnitas.dao.impl.ComServerMessageDaoImpl;
+import com.agnitas.dao.ServerMessageDao;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
+import com.agnitas.dao.impl.ServerMessageDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.JavaMailServiceImpl;
 import com.agnitas.emm.core.Permission;
@@ -85,14 +62,33 @@ import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.permission.service.PermissionServiceImpl;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.impl.RecipientFieldServiceImpl;
-import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
+import com.agnitas.emm.core.supervisor.dao.SupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.messages.Message;
 import com.agnitas.service.LicenseError;
 import com.agnitas.util.CryptographicUtilities;
 import com.agnitas.util.Version;
-
 import jakarta.servlet.http.HttpServletRequest;
+import org.agnitas.emm.core.commons.util.ConfigValue.WebPush;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DataEncryptor;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.ServerCommand.Command;
+import com.agnitas.util.ServerCommand.Server;
+import com.agnitas.util.Systemconfig;
+import com.agnitas.util.Tuple;
+import com.agnitas.util.XmlUtilities;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * ConfigurationService for EMM
@@ -142,7 +138,7 @@ public class ConfigService {
 	protected CompanyInfoDao companyInfoDao;
 	
 	/** DAO for access company table. */
-	protected ComCompanyDao companyDao;
+	protected CompanyDao companyDao;
 	
 	protected RecipientFieldService recipientFieldService;
 	
@@ -153,7 +149,7 @@ public class ConfigService {
 	protected WebserviceUserDao webserviceUserDao;
 	
 	/** DAO for access supervisor table. */
-	protected ComSupervisorDao supervisorDao;
+	protected SupervisorDao supervisorDao;
 	
 	/** DAO for access license table. */
 	protected LicenseDao licenseDao;
@@ -162,7 +158,7 @@ public class ConfigService {
 	protected DataEncryptor dataEncryptor;
 	
 	/** DAO for access server_command_tbl table. */
-	protected ComServerMessageDao serverMessageDao;
+	protected ServerMessageDao serverMessageDao;
 	
 	protected JavaMailService javaMailService;
 	
@@ -192,36 +188,36 @@ public class ConfigService {
 				logger.error("Cannot find datasource in JNDI context: " + e.getMessage(), e);
 				throw new RuntimeException("Cannot find datasource in JNDI context: " + e.getMessage(), e);
 			}
-			
-			ConfigTableDao configTableDao = new ConfigTableDaoImpl();
-			((ConfigTableDaoImpl) configTableDao).setDataSource(dataSource);
+
+			ConfigTableDaoImpl configTableDao = new ConfigTableDaoImpl();
+			configTableDao.setDataSource(dataSource);
 			instance.setConfigTableDao(configTableDao);
-			
-			LicenseDao licenseDao = new LicenseDaoImpl();
-			((LicenseDaoImpl) licenseDao).setDataSource(dataSource);
+
+			LicenseDaoImpl licenseDao = new LicenseDaoImpl();
+			licenseDao.setDataSource(dataSource);
 			instance.setLicenseDao(licenseDao);
 			
 			CompanyInfoDao companyInfoDao = new CompanyInfoDao();
 			companyInfoDao.setDataSource(dataSource);
 			instance.setCompanyInfoDao(companyInfoDao);
-			
-			ComServerMessageDao serverMessageDao = new ComServerMessageDaoImpl();
-			((ComServerMessageDaoImpl) serverMessageDao).setDataSource(dataSource);
+
+			ServerMessageDaoImpl serverMessageDao = new ServerMessageDaoImpl();
+			serverMessageDao.setDataSource(dataSource);
 			instance.setServerMessageDao(serverMessageDao);
-			
-			PermissionDao permissionDao = new PermissionDaoImpl();
-			((PermissionDaoImpl) permissionDao).setDataSource(dataSource);
-			PermissionService permissionService = new PermissionServiceImpl();
-			((PermissionServiceImpl) permissionService).setPermissionDao(permissionDao);
+
+			PermissionDaoImpl permissionDao = new PermissionDaoImpl();
+			permissionDao.setDataSource(dataSource);
+			PermissionServiceImpl permissionService = new PermissionServiceImpl();
+			permissionService.setPermissionDao(permissionDao);
 			instance.setPermissionService(permissionService);
 			
-			RecipientFieldDao recipientFieldDao = new RecipientFieldDaoImpl(dataSource, null);
-			RecipientFieldService recipientFieldService = new RecipientFieldServiceImpl();
-			((RecipientFieldServiceImpl) recipientFieldService).setRecipientFieldDao(recipientFieldDao);
+			RecipientFieldDao recipientFieldDao = new RecipientFieldDaoImpl(dataSource, null, null);
+			RecipientFieldServiceImpl recipientFieldService = new RecipientFieldServiceImpl();
+			recipientFieldService.setRecipientFieldDao(recipientFieldDao);
 			instance.setRecipientFieldService(recipientFieldService);
-			
-			JavaMailService javaMailService = new JavaMailServiceImpl();
-			((JavaMailServiceImpl) javaMailService).setConfigService(instance);
+
+			JavaMailServiceImpl javaMailService = new JavaMailServiceImpl();
+			javaMailService.setConfigService(instance);
 			instance.setJavaMailService(javaMailService);
 		}
 		return instance;
@@ -249,7 +245,6 @@ public class ConfigService {
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
-	@Required
 	public void setPermissionService(PermissionService permissionService) {
 		this.permissionService = permissionService;
 		invalidateCache();
@@ -261,14 +256,12 @@ public class ConfigService {
 	 * 
 	 * @param configTableDao DAO accessing configuration in DB
 	 */
-	@Required
 	public void setConfigTableDao(ConfigTableDao configTableDao) {
 		this.configTableDao = configTableDao;
 		invalidateCache();
 		LICENSE_VALUES = null;
 	}
 	
-	@Required
 	public void setCompanyInfoDao(CompanyInfoDao companyInfoDao) {
 		this.companyInfoDao = companyInfoDao;
 		invalidateCache();
@@ -280,8 +273,7 @@ public class ConfigService {
 	 * 
 	 * @param companyDao DAO accessing company data
 	 */
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 		invalidateCache();
 		LICENSE_VALUES = null;
@@ -292,7 +284,6 @@ public class ConfigService {
 	 * 
 	 * @param licenseDao DAO accessing company data
 	 */
-	@Required
 	public void setLicenseDao(LicenseDao licenseDao) {
 		this.licenseDao = licenseDao;
 		invalidateCache();
@@ -304,7 +295,6 @@ public class ConfigService {
 	 * 
 	 * @param adminDao DAO accessing admin data
 	 */
-	@Required
 	public void setAdminDao(AdminDao adminDao) {
 		this.adminDao = adminDao;
 		invalidateCache();
@@ -316,7 +306,6 @@ public class ConfigService {
 	 * 
 	 * @param webserviceUserDao DAO accessing admin data
 	 */
-	@Required
 	public void setWebserviceUserDao(WebserviceUserDao webserviceUserDao) {
 		this.webserviceUserDao = webserviceUserDao;
 		invalidateCache();
@@ -328,8 +317,7 @@ public class ConfigService {
 	 * 
 	 * @param supervisorDao DAO accessing supervisors
 	 */
-	@Required
-	public void setSupervisorDao(ComSupervisorDao supervisorDao) {
+	public void setSupervisorDao(SupervisorDao supervisorDao) {
 		this.supervisorDao = supervisorDao;
 		invalidateCache();
 		LICENSE_VALUES = null;
@@ -340,13 +328,11 @@ public class ConfigService {
 	 * 
 	 * @param dataEncryptor data encryptor
 	 */
-	@Required
 	public void setDataEncryptor(DataEncryptor dataEncryptor) {
 		this.dataEncryptor = dataEncryptor;
 	}
 	
-	@Required
-	public void setServerMessageDao(ComServerMessageDao serverMessageDao) {
+	public void setServerMessageDao(ServerMessageDao serverMessageDao) {
 		this.serverMessageDao = serverMessageDao;
 	}
 	
@@ -354,12 +340,10 @@ public class ConfigService {
 	 * Set RecipientFieldService
 	 * 
 	 */
-	@Required
 	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
 		this.recipientFieldService = recipientFieldService;
 	}
 	
-	@Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
@@ -625,6 +609,17 @@ public class ConfigService {
 		}
 	}
 
+	public String readLicenseContent() {
+        try {
+            return new String(
+					licenseDao.getLicenseData(),
+					StandardCharsets.UTF_8
+			);
+        } catch (Exception e) {
+			throw new RuntimeException("Error reading license data", e);
+        }
+    }
+
 	/**
 	 * When this is EMM LTS ??.10.x, we check for a former startup of EMM LTS ??.04.x,
 	 * because EMM may contain java code migrations in a former version of EMM which have to be started before this version 
@@ -653,9 +648,6 @@ public class ConfigService {
 	
 	/**
 	 * Check validity of license data to current db data
-	 * 
-	 * @return
-	 * @throws LicenseError
 	 */
 	public Message[] checkLicenseData() {
 		try {
@@ -863,12 +855,8 @@ public class ConfigService {
 				int maximumNumberOfProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
 				int gracefulExtensionProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields_Graceful, companyID);
 				if (maximumNumberOfProfileFields >= 0) {
-					int numberOfCompanySpecificProfileFields;
-					try {
-						numberOfCompanySpecificProfileFields = recipientFieldService.getClientSpecificFieldCount(companyID);
-					} catch (Exception e) {
-						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
-					}
+					int numberOfCompanySpecificProfileFields = recipientFieldService.getClientSpecificFieldCount(companyID);
+
 					if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
 					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + gracefulExtensionProfileFields) {
 							throw new LicenseError("Invalid Number of profileFields of company " + companyID, maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
@@ -1111,7 +1099,7 @@ public class ConfigService {
 		}
 	}
 	
-	public String getEncryptedValue(ConfigValue configurationValueID, int companyID) throws Exception {
+	public String getEncryptedValue(ConfigValue configurationValueID, int companyID) {
 		String encryptedDataBase64 = getValue(configurationValueID, companyID);
 		
 		if (StringUtils.isNotEmpty(encryptedDataBase64)) {
@@ -1470,38 +1458,10 @@ public class ConfigService {
 		return getValue(WebPush.PushNotificationProviderCredentials, companyID, "{}");
 	}
 
-	public String getPushNotificationFileSinkBaseDirectory(int companyID) {
-		return getValue(WebPush.PushNotificationFileSinkBaseDirectory, companyID, "/tmp");
-	}
-	
-	public final String getPushNotificationResultBaseDirectory() {
-		return getValue(WebPush.PushNotificationResultBaseDirectory, "/tmp");
-	}
-	
 	public final int getLicenseID() {
 		return getIntegerValue(ConfigValue.System_Licence);
 	}
 
-	public final String getPushNotificationSftpHost() {
-		return getValue(WebPush.PushNotificationSftpHost);
-	}
-
-	public String getPushNotificationSftpUser() {
-		return getValue(WebPush.PushNotificationSftpUser);
-	}
-
-	public String getPushNotificationSftpBasePath() {
-		return getValue(WebPush.PushNotificationSftpBasePath);
-	}
-
-	public String getPushNotificationSftpKeyFileName() {
-		return getValue(WebPush.PushNotificationSftpSshKeyFile);
-	}
-
-	public String getPushNotificationEncryptedSftpPassphrase() {
-		return getValue(WebPush.PushNotificationSftpEncryptedSshKeyPassphrase);
-	}
-	
 	public String getPushNotificationClickTrackingUrl(final int companyID) {
 		return getValue(WebPush.PushNotificationClickTrackingUrl, companyID);
 	}
@@ -1598,7 +1558,7 @@ public class ConfigService {
 		return applicationType;
 	}
 
-	public List<Map<String, Object>> getReleaseData(String hostName, String applicationTypeParam) throws Exception {
+	public List<Map<String, Object>> getReleaseData(String hostName, String applicationTypeParam) {
 		return configTableDao.getReleaseData(hostName, applicationTypeParam);
 	}
 
@@ -1626,6 +1586,10 @@ public class ConfigService {
         return getBooleanValue(ConfigValue.UserBasedFavoriteTargets, companyId);
     }
 
+    public boolean allowHtmlInReferenceAndProfileFields(int companyId) {
+        return getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, companyId);
+    }
+
     public boolean isExtendedAltgEnabled(int companyId) {
 		return getBooleanValue(ConfigValue.TargetAccessLimitExtended, companyId);
 	}
@@ -1648,12 +1612,7 @@ public class ConfigService {
     
 	public boolean isAccessLimitingTargetgroupsSupported() {
 		if (isAccessLimitingTargetgroupsSupported == null) {
-			try {
-				isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(configTableDao.getDataSource(), "dyn_target_tbl", "is_access_limiting");
-			} catch (Exception e) {
-				e.printStackTrace();
-				isAccessLimitingTargetgroupsSupported = false;
-			}
+			isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(configTableDao.getDataSource(), "dyn_target_tbl", "is_access_limiting");
 		}
 
 		return isAccessLimitingTargetgroupsSupported;

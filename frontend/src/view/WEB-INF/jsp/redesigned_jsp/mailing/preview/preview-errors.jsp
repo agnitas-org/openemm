@@ -1,17 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.preview.service.MailingWebPreviewService" %>
-<%@ page import="com.agnitas.beans.EmmLayoutBase" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
+
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="errorReport" type="java.util.List<java.lang.String[]>"--%>
 
 <c:set var="TEMPLATE" value="<%= MailingWebPreviewService.TEMPLATE %>" scope="page"/>
 <c:set var="FROM" value="<%= MailingWebPreviewService.FROM %>" scope="page"/>
 <c:set var="SUBJECT" value="<%= MailingWebPreviewService.SUBJECT %>" scope="page"/>
-
-<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE%>" scope="page"/>
 
 <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
@@ -20,7 +18,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <jsp:include page="/WEB-INF/jsp/redesigned_jsp/page-template/assets.jsp"/>
 </head>
-<body class="flex-center ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
+<body class="flex-center" data-bs-theme="${emmLayoutBase.themeType.name}">
 <emm:messagesPresent type="error">
 
     <div class="tile tile--xs tile--alert flex-grow-1" style="max-width: 800px">

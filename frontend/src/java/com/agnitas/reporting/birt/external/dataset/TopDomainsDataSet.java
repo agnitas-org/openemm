@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,22 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
 
 public class TopDomainsDataSet extends BIRTDataSet {
-	private static final transient Logger logger = LogManager.getLogger(TopDomainsDataSet.class);
 
 	public static final int CATEGORY_TOTAL_SENT_EMAILS = 1;
 	public static final int CATEGORY_SENT_EMAILS = 2;
@@ -46,6 +43,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	public static final String CATEGORY_NAME_CLICKERS = "statistic.clicker";
 
 	protected static class TempRow {
+
 		private String categoryName;
 		private int categoryIndex;
 		private String domainName;
@@ -132,6 +130,20 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
+	// used in mailing_statistic.rptdesign
+	public List<SendPerDomainStatRow> getStat(String mailingsCsv, int companyId, String targetsCsv, int maxDomains, String lang, boolean topLevelDomain) throws Exception {
+		List<Integer> mailingIds = parseCommaSeparatedIds(mailingsCsv);
+		List<SendPerDomainStatRow> stat = new ArrayList<>();
+
+		for (Integer mailingId : mailingIds) {
+			int tempTableId = prepareReport(mailingId, companyId, targetsCsv, maxDomains, lang, topLevelDomain);
+			List<SendPerDomainStatRow> mailingDomainsStat = getResultsFromTempTable(tempTableId);
+            mailingDomainsStat.forEach(row -> row.setMailingId(mailingId));
+			stat.addAll(mailingDomainsStat);
+		}
+		return stat;
+	}
+
 	/**
 	 * This method has to be called in initialize function of the report, it loads the data to be retrieved later.
 	 * @param mailingID
@@ -160,7 +172,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	}
 
 	public List<SendPerDomainStatRow> getResultsFromTempTable(int tempTableID) throws Exception {
-		return selectEmbedded(logger, "SELECT * FROM " + getTemporaryTableName(tempTableID) + " " +
+		return selectEmbedded("SELECT * FROM " + getTemporaryTableName(tempTableID) + " " +
 				"WHERE domainname IS NOT NULL ORDER BY category_index, domainname_index, targetgroup_index",
 				(resultSet, index) -> {
 			SendPerDomainStatRow row = new SendPerDomainStatRow();
@@ -182,9 +194,9 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 		int overallSentMailings;
 		if (mailingTrackingDataAvailable) {
-			overallSentMailings = selectInt(logger, "SELECT COUNT(*) FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
+			overallSentMailings = selectInt("SELECT COUNT(*) FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
 		} else {
-			overallSentMailings = selectInt(logger, "SELECT SUM(COALESCE(no_of_mailings, 0)) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
+			overallSentMailings = selectInt("SELECT SUM(COALESCE(no_of_mailings, 0)) FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
 		}
 
 		TempRow overallRow = new TempRow();
@@ -202,7 +214,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			for (LightTarget target : targets) {
 				int targetSentMailings = 0;
 				if (mailingTrackingDataAvailable) {
-					targetSentMailings = selectInt(logger,
+					targetSentMailings = selectInt(
 						"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, mailtrack_" + companyID + "_tbl track WHERE cust.customer_id = track.customer_id AND track.mailing_id = ?"
 							+ " AND (" + target.getTargetSQL() + ")",
 						mailingID);
@@ -235,7 +247,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				}
 			}
 
-			List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
+			List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
 					TempRow row = new TempRow();
 					row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
 					row.setCategoryIndex(CATEGORY_SENT_EMAILS);
@@ -276,7 +288,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 						}
 
 						final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
-						List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
+						List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
 								TempRow row = new TempRow();
 								row.setCategoryName(CATEGORY_NAME_SENT_EMAILS);
 								row.setCategoryIndex(CATEGORY_SENT_EMAILS);
@@ -348,7 +360,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, Rule rule) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
-		int overallBouncedMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition, companyID, mailingID);
+		int overallBouncedMailings = selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition, companyID, mailingID);
 
 		TempRow overallRow = new TempRow();
 		overallRow.setCategoryName(rule.categoryName);
@@ -363,7 +375,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targets != null) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
-				int targetSentMailings = selectInt(logger,
+				int targetSentMailings = selectInt(
 					"SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition
 						+ " AND (" + target.getTargetSQL() + ")",
 					companyID,
@@ -394,7 +406,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			}
 		}
 
-		List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
+		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
 				TempRow row = new TempRow();
 				row.setCategoryName(rule.categoryName);
 				row.setCategoryIndex(rule.categoryIndex);
@@ -435,7 +447,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				}
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
-				List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
+				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
 						TempRow row = new TempRow();
 						row.setCategoryName(rule.categoryName);
 						row.setCategoryIndex(rule.categoryIndex);
@@ -466,7 +478,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	private void insertOpenersIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
-		int overallOpeners = selectInt(logger, "SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?", mailingID);
+		int overallOpeners = selectInt("SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?", mailingID);
 
 		TempRow overallRow = new TempRow();
 		overallRow.setCategoryName(CATEGORY_NAME_OPENERS);
@@ -481,7 +493,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targets != null) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
-				int targetSentMailings = selectInt(logger,
+				int targetSentMailings = selectInt(
 					"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?"
 						+ " AND (" + target.getTargetSQL() + ")",
 					mailingID);
@@ -511,7 +523,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			}
 		}
 
-		List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
+		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
 				TempRow row = new TempRow();
 				row.setCategoryName(CATEGORY_NAME_OPENERS);
 				row.setCategoryIndex(CATEGORY_OPENERS);
@@ -551,7 +563,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				}
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
-				List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
+				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
 						TempRow row = new TempRow();
 						row.setCategoryName(CATEGORY_NAME_OPENERS);
 						row.setCategoryIndex(CATEGORY_OPENERS);
@@ -582,7 +594,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	private void insertClickersIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
-		int overallClickers = selectInt(logger, "SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?", mailingID);
+		int overallClickers = selectInt("SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?", mailingID);
 
 		TempRow overallRow = new TempRow();
 		overallRow.setCategoryName(CATEGORY_NAME_CLICKERS);
@@ -597,7 +609,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		if (targets != null) {
 			int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX + 1;
 			for (LightTarget target : targets) {
-				int targetSentMailings = selectInt(logger,
+				int targetSentMailings = selectInt(
 					"SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?"
 						+ " AND (" + target.getTargetSQL() + ")",
 					mailingID);
@@ -627,7 +639,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			}
 		}
 
-		List<TempRow> overallDomainsRows = select(logger, overallDomainsSql, (resultSet, index) -> {
+		List<TempRow> overallDomainsRows = select(overallDomainsSql, (resultSet, index) -> {
 				TempRow row = new TempRow();
 				row.setCategoryName(CATEGORY_NAME_CLICKERS);
 				row.setCategoryIndex(CATEGORY_CLICKERS);
@@ -667,7 +679,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 				}
 
 				final int domainTargetGroupIndexFinal = domainTargetGroupIndex;
-				List<TempRow> targetDomainsRows = select(logger, targetDomainsSql, (resultSet, index) -> {
+				List<TempRow> targetDomainsRows = select(targetDomainsSql, (resultSet, index) -> {
 						TempRow row = new TempRow();
 						row.setCategoryName(CATEGORY_NAME_CLICKERS);
 						row.setCategoryIndex(CATEGORY_CLICKERS);
@@ -754,23 +766,23 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	
 			sqlUpdateRatesBuilder.append(" WHERE category_index IN (" + StringUtils.join(ArrayUtils.toObject(categories), ", ") + ") AND targetgroup_index = ?");
 	
-			updateEmbedded(logger, sqlUpdateRatesBuilder.toString(), targetGroupIndex);
+			updateEmbedded(sqlUpdateRatesBuilder.toString(), targetGroupIndex);
 		}
 	}
 
 	private int getTotalSentEmails(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalSentEmails = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbeddedInt(logger, sqlGetTotalSentEmails, CATEGORY_TOTAL_SENT_EMAILS, targetGroupIndex);
+		return selectEmbeddedInt(sqlGetTotalSentEmails, CATEGORY_TOTAL_SENT_EMAILS, targetGroupIndex);
 	}
 
 	private int getTotalClickers(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalClickers = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbeddedInt(logger, sqlGetTotalClickers, CATEGORY_TOTAL_CLICKERS, targetGroupIndex);
+		return selectEmbeddedInt(sqlGetTotalClickers, CATEGORY_TOTAL_CLICKERS, targetGroupIndex);
 	}
 
 	private int getTotalOpeners(int tempTableID, int targetGroupIndex) throws Exception {
 		String sqlGetTotalOpeners = "SELECT value FROM " + getTemporaryTableName(tempTableID) + " WHERE category_index = ? AND targetgroup_index = ? AND domainname IS NULL";
-		return selectEmbeddedInt(logger, sqlGetTotalOpeners, CATEGORY_TOTAL_OPENERS, targetGroupIndex);
+		return selectEmbeddedInt(sqlGetTotalOpeners, CATEGORY_TOTAL_OPENERS, targetGroupIndex);
 	}
 
 	private void insertIntoTempTable(int tempTableID, List<TempRow> rows) throws Exception {
@@ -784,7 +796,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			+ " (category_name, category_index, domainname, domainname_index, targetgroup, targetgroup_id, targetgroup_index, value, rate)"
 			+ " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-		updateEmbedded(logger, insertSql,
+		updateEmbedded(insertSql,
 			row.getCategoryName(),
 			row.getCategoryIndex(),
 			row.getDomainName(),
@@ -815,7 +827,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	 */
 	protected int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger,
+		executeEmbedded(
 			"CREATE TABLE " + getTemporaryTableName(tempTableID) + " ("
 				+ "category_name VARCHAR(200),"
 				+ " category_index INTEGER,"

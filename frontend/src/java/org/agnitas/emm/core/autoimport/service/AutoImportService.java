@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,33 +10,29 @@
 
 package org.agnitas.emm.core.autoimport.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
-import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.service.CsvImportExportDescription;
-import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
-import org.agnitas.emm.core.autoimport.bean.AutoImportWsJobState;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
+import com.agnitas.emm.core.referencetable.beans.ReferenceTable;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.service.CsvImportExportDescription;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
+import org.agnitas.emm.core.autoimport.bean.AutoImportWsJobState;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+
 public interface AutoImportService {
+
     List<Mailinglist> getMailinglists(int companyId);
 
     List<LightweightMailing> getAvailableMailings(Admin admin);
-
-    List<ImportProfile> getImportProfiles(int companyId);
-
-    ImportProfile getImportProfileById(int importProfileId);
 
     List<AutoImportLight> getListAutoImportsByProfileId(int importProfileId);
 
@@ -46,6 +42,7 @@ public interface AutoImportService {
 
     int getWorkflowId(int autoImportId, int companyId);
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     boolean deleteAutoImport(int autoImportId, int companyId);
 
     List<AutoImportLight> listAutoImports(int companyId);
@@ -62,24 +59,25 @@ public interface AutoImportService {
 
     AutoImportResult doImportContentSource(AutoImport autoImport) throws Exception;
 
-    void setAutoActivationDateAndActivate(Admin admin, int autoImportId, Date date, boolean isWmDriven) throws Exception;
+    void setAutoActivationDateAndActivate(Admin admin, int autoImportId, Date date, boolean isWmDriven);
 
-    void deactivateAutoImport(int companyId, int autoImportId) throws Exception;
+    void deactivateAutoImport(int companyId, int autoImportId);
 
     List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName);
 
-    List<ComReferenceTable> getReferencetable(int companyId);
+    List<ReferenceTable> getReferencetable(int companyId);
 
     boolean announceStart(int autoImportId, Date nextStart);
 
-    void announceEnd(AutoImport autoImport) throws Exception;
+    void announceEnd(AutoImport autoImport);
 
-    void writeResultData(final AutoImport autoImport, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
+    void writeResultData(final AutoImport autoImport, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize);
 
-    void saveAutoImport(AutoImport autoImport) throws Exception;
+    void saveAutoImport(AutoImport autoImport);
+
     void updateEmail(String emailForError, int id);
 
-    AutoImport copyAutoImport(Admin admin, int autoImportId) throws Exception;
+    AutoImport copyAutoImport(Admin admin, int autoImportId);
 
     AutoImportWsJobState getWsJobState(int autoImportJobId, int companyId);
 

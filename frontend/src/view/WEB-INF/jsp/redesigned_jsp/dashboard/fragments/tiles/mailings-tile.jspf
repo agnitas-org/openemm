@@ -1,68 +1,106 @@
 
+<c:set var="isMailingCopyAllowed" value="${emm:permissionAllowed('mailing.change', pageContext.request) && !emm:permissionAllowed('mailing.content.readonly', pageContext.request)}" />
+<c:set var="isMailingDeleteAllowed" value="${emm:permissionAllowed('mailing.delete', pageContext.request)}" />
+
+<c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
+    <c:choose>
+        <c:when test="${mailing.isOnlyPostType}">
+            <c:url var="previewUrl" value="assets/core/images/facelift/post_thumbnail.jpg"/>
+        </c:when>
+        <c:when test="${not empty mailing.component and mailing.component ne 0}">
+            <c:url var="previewUrl" value="/sc">
+                <c:param name="compID" value="${mailing.component}"/>
+                <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
+            </c:url>
+        </c:when>
+        <c:otherwise>
+            <c:url var="previewUrl" value="assets/core/images/facelift/no_preview.svg"/>
+        </c:otherwise>
+    </c:choose>
+
+    <c:set target="${mailing}" property="previewUrl" value="${previewUrl}" />
+
+    <script id="dashboard-mailing-thumbnail-${mailing.mailingid}" type="text/x-mustache-template">
+        <img class="popover__thumbnail" src="${previewUrl}" alt="">
+    </script>
+</c:forEach>
+
 <script id="dashboard-tile-mailings" type="text/x-mustache-template">
     <div class="tile draggable-tile" id="dashboard-mailings">
         <div class="tile-header">
             <h1 class="tile-title text-truncate">{{- tileName }}</h1>
+            <div class="tile-title-controls">
+                <label class="switch">
+                    <input id="mailings-preview-switch" type="checkbox" data-action="change-mailings-preview"
+                           {{ isPreviewEnabled ? print('') : print('checked') }}>
+                    <i class="icon icon-image"></i>
+                    <i class="icon icon-th-list"></i>
+                </label>
+            </div>
         </div>
-        <div class="tile-body grid js-scrollable" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
+        <div class="tile-body grid js-scrollable">
             <c:choose>
                 <c:when test="${fn:length(mailinglist.list) gt 0}">
                     <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                         <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                             <emm:ShowByPermission token="stats.mailing">
-                                <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
+                                <c:url var="mailingLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
                             </emm:ShowByPermission>
                         </c:if>
-                        <c:choose>
-                            <c:when test="${mailing.isOnlyPostType}">
-                                <c:url var="previewUrl" value="assets/core/images/facelift/post_thumbnail.jpg"/>
-                            </c:when>
-                            <c:when test="${not empty mailing.component and mailing.component ne 0}">
-                                <c:url var="previewUrl" value="/sc">
-                                    <c:param name="compID" value="${mailing.component}"/>
-                                    <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
-                                </c:url>
-                            </c:when>
-                            <c:otherwise>
-                                <c:url var="previewUrl" value="assets/core/images/facelift/no_preview.svg"/>
-                            </c:otherwise>
-                        </c:choose>
+                        <a href="${mailingLink}" class="card mailing-card" data-mailing-id="${mailing.mailingid}" data-popover
+                           data-popover-options='{"html": true, "disabled": {{= isPreviewEnabled }}, "delay": {"show": 300, "hide": 100}, "templateName": "dashboard-mailing-thumbnail-${mailing.mailingid}"}'>
 
-                        <a href="${mailingLink}" class="card mailing-card" data-mailing-id="${mailing.mailingid}">
-
-                            <img src="${previewUrl}" class="mailing-preview-card-image"/>
+                            <img src="${mailing.previewUrl}" class="mailing-card__thumbnail" />
 
                             <div class="card-body">
-                                <div class="card-title">
-                                    <div class="card-title--name">
+                                <div class="mailing-card__info">
+                                    <div class="mailing-card__title">
                                         <c:set var="mailingWorkStatus">
                                             <c:if test="${mailing.workstatus ne null}">
                                                 <mvc:message code="${mailing.workstatus}"/>
                                             </c:if>
                                         </c:set>
                                         <span class="status-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
-                                        <span class="d-inline-block text-truncate">${mailing.shortname}</span>
-                                    </div>
-                                    <div class="card-title--buttons">
-                                        <emm:ShowByPermission token="mailing.change">
-                                            <emm:HideByPermission token="mailing.content.readonly">
-                                                <button class="icon-btn" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
-                                                    <i class="icon icon-copy text-primary"></i>
-                                                </button>
-                                            </emm:HideByPermission>
-                                        </emm:ShowByPermission>
-                                        <emm:ShowByPermission token="mailing.delete">
-                                            <button class="icon-btn" data-action="delete-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingDelete"/>">
-                                                <i class="icon icon-trash-alt text-danger"></i>
+                                        <p class="mailing-card__name" data-truncated-text>${mailing.shortname}</p>
+
+                                        <c:if test="${isMailingCopyAllowed}">
+                                            <button class="icon-btn icon-btn--primary" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                <i class="icon icon-copy"></i>
                                             </button>
-                                        </emm:ShowByPermission>
+                                        </c:if>
+                                        <c:if test="${isMailingDeleteAllowed}">
+                                            <button class="icon-btn icon-btn--danger" data-action="delete-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingDelete"/>">
+                                                <i class="icon icon-trash-alt"></i>
+                                            </button>
+                                        </c:if>
+                                    </div>
+                                    <div class="mailing-card__subinfo">
+                                        <i class="icon icon-pen" data-tooltip="<mvc:message code='default.changeDate'/>"></i>
+                                        <p class="text-truncate">
+                                            <fmt:formatDate value="${mailing.changedate}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
+                                        </p>
+                                    </div>
+                                    <div class="mailing-card__subinfo">
+                                        <i class="icon icon-list" data-tooltip="<mvc:message code='birt.mailinglist'/>"></i>
+                                        <p class="text-truncate">${mailing.mailinglist}</p>
                                     </div>
                                 </div>
-                                <div class="card-text">
-                                    <i class="icon icon-list" data-tooltip="<mvc:message code='birt.mailinglist'/>"></i>
-                                    <span class="d-inline-block text-truncate">${mailing.mailinglist}</span>
-                                </div>
+
+                                <c:if test="${isMailingCopyAllowed or isMailingDeleteAllowed}">
+                                    <div class="mailing-card__buttons">
+                                        <c:if test="${isMailingCopyAllowed}">
+                                            <button class="btn btn-icon btn-primary" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                <i class="icon icon-copy"></i>
+                                            </button>
+                                        </c:if>
+                                        <c:if test="${isMailingDeleteAllowed}">
+                                            <button class="btn btn-icon btn-danger" data-action="delete-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingDelete"/>">
+                                                <i class="icon icon-trash-alt"></i>
+                                            </button>
+                                        </c:if>
+                                    </div>
+                                </c:if>
                             </div>
                         </a>
                     </c:forEach>

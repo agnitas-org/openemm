@@ -24,7 +24,11 @@
       let value = WebStorage.get(key);
 
       if (value != null) {
-        value = $.extend(value, val);
+        if (key === 'mailing-preview') {
+          value = $.extend(true, {}, value, val);
+        } else {
+          value = $.extend(value, val);
+        }
       } else {
         value = val;
       }

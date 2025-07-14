@@ -1,9 +1,9 @@
 
 .form-wrap.form-builder {
-  padding: 5px;
+  padding: $gap-x-sm;
   @include box-shadow(inset 0px 0px 5px 1px rgba(0,0,0,0.3));
-  border-radius: 5px;
-  background-color: #e2e3e3;
+  border-radius: $border-radius-sm;
+  background-color: $light-grey;
 
   .form-field {
     cursor: move;
@@ -91,10 +91,6 @@
   width: 500px;
   padding: $gap-md;
 
-  body.dark-theme & {
-    color: $white;
-  }
-
   .button-wrap {
     body &::before { // remove bottom arrow of the original modal 
       content: unset;
@@ -155,9 +151,15 @@
   }
 }
 
-body.dark-theme .form-wrap.form-builder {
-  color: $black;
-  .form-control {
+@include dark-themes {
+  .form-builder-dialog.positioned {
+    color: $white;
+  }
+
+  .form-wrap.form-builder {
     color: $black;
+    .form-control {
+      color: $black;
+    }
   }
 }

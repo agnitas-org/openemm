@@ -47,7 +47,7 @@
 importPackage(Packages.org.eclipse.birt.report.model.api.util);
 importPackage(Packages.org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.com.agnitas.messages);
-importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.org.apache.commons.lang3);
 importPackage(Packages.org.springframework.context);
 importPackage(Packages.org.springframework.web.context.support);
 
@@ -73,7 +73,7 @@ reportContext.setPersistentGlobalVariable("showNet", new Boolean(showNet));
 reportContext.setPersistentGlobalVariable("showGross", new Boolean(showGross));
 
 workflowDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.WorkflowDataSet(workflowDataParser);
-workflowDataSet.prepareWorkflowReport(params["workflowId"], params["companyID"], params["showSoftbounces"]);
+workflowDataSet.prepareWorkflowReport(params["workflowId"], params["companyID"], params["showSoftbounces"], params["startDate"], params["stopDate"]);
 
 mailingSummaryDataDefinition = {};
 mailingSummaryDataDefinition[CommonKeys.RECIPIENTS_NUMBER] 			= {"position": 1, "color": "color-pure-blue"};
@@ -419,6 +419,37 @@ reportContext.setGlobalVariable("getKeyFiguresColumnPositionByNameFunction", get
             <property name="controlType">check-box</property>
             <structure name="format"/>
         </scalar-parameter>
+        <scalar-parameter name="startDate" id="1907">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="javascript"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="stopDate" id="1908">
+            <property name="hidden">false</property>
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="javascript"></value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="DummyDataSource" id="7"/>
@@ -529,7 +560,7 @@ reportContext.setGlobalVariable("getKeyFiguresColumnPositionByNameFunction", get
 workflowMailings = workflowDataSet.getWorkflowMailings();
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[
-importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.org.apache.commons.lang3);
 
 if( currentrow < workflowMailings.size() ) {
 	dataRow = workflowMailings.get(currentrow);
@@ -727,7 +758,7 @@ reportContext.setGlobalVariable("maxValue", parseInt(max));
 reportContext.setGlobalVariable("total_sent", parseInt(0));
 reportContext.setGlobalVariable("total_delivered", parseInt(0));]]></method>
             <method name="fetch"><![CDATA[
-importPackage(Packages.org.apache.commons.lang);
+importPackage(Packages.org.apache.commons.lang3);
 importPackage(Packages.com.agnitas.messages);
 importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 

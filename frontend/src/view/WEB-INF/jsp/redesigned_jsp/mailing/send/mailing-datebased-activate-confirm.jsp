@@ -12,7 +12,7 @@
 <c:set var="DEFAULT_STEPPING" value="<%= MailingBlockSizeService.DEFAULT_STEPPING %>"/>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/send/activate-date-based.action" modelAttribute="form">
 
             <mvc:hidden path="mailingID" />

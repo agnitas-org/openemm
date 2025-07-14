@@ -40,7 +40,7 @@
     <div id="evaluate-loader">
         <div class="msg-tile msg-tile-primary">
             <div class="msg-tile-header">
-                <c:url var="uploadUrl" value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>
+                <c:url var="uploadUrl" value="/assets/core/images/facelift/msgs_msg-uploading_old.svg"/>
                 <img alt="" src="${uploadUrl}">
             </div>
             <div class="msg-tile-content">

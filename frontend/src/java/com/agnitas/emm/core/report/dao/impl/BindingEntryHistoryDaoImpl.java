@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,61 +10,36 @@
 
 package com.agnitas.emm.core.report.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-
-import javax.sql.DataSource;
-
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryHistoryImpl;
 import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryHistoryImpl;
 import com.agnitas.emm.core.report.dao.BindingEntryHistoryDao;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 
 public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements BindingEntryHistoryDao {
 
-	/** The logger. */
-    private static final Logger logger = LogManager.getLogger(BindingEntryHistoryDaoImpl.class);
-
-    private String getRecipientBindingHistoryTableName(int companyId) {
-        return String.format("hst_customer_%d_binding_tbl", companyId);
-    }
-
-    private String getRecipientBindingTableName(int companyId) {
-        return String.format("customer_%d_binding_tbl", companyId);
-    }
-
-    private String getRecipientTableName(int companyId) {
-        return String.format("customer_%d_tbl", companyId);
-    }
-
     @Override
     public List<PlainBindingEntryHistory> getHistory(int companyId, int recipientId, int mailinglistId, int mediaType) {
+        String tableName = getRecipientBindingHistoryTableName(companyId);
 
-        String recipientBindingHistoryTable = getRecipientBindingHistoryTableName(companyId);
+        if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
+            StringBuilder query = new StringBuilder("SELECT * FROM ").append(tableName)
+                    .append(" WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?")
+                    .append(" ORDER BY timestamp_change ASC");
 
-        DataSource dataSource = getDataSource();
-        boolean isBindingHistoryTableExisted = DbUtilities.checkIfTableExists(dataSource, recipientBindingHistoryTable);
-
-        if (isBindingHistoryTableExisted) {
-            StringBuilder statement = new StringBuilder("SELECT *");
-            statement.append(" FROM ").append(recipientBindingHistoryTable);
-            statement.append(" WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?");
-            statement.append(" ORDER BY timestamp_change ASC");
-
-            Object[] parameters = {recipientId, mailinglistId, mediaType};
-            return select(logger, statement.toString(), new PlainRowMapper(), parameters);
+            return select(query.toString(), new PlainRowMapper(), recipientId, mailinglistId, mediaType);
         }
 
         return Collections.emptyList();
@@ -72,18 +47,15 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
 
     @Override
     public List<CompositeBindingEntryHistory> getHistoryOfNonexistentBindings(int companyId, int recipientId) {
-
         String recipientBindingHistoryTable = getRecipientBindingHistoryTableName(companyId);
         String recipientBindingTable = getRecipientBindingTableName(companyId);
         String recipientTable = getRecipientTableName(companyId);
-        String mailinglistTable = "mailinglist_tbl";
 
         DataSource dataSource = getDataSource();
         boolean isBindingHistoryTableExisted = DbUtilities.checkIfTableExists(dataSource, recipientBindingHistoryTable);
         if (isBindingHistoryTableExisted) {
 
-            StringBuilder bindingsQuery = new StringBuilder("SELECT 1");
-            bindingsQuery.append(" FROM ").append(recipientBindingTable).append(" bind");
+            StringBuilder bindingsQuery = new StringBuilder("SELECT 1 FROM ").append(recipientBindingTable).append(" bind");
             bindingsQuery.append(" WHERE bind.customer_id = hst.customer_id");
             bindingsQuery.append(" AND bind.mailinglist_id = hst.mailinglist_id");
             bindingsQuery.append(" AND bind.mediatype = hst.mediatype");
@@ -108,12 +80,12 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
             historyOfNonexistentBindings.append(" AND hst_out.timestamp_change = hst_in.max_timestamp_change");
             historyOfNonexistentBindings.append(" INNER JOIN ").append(recipientTable).append(" rec");
             historyOfNonexistentBindings.append(" ON hst_out.customer_id = rec.customer_id");
-            historyOfNonexistentBindings.append(" LEFT JOIN ").append(mailinglistTable).append(" ml");
+            historyOfNonexistentBindings.append(" LEFT JOIN mailinglist_tbl ml");
             historyOfNonexistentBindings.append(" ON hst_out.mailinglist_id = ml.mailinglist_id");
             historyOfNonexistentBindings.append(" ORDER BY timestamp_change ASC");
 
             CompositeRowMapperWithMailinglist mapper = new CompositeRowMapperWithMailinglist("ml_");
-            return select(logger, historyOfNonexistentBindings.toString(), mapper, recipientId);
+            return select(historyOfNonexistentBindings.toString(), mapper, recipientId);
         }
 
         return Collections.emptyList();
@@ -121,42 +93,23 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
 
     public static class PlainRowMapper implements RowMapper<PlainBindingEntryHistory> {
 
-        private String columnNamePrefix;
-
-        /**
-         * Default constructor uses in case of your ResultSet contains default names of columns.
-         */
-        public PlainRowMapper() {
-            columnNamePrefix = StringUtils.EMPTY;
-        }
-
-        /**
-         * Constructor uses in case of your ResultSet contains default names of columns with some prefix.
-         * Maybe useful when you calls one RowMapper inside the second one.
-         *
-         * @param columnNamePrefix prefix for column names.
-         */
-        public PlainRowMapper(String columnNamePrefix) {
-            this.columnNamePrefix = StringUtils.defaultString(columnNamePrefix, StringUtils.EMPTY);
-        }
-
         @Override
         public PlainBindingEntryHistory mapRow(ResultSet resultSet, int rowNum) throws SQLException {
             PlainBindingEntryHistory bindingEntryHistory = new PlainBindingEntryHistoryImpl();
 
-            bindingEntryHistory.setCustomerId(resultSet.getInt(columnNamePrefix + "customer_id"));
-            bindingEntryHistory.setMailingListId(resultSet.getInt(columnNamePrefix + "mailinglist_id"));
-            bindingEntryHistory.setUserType(resultSet.getString(columnNamePrefix + "user_type"));
-            bindingEntryHistory.setUserStatus(resultSet.getInt(columnNamePrefix + "user_status"));
-            bindingEntryHistory.setUserRemark(resultSet.getString(columnNamePrefix + "user_remark"));
-            bindingEntryHistory.setTimestamp(resultSet.getTimestamp(columnNamePrefix + "timestamp"));
-            bindingEntryHistory.setCreationDate(resultSet.getTimestamp(columnNamePrefix + "creation_date"));
-            bindingEntryHistory.setExitMailingId(resultSet.getInt(columnNamePrefix + "exit_mailing_id"));
-            bindingEntryHistory.setMediaType(resultSet.getInt(columnNamePrefix + "mediatype"));
-            bindingEntryHistory.setChangeType(resultSet.getInt(columnNamePrefix + "change_type"));
-            bindingEntryHistory.setTimestampChange(resultSet.getTimestamp(columnNamePrefix + "timestamp_change"));
-            bindingEntryHistory.setClientInfo(resultSet.getString(columnNamePrefix + "client_info"));
-            bindingEntryHistory.setEmail(resultSet.getString(columnNamePrefix + "email"));
+            bindingEntryHistory.setCustomerId(resultSet.getInt("customer_id"));
+            bindingEntryHistory.setMailingListId(resultSet.getInt("mailinglist_id"));
+            bindingEntryHistory.setUserType(resultSet.getString("user_type"));
+            bindingEntryHistory.setUserStatus(resultSet.getInt("user_status"));
+            bindingEntryHistory.setUserRemark(resultSet.getString("user_remark"));
+            bindingEntryHistory.setTimestamp(resultSet.getTimestamp("timestamp"));
+            bindingEntryHistory.setCreationDate(resultSet.getTimestamp("creation_date"));
+            bindingEntryHistory.setExitMailingId(resultSet.getInt("exit_mailing_id"));
+            bindingEntryHistory.setMediaType(resultSet.getInt("mediatype"));
+            bindingEntryHistory.setChangeType(resultSet.getInt("change_type"));
+            bindingEntryHistory.setTimestampChange(resultSet.getTimestamp("timestamp_change"));
+            bindingEntryHistory.setClientInfo(resultSet.getString("client_info"));
+            bindingEntryHistory.setEmail(resultSet.getString("email"));
 
             return bindingEntryHistory;
         }
@@ -164,18 +117,8 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
 
     public static class CompositeRowMapperWithMailinglist implements RowMapper<CompositeBindingEntryHistory> {
 
-        private static final String DEFAULT_MAILING_LIST_PREFIX = "ml_";
-
         private final String columnPrefix;
         private final MailinglistRowMapper mailinglistRowMapper;
-
-        /**
-         * Default constructor uses in case of your ResultSet contains default names of columns.
-         */
-        public CompositeRowMapperWithMailinglist() {
-            columnPrefix = StringUtils.EMPTY;
-            mailinglistRowMapper = new MailinglistRowMapper(DEFAULT_MAILING_LIST_PREFIX);
-        }
 
         /**
          * Constructor uses in case of your ResultSet contains default names of columns with some prefix.
@@ -215,5 +158,17 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
 
             return compositeBindingHistory;
         }
+    }
+
+    private String getRecipientBindingHistoryTableName(int companyId) {
+        return String.format("hst_customer_%d_binding_tbl", companyId);
+    }
+
+    private String getRecipientBindingTableName(int companyId) {
+        return String.format("customer_%d_binding_tbl", companyId);
+    }
+
+    private String getRecipientTableName(int companyId) {
+        return String.format("customer_%d_tbl", companyId);
     }
 }

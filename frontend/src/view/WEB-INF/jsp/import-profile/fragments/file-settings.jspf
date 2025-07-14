@@ -1,7 +1,7 @@
 
-<%--@elvariable id="charsets" type="org.agnitas.util.importvalues.Charset[]"--%>
-<%--@elvariable id="delimiters" type="org.agnitas.util.importvalues.TextRecognitionChar[]"--%>
-<%--@elvariable id="dateFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
+<%--@elvariable id="charsets" type="com.agnitas.util.importvalues.Charset[]"--%>
+<%--@elvariable id="delimiters" type="com.agnitas.util.importvalues.TextRecognitionChar[]"--%>
+<%--@elvariable id="dateFormats" type="com.agnitas.util.importvalues.DateFormat[]"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <div class="tile">

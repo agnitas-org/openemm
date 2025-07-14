@@ -64,27 +64,76 @@ The Font Awesome Iconset (v5.15.4)  is included in the css.
 }
 
 .colon-icon {
+  --colon-icon-dot-color: #{$white};
   display: inline-flex;
 
   &__dot {
     @include size(6px);
-    background-color: $white;
+    background-color: var(--colon-icon-dot-color);
     border-radius: 1px;
     margin: 0 1px;
   }
 }
 
 .wide-tile-icon {
+  --wide-tile-icon-color: #{$dark-grey};
+
   .colon-icon__dot {
-    background-color: var(--input-icon-color);
+    background-color: var(--wide-tile-icon-color);
+  }
+}
+
+@include color-mode(dark) {
+  .wide-tile-icon {
+    --wide-tile-icon-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .colon-icon {
+    --colon-icon-dot-color: currentColor;
+  }
+
+  .wide-tile-icon {
+    --wide-tile-icon-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .colon-icon {
+    --colon-icon-dot-color: currentColor;
+  }
+
+  .wide-tile-icon {
+    --wide-tile-icon-color: #{$white};
   }
 }
 
 .icon.regular-tile-icon {
+  --icon-regular-tile-icon-color: #{$dark-grey};
+
   font-size: 6px;
   margin-left: 5px;
-  color: var(--input-icon-color);
-  background-color: var(--input-icon-color);
+  color: var(--icon-regular-tile-icon-color);
+  background-color: var(--icon-regular-tile-icon-color);
+}
+
+@include color-mode(dark) {
+  .icon.regular-tile-icon {
+    --icon-regular-tile-icon-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .icon.regular-tile-icon {
+    --icon-regular-tile-icon-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .icon.regular-tile-icon {
+    --icon-regular-tile-icon-color: #{$white};
+  }
 }
 
 //TODO fix in java code com/agnitas/emm/core/workflow/beans/WorkflowReactionType.java:14 CHANGE_OF_PROFILE

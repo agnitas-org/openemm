@@ -33,7 +33,7 @@
 
 <script id="csrf-error-message" type="text/x-mustache-template">
     <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="d-flex align-items-center justify-content-center gap-2">

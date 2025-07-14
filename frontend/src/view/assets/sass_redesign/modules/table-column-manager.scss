@@ -1,6 +1,11 @@
 
 [data-table-column-manager].is-edit-mode {
-  tbody, .table-wrapper__rows-selection {
+  table {
+    --bs-table-bg: transparent;
+    --table-checkbox-bg: transparent;
+  }
+
+  tbody, .table-wrapper__footer {
     position: relative;
 
     &::after {
@@ -15,7 +20,7 @@
   }
 
   .table-wrapper__body {
-    background: var(--table-head-bg-color);
+    background: var(--table-head-bg);
   }
 }
 

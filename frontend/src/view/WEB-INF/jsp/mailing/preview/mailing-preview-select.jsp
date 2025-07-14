@@ -1,15 +1,15 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
-<%@ page import="org.agnitas.preview.ModeType" %>
-<%@ page import="org.agnitas.preview.Preview" %>
+<%@ page import="com.agnitas.preview.ModeType" %>
+<%@ page import="com.agnitas.preview.Preview" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="availablePreviewFormats" type="java.util.List"--%>
-<%--@elvariable id="previewRecipients" type="java.util.List<com.agnitas.beans.impl.ComRecipientLiteImpl>"--%>
+<%--@elvariable id="previewRecipients" type="java.util.List<com.agnitas.beans.impl.RecipientLiteImpl>"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.preview.form.PreviewForm"--%>
 <%--@elvariable id="mailingListExist" type="java.lang.Boolean"--%>
 <%--@elvariable id="availableTargetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>

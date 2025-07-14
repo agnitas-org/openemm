@@ -16,9 +16,9 @@ parent: badges_04_status
 */
 
 $complexity-status-badges-defs: (
-        green:    (background: $stat-or-badge-lime,   icon: $fa-var-circle),
-        yellow:   (background: $stat-or-badge-orange, icon: $fa-var-adjust),
-        red:      (background: #880010,               icon: $fa-var-circle)
+  green:    (background: $badge-lime-var,        icon: $fa-var-circle),
+  yellow:   (background: $badge-dark-yellow-var, icon: $fa-var-adjust),
+  red:      (background: $badge-dark-red-var,    icon: $fa-var-circle)
 );
 
 @mixin complexity-status-badge($state) {

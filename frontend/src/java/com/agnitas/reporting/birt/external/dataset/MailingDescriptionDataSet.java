@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,10 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.utils.EmailParamExtractor;
+import org.apache.commons.lang3.StringUtils;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,22 +21,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.utils.EmailParamExtractor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class MailingDescriptionDataSet extends BIRTDataSet {
-
-    private static final Logger logger = LogManager.getLogger(MailingDescriptionDataSet.class);
 
     public List<String> getMailingDescription(int mailingID) {
         List<String> mailingDescription = new ArrayList<>();
         String query = "SELECT shortname FROM mailing_tbl WHERE mailing_id = ?";
 
-        String name = selectWithDefaultValue(logger, query, String.class, "", mailingID);
+        String name = selectWithDefaultValue(query, String.class, "", mailingID);
 
         if (!name.isBlank()) {
             mailingDescription.add(name);

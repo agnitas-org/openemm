@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,20 +17,17 @@ import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.Const;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.Const;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CampaignServiceImpl implements CampaignService {
 	private static final Logger logger = LogManager.getLogger(CampaignServiceImpl.class);
@@ -104,13 +101,13 @@ public class CampaignServiceImpl implements CampaignService {
                 .map(id -> getArchiveForDeletion(id, admin))
                 .filter(ServiceResult::isSuccess)
                 .map(ServiceResult::getResult)
-                .collect(Collectors.toList());
+                .toList();
 
         for (Campaign archive : archives) {
             delete(archive);
         }
 
-        List<Integer> removedIds = archives.stream().map(Campaign::getId).collect(Collectors.toList());
+        List<Integer> removedIds = archives.stream().map(Campaign::getId).toList();
 
         return ServiceResult.success(
                 new UserAction(
@@ -143,12 +140,10 @@ public class CampaignServiceImpl implements CampaignService {
         return ServiceResult.success(campaign);
     }
 
-    @Required
     public void setCampaignDao(CampaignDao campaignDao) {
         this.campaignDao = campaignDao;
     }
 
-    @Required
     public void setBulkActionValidationService(BulkActionValidationService<Integer, Campaign> bulkActionValidationService) {
         this.bulkActionValidationService = bulkActionValidationService;
     }

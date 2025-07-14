@@ -1,0 +1,30 @@
+1) agn-birt-securitymanager-issue-workaround.migrated.jar added manually to ./WebViewerExample/WEB-INF/lib
+
+2) csv-emitter-plugin added automatically (see src-birt/csv-emitter-plugin)
+
+3) GWUA-6215: In lib_birt/WebViewerExample/WEB-INF/lib/org.eclipse.birt.runtime_4.17.0-202409160710.migrated.jar
+
+    In file org.eclipse.birt.report.engine.emitter.html.HTMLReportEmitter
+
+	protected boolean outputErrors(List<?> errors) {
+		// Outputs the error message at the end of the report
+		if (errors != null && !errors.isEmpty()) {
+			writer.writeCode("	<hr style=\"color:red\"/>");
+
+			...
+
+    }
+
+    change to
+
+    protected boolean outputErrors(List<?> errors) {
+        return false;
+    }
+
+    in order to prevent error stack trace from being displayed in html reports
+
+4) GWUA-6215: In lib_birt/WebViewerExample/WEB-INF/lib/viewservlets.migrated.jar
+
+    In org.eclipse.birt.report.utility.BirtUtility.appendErrorMessage
+
+    Removed lines that add details (stack trace) of the error on UI.

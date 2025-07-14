@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,28 +14,27 @@ import com.agnitas.beans.Company;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComDkimDao;
+import com.agnitas.dao.DkimDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.messages.I18nString;
-import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.emm.company.service.CompanyService;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HtmlUtils;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HtmlUtils;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MaildropServiceImpl implements MaildropService {
@@ -55,18 +53,18 @@ public class MaildropServiceImpl implements MaildropService {
 
 	protected MailingService mailingService;
 	protected MaildropStatusDao maildropStatusDao;
-	private ComDkimDao dkimDao;
+	private DkimDao dkimDao;
 	private MediaTypesService mediaTypesService;
 	private CompanyService companyService;
 	private JavaMailService javaMailService;
 	private ConfigService configService;
 	private AdminService adminService;
-	
+
 	public void setMailingService(MailingService mailingService) {
 		this.mailingService = mailingService;
 	}
 
-	public void setDkimDao(ComDkimDao dkimDao) {
+	public void setDkimDao(DkimDao dkimDao) {
 		this.dkimDao = dkimDao;
 	}
 
@@ -90,11 +88,10 @@ public class MaildropServiceImpl implements MaildropService {
 		this.adminService = adminService;
 	}
 
-	@Required
 	public void setMaildropStatusDao(final MaildropStatusDao dao) {
 		this.maildropStatusDao = dao;
 	}
-	
+
 	@Override
 	public final boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID) {
 		return maildropStatusDao.delete(companyID, mailingID, MaildropStatus.WORLD, MaildropGenerationStatus.SCHEDULED);
@@ -123,7 +120,7 @@ public class MaildropServiceImpl implements MaildropService {
 
 		return entries.stream()
 				.filter(m -> Stream.of(statuses).anyMatch(s -> s.getCode() == m.getStatus()))
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override
@@ -152,7 +149,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public int saveMaildropEntry(MaildropEntry entry) throws Exception {
+	public int saveMaildropEntry(MaildropEntry entry) {
 		int mailingID = entry.getMailingID();
 
 		MailingType mailingType = mailingService.getMailingType(mailingID);
@@ -221,7 +218,7 @@ public class MaildropServiceImpl implements MaildropService {
 				.map(Locale::new)
 				.orElse(Locale.UK);
 
-		Company company = companyService.getCompanyOrNull(companyId);
+		Company company = companyService.getCompany(companyId);
 
 		AgnUtils.splitAndTrimList(StringUtils.defaultString(company.getContactTech()))
 				.stream()

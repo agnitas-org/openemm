@@ -112,8 +112,7 @@ To do this you need to add `data-tab-related="#tabSelector"` attribute to the el
   class Tab {
     static init($trigger) {
       const target = $trigger.data('toggle-tab');
-      const group = this.#getGroupId($trigger, target);
-      const conf = Storage.get(`toggle_tab${group}`) || {};
+      const conf = Storage.get(this.#getStorageKey($trigger, target)) || {};
       const $target = $(target);
 
       // overwrite settings
@@ -144,7 +143,7 @@ To do this you need to add `data-tab-related="#tabSelector"` attribute to the el
       _.each($siblings, sibling => this.hide($(sibling)));
 
       $trigger.addClass('active');
-      $trigger.closest('nav').find('.chosen-tab > span').text($trigger.text())
+      $trigger.closest('nav').find('.btn-header-tab.active > span').text($trigger.text())
       $icon.removeClass('icon-angle-down').addClass('icon-angle-up');
       $target.removeClass('hidden');
       $extends.removeClass('hidden');
@@ -183,13 +182,18 @@ To do this you need to add `data-tab-related="#tabSelector"` attribute to the el
         return;
       }
 
-      const group = this.#getGroupId($trigger, target);
-      Storage.set(`toggle_tab${group}`, {hidden: hidden})
+      Storage.set(this.#getStorageKey($trigger, target), {hidden})
     }
 
-    static #getGroupId($trigger, defaultValue) {
+    static #getStorageKey($trigger, target) {
+      const prefix = 'toggle_tab';
+
       const group = $trigger.data('tab-group');
-      return group ? `/${group}` : defaultValue;
+      if (group) {
+        return `${prefix}/${group}`;
+      }
+
+      return prefix + target;
     }
   }
 

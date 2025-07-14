@@ -27,7 +27,7 @@
                 <%@include file="fragments/mailinglist-frequency-counter-toggle.jspf"%>
 
                 <c:if test="${isRestrictedForSomeAdmins}">
-                    <span class="icon-badge text-bg-danger-dark" data-tooltip="<mvc:message code="mailinglist.limit.access" />">
+                    <span class="icon-badge badge--dark-red" data-tooltip="<mvc:message code="mailinglist.limit.access" />">
                         <i class="icon icon-user-lock"></i>
                     </span>
                 </c:if>

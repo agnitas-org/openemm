@@ -2,7 +2,7 @@
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
+<%--@elvariable id="simpleActionForm" type="com.agnitas.web.forms.SimpleActionForm"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 
 <div class="modal">

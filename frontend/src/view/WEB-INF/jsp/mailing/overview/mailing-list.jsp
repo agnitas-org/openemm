@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
-<%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@ page import="com.agnitas.emm.common.MailingStatus" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -9,9 +9,9 @@
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingOverviewForm" type="com.agnitas.emm.core.mailing.forms.MailingOverviewForm"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="mailing" type="java.util.Map<java.lang.String, java.lang.Object>"--%>
-<%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="mailinglist" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="archives" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="contentSearchEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
@@ -45,7 +45,7 @@
 <c:set var="ADDITIONAL_FIELDS" value="<%= MailingAdditionalColumn.values() %>"/>
 <c:set var="forTemplates" value="${mailingOverviewForm.forTemplates}"/>
 
-<%@ page import="org.agnitas.web.MailingAdditionalColumn" %>
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn" %>
 
 <c:choose>
     <c:when test="${forTemplates}">
@@ -713,7 +713,7 @@
                                     <c:choose>
                                         <c:when test="${field == 'RECIPIENTS_COUNT'}">
                                             <%-- Replace 0 values with "n/a" for all the mailings but normal --%>
-                                            <c:if test="${mailing.mailing_type ne MAILING_TYPE_NORMAL.code}">
+                                            <c:if test="${not empty mailing and mailing.mailing_type ne MAILING_TYPE_NORMAL.code}">
                                                 <c:set target="${mailing}" property="recipientsCount"><mvc:message code="NotAvailableShort"/></c:set>
                                             </c:if>
                                             <display:column property="recipientsCount"

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,20 +15,20 @@ import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkServiceImpl;
 import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.Span;
-import org.agnitas.backend.AgnTag;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
+import com.agnitas.backend.AgnTag;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DynTagException;
-import org.agnitas.util.Tuple;
+import com.agnitas.util.AgnTagUtils;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DynTagException;
+import com.agnitas.util.Tuple;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,12 +62,12 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
 
     private static final List<AgnTag> AGN_IMAGE_TAGS = List.of(AgnTag.IMG_LINK, AgnTag.IMAGE);
 
-    private final ComMailingComponentsService mailingComponentsService;
+    private final MailingComponentsService mailingComponentsService;
     private final AgnTagService agnTagService;
     private final LinkService linkService;
     private final DynamicTagDao dynamicTagDao;
 
-    public MailingSizeCalculationServiceImpl(ComMailingComponentsService mailingComponentsService, AgnTagService agnTagService, LinkService linkService, DynamicTagDao dynamicTagDao) {
+    public MailingSizeCalculationServiceImpl(MailingComponentsService mailingComponentsService, AgnTagService agnTagService, LinkService linkService, DynamicTagDao dynamicTagDao) {
         this.mailingComponentsService = mailingComponentsService;
         this.agnTagService = agnTagService;
         this.linkService = linkService;

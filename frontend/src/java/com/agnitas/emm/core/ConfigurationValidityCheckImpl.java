@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,18 +18,17 @@ import java.text.MessageFormat;
 import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.util.ServerCommand.Server;
+import com.agnitas.util.ServerCommand.Server;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LayoutDao;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 
 /**
  * ATTENTION: Before changing something in Database affecting all companies, please rethink.
@@ -46,39 +45,33 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 
 	protected ConfigTableDao configTableDao;
 
-	protected ComCompanyDao companyDao;
+	protected CompanyDao companyDao;
 
-	protected ComTargetService targetService;
+	protected TargetService targetService;
 	
 	private LayoutDao layoutDao;
 	
-	@Required
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 		jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
 	public void setConfigTableDao(ConfigTableDao configTableDao) {
 		this.configTableDao = configTableDao;
 	}
 
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 
-	@Required
-	public void setTargetService(ComTargetService targetService) {
+	public void setTargetService(TargetService targetService) {
 		this.targetService = targetService;
 	}
 
-	@Required
 	public void setLayoutDao(LayoutDao layoutDao) {
 		this.layoutDao = layoutDao;
 	}

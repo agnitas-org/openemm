@@ -5,8 +5,8 @@
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
 <%--@elvariable id="parsedContent" type="java.util.List<java.ulit.List<java.lang.String>>"--%>
-<%--@elvariable id="enforcedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="enforcedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="possibleToSelectMailinglist" type="java.lang.Boolean"--%>
 
 <mvc:form id="import-form" servletRelativeAction="/recipient/import/execute.action" enctype="multipart/form-data" data-form="resource" modelAttribute="form">

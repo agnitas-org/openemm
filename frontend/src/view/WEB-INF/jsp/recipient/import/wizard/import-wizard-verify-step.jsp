@@ -6,7 +6,7 @@
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="importWizardSteps" type="com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps"--%>
-<%--@elvariable id="parsedContentJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="parsedContentJson" type="org.json.JSONArray"--%>
 
 <mvc:form servletRelativeAction="/recipient/import/wizard/step/verify.action" modelAttribute="importWizardSteps" enctype="multipart/form-data" data-form="resource">
     <c:set var="tileContent">
@@ -78,7 +78,7 @@
                             "options": {
                                 "paginationPageSize": 5
                             },
-                            "data": ${emm:toJson(parsedContentJson)}
+                            "data": ${parsedContentJson}
                         }
                         </c:set>
                         <script id="csv-preview" type="application/json">

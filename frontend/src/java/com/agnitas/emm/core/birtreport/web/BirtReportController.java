@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,74 +10,15 @@
 
 package com.agnitas.emm.core.birtreport.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Campaign;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
-import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
-import com.agnitas.emm.core.birtreport.dto.BirtReportType;
-import com.agnitas.emm.core.birtreport.dto.FilterType;
-import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
-import com.agnitas.emm.core.birtreport.forms.BirtReportFormSearchParams;
-import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import com.agnitas.emm.core.birtreport.forms.FiltersForm;
-import com.agnitas.emm.core.birtreport.forms.validation.BirtReportFormValidator;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.dto.DataResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import jakarta.servlet.http.HttpServletResponse;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.web.forms.FormTime;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.ENABLED_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILING_FILTER_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.PREDEFINED_ID_KEY;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -96,15 +37,73 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.ENABLED_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_FILTER_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_ID_KEY;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtreport.dto.BirtReportDownload;
+import com.agnitas.emm.core.birtreport.dto.BirtReportDto;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.dto.FilterType;
+import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
+import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
+import com.agnitas.emm.core.birtreport.forms.BirtReportFormSearchParams;
+import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
+import com.agnitas.emm.core.birtreport.forms.FiltersForm;
+import com.agnitas.emm.core.birtreport.forms.validation.BirtReportFormValidator;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.WebStorage;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.Mailinglist;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.FormTime;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.SimpleActionForm;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/statistics")
@@ -115,21 +114,21 @@ public class BirtReportController implements XssCheckAware {
     private static final Logger logger = LogManager.getLogger(BirtReportController.class);
     private static final String REDIRECT_TO_OVERVIEW = "redirect:/statistics/reports.action?restoreSort=true";
 
-    private final ComBirtReportService birtReportService;
+    private final BirtReportService birtReportService;
     private final WebStorage webStorage;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final ExtendedConversionService conversionService;
     private final UserActivityLogService userActivityLogService;
     private final BirtStatisticsService birtStatisticsService;
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final BirtReportFormValidator formValidator;
     private final AdminService adminService;
     private final ConfigService configService;
 
-    public BirtReportController(ConfigService configService, ComBirtReportService birtReportService,
+    public BirtReportController(ConfigService configService, BirtReportService birtReportService,
                                 WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService,
                                 ExtendedConversionService conversionService, UserActivityLogService userActivityLogService,
-                                BirtStatisticsService birtStatisticsService, ComTargetService targetService, AdminService adminService) {
+                                BirtStatisticsService birtStatisticsService, TargetService targetService, AdminService adminService) {
         this.birtReportService = birtReportService;
         this.webStorage = webStorage;
         this.conversionService = conversionService;
@@ -156,10 +155,10 @@ public class BirtReportController implements XssCheckAware {
 
     @RequestMapping("/reports.action")
     public String list(Admin admin, @ModelAttribute("birtReportsForm") BirtReportOverviewFilter filter,
-                       @ModelAttribute BirtReportFormSearchParams searchParams, @RequestParam(required = false) boolean restoreSort, Model model) {
+                       @ModelAttribute BirtReportFormSearchParams searchParams, @RequestParam(required = false) Boolean restoreSort, Model model) {
         FormUtils.syncPaginationData(webStorage, WebStorage.BIRT_REPORT_OVERVIEW, filter, restoreSort);
 
-        if (isRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             FormUtils.syncSearchParams(searchParams, filter, true);
             model.addAttribute("reports", birtReportService.getPaginatedReportList(filter, admin.getCompanyID()));
         } else {
@@ -173,10 +172,6 @@ public class BirtReportController implements XssCheckAware {
         writeUserActivityLog(admin, new UserAction("statistics reports", "active tab - overview"));
 
         return "birtreport_list";
-    }
-
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/reports/search.action")
@@ -199,8 +194,8 @@ public class BirtReportController implements XssCheckAware {
             if (birtReport != null) {
                 form = conversionService.convert(birtReport, BirtReportForm.class);
 
-                form.getSendDate().set(birtReport.getNextStart(), AgnUtils.getZoneId(admin));
-                form.getEndDate().set(birtReport.getEndDate(), isRedesign(admin) ? admin.getDateFormat() : BirtReportSettingsUtils.getReportDateFormatLocalized(admin));
+                form.getSendDate().set(birtReport.getNextStart(), admin.getZoneId());
+                form.getEndDate().set(birtReport.getEndDate(), admin.isRedesignedUiUsed() ? admin.getDateFormat() : BirtReportSettingsUtils.getReportDateFormatLocalized(admin));
 
                 writeUserActivityLog(admin, new UserAction("view report", getReportUalDescription(birtReport.getShortname(), birtReport.getId())));
             }
@@ -216,7 +211,7 @@ public class BirtReportController implements XssCheckAware {
 
         setUpViewParameters(admin, model);
         model.addAttribute("hasActiveDelivery", birtReportService.hasActiveDelivery(id));
-        if (isRedesign(admin) && form != null) {
+        if (admin.isRedesignedUiUsed() && form != null) {
             model.addAttribute("activeTabType", ReportSettingsType.getTypeByCode(form.getActiveTab()));
         }
 
@@ -225,7 +220,7 @@ public class BirtReportController implements XssCheckAware {
 
     @RequestMapping(value = {"/report/new.action", "/report/0/view.action"})
     public String create(Admin admin, Model model, BirtReportForm form) {
-        form.setSettings(BirtReportSettingsUtils.getDefaultSettings());
+        form.setSettings(BirtReportSettingsUtils.getDefaultSettings(true));
 
         setUpDateFormats(admin, model);
         setUpViewParameters(admin, model);
@@ -235,27 +230,28 @@ public class BirtReportController implements XssCheckAware {
     }
 
     @PostMapping("/report/save.action")
-    public ModelAndView save(Admin admin, BirtReportForm form, Popups popups) throws Exception {
+    public String save(Admin admin, BirtReportForm form, Popups popups) {
         if (!formValidator.validateBeforeSave(form, admin, popups)) {
-            return new ModelAndView(MESSAGES_VIEW, HttpStatus.BAD_REQUEST);
+            return MESSAGES_VIEW;
         }
 
         saveReport(admin, form, popups);
-        return new ModelAndView(redirectToView(form.getReportId()));
+        return redirectToView(form.getReportId());
     }
 
     @PostMapping("/report/evaluate.action")
-    public Object evaluate(Admin admin, BirtReportForm form, RedirectAttributes redirectModel, Model model, Popups popups) throws Exception {
+    public Object evaluate(Admin admin, BirtReportForm form, RedirectAttributes redirectModel, Model model, Popups popups) {
+        form.getSettings().values().forEach(settings -> settings.put("enabled", "false")); // skip delivery validation
         if (!formValidator.isValidToEvaluate(form, admin, popups)) {
-            if (isRedesign(admin)) {
-                return MESSAGES_VIEW;
+            if (admin.isRedesignedUiUsed()) {
+                return ResponseEntity.ok(new BooleanResponseDto(popups, false));
             } else {
                 redirectModel.addFlashAttribute("birtReportForm", form);
                 return "redirect:/statistics/report/" + form.getReportId() + "/view.action";
             }
         }
 
-        if (isRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             return evaluate(form, admin, popups);
         } else {
             prepareDownloadPage(form, admin, model);
@@ -263,33 +259,31 @@ public class BirtReportController implements XssCheckAware {
         }
     }
 
-    private Object evaluate(BirtReportForm form, Admin admin, Popups popups) throws Exception {
-        List<BirtReportDownload> downloads = birtReportService.evaluate(form.getReportId(), form.getActiveTab(), admin);
-        if (CollectionUtils.isEmpty(downloads)) {
+    private Object evaluate(BirtReportForm form, Admin admin, Popups popups) {
+        BirtReportDownload download = birtReportService.evaluate(form, admin);
+        if (download == null) {
             return "evaluation_finished";
         }
 
-        File tmpFile = birtStatisticsService.getBirtReportTmpFile(downloads, admin.getCompanyID());
+        File tmpFile = birtStatisticsService.getBirtReportTmpFile(download, admin.getCompanyID());
         if (tmpFile == null || !tmpFile.exists() || tmpFile.length() <= 0) {
             return "evaluation_finished";
         }
 
-        String fileName = downloads.size() == 1 ? downloads.get(0).getFileName() : "birt_reports.zip";
-
         String downloadUrl = String.format("/statistics/report/download.action?fileName=%s&tmpFileName=%s",
-                fileName, Objects.requireNonNull(tmpFile).getAbsolutePath());
+            download.getFileName(), Objects.requireNonNull(tmpFile).getAbsolutePath());
         return ResponseEntity.ok(new DataResponseDto<>(downloadUrl, popups));
     }
 
     // TODO: EMMGUI-714: remove when old design will be removed
-    private void prepareDownloadPage(BirtReportForm form, Admin admin, Model model) throws Exception {
+    private void prepareDownloadPage(BirtReportForm form, Admin admin, Model model) {
         model.addAttribute("reportId", form.getReportId());
         model.addAttribute("success", evaluate(form, admin, model));
     }
 
     // TODO: EMMGUI-714: remove when old design will be removed
-    private boolean evaluate(BirtReportForm form, Admin admin, Model model) throws Exception {
-        BirtReportDownload birtDownload = birtReportService.evaluate(admin, form);
+    private boolean evaluate(BirtReportForm form, Admin admin, Model model) {
+        BirtReportDownload birtDownload = birtReportService.evaluate(form, admin);
         if (birtDownload == null) {
             return false;
         }
@@ -301,7 +295,7 @@ public class BirtReportController implements XssCheckAware {
         model.addAttribute("fileName", birtDownload.getFileName());
         model.addAttribute("tmpFileName", birtDownload.getTmpFileName());
         model.addAttribute("reportShortname", birtDownload.getShortname());
-        if (isRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("downloadUrl", "/statistics/report/download.action");
         }
 
@@ -393,7 +387,7 @@ public class BirtReportController implements XssCheckAware {
     }
 
     @GetMapping(value = "/report/getFilteredMailing.action", produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody JSONArray getFilteredMailing(Admin admin, FiltersForm form) throws Exception {
+    public @ResponseBody List<Object> getFilteredMailing(Admin admin, FiltersForm form) throws Exception {
         JSONArray mailinglist = new JSONArray();
 
         List<MailingBase> predefinedMailingsForReports =
@@ -403,10 +397,10 @@ public class BirtReportController implements XssCheckAware {
             JSONObject m = new JSONObject();
             m.put("id", mailingBase.getId());
             m.put("shortname", mailingBase.getShortname());
-            mailinglist.add(m);
+            mailinglist.put(m);
         }
 
-        return mailinglist;
+        return mailinglist.toList();
     }
     
     @PostMapping("/report/{reportId:\\d+}/deactivateAllDeliveries.action")
@@ -421,18 +415,14 @@ public class BirtReportController implements XssCheckAware {
 
     @RequestMapping("/singleMailingStatistics/create.action")
     public Object createSingleMailingStatisticsReport(@RequestParam(name = "mailingId") int mailingId, Admin admin, Model model, Popups popups) throws Exception {
-        BirtReportDto newReport = birtReportService.createSingleMailingStatisticsReport(mailingId, admin);
-        BirtReportForm form = conversionService.convert(newReport, BirtReportForm.class);
+        BirtReportForm form = birtReportService.createSingleMailingStatisticsReportForm(mailingId, admin);
 
-        if (isRedesign(admin)) {
-            Object evaluationResult = evaluate(form, admin, popups);
-            birtReportService.deleteReport(admin.getCompanyID(), newReport.getId());
-            return evaluationResult;
+        if (admin.isRedesignedUiUsed()) {
+            return evaluate(form, admin, popups);
         } else {
             prepareDownloadPage(form, admin, model);
             model.addAttribute("backUrl", "/statistics/mailing/" + mailingId + "/view.action");
-            birtReportService.deleteReport(admin.getCompanyID(), newReport.getId());
-
+            model.addAttribute("fromMailingStatPage", true);
             return "birtreport_download";
         }
     }
@@ -446,7 +436,7 @@ public class BirtReportController implements XssCheckAware {
         model.addAttribute("reportDateFormatPattern", BirtReportSettingsUtils.getReportDateFormatLocalized(admin).toPattern());
     }
 
-    private void saveReport(Admin admin, BirtReportForm form, Popups popups) throws Exception {
+    private void saveReport(Admin admin, BirtReportForm form, Popups popups) {
         boolean isNew = form.getReportId() == 0;
 
         BirtReportDto existedReport = null;
@@ -530,13 +520,7 @@ public class BirtReportController implements XssCheckAware {
         comparisonMap.put(BirtReportSettingsUtils.DEVICES_GROUP, BirtReportSettingsUtils.COMPARISON_DEVICES_GROUP);
         comparisonMap.put(BirtReportSettingsUtils.FORMATS_GROUP, BirtReportSettingsUtils.COMPARISON_FORMATS_GROUP);
         settingType.put(ReportSettingsType.COMPARISON, comparisonMap);
-
-        Map<String, List<BirtReportSettingsUtils.Properties>> mailingMap = new LinkedHashMap<>();
-        mailingMap.put(BirtReportSettingsUtils.FORMATS_GROUP, BirtReportSettingsUtils.MAILING_FORMATS_GROUP);
-        mailingMap.put(BirtReportSettingsUtils.SENDING_OPENER_GROUP, BirtReportSettingsUtils.MAILING_OPENER_GROUP);
-        mailingMap.put(BirtReportSettingsUtils.GENERAL_GROUP, BirtReportSettingsUtils.MAILING_GENERAL_GROUP);
-        mailingMap.put(BirtReportSettingsUtils.DEVICES_GROUP, BirtReportSettingsUtils.MAILING_DEVICES_GROUP);
-        settingType.put(ReportSettingsType.MAILING, mailingMap);
+        settingType.put(ReportSettingsType.MAILING, BirtReportSettingsUtils.mailingStatisticProps);
 
         Map<String, List<BirtReportSettingsUtils.Properties>> recipientMap = new LinkedHashMap<>();
         recipientMap.put(BirtReportSettingsUtils.WITHOUT_GROUP, BirtReportSettingsUtils.RECIPIENT_WITHOUT_GROUP);
@@ -559,7 +543,7 @@ public class BirtReportController implements XssCheckAware {
             JSONObject ca = new JSONObject();
             ca.put("id", campaign.getId());
             ca.put("shortname", campaign.getShortname());
-            archiveFilter.add(ca);
+            archiveFilter.put(ca);
         }
         filterLists.put(FilterType.FILTER_ARCHIVE.name(), archiveFilter);
 
@@ -569,7 +553,7 @@ public class BirtReportController implements XssCheckAware {
             ma.put("id", mailinglist.getId());
             ma.put("shortname", mailinglist.getShortname());
             ma.put("changeDate", mailinglist.getChangeDate());
-            mailinglistFilter.add(ma);
+            mailinglistFilter.put(ma);
         }
         filterLists.put(FilterType.FILTER_MAILINGLIST.name(), mailinglistFilter);
 
@@ -578,7 +562,7 @@ public class BirtReportController implements XssCheckAware {
             final JSONObject targetObj = new JSONObject();
             targetObj.put("id", target.getId());
             targetObj.put("shortname", target.getTargetName());
-            targetsFilter.add(targetObj);
+            targetsFilter.put(targetObj);
         }
         filterLists.put(FilterType.FILTER_TARGET.name(), targetsFilter);
 

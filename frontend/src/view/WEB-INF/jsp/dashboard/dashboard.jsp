@@ -1,11 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.action" %>
-<%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@ page import="com.agnitas.emm.common.MailingStatus" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
-<%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
+<%--@elvariable id="mailinglist" type="com.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="worldmailinglist" type="java.utils.List<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>

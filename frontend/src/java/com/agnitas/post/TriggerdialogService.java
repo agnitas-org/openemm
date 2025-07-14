@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -26,17 +26,17 @@ public interface TriggerdialogService {
 
 	boolean isPostMailing(Mailing mailing);
 
-	boolean existsCampaign(int companyID, int mailingID, String shortname) throws Exception;
+	boolean existsCampaign(int companyID, int mailingID, String shortname);
 
 	void createExternalMailing(Mailing mailing) throws Exception;
 
 	void updateExternalMailing(Mailing mailing) throws Exception;
 
-	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate) throws Exception;
+	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate);
 
-	boolean createPostTrigger(Mailing mailing, Date sendDate) throws Exception;
+	boolean createPostTrigger(Mailing mailing, Date sendDate);
 
-	String createSsoUrl(String triggerDialogFrontendUrl, String ssoSharedSecret, int triggerDialogMasId, String triggerDialogMasClientId, String ssoUsername, String ssoEmail, String ssoFirstname, String ssoLastname, int validityInMinutes) throws Exception;
+	String createSsoUrl(String triggerDialogFrontendUrl, String ssoSharedSecret, int triggerDialogMasId, String triggerDialogMasClientId, String ssoUsername, String ssoEmail, String ssoFirstname, String ssoLastname, int validityInMinutes);
 
 	List<TriggerdialogField> getExternalMailingFields(int companyID, int mailingID);
 
@@ -54,9 +54,9 @@ public interface TriggerdialogService {
 
 	void removeExternalMailingField(String fieldName, int companyId, int mailingId);
 
-	DeliveryStat getTriggerdialogDeliveryStatus(int mailingID) throws Exception;
+	DeliveryStat getTriggerdialogDeliveryStatus(int mailingID);
 
-	boolean canStopMailing(int companyID, int mailingID) throws Exception;
+	boolean canStopMailing(int companyID, int mailingID);
 
 	void updateTriggerdialogDeliveryStatusByMailingID(int mailingID, TriggerdialogDeliveryStatus newStatus);
 
@@ -70,7 +70,7 @@ public interface TriggerdialogService {
 
 	List<String> getExternalFieldsNames(List<TriggerdialogField> externalFields);
 
-	TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByMailingID(int mailingID) throws Exception;
+	TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByMailingID(int mailingID);
 
 	List<LightweightMailing> getMailingsDependentOnProfileField(String column, int companyId);
 

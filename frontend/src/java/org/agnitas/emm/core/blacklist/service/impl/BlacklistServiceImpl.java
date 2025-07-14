@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,28 +10,26 @@
 
 package org.agnitas.emm.core.blacklist.service.impl;
 
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import com.agnitas.service.ExtendedConversionService;
-import org.agnitas.beans.BlackListEntry;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.UserStatus;
+import com.agnitas.beans.BlackListEntry;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.core.binding.service.BindingServiceException;
 import org.agnitas.emm.core.blacklist.service.BlacklistAlreadyExistException;
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -43,8 +41,8 @@ public class BlacklistServiceImpl implements BlacklistService {
 	private static final Logger logger = LogManager.getLogger( BlacklistServiceImpl.class);
 	
 	/** DAO for blacklists. */
-	private ComBlacklistDao blacklistDao;
-	protected ComRecipientDao recipientDao;
+	private BlacklistDao blacklistDao;
+	protected RecipientDao recipientDao;
 	private BlacklistModelValidator blacklistModelValidator;
 	
 	/** Binding service to update binding status when blacklisting mail address. */
@@ -60,12 +58,8 @@ public class BlacklistServiceImpl implements BlacklistService {
 		
 		boolean result = blacklistDao.insert(model.getCompanyId(), model.getEmail(), model.getReason());
 		
-		if( result) {
-			try {
-				bindingService.updateBindingStatusByEmailPattern( model.getCompanyId(), model.getEmail(), UserStatus.Blacklisted, "Added to blocklist");
-			} catch( BindingServiceException e) {
-				logger.error( "Unable to update binding status for blacklisted email: " + model.getEmail(), e);
-			}
+		if (result) {
+			bindingService.updateBindingStatusByEmailPattern( model.getCompanyId(), model.getEmail(), UserStatus.Blacklisted, "Added to blocklist");
 		}
 
 		return result;
@@ -103,21 +97,21 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public List<String> getEmailList(int companyID) throws Exception {
+	public List<String> getEmailList(int companyID) {
 		final List<String> result = blacklistDao.getBlacklist(companyID);
 		
 		if(result == null) {
 			final String msg = String.format("Error reading blacklist entries for company %d", companyID);
 			
 			logger.error(msg);
-			throw new Exception(msg);
+			throw new RuntimeException(msg);
 		}
 		
 		return result;
 	}
 
     @Override
-    public List<BlackListEntry> getRecipientList(int companyID) throws Exception {
+    public List<BlackListEntry> getRecipientList(int companyID) {
         return blacklistDao.getBlacklistedRecipients(companyID);
     }
 
@@ -145,7 +139,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public boolean add(int companyId, int adminId, String email, String reason) throws Exception {
+	public boolean add(int companyId, int adminId, String email, String reason) {
 		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
 		if (isSuccessfullyInserted) {
 			String remark = "Added to blocklist by " + adminId;
@@ -167,13 +161,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public List<BlacklistDto> getAll(int companyId) throws Exception {
+	public List<BlacklistDto> getAll(int companyId) {
 		List<BlackListEntry> recipientList = getRecipientList(companyId);
 		return conversionService.convert(recipientList, BlackListEntry.class, BlacklistDto.class);
 	}
 
 	@Override
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public List<Mailinglist> getBindedMailingLists(int companyId, String email) {
 		BlacklistModel blacklistModel = new BlacklistModel();
 		blacklistModel.setCompanyId(companyId);
@@ -188,7 +181,6 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public boolean delete(int companyId, String email, Set<Integer> mailinglistIds) {
 		boolean isDeleted = blacklistDao.delete(companyId, email);
 
@@ -251,14 +243,13 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 	
 	@Override
-	public Set<String> loadBlackList(int companyId) throws Exception {
+	public Set<String> loadBlackList(int companyId) {
 		return blacklistDao.loadBlackList(companyId);
 	}
 	
 	// ------------------------------------------------------------------------------------------ Dependency Injection
 
-    @Required
-	public void setBlacklistDao(ComBlacklistDao blacklistDao) {
+	public void setBlacklistDao(BlacklistDao blacklistDao) {
 		this.blacklistDao = blacklistDao;
 	}
 
@@ -267,22 +258,18 @@ public class BlacklistServiceImpl implements BlacklistService {
      * 
      * @param bindingService binding service
      */
-    @Required
     public void setBindingService(BindingService bindingService) {
     	this.bindingService = bindingService;
     }
 
-	@Required
 	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
 	}
 
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
+	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 	
-	@Required
 	public void setBlacklistModelValidator(final BlacklistModelValidator blacklistModelValidator) {
 		this.blacklistModelValidator = blacklistModelValidator;
 	}

@@ -1,5 +1,8 @@
 
 #dashboard-add-ons {
+  --dashboard-add-ons-icon-color: #{$white};
+  --dashboard-add-ons-icon-bg: #{$dark-grey};
+
   .tile-body {
     @include flex-column($gap-sm);
   }
@@ -18,9 +21,29 @@
 
       @include size(20px);
 
-      background-color: $dark-grey;
-      color: $white;
+      background-color: var(--dashboard-add-ons-icon-bg);
+      color: var(--dashboard-add-ons-icon-color);
       border-radius: 2px;
     }
+  }
+}
+
+@include color-mode(dark) {
+  #dashboard-add-ons {
+    --dashboard-add-ons-icon-bg: #{$light-grey};
+    --dashboard-add-ons-icon-color: #{$body-bg-dark};
+  }
+}
+
+@include color-mode(light-contrast) {
+  #dashboard-add-ons {
+    --dashboard-add-ons-icon-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #dashboard-add-ons {
+    --dashboard-add-ons-icon-bg: #{$con-grey};
+    --dashboard-add-ons-icon-color: #{$con-dark-blue};
   }
 }

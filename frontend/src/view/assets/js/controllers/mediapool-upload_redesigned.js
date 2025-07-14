@@ -109,6 +109,10 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
     }
   });
 
+  function updateToggleAllBtn() {
+    AGN.Lib.CoreInitializer.run("slider", $('#upload-files-tile'));
+  }
+
   function nameDuplicationCheckRequest(fileName, success, async = false) {
     const commonSuccess = resp => {
       if (resp.data) {
@@ -116,6 +120,7 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
       }
 
       success(resp);
+      updateToggleAllBtn();
     }
 
     $.ajax(AGN.url('/mediapool/findElementWithName.action'), {
@@ -171,6 +176,7 @@ AGN.Lib.Controller.new('mediapool-upload', function () {
       toggleUploadNotification(true);
       toggleCancelBtnVisibility(false);
     }
+    updateToggleAllBtn();
   });
 
   function updateIndexes(fromIndex) {

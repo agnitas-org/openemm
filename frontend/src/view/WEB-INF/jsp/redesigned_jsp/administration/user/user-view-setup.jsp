@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.web.forms.FormSearchParams" %>
+<%@ page import="com.agnitas.web.forms.FormSearchParams" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -16,7 +16,7 @@
 
 <c:set var="agnTitleKey" 			       value="settings.${isRestfulUser ? 'RestfulUser' : 'Admin'}"  scope="request" />
 <c:set var="sidemenu_active" 		       value="Administration" 					                    scope="request" />
-<c:set var="sidemenu_sub_active" 	       value="settings.Admin" 					                    scope="request" />
+<c:set var="sidemenu_sub_active" 	       value="UserActivitylog.Users" 					            scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	       value="UserActivitylog.Users" 					            scope="request" />
 <c:set var="agnBreadcrumbsRootUrl" 	       value="${overviewLink}"	                                    scope="request" />
 <c:set var="agnHelpKey" 			       value="newUser" 						                        scope="request" />

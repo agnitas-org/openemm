@@ -1,0 +1,32 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.service;
+
+import java.util.Locale;
+
+import com.agnitas.emm.core.components.service.MailingRecipientsService;
+import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
+import com.agnitas.emm.core.mailing.service.MailingRecipientsExportWorker;
+import com.agnitas.service.MailingRecipientExportWorkerFactory;
+
+public class MailingRecipientExportWorkerFactoryImpl implements MailingRecipientExportWorkerFactory {
+
+    private MailingRecipientsService mailingRecipientsService;
+
+    @Override
+    public final MailingRecipientsExportWorker newWorker(MailingRecipientsOverviewFilter filter, int mailingId, int companyId, Locale locale) {
+        return new MailingRecipientsExportWorker(filter, mailingId, companyId, mailingRecipientsService, locale);
+    }
+
+    public void setMailingRecipientsService(MailingRecipientsService mailingRecipientsService) {
+        this.mailingRecipientsService = mailingRecipientsService;
+    }
+}

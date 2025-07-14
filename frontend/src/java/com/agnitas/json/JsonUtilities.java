@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,146 +10,29 @@
 
 package com.agnitas.json;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TimeZone;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import com.fasterxml.jackson.core.type.TypeReference;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.XmlUtilities;
-import org.apache.commons.lang3.StringUtils;
+import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
-import net.sf.json.JsonConfig;
-import net.sf.json.processors.DefaultValueProcessorMatcher;
-
 public class JsonUtilities {
 
     private static final Logger logger = LogManager.getLogger(JsonUtilities.class);
     
-	public static JsonObject convertXmlDocument(Document xmlDocument, boolean throwExceptionOnError) throws Exception {
-		try {
-			JsonObject jsonObject = new JsonObject();
-			jsonObject.add(xmlDocument.getChildNodes().item(0).getNodeName(), convertXmlNode(xmlDocument.getChildNodes().item(0)));
-			return jsonObject;
-		} catch (Exception e) {
-			if (throwExceptionOnError) {
-				throw new Exception("Invalid data", e);
-			} else {
-				return null;
-			}
-		}
-	}
-
-	public static JsonObject convertXmlNode(Node xmlNode) {
-		JsonObject jsonObject = new JsonObject();
-		if (xmlNode.getAttributes() != null && xmlNode.getAttributes().getLength() > 0) {
-			for (int attributeIndex = 0; attributeIndex < xmlNode.getAttributes().getLength(); attributeIndex++) {
-				Node attributeNode = xmlNode.getAttributes().item(attributeIndex);
-				jsonObject.add(attributeNode.getNodeName(), attributeNode.getNodeValue());
-			}
-		}
-		if (xmlNode.getChildNodes() != null && xmlNode.getChildNodes().getLength() > 0) {
-			for (int i = 0; i < xmlNode.getChildNodes().getLength(); i++) {
-				Node childNode = xmlNode.getChildNodes().item(i);
-				if (childNode.getNodeType() == Node.TEXT_NODE) {
-					if (StringUtils.isNotBlank(childNode.getNodeValue())) {
-						jsonObject.add("text", childNode.getNodeValue());
-					}
-				} else if (childNode.getNodeType() == Node.COMMENT_NODE) {
-					// do nothing
-				} else if (childNode.getChildNodes().getLength() == 1 && childNode.getChildNodes().item(0).getNodeType() == Node.TEXT_NODE) {
-					// only one textnode under this node
-					jsonObject.add(childNode.getNodeName(), childNode.getChildNodes().item(0).getNodeValue());
-				} else {
-					Node xmlSubNode = childNode;
-					JsonObject nodeJsonObject = convertXmlNode(xmlSubNode);
-					if (nodeJsonObject != null) {
-						jsonObject.add(xmlSubNode.getNodeName(), nodeJsonObject);
-					}
-				}
-			}
-		}
-		return jsonObject;
-	}
-
-	public static Document convertToXmlDocument(JsonNode jsonNode, boolean useAttributes) throws Exception {
-		try {
-			DocumentBuilderFactory documentBuilderFactory = XmlUtilities.newXxeProtectedDocumentBuilderFactory();
-			DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-			Document xmlDocument = documentBuilder.newDocument();
-			xmlDocument.setXmlStandalone(true);
-			List<Node> mainNodes;
-			if (jsonNode.isJsonObject()) {
-				mainNodes = convertToXmlNodes((JsonObject) jsonNode.getValue(), xmlDocument, useAttributes);
-				if (mainNodes == null || mainNodes.size() < 1) {
-					throw new Exception("No data found");
-				} else if (mainNodes.size() == 1) {
-					xmlDocument.appendChild(mainNodes.get(0));
-				} else {
-					Node rootNode = xmlDocument.createElement("root");
-					for (Node subNode : mainNodes) {
-						if (subNode instanceof Attr) {
-							rootNode.getAttributes().setNamedItem(subNode);
-						} else {
-							rootNode.appendChild(subNode);
-						}
-					}
-					xmlDocument.appendChild(rootNode);
-				}
-			} else if (jsonNode.isJsonArray()) {
-				mainNodes = convertToXmlNodes((JsonArray) jsonNode.getValue(), "root", xmlDocument, useAttributes);
-				if (mainNodes == null || mainNodes.size() < 1) {
-					throw new Exception("No data found");
-				} else if (mainNodes.size() == 1) {
-					xmlDocument.appendChild(mainNodes.get(0));
-				} else {
-					Node rootNode = xmlDocument.createElement("root");
-					for (Node subNode : mainNodes) {
-						if (subNode instanceof Attr) {
-							rootNode.getAttributes().setNamedItem(subNode);
-						} else {
-							rootNode.appendChild(subNode);
-						}
-					}
-					xmlDocument.appendChild(rootNode);
-				}
-			} else if (jsonNode.isNull()) {
-				Node rootNode = xmlDocument.createElement("root");
-				rootNode.setTextContent("null");
-				xmlDocument.appendChild(rootNode);
-			} else {
-				Node rootNode = xmlDocument.createElement("root");
-				rootNode.setTextContent(jsonNode.getValue().toString());
-				xmlDocument.appendChild(rootNode);
-			}
-			
-			return xmlDocument;
-		} catch (Exception e) {
-			throw new Exception("Invalid data", e);
-		}
-	}
-
 	public static List<Node> convertToXmlNodes(JsonObject jsonObject, Document xmlDocument, boolean useAttributes) {
 		List<Node> list = new ArrayList<>();
 
@@ -227,10 +110,6 @@ public class JsonUtilities {
 	 *<br />
 	 * JsonPath example:<br />
 	 * 	"$.list.customer[0].name"<br />
-	 * 
-	 * @param jsonReader
-	 * @param jsonPath
-	 * @throws Exception
 	 */
 	public static void readUpToJsonPath(JsonReader jsonReader, String jsonPath) throws Exception {
 		if (jsonPath.startsWith("/") || jsonPath.startsWith("$")) {
@@ -248,46 +127,6 @@ public class JsonUtilities {
 		if (!jsonReader.getCurrentJsonPath().equals(jsonPath)) {
 			throw new Exception("Path '" + jsonPath + "' is not part of the JSON data");
 		}
-	}
-
-	public static JsonNode validateJson(byte[] jsonData, String encoding) throws Exception {
-		try (JsonReader jsonReader = new JsonReader(new ByteArrayInputStream(jsonData), encoding)) {
-			return jsonReader.read();
-		}
-	}
-
-	/**
-	 * The shortcut for {@link #useNulls(JsonConfig)}.
-	 *
-	 * @return a {@link JsonConfig} instance.
-	 */
-	public static JsonConfig useNulls() {
-		return useNulls(new JsonConfig());
-	}
-
-	/**
-	 * Change the default value processing so {@code null} values are represented "as is" (not replaced with stubs like
-	 * empty list or zeros).
-	 *
-	 * @param config a {@link JsonConfig} instance to change.
-	 * @return a {@link JsonConfig} instance passes as an argument.
-	 */
-	public static JsonConfig useNulls(JsonConfig config) {
-		config.registerDefaultValueProcessor(Object.class, type -> null);
-		config.setDefaultValueProcessorMatcher(new DefaultValueProcessorMatcher() {
-			@SuppressWarnings("rawtypes")
-			@Override
-			public Object getMatch(Class type, Set set) {
-				for (Object o : set) {
-					Class<?> candidate = (Class<?>) o;
-					if (candidate.isAssignableFrom(type)) {
-						return candidate;
-					}
-				}
-				return null;
-			}
-		});
-		return config;
 	}
 
 	public static ObjectMapper getObjectMapper(TimeZone timezone) {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,9 +11,9 @@
 package com.agnitas.emm.core.import_profile.web;
 
 import static com.agnitas.emm.core.import_profile.component.ImportProfileColumnMappingChangesDetector.NO_VALUE;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,20 +25,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.impl.ColumnMappingImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.ImportException;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.CaseInsensitiveSet;
-import org.agnitas.util.CsvColInfo;
-import org.agnitas.util.CsvDataInvalidItemCountException;
-import org.agnitas.util.ImportUtils;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.Separator;
-import org.agnitas.util.importvalues.TextRecognitionChar;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.impl.ColumnMappingImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ImportException;
+import com.agnitas.service.ImportProfileService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.CaseInsensitiveSet;
+import com.agnitas.util.CsvColInfo;
+import com.agnitas.util.CsvDataInvalidItemCountException;
+import com.agnitas.util.ImportUtils;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.Separator;
+import com.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
@@ -96,11 +96,11 @@ public class ImportProfileColumnsController {
     private final ImportProfileColumnMappingsValidator mappingsValidator;
     private final UserActivityLogService userActivityLogService;
     private final ImportProfileColumnMappingChangesDetector changesDetector;
-    private final ComRecipientDao recipientDao;
+    private final RecipientDao recipientDao;
 
     public ImportProfileColumnsController(ImportProfileService importProfileService, RecipientFieldService recipientFieldService, ExtendedConversionService conversionService,
                                           ImportProfileColumnMappingsValidator mappingsValidator, UserActivityLogService userActivityLogService,
-                                          ImportProfileColumnMappingChangesDetector changesDetector, ComRecipientDao recipientDao) {
+                                          ImportProfileColumnMappingChangesDetector changesDetector, RecipientDao recipientDao) {
 
         this.importProfileService = importProfileService;
         this.recipientFieldService = recipientFieldService;
@@ -112,7 +112,7 @@ public class ImportProfileColumnsController {
     }
 
     @GetMapping("/{id:\\d+}/columns/view.action")
-    public String view(@PathVariable(name = "id") int id, @ModelAttribute("form") ImportProfileColumnsForm form, Admin admin, Model model, HttpSession session) throws Exception {
+    public String view(@PathVariable(name = "id") int id, @ModelAttribute("form") ImportProfileColumnsForm form, Admin admin, Model model, HttpSession session) {
         session.removeAttribute(RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME);
         ImportProfile profile = importProfileService.getImportProfileById(id);
 
@@ -127,7 +127,7 @@ public class ImportProfileColumnsController {
         return "import_wizard_profile_columns_view";
     }
     
-    private Map<String, RecipientFieldDescription> getProfileFieldsMap(ImportProfile profile, Admin admin) throws Exception {
+    private Map<String, RecipientFieldDescription> getProfileFieldsMap(ImportProfile profile, Admin admin) {
     	List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
     	Map<String, RecipientFieldDescription> recipientFieldsMap = new HashMap<>();
     	for (RecipientFieldDescription recipientField : recipientFields) {
@@ -144,7 +144,7 @@ public class ImportProfileColumnsController {
     }
 
     @PostMapping("/columns/save.action")
-    public String save(@ModelAttribute ImportProfileColumnsForm form, @RequestParam(required = false) boolean start, Admin admin, Popups popups) throws Exception {
+    public String save(@ModelAttribute ImportProfileColumnsForm form, @RequestParam(required = false) boolean start, Admin admin, Popups popups) {
         List<ColumnMapping> mappings = conversionService.convert(form.getColumnsMappings(), ImportProfileColumnMapping.class, ColumnMapping.class);
         ImportProfile existingProfile = importProfileService.getImportProfileById(form.getProfileId());
 

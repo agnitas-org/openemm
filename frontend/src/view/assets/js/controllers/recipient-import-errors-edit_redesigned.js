@@ -1,7 +1,7 @@
 AGN.Lib.Controller.new('recipient-import-errors-edit', function () {
 
   this.addDomInitializer('recipient-import-errors-edit', function () {
-    if (isPageReloaded()) {
+    if (isCurrentPageReloaded()) {
       AGN.Lib.Page.reload(AGN.url('/recipient/import/chooseMethod.action?cancelImport=true'))
     } else {
       window.onbeforeunload = function () {
@@ -10,14 +10,14 @@ AGN.Lib.Controller.new('recipient-import-errors-edit', function () {
     }
   });
 
-  function isPageReloaded() {
+  function isCurrentPageReloaded() {
     if (typeof performance === 'undefined' || typeof performance.getEntriesByType !== 'function') {
       return false;
     }
 
     const entries = performance.getEntriesByType('navigation');
     if (entries.length > 0) {
-      return entries[0].type === 'reload';
+      return entries[0].type === 'reload' && entries[0].name === window.location.href;
     }
 
     return false;

@@ -12,6 +12,8 @@
 <c:set var="agnBreadcrumbsRootKey" 	value="Administration" 		    	scope="request" />
 <c:set var="agnHelpKey" 			value="userlog" 			    	scope="request" />
 
+<c:url var="switchDesignUrl" value="/administration/soap-user/activitylog/listRedesigned.action" scope="request" />
+
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>

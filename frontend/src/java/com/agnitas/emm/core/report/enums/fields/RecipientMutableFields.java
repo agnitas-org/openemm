@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,7 +12,7 @@ package com.agnitas.emm.core.report.enums.fields;
 
 import org.antlr.v4.runtime.misc.Nullable;
 
-import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.RecipientHistory;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
 
@@ -23,24 +23,24 @@ import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
 public enum RecipientMutableFields implements DatabaseField<String, RecipientMutableFields> {
 
     // mutable fields from binding history
-    USER_TYPE(ComRecipientHistory.USER_TYPE, "User Type", "recipient.history.usertype", true),
-    USER_STATUS(ComRecipientHistory.USER_STATUS, "User Status", "recipient.Status", true),
-    USER_REMARK(ComRecipientHistory.USER_REMARK, "User Remark", "recipient.Remark", true),
-    EXIT_MAILING_ID(ComRecipientHistory.EXIT_MAILING_ID, "Exit Mailing Id", "recipient.history.mailingid", true),
-    MAILINGLIST_DELETED(ComRecipientHistory.MAILINGLIST_DELETED, "Mailinglist Deleted", "Mailinglist", true),
-    CUSTOMER_BINDING_DELETED(ComRecipientHistory.CUSTOMER_BINDING_DELETED, "Customer Binding Deleted", "Binding", true),
+    USER_TYPE(RecipientHistory.USER_TYPE, "User Type", "recipient.history.usertype", true),
+    USER_STATUS(RecipientHistory.USER_STATUS, "User Status", "recipient.Status", true),
+    USER_REMARK(RecipientHistory.USER_REMARK, "User Remark", "recipient.Remark", true),
+    EXIT_MAILING_ID(RecipientHistory.EXIT_MAILING_ID, "Exit Mailing Id", "recipient.history.mailingid", true),
+    MAILINGLIST_DELETED(RecipientHistory.MAILINGLIST_DELETED, "Mailinglist Deleted", "Mailinglist", true),
+    CUSTOMER_BINDING_DELETED(RecipientHistory.CUSTOMER_BINDING_DELETED, "Customer Binding Deleted", "Binding", true),
 
     // mutable fields from profile history
-    FIRST_NAME(ComRecipientHistory.FIRSTNAME, "Firstname", "recipient.Firstname", false),
-    LAST_NAME(ComRecipientHistory.LASTNAME, "lastname", "recipient.Lastname", false),
-    GENDER(ComRecipientHistory.GENDER, "Gender", "Gender", false),
-    MAIL_TYPE(ComRecipientHistory.MAILTYPE, "Mailtype", "Mailtype", false),
-    TITLE(ComRecipientHistory.TITLE, "Title", "Title", false),
-    DATASOURCE_ID(ComRecipientHistory.DATASOURCE_ID, "Datasource Id", "recipient.DatasourceId", false),
-    EMAIL(ComRecipientHistory.EMAIL, "Email", "mailing.MediaType.0", false);
+    FIRST_NAME(RecipientHistory.FIRSTNAME, "Firstname", "recipient.Firstname", false),
+    LAST_NAME(RecipientHistory.LASTNAME, "lastname", "recipient.Lastname", false),
+    GENDER(RecipientHistory.GENDER, "Gender", "Gender", false),
+    MAIL_TYPE(RecipientHistory.MAILTYPE, "Mailtype", "Mailtype", false),
+    TITLE(RecipientHistory.TITLE, "Title", "Title", false),
+    DATASOURCE_ID(RecipientHistory.DATASOURCE_ID, "Datasource Id", "recipient.DatasourceId", false),
+    EMAIL(RecipientHistory.EMAIL, "Email", "mailing.MediaType.0", false);
 
     /**
-     * Necessary 'cause current enumeration dependent on constants which situate in {@link ComRecipientHistory}
+     * Necessary 'cause current enumeration dependent on constants which situate in {@link RecipientHistory}
      */
     private String code;
 

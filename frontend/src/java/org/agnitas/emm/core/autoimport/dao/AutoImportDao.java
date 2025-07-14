@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,11 +14,11 @@ import java.util.Date;
 import java.util.List;
 
 import com.agnitas.emm.core.auto_import.form.AutoImportOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.service.AutoImportJobStatus;
-import org.agnitas.util.Tuple;
+import com.agnitas.util.Tuple;
 
 public interface AutoImportDao {
 
@@ -40,17 +40,17 @@ public interface AutoImportDao {
 
 	void changeActiveStatus(int autoImportId, int companyId, boolean active);
 
-	void updateAutoImport(AutoImport autoImport) throws Exception;
+	void updateAutoImport(AutoImport autoImport);
 
-	void createAutoImport(AutoImport autoImport) throws Exception;
+	void createAutoImport(AutoImport autoImport);
 
 	List<AutoImport> getAutoImportsToRun(int maximumParallelAutoImports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
 	boolean announceStart(int autoImportId, Date nextStart);
 
-	void announceInterimResult(AutoImport autoImport) throws Exception;
+	void announceInterimResult(AutoImport autoImport);
 
-	void announceEnd(AutoImport autoImport) throws Exception;
+	void announceEnd(AutoImport autoImport);
 
 	int resetAutoImportsForCurrentHost();
 
@@ -58,7 +58,7 @@ public interface AutoImportDao {
 
 	int getRunningAutoImportsByHost(String hostname);
 
-	void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
+	void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize);
 
 	List<AutoImportLight> listAutoImportsUsingProfile(int importProfileID);
 

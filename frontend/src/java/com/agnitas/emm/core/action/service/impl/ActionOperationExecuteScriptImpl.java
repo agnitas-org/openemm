@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,11 +15,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.Recipient;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.Recipient;
 import com.agnitas.dao.MailingDao;
-import org.agnitas.dao.SourceGroupType;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.velocity.VelocityResult;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
@@ -33,12 +33,10 @@ import org.agnitas.emm.core.velocity.emmapi.VelocityMailingDaoWrapper;
 import org.agnitas.emm.core.velocity.emmapi.VelocityMailingWrapper;
 import org.agnitas.emm.core.velocity.emmapi.VelocityRecipient;
 import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.TimeoutLRUMap;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.TimeoutLRUMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DatasourceDescriptionDao;
@@ -193,22 +191,18 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 		this.javaMailService = javaMailService;
 	}
 	
-	@Required
 	public final void setCompanyAccessCheck(final CompanyAccessCheck check) {
 		this.companyAccessCheck = Objects.requireNonNull(check, "CompanyAccessCheck is null");
 	}
 	
-	@Required
 	public final void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
 	}
 	
-	@Required
 	public final void setSendActionbasedMailingService(final SendActionbasedMailingService service) {
 		this.sendActionbasedMailingService = Objects.requireNonNull(service, "SendActionbasedMailingService is null");
 	}
 	
-	@Required
 	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
 		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
 	}

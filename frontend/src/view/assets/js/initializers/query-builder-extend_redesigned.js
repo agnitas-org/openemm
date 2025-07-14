@@ -71,7 +71,7 @@
                 this.on('getGroupTemplate.filter getRuleTemplate.filter', function(h, level) {
                     const $h = $(h.value);
                     $h.find(Selectors.drag_handle).replaceWith(`
-                        <button class="btn btn-icon btn-inverse drag-handle" type="button">
+                        <button class="btn btn-icon btn-secondary drag-handle" type="button">
                             <i class="icon icon-arrows-alt"></i>
                         </button>
                     `);
@@ -80,6 +80,12 @@
                 });
 
                 this.on('afterAddGroup', function (e, group) {
+                    const $parentGroup = group.$el.parent().closest('.rules-group-container');
+
+                    if ($parentGroup.exists() && !$parentGroup.hasClass('rules-group-container--nested')) {
+                        group.$el.addClass('rules-group-container--nested');
+                    }
+
                     AGN.Lib.CoreInitializer.run('tooltip', group.$el);
                 });
 
@@ -130,7 +136,7 @@
                             <div class="qb-dateformat-block">
                                 <label class="form-label">
                                     <span>${t('date.formats.label')}</span>
-                                    <a href="#" class="icon icon-question-circle" data-help="help_${this.settings.helpLanguage}/targets/DateFormat.xml"></a>
+                                    <a href="#" class="icon icon-question-circle" data-help="targets/DateFormat.xml"></a>
                                 </label>
                                 <select class="form-control" id="date-format" data-select-options="dropdownAutoWidth: true">
                                     ${generateDateFormatSelect(options.availableFormats(options.operator))}

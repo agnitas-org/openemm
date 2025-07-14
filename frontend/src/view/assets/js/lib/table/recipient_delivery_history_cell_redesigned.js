@@ -20,7 +20,7 @@
     if (!href) {
       this.eGui.innerHTML = params.value;
     } else {
-      this.eGui.innerHTML = '<button type="button" class="table__btn btn btn-inverse"><i class="icon icon-external-link-alt"></i><span>' + params.value + '</span></button>';
+      this.eGui.innerHTML = '<button type="button" class="table__btn btn btn-secondary"><i class="icon icon-external-link-alt"></i><span>' + params.value + '</span></button>';
 
       this.eButton = this.eGui.querySelector('.btn');
 

@@ -27,6 +27,10 @@
     return confirm.promise();
   };
 
+  Confirm.from = function (template) {
+    return Confirm.createFromTemplate({}, template);
+  }
+
   // static method
   // create a new confirm
   Confirm.createFromTemplate = function(conf, template, deferred) {

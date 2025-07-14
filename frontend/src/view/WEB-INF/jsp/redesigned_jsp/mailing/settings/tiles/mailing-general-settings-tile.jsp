@@ -8,7 +8,6 @@
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="isTemplate" type="java.lang.Boolean"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="worldMailingSend" type="java.lang.Boolean"--%>
@@ -46,14 +45,14 @@
         <div>
             <mvc:message var="descriptionMsg" code="Description"/>
             <label class="form-label" for="mailingDescription">${descriptionMsg}</label>
-            <mvc:textarea id="mailingDescription" cssClass="form-control js-scrollable" path="description" rows="1" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
+            <mvc:textarea id="mailingDescription" cssClass="form-control" path="description" rows="1" placeholder="${descriptionMsg}" disabled="${isSettingsReadonly}"/>
         </div>
         <emm:ShowByPermission token="settings.extended">
             <div class="form-check form-switch mt-auto">
                 <mvc:checkbox cssClass="form-check-input" path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising" role="switch" disabled="${isSettingsReadonly}"/>
                 <label class="form-label form-check-label">
                     <mvc:message code="mailing.contentType.advertising"/>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml"></a>
+                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/AdvertisingMsg.xml"></a>
                 </label>
             </div>
         </emm:ShowByPermission>
@@ -69,7 +68,7 @@
             <div class="${mailingTypeContainerClass}">
                 <label class="form-label">
                     <label for="settingsGeneralMailType"><mvc:message code="mailing.Mailing_Type"/></label>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/MailingTypeMsg.xml"></a>
+                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/MailingTypeMsg.xml"></a>
                 </label>
                 <mvc:select path="mailingType" id="settingsGeneralMailType" cssClass="form-control"
                             data-action="change-general-mailing-type"
@@ -98,7 +97,7 @@
             <div class="${isPostMediatypeActive ? 'hidden' : ''}">
                 <label class="form-label">
                     <mvc:message code="mediatype.mediatypes"/>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/MediaTypesMsg.xml"></a>
+                    <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/MediaTypesMsg.xml"></a>
                 </label>
                 <ul id="mediatypes-list" class="list-group">
                     <c:forEach var="mediaType" items="${prioritizedMediatypes}">
@@ -236,7 +235,7 @@
                 <div>
                     <label class="form-label">
                         <label for="settings_general_campaign"><mvc:message code="mailing.archive"/></label>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/CampaignMsg.xml"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/CampaignMsg.xml"></a>
                     </label>
                     <mvc:select path="archiveId" id="settings_general_campaign" cssClass="form-control js-select" disabled="${workflowDriven or isSettingsReadonly}" data-workflow-driven="${workflowDriven}">
                         <mvc:option value="0"><mvc:message code="mailing.NoCampaign"/></mvc:option>
@@ -250,7 +249,7 @@
                         <mvc:checkbox cssClass="form-check-input" path="archived" disabled="${not emailSettingsEditable or workflowDriven or isSettingsReadonly}" role="switch" data-workflow-driven="${workflowDriven}"/>
                         <label class="form-label form-check-label">
                             <mvc:message code="mailing.archived"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/ShowInOnlineArchive.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/ShowInOnlineArchive.xml"></a>
                         </label>
                     </div>
                 </div>

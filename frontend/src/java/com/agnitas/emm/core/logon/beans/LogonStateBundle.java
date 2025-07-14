@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,30 +12,32 @@ package com.agnitas.emm.core.logon.beans;
 
 import java.util.Objects;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.Arrays;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
-
 public class LogonStateBundle {
 	
-	/** The logger. */
 	private static final Logger LOGGER = LogManager.getLogger(LogonStateBundle.class);
 	
     private LogonState state;
+    private boolean prefillUsername;
     private Admin admin;
     private String hostId;
     private byte[] totpSharedSecret;
 
     public LogonStateBundle(LogonState state) {
         this.state = Objects.requireNonNull(state);
+    }
+
+    public boolean shouldPrefillUsername() {
+        return this.prefillUsername;
     }
 
     /**
@@ -45,6 +47,7 @@ public class LogonStateBundle {
     	setState(LogonState.PENDING);
     	setAdmin(null);
     	setHostId(null);
+        setPrefillUsername(false);
     }
     
     public final void toTotpState(final Admin newAdmin) {
@@ -84,6 +87,11 @@ public class LogonStateBundle {
     		setState(LogonState.CHANGE_ADMIN_PASSWORD);
     	}
     }
+
+    public void toCompleteState(boolean prefillUsername) {
+        toCompleteState();
+        setPrefillUsername(prefillUsername);
+    }
     
     public final void toCompleteState() {
     	if (admin == null) {
@@ -115,7 +123,6 @@ public class LogonStateBundle {
         }
 
         return admin;
-    	
     }
     
     public final byte[] getNewTotpSharedSecret() {
@@ -138,6 +145,10 @@ public class LogonStateBundle {
 
     private void setAdmin(Admin admin) {
         this.admin = admin;
+    }
+
+    private void setPrefillUsername(boolean prefillUsername) {
+        this.prefillUsername = prefillUsername;
     }
 
     public String getHostId() {
@@ -174,13 +185,10 @@ public class LogonStateBundle {
         // try-catch to get the stack trace
         try {
         	throw new UnexpectedLogonStateException(msg);
-        } catch(final UnexpectedLogonStateException e) {
+        } catch(UnexpectedLogonStateException e) {
 	        LOGGER.error(msg, e);
-	        
-	        // Re-throw exception
 	        throw e;
         }
-        
     }
 
     private String getAdminUsername() {

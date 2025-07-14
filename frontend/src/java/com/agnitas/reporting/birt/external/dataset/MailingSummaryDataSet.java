@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,25 @@
 */
 
 package com.agnitas.reporting.birt.external.dataset;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightMailing;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.SendStatRow;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,34 +41,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.EmptyResultDataAccessException;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.SendStatRow;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-
 /**
  * Methods in this class must be kept "public", so they can be called from Birt via "rptdesign"-files, which use the class "MailingStatisticDataSet".
  * Otherwise there will be some InvocationTargetException because of different used Classlodaers, etc.
  */
 public class MailingSummaryDataSet extends ComparisonBirtDataSet {
-    private static final Logger logger = LogManager.getLogger(MailingSummaryDataSet.class);
+
     private static final int APPLE_PROXY_DEVICE_ID = 1484;
     private static final int YAHOO_PROXY_DEVICE_ID = 1703;
     private static final int[] PROXY_DEVICE_IDS = new int[]{
@@ -141,7 +138,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 .append(", rate DOUBLE")
                 .append(", rate_delivered DOUBLE")
                 .append(")");
-        updateEmbedded(logger, createTable.toString());
+        updateEmbedded(createTable.toString());
         return tempTableID;
     }
 
@@ -267,11 +264,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         queryBuilder.append("GROUP BY mailtypes.id");
 
-        List<Map<String, Object>> resultList = select(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> resultList = select(queryBuilder.toString(), parameters.toArray(new Object[0]));
         // variable to count both mail type "2" and "3" as Offline-HTML
         int sentOfflineHtml = 0;
         for (Map<String, Object> map : resultList) {
-            int mailtype = ((Number) map.get("mailtype")).intValue();
+            int mailtype = toInt(map.get("mailtype"));
             int categoryIndex = 0;
             String category = "";
             if (mailtype == MailType.HTML.getIntValue() && figures.contains(BirtReporUtils.BirtReportFigure.HTML)) {
@@ -285,7 +282,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 category = CommonKeys.SENT_OFFILE_HTML;
             }
             if (categoryIndex != 0) {
-                int mailsSent = ((Number) map.get("mails_sent")).intValue();
+                int mailsSent = toInt(map.get("mails_sent"));
                 // delaying of insert the mail sent value to count both mail types "2" and "3" as Offline-HTML
                 if (categoryIndex == CommonKeys.SENT_OFFLINE_HTML_INDEX) {
                     sentOfflineHtml += mailsSent;
@@ -555,7 +552,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     public void insertRecipientsNumberToTemplate(MailingDataSet mailingDataSet, int mailingId, int tempTableID, DateFormats dateFormats) {
         try {
             Map<String, Object> mailStats = mailingDataSet.getMailingStats(mailingId, dateFormats.getStartDate(), dateFormats.getStopDate());
-            int mailsNum = ((Number) mailStats.get("MAILS")).intValue();
+            int mailsNum = toInt(mailStats.get("MAILS"));
             insertIntoTempTable(tempTableID,
                     CommonKeys.RECIPIENTS_NUMBER,
                     CommonKeys.RECIPIENTS_NUMBER_INDEX,
@@ -617,10 +614,10 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 StringUtils.join(measuredCategories, ", ") +
                 ")";
 
-        updateEmbedded(logger, sqlUpdateMeasuredCategories);
+        updateEmbedded(sqlUpdateMeasuredCategories);
 
         // Gross openings / gross clicks
-        updateEmbedded(logger, getUpdateResponseRateQuery(tempTableID), CommonKeys.ACTIVITY_RATE, CommonKeys.ACTIVITY_RATE_INDEX);
+        updateEmbedded(getUpdateResponseRateQuery(tempTableID), CommonKeys.ACTIVITY_RATE, CommonKeys.ACTIVITY_RATE_INDEX);
     }
 
     private void updateRatesByCategories(int tempTableID, List<Integer> allCategoryIndex, List<Integer> allTargetgroupIndex, List<Integer> categoryIndex) throws Exception {
@@ -638,8 +635,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 .append(" SET t.rate = (CASE WHEN (? = -1) THEN -1 ELSE 1.0 * t.value / ? END)")
                 .append(" WHERE t.targetgroup_index = ? AND t.category_index IN (").append(StringUtils.join(categoryIndex, ", ")).append(")");
 
-        for (Map<String, Object> row : selectEmbedded(logger, totalCountQuery.toString())) {
-            updateEmbedded(logger, updateRateQuery.toString(), ((Number) row.get("total")).intValue(), ((Number) row.get("total")).intValue(), ((Number) row.get("targetgroup_index")).intValue());
+        for (Map<String, Object> row : selectEmbedded(totalCountQuery.toString())) {
+            updateEmbedded(updateRateQuery.toString(), toInt(row.get("total")), toInt(row.get("total")), toInt(row.get("targetgroup_index")));
         }
     }
 
@@ -658,8 +655,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 .append(" SET rate_delivered = (CASE WHEN category_index IN (" + CommonKeys.DELIVERED_EMAILS_INDEX + "," + CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX + ") THEN rate ELSE (CASE WHEN (? = -1) THEN -1 ELSE 1.0 * value / ? END) END) ")
                 .append(" WHERE targetgroup_index = ? AND category_index IN (").append(StringUtils.join(categoryIndex, ", ")).append(")");
 
-        for (Map<String, Object> row : selectEmbedded(logger, totalCountQuery.toString())) {
-            updateEmbedded(logger, updateRateQuery.toString(), ((Number) row.get("total")).intValue(), ((Number) row.get("total")).intValue(), ((Number) row.get("targetgroup_index")).intValue());
+        for (Map<String, Object> row : selectEmbedded(totalCountQuery.toString())) {
+            updateEmbedded(updateRateQuery.toString(), toInt(row.get("total")), toInt(row.get("total")), toInt(row.get("targetgroup_index")));
         }
     }
 
@@ -667,10 +664,10 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     private void insertMailformatRate(int tempTableID, int targetGroupIndex, int categoryIndex) throws Exception {
         try {
             String queryTotalSend = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE targetgroup_index = ? AND category_index = ? ";
-            int totalSend = selectEmbedded(logger, queryTotalSend, Integer.class, targetGroupIndex, CommonKeys.RECIPIENTS_NUMBER_INDEX);
+            int totalSend = selectEmbedded(queryTotalSend, Integer.class, targetGroupIndex, CommonKeys.RECIPIENTS_NUMBER_INDEX);
             if (totalSend != 0) {
                 String queryUpdateRate = "UPDATE " + getTempTableName(tempTableID) + " SET rate = ( value * 1.0 ) / ? WHERE targetgroup_index = ? AND category_index in (" + categoryIndex + ")";
-                updateEmbedded(logger, queryUpdateRate, totalSend, targetGroupIndex);
+                updateEmbedded(queryUpdateRate, totalSend, targetGroupIndex);
             }
         } catch (DataAccessException e) {
             logger.error("MailingSummaryDataSet.insertMailformatRate : " + e);
@@ -982,7 +979,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     @DaoUpdateReturnValueCheck
     public void removeCategoryData(int tempTableID, int categoryIndex) throws Exception {
         String query = "DELETE FROM " + getTempTableName(tempTableID) + " WHERE category_index = ?";
-        updateEmbedded(logger, query, categoryIndex);
+        updateEmbedded(query, categoryIndex);
     }
 
     @DaoUpdateReturnValueCheck
@@ -998,12 +995,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 .append(" WHERE category_index IN (").append(CommonKeys.DELIVERED_EMAILS_INDEX).append(", ").append(CommonKeys.HARD_BOUNCES_INDEX).append(")")
                 .append(" GROUP BY targetgroup, targetgroup_index, targetgroup_id");
 
-        List<Map<String, Object>> selectResult = selectEmbedded(logger, queryBuilder.toString());
+        List<Map<String, Object>> selectResult = selectEmbedded(queryBuilder.toString());
         for (Map<String, Object> row : selectResult) {
             String targetGroupName = (String) row.get("targetgroup");
-            int targetGroupId = ((Number) row.get("targetgroup_id")).intValue();
-            int targetGroupIndex = ((Number) row.get("targetgroup_index")).intValue();
-            int value = ((Number) row.get("value")).intValue();
+            int targetGroupId = toInt(row.get("targetgroup_id"));
+            int targetGroupIndex = toInt(row.get("targetgroup_index"));
+            int value = toInt(row.get("value"));
 
             if (targetGroupId != CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID && !isActivated) {
                 value = -1;
@@ -1056,11 +1053,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     private void updateDashboardRates(int tempTableID) throws Exception {
         String queryTotalSend = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE targetgroup_index = ? AND category_index = ? ";
 
-        int totalSend = selectEmbedded(logger, queryTotalSend, Integer.class, CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.DELIVERED_EMAILS_INDEX);
+        int totalSend = selectEmbedded(queryTotalSend, Integer.class, CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.DELIVERED_EMAILS_INDEX);
 
         if (totalSend != 0) {
             String queryUpdateRate = "UPDATE " + getTempTableName(tempTableID) + " SET rate = (value * 1.0) / ?";
-            updateEmbedded(logger, queryUpdateRate, totalSend);
+            updateEmbedded(queryUpdateRate, totalSend);
         }
     }
 
@@ -1139,8 +1136,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
-        return ((Number) result.get(0).get("counter")).intValue();
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
+        return toInt(result.get(0).get("counter"));
     }
 
     protected int selectNonOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -1186,8 +1183,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
-        return ((Number) result.get(0).get("counter")).intValue();
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
+        return toInt(result.get(0).get("counter"));
     }
 
     protected int selectClicks(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -1229,9 +1226,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                     .append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     protected int selectAnonymousClicks(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
@@ -1255,9 +1252,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray());
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray());
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     /**
@@ -1313,7 +1310,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         queryBuilder.append(" GROUP BY r.device_class_id");
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
         Map<DeviceClass, Integer> returnMap = new HashMap<>();
         // Initialize default values 0 for no clickers at all
@@ -1323,9 +1320,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         for (Map<String, Object> row : result) {
             if (row.get("deviceClassId") == null) {
                 // Some old entries dont't have a deviceclassid, those are desktop values
-                returnMap.put(DeviceClass.DESKTOP, ((Number) row.get("counter")).intValue());
+                returnMap.put(DeviceClass.DESKTOP, toInt(row.get("counter")));
             } else {
-                returnMap.put(DeviceClass.fromId(((Number) row.get("deviceClassId")).intValue()), ((Number) row.get("counter")).intValue());
+                returnMap.put(DeviceClass.fromId(toInt(row.get("deviceClassId"))), toInt(row.get("counter")));
             }
         }
 
@@ -1372,9 +1369,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     /**
@@ -1430,7 +1427,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         queryBuilder.append(" GROUP BY o.device_class_id");
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
         Map<DeviceClass, Integer> returnMap = new HashMap<>();
         // Initialize default values 0 for no clickers at all
@@ -1440,9 +1437,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         for (Map<String, Object> row : result) {
             if (row.get("deviceClassId") == null) {
                 // Some old entries dont't have a deviceclassid, those are desktop values
-                returnMap.put(DeviceClass.DESKTOP, ((Number) row.get("counter")).intValue());
+                returnMap.put(DeviceClass.DESKTOP, toInt(row.get("counter")));
             } else {
-                returnMap.put(DeviceClass.fromId(((Number) row.get("deviceClassId")).intValue()), ((Number) row.get("counter")).intValue());
+                returnMap.put(DeviceClass.fromId(toInt(row.get("deviceClassId"))), toInt(row.get("counter")));
             }
         }
 
@@ -1493,9 +1490,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     protected int selectOpenings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -1534,9 +1531,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     protected int selectAnonymousOpenings(int companyID, int mailingID, String startDateString, String endDateString) throws Exception {
@@ -1560,16 +1557,16 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray());
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray());
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     private int getTempTableValuesByCategoryAndTargetGroupId(int tempTableID, String category, int targetGroupId) throws Exception {
         String query = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE category = ? AND targetgroup_id = ?";
         int value;
         try {
-            value = selectEmbedded(logger, query, Integer.class, category, targetGroupId);
+            value = selectEmbedded(query, Integer.class, category, targetGroupId);
         } catch (EmptyResultDataAccessException e) {
             logger.error("No data found for category: " + category + ", targetId: " + targetGroupId);
             value = 0;
@@ -1579,7 +1576,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     private String getTargetIds(int mailingId, int companyId) {
         String query = "SELECT target_expression FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
-        String targetExpression = selectObjectDefaultNull(logger, query, StringRowMapper.INSTANCE, mailingId, companyId);
+        String targetExpression = selectObjectDefaultNull(query, StringRowMapper.INSTANCE, mailingId, companyId);
         final Pattern pattern = Pattern.compile("^.*?(\\d+)(.*)$");
         Set<Integer> targetIds = new HashSet<>();
         if (targetExpression != null) {
@@ -1601,7 +1598,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     private void insertIntoTempTable(int tempTableID, String category, int categoryIndex, String targetgroup, int targetgroupId, int targetgroupIndex, int value, int partialValue) throws Exception {
         String insertSql = "INSERT INTO " + getTempTableName(tempTableID) + " (category, category_index, targetgroup, targetgroup_id, targetgroup_index, value, partial_value, rate) values (?, ?, ?, ?, ?, ?, ?, 0)";
-        updateEmbedded(logger, insertSql, category, categoryIndex, targetgroup, targetgroupId, targetgroupIndex, value, partialValue);
+        updateEmbedded(insertSql, category, categoryIndex, targetgroup, targetgroupId, targetgroupIndex, value, partialValue);
     }
 
     private String getUpdateResponseRateQuery(int tempTableID) {
@@ -1615,7 +1612,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     private List<MailingSummaryRow> getResultsFromTempTable(int tempTableID) throws Exception {
         String query = "SELECT category, category_index, targetgroup_id, targetgroup, targetgroup_index, value , partial_value, rate, rate_delivered "
                 + "FROM " + getTempTableName(tempTableID) + " ORDER BY category_index, targetgroup_index ";
-        return selectEmbedded(logger, query, (resultSet, rowNum) -> {
+        return selectEmbedded(query, (resultSet, rowNum) -> {
             MailingSummaryRow row = new MailingSummaryRow();
             row.setCategory(resultSet.getString("category"));
             row.setCategoryindex(resultSet.getInt("category_index"));
@@ -1646,7 +1643,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     protected Map<Integer, Integer> getMeasuredFromTempTable(int tempTableId) throws Exception {
         String query = "SELECT value, targetgroup_id FROM " + getTempTableName(tempTableId) + " WHERE category_index = ?";
         Map<Integer, Integer> result = new HashMap<>();
-        selectEmbedded(logger, query, (resultSet, i) -> {
+        selectEmbedded(query, (resultSet, i) -> {
             result.put(resultSet.getInt("targetgroup_id"), resultSet.getInt("value"));
             return null;
         }, CommonKeys.OPENERS_MEASURED_INDEX);
@@ -1685,7 +1682,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
         return ((Number) result.get(0).get("revenue")).doubleValue();
     }
@@ -1728,9 +1725,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("optouts")).intValue();
+        return toInt(result.get(0).get("optouts"));
     }
 
     /**
@@ -1774,9 +1771,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("softbounces")).intValue();
+        return toInt(result.get(0).get("softbounces"));
     }
 
     /**
@@ -1820,9 +1817,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("hardbounces")).intValue();
+        return toInt(result.get(0).get("hardbounces"));
     }
 
     /**
@@ -1865,9 +1862,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("softbounces")).intValue();
+        return toInt(result.get(0).get("softbounces"));
     }
 
     /**
@@ -1910,9 +1907,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryBuilder.toString(), parameters.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("hardbounces")).intValue();
+        return toInt(result.get(0).get("hardbounces"));
     }
 
     public static class MailingSummaryRow extends SendStatRow {

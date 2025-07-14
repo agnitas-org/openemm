@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,30 +10,31 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.sql.DataSource;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import com.agnitas.emm.core.bounce.Bounce;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.BouncesEmailStatRow;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MailingBouncesDataSet extends BIRTDataSet {
 
-	private static final Logger logger = LogManager.getLogger(MailingBouncesDataSet.class);
-
     public static final int SOFTBOUNCES_UNDELIVERABLE = 33;
-
     public static final String BOUNCE_REMARK_SIGN = "bounce:";
 
 	public MailingBouncesDataSet() {
@@ -44,26 +45,36 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 		super();
 		setDataSource(dataSource);
 	}
-	
+
 	public static class BouncesRow {
-        Integer mailingId;
-		String detailstring;
-		Integer detail;
-		Integer count;
-		Integer countPercent;
+
+		Bounce bounce;
+		int mailingId;
+		int count;
+		int countPercent;
+		private final String lang;
+
+		public BouncesRow(Bounce bounce, int mailingId, int count, int countPercent, String lang) {
+			this.bounce = bounce;
+			this.mailingId = mailingId;
+			this.count = count;
+			this.countPercent = countPercent;
+			this.lang = lang;
+		}
+
 		public String getDetailstring() {
-			return detailstring;
+			return bounce.getDetailMsg(lang);
 		}
-		public Integer getDetail() {
-			return detail;
+		public int getDetail() {
+			return bounce.getCode();
 		}
-		public Integer getCount() {
+		public int getCount() {
 			return count;
 		}
-		public Integer getCountPercent() {
+		public int getCountPercent() {
 			return countPercent;
 		}
-        public Integer getMailingId() {
+        public int getMailingId() {
             return mailingId;
         }
     }
@@ -78,154 +89,133 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 		}
 	}
 
-	public BouncesAvailableContainer getBouncesWithDetailByMailings(int companyID, String mailings, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception{
+	public BouncesAvailableContainer getBouncesWithDetailByMailings(int companyID, String mailings, String lang, String targets, BounceType bounceType, String hiddenTarget) throws Exception {
+		BouncesAvailableContainer container = new BouncesAvailableContainer();
+
 		List<Integer> mailingIDs = parseCommaSeparatedIds(mailings);
-		if (!mailingIDs.isEmpty()){
-			BouncesAvailableContainer container = new BouncesAvailableContainer();
-			for(Integer id : mailingIDs){
-				container.addBouncesData(id, getBouncesWithDetail(companyID, id, language, selectedTargets, bounceType, hiddenTarget));
-			}
+		if (mailingIDs.isEmpty()) {
 			return container;
-		} else {
-			return new BouncesAvailableContainer();
 		}
+		for (Integer mailingId : mailingIDs) {
+			List<BouncesRow> bounces = getBouncesWithDetail(companyID, mailingId, lang, targets, bounceType, hiddenTarget);
+			bounces.addAll(getMissingSoftBounces(bounces, mailingId, lang));
+			container.addBouncesData(mailingId, bounces);
+		}
+		return container;
+	}
+
+	private static List<BouncesRow> getMissingSoftBounces(List<BouncesRow> existing, Integer mailingId, String lang) {
+		Set<Integer> existingCodes = existing.stream().map(BouncesRow::getDetail).collect(Collectors.toSet());
+		return Arrays.stream(Bounce.values())
+			.map(Bounce::getCode)
+			.filter(code -> !existingCodes.contains(code))
+			.map(code -> new BouncesRow(Bounce.from(code), mailingId, 0, 0, lang))
+			.toList();
 	}
 
 	public List<BouncesRow> getBouncesWithDetail(int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType) throws Exception {
 		return getBouncesWithDetail(companyID, mailingID, language, selectedTargets, bounceType, null);
 	}
 
-	public List<BouncesRow> getBouncesWithDetail(int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception {
-		language = StringUtils.defaultIfEmpty(language, "EN");
+	public List<BouncesRow> getBouncesWithDetail(int companyId, int mailingId, String lang, String targets, BounceType bounceType, String hiddenTarget) throws Exception {
+		lang = StringUtils.defaultIfEmpty(lang, "EN");
 
 		// In the mailing_statistic.rptdesign "-1" is a default value if target groups are not present
-		if ("-1".equals(selectedTargets)){
-			selectedTargets = "";
+		if ("-1".equals(targets)){
+			targets = "";
 		}
 
 		List<BouncesRow> returnList = new ArrayList<>();
-
 		if (bounceType == BounceType.SOFTBOUNCES || bounceType == BounceType.BOTH) {
-			StringBuilder query = new StringBuilder();
-			String targetSql = joinWhereClause(getTargetSqlString(selectedTargets, companyID), getTargetSqlString(hiddenTarget, companyID));
-			query.append("SELECT COUNT(DISTINCT bounce.customer_id) amount, bounce.detail AS detail FROM bounce_tbl bounce");
-			if (StringUtils.isNotBlank(targetSql)) {
-				query.append(" JOIN customer_" + companyID + "_tbl cust ON (bounce.customer_id = cust.customer_id)");
-			}
-			query.append(" WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND bounce.detail <= 509");
-			if (StringUtils.isNotBlank(targetSql)) {
-				query.append(" AND (" + targetSql + ")");
-			}
-			query.append(" GROUP BY detail ORDER BY detail");
-
-			List<Map<String, Object>> result = select(logger, query.toString(), companyID, mailingID);
-			int softbouncesTotal = 0;
-			List<BouncesRow> softbouncesList = new ArrayList<>();
-			for (Map<String, Object> resultRow : result) {
-				int bounceDetailCode = ((Number) resultRow.get("detail")).intValue();
-				int bounceCount = ((Number) resultRow.get("amount")).intValue();
-
-				BouncesRow row = new BouncesRow();
-				row.mailingId = mailingID;
-				row.count = bounceCount;
-				row.detail = bounceDetailCode;
-				row.detailstring = I18nString.getLocaleString("bounces.detail." + row.detail, language);
-				softbouncesList.add(row);
-				softbouncesTotal += row.count;
-			}
-
-			for (BouncesRow item : softbouncesList) {
-				if (softbouncesTotal > 0) {
-					item.countPercent = Math.round(item.count * 100f / softbouncesTotal);
-				} else {
-					item.countPercent = 0;
-				}
-			}
-			returnList.addAll(softbouncesList);
+			returnList.addAll(getSoftBouncesWithDetail(companyId, mailingId, lang, targets, hiddenTarget));
 		}
-
 		if (bounceType == BounceType.HARDBOUNCES || bounceType == BounceType.BOTH) {
-			String targetSql = getTargetSqlString(selectedTargets, companyID);
-			StringBuilder query = new StringBuilder();
-			query.append("SELECT bind.user_remark, COUNT(DISTINCT bind.customer_id) AS amount FROM customer_" + companyID + "_binding_tbl bind");
-			if (StringUtils.isNotBlank(targetSql)) {
-				query.append(" JOIN customer_" + companyID + "_tbl cust ON bind.customer_id = cust.customer_id");
-			}
-			query.append(" WHERE bind.user_status = ? AND bind.exit_mailing_id = ? AND bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')");
-			if (StringUtils.isNotBlank(targetSql)) {
-				query.append(" AND (" + targetSql + ")");
-			}
-			query.append(" GROUP BY bind.user_remark");
-
-			List<Map<String, Object>> result = select(logger, query.toString(), UserStatus.Bounce.getStatusCode(), mailingID);
-			int hardbouncesTotal = 0;
-			int standardHardbounceCount = 0; // detail = 510
-			List<BouncesRow> hardbouncesList = new ArrayList<>();
-			for (Map<String, Object> resultRow : result) {
-				String userRemark = (String) resultRow.get("user_remark");
-				int bounceCount = ((Number) resultRow.get("amount")).intValue();
-
-				// Userremark may be of format "bounce:<code>"
-				int bounceDetailCode = -1;
-				if (userRemark != null && userRemark.startsWith(BOUNCE_REMARK_SIGN)) {
-					String bounceDetailCodeString = userRemark.substring(BOUNCE_REMARK_SIGN.length()).trim();
-					if (AgnUtils.isNumber(bounceDetailCodeString)) {
-						bounceDetailCode = Integer.parseInt(bounceDetailCodeString);
-					}
-				}
-
-				if (bounceDetailCode > 0 && bounceDetailCode != 510) {
-					BouncesRow row = new BouncesRow();
-					row.mailingId = mailingID;
-					row.count = bounceCount;
-					row.detail = bounceDetailCode;
-					row.detailstring = I18nString.getLocaleString("bounces.detail." + row.detail, language);
-					hardbouncesList.add(row);
-					hardbouncesTotal += row.count;
-				} else {
-					// Handle all unparseable userRemarks as 510-Hardbounces
-					standardHardbounceCount += bounceCount;
-				}
-			}
-			// Create entry for 510-Hardbounces
-			if (standardHardbounceCount > 0) {
-				BouncesRow row = new BouncesRow();
-				row.mailingId = mailingID;
-				row.count = standardHardbounceCount;
-				row.detail = 510;
-				row.detailstring = I18nString.getLocaleString("bounces.detail." + row.detail, language);
-				hardbouncesList.add(row);
-				hardbouncesTotal += row.count;
-			}
-
-			for (BouncesRow item : hardbouncesList) {
-				if (hardbouncesTotal > 0) {
-					item.countPercent = Math.round(item.count * 100f / hardbouncesTotal);
-				} else {
-					item.countPercent = 0;
-				}
-			}
-			returnList.addAll(hardbouncesList);
-
-	        if (successTableActivated(companyID)) {
-	            BouncesRow softUndelivered = getSoftbouncesUndelivered(companyID, mailingID, language, hardbouncesTotal);
-	            returnList.add(softUndelivered);
-	        }
+			returnList.addAll(getHardBouncesWithDetail(companyId, mailingId, lang, targets));
 		}
-
 		return returnList;
 	}
 
-    private BouncesRow getSoftbouncesUndelivered(int companyID, int mailingID, String language, int hardTotal) throws Exception {
-        BouncesRow softUndelivered = new BouncesRow();
-        // Row is not used in total count, so percent is 0
-        softUndelivered.countPercent = 0;
-        softUndelivered.detail = SOFTBOUNCES_UNDELIVERABLE;
-        softUndelivered.detailstring = I18nString.getLocaleString("report.softbounces.undeliverable", language);
+	private List<BouncesRow> getSoftBouncesWithDetail(int companyId, int mailingId, String lang, String targets, String hiddenTarget) {
+		String targetSql = joinWhereClause(getTargetSqlString(targets, companyId), getTargetSqlString(hiddenTarget, companyId));
+		String sql = """
+        SELECT COUNT(DISTINCT bounce.customer_id) amount, bounce.detail AS detail
+        FROM bounce_tbl bounce %s
+        WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND bounce.detail <= 509 %s
+        GROUP BY detail
+        ORDER BY detail""".formatted(
+			isNotBlank(targetSql) ? "JOIN customer_%d_tbl cust ON (bounce.customer_id = cust.customer_id)".formatted(companyId) : "",
+			isNotBlank(targetSql) ? "AND (" + targetSql + ")" : "");
+
+		List<BouncesRow> result = select(sql, (rs, i) -> getSoftBounceRow(rs, mailingId, lang), companyId, mailingId);
+		int total = result.stream().mapToInt(bounce -> bounce.count).sum();
+		result.forEach(item -> item.countPercent = total > 0 ? Math.round(item.count * 100f / total) : 0);
+		return result;
+	}
+
+	private static BouncesRow getSoftBounceRow(ResultSet rs, int mailingId, String lang) throws SQLException {
+		return new BouncesRow(Bounce.from(rs.getInt("detail")), mailingId, rs.getInt("amount"), 0, lang);
+	}
+
+	private List<BouncesRow> getHardBouncesWithDetail(int companyId, int mailingId, String lang, String targets) throws Exception {
+		String targetSql = getTargetSqlString(targets, companyId);
+		String sql = """
+		SELECT bind.user_remark, COUNT(DISTINCT bind.customer_id) AS amount
+		FROM customer_%d_binding_tbl bind %s
+		WHERE bind.user_status = ? AND bind.exit_mailing_id = ? AND bind.user_type IN ('%s', '%s') %s
+		GROUP BY bind.user_remark
+		""".formatted(companyId,
+			isNotBlank(targetSql) ? "JOIN customer_%d_tbl cust ON bind.customer_id = cust.customer_id".formatted(companyId) : "",
+			UserType.World.getTypeCode(), UserType.WorldVIP.getTypeCode(),
+			isNotBlank(targetSql) ? " AND (%s)".formatted(targetSql) : "");
+
+		List<BouncesRow> foundBounces = select(sql,
+			(rs, i) -> getHardBounceRow(rs, mailingId, lang),
+			UserStatus.Bounce.getStatusCode(), mailingId);
+
+		List<BouncesRow> result = foundBounces.stream().filter(b -> !is510bounce(b)).collect(Collectors.toList());
+		int bounce510count = foundBounces.stream().filter(MailingBouncesDataSet::is510bounce).mapToInt(b -> b.count).sum();
+		result.add(new BouncesRow(Bounce.OTHER_HARD_BOUNCE, mailingId, bounce510count, 0, lang));
+
+		int total = result.stream().mapToInt(b -> b.count).sum();
+		result.forEach(item -> item.countPercent = total > 0 ? Math.round(item.count * 100f / total) : 0);
+
+		if (successTableActivated(companyId)) {
+			result.add(getSoftBouncesUndelivered(companyId, mailingId, lang, total));
+		}
+		return result;
+	}
+
+	private static BouncesRow getHardBounceRow(ResultSet rs, int mailingId, String lang) throws SQLException {
+		Bounce bounce = getBounceFromRemark(rs.getString("user_remark"));
+		return new BouncesRow(bounce, mailingId, rs.getInt("amount"), 0, lang);
+	}
+
+	// detail = 510 + all unparseable userRemarks as other hardBounces
+	private static boolean is510bounce(BouncesRow bounce) {
+		return bounce.getDetail() <= 0 || bounce.getDetail() == Bounce.OTHER_HARD_BOUNCE.getId();
+	}
+
+	// Userremark may be of format "bounce:<code>"
+	private static Bounce getBounceFromRemark(String userRemark) {
+		if (userRemark == null || !userRemark.startsWith(BOUNCE_REMARK_SIGN)) {
+			return Bounce.OTHER_HARD_BOUNCE;
+		}
+		String bounceDetailCodeStr = userRemark.substring(BOUNCE_REMARK_SIGN.length()).trim();
+		return AgnUtils.isNumber(bounceDetailCodeStr)
+			? Bounce.from(Integer.parseInt(bounceDetailCodeStr))
+			: Bounce.OTHER_HARD_BOUNCE;
+	}
+
+    private BouncesRow getSoftBouncesUndelivered(int companyID, int mailingID, String language, int hardTotal) throws Exception {
         int numberSentMailings = getNumberSentMailings(companyID, mailingID, null, null, null, null);
         int numberDeliveredMailings = selectNumberOfDeliveredMails(companyID, mailingID, null, null, null, null);
-        softUndelivered.count = numberSentMailings - numberDeliveredMailings - hardTotal;
-        return softUndelivered;
+        int count = numberSentMailings - numberDeliveredMailings - hardTotal;
+
+		return new BouncesRow(
+			Bounce.UNDELIVERABLE, mailingID,
+			count,
+			0, // Row is not used in total count, so percent is 0
+			language);
     }
 
 	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(int companyID, int mailingID, String language, String selectedTargets) {
@@ -248,21 +238,21 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 			query.append("SELECT cust.email email, cust.gender gender, cust.firstname firstname, cust.lastname lastname, cust.customer_id customer_id, bounce.detail AS detail FROM bounce_tbl bounce");
 			query.append(" JOIN customer_" + companyID + "_tbl cust ON (bounce.customer_id = cust.customer_id)");
 			query.append(" WHERE bounce.company_id = ? AND bounce.mailing_id = ? AND bounce.detail <= 509");
-			if (StringUtils.isNotBlank(targetSql)) {
+			if (isNotBlank(targetSql)) {
 				query.append(" AND (" + targetSql + ")");
 			}
 
-			List<Map<String, Object>> result = select(logger, query.toString(), companyID, mailingID);
+			List<Map<String, Object>> result = select(query.toString(), companyID, mailingID);
 			for (Map<String, Object> resultRow : result) {
-				int bounceDetailCode = ((Number) resultRow.get("detail")).intValue();
+				int bounceDetailCode = toInt(resultRow.get("detail"));
 				
 				BouncesEmailStatRow row = new BouncesEmailStatRow();
 				row.setMailingId(mailingID);
-				row.setCustomerID(((Number) resultRow.get("customer_id")).intValue());
+				row.setCustomerID(toInt(resultRow.get("customer_id")));
 				row.setEmail((String) resultRow.get("email"));
 				row.setFirstname((String) resultRow.get("firstname"));
 				row.setLastname((String) resultRow.get("lastname"));
-				row.setGender(I18nString.getLocaleString("recipient.gender." + ((Number) resultRow.get("gender")).intValue() + ".short", language));
+				row.setGender(I18nString.getLocaleString("recipient.gender." + toInt(resultRow.get("gender")) + ".short", language));
 				row.setDetail(I18nString.getLocaleString("bounces.detail." + bounceDetailCode, language));
 				if (bounceDetailCode == 410) {
 					row.setIndex(0);
@@ -282,12 +272,12 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 			query.append(" FROM customer_" + companyID + "_binding_tbl bind");
 			query.append(" JOIN customer_" + companyID + "_tbl cust ON bind.customer_id = cust.customer_id");
 			query.append(" WHERE bind.user_status = ? AND bind.exit_mailing_id = ? AND bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')");
-			if (StringUtils.isNotBlank(targetSql)) {
+			if (isNotBlank(targetSql)) {
 				query.append(" AND (" + targetSql + ")");
 			}
 			query.append(" GROUP BY cust.email, cust.gender, cust.firstname, cust.lastname, cust.customer_id");
 
-			List<Map<String, Object>> result = select(logger, query.toString(), UserStatus.Bounce.getStatusCode(), mailingID);
+			List<Map<String, Object>> result = select(query.toString(), UserStatus.Bounce.getStatusCode(), mailingID);
 			for (Map<String, Object> resultRow : result) {
 				String userRemark = (String) resultRow.get("user_remark");
 
@@ -302,11 +292,11 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 
 				BouncesEmailStatRow row = new BouncesEmailStatRow();
 				row.setMailingId(mailingID);
-				row.setCustomerID(((Number) resultRow.get("customer_id")).intValue());
+				row.setCustomerID(toInt(resultRow.get("customer_id")));
 				row.setEmail((String) resultRow.get("email"));
 				row.setFirstname((String) resultRow.get("firstname"));
 				row.setLastname((String) resultRow.get("lastname"));
-				row.setGender(I18nString.getLocaleString("recipient.gender." + ((Number) resultRow.get("gender")).intValue() + ".short", language));
+				row.setGender(I18nString.getLocaleString("recipient.gender." + toInt(resultRow.get("gender")) + ".short", language));
 				row.setDetail(I18nString.getLocaleString("bounces.detail." + bounceDetailCode, language));
 				if (bounceDetailCode == 511) {
 					row.setIndex(3);
@@ -326,11 +316,11 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 	 * Contains all hard bounce statuses and their names provided by the AGNINTAS.
 	 */
 	public enum HardBounceType {
-		OTHER_HARD_BOUNCES(510),
+		OTHER_HARD_BOUNCES(510), // also mentioned as [standard, general] in code
 		UNKNOWN_ADDRESS(511),
 		UNKNOWN_DOMAIN_NAME(512);
 
-		private int statusCode;
+		private final int statusCode;
 
 		HardBounceType(int statusCode) {
 			this.statusCode = statusCode;
@@ -357,7 +347,7 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 			int undeliveredCount = 0;
 
 			for (BouncesRow bounce : bounces) {
-				if (bounce.count > 0 && bounce.getMailingId() != null && bounce.getMailingId() == mailingID) {
+				if (bounce.count > 0 && bounce.getMailingId() > 0 && bounce.getMailingId() == mailingID) {
 					// setting flags
 					if (!hasHardBounceData && HardBounceType.isValidStatusCode(bounce.getDetail())) {
 						hasHardBounceData = true;

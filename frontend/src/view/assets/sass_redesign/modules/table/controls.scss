@@ -1,5 +1,7 @@
 
 .table-wrapper__controls {
+  --table-head-control-bg: #{$white};
+
   @include flex-row($gap-sm);
   align-items: center;
   overflow: hidden;
@@ -9,17 +11,19 @@
     flex-grow: 1;
   }
 
-  .icon-switch {
+  .switch {
     margin-left: 2px; // prevents truncation of the part of the switch
     width: 66px;
     border-radius: $table-control-radius;
-    --switch-inactive-bg-color: var(--table-head-control-bg-color);
+    --switch-inactive-bg: var(--table-head-control-bg);
     --switch-selected-color: #{$white};
     --switch-color: var(--table-head-text-color);
   }
 
   .btn {
     @extend .btn-sm-horizontal;
+    @extend .btn-secondary;
+    overflow: hidden;
 
     border-radius: $table-control-radius;
     font-weight: $table-control-font-weight;
@@ -33,46 +37,97 @@
     }
   }
 
+  [data-manage-table-columns] {
+    @include mobile {
+      display: none;
+    }
+  }
+
   .form-switch {
+    overflow: hidden;
+
     label {
       color: var(--table-head-text-color);
       font-weight: $table-control-font-weight;
+      @extend .text-truncate;
     }
 
-    background: var(--table-head-control-bg-color);
+    background: var(--table-head-control-bg);
 
-    border: $border-default;
+    border: $table-border;
     border-radius: $table-control-radius;
 
     padding: $gap-x-sm;
   }
 
+  &:not(&--stretchable) {
+    .input-group {
+      width: auto;
+      flex-wrap: nowrap;
+
+      .select2-container:nth-child(3) {
+        overflow: unset;
+      }
+    }
+  }
+
   .input-group-text {
     @include border-start-radius($table-control-radius);
-    background: var(--table-head-control-bg-color);
+    background: var(--table-head-control-bg);
     color: var(--table-head-text-color);
     font-weight: $table-control-font-weight;
+    @extend .text-truncate;
+  }
+}
+
+@include color-mode(dark) {
+  .table-wrapper__controls {
+    --table-head-control-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .table-wrapper__controls .btn {
+    --bs-btn-bg: transparent;
+    @include button-outline-variant($con-dark-blue);
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .table-wrapper__controls {
+    --table-head-control-bg: #{$con-dark-blue};
+
+    .btn {
+      --bs-btn-bg: transparent;
+      @include button-outline-variant($white, $con-dark-blue, $white, $white, $con-dark-blue);
+    }
   }
 }
 
 .table-wrapper__entries-label {
+  overflow: hidden;
   @include flex-row($gap-x-sm);
   color: var(--table-head-text-color);
-  background: var(--table-head-control-bg-color);
+  background: var(--table-head-control-bg);
 
   font-weight: $table-control-font-weight;
 
-  border: $border-default;
+  border: $table-border;
   border-radius: $table-control-radius;
 
   padding: $gap-x-sm;
+
+  > b {
+    text-wrap: nowrap;
+  }
 }
 
 .bulk-actions {
+  overflow: hidden;
   @include flex-row($gap-sm);
   align-items: center;
 
-  border: $border-default;
+  border: $table-border;
   border-radius: $table-control-radius;
   padding: $gap-x-sm $gap-sm;
 

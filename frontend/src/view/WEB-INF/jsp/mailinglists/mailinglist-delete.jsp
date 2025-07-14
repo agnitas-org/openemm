@@ -6,7 +6,7 @@
 
 <%--@elvariable id="mailinglistForm" type="com.agnitas.emm.core.mailinglist.form.MailinglistForm"--%>
 <%--@elvariable id="excludeDialog" type="java.lang.Boolean"--%>
-<%--@elvariable id="bulkDeleteForm" type="org.agnitas.web.forms.BulkActionForm"--%>
+<%--@elvariable id="bulkDeleteForm" type="com.agnitas.web.forms.BulkActionForm"--%>
 
 <div class="modal">
     <div class="modal-dialog">

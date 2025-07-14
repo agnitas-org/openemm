@@ -2,19 +2,18 @@
 
   const Helpers = AGN.Lib.Helpers;
   const Confirm = AGN.Lib.Confirm;
-  const Form    = AGN.Lib.Form;
-  const Page= AGN.Lib.Page;
+  const Form = AGN.Lib.Form;
 
   // avoid loading the Single View
   // when inputs or links are clicked
-  $(document).on('click', '.js-table a, .js-table input, .input-table input[type="checkbox"], .js-table select, .js-table .select2, .js-table button, .js-table td:has(input[type="checkbox"]), .js-table .disabled, .js-table a.disable', function(e) {
+  $(document).on('click', '.js-table a, .js-table input, .input-table input[type="checkbox"], .js-table select, .js-table .select2, .js-table button, .js-table td:has(input[type="checkbox"]), .js-table .disabled', function (e) {
     e.stopPropagation();
   });
 
-  $(document).on('click', '.js-table-sort > a', function(e) {
+  $(document).on('click', '[data-table-sort]', function (e) {
     const $this = $(this);
     // not <a> was clicked, so skip
-    if ( e.target !== $this.get(0) ) {
+    if (e.target !== $this.get(0)) {
       return;
     }
 
@@ -29,17 +28,15 @@
 
       form.submit();
     } else {
-      $.get(href).done(resp => {
-        Page.render(resp, false);
-      });
+      $.get(href).done(resp => AGN.Lib.Page.render(resp, false));
     }
 
     e.preventDefault();
   });
 
-  $(document).on('click', '.js-table-paginate', function(e) {
+  $(document).on('click', '[data-paginate]', function (e) {
     const $this = $(this);
-    const form  = Form.get($this);
+    const form = Form.get($this);
     const params = Helpers.paramsFromUrl($this.attr('href'));
 
     // feed the link params to the form
@@ -59,21 +56,9 @@
     }
   });
 
-  function showRemoteModal($el, href) {
-    const form  = Form.get($el)
-    $.get(href).done(resp => {
-      const $modal = $(resp).all('.modal');
-      if ($modal.exists()) {
-        Confirm.create(resp).done(resp => form.updateHtml(resp));
-      } else {
-        form.updateHtml(resp);
-      }
-    });
-  }
-
-  $(document).on('click', '.js-row-delete', function(e) {
+  $(document).on('click', '.js-row-delete', function (e) {
     const $this = $(this);
-    const href  = $this.is('button') ? $this.data('url') : $this.attr('href');
+    const href = $this.is('button') ? $this.data('url') : $this.attr('href');
     const form = Form.get($this);
 
     if (href) {
@@ -96,58 +81,66 @@
 
   // load the resource when
   // a table row is clicked
-  $(document).on('click', '.js-table tr', function(e) {
+  $(document).on('click', '.js-table tr:not(.disabled)', function (e) {
     if (AGN.Lib.Helpers.isMobileView()) {
       return;
     }
 
-    const $this = $(this);
-    const target = $this.data('link');
+    const $row = $(this);
+    const target = $row.data('link');
 
-    if (typeof(target) !== 'undefined' && target !== '#') {
-      if ($this.data('load-page')) {
-        window.location.href = target;
-      } else {
-        showRemoteModal($this, target);
-      }
+    if (typeof (target) !== 'undefined' && target !== '#' && !$row.closest('.table-row-wrapper').exists()) {
+      showRemoteModal($row, target);
     }
   });
 
-  $(document).on('click', 'td:has(input[type="checkbox"])', function(e) {
+  function showRemoteModal($el, href) {
+    const form = Form.get($el)
+    $.get(href).done(resp => {
+      const $modal = $(resp).all('.modal');
+      if ($modal.exists()) {
+        Confirm.create(resp).done(resp => form.updateHtml(resp));
+      } else {
+        form.updateHtml(resp);
+      }
+    });
+  }
+
+  $(document).on('click', 'td:has(input[type="checkbox"])', function (e) {
     e.preventDefault();
 
     const $targets = $(this).find('input[type="checkbox"]');
 
     _.each($targets, target => {
       const $target = $(target);
-      if (!$target.prop('disabled')){
+      if (!$target.prop('disabled')) {
         $target.prop('checked', !$target.prop('checked'));
         $target.trigger('change');
       }
     });
   });
 
-  $(document).on('click', '.disabled, a.disable', function(e) {
+  $(document).on('click', '.disabled', function (e) {
     e.preventDefault();
   });
 
   $(document).on('click', '[data-toggle-table-truncation]', function () {
     const $tableWrapper = $(this).closest('.table-wrapper');
-    const $table = $tableWrapper.find('.table, .ag-body');
+    const $table = $tableWrapper.find('table, .ag-body');
     $table.toggleClass('no-truncate');
     AGN.Lib.CoreInitializer.run(['truncated-text-popover', 'scrollable'], $tableWrapper);
     AGN.Lib.Storage.set('truncate-table-text', !$table.hasClass('no-truncate'));
   });
 
-  AGN.Lib.Action.new({change: '[data-preview-table]'}, function() {
+  AGN.Lib.Action.new({change: '[data-preview-table]'}, function () {
     AGN.Lib.PreviewTable.toggle(this.el);
-    AGN.Lib.CoreInitializer.run(['table-row-actions', 'scrollable', 'truncated-text-popover'], this.el.closest('.table-wrapper'));
+    AGN.Lib.CoreInitializer.run(['scrollable', 'truncated-text-popover', 'table', 'table-cols-resizer'], this.el.closest('.table-wrapper'));
   });
 
   $(document).on('change', '[data-bulk-checkbox]', function () {
     const $tableWrapper = $(this).closest('.table-wrapper');
     const $mainCheckbox = $tableWrapper.find('[data-bulk-checkboxes]');
-    const $checkboxes = $tableWrapper.find('[data-bulk-checkbox]');
+    const $checkboxes = $tableWrapper.find('[data-bulk-checkbox]:not(:disabled)');
 
     const checkedCount = $checkboxes.filter(':checked').length;
     const totalCheckboxes = $checkboxes.length;
@@ -190,7 +183,7 @@
   function findAllowedBulkActionsNames($rows) {
     return $rows
       .find('[data-bulk-action]')
-      .filter((_, btn) => !$(btn).prop('disabled') && !$(btn).hasClass('disable'))
+      .filter((_, btn) => !$(btn).prop('disabled') && !$(btn).hasClass('disabled'))
       .map((_, btn) => $(btn).data('bulk-action'))
       .get();
   }

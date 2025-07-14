@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,12 +20,14 @@ import java.util.Objects;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ServerStatus {
+
+    private String licenceData;
     private String licenseName;
     private String hostName;
     private String version;
@@ -55,7 +57,11 @@ public class ServerStatus {
     public String getLicenseName() {
         return licenseName;
     }
-    
+
+    public String getLicenceData() {
+        return licenceData;
+    }
+
     public String getHostName() {
         return hostName;
     }
@@ -242,6 +248,7 @@ public class ServerStatus {
             }
             
             serverStatus.licenseName = "\"" + configService.getValue(ConfigValue.System_License_Holder) + "\" (ID: " + configService.getValue(ConfigValue.System_Licence) + ", Type: " + configService.getValue(ConfigValue.System_License_Type) + ")";
+            serverStatus.licenceData = configService.readLicenseContent();
             
             serverStatus.hostName = AgnUtils.getHostName();
             

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,19 +10,18 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.dto;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
+import com.agnitas.emm.core.commons.dto.DateTimeRange;
 
 public class MailingStatisticDto {
     private int mailingId;
     private String shortname;
     private String description;
     private String[] selectedTargets;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private DateTimeRange dateRange;
     private DateMode dateMode;
     private StatisticType type;
     private boolean showNetto;
@@ -68,20 +67,12 @@ public class MailingStatisticDto {
         this.selectedTargets = selectedTargets;
     }
 
-    public LocalDateTime getStartDate() {
-        return startDate;
+    public DateTimeRange getDateRange() {
+        return dateRange;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDateTime getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
+    public void setDateRange(DateTimeRange dateRange) {
+        this.dateRange = dateRange;
     }
 
     public boolean isHourScale() {

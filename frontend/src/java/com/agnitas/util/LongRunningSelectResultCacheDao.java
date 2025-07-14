@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,20 +10,19 @@
 
 package com.agnitas.util;
 
+import com.agnitas.dao.impl.BaseDaoImpl;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.FutureTask;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.logging.log4j.Logger;
-
 public class LongRunningSelectResultCacheDao extends BaseDaoImpl {
+
 	private static final int DEFAULT_RESULTVALIDSECONDS = 5 * 60; // 5 minutes
 
 	/**
@@ -31,11 +30,11 @@ public class LongRunningSelectResultCacheDao extends BaseDaoImpl {
 	 */
 	private static final ConcurrentMap<TimedKey, FutureTask<List<Map<String, Object>>>> cache = new ConcurrentHashMap<>();
 	
-	public List<Map<String, Object>> selectLongRunning(final Logger logger, final String statement, final Object... parameter) throws Exception {
-		return selectLongRunning(logger, DEFAULT_RESULTVALIDSECONDS, statement, parameter);
+	public List<Map<String, Object>> selectLongRunning(final String statement, final Object... parameter) throws Exception {
+		return selectLongRunning(DEFAULT_RESULTVALIDSECONDS, statement, parameter);
 	}
 	
-	public List<Map<String, Object>> selectLongRunning(final Logger logger, int cacheTimeInSeconds, final String statement, final Object... parameter) throws Exception {
+	public List<Map<String, Object>> selectLongRunning(int cacheTimeInSeconds, final String statement, final Object... parameter) throws Exception {
 		String cacheKey = statement + "\n" + Arrays.toString(parameter);
 		
 		try {
@@ -50,12 +49,7 @@ public class LongRunningSelectResultCacheDao extends BaseDaoImpl {
 			}
 			
 			// Create new worker for cache entry
-			FutureTask<List<Map<String, Object>>> futureTask = new FutureTask<>(new Callable<List<Map<String, Object>>>() {
-				@Override
-				public List<Map<String, Object>> call() throws Exception {
-					return select(logger, statement, parameter);
-				}
-			});
+			FutureTask<List<Map<String, Object>>> futureTask = new FutureTask<>(() -> select(statement, parameter));
 			TimedKey lockKey = new TimedKey(cacheKey, null);
 			cache.put(lockKey, futureTask);
 			futureTask.run();

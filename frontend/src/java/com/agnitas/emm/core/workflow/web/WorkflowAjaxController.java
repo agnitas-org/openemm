@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
@@ -32,7 +32,7 @@ import com.agnitas.beans.Campaign;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -40,13 +40,13 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @PermissionMapping("workflow")
 public class WorkflowAjaxController implements XssCheckAware {
 
-    private final ComWorkflowService workflowService;
+    private final WorkflowService workflowService;
     private final AutoImportService autoImportService;
     private final AutoExportService autoExportService;
     private final CampaignDao campaignDao;
     private final MailinglistApprovalService mailinglistApprovalService;
 
-    public WorkflowAjaxController(ComWorkflowService workflowService,
+    public WorkflowAjaxController(WorkflowService workflowService,
                                   @Autowired(required = false) AutoImportService autoImportService,
                                   @Autowired(required = false) AutoExportService autoExportService,
                                   CampaignDao campaignDao,

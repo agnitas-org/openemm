@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,9 +23,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 
 /**
  * Facade. Implementation of ExtensibleUIDService.
@@ -47,24 +45,24 @@ public class ExtensibleUIDServiceImpl implements ExtensibleUIDService {
     // ------------------------------------------------------ Business Logic
 
     @Override
-    public String buildUIDString(final ComExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException {
+    public String buildUIDString(final ExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException {
         return this.stringBuilder.buildUIDString(extensibleUID);
     }
 
     @Override
-    public ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
+    public ExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
         return this.parser.parse(uidString);
     }
 
     @Override
-    public ComExtensibleUID parseOrNull(final String uid) {
+    public ExtensibleUID parseOrNull(final String uid) {
         if (StringUtils.isBlank(uid)) {
             return null;
         }
         return tryParseUid(uid);
     }
 
-    private ComExtensibleUID tryParseUid(String uid) {
+    private ExtensibleUID tryParseUid(String uid) {
         try {
             return parse(uid);
         } catch (DeprecatedUIDVersionException e) {
@@ -82,7 +80,6 @@ public class ExtensibleUIDServiceImpl implements ExtensibleUIDService {
      *
      * @param parser ExtensibleUIDParser
      */
-    @Required
     public final void setParser(final ExtensibleUIDParser parser) {
         this.parser = Objects.requireNonNull(parser, "Parser cannot be null");
     }
@@ -92,7 +89,6 @@ public class ExtensibleUIDServiceImpl implements ExtensibleUIDService {
      *
      * @param stringBuilder ExtensibleUIDStringBuilder
      */
-    @Required
     public final void setStringBuilder(final ExtensibleUIDStringBuilder stringBuilder) {
         this.stringBuilder = Objects.requireNonNull(stringBuilder, "String builder cannot be null");
     }

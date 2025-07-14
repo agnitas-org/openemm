@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,14 +17,13 @@ import com.agnitas.emm.core.components.form.MailingTestSendForm;
 import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
 public interface MailingSendService {
-
 
     enum DeliveryType {
         WORLD,
@@ -38,7 +37,7 @@ public interface MailingSendService {
 
     ServiceResult<UserAction> sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin) throws Exception;
 
-    ServiceResult<UserAction> sendWorldMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) throws Exception;
+    ServiceResult<UserAction> sendWorldMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
 
     ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions) throws Exception;
 
@@ -60,15 +59,15 @@ public interface MailingSendService {
 
     boolean deactivateIntervalMailing(Mailing mailing);
         
-    boolean canSendOrActivateMailing(Admin admin, Mailing mailing) throws Exception;
+    boolean canSendOrActivateMailing(Admin admin, Mailing mailing);
 
-    boolean isMailingActiveOrSent(Mailing mailing) throws Exception;
+    boolean isMailingActiveOrSent(Mailing mailing);
 
     boolean cancelMailingDelivery(int mailingID, int companyId);
 
     void sendEmail(Admin admin, String senderDomain);
 
-    void checkIfMailingCanBeSend(Mailing mailing, Date sendDate, TimeZone timeZone) throws Exception;
+    void checkIfMailingCanBeSend(Mailing mailing, Date sendDate, TimeZone timeZone);
 
     List<Integer> getAvailableSendingSpeedOptions(int companyID);
 

@@ -7,7 +7,6 @@
 <%--@elvariable id="jobStartResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="sendTestmailResult" type="com.agnitas.service.SimpleServiceResult"--%>
 <%--@elvariable id="serverStatus" type="com.agnitas.emm.core.serverstatus.bean.ServerStatus"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="layoutdir" type="java.lang.String"--%>
 <c:if test="${not empty layoutdir and layoutdir != 'assets/core'}">
     <mvc:message var="title" code="serverStatus.statusExternal.header" text="${title}"/>
@@ -111,7 +110,9 @@
 
 				<%@ include file="fragments/serverstatus-external-footer.jspf" %>
 			</main>
-			<footer><p><mvc:message code="serverStatus.general.version"/>: ${appVersion}</p></footer>
+
+			<%-- NOTE: Do not remove the comment! (GWUA-5824) --%>
+			<!-- <mvc:message code="serverStatus.general.version"/>: ${appVersion} -->
 		</div>
 	</body>
 </html>

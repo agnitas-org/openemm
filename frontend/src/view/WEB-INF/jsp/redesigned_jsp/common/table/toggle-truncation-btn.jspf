@@ -1,4 +1,4 @@
-<button type="button" class="btn btn-inverse" data-toggle-table-truncation>
+<button type="button" class="btn" data-toggle-table-truncation>
     <i class="icon icon-ellipsis-h"></i>
     <span><mvc:message code="view.truncation.toggle" /></span>
 </button>

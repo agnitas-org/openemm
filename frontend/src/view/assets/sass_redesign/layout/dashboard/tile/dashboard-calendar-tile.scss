@@ -23,7 +23,7 @@
 
   #calendar-table {
     height: clamp(200px, 16vw, 300px);
-    color: var(--text-color-default);
+    color: $body-color-var;
   }
 
   #calendar-tile-day-mailings {

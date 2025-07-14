@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,8 +9,6 @@
 */
 
 package com.agnitas.web;
-
-import java.io.IOException;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
@@ -21,8 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.components.service.ComponentService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.TimeoutLRUMap;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.TimeoutLRUMap;
 import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,8 +57,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = -8121518755028038107L;
 
-	/** The Constant logger. */
-	private static final transient Logger logger = LogManager.getLogger(ShowFormImageServlet.class);
+	private static final Logger logger = LogManager.getLogger(ShowFormImageServlet.class);
 
 	/** The Constant CLEAR_IMAGE_CACHE_HTTP_PARAMETER_NAME. */
 	public static final String CLEAR_IMAGE_CACHE_HTTP_PARAMETER_NAME = "clearFormImageCache";
@@ -123,7 +120,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	 * @see jakarta.servlet.http.HttpServlet#service(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)
 	 */
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 		try {
 			if (request.getAttribute(CLEAR_IMAGE_CACHE_HTTP_PARAMETER_NAME) != null) {
 				if (request.getAttribute(CLEAR_IMAGE_CACHE_HTTP_PARAMETER_NAME).toString().equals("doClear")) {
@@ -259,9 +256,8 @@ public class ShowFormImageServlet extends HttpServlet {
 	 * @param formID the form id
 	 * @param name the name
 	 * @return the string
-	 * @throws Exception             on missing parameters
 	 */
-	private String generateCachingKey(int licenseID, int companyID, int formID, String name) throws Exception {
+	private String generateCachingKey(int licenseID, int companyID, int formID, String name) {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append(licenseID);
 		cacheKeyBuilder.append("-");

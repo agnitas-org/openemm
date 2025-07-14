@@ -22,6 +22,7 @@
 <%--@elvariable id="yearlist" type="java.util.List<java.lang.Integer>"--%>
 <%--@elvariable id="mailtrackingExpirationDays" type="java.lang.Integer"--%>
 <%--@elvariable id="isTotalAutoOpt" type="java.lang.Boolean"--%>
+<%--@elvariable id="hideStatActions" type="java.lang.Boolean"--%>
 
 <c:set var="SUMMARY" value="<%= StatisticType.SUMMARY %>" />
 <c:set var="CLICK_STATISTICS_PER_LINK" value="<%= StatisticType.CLICK_STATISTICS_PER_LINK %>" />
@@ -144,6 +145,15 @@
                                     </mvc:select>
                                 </div>
 
+                                <c:if test="${isTotalAutoOpt and mailingStatisticForm.statisticType eq 'SUMMARY'}">
+                                    <ul class="tile-header-nav">
+                                        <mvc:select path="ignoreAutoOptSummary" data-form-submit="" cssClass="form-control select2-offscreen">
+                                            <mvc:option value="false"><mvc:message code="statistic.workflow"/></mvc:option>
+                                            <mvc:option value="true"><mvc:message code="mailing.statistics"/></mvc:option>
+                                        </mvc:select>
+                                    </ul>
+                                </c:if>
+
                                 <c:if test="${isReportCanBeShown && (mailingStatisticForm.dateSelectMode ne 'NONE')}">
                                     <ul class="tile-header-nav">
                                         <c:if test="${mailingStatisticForm.show10HoursTab}">
@@ -172,7 +182,7 @@
                                     </ul>
                                 </c:if>
 
-                                <c:if test="${isReportCanBeShown && not empty downloadBirtUrl}">
+                                <c:if test="${isReportCanBeShown && not empty downloadBirtUrl and not hideStatActions}">
                                     <ul class="tile-header-actions">
                                         <li class="dropdown">
                                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">

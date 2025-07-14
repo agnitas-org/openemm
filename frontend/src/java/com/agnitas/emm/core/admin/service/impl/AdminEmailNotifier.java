@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,11 +17,11 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HtmlUtils;
+import com.agnitas.preview.Page;
+import com.agnitas.preview.Preview;
+import com.agnitas.preview.PreviewFactory;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HtmlUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -104,7 +104,7 @@ public final class AdminEmailNotifier implements AdminNotifier {
         if (mailingId <= 0) {
             String text = getTextContentForPasswordExpirationMail(admin, daysLeft);
             return new EmailContent(
-                    getLocaleString("GWUA.password.reminder.email.subject", admin.getLocale()),
+                    getLocaleString("password.reminder.email.subject", admin.getLocale()),
                     text, HtmlUtils.replaceLineFeedsForHTML(text));
         }
         Page output = getMailingOutput(mailingId);
@@ -134,7 +134,7 @@ public final class AdminEmailNotifier implements AdminNotifier {
     }
 
     private String getTextContentForPasswordExpirationMail(Admin admin, int daysLeft) {
-        return getLocaleString("GWUA.password.reminder.email.text", admin.getLocale(),
+        return getLocaleString("password.reminder.email.content", admin.getLocale(),
                 admin.getFirstName(),
                 admin.getFullname(),
                 admin.getUsername(),

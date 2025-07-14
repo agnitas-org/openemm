@@ -25,7 +25,7 @@
 
 	<!-- check for queued jobs to execute -->
 	<bean id="JobQueueJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="org.agnitas.service.JobQueueQuartzJob" />
+		<property name="jobClass" value="com.agnitas.service.JobQueueQuartzJob" />
 		<property name="name" value="JobQueueJob" />
 		<property name="jobDataAsMap">
 			<map>

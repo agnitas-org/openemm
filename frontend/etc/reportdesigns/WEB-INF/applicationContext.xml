@@ -42,7 +42,7 @@
    		<property name="recipientFieldService" ref="RecipientFieldService" />
    	</bean>
 
-	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.ComWorkflowDataParser" />
+	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.WorkflowDataParser" />
     
     <bean id="permissionService" class="com.agnitas.emm.core.permission.service.PermissionServiceImpl">
     	<property name="permissionDao" ref="permissionDao" />
@@ -64,7 +64,7 @@
    		<property name="dataSource" ref="dataSource" />
    	</bean>
     
-    <bean id="serverMessageDao" class="com.agnitas.dao.impl.ComServerMessageDaoImpl">
+    <bean id="serverMessageDao" class="com.agnitas.dao.impl.ServerMessageDaoImpl">
    		<property name="dataSource" ref="dataSource" />
    	</bean>
 	
@@ -92,6 +92,7 @@
 		<constructor-arg name="javaMailService">
 			<null />
 		</constructor-arg>
+		<constructor-arg ref="ConfigService" />
 	</bean>
 
     <bean id="ProfileFieldDao" class="com.agnitas.dao.impl.ProfileFieldDaoImpl">

@@ -24,7 +24,17 @@
   }
 
   NodeTitleHelper.addArchiveName = function (id, name) {
-    ENTITY_NAMES_BY_TYPE['archive'][id] = name;
+    addEntityName('archive', id, name);
+  }
+
+  NodeTitleHelper.addMailingName = function (id, name) {
+    addEntityName('mailing', id, name);
+  }
+
+  function addEntityName(type, id, name) {
+    const names = ENTITY_NAMES_BY_TYPE[type] || {};
+    names[id] = name;
+    ENTITY_NAMES_BY_TYPE[type] = names;
   }
 
   NodeTitleHelper.getWebFormName = function (webFormId) {
@@ -248,6 +258,10 @@
   }
 
   NodeTitleHelper.positionTitle = function(node, anchorsInUse) {
+    if (node.type === 'split') {
+      node.positionTitle(Def.BOTTOM);
+      return;
+    }
     if (anchorsInUse[Def.BOTTOM]) {
         if (anchorsInUse[Def.LEFT]) {
             if (anchorsInUse[Def.RIGHT]) {
@@ -361,42 +375,33 @@
     }
   }
 
-  var TITLE_CONFIG = {
+  const TITLE_CONFIG = {
     '*': { overlayTitle: '', title: ''},
     start: { title: getStartNodeTitle },
     stop: { title: getStopNodeTitle },
     deadline: { title: getDeadlineNodeTitle },
     parameter: {
       title: '',
-      overlayTitle: function(data) {
-        return data.value;
-      }
+      overlayTitle: data => data.value
     },
+    split: { title: data => t(`split.ratio.${data.splitType}`) },
     decision: {
       title: getDecisionNodeTitle,
       branches: {
-        title: function () {
-          return {
-            positive: t('workflow.defaults.yes'),
-            negative: t('workflow.defaults.no')
-          };
-        }
+        title: () => ({
+          positive: t('workflow.defaults.yes'),
+          negative: t('workflow.defaults.no')
+        })
       }
     },
     recipient: {
-      title: function(data, node) {
-        return getRecipientDescription(data.mailinglistId, data.targets, data.targetsOption, !node.isInRecipientsChain());
-      }
+      title: (data, node) => getRecipientDescription(data.mailinglistId, data.targets, data.targetsOption, !node.isInRecipientsChain())
     },
     archive: {
-      title: function(data) {
-        return NodeTitleHelper.getArchiveName(data.campaignId)
-      }
+      title: data => NodeTitleHelper.getArchiveName(data.campaignId)
     },
     form: {
-      title: function(data) {
-        return NodeTitleHelper.getWebFormName(data.userFormId);
-      }
+      title: data => NodeTitleHelper.getWebFormName(data.userFormId)
     },
     mailing: MAILING_TITLE_CONFIG,
     mailing_mediatype_sms: MAILING_TITLE_CONFIG,
@@ -407,14 +412,10 @@
       title: getFollowUpMailingNodeTitle
     },
     import: {
-      title: function(data) {
-        return NodeTitleHelper.getAutoImportName(data.importexportId);
-      }
+      title: data => NodeTitleHelper.getAutoImportName(data.importexportId)
     },
     export: {
-      title: function(data) {
-        return NodeTitleHelper.getAutoExportName(data.importexportId);
-      }
+      title: data => NodeTitleHelper.getAutoExportName(data.importexportId)
     }
   };
 

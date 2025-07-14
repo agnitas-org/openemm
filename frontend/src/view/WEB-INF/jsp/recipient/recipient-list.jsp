@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
-<%@ page import="org.agnitas.beans.BindingEntry" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.beans.BindingEntry" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -11,7 +11,7 @@
 <%--@elvariable id="listForm" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 <%--@elvariable id="fieldsMap" type="java.util.Map<java.lang.String, java.lang.String>"--%>
 <%--@elvariable id="deactivatePagination" type="java.lang.Boolean"--%>
-<%--@elvariable id="recipientList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="recipientList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
 <%--@elvariable id="loadRecipients" type="java.lang.Boolean"--%>
 

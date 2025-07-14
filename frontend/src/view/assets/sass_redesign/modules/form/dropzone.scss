@@ -1,7 +1,9 @@
 
 .dropzone {
+  --dropzone-color: #{$blue};
+
   @include flex-center;
-  border: 1px dashed $primary;
+  border: 1px dashed var(--dropzone-color);
   border-radius: $border-radius;
   padding: $gap-sm;
 
@@ -27,6 +29,18 @@
 
   b {
     margin-right: $gap-sm;
-    color: $primary;
+    color: var(--dropzone-color);
+  }
+}
+
+@include color-mode(light-contrast) {
+  .dropzone {
+    --dropzone-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .dropzone {
+    --dropzone-color: #{$white};
   }
 }

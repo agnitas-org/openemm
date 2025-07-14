@@ -10,9 +10,11 @@
     </script>
 
     <div class="chat-header">
-        <i class="icon icon-user-circle chat__icon text-dark"></i>
+        <div class="chat__icon-container">
+            <i class="icon icon-user chat__icon"></i>
+        </div>
         <input type="text" class="form-control" readonly value="<mvc:message code="GWUA.aiSupportChat.headline" />">
-        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/support/AISupportChat.xml"></a>
+        <a href="#" class="icon icon-question-circle" data-help="support/AISupportChat.xml"></a>
     </div>
 
     <div class="chat-content js-scrollable">
@@ -29,14 +31,18 @@
 
 <script id="support-chart-typing-msg" type="text/x-mustache-template">
     <div class="chat__message chat__message--in">
-        <i class="icon icon-user-circle chat__icon"></i>
+        <div class="chat__icon-container">
+            <i class="icon icon-user chat__icon"></i>
+        </div>
         <div class="message__content"><i class="icon icon-ellipsis-h chat__typing-icon"></i></div>
     </div>
 </script>
 
 <script id="support-chart-incoming-message" type="text/x-mustache-template">
     <div class="chat__message chat__message--in">
-        <i class="icon icon-user-circle chat__icon"></i>
+        <div class="chat__icon-container">
+            <i class="icon icon-user chat__icon"></i>
+        </div>
         <div class="message__content">{{= text }}</div>
     </div>
 </script>
@@ -44,6 +50,8 @@
 <script id="support-chart-outgoing-message" type="text/x-mustache-template">
     <div class="chat__message chat__message--out">
         <div class="message__content">{{= text }}</div>
-        <i class="icon icon-user-circle chat__icon"></i>
+        <div class="chat__icon-container">
+            <i class="icon icon-user chat__icon"></i>
+        </div>
     </div>
 </script>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,13 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.exception.UnknownUserStatusException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -17,19 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
-    private static final Logger logger = LogManager.getLogger(RecipientsBasedDataSet.class);
-	
+
     protected static String getCustomerBindingTableName(int companyId) {
 		return "customer_" + companyId + "_binding_tbl";
 	}
@@ -46,7 +42,7 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 		return "onepixellog_device_" + companyId + "_tbl";
 	}
 	
-    protected static UserStatus getUserStatus(int statusCode) {
+    protected UserStatus getUserStatus(int statusCode) {
 		try {
 			return UserStatus.getUserStatusByID(statusCode);
 		} catch (UnknownUserStatusException e) {
@@ -74,31 +70,31 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	}
 
 	protected int getConfirmedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status = ? AND EXISTS \n" +
+		return selectInt("SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status = ? AND EXISTS \n" +
 				"(SELECT 1 FROM hst_customer_" + companyId + "_binding_tbl hst WHERE hst.mailinglist_id = bind.mailinglist_id AND user_status = ? \n" +
 				"AND timestamp > ? AND timestamp < ? AND bind.customer_id = hst.customer_id)", mailinglistId, UserStatus.Active.getStatusCode(), UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
 	}
 
 	protected int getConfirmedAndNotActiveDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status IN (2,3,4,6,7) AND EXISTS \n" +
+		return selectInt("SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl bind WHERE mailinglist_id = ? AND user_status IN (2,3,4,6,7) AND EXISTS \n" +
 				"(SELECT 1 FROM hst_customer_" + companyId + "_binding_tbl hst WHERE hst.mailinglist_id = bind.mailinglist_id AND user_status = ? \n" +
 				"AND timestamp > ? AND timestamp < ? AND bind.customer_id = hst.customer_id)", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
 	}
 
 	protected int getNotConfirmedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
-		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? and user_status = ? \n" +
+		return selectInt("SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? and user_status = ? \n" +
 				"AND timestamp > ? AND timestamp < ?", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
 	}
 
 	protected int getNotConfirmedAndDeletedDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
-		return selectInt(logger, "SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
+		return selectInt("SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
 				"AND timestamp > ? AND timestamp < ? AND change_type = 0", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
 	}
 
 	protected int getTotalDoiCount(int companyId, int mailinglistId, Date startDate, Date endDate) {
-		int count1 = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? AND timestamp > ? AND timestamp < ?",
+		int count1 = selectInt("SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? AND timestamp > ? AND timestamp < ?",
 				mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
-		int count2 = selectInt(logger, "SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
+		int count2 = selectInt("SELECT COUNT(*) FROM hst_customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ? AND user_status = ? \n" +
 				"AND timestamp > ? AND timestamp < ?", mailinglistId, UserStatus.WaitForConfirm.getStatusCode(), startDate, endDate);
 
 		return count1 + count2;

@@ -1,10 +1,10 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action"%>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="recipientBulkForm" type="com.agnitas.emm.core.recipient.forms.RecipientBulkForm"--%>
 <%--@elvariable id="mailingLists" type="java.util.List"--%>
@@ -80,25 +80,19 @@
 				</div>
 
 				<div class="table-wrapper__body">
-					<agnDisplay:table id="column" name="recipientColumns" class="table table--borderless js-table"
-								   sort="page" partialList="false" excludedParams="*">
+					<emm:table var="column" modelAttribute="recipientColumns" cssClass="table table--borderless js-table">
 
-						<c:set var="noNumberOfRowsSelect" value="true" />
-						<%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+						<emm:column titleKey="settings.FieldName" sortable="true" property="column" />
 
-						<agnDisplay:column headerClass="js-table-sort" titleKey="settings.FieldName" sortable="true" sortProperty="shortname">
-							<span>${column.column}</span>
-						</agnDisplay:column>
-
-						<agnDisplay:column headerClass="js-table-sort" titleKey="default.Type" sortable="false">
+						<emm:column titleKey="default.Type">
 							<c:set var="columnDataType" value="${column.simpleDataType}"/>
-							<%--@elvariable id="columnDataType" type="org.agnitas.util.DbColumnType.SimpleDataType"--%>
+							<%--@elvariable id="columnDataType" type="com.agnitas.util.DbColumnType.SimpleDataType"--%>
 							<span>
 								<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE ? localeDateHint: columnDataType == DATETIME_TYPE ? localeDateTimeHint : ''}
 							</span>
-						</agnDisplay:column>
+						</emm:column>
 
-						<agnDisplay:column headerClass="js-table-sort" titleKey="recipient.history.newvalue">
+						<emm:column titleKey="recipient.history.newvalue">
 							<mvc:hidden path="recipientFieldChanges[${column.column}].shortname" value="${column.column}"/>
 							<mvc:hidden path="recipientFieldChanges[${column.column}].type" value="${column.simpleDataType}"/>
                             <c:choose>
@@ -119,14 +113,14 @@
                                     <mvc:text path="recipientFieldChanges[${column.column}].newValue" cssClass="form-control"/>
                                 </c:otherwise>
                             </c:choose>
-						</agnDisplay:column>
+						</emm:column>
 
-						<agnDisplay:column headerClass="fit-content" titleKey="EmptyField" sortable="false">
+						<emm:column headerClass="fit-content" titleKey="EmptyField">
 							<div class="form-check form-switch">
 								<mvc:checkbox path="recipientFieldChanges[${column.column}].clear" cssClass="form-check-input" value="on" role="switch"/>
 							</div>
-						</agnDisplay:column>
-					</agnDisplay:table>
+						</emm:column>
+					</emm:table>
 				</div>
 
 				<div class="table-wrapper__footer"></div>

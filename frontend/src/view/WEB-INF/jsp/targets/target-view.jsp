@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
-<%@page import="org.agnitas.target.ConditionalOperator" %>
-<%@page import="org.agnitas.util.AgnUtils"%>
+<%@page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
+<%@page import="com.agnitas.util.AgnUtils"%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -12,7 +12,7 @@
 <%--@elvariable id="hidden" type="java.lang.Boolean"--%>
 <%--@elvariable id="isValid" type="java.lang.Boolean"--%>
 <%--@elvariable id="complexityGrade" type="com.agnitas.emm.core.target.beans.TargetComplexityGrade"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 
 <c:set var="OPERATOR_IS" value="<%= ConditionalOperator.IS.getOperatorCode() %>" scope="page" />
 <c:set var="OPERATOR_MOD" value="<%= ConditionalOperator.MOD.getOperatorCode() %>" scope="page" />

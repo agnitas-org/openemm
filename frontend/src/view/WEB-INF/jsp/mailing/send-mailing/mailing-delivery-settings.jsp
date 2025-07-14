@@ -1,5 +1,5 @@
-<%@page import="org.agnitas.util.AgnUtils"%>
-<%@ page import="org.agnitas.dao.FollowUpType" %>
+<%@page import="com.agnitas.util.AgnUtils"%>
+<%@ page import="com.agnitas.emm.common.FollowUpType" %>
 <%@ page import="com.agnitas.emm.core.components.service.MailingBlockSizeService" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>

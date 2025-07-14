@@ -1,0 +1,11 @@
+@mixin contrast-themes() {
+  [data-bs-theme=light-contrast], [data-bs-theme=dark-contrast] {
+    @content;
+  }
+}
+
+@mixin dark-themes() {
+  [data-bs-theme=dark], [data-bs-theme=dark-contrast] {
+    @content;
+  }
+}

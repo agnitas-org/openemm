@@ -13,6 +13,7 @@ These can exist in text elements or standalone and denote the status of a mailin
 <span class="status-badge mailing.status.new"></span>
 <span class="status-badge mailing.status.active"></span>
 <span class="status-badge mailing.status.canceled"></span>
+<span class="status-badge mailing.status.insufficient-vouchers"></span>
 <span class="status-badge mailing.status.disable"></span>
 <span class="status-badge mailing.status.edit"></span>
 <span class="status-badge mailing.status.ready"></span>
@@ -43,29 +44,31 @@ Such as `has content`, `no content`, `used in WM`, `is EMC`, `has actions`, `del
 */
 
 $mailing-status-badges-defs: (
-    new:                  (background: $stat-or-badge-blue,           icon: $fa-var-file),
-    has-content:          (background: $stat-or-badge-very-dark-blue, icon: $fa-var-file-alt),
-    no-content:           (background: $gray-400,                     icon: $fa-var-file),
-    active:               (background: #57C700,                       icon: $fa-var-play),
-    canceled:             (background: $stat-or-badge-light-red,      icon: $fa-var-minus-circle),
-    disable:              (background: $stat-or-badge-grey,           icon: $fa-var-ban),
-    edit:                 (background: $stat-or-badge-dark-blue,      icon: $fa-var-pen),
-    ready:                (background: #8BF4AF,                       icon: $fa-var-check),
-    scheduled:            (background: $stat-or-badge-lime,           icon: $fa-var-history),
-    sending:              (background: #57C700,                       icon: $fa-var-paper-plane),
-    sent:                 (background: #516C03,                       icon: $fa-var-paper-plane),
-    norecipients:         (background: $stat-or-badge-grey,           icon: $fa-var-paper-plane),
-    test:                 (background: $light-purple,                 icon: $fa-var-lightbulb),
-    admin:                (background: $stat-or-badge-violet-dark,    icon: $fa-var-lightbulb),
-    in-generation:        (background: #8BF4AF,                       icon: $fa-var-cogs),
-    generation-finished:  (background: $stat-or-badge-lime,           icon: $fa-var-cog),
-    canceledAndCopied:    (background: $stat-or-badge-light-red,      icon: $fa-var-copy),
-    cm:                   (background: $stat-or-badge-dark-cyan,      icon: $fa-var-project-diagram),
-    emc:                  (background: $stat-or-badge-dark-grey,      icon: $fa-var-th-large),
-    trigger:              (background: $stat-or-badge-dark-grey,      icon: $fa-var-cogs),
-    deleted:              (background: $red,                          icon: $fa-var-trash-alt),
-    world:                (background: $stat-or-badge-dark-blue,      icon: $fa-var-envelope),
-    datebased:            (background: $stat-or-badge-very-dark-blue, icon: $fa-var-calendar-alt),
+    new:                   (background: $badge-blue-var,           icon: $fa-var-file),
+    has-content:           (background: $badge-darkest-blue-var,   icon: $fa-var-file-alt),
+    no-content:            (background: $stat-light-grey,          icon: $fa-var-file),
+    active:                (background: $badge-green-var,          icon: $fa-var-play),
+    canceled:              (background: $stat-light-red,           icon: $fa-var-minus-circle),
+    insufficient-vouchers: (background: $badge-grey-var,           icon: $fa-var-minus-circle),
+    disable:               (background: $badge-grey-var,           icon: $fa-var-ban),
+    edit:                  (background: $badge-dark-blue-var,      icon: $fa-var-pen),
+    ready:                 (background: $stat-light-lime,          icon: $fa-var-check),
+    scheduled:             (background: $badge-lime-var,           icon: $fa-var-history),
+    sending:               (background: $badge-green-var,          icon: $fa-var-paper-plane),
+    sent:                  (background: $badge-dark-green-var,     icon: $fa-var-paper-plane),
+    norecipients:          (background: $badge-grey-var,           icon: $fa-var-paper-plane),
+    test:                  (background: $badge-dark-violet-var,    icon: $fa-var-lightbulb),
+    admin:                 (background: $badge-darkest-violet-var, icon: $fa-var-lightbulb),
+    in-generation:         (background: $stat-light-lime,          icon: $fa-var-cogs),
+    generation-finished:   (background: $badge-lime-var,           icon: $fa-var-cog),
+    canceledAndCopied:     (background: $stat-light-red,           icon: $fa-var-copy),
+    cm:                    (background: $badge-dark-cyan-var,      icon: $fa-var-project-diagram),
+    emc:                   (background: $badge-dark-grey-var,      icon: $fa-var-th-large),
+    trigger:               (background: $badge-dark-grey-var,      icon: $fa-var-cogs),
+    deleted:               (background: $badge-dark-red-var,       icon: $fa-var-trash-alt),
+    world:                 (background: $badge-dark-blue-var,      icon: $fa-var-envelope),
+    datebased:             (background: $badge-darkest-blue-var,   icon: $fa-var-calendar-alt),
+    ao_test_send:          (background: $stat-cyan,                icon: $fa-var-flask),
 );
 
 @mixin mailing-status-badge($state) {

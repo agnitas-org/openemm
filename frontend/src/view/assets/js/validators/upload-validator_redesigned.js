@@ -4,7 +4,7 @@ AGN.Lib.Validator.new('upload-file/form', {
     const $form = uploadForm.get$();
 
     if ($form.data('upload-selection').length < 1) {
-      AGN.Lib.Messages(t('defaults.error'), t('error.upload.file'), 'alert');
+      AGN.Lib.Messages.alert('error.upload.file');
       isSuccessfully = false;
     }
 

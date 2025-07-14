@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <%--@elvariable id="recipient" type="com.agnitas.emm.core.recipient.dto.RecipientDto"--%>
 
@@ -38,8 +38,8 @@
             </c:otherwise>
         </c:choose>
 
-        <agnDisplay:column headerClass="js-table-sort ${colHidden}" title="${title}" class="${colHidden}" sortable="true" sortProperty="${column}" data-table-column="${column}">
+        <emm:column headerClass="${colHidden}" title="${title}" cssClass="${colHidden}" sortable="true" sortProperty="${column}" data-table-column="${column}">
             <span>${text}</span>
-        </agnDisplay:column>
+        </emm:column>
     </c:if>
 </c:forEach>

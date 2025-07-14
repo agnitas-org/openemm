@@ -4,8 +4,8 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>

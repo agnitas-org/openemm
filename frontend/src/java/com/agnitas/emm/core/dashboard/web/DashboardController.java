@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,16 +17,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.calendar.form.DashboardCalendarForm;
+import com.agnitas.emm.core.calendar.service.CalendarService;
+import com.agnitas.emm.core.calendar.web.CalendarController;
+import com.agnitas.emm.core.dashboard.enums.DashboardMode;
+import com.agnitas.emm.core.dashboard.form.DashboardForm;
+import com.agnitas.emm.core.dashboard.service.DashboardService;
+import com.agnitas.emm.core.news.enums.NewsType;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.displaytag.pagination.PaginatedList;
+import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,17 +49,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.calendar.web.CalendarController;
-import com.agnitas.emm.core.dashboard.form.DashboardForm;
-import com.agnitas.emm.core.dashboard.service.DashboardService;
-import com.agnitas.emm.core.news.enums.NewsType;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.XssCheckAware;
-
-import net.sf.json.JSONObject;
-
 public class DashboardController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(DashboardController.class);
@@ -53,33 +56,115 @@ public class DashboardController implements XssCheckAware {
     private final AdminService adminService;
     private final DashboardService dashboardService;
     private final ConfigService configService;
+    private final WebStorage webStorage;
+    private final CalendarService calendarService;
 
-    public DashboardController(AdminService adminService, DashboardService dashboardService, ConfigService configService) {
+    public DashboardController(AdminService adminService, DashboardService dashboardService, ConfigService configService, WebStorage webStorage, CalendarService calendarService) {
         this.adminService = adminService;
         this.dashboardService = dashboardService;
         this.configService = configService;
+        this.webStorage = webStorage;
+        this.calendarService = calendarService;
     }
 
     @RequestMapping("/dashboard.action")
-    public String view(Admin admin, DashboardForm form, Model model) {
-        PaginatedList mailingList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
+    public String view(Admin admin, DashboardForm form, DashboardCalendarForm calendarForm, Model model) {
+        if (!admin.isRedesignedUiUsed() || admin.isUxUpdateRollback()) {
+            PaginatedList mailingList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
+            List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
+
+            if (CollectionUtils.isNotEmpty(worldMailinglist)) {
+                int lastSentMailingId = (Integer) (worldMailinglist.get(0).get("mailingid"));
+
+                form.setLastSentMailingId(lastSentMailingId);
+            }
+
+            model.addAttribute("mailinglist", mailingList);
+            model.addAttribute("worldmailinglist", worldMailinglist);
+            model.addAttribute("newsTypes", NewsType.values());
+            if (admin.isRedesignedUiUsed()) {
+                addRedesignAttrs(admin, model);
+            }
+
+            loadData(model, admin.getLocale(), admin);
+            return "dashboard_view";
+        }
+
+        String dashboardLayout = adminService.getDashboardLayout(admin);
+        syncForm(form);
+        syncCalendarForm(calendarForm);
+
+        if (form.getMode() == DashboardMode.CALENDAR && admin.permissionAllowed(Permission.CALENDAR_SHOW)) {
+            addCalendarViewModelAttrs(model, calendarForm, admin);
+            return "dashboard_calendar";
+        }
+
+        addGridViewModelAttrs(admin, model, form, dashboardLayout);
+        return "dashboard_grid";
+    }
+
+    @GetMapping("/calendar/unsent-mailings.action")
+    public String calendarUnsentList(Model model, DashboardCalendarForm form, Admin admin) {
+        syncCalendarForm(form);
+        addUnsentMailingsModelAttr(model, form, admin);
+        return "calendar_unsent_list";
+    }
+
+    private void addCalendarViewModelAttrs(Model model, DashboardCalendarForm form, Admin admin) {
+        addCommonViewModelAttrs(model, admin);
+        model.addAttribute("showALlCalendarEntries", configService.getBooleanValue(ConfigValue.DashboardCalendarShowALlEntries, admin.getCompanyID()));
+        model.addAttribute("companyAdmins", adminService.mapIdToUsernameByCompanyAndEmail(admin.getCompanyID()));
+        addUnsentMailingsModelAttr(model, form, admin);
+    }
+
+    private void addUnsentMailingsModelAttr(Model model, DashboardCalendarForm form, Admin admin) {
+        if (Boolean.TRUE.equals(form.getShowUnsentList())) {
+            model.addAttribute("unsentMailings", Boolean.TRUE.equals(form.getShowUnsentPlanned())
+                ? calendarService.getUnsentPlannedMailings(admin)
+                : calendarService.getUnsentUnplannedMailings(admin));
+        }
+    }
+
+    private void syncCalendarForm(DashboardCalendarForm form) {
+        webStorage.access(WebStorage.DASHBOARD_CALENDAR, entry -> {
+            if (form.getShowUnsentList() != null) {
+                entry.setShowUnsentList(form.getShowUnsentList());
+                entry.setShowUnsentPlanned(form.getShowUnsentPlanned());
+            } else {
+                form.setShowUnsentList(entry.getShowUnsentList());
+                form.setShowUnsentPlanned(entry.getShowUnsentPlanned());
+            }
+        });
+    }
+
+    protected void addCommonViewModelAttrs(Model model, Admin admin) {
+        // overridden
+    }
+
+    private void syncForm(DashboardForm form) {
+        webStorage.access(WebStorage.DASHBOARD, entry -> {
+            if (form.getMode() != null) {
+                entry.setMode(form.getMode());
+            } else {
+                form.setMode(entry.getMode());
+            }
+        });
+    }
+
+    protected void addGridViewModelAttrs(Admin admin, Model model, DashboardForm form, String dashboardLayout) {
+        addCommonViewModelAttrs(model, admin);
+        PaginatedList mailingsList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
         List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
-
-        if (CollectionUtils.isNotEmpty(worldMailinglist)) {
-            int lastSentMailingId = (Integer) (worldMailinglist.get(0).get("mailingid"));
-
-            form.setLastSentMailingId(lastSentMailingId);
-        }
-
-        model.addAttribute("mailinglist", mailingList);
-        model.addAttribute("worldmailinglist", worldMailinglist);
-        model.addAttribute("newsTypes", NewsType.values());
-        if (admin.isRedesignedUiUsed()) {
-            addRedesignAttrs(admin, model);
-        }
-
-        loadData(model, admin.getLocale(), admin);
-        return "dashboard_view";
+        model
+            .addAttribute("mailinglist", mailingsList)
+            .addAttribute("worldmailinglist", worldMailinglist)
+            .addAttribute("workflows", dashboardService.getWorkflows(admin))
+            .addAttribute("adminDateTimeFormat", admin.getDateTimeFormat().toPattern())
+            .addAttribute("recipientReports", dashboardService.getRecipientReports(admin))
+            .addAttribute("layout", dashboardLayout)
+            .addAttribute("language", admin.getAdminLang())
+            .addAttribute("adminTimeZone", admin.getAdminTimezone())
+            .addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
     }
 
     protected void addRedesignAttrs(Admin admin, Model model) {
@@ -91,7 +176,7 @@ public class DashboardController implements XssCheckAware {
 
     @GetMapping(value = "/dashboard/statistics.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
     public @ResponseBody
-    JSONObject getStatistics(Admin admin, @RequestParam(name = "mailingId") int mailingId) {
+    Map<String, Object> getStatistics(Admin admin, @RequestParam(name = "mailingId") int mailingId) {
         JSONObject result;
 
         try {
@@ -102,7 +187,7 @@ public class DashboardController implements XssCheckAware {
             result = new JSONObject();
         }
 
-        return result;
+        return result.toMap();
     }
 
     @GetMapping("/dashboard/scheduledMailings.action")

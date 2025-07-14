@@ -15,10 +15,10 @@ The square badge can contain any icon inside. To do that you should use class `.
 </span>
 ```
 
-Default background color for such badges is primary. But you can easy change it.
+Default background color for such badges is blue. But you can easy change it.
 
 ```htmlexample
-<span class="icon-badge text-bg-success">
+<span class="icon-badge badge--green">
   <i class="icon icon-check"></i>
 </span>
 ```
@@ -47,7 +47,7 @@ If you need to add multiple icons inside you can use `.multi-icon-badge`.
   @extend .square-badge;
   font-size: $status-badge-font-size;
   color: $white;
-  background-color: $primary;
+  background-color: $badge-standard-blue-var;
 
   &--lg {
     @include size($status-badge-size-lg);
@@ -56,17 +56,33 @@ If you need to add multiple icons inside you can use `.multi-icon-badge`.
   }
 }
 
+@include contrast-themes {
+  .icon-badge {
+    -webkit-text-stroke: 1px black;
+  }
+}
+
 .multi-icon-badge {
+  --multi-icon-badge-bg: #{$badge-dark-grey-var};
+  --multi-icon-badge-color: #{$white};
+
   @include flex-row($gap-x-sm);
   align-items: center;
   padding-inline: $gap-x-sm - 1;
   height: $status-badge-size;
   max-width: min-content;
   border-radius: $border-radius-sm;
-  background-color: $stat-or-badge-dark-grey;
-  color: $white;
+  background-color: var(--multi-icon-badge-bg);
+  color: var(--multi-icon-badge-color);
 
   .icon {
     font-size: $status-badge-font-size;
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .multi-icon-badge {
+    --multi-icon-badge-bg: #{$white};
+    --multi-icon-badge-color: #{$con-dark-blue};
   }
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,20 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
-
 public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationGetCustomerParameters> {
 
-	private static final Logger logger = LogManager.getLogger(ActionOperationGetCustomerDaoImpl.class);
-	
 	@Override
 	protected void processGetOperation(ActionOperationGetCustomerParameters operation) {
-		Map<String, Object> row = selectObject(logger, "select load_always from actop_get_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
+		Map<String, Object> row = selectObject("select load_always from actop_get_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
 			@Override
 			public Map<String, Object> mapRow(ResultSet resultSet, int rowIndex) throws SQLException {
 				Map<String, Object> map = new HashMap<>(1);
@@ -42,7 +37,7 @@ public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationGetCustomerParameters operation) {
-		update(logger, "insert into actop_get_customer_tbl (action_operation_id, load_always) values (?,?)",
+		update("insert into actop_get_customer_tbl (action_operation_id, load_always) values (?,?)",
 				operation.getId(),
 				operation.isLoadAlways());
 	}
@@ -50,7 +45,7 @@ public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationGetCustomerParameters operation) {
-		update(logger, "update actop_get_customer_tbl set load_always=? where action_operation_id=?",
+		update("update actop_get_customer_tbl set load_always=? where action_operation_id=?",
 				operation.isLoadAlways(),
 				operation.getId());
 	}
@@ -58,7 +53,7 @@ public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processDeleteOperation(ActionOperationGetCustomerParameters operation) {
-		update(logger, "delete from actop_get_customer_tbl where action_operation_id=?", operation.getId());
+		update("delete from actop_get_customer_tbl where action_operation_id=?", operation.getId());
 	}
 
 }

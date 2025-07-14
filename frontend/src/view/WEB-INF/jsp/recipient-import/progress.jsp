@@ -11,8 +11,8 @@
 
 <c:choose>
     <c:when test="${errorOccurred}">
-        <c:url var="uploadingErrorImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading-error.svg"/>
-        <c:url var="uploadingErrorImagePng" value="assets/core/images/facelift/msgs_msg-uploading-error.png"/>
+        <c:url var="uploadingErrorImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading-error_old.svg"/>
+        <c:url var="uploadingErrorImagePng" value="assets/core/images/facelift/msgs_msg-uploading-error_old.png"/>
 
         <mvc:form servletRelativeAction="/recipient/import/execute.action" data-form="resource">
             <div class="msg-tile msg-tile-alert">
@@ -43,8 +43,8 @@
         </mvc:form>
     </c:when>
     <c:otherwise>
-        <c:url var="uploadingImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>
-        <c:url var="uploadingImagePng" value="assets/core/images/facelift/msgs_msg-uploading.png"/>
+        <c:url var="uploadingImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading_old.svg"/>
+        <c:url var="uploadingImagePng" value="assets/core/images/facelift/msgs_msg-uploading_old.png"/>
 
         <mvc:form servletRelativeAction="/recipient/import/execute.action" data-form="loading" modelAttribute="form">
             <mvc:hidden path="profileId" />

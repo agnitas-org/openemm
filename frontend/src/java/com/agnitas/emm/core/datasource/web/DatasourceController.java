@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,21 +10,21 @@
 
 package com.agnitas.emm.core.datasource.web;
 
-import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.beans.Admin;
+import com.agnitas.service.DataSourceService;
 import com.agnitas.service.WebStorage;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.datasource.form.DatasourceForm;
-import com.agnitas.service.DataSourceService;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/importexport/datasource")
@@ -46,7 +46,7 @@ public class DatasourceController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public String list(Admin admin, DatasourceForm form, Model model, Popups popups) {
+    public String list(Admin admin, @ModelAttribute("datasourceForm") PaginationForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, WebStorage.DATASOURCE_OVERVIEW, form);
             model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin));

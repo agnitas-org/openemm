@@ -97,6 +97,14 @@
                 [0.5, 0.78, 0, 1]
             ]
         },
+        split: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.22, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.78, 0, 1]
+            ]
+        },
         ownWorkflow: {
             anchors: [
                 [0.1, 0.5, -1, 0],
@@ -251,7 +259,8 @@
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
-            mailing: true
+            mailing: true,
+            split: true,
         },
         parameter: {
             stop: true,
@@ -280,7 +289,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         recipient: {
             decision: true,
@@ -296,7 +306,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         actionbased_mailing: {
             stop: true,
@@ -342,6 +353,9 @@
             import: true,
             export: true
         },
+        split: {
+            parameter: true
+        },
         mailing_mediatype_sms: {
             stop: true,
             decision: true,
@@ -376,7 +390,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         form: {
             stop: true,
@@ -415,7 +430,8 @@
             import: true,
             export: true,
             archive: true,
-            form: true
+            form: true,
+            split: true,
         }
     };
 
@@ -491,11 +507,11 @@
 
         MAX_UNDO_STEPS: 17,
 
-        CONNECTION_COLOR: '#C0C0C0',
+        CONNECTION_COLOR: 'var(--workflow-connection-color)',
         CONNECTION_THICKNESS: 3,
         CONNECTION_OUTLINE_COLOR: 'transparent',
         CONNECTION_OUTLINE_WIDTH: 4,
-        CONNECTION_HOVER_COLOR: '#6F6F6F',
+        CONNECTION_HOVER_COLOR: 'var(--workflow-connection-hover-color)',
         CONNECTION_ARROW_SIZE: 10,
 
         NODE_TYPE_START: 'start',
@@ -508,6 +524,7 @@
         NODE_TYPE_FORM: 'form',
         NODE_TYPE_MAILING: 'mailing',
         NODE_TYPE_OWN_WORKFLOW: 'ownWorkflow',
+        NODE_TYPE_SPLIT: 'split',
         NODE_TYPE_SC_BIRTHDAY: 'scBirthday',
         NODE_TYPE_SC_DOI: 'scDOI',
         NODE_TYPE_SC_ABTEST: 'scABTest',

@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
-<%@ page import="com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings" %>
+<%@ page import="com.agnitas.emm.core.birtreport.bean.impl.BirtReportRecipientSettings" %>
 <%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
 <%@ page import="com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils" %>
 
@@ -17,13 +17,13 @@
 <%--@elvariable id="mailinglistList" type="java.util.List"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
-<c:set var="DATE_RANGE_PREDEFINED" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED%>" scope="request"/>
-<c:set var="DATE_RANGE_CUSTOM" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_CUSTOM%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED" value="<%=BirtReportRecipientSettings.DATE_RANGE_PREDEFINED%>" scope="request"/>
+<c:set var="DATE_RANGE_CUSTOM" value="<%=BirtReportRecipientSettings.DATE_RANGE_CUSTOM%>" scope="request"/>
 
-<c:set var="DATE_RANGE_PREDEFINED_WEEK" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_WEEK%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_30_DAYS" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_30_DAYS%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_LAST_MONTH" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_LAST_MONTH%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_THREE_MONTHS" value="<%=ComBirtReportRecipientSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_WEEK" value="<%=BirtReportRecipientSettings.DATE_RANGE_PREDEFINED_WEEK%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_30_DAYS" value="<%=BirtReportRecipientSettings.DATE_RANGE_PREDEFINED_30_DAYS%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_LAST_MONTH" value="<%=BirtReportRecipientSettings.DATE_RANGE_PREDEFINED_LAST_MONTH%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_THREE_MONTHS" value="<%=BirtReportRecipientSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS%>" scope="request"/>
 
 <c:set var="RECIPIENT_KEY" value="<%= ReportSettingsType.RECIPIENT.getKey()%>"/>
 

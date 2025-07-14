@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,8 +14,6 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
 import com.agnitas.emm.util.quota.api.QuotaService;
 import com.agnitas.emm.util.quota.api.QuotaServiceException;
@@ -72,7 +70,6 @@ public final class Bucket4jQuotaService implements QuotaService {
 	 * 
 	 * @param manager bucket manager
 	 */
-	@Required
 	public final void setBucketManager(final BucketManager manager) {
 		this.bucketManger = Objects.requireNonNull(manager, "BucketManager is null");
 	}
@@ -82,7 +79,6 @@ public final class Bucket4jQuotaService implements QuotaService {
 	 * 
 	 * @param costs invocation costs
 	 */
-	@Required
 	public final void setApiInvocationCosts(final ApiInvocationCosts costs) {
 		this.invocationCosts = Objects.requireNonNull(costs, "ApiInvocationCosts is null");
 	}

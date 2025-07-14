@@ -4,7 +4,7 @@
 				 org.eclipse.birt.report.utility.ParameterAccessor,
 				 org.eclipse.birt.report.context.BaseAttributeBean,
 				 org.eclipse.birt.report.engine.api.DataExtractionFormatInfo" %>
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 
@@ -25,7 +25,7 @@
     <TR HEIGHT="5px"><TD></TD></TR>
     <TR>
         <TD>
-            <LABEL FOR="resultsets"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.resultsets", locale )%>
+            <LABEL FOR="resultsets"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.resultsets", locale )%>
             </LABEL>
         </TD>
     </TR>
@@ -40,7 +40,7 @@
         <TD VALIGN="top">
             <TABLE STYLE="font-size:8pt;">
                 <TR><TD>
-                    <LABEL FOR="availableColumnSelect"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.availablecolumn", locale )%></LABEL>
+                    <LABEL FOR="availableColumnSelect"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.availablecolumn", locale )%></LABEL>
                 </TD></TR>
                 <TR><TD>
                     <SELECT ID="availableColumnSelect" MULTIPLE="true" SIZE="10" CLASS="birtviewer_exportdata_dialog_select">
@@ -69,8 +69,8 @@
                                     <%
 									}
 									%>
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.addall", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.addall", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.addall", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.addall", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                             <TR height="2px"><TD></TD></TR>
@@ -90,8 +90,8 @@
                                     <%
 									}
 									%>
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.add", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.add", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.add", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.add", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                             <TR height="2px"><TD></TD></TR>
@@ -111,8 +111,8 @@
                                     <%
 									}
 									%>
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.remove", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.remove", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.remove", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.remove", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                             <TR height="2px"><TD></TD></TR>
@@ -132,8 +132,8 @@
                                     <%
 									}
 									%>
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.removeall", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.removeall", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.removeall", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.removeall", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                         </TABLE>
@@ -148,15 +148,15 @@
                         <TABLE VALIGN="middle">
                             <TR><TD>
                                 <INPUT TYPE="image" NAME="Up" SRC="birt/images/Up_disabled.gif"
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.up", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.up", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.up", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.up", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                             <TR height="2px"><TD></TD></TR>
                             <TR><TD>
                                 <INPUT TYPE="image" NAME="Down" SRC="birt/images/Down_disabled.gif"
-                                       ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.down", locale )%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.down", locale )%>"
+                                       ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.down", locale )%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.exportdata.down", locale )%>"
                                        CLASS="birtviewer_exportdata_dialog_button">
                             </TD></TR>
                         </TABLE>
@@ -167,7 +167,7 @@
         <TD >
             <TABLE STYLE="font-size:8pt;">
                 <TR><TD>
-                    <LABEL FOR="selectedColumnSelect"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.selectedcolumn", locale )%></LABEL>
+                    <LABEL FOR="selectedColumnSelect"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.selectedcolumn", locale )%></LABEL>
                 </TD></TR>
                 <TR><TD>
                     <SELECT ID="selectedColumnSelect" MULTIPLE="true" SIZE="10" CLASS="birtviewer_exportdata_dialog_select">
@@ -180,7 +180,7 @@
     <TR>
         <TD COLSPAN="4">
             <DIV>
-                <label for="exportDataExtension"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.extension", locale )%></label>
+                <label for="exportDataExtension"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.extension", locale )%></label>
                 <SELECT ID="exportDataExtension" CLASS="birtviewer_exportdata_dialog_select">
                     <%
                         for ( int i = 0; i < dataExtractInfos.length; i++ )
@@ -205,7 +205,7 @@
             <DIV ID="exportDataEncodingSetting">
                 <TABLE>
                     <TR>
-                        <TD><label for="exportDataEncoding_UTF8"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding", locale )%></label></TD>
+                        <TD><label for="exportDataEncoding_UTF8"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding", locale )%></label></TD>
                         <TD>
                             <INPUT TYPE="radio" NAME="exportDataEncoding" ID="exportDataEncoding_UTF8" CHECKED value="UTF-8">
                             <label for="exportDataEncoding_UTF8">UTF-8</label>
@@ -219,9 +219,9 @@
                                     <INPUT TYPE="radio" NAME="exportDataEncoding" ID="exportDataEncoding_other">
                                 </TD>
                                 <TD>
-                                    <label for="exportDataEncoding_other"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding.other", locale )%></label>
+                                    <label for="exportDataEncoding_other"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding.other", locale )%></label>
                                     <INPUT TYPE="text" NAME="exportDataOtherEncoding" ID="exportDataOtherEncoding_input" CLASS="birtviewer_exportdata_dialog_input" DISABLED="true">
-                                    <%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding.comment", locale )%>
+                                    <%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.encoding.comment", locale )%>
                                 </TD>
                             </TR></TABLE>
                         </TD>
@@ -230,13 +230,13 @@
             </DIV>
             <BR/>
             <DIV>
-                <label for="exportDataCSVSeparator"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.separator", locale )%></label>
+                <label for="exportDataCSVSeparator"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.separator", locale )%></label>
                 <SELECT ID="exportDataCSVSeparator" CLASS="birtviewer_exportdata_dialog_select">
-                    <OPTION VALUE="0" SELECTED><%= ComBirtResources.getMessage( "birt.viewer.sep.0", locale )%></OPTION>
-                    <OPTION VALUE="1"><%= ComBirtResources.getMessage( "birt.viewer.sep.1")%></OPTION>
-                    <OPTION VALUE="2"><%= ComBirtResources.getMessage( "birt.viewer.sep.2")%></OPTION>
-                    <OPTION VALUE="3"><%= ComBirtResources.getMessage( "birt.viewer.sep.3")%></OPTION>
-                    <OPTION VALUE="4"><%= ComBirtResources.getMessage( "birt.viewer.sep.4")%></OPTION>
+                    <OPTION VALUE="0" SELECTED><%= EmmBirtResources.getMessage( "birt.viewer.sep.0", locale )%></OPTION>
+                    <OPTION VALUE="1"><%= EmmBirtResources.getMessage( "birt.viewer.sep.1")%></OPTION>
+                    <OPTION VALUE="2"><%= EmmBirtResources.getMessage( "birt.viewer.sep.2")%></OPTION>
+                    <OPTION VALUE="3"><%= EmmBirtResources.getMessage( "birt.viewer.sep.3")%></OPTION>
+                    <OPTION VALUE="4"><%= EmmBirtResources.getMessage( "birt.viewer.sep.4")%></OPTION>
                 </SELECT>
             </DIV>
             <BR/>
@@ -245,17 +245,17 @@
                     <TR >
                         <TD><INPUT TYPE="checkbox" ID="exportColumnDataType"></TD>
                         <TD>
-                            <label for="exportColumnDataType"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.datatype", locale )%></label>
+                            <label for="exportColumnDataType"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.datatype", locale )%></label>
                         </TD>
                         <TD style="padding-left:20px;" ><INPUT TYPE="checkbox" ID="exportColumnLocaleNeutral"></TD>
                         <TD rowspan="2" valign="top" style="padding-top:3px;">
-                            <label for="exportColumnLocaleNeutral"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.localeneutral", locale )%></label>
+                            <label for="exportColumnLocaleNeutral"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.localeneutral", locale )%></label>
                         </TD>
                     </TR>
                     <TR>
                         <TD><INPUT TYPE="checkbox" ID="exportDataWithCR"></TD>
                         <TD nowrap="nowrap">
-                            <label for="exportDataWithCR"><%= ComBirtResources.getMessage( "birt.viewer.dialog.exportdata.carriage_return", locale )%></label>
+                            <label for="exportDataWithCR"><%= EmmBirtResources.getMessage( "birt.viewer.dialog.exportdata.carriage_return", locale )%></label>
                         </TD>
                     </TR>
                 </TABLE>

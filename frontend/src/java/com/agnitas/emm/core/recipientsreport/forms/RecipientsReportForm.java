@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.core.recipientsreport.forms;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormDateTime;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.FormDateTime;
+import com.agnitas.web.forms.PaginationForm;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -23,8 +23,10 @@ public class RecipientsReportForm extends PaginationForm {
     // TODO: EMMGUI-714: remove this old fields when old design will be removed
     private RecipientsReport.RecipientReportType[] filterTypes;
 
+    // TODO: EMMGUI-714: remove this old fields when old design will be removed
     private FormDateTime filterDateStart = new FormDateTime();
 
+    // TODO: EMMGUI-714: remove this old fields when old design will be removed
     private FormDateTime filterDateFinish = new FormDateTime();
 
     public RecipientsReport.RecipientReportType[] getFilterTypes() {

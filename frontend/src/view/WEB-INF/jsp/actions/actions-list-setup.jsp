@@ -3,8 +3,6 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionsForm"--%>
-
 <c:set var="agnNavigationKey" 		value="ActionOverview" 				scope="request"/>
 <c:set var="agnTitleKey" 			value="Actions" 			scope="request"/>
 <c:set var="agnSubtitleKey" 		value="Actions" 			scope="request"/>

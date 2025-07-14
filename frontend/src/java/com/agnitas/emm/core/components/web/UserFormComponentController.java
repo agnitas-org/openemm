@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,20 @@
 */
 
 package com.agnitas.emm.core.components.web;
+
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
@@ -33,13 +47,13 @@ import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.SimpleActionForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,20 +77,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/webform")
@@ -345,11 +345,6 @@ public class UserFormComponentController implements XssCheckAware {
 	}
 
 	private void writeUserActivityLog(Admin admin, UserAction userAction) {
-		if (userActivityLogService != null) {
-			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-		} else {
-			logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-			logger.info("Userlog: " + admin.getUsername() + " " + userAction.getAction() + " " +  userAction.getDescription());
-		}
+		userActivityLogService.writeUserActivityLog(admin, userAction, logger);
 	}
 }

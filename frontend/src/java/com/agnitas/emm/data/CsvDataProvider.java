@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,47 +11,36 @@
 package com.agnitas.emm.data;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import org.agnitas.util.CsvDataException;
-import org.agnitas.util.CsvReader;
-import org.agnitas.util.CsvWriter;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.ZipUtilities;
+import com.agnitas.util.CsvDataException;
+import com.agnitas.util.CsvReader;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class CsvDataProvider extends DataProvider {
+
 	// Default optional parameters
-	private char separator = ';';
-	private Character stringQuote = '"';
-	private char escapeStringQuote = '"';
-	private String nullValueText = null;
-	private boolean allowUnderfilledLines = false;
-	private boolean removeSurplusEmptyTrailingColumns = false;
-	private boolean noHeaders = false;
-	private boolean trimData = true;
+	private final char separator;
+	private final Character stringQuote;
+	private final char escapeStringQuote;
+	private final String nullValueText;
+	private final boolean allowUnderfilledLines;
+	private final boolean removeSurplusEmptyTrailingColumns;
+	private final boolean noHeaders;
+	private final boolean trimData = true;
 	private CsvReader csvReader = null;
 	private List<String> columnNames = null;
-	private Map<String, DbColumnType> dataTypes = null;
 	private Long itemsAmount = null;
 	private String itemsUnitSign = null;
 
-	private Charset encoding = StandardCharsets.UTF_8;
+	private final Charset encoding;
 
-	public CsvDataProvider(final File importFile, final char[] zipPassword, String encoding, final char separator, final Character stringQuote, final char escapeStringQuote, final boolean allowUnderfilledLines, final boolean removeSurplusEmptyTrailingColumns, final boolean noHeaders, final String nullValueText) {
+	public CsvDataProvider(File importFile, char[] zipPassword, String encoding, char separator, Character stringQuote, char escapeStringQuote,
+						   boolean allowUnderfilledLines, boolean removeSurplusEmptyTrailingColumns, boolean noHeaders, String nullValueText) {
 		super(importFile, zipPassword);
 		this.encoding = Charset.forName(encoding);
 		this.separator = separator;
@@ -75,38 +64,6 @@ public class CsvDataProvider extends DataProvider {
 			+ "RemoveSurplusEmptyTrailingColumns: " + removeSurplusEmptyTrailingColumns + "\n"
 			+ "TrimData: " + trimData + "\n"
 			+ "Null value text: " + (nullValueText == null ? "none" : "\"" + nullValueText + "\"") + "\n";
-	}
-
-	@Override
-	public Map<String, DbColumnType> scanDataPropertyTypes(final Map<String, Tuple<String, String>> mapping) throws Exception {
-		if (dataTypes == null) {
-			try (CsvReader scanCsvReader = new CsvReader(getInputStream(), encoding, separator, stringQuote)) {
-				scanCsvReader.setStringQuoteEscapeCharacter(escapeStringQuote);
-				scanCsvReader.setAlwaysTrim(trimData);
-				scanCsvReader.setIgnoreEmptyLines(true);
-				
-				if (!noHeaders) {
-					// Read headers from file
-					columnNames = scanCsvReader.readNextCsvLine();
-				}
-
-				dataTypes = new HashMap<>();
-
-				// Scan all data for maximum
-				List<String> values;
-				while ((values = scanCsvReader.readNextCsvLine()) != null) {
-					for (int i = 0; i < values.size(); i++) {
-						final String columnName = (columnNames == null || columnNames.size() <= i ? "column_" + Integer.toString(i + 1) : columnNames.get(i));
-						final String currentValue = values.get(i);
-						detectNextDataType(mapping, dataTypes, columnName, currentValue);
-					}
-				}
-			} catch (final Exception e) {
-				throw e;
-			}
-		}
-
-		return dataTypes;
 	}
 
 	@Override
@@ -134,7 +91,7 @@ public class CsvDataProvider extends DataProvider {
 						// Only take first data as example for all other data
 						final List<String> values = scanCsvReader.readNextCsvLine();
 						for (int i = 0; i < values.size(); i++) {
-							returnList.add("column_" + Integer.toString(i + 1));
+							returnList.add("column_" + (i + 1));
 						}
 						columnNames = returnList;
 					}
@@ -142,8 +99,6 @@ public class CsvDataProvider extends DataProvider {
 					// Read headers from file
 					columnNames = scanCsvReader.readNextCsvLine();
 				}
-			} catch (final Exception e) {
-				throw e;
 			}
 		}
 
@@ -160,16 +115,14 @@ public class CsvDataProvider extends DataProvider {
 					scanCsvReader.setIgnoreEmptyLines(true);
 					
 					if (noHeaders) {
-						itemsAmount = Long.valueOf(scanCsvReader.getCsvLineCount());
+						itemsAmount = (long) scanCsvReader.getCsvLineCount();
 						itemsUnitSign = null;
 					} else {
-						itemsAmount = Long.valueOf(scanCsvReader.getCsvLineCount() - 1);
+						itemsAmount = (long) (scanCsvReader.getCsvLineCount() - 1);
 						itemsUnitSign = null;
 					}
-				} catch (final CsvDataException e) {
+				} catch (CsvDataException e) {
 					throw new Exception(e.getMessage(), e);
-				} catch (final Exception e) {
-					throw e;
 				}
 			} else {
 				itemsAmount = getImportDataAmount();
@@ -181,7 +134,7 @@ public class CsvDataProvider extends DataProvider {
 	}
 
 	@Override
-	public String getItemsUnitSign() throws Exception {
+	public String getItemsUnitSign() {
 		return itemsUnitSign;
 	}
 
@@ -192,24 +145,24 @@ public class CsvDataProvider extends DataProvider {
 		}
 
 		final List<String> values = csvReader.readNextCsvLine();
-		if (values != null) {
-			final Map<String, Object> returnMap = new HashMap<>();
-			for (int i = 0; i < getAvailableDataPropertyNames().size(); i++) {
-				final String columnName = getAvailableDataPropertyNames().get(i);
-				if (values.size() > i) {
-					if (nullValueText != null && nullValueText.equals(values.get(i))) {
-						returnMap.put(columnName, null);
-					} else {
-						returnMap.put(columnName, values.get(i));
-					}
-				} else {
-					returnMap.put(columnName, null);
-				}
-			}
-			return returnMap;
-		} else {
+		if (values == null) {
 			return null;
 		}
+
+		final Map<String, Object> returnMap = new HashMap<>();
+		for (int i = 0; i < getAvailableDataPropertyNames().size(); i++) {
+			final String columnName = getAvailableDataPropertyNames().get(i);
+			if (values.size() > i) {
+				if (nullValueText != null && nullValueText.equals(values.get(i))) {
+					returnMap.put(columnName, null);
+				} else {
+					returnMap.put(columnName, values.get(i));
+				}
+			} else {
+				returnMap.put(columnName, null);
+			}
+		}
+		return returnMap;
 	}
 
 	@Override
@@ -219,61 +172,9 @@ public class CsvDataProvider extends DataProvider {
 		super.close();
 	}
 
-	@Override
-	public File filterDataItems(final List<Integer> indexList, final String fileSuffix) throws Exception {
-		OutputStream outputStream = null;
-		try {
-			openReader();
-
-			File filteredDataFile;
-			if (StringUtils.endsWithIgnoreCase(getImportFilePath(), ".zip")) {
-				filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".csv.zip");
-				outputStream = ZipUtilities.openNewZipOutputStream(filteredDataFile);
-				((ZipOutputStream) outputStream).putNextEntry(new ZipEntry(new File(getImportFilePath() + "." + fileSuffix + ".csv").getName()));
-			} else {
-				filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".csv");
-				outputStream = new FileOutputStream(filteredDataFile);
-			}
-
-			try (CsvWriter csvWriter = new CsvWriter(outputStream, encoding.toString(), separator, stringQuote)) {
-				csvWriter.setStringQuoteEscapeCharacter(escapeStringQuote);
-
-				csvWriter.writeValues(columnNames);
-
-				Map<String, Object> item;
-				int itemIndex = 0;
-				while ((item = getNextItemData()) != null) {
-					itemIndex++;
-					if (indexList.contains(itemIndex)) {
-						final List<String> values = new ArrayList<>();
-						for (final String columnName : columnNames) {
-							if (item.get(columnName) == null) {
-								values.add(nullValueText);
-							} else if (item.get(columnName) instanceof String) {
-								values.add((String) item.get(columnName));
-							} else if (item.get(columnName) instanceof Date) {
-								values.add(DateUtilities.formatDate(DateUtilities.YYYY_MM_DD_HH_MM_SS, (Date) item.get(columnName)));
-							} else if (item.get(columnName) instanceof Number) {
-								values.add(item.get(columnName).toString());
-							} else {
-								values.add(item.get(columnName).toString());
-							}
-						}
-						csvWriter.writeValues(values);
-					}
-				}
-
-				return filteredDataFile;
-			}
-		} finally {
-			close();
-			IOUtils.closeQuietly(outputStream);
-		}
-	}
-
 	private void openReader() throws Exception {
 		if (csvReader != null) {
-			throw new Exception("Reader was already opened before");
+			throw new IllegalStateException("Reader was already opened before");
 		}
 
 		try {

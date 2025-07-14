@@ -45,7 +45,7 @@
     <c:if test="${needsOutsideApproval}">
         <div class="col-12">
             <div class="notification-simple notification-simple--lg">
-                <span><strong><mvc:message code="ENTW.Note"/>:</strong> <mvc:message code="ENTW.needs.approval"/></span>
+                <span><strong><mvc:message code="default.note"/>:</strong> <mvc:message code="mailing.send.approval.note"/></span>
             </div>
         </div>
     </c:if>

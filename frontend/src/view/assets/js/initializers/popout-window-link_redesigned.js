@@ -7,7 +7,7 @@ parent: iframe
 
 Use `[data-popout-window]` to append 'Pop-out this window' button to the element footer (caption).
 
-<small class="text-muted">Initially designed for iframe.</small>
+<small class="text-secondary">Initially designed for iframe.</small>
 
 ```htmlexample
 <iframe src="https://www.agnitas.de/" data-popout-window style="height: 500px;"></iframe>
@@ -27,7 +27,7 @@ AGN.Lib.CoreInitializer.new('popout-window', function ($scope = $(document)) {
         .append($el)
         .append($(`
           <figcaption>
-            <a class="link-dark-md clickable flex-center overflow-hidden" data-popup="${src}" data-bs-dismiss="modal">
+            <a class="clickable flex-center overflow-hidden" data-popup="${src}" data-bs-dismiss="modal">
                 <span class="text-truncate">${src}</span>
                 <i class="icon icon-external-link-alt"></i>
             </a>

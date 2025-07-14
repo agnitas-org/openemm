@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,15 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.emm.core.birtstatistics.monthly.MonthlyStatType;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.MonthCounterStat;
+import com.agnitas.reporting.birt.external.beans.MonthDetailStatRow;
+import com.agnitas.reporting.birt.external.beans.MonthTotalStatRow;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.importvalues.MailType;
+
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,21 +26,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.core.birtstatistics.monthly.MonthlyStatType;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.MonthCounterStat;
-import com.agnitas.reporting.birt.external.beans.MonthDetailStatRow;
-import com.agnitas.reporting.birt.external.beans.MonthTotalStatRow;
-
 public class MonthStatDataSet extends BIRTDataSet {
 
-	private static final Logger logger = LogManager.getLogger(MonthStatDataSet.class);
 	private static final String DATE_FORMAT_PATTERN = "yyyyMMdd";
 
 	/**
@@ -43,13 +39,15 @@ public class MonthStatDataSet extends BIRTDataSet {
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
+		String query;
 		List<Object> params = new ArrayList<>();
 		
-		String query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
-			+ " SUM(a.no_of_mailings) email_count,"
-			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail,"
-			+ " a.status_field"
-			+ " FROM mailing_account_tbl a";
+		if (false) { // previous, slower version
+			query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
+				+ " SUM(a.no_of_mailings) email_count,"
+				+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail,"
+				+ " a.status_field"
+				+ " FROM mailing_account_tbl a";
 		
 			if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
 				query += " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id";
@@ -67,9 +65,48 @@ public class MonthStatDataSet extends BIRTDataSet {
 			params.add(endDate);
 			params.add(startDate);
 			params.add(endDate);
+		} else {
+			boolean	requiresAdminId = false;
+			
+			String	baseQuery = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
+				+ " SUM(a.no_of_mailings) email_count,"
+				+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail,"
+				+ " a.status_field"
+				+ " FROM mailing_account_tbl a";
+			if (adminId > 0 && ConfigService.getInstance().isDisabledMailingListsSupported()) {
+				baseQuery += " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id";
+				baseQuery += " AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?)";
+				requiresAdminId = true;
+			}
+			baseQuery += " WHERE a.company_id = ?"
+				+ " AND a.timestamp >= ?"
+				+ " AND a.timestamp < ?";
+			
+			query = baseQuery +
+				" AND a.status_field NOT IN ('A', 'T') GROUP BY a.status_field" +
+				" UNION " +
+				baseQuery +
+				" AND a.status_field IN ('A', 'T') AND EXISTS " +
+				"(SELECT 1 FROM mailing_account_tbl b WHERE b.mailing_id = a.mailing_id AND b.status_field NOT IN ('A', 'T') AND b.timestamp >= ? AND b.timestamp < ?)" +
+				" GROUP BY a.status_field";
 
+			if (requiresAdminId) {
+				params.add(adminId);
+			}
+			params.add(companyID);
+			params.add(startDate);
+			params.add(endDate);
+			if (requiresAdminId) {
+				params.add(adminId);
+			}
+			params.add(companyID);
+			params.add(startDate);
+			params.add(endDate);
+			params.add(startDate);
+			params.add(endDate);
+		}
 		MonthCounterStat row = new MonthCounterStat();
-		select(logger, query, (resultSet, rowNum) -> {
+		select(query, (resultSet, rowNum) -> {
 			String status = resultSet.getString("status_field");
 			row.getMailings().put(status, resultSet.getInt("mailing_count"));
 			row.getEmails().put(status, resultSet.getInt("email_count"));
@@ -160,7 +197,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}
 		queryBuilder.append(" ORDER BY datum, total");
 		
-		return select(logger, queryBuilder.toString(), (resultSet, rowNum) -> {
+		return select(queryBuilder.toString(), (resultSet, rowNum) -> {
 			MonthDetailStatRow monthDetailRow = new MonthDetailStatRow();
 			monthDetailRow.setMailingId(resultSet.getInt("mailing_id"));
 			monthDetailRow.setDate(resultSet.getString("datum"));
@@ -249,7 +286,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		
 		queryBuilder.append(" GROUP BY m.mailing_id, m.shortname");
 
-		return select(logger, queryBuilder.toString(), (resultSet, rowNum) -> {
+		return select(queryBuilder.toString(), (resultSet, rowNum) -> {
 			MonthTotalStatRow row = new MonthTotalStatRow();
 			row.setMailingId(resultSet.getInt("mailing_id"));
 			row.setShortName(resultSet.getString("shortname"));

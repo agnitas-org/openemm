@@ -4,10 +4,8 @@
   grid-auto-rows: min-content;
 }
 
-.row {
-  &:blank {
-    display: none !important;
-  }
+.row:blank {
+  display: none !important;
 }
 
 #page-wrapper {
@@ -19,6 +17,10 @@
           'sidebar main-view';
 
   height: 100dvh;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
 }
 
 #main-view {
@@ -33,6 +35,9 @@
 
 #navbar_wrapper {
   padding: $tiles-spacer $tiles-spacer 0 $tiles-spacer;
+  @include left-hand {
+    @include flipHorizontally;
+  }
 }
 
 .tiles-container {
@@ -41,13 +46,24 @@
   flex-grow: 1;
   min-height: 0;
   gap: $tiles-spacer;
-  position: relative; // for select2 dropdown
 
   > .tile, > .tiles-block {
     flex: 1;
 
     @include mobile {
       flex: 0 0 min-content !important;
+    }
+  }
+
+  > .tile, .tiles-block > .tile {
+    @include left-hand {
+      > .tile-header {
+        z-index: 1; // hack to display bootstrap dropdown over the tiles
+      }
+
+      > * {
+        @include flipHorizontally;
+      }
     }
   }
 

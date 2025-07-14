@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,67 +22,50 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
 import javax.imageio.ImageIO;
-
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.impl.MailingComponentImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.fit.cssbox.css.CSSNorm;
-import org.fit.cssbox.css.DOMAnalyzer;
-import org.fit.cssbox.io.DOMSource;
-import org.fit.cssbox.io.DefaultDOMSource;
-import org.fit.cssbox.io.DefaultDocumentSource;
-import org.fit.cssbox.io.DocumentSource;
-import org.fit.cssbox.layout.BrowserCanvas;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.context.ServletContextAware;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.util.ProcessUtils;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
-
-import cz.vutbr.web.css.MediaSpec;
-import jakarta.servlet.ServletContext;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.impl.MailingComponentImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 // TODO Move thumbnail generation to new MailingThumbnailService
-public class PreviewImageServiceImpl implements PreviewImageService, ServletContextAware {
+public class PreviewImageServiceImpl implements PreviewImageService {
 
     private static final Logger logger = LogManager.getLogger(PreviewImageServiceImpl.class);
 
 	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
+    private static final String PDF_SERVICE_URL = PuppeteerServiceManager.PUPPETEER_SERVICE_URL + "/screenshot";
 
-	protected static final int GRID_TEMPLATE_THUMBNAIL_WIDTH = 300;
-	protected static final int GRID_TEMPLATE_THUMBNAIL_HEIGHT = 300;
-
-    protected static final int DIV_CONTAINER_THUMBNAIL_WIDTH = 150;
-    protected static final int DIV_CONTAINER_THUMBNAIL_HEIGHT = 100;
-    private static final int PUPPETEER_VIEWPORT_WIDTH = 1024;
+    protected static final int PUPPETEER_VIEWPORT_WIDTH = 1024;
+    private static final int PUPPETEER_TIMEOUT = 60_000; // 1 minute
 
     protected ConfigService configService;
-    private ComRecipientDao recipientDao;
+    private RecipientDao recipientDao;
     private MediaTypesService mediaTypesService;
-    private ServletContext servletContext;
     private MailingComponentDao mailingComponentDao;
     protected PreviewImageGenerationQueue queue;
 
@@ -90,29 +73,22 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
     public void generateMailingPreview(Admin admin, String sessionId, int mailingId, boolean async) {
         int customerId = recipientDao.getPreviewRecipient(admin.getCompanyID(), mailingId);
         Mediatype activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
-        
-        if (customerId > 0) {
-            queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType, admin), async);
-        } else {
-            logger.error("Cannot create mailing preview: no test or admin recipient found");
-        }
+        queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType), async);
     }
 
-    protected byte[] generatePreview(String url, Dimension maxSize, boolean isMailingPreview, Admin admin) throws Exception {
+    protected byte[] generatePreview(String url, Dimension maxSize, Integer viewportWidth) {
         ByteArrayOutputStream outputStream = null;
         try {
-            BufferedImage image = renderDocument(url, admin);
+            BufferedImage image = createScreenshotWithPuppeteer(url, viewportWidth);
 
             if (image != null) {
-                image = resizePreview(image, maxSize, isMailingPreview);
+                image = resizePreview(image, maxSize);
 
                 outputStream = new ByteArrayOutputStream();
                 ImageIO.write(image, "png", outputStream);
 
                 return outputStream.toByteArray();
             }
-        } catch (SAXException e) {
-            logger.error("Error occurred while rendering an html page preview. URL: {}", url, e);
         } catch (IOException e) {
             logger.error("Error occurred while saving preview-image. URL: {}", url, e);
         } finally {
@@ -127,200 +103,69 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
         return null;
     }
 
-    private BufferedImage renderDocument(String url, Admin admin) throws Exception {
-        if (!configService.getBooleanValue(ConfigValue.UseWkhtmltox, admin.getCompanyID())) {
-            return createScreenshotWithPuppeteer(url);
-        }
-        if (StringUtils.isNotBlank(configService.getValue(ConfigValue.WkhtmlToImageToolPath))) {
-            return renderDocumentWithWkhtml(url);
-        }
-        return renderDocumentWithCssBox(url);
-    }
-
-    private BufferedImage createScreenshotWithPuppeteer(String url) throws IOException {
-        File imageTmpFile = File.createTempFile("preview_", ".png");
+    private BufferedImage createScreenshotWithPuppeteer(String url, Integer viewportWidth) throws IOException {
+        File imageTmpFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
         try {
-            String command = generatePuppeteerImageToolCommand(url, imageTmpFile.getAbsolutePath());
-            ProcessUtils.runCommand(command);
-            if (!imageTmpFile.exists() || imageTmpFile.length() == 0) {
-                throw new IOException("Screenshot generation failed. Command: " + command);
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("url", url);
+            requestBody.put("path", imageTmpFile.getAbsolutePath());
+            if (viewportWidth != null) {
+                requestBody.put("width", viewportWidth);
             }
-            return ImageIO.read(imageTmpFile);
+            requestBody.put("timeout", PUPPETEER_TIMEOUT);
+
+            HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(PDF_SERVICE_URL, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && imageTmpFile.exists() && imageTmpFile.length() > 0) {
+                return ImageIO.read(imageTmpFile);
+            } else {
+                throw new IOException("Screenshot generation failed. Response: " + response.getBody());
+            }
+        } catch (Exception e) {
+            throw new IOException("Error while creating screenshot with a new puppeteer method - " + e.getMessage());
         } finally {
             Files.deleteIfExists(imageTmpFile.toPath());
         }
     }
 
-    private String generatePuppeteerImageToolCommand(String url, String path) {
-        return String.format("node %s %s %s %d", getImageToolPath(), path, url, PUPPETEER_VIEWPORT_WIDTH);
-    }
-
-    private String getImageToolPath() {
-        String path = servletContext.getRealPath("WEB-INF/puppeteer/imageTool.js");
-        if (StringUtils.isBlank(path)) {
-        	logger.error("Missing path to imageTool tool");
-        } else if (!new File(path).exists()) {
-        	logger.error("Missing imageTool at path: '{}'", path);
-        }
-        return path;
-    }
-
-	private BufferedImage renderDocumentWithWkhtml(String url) throws Exception {
-		if (!new File(configService.getValue(ConfigValue.WkhtmlToImageToolPath)).exists()) {
-			throw new Exception("Preview generation via wkhtmltoimage failed: " + configService.getValue(ConfigValue.WkhtmlToImageToolPath) + " does not exist");
-		}
-
-		File imageTempFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
-
-        String proxyString = "None";
-		String proxyHost = System.getProperty("http.proxyHost");
-		List<String> nonProxyHosts = new ArrayList<>();
-		if (StringUtils.isNotBlank(proxyHost)) {
-			String nonProxyHostsString = System.getProperty("http.nonProxyHosts");
-			if (StringUtils.isNotBlank(nonProxyHostsString)) {
-    			for (String nonProxyHost : nonProxyHostsString.split("\\||,|;| ")) {
-					nonProxyHost = nonProxyHost.trim().toLowerCase();
-					nonProxyHosts.add(nonProxyHost);
-				}
-			}
-
-			proxyString = proxyHost;
-			if (!proxyString.contains("://")) {
-				proxyString = "http://" + proxyString;
-			}
-
-			String proxyPort = System.getProperty("http.proxyPort");
-			if (StringUtils.isNotBlank(proxyPort)) {
-				proxyString = proxyString + ":" + proxyPort;
-			} else {
-				proxyString = proxyString + ":" + 8080;
-			}
-		}
-
-		List<String> command = new ArrayList<>();
-
-		command.add(configService.getValue(ConfigValue.WkhtmlToImageToolPath));
-
-//			"--crop-x", Integer.toString(0),
-//			"--crop-y", Integer.toString(0),
-//			"--crop-w", Integer.toString(maxWidth),
-//			"--crop-h", Integer.toString(maxHeight),
-//			"--format, png",
-
-		command.add("--quality");
-		command.add(Integer.toString(50));
-
-		if (StringUtils.isNotBlank(proxyString) && !"None".equals(proxyString)) {
-			command.add("--proxy");
-			command.add(proxyString);
-			for (String nonProxyHost : nonProxyHosts) {
-				command.add("--bypass-proxy-for");
-				command.add(nonProxyHost);
-			}
-		}
-
-		command.add(url);
-
-		command.add(imageTempFile.getAbsolutePath());
-
-		Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
-		process.waitFor();
-
-		if (!imageTempFile.exists() || imageTempFile.length() == 0) {
-			throw new Exception("Preview generation via wkhtmltoimage failed: \n" + StringUtils.join(command, "\n"));
-		}
-
-		BufferedImage image = ImageIO.read(imageTempFile);
-
-		imageTempFile.delete();
-
-		return image;
-	}
-
-    private BufferedImage renderDocumentWithCssBox(String url) throws IOException, SAXException {
-    	DocumentSource docSource = new DefaultDocumentSource(ensureUrlHasProtocol(url));
-
-        final Dimension windowSize = new Dimension(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        final String mediaType = "screen";
-
-        // Parse the input document
-        DOMSource parser = new DefaultDOMSource(docSource);
-        Document doc = parser.parse();
-
-        // Create the media specification
-        MediaSpec media = new MediaSpec(mediaType);
-        media.setDimensions(windowSize.width, windowSize.height);
-        media.setDeviceDimensions(windowSize.width, windowSize.height);
-
-        // Create the CSS analyzer
-        DOMAnalyzer analyzer = new DOMAnalyzer(doc, docSource.getURL());
-
-        analyzer.setMediaSpec(media);
-
-        // Convert the HTML presentation attributes to inline styles
-        analyzer.attributesToStyles();
-
-        // Use the standard style sheet
-        analyzer.addStyleSheet(null, CSSNorm.stdStyleSheet(), DOMAnalyzer.Origin.AGENT);
-
-        // Use the additional style sheet
-        analyzer.addStyleSheet(null, CSSNorm.userStyleSheet(), DOMAnalyzer.Origin.AGENT);
-
-        // Render form fields using css
-        analyzer.addStyleSheet(null, CSSNorm.formsStyleSheet(), DOMAnalyzer.Origin.AGENT);
-
-        // Load the author style sheets
-        analyzer.getStyleSheets();
-
-        BrowserCanvas contentCanvas = new BrowserCanvas(analyzer.getRoot(), analyzer, docSource.getURL());
-        // We have a correct media specification, do not update
-        contentCanvas.setAutoMediaUpdate(false);
-        contentCanvas.getConfig().setClipViewport(false);
-        contentCanvas.getConfig().setLoadImages(true);
-        contentCanvas.getConfig().setLoadBackgroundImages(true);
-        contentCanvas.getConfig().setImageLoadTimeout((int) TimeUnit.SECONDS.toMillis(IMAGE_LOADING_TIMEOUT));
-
-        contentCanvas.createLayout(windowSize);
-
-        return contentCanvas.getImage();
-    }
-
-    private BufferedImage resizePreview(BufferedImage image, Dimension maxSize, boolean isMailingPreview) {
+    private BufferedImage resizePreview(BufferedImage image, Dimension maxSize) {
         if (logger.isInfoEnabled()) {
             logger.info("Preview image rescaling started");
         }
 
         Dimension sourceSize = new Dimension(image.getWidth(), image.getHeight());
-        Dimension previewSize = getPreviewSize(maxSize, sourceSize, isMailingPreview);
 
-        if (sourceSize.width < previewSize.width) {
-            if (sourceSize.height > previewSize.height) {
+        if (sourceSize.width < maxSize.width) {
+            if (sourceSize.height > maxSize.height) {
                 // Crop: Y
-                image = image.getSubimage(0, 0, sourceSize.width, previewSize.height);
+                image = image.getSubimage(0, 0, sourceSize.width, maxSize.height);
             }
-            if (isMailingPreview) {
-                // Align center
-                image = expandImage(image, previewSize.width, previewSize.height, new Color(0,0,0,0));
-            }
+            // Align center
+            image = expandImage(image, maxSize.width, maxSize.height, new Color(0,0,0,0));
         } else {
             // Scale: X (and Y with same factor)
 
-            double scale = ((double) previewSize.width / (double) sourceSize.width);
+            double scale = ((double) maxSize.width / (double) sourceSize.width);
             int paddingY = 0;
 
             // Scaled size
-            sourceSize = new Dimension(previewSize.width, (int) Math.round(sourceSize.height * scale));
+            sourceSize = new Dimension(maxSize.width, (int) Math.round(sourceSize.height * scale));
 
             Image scaledImage = image.getScaledInstance(sourceSize.width, sourceSize.height, Image.SCALE_SMOOTH);
-            image = new BufferedImage(previewSize.width, previewSize.height, BufferedImage.TYPE_INT_ARGB);
+            image = new BufferedImage(maxSize.width, maxSize.height, BufferedImage.TYPE_INT_ARGB);
 
-            if (sourceSize.height < previewSize.height && isMailingPreview) {
-                paddingY = (previewSize.height - sourceSize.height) / 2;
+            if (sourceSize.height < maxSize.height) {
+                paddingY = (maxSize.height - sourceSize.height) / 2;
             }
 
             Graphics2D graphics = image.createGraphics();
             graphics.setBackground(new Color(0,0,0,0));
-            graphics.clearRect(0, 0, previewSize.width, previewSize.height);
+            graphics.clearRect(0, 0, maxSize.width, maxSize.height);
             graphics.drawImage(scaledImage, 0, paddingY, null);
             graphics.dispose();
         }
@@ -330,25 +175,6 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
         }
 
         return image;
-    }
-
-    private Dimension getPreviewSize(Dimension maxSize, Dimension sourceSize, boolean isMailingPreview) {
-        if (isMailingPreview) {
-            return maxSize;
-        }
-
-        double scaleX = maxSize.getWidth() / sourceSize.getWidth();
-        double scaleY = maxSize.getHeight() / sourceSize.getHeight();
-
-        if (scaleX == scaleY) {
-            return maxSize;
-        }
-
-        if (scaleX < scaleY) {
-            return new Dimension(maxSize.width, (int) Math.round(scaleY * sourceSize.height));
-        } else {
-            return new Dimension((int) Math.round(scaleX * sourceSize.width), maxSize.height);
-        }
     }
 
     private BufferedImage expandImage(BufferedImage image, int newWidth, int newHeight, Color frameColor) {
@@ -374,69 +200,40 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
         return newImage;
     }
 
-    private String ensureUrlHasProtocol(String url) {
-        final String[] expectedProtocols = new String[] {"http:", "https:", "ftp:", "file:"};
-
-        boolean protocolOmitted = true;
-
-        for (String protocol : expectedProtocols) {
-            if (url.startsWith(protocol)) {
-                protocolOmitted = false;
-                break;
-            }
-        }
-
-        if (protocolOmitted) {
-            return "http://" + url;
-        }
-        return url;
-    }
-
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }
 
-    @Required
-    public void setRecipientDao(ComRecipientDao recipientDao) {
+    public void setRecipientDao(RecipientDao recipientDao) {
         this.recipientDao = recipientDao;
     }
 
-    @Required
     public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
         this.mailingComponentDao = mailingComponentDao;
     }
 
-    @Required
     public void setPreviewImageGenerationQueue(PreviewImageGenerationQueue previewImageGenerationQueue) {
         this.queue = previewImageGenerationQueue;
     }
 
-    @Required
     public void setMediaTypesService(MediaTypesService mediaTypesService) {
         this.mediaTypesService = mediaTypesService;
     }
 
-    @Override
-   	public void setServletContext(final ServletContext servletContext) {
-   		this.servletContext = Objects.requireNonNull(servletContext, "servletContext is null");
-   	}
-
     private class MailingPreviewTask implements PreviewImageGenerationTask {
-        private Admin admin;
-        private String sessionId;
-        private int companyId;
-        private int mailingId;
-        private int customerId;
-        private Mediatype mediaType;
 
-        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, Mediatype mediaType, Admin admin) {
+        private final String sessionId;
+        private final int companyId;
+        private final int mailingId;
+        private final int customerId;
+        private final Mediatype mediaType;
+
+        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, Mediatype mediaType) {
             this.sessionId = sessionId;
             this.companyId = companyId;
             this.mailingId = mailingId;
             this.customerId = customerId;
             this.mediaType = mediaType;
-            this.admin = admin;
         }
 
         @Override
@@ -448,7 +245,7 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
         public void run() {
             try {
                 Dimension maxSize = new Dimension(ThumbnailService.MAILING_THUMBNAIL_WIDTH, ThumbnailService.MAILING_THUMBNAIL_HEIGHT);
-                byte[] preview = generatePreview(getPreviewUrl(), maxSize, true, admin);
+                byte[] preview = generatePreview(getPreviewUrl(), maxSize, PUPPETEER_VIEWPORT_WIDTH);
 
                 List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, MailingComponentType.ThumbnailImage, false);
                 if (components.size() > 1) {
@@ -489,14 +286,13 @@ public class PreviewImageServiceImpl implements PreviewImageService, ServletCont
             }
 
             return baseUrl + "/mailing/preview/view-content.action;jsessionid=" + sessionId
-                    + "?format=" + getPreviewFormat()
+                    + "?internal=true&format=" + getPreviewFormat()
                     + "&customerID=" + customerId
                     + "&mailingId=" + mailingId;
         }
 
         private int getPreviewFormat() {
-            if (mediaType instanceof MediatypeEmail
-                    && ((MediatypeEmail) mediaType).getMailFormat() == MailingModel.Format.TEXT.getCode()) {
+            if (mediaType instanceof MediatypeEmail mediatypeEmail && mediatypeEmail.getMailFormat() == MailingModel.Format.TEXT.getCode()) {
                 return MailingPreviewHelper.INPUT_TYPE_TEXT; 
             }
             return mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaType().getMediaCode() + 1;

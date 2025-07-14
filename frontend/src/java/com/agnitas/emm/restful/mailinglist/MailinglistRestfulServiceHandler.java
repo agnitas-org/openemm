@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,14 +23,14 @@ import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.dao.UserStatus;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.MailinglistImpl;
+import com.agnitas.emm.common.UserStatus;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 
@@ -86,7 +86,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}

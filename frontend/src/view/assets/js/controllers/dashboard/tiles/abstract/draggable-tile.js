@@ -149,6 +149,10 @@
       return `dashboard-tile-${this.id}`;
     }
 
+    get shown() {
+      return this._$el?.is(':visible');
+    }
+
     toggleHighlight(isHovered) {
       this.$el.toggleClass('draggable-accept--hovered', isHovered);
     }

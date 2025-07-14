@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.impl.ViciousFormDataException;
-import org.agnitas.dao.EmmActionDao;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.beans.impl.ViciousFormDataException;
+import com.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.velocity.VelocitySpringUtils;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationContext;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
 
 /**
  * Bean extension of EMM (needed for trackable links)
@@ -102,7 +102,7 @@ public class UserFormImpl implements UserForm {
 	/**
 	 * holds all user form trackable links
 	 */
-	protected Map<String, ComTrackableUserFormLink> trackableLinks;
+	protected Map<String, TrackableUserFormLink> trackableLinks;
 	protected Date creationDate;
 	protected Date changeDate;
 	protected String successMimetype = "text/html"; // alternative: "application/json"
@@ -265,7 +265,7 @@ public class UserFormImpl implements UserForm {
      * @return Value of property startAction.
      */
     @Override
-	public org.agnitas.actions.EmmAction getStartAction() {
+	public EmmAction getStartAction() {
         return startAction;
     }
     
@@ -274,7 +274,7 @@ public class UserFormImpl implements UserForm {
      * @param startAction New value of property startAction.
      */
     @Override
-	public void setStartAction(org.agnitas.actions.EmmAction startAction) {
+	public void setStartAction(EmmAction startAction) {
         this.startAction = startAction;
     }
     
@@ -283,7 +283,7 @@ public class UserFormImpl implements UserForm {
      * @return Value of property endAction.
      */
     @Override
-	public org.agnitas.actions.EmmAction getEndAction() {
+	public EmmAction getEndAction() {
         return endAction;
     }
     
@@ -292,7 +292,7 @@ public class UserFormImpl implements UserForm {
      * @param endAction New value of property endAction.
      */
     @Override
-	public void setEndAction(org.agnitas.actions.EmmAction endAction) {
+	public void setEndAction(EmmAction endAction) {
         this.endAction = endAction;
     }
 
@@ -336,7 +336,7 @@ public class UserFormImpl implements UserForm {
         this.errorUseUrl = errorUseUrl;
     }
 
-    protected boolean evaluateAction(ApplicationContext con, org.agnitas.actions.EmmAction aAction, Map<String, Object> params, final EmmActionOperationErrors errors) {
+    protected boolean evaluateAction(ApplicationContext con, EmmAction aAction, Map<String, Object> params, final EmmActionOperationErrors errors) {
         if (aAction == null) {
             return true;
         }
@@ -410,7 +410,7 @@ public class UserFormImpl implements UserForm {
 		return evaluateFormResult(params, false, con);
 	}
     
-	private void evaluteTemplate(final Map<String, Object> params, final ApplicationContext applicationContext, final String template, final Writer writer) throws Exception {
+	private void evaluateTemplate(Map<String, Object> params, ApplicationContext applicationContext, String template, Writer writer) {
 		final VelocityWrapperFactory factory = VelocitySpringUtils.getVelocityWrapperFactory(applicationContext);
 		final VelocityWrapper velocity = factory.getWrapper(companyID);
 
@@ -421,7 +421,7 @@ public class UserFormImpl implements UserForm {
 	
 	private String evaluateResultUrl(final Map<String, Object> params, final ApplicationContext applicationContext, final String url) throws Exception {
 		try(final StringWriter writer = new StringWriter()) {
-			evaluteTemplate(params, applicationContext, url, writer);
+			evaluateTemplate(params, applicationContext, url, writer);
 			
 			writer.flush();
 			return writer.toString();
@@ -531,12 +531,12 @@ public class UserFormImpl implements UserForm {
 	}
 
 	@Override
-	public Map<String, ComTrackableUserFormLink> getTrackableLinks() {
+	public Map<String, TrackableUserFormLink> getTrackableLinks() {
 		return trackableLinks;
 	}
 
 	@Override
-	public void setTrackableLinks(Map<String, ComTrackableUserFormLink> trackableLinks) {
+	public void setTrackableLinks(Map<String, TrackableUserFormLink> trackableLinks) {
 		this.trackableLinks = trackableLinks;
 	}
 

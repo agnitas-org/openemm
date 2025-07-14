@@ -5,8 +5,8 @@
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="datasources" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.datasource.bean.DataSource>"--%>
-<%--@elvariable id="datasourceForm" type="com.agnitas.emm.core.datasource.form.DatasourceForm"--%>
+<%--@elvariable id="datasources" type="org.json.JSONArray"--%>
+<%--@elvariable id="datasourceForm" type="com.agnitas.web.forms.PaginationForm"--%>
 
 <mvc:form servletRelativeAction="/importexport/datasource/list.action"
           id="datasourceForm"
@@ -71,7 +71,9 @@
             <div class="js-data-table-body" data-web-storage="datasource-overview" style="height: 100%;"></div>
         </div>
 
-        <c:forEach var="entry" items="${datasources}">
+        <c:set var="dataSourcesList" value="${datasources.toList()}" />
+
+        <c:forEach var="entry" items="${dataSourcesList}">
             <c:url var="viewLink" value="/recipient/list.action?dataSourceId=${entry['id']}"/>
             <c:set target="${entry}" property="show" value="${viewLink}"/>
         </c:forEach>
@@ -94,7 +96,7 @@
                     "cellRenderer": "NotEscapedStringCellRenderer"
                 }
             ],
-            "data": ${datasources}
+            "data": ${emm:toJson(dataSourcesList)}
         }
         </script>
     </div>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,29 +12,29 @@ package com.agnitas.emm.util;
 
 import java.util.NoSuchElementException;
 
-/**
- * Sorting direction.
- */
 public enum SortDirection {
 	
-	/** Sort ascending. */
-	ASCENDING("asc"),
-	
-	/** Sort descending. */
-	DESCENDING("desc");
+	ASCENDING("asc", "default.order.ascending"),
+	DESCENDING("desc", "default.order.descending");
 	
 	private final String id;
+	private final String messageKey;
 	
-	SortDirection(final String id) {
+	SortDirection(String id, String messageKey) {
 		this.id = id;
-	}
+        this.messageKey = messageKey;
+    }
 	
-	public final String getId() {
+	public String getId() {
 		return this.id;
 	}
+
+	public String getMessageKey() {
+		return this.messageKey;
+	}
 	
-	public static final SortDirection fromId(final String id) {
-		for(final SortDirection direction : values()) {
+	public static SortDirection fromId(String id) {
+		for (SortDirection direction : values()) {
 			if(direction.id.equalsIgnoreCase(id)) {
 				return direction;
 			}
@@ -43,9 +43,9 @@ public enum SortDirection {
 		throw new NoSuchElementException();
 	}
 	
-	public static final SortDirection fromId(final String id, final SortDirection defaultValue) {
-		for(final SortDirection direction : values()) {
-			if(direction.id.equalsIgnoreCase(id)) {
+	public static SortDirection fromId(String id, SortDirection defaultValue) {
+		for(SortDirection direction : values()) {
+			if (direction.id.equalsIgnoreCase(id)) {
 				return direction;
 			}
 		}

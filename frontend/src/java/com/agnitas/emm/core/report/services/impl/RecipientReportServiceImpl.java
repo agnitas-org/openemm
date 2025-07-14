@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,8 @@
 
 package com.agnitas.emm.core.report.services.impl;
 
-import java.io.ByteArrayOutputStream;
+import static com.agnitas.messages.I18nString.getLocaleString;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -24,20 +25,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.util.CsvWriter;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.springframework.stereotype.Service;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.ComRecipientMailing;
-import com.agnitas.beans.ComRecipientReaction;
+import com.agnitas.beans.RecipientHistory;
+import com.agnitas.beans.RecipientMailing;
+import com.agnitas.beans.RecipientReaction;
 import com.agnitas.beans.WebtrackingHistoryEntry;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
 import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
@@ -66,11 +60,15 @@ import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.mapper.Mapper;
 import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
-import com.agnitas.messages.I18nString;
-
 import jakarta.annotation.Resource;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import com.agnitas.beans.Mailinglist;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.util.CsvWriter;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.stereotype.Service;
 
 @Service
 public class RecipientReportServiceImpl implements RecipientReportService {
@@ -78,7 +76,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     public static final String TXT_REPORT_FOOTER = "The data is stored on servers in Germany";
     
     @Resource
-    private ComBindingEntryDao bindingEntryDao;
+    private BindingEntryDao bindingEntryDao;
 
     @Resource
     private BindingEntryHistoryDao bindingEntryHistoryDao;
@@ -87,13 +85,13 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     private RecipientProfileHistoryDao recipientProfileHistoryDao;
 
     @Resource
-    private ComRecipientDao recipientDao;
+    private RecipientDao recipientDao;
 
     @Resource
     private ConfigService configService;
 
     @Resource
-    private CollectionConverter<RecipientBindingHistory, ComRecipientHistory> recipientHistoryConverter;
+    private CollectionConverter<RecipientBindingHistory, RecipientHistory> recipientHistoryConverter;
 
     @Resource
     private Mapper<RecipientEntity> recipientEntityMapper;
@@ -166,7 +164,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     private String getDeviceHistoryTxtTable(int recipientId, int companyId, Locale locale) {
-        List<ComRecipientReaction> deviceHistory = getDeviceHistory(recipientId, companyId);
+        List<RecipientReaction> deviceHistory = getDeviceHistory(recipientId, companyId);
         return txtTableGenerator.generate(recipientDeviceHistoryDtoConverter.convert(deviceHistory, locale), locale);
     }
 
@@ -176,12 +174,12 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     private String getMailingHistoryTxtTable(int recipientId, int companyId, Locale locale) {
-        List<ComRecipientMailing> mailingHistory = getMailingHistory(recipientId, companyId);
+        List<RecipientMailing> mailingHistory = getMailingHistory(recipientId, companyId);
         return txtTableGenerator.generate(recipientMailingHistoryDtoConverter.convert(mailingHistory, locale), locale);
     }
 
     private String getStatusHistoryTxtTable(int recipientId, int companyId, Locale locale) {
-        List<ComRecipientHistory> statusHistory = getStatusHistory(recipientId, companyId);
+        List<RecipientHistory> statusHistory = getStatusHistory(recipientId, companyId);
         return txtTableGenerator.generate(recipientStatusHistoryConverter.convert(statusHistory, locale), locale);
     }
 
@@ -226,7 +224,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     @Override
-    public List<ComRecipientHistory> getProfileHistory(int recipientId, int companyId) {
+    public List<RecipientHistory> getProfileHistory(int recipientId, int companyId) {
         if (configService.isRecipientProfileHistoryEnabled(companyId)) {
             return recipientProfileHistoryDao.listProfileFieldHistory(recipientId, companyId);
         }
@@ -234,18 +232,18 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     @Override
-    public List<ComRecipientHistory> getStatusHistory(int recipientId, int companyId) {
+    public List<RecipientHistory> getStatusHistory(int recipientId, int companyId) {
         List<RecipientBindingHistory> recipientBindingHistory = getBindingHistory(recipientId, companyId);
-        List<ComRecipientHistory> convertedBindingHistory = recipientHistoryConverter.convert(recipientBindingHistory);
-        List<ComRecipientHistory> recipientProfileHistory = getProfileHistory(recipientId, companyId);
-        List<ComRecipientHistory> unitedList = ListUtils.union(convertedBindingHistory, recipientProfileHistory);
-        unitedList.sort(Comparator.comparing(ComRecipientHistory::getChangeDate,
+        List<RecipientHistory> convertedBindingHistory = recipientHistoryConverter.convert(recipientBindingHistory);
+        List<RecipientHistory> recipientProfileHistory = getProfileHistory(recipientId, companyId);
+        List<RecipientHistory> unitedList = ListUtils.union(convertedBindingHistory, recipientProfileHistory);
+        unitedList.sort(Comparator.comparing(RecipientHistory::getChangeDate,
                 Comparator.nullsFirst(Comparator.naturalOrder())).reversed());
         return unitedList;
     }
 
     @Override
-    public List<ComRecipientMailing> getMailingHistory(int recipientId, int companyId) {
+    public List<RecipientMailing> getMailingHistory(int recipientId, int companyId) {
         return recipientDao.getMailingsDeliveredToRecipient(recipientId, companyId);
     }
 
@@ -258,7 +256,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     @Override
-    public List<ComRecipientReaction> getDeviceHistory(int recipientId, int companyId) {
+    public List<RecipientReaction> getDeviceHistory(int recipientId, int companyId) {
         return recipientDao.getRecipientReactionsHistory(recipientId, companyId);
     }
 
@@ -437,7 +435,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
         statuses.entrySet().stream()
                 .filter(statusEntry -> summed == SummedRecipientStatus.getNames().contains(statusEntry.getKey()))
                 .map(statusEntry -> getRecipientStatusJson(statusEntry.getKey(), statusEntry.getValue()))
-                .forEach(jsonArray::add);
+                .forEach(jsonArray::put);
         return jsonArray;
     }
 
@@ -449,27 +447,18 @@ public class RecipientReportServiceImpl implements RecipientReportService {
     }
 
     @Override
-    public byte[] getRecipientStatusesCSV(Admin admin, int mailingListId, int targetId) {
-        Map<String, Integer> statuses = getRecipientStatusStat(mailingListId, targetId, admin.getCompanyID());
-        Locale locale = admin.getLocale();
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
-            writeRecipientStatusesToCsv(csvWriter, statuses, locale);
-        } catch (Exception e) {
-            return new byte[0];
-        }
-        return outputStream.toByteArray();
+    public byte[] getRecipientStatusesCSV(Admin admin, int mailingListId, int targetId) throws Exception {
+        return CsvWriter.csv(ListUtils.union(
+            List.of(getRecipientStatusesHeaderForCsv(admin.getLocale())),
+            getRecipientStatusesRowsForCsv(mailingListId, targetId, admin.getCompanyID())));
     }
 
-    private void writeRecipientStatusesToCsv(CsvWriter csvWriter, Map<String, Integer> statuses, Locale locale) throws Exception {
-        csvWriter.writeValues(localStr("recipient.Remark", locale), localStr("Value", locale));
-        for (Map.Entry<String, Integer> status : statuses.entrySet()) {
-            csvWriter.writeValues(status.getKey(), status.getValue());
-        }
+    private List<String> getRecipientStatusesHeaderForCsv(Locale locale) {
+        return List.of(getLocaleString("recipient.Remark", locale), getLocaleString("Value", locale));
     }
 
-    private String localStr(String code, Locale locale) {
-        return I18nString.getLocaleString(code, locale);
+    private List<List<String>> getRecipientStatusesRowsForCsv(int mailingListId, int targetId, int companyId) {
+        return getRecipientStatusStat(mailingListId, targetId, companyId).entrySet().stream()
+            .map(status -> List.of(status.getKey(), String.valueOf(status.getValue()))).toList();
     }
 }

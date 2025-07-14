@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.dao.ImportRecipientsDao" %>
+<%@ page import="com.agnitas.dao.ImportRecipientsDao" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -7,8 +7,8 @@
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
-<%--@elvariable id="columns" type="org.agnitas.service.impl.CSVColumnState[]"--%>
-<%--@elvariable id="recipientList" type="org.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>>"--%>
+<%--@elvariable id="columns" type="com.agnitas.service.impl.CSVColumnState[]"--%>
+<%--@elvariable id="recipientList" type="com.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>>"--%>
 
 <c:set var="VALIDATOR_RESULT_RESERVED" value="<%= ImportRecipientsDao.VALIDATOR_RESULT_RESERVED %>"/>
 <c:set var="ERROR_EDIT_REASON_KEY_RESERVED" value="<%= ImportRecipientsDao.ERROR_EDIT_REASON_KEY_RESERVED %>"/>

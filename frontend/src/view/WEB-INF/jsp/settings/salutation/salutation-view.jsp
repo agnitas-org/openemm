@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" %>
-<%@ page import="org.agnitas.util.importvalues.Gender" %>
+<%@ page import="com.agnitas.util.importvalues.Gender" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>

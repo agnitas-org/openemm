@@ -37,7 +37,7 @@
 
 	<!-- ========================= GENERAL DEFINITIONS ========================= -->
 
-	<bean id="modelValidator" class="org.agnitas.emm.core.validator.ModelValidator">
+	<bean id="modelValidator" class="com.agnitas.emm.core.validator.ModelValidator">
 		<constructor-arg type="java.lang.String" value="validator-rules.xml" />
 		<constructor-arg type="java.lang.String" value="validator-messages" />
 	</bean>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,16 +10,13 @@
 
 package com.agnitas.beans;
 
-import org.agnitas.beans.MediaTypeStatus;
+import com.agnitas.beans.MediaTypeStatus;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface Mediatype {
-    int DB_SAVE_MODE_MAILING = 1;
-    
-    int DB_SAVE_MODE_TEMPLATE = 2;
-    
+
     static boolean isActive(Mediatype mediaType) {
         return mediaType != null && MediaTypeStatus.Active.getCode() == mediaType.getStatus();
     }
@@ -29,14 +26,14 @@ public interface Mediatype {
      *
      * @return Value of property param.
      */
-    String getParam() throws Exception;
+    String getParam();
 
     /**
      * Setter for property param.
      *
      * @param param New value of property param.
      */
-    void setParam(String param) throws Exception;
+    void setParam(String param);
 
     /**
      * Getter for property priority.
@@ -82,15 +79,12 @@ public interface Mediatype {
 
     void setTemplate(String template);
 
-    void syncTemplate(Mailing mailing, ApplicationContext con) throws Exception;
+    void syncTemplate(Mailing mailing, ApplicationContext con);
     
     /**
      * Makes a standalone copy of this mediatype without any references to this objects data
-     * 
-     * @return
-     * @throws Exception
      */
-    Mediatype copy() throws Exception;
+    Mediatype copy();
     
     MediaTypes getMediaType();
 }

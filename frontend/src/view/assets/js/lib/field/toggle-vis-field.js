@@ -23,7 +23,7 @@ To change this and specify a specific container you need to set the `data-field-
   <div class="d-flex flex-column gap-2" data-field="toggle-vis">
     <div>
       <label class="form-label">Control via Radiobuttons</label>
-      <div class="radio-switch">
+      <div class="switch">
         <input type="radio" id="radio-hide" name="combinator" value="1" checked data-field-vis="" data-field-vis-hide="#exampleRadioTarget" />
         <label for="radio-hide">HIDE</label>
         <input type="radio" id="radio-show" name="combinator" value="0" data-field-vis="" data-field-vis-show="#exampleRadioTarget" />
@@ -158,8 +158,8 @@ To change this and specify a specific container you need to set the `data-field-
         $el.hide();
 
         if ($el.data('select2')) {
-          $el.select2("container").hide();
-          $el.select2("enable", false)
+          $el.next('.select2-container').hide();
+          AGN.Lib.CoreInitializer.run('select', $el.parents('select'));
         }
 
         if ($el.is('option')) {
@@ -180,8 +180,8 @@ To change this and specify a specific container you need to set the `data-field-
         $el.show();
 
         if ($el.data('select2')) {
-          $el.select2("container").show();
-          $el.select2("enable", true)
+          $el.next('.select2-container').show();
+          AGN.Lib.CoreInitializer.run('select', $el.parents('select'));
         }
 
         if ($el.is('option')) {

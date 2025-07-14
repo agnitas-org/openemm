@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,9 +10,11 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.emm.core.components.service.MailingSendService.DeliveryType;
-
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+
+import com.agnitas.emm.core.components.service.MailingSendService.DeliveryType;
 
 public class MailingSendOptions {
 
@@ -35,7 +37,7 @@ public class MailingSendOptions {
     private boolean reportSendAfter48h;
     private boolean reportSendAfter1Week;
     private boolean requestApproval; // GWUA-5738
-    private String reportSendEmail;
+    private List<String> reportEmails;
 
     public static Builder builder() {
         return new Builder();
@@ -104,8 +106,8 @@ public class MailingSendOptions {
         return reportSendAfter1Week;
     }
 
-    public String getReportSendEmail() {
-        return reportSendEmail;
+    public List<String> getReportEmails() {
+        return reportEmails;
     }
 
     public DeliveryType getDeliveryType() {
@@ -146,9 +148,9 @@ public class MailingSendOptions {
         private boolean reportSendAfter24h;
         private boolean reportSendAfter48h;
         private boolean reportSendAfter1Week;
-        private String reportSendEmail;
         private DeliveryType deliveryType;
         private boolean requestApproval; // GWUA-5738
+        private List<String> reportEmails;
 
         public Builder setDate(Date date) {
             this.date = date;
@@ -225,8 +227,8 @@ public class MailingSendOptions {
             return this;
         }
 
-        public Builder setReportSendEmail(String reportSendEmail) {
-            this.reportSendEmail = reportSendEmail;
+        public Builder setReportEmails(List<String> reportEmails) {
+            this.reportEmails = reportEmails;
             return this;
         }
 
@@ -268,7 +270,7 @@ public class MailingSendOptions {
             options.reportSendAfter24h = reportSendAfter24h;
             options.reportSendAfter48h = reportSendAfter48h;
             options.reportSendAfter1Week = reportSendAfter1Week;
-            options.reportSendEmail = reportSendEmail;
+            options.reportEmails = reportEmails == null ? Collections.emptyList() : reportEmails;
             options.deliveryType = deliveryType;
             options.isActivateAgainToday = isActivateAgainToday;
             options.overwriteTestRecipientId = overwriteTestRecipientId;

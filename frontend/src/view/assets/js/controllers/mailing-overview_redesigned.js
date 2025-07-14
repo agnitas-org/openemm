@@ -5,7 +5,7 @@ AGN.Lib.Controller.new('mailing-overview', function () {
 
   const BADGES_FILTERS = [
     {key: 'isgrid', text: t('mailing.default.grid'), class: 'mailing.status.emc'},
-    {key: 'isCampaignManager', text: t('workflow.icon'), class: 'mailing.status.cm'}
+    {key: 'isCampaignManager', text: t('workflow.campaign'), class: 'mailing.status.cm'}
   ];
 
   this.addDomInitializer('mailing-overview', function () {

@@ -22,20 +22,8 @@
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
 <emm:HideByPermission token="mailing.editor.hide">
-    <c:choose>
-        <c:when test="${emm:fullPackAllowed(pageContext.request)}">
-            <c:set var="toolbarType" value="Full"/>
-        </c:when>
-        <c:when test="${emm:isCKEditorTrimmed(pageContext.request)}">
-            <c:set var="toolbarType" value="Trimmed"/>
-        </c:when>
-        <c:otherwise>
-            <c:set var="toolbarType" value="EMM"/>
-        </c:otherwise>
-    </c:choose>
-
     <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
-        <jsp:param name="toolbarType" value="${toolbarType}"/>
+        <jsp:param name="toolbarType" value="${emm:getWysiwygToolbarType(pageContext.request, 'EMM')}"/>
         <jsp:param name="showAiTextGenerationBtn" value="${isContentGenerationAllowed}"/>
     </jsp:include>
 </emm:HideByPermission>

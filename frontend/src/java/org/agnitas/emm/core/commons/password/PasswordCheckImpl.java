@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,8 +17,6 @@ import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
 import org.agnitas.emm.core.commons.password.util.PasswordCheckUtil;
 import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.messages.Message;
@@ -116,12 +114,10 @@ public class PasswordCheckImpl implements PasswordCheck {
 	}
 
 	// ---------------------------------------------------------------------------------------------------- Dependency Injection
-	@Required
 	public final void setAdminService(final AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");
 	}
 	
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service is null");
 	}

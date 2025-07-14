@@ -29,7 +29,7 @@
             </c:choose>
 
             <c:if test="${isDropdownBtn}">
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu--select">
                     <c:forEach items="${item['dropDownItems']}" var="itemListOption">
                         <c:set var="itemOption" value="${itemListOption.value}" />
 

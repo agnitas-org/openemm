@@ -6,14 +6,14 @@
 }
 
 @mixin collapsedNavbar() {
-  background-color: var(--main-bg-color);
+  background-color: $body-bg-var;
   position: absolute;
   top: 35px;
   left: -1px;
   min-width: calc(100% + 2px);
   border: $border-default;
   border-radius: $border-radius;
-  padding: $gap-sm;
+  padding: $gap-x-sm;
 
   .navbar-nav {
     border: $border-default;
@@ -28,7 +28,7 @@
       font-size: 1rem;
       text-align: left;
       &:not(.active):not(:hover) {
-        color: var(--text-color-default);
+        color: $body-color-var;
       }
     }
 
@@ -52,8 +52,48 @@
   }
 }
 
+.btn-header-tab {
+  @include button-outline-variant($dark-grey, $white, $blue, $blue, $white);
+  height: 30px;
+  --bs-btn-disabled-bg: var(--base-disabled-bg);
+  --bs-btn-border-color: #{$border-color-var};
+}
+
+@include color-mode(dark) {
+  .btn-header-tab {
+    --bs-btn-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .btn-header-tab {
+    @include button-outline-variant($dark-grey, $white, $con-blue, $con-blue, $white);
+    --bs-btn-disabled-bg: var(--base-disabled-bg);
+    --bs-btn-border-color: #{$border-color-var};
+
+    &:disabled, &.disabled {
+      --navbar-color: var(--base-disabled-color);
+    }
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .btn-header-tab {
+    @include button-outline-variant($white, $con-dark-blue, $con-light-blue, $con-light-blue, $con-dark-blue);
+    --bs-btn-disabled-bg: var(--base-disabled-bg);
+    --bs-btn-border-color: #{$border-color-var};
+
+    &:disabled, &.disabled {
+      --navbar-color: var(--base-disabled-color);
+    }
+  }
+}
+
 .navbar {
-  @extend .rounded;
+  --navbar-color: #{$dark-grey};
+  --navbar-toggler-color: #{$gray-600};
+
+  border-radius: $border-radius;
   width: 100%;
 
   .navbar-nav {
@@ -75,7 +115,7 @@
 
       .btn {
         border-radius: 0;
-        padding-block: 5px;
+        padding: $gap-x-sm $gap-sm;
         width: 100%;
 
         &:not(.active):not(:hover) {
@@ -88,13 +128,17 @@
         &.active, &:hover {
           @include navbar-active-tab-switch;
         }
+
+        @include mobile {
+          justify-content: left;
+        }
       }
 
       &:last-child .btn {
         @include border-end-radius;
 
         &:not(.active):not(:hover) {
-          border-right: $border-default;
+          border-right: 1px solid $light-grey;
         }
       }
 
@@ -102,7 +146,7 @@
         @include border-start-radius;
 
         &:not(.active):not(:hover) {
-          border-left: $border-default;
+          border-left: 1px solid $light-grey;
         }
       }
     }
@@ -110,12 +154,15 @@
 
   .navbar-toggler {
     @include border-start-radius(0);
-    border-color: $border-color;
-    color: var(--text-dark-gray-color);
+    @include border-end-radius($gap-sm);
+    border-left: none;
+    border-color: $border-color-var;
+    color: var(--navbar-toggler-color);
+    outline: none;
+    box-shadow: none !important;
   }
   
-  .chosen-tab {
-    color: $white;
+  > .btn-header-tab:first-child {
     flex-grow: 1;
     @include border-start-radius;
     @include border-end-radius(0);
@@ -125,7 +172,7 @@
   }
 
   &.navbar-expand-lg {
-    .chosen-tab {
+    > .btn-header-tab:first-child {
       @include media-breakpoint-up(lg) {
         display: none;
       }
@@ -135,7 +182,7 @@
   .navbar-collapse {
     transition: none;
     height: min-content;
-    
+
     &:not(.show) {
       border: none;
     }
@@ -156,6 +203,37 @@
   }
   
   .offcanvas-backdrop {
-    opacity: 0; // hide dark backdrop when collapsed nabbar opened on mobile
+    opacity: 0; // hide dark backdrop when collapsed navbar opened on mobile
+  }
+
+  @include mobile {
+
+    &.tile-header {
+      gap: 0;
+
+      .navbar-toggler {
+        border: none;
+      }
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .navbar {
+    --navbar-color: #{$light-grey};
+    --navbar-toggler-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .navbar {
+    --navbar-toggler-color: #{$body-bg-dark};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .navbar {
+    --navbar-color: #{$white};
+    --navbar-toggler-color: #{$white};
   }
 }

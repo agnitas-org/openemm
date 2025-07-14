@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>

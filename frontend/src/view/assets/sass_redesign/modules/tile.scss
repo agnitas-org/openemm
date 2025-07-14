@@ -33,11 +33,14 @@ parent: tiles
 This is a full example showcasing what eventually makes up a complete tile.
 
 ```htmlexample
-<div class="tile">
+<div class="tile" data-toggle-tile>
     <div class="tile-header">
-        <h1 class="tile-title">Headline</h1>
+        <h1 class="tile-title">
+            <i class="icon icon-caret-up"></i>
+            Headline
+        </h1>
         <div class="tile-title-controls">
-            <label class="text-switch">
+            <label class="switch">
                 <input type="checkbox">
                 <span>Basic</span>
                 <span>Advanced</span>
@@ -45,12 +48,15 @@ This is a full example showcasing what eventually makes up a complete tile.
         </div>
 
         <div class="tile-controls">
-            <a class="btn btn-icon btn-inverse">
+            <a class="btn btn-icon btn-secondary">
                 <i class="icon icon-sync"></i>
             </a>
             <a class="btn btn-icon btn-primary">
                 <i class="icon icon-search"></i>
             </a>
+            <button type="button" class="btn btn-icon btn-secondary" data-full-screen>
+                <i class="icon icon-expand-arrows-alt"></i>
+            </button>
         </div>
     </div>
     <div class="tile-body row g-3">
@@ -152,7 +158,7 @@ This area is very flexible and can store different types of elements. It can con
 <div class="tile">
     <div class="tile-header">
         <div class="tile-title-controls">
-            <label class="icon-switch">
+            <label class="switch">
                 <input type="checkbox">
                 <i class="icon icon-image"></i>
                 <i class="icon icon-th-list"></i>
@@ -168,7 +174,7 @@ This area is very flexible and can store different types of elements. It can con
             </select>
 
             <nav class="navbar navbar-expand-lg">
-                <a class="chosen-tab btn btn-primary w-0" href="#"><span class="text text-truncate">Tab 1</span></a>
+                <a class="btn btn-header-tab active w-0" href="#"><span class="text text-truncate">Tab 1</span></a>
                 <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#tile-title-nav" aria-controls="tile-title-nav" aria-expanded="false">
                     <i class="icon icon-bars"></i>
                 </button>
@@ -548,7 +554,7 @@ To use it you need to add a class `.tile--msg`.
 <div class="systempage" style="height: 350px;">
     <div class="tile tile--msg tile--alert">
         <div class="tile-header">
-            <img alt="error-img" src="/assets/core/images/facelift/errors_error-500.svg">
+            <svg><use href="/assets/core/images/facelift/sprite.svg#errors_error-500"></use></svg>
             <h1>500 - Error</h1>
         </div>
         <div class="tile-body">
@@ -564,9 +570,69 @@ To use it you need to add a class `.tile--msg`.
 ```
 */
 
+/*doc
+---
+title: Expand / Collapse tile
+name: tiles_16_full-screen
+parent: tiles
+---
+
+Use `[data-full-screen]` in order to expand the tile to fill the entire browser window.
+
+Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, leaving only the header visible.
+
+<small class="text-muted">
+    With `.mobile-hidden` near `.icon-caret-up` the tile will be collapsable on mobile only.
+    If the browser window reaches the size of the desktop, the collapse will be automatically ignored. Resize window to see it in action.
+</small>
+
+```htmlexample
+<div class="tile" data-toggle-tile>
+    <div class="tile-header">
+        <h1 class="tile-title">
+          <i class="icon icon-caret-up"></i>
+          <span>I am stay when I or this caret icon on the left is clicked</span>
+        </h1>
+        <div class="tile-controls">
+            <button type="button" class="btn btn-icon btn-secondary" data-full-screen>
+                <i class="icon icon-expand-arrows-alt"></i>
+            </button>
+        </div>
+    </div>
+    <div class="tile-body border-top border-bottom">
+        I am hidden when tile title clicked
+    </div>
+    <div class="tile-footer">
+        I am also hidden when tile title clicked
+    </div>
+</div>
+
+<div class="tile mt-3" data-toggle-tile>
+    <div class="tile-header">
+        <h1 class="tile-title">
+          <i class="icon icon-caret-up mobile-visible"></i>
+          <span>If you shrink the browser window to the mobile size, you can see the icon on the left</span>
+        </h1>
+    </div>
+    <div class="tile-body border-top border-bottom">
+        <p>I am hidden when tile header is pressed (except controls), but only on mobile size</p>
+        <p>Anyway, if you resize browser window to desktop size back, I'll still be visible</p>
+    </div>
+</div>
+```
+*/
+
 .tile {
+  --tile-title-color: #{$dark-blue};
+  --tile-title-grey-color: #{$dark-grey};
+  --tile-footer-bg: #{$x-light-grey};
+  --tile-footer-color: inherit;
+  --tile-highlighted-header-bg: #{$gray-100};
+  --tile-highlighted-header-color: #{$dark-grey};
+  --tile-variant-color: #{$white};
+
   @extend .card;
-  border-color: var(--bs-border-color);
+  border-color: $border-color-var;
   height: 100%;
   overflow: hidden;
 
@@ -574,31 +640,142 @@ To use it you need to add a class `.tile--msg`.
     margin-bottom: 0;
   }
 
+  nav.tile-header {
+    padding: 0;
+    flex: 0;
+    border-radius: 0;
+
+    .btn {
+      border: none !important;
+      border-radius: 0 !important;
+    }
+  }
+
   .tile-body {
     @extend .card-body;
     @include hide-scroll;
-    color: var(--text-color-default);
+    color: $body-color-var;
     padding: $tile-body-spacer;
     position: relative;
 
     &.tile-body--js-editor {
       padding: 0;
       min-height: 250px;
+      display: grid; // FF fix
+    }
+
+    @include mobile {
+      padding: $gap-sm;
+      gap: $gap-sm;
     }
   }
 
-  @include mobile {
-    &.collapsed-mobile {
-      .tile-body {
-        display: none;
+  $collapse-mobile-only: '.tile-title > i.icon-caret-up.mobile-visible, .tile-title > i.icon-caret-down.mobile-visible';
+
+  &--collapsed {
+    .tile-header {
+      border-bottom: none !important;
+    }
+
+    height: max-content;
+    flex: none;
+
+    &:has(#{$collapse-mobile-only}) {
+      height: initial;
+
+      @include mobile {
+        .tile-body, .tile-footer {
+          display: none !important;
+        }
+      }
+    }
+
+    &:not(:has(#{$collapse-mobile-only})) {
+      .tile-body, .tile-footer {
+        display: none !important;
       }
     }
   }
 
-  &.collapsed {
-    .tile-body {
+  &--full-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    border-radius: 0;
+    border: 0;
+
+    .tile-title i:first-child {
       display: none;
     }
+
+    .tile-body {
+      height: 100%;
+    }
+
+    &:not(:has(#{$collapse-mobile-only})) {
+      .tile-body, .tile-footer {
+        display: flex !important;
+      }
+    }
+
+    .tile-header, .tile-footer {
+      border-radius: 0;
+    }
+  }
+
+  &--switchable {
+
+    .tile-header {
+      justify-content: unset;
+      gap: $gap-x-sm;
+      color: var(--tile-title-grey-color);
+      flex-basis: 30px;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      padding: $gap-x-sm $gap-md;
+    }
+
+    .tile-body {
+      padding: $gap-sm;
+      border-top: $border-default;
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .tile {
+    --tile-title-color: #{$light-blue};
+    --tile-title-grey-color: #{$light-grey};
+    --tile-footer-bg: #{$grey-blue};
+    --tile-highlighted-header-bg: #{$grey-blue};
+    --tile-highlighted-header-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .tile {
+    --tile-title-color: #{$con-dark-blue};
+    --tile-title-grey-color: var(--tile-title-color);
+    --tile-highlighted-header-bg: #{$con-grey};
+    --tile-highlighted-header-color: #{$con-dark-blue};
+    --tile-variant-color: #{$con-dark-blue};
+    --tile-footer-bg: #{$con-light-blue};
+    --tile-footer-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .tile {
+    --tile-title-color: #{$white};
+    --tile-title-grey-color: var(--tile-title-color);
+    --tile-footer-bg: #{$con-light-blue};
+    --tile-highlighted-header-bg: #{$dark-grey};
+    --tile-highlighted-header-color: #{$white};
+    --tile-variant-color: #{$con-dark-blue};
+    --tile-footer-color: #{$con-dark-blue};
   }
 }
 
@@ -610,25 +787,29 @@ To use it you need to add a class `.tile--msg`.
   justify-content: space-between;
 
   border-bottom: none;
-  flex: 0 0 $tile-header-height;
+  flex: 0 0 40px;
   background-color: transparent;
   padding: $gap-sm $gap $gap-x-sm $gap;
 
   @include mobile {
-    padding-left: $gap-sm;
-    padding-right: $gap-x-sm;
+    padding: $gap-sm;
+    gap: $gap-sm;
   }
 }
 
 .tile-title {
   @include flex-row($gap-sm);
   align-items: center;
-  font-weight: 500;
+  font-weight: $font-weight-medium;
   color: var(--tile-title-color);
   overflow: hidden; // for text truncation
 
   &.text-truncate {
     display: block;
+  }
+
+  &--grey {
+    color: var(--tile-title-grey-color);
   }
 }
 
@@ -642,16 +823,6 @@ To use it you need to add a class `.tile--msg`.
   @include flex-row($gap-sm);
   align-items: center;
   min-width: 0;
-
-  @include mobile {
-    .btn-icon:not(.btn-select-control) {
-      @include size(40px);
-
-      i {
-        font-size: $font-size-xl;
-      }
-    }
-  }
 
   .form-check-label {
     font-weight: normal;
@@ -676,7 +847,8 @@ To use it you need to add a class `.tile--msg`.
   border-top: 0;
   padding: $gap-x-sm $gap-sm;
   margin: 0;
-  background-color: var(--tile-footer-bg-color);
+  color: var(--tile-footer-color);
+  background-color: var(--tile-footer-bg);
   display: grid;
 
   &.tile-footer--loader {
@@ -711,7 +883,7 @@ To use it you need to add a class `.tile--msg`.
 
 .tile--xs {
   > .tile-header {
-    color: var(--text-color-default);
+    color: $body-color-var;
     flex-basis: 30px;
     padding: 0 $gap-sm;
     gap: $gap-x-sm;
@@ -728,7 +900,7 @@ To use it you need to add a class `.tile--msg`.
 
 .tile--sm {
   > .tile-header {
-    color: var(--text-color-default);
+    color: $body-color-var;
     flex-basis: 40px;
     padding: 0 $gap-sm;
   }
@@ -740,7 +912,7 @@ To use it you need to add a class `.tile--msg`.
 
 .tile--md {
   > .tile-header {
-    color: var(--text-color-default);
+    color: $body-color-var;
     padding: 0 $gap-md;
   }
 
@@ -752,6 +924,18 @@ To use it you need to add a class `.tile--msg`.
     &.tile-footer--buttons {
       padding: $gap-sm;
     }
+  }
+}
+
+.tile--headless {
+  border: none;
+
+  > .tile-header {
+    padding-inline: 0;
+  }
+
+  > .tile-body {
+    @include border;
   }
 }
 
@@ -786,11 +970,11 @@ To use it you need to add a class `.tile--msg`.
     border-color: $color;
 
     .tile-header {
-      color: $white;
+      color: var(--tile-variant-color);
       background-color: $color;
 
       .tile-title {
-        color: $white;
+        color: var(--tile-variant-color);
       }
     }
   }
@@ -805,12 +989,12 @@ To use it you need to add a class `.tile--msg`.
 
 .tile--highlighted {
   .tile-header {
-    background-color: var(--tile-highlighted-header-bg-color);
+    background-color: var(--tile-highlighted-header-bg);
     border-bottom: $border-default;
   }
 
   .tile-title {
-    color: var(--text-dark-gray-color);
+    color: var(--tile-highlighted-header-color);
   }
 }
 
@@ -834,7 +1018,7 @@ To use it you need to add a class `.tile--msg`.
     @include flex-column($gap);
     padding: $gap;
 
-    img {
+    img, svg {
       max-height: 100px;
     }
   }

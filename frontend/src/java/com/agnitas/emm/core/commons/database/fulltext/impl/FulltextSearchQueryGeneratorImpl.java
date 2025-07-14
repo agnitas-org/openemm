@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,11 +23,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.agnitas.messages.Message;
-import org.agnitas.util.FulltextSearchInvalidQueryException;
-import org.agnitas.util.FulltextSearchQueryException;
+import com.agnitas.util.FulltextSearchInvalidQueryException;
+import com.agnitas.util.FulltextSearchQueryException;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
 import com.agnitas.emm.core.commons.database.fulltext.operator.Operator;
@@ -241,17 +239,14 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         return escapedQuery.toString();
     }
 
-    @Required
     public void setOperators(Map<String, Operator> operators) {
         this.operators = operators;
     }
 
-    @Required
     public void setWordProcessors(Set<WordProcessor> wordProcessors) {
         this.wordProcessors = wordProcessors;
     }
 
-    @Required
     public void setReservedLiteralsConfig(FulltextSearchReservedLiteralsConfig reservedLiteralsConfig) {
         this.reservedLiteralsConfig = reservedLiteralsConfig;
     }

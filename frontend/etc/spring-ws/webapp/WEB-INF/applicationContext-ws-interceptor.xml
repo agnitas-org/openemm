@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:sws="http://www.springframework.org/schema/web-services"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+						http://www.springframework.org/schema/context
+						http://www.springframework.org/schema/context/spring-context-2.5.xsd
+						http://www.springframework.org/schema/aop
+                        http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                        http://www.springframework.org/schema/tx
+                        http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                        http://www.springframework.org/schema/web-services
+                        http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
+
+
+    <bean id="xsdSchema" class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
+        <property name="xsds">
+            <list>
+                <value>OpenEmm.xsd</value>
+                <value>Emm.xsd</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
+        <property name="throttlingService" ref="throttlingService"/>
+        <property name="securityContextAccess" ref="securityContextAccess" />
+    </bean>
+
+    <bean id="schemaValidatingInterceptor" class="org.springframework.ws.soap.server.endpoint.interceptor.PayloadValidatingInterceptor">
+        <property name="xsdSchemaCollection" ref="xsdSchema" />
+        <property name="validateRequest" value="false" />
+        <property name="validateResponse" value="true" />
+    </bean>
+
+    <!--
+    Security interceptor with login tracking.
+
+    If server load is too high and no login tracking is required, one can use
+    the security interceptor above.
+-->
+    <bean id="wsSecurityInterceptor" class="com.agnitas.emm.springws.security.LoginTrackingXwsSecurityInterceptor">
+        <property name="validationActions" value="UsernameToken" />
+        <property name="validationCallbackHandler" ref="springSecurityHandler"/>
+
+        <property name="loginTrackService" ref="WsLoginTrackService" />
+        <property name="configService" ref="ConfigService" />
+    </bean>
+
+    <bean id="payloadLoggingInterceptor" class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
+
+
+
+    <bean id="permissionInterceptor" class="com.agnitas.emm.springws.permissions.PermissionCheckingEndpointInterceptor" />
+
+    <context:annotation-config/>
+
+</beans>

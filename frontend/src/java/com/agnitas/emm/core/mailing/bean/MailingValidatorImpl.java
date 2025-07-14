@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,13 +17,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.preview.AgnTagError;
-import org.agnitas.preview.PreviewHelper;
-import org.agnitas.preview.TAGCheck;
-import org.agnitas.preview.TAGCheckFactory;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.DynTagException;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.preview.AgnTagError;
+import com.agnitas.preview.PreviewHelper;
+import com.agnitas.preview.TAGCheck;
+import com.agnitas.preview.TAGCheckFactory;
+import com.agnitas.util.AgnTagUtils;
+import com.agnitas.util.DynTagException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +37,7 @@ import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
-import com.agnitas.web.ComMailingContentChecker;
+import com.agnitas.web.MailingContentChecker;
 import com.agnitas.web.mvc.Popups;
 
 @Component
@@ -77,7 +77,7 @@ public class MailingValidatorImpl implements MailingValidator {
                 }
             }
         });
-        ComMailingContentChecker.checkHtmlWarningConditions(mailing, popups);
+        MailingContentChecker.checkHtmlWarningConditions(mailing, popups);
     }
 
     @Override

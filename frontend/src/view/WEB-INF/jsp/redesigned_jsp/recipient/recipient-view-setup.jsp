@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.web.forms.FormSearchParams" %>
+<%@ page import="com.agnitas.web.forms.FormSearchParams" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -9,6 +9,7 @@
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientForm"--%>
 <%--@elvariable id="isSaveButtonDisabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="recipientMention" type="java.lang.String"--%>
 
 <c:url var="recipientsOverviewLink" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
@@ -44,21 +45,6 @@
 				<c:set var="agnNavigationKey" value="subscriber_editor_no_mailtracking" scope="request" />
 		    </c:otherwise>
 		</c:choose>
-        
-        <c:choose>
-            <c:when test="${not empty form.firstname and not empty form.lastname}">
-                <c:set var="recipientMention" value="${form.firstname} ${form.lastname}"/>
-            </c:when>
-            <c:when test="${not empty form.firstname}">
-                <c:set var="recipientMention" value="${form.firstname}"/>
-            </c:when>
-            <c:when test="${not empty form.lastname}">
-                <c:set var="recipientMention" value="${form.lastname}"/>
-            </c:when>
-            <c:otherwise>
-                <c:set var="recipientMention" value="${form.email}"/>
-            </c:otherwise>
-        </c:choose>
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

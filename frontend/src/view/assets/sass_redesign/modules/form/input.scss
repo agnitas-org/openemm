@@ -37,10 +37,6 @@ parent: checkboxes
 $input-height: 30px;
 
 .form-control {
-  &, &:focus {
-    background-color: var(--main-bg-color);
-    color: var(--text-color-default);
-  }
   // Disabled and read-only inputs
   //
   // HTML5 says that controls under a fieldset > legend:first-child won't be
@@ -49,16 +45,14 @@ $input-height: 30px;
   &[disabled],
   &[readonly],
   fieldset[disabled] & {
-    color: var(--input-disabled-color);
-    background-color: var(--input-disabled-bg-color);
+    color: var(--base-disabled-color);
+    background-color: var(--base-disabled-bg);
     cursor: not-allowed;
     opacity: 1; // iOS fix for unreadable disabled content
   }
 }
 
 .form-label {
-  color: var(--label-color);
-
   &.text-truncate {
     display: block;
     max-width: min-content;
@@ -75,12 +69,46 @@ input.form-control {
 }
 
 .form-check-input {
+  --checkbox-checked-bg: #{$blue};
+  --checkbox-border-color: #{$dark-grey};
+
   cursor: pointer;
   border-color: var(--checkbox-border-color);
-  background-color: var(--main-bg-color);
 
-  &:disabled {
-    background-color: var(--input-disabled-bg-color);
+  &:disabled, &[readoly] {
+    background-color: var(--base-disabled-bg);
+  }
+
+  &[readonly] {
+    pointer-events: none;
+  }
+}
+
+@include color-mode(dark) {
+  .form-check-input {
+    --checkbox-border-color: #{$border-color-var};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .form-check-input {
+    --checkbox-border-color: #{$border-color-var};
+    --checkbox-checked-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .form-check-input {
+    --checkbox-border-color: #{$border-color-var};
+    --checkbox-checked-bg: #{$white};
+
+    &:checked[type=checkbox] {
+      --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%2306101f' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    }
+
+    &[type=checkbox]:indeterminate {
+      --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%2306101f' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+    }
   }
 }
 

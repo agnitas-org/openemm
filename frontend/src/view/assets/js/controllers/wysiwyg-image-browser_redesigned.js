@@ -1,9 +1,7 @@
-
 AGN.Lib.Controller.new('wysiwyg-image-browser', function () {
 
   let config;
 
-  const funcNum = getUrlParam('CKEditorFuncNum');
   const mailingId = getUrlParam('mailingID');
 
   function getUrlParam(paramName) {
@@ -65,7 +63,12 @@ AGN.Lib.Controller.new('wysiwyg-image-browser', function () {
   }
   
   function submitLink(link) {
-    window.opener.CKEDITOR.tools.callFunction(funcNum, link);
+    if (window.opener.Jodit) {
+      const editorId = getUrlParam('editorId');
+      window.opener.AGN.Lib.Messaging.send(`image-browser:selectedLink:${editorId}`, link);
+    } else {
+      window.opener.CKEDITOR.tools.callFunction(getUrlParam('CKEditorFuncNum'), link);
+    }
     window.close();
   }
 

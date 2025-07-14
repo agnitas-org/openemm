@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,41 +10,35 @@
 
 package com.agnitas.emm.core.recipient.dao.impl;
 
+import com.agnitas.beans.RecipientHistory;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.RecipientHistoryImpl;
+import com.agnitas.emm.core.recipient.CannotUseViewsException;
+import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.DbUtilities;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.DbUtilities;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.impl.ComRecipientHistoryImpl;
-import com.agnitas.emm.core.recipient.CannotUseViewsException;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
-import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
 
 /**
  * Implementation of {@link RecipientProfileHistoryDao} interface.
  */
 public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements RecipientProfileHistoryDao {
 
-	/** The logger. */
-	private static final Logger logger = LogManager.getLogger(RecipientProfileHistoryDaoImpl.class);
-	
 	/**
 	 * Implementation of {@link RowMapper} for profile field history.
 	 */
-	private static class HistoryRowMapper implements RowMapper<ComRecipientHistory> {
+	private static class HistoryRowMapper implements RowMapper<RecipientHistory> {
 		@Override
-		public ComRecipientHistory mapRow(ResultSet resultSet, int row) throws SQLException {
-			ComRecipientHistoryImpl history = new ComRecipientHistoryImpl();
+		public RecipientHistory mapRow(ResultSet resultSet, int row) throws SQLException {
+			RecipientHistoryImpl history = new RecipientHistoryImpl();
 
 			history.setChangeDate(resultSet.getTimestamp("change_date"));
 			history.setFieldName(resultSet.getString("name"));
@@ -103,14 +97,14 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 	}
 
 	@Override
-	public void afterProfileFieldStructureModification(final int companyID, final List<ProfileField> profileFields) throws RecipientProfileHistoryException {
+	public void afterProfileFieldStructureModification(int companyID, List<ProfileField> profileFields) {
 		createOrReplaceTrigger(TriggerEvent.INSERT, companyID, profileFields);
 		createOrReplaceTrigger(TriggerEvent.UPDATE, companyID, profileFields);
 		createOrReplaceTrigger(TriggerEvent.DELETE, companyID, profileFields);
 	}
 
 	@Override
-	public List<ComRecipientHistory> listProfileFieldHistory(final int recipientID, final int companyID) {
+	public List<RecipientHistory> listProfileFieldHistory(final int recipientID, final int companyID) {
 		String recipientHistoryTable = buildHistoryTableName(companyID);
 		boolean isRecipientHistoryTableExist = DbUtilities.checkIfTableOrSynonymExists(getDataSource(), recipientHistoryTable);
 
@@ -120,7 +114,7 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 					" WHERE customer_id = ?" +
 					" ORDER BY change_date ASC";
 
-			return select(logger, sql, new HistoryRowMapper(), recipientID);
+			return select(sql, new HistoryRowMapper(), recipientID);
 		}
 
 		return Collections.emptyList();
@@ -139,9 +133,9 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 	protected final void createOrReplaceTrigger(final TriggerEvent triggerEvent, final int companyID, List<ProfileField> profileFields) {
 		try {
 			if (isOracleDB()) {
-				execute(logger, "DROP TRIGGER " + buildTriggerName(companyID, triggerEvent));
+				execute("DROP TRIGGER " + buildTriggerName(companyID, triggerEvent));
 			} else {
-				execute(logger, "DROP TRIGGER IF EXISTS " + buildTriggerName(companyID, triggerEvent));
+				execute("DROP TRIGGER IF EXISTS " + buildTriggerName(companyID, triggerEvent));
 			}
 		} catch (Exception e) {
 			// Reduced level to INFO, because dropping trigger also fails, if trigger does
@@ -151,7 +145,7 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 			}
 		}
 
-		execute(logger, createTriggerStatement(companyID, triggerEvent, profileFields));
+		execute(createTriggerStatement(companyID, triggerEvent, profileFields));
 	}
 
 	/**

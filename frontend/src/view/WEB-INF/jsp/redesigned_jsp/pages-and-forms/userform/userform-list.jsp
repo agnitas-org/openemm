@@ -6,7 +6,7 @@
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="userFormURLPattern" type="java.lang.String"--%>
-<%--@elvariable id="webformListJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="webformListJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="companyToken" type="java.lang.String"--%>
 
 <c:set var="isDeletionAllowed" value="${emm:permissionAllowed('forms.delete', pageContext.request)}"/>
@@ -51,19 +51,19 @@
                                 <mvc:message code="default.list.entry.select" />
                             </p>
                             <div class="bulk-actions__controls">
-                                <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-userform">
+                                <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-userform">
                                     <i class="icon icon-check-circle"></i>
                                 </a>
-                                <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-userform">
+                                <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-userform">
                                     <i class="icon icon-times-circle"></i>
                                 </a>
 
                                 <c:if test="${isDeletionAllowed}">
-                                    <a href="#" class="icon-btn text-danger js-data-table-bulk-delete" data-tooltip="<mvc:message code="bulkAction.delete.userform" />"
+                                    <a href="#" class="icon-btn icon-btn--danger js-data-table-bulk-delete" data-tooltip="<mvc:message code="bulkAction.delete.userform" />"
                                        data-bulk-url="${confirmDeleteUrl}" data-bulk-action="delete-userform">
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
-                                    <a href="#" class="icon-btn text-primary" data-tooltip="${deactivateMsg}" data-bulk-action="restore" data-bulk-url="${confirmRestoreUrl}">
+                                    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${deactivateMsg}" data-bulk-action="restore" data-bulk-url="${confirmRestoreUrl}">
                                         <i class="icon icon-redo"></i>
                                     </a>
                                 </c:if>
@@ -79,11 +79,6 @@
                 {
                     "columns": [
                         {
-                            "field": "select",
-                            "type": "bulkSelectColumn",
-                            "hide": ${not isChangeAllowed and not isDeletionAllowed}
-                        },
-                        {
                             "headerName": "<mvc:message code='Status'/>",
                             "editable": false,
                             "field": "active",
@@ -95,14 +90,12 @@
                         },
                         {
                             "headerName": "<mvc:message code='default.Name'/>",
-                            "editable": false,
                             "cellRenderer": "StringCellRenderer",
                             "field": "name",
                             "type": "textCaseInsensitiveColumn"
                         },
                         {
                             "headerName": "<mvc:message code='Description'/>",
-                            "editable": false,
                             "cellRenderer": "NotEscapedStringCellRenderer",
                             "field": "description",
                             "type": "textCaseInsensitiveColumn"
@@ -164,7 +157,7 @@
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
@@ -240,27 +233,27 @@
 </script>
 
 <script id="userform-delete-btn" type="text/x-mustache-template">
-    <a href="${confirmDeleteUrl}{{= '?bulkIds=' + id }}" type="button" class="icon-btn text-danger js-data-table-delete"
+    <a href="${confirmDeleteUrl}{{= '?bulkIds=' + id }}" type="button" class="icon-btn icon-btn--danger js-data-table-delete"
        data-bulk-action="delete" data-tooltip="<mvc:message code="Delete" />">
         <i class="icon icon-trash-alt"></i>
     </a>
 </script>
 
 <script id="userform-restore-btn" type="text/x-mustache-template">
-    <a data-bulk-url="${confirmRestoreUrl}" type="button" class="icon-btn text-primary"
+    <a data-bulk-url="${confirmRestoreUrl}" type="button" class="icon-btn icon-btn--primary"
        data-tooltip="<mvc:message code='default.restore' />" data-restore-row>
         <i class="icon icon-redo"></i>
     </a>
 </script>
 
 <script id="userform-activate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
         <i class="icon icon-check-circle"></i>
     </a>
 </script>
 
 <script id="userform-deactivate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
         <i class="icon icon-times-circle"></i>
     </a>
 </script>

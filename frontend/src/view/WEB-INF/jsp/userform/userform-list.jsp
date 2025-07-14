@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.commons.ActivenessStatus" %>
-<%@ page import="org.agnitas.dao.MailingStatus" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.emm.common.MailingStatus" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -11,7 +11,7 @@
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="userFormURLPattern" type="java.lang.String"--%>
-<%--@elvariable id="webformListJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="webformListJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="companyToken" type="java.lang.String"--%>
 
 <c:set var="active" value="<%= ActivenessStatus.ACTIVE %>"/>
@@ -88,7 +88,9 @@
         </button>
     </div>
 
-    <c:forEach var="entry" items="${webformListJson}">
+    <c:set var="formsList" value="${webformListJson.toList()}" />
+
+    <c:forEach var="entry" items="${formsList}">
         <c:url var="viewLink" value="/webform/${entry['id']}/view.action"/>
         <c:set target="${entry}" property="show" value="${viewLink}"/>
 
@@ -182,7 +184,7 @@
                     "hide": ${not isDeletionAllowed}
                 }
             ],
-            "data": ${webformListJson},
+            "data": ${emm:toJson(formsList)},
             "options": {
                 "filtersDescription": {
                     "enabled": true,

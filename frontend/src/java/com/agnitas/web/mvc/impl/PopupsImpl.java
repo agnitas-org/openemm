@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,14 +10,17 @@
 
 package com.agnitas.web.mvc.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @JsonSerialize(using = PopupsJsonSerializer.class)
 public class PopupsImpl implements Popups {
@@ -175,16 +178,6 @@ public class PopupsImpl implements Popups {
     }
 
     @Override
-    public Popups field(String field, Message popup) {
-        return alert(popup);
-    }
-
-    @Override
-    public Popups field(String field, String code, Object... arguments) {
-        return field(field, Message.of(code, arguments));
-    }
-
-    @Override
     public Popups fieldError(String field, Message popup) {
         fieldsMessages.add(new FieldMessage(field, popup, MessageType.ERROR));
         return this;
@@ -196,8 +189,8 @@ public class PopupsImpl implements Popups {
     }
 
     @Override
-    public Popups exactField(String field, String text) {
-        return field(field, new Message(text, false));
+    public Popups exactFieldError(String field, String text) {
+        return fieldError(field, new Message(text, false));
     }
 
     @Override
@@ -237,6 +230,22 @@ public class PopupsImpl implements Popups {
     public void clear() {
         popupsMessages.clear();
         fieldsMessages.clear();
+    }
+
+    @Override
+    public String getFullErrorsText(Locale locale) {
+        return getPopupsMessages()
+                .stream()
+                .filter(m -> MessageType.ERROR.equals(m.getType()))
+                .map(MessagePopup::getMessage)
+                .map(m -> {
+                    if (m.isResolvable()) {
+                        return I18nString.getLocaleString(m.getCode(), locale, m.getArguments());
+                    }
+
+                    return m.getCode();
+                })
+                .collect(Collectors.joining("\n\n"));
     }
 
     public List<MessagePopup> getPopupsMessages() {

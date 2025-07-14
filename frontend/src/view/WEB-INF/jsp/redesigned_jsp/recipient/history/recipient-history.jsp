@@ -2,7 +2,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="statusChangesHistoryJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="statusChangesHistoryJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 
 <mvc:message var="dateMsg" code='Date'/>
@@ -35,19 +35,19 @@
                     },
                     {
                         "headerName": "${fieldnameMsg}",
-                        "editable": false,
+                        "type": "textCaseInsensitiveColumn",
                         "field": "fieldDescription",
                         "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${oldvalueMsg}",
-                        "editable": false,
+                        "type": "textCaseInsensitiveColumn",
                         "field": "oldValue",
                         "cellRenderer": "NotEscapedStringCellRenderer"
                     },
                     {
                         "headerName": "${newvalueMsg}",
-                        "editable": false,
+                        "type": "textCaseInsensitiveColumn",
                         "resizable": false,
                         "field": "newValue",
                         "cellRenderer": "NotEscapedStringCellRenderer"
@@ -71,35 +71,33 @@
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="changeDate-from-filter">${dateMsg}</label>
-                    <div class="inline-input-range" data-date-range>
-                        <div class="date-picker-container">
-                            <input type="text" id="changeDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
-                        </div>
-                        <div class="date-picker-container">
-                            <input type="text" id="changeDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
-                        </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label class="form-label" for="changeDate-from-filter">${dateMsg}</label>
+                <div class="inline-input-range" data-date-range>
+                    <div class="date-picker-container">
+                        <input type="text" id="changeDate-from-filter" placeholder="<mvc:message code='From'/>" class="form-control js-datepicker" />
+                    </div>
+                    <div class="date-picker-container">
+                        <input type="text" id="changeDate-to-filter" placeholder="<mvc:message code='To'/>" class="form-control js-datepicker" />
                     </div>
                 </div>
-                <div class="col-12">
-                    <label class="form-label" for="fieldDescription-filter">${fieldnameMsg}</label>
-                    <input type="text" id="fieldDescription-filter" class="form-control" placeholder="${fieldnameMsg}"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="oldValue-filter">${oldvalueMsg}</label>
-                    <input type="text" id="oldValue-filter" class="form-control" placeholder="${oldvalueMsg}"/>
-                </div>
-                <div class="col-12">
-                    <label class="form-label" for="newValue-filter">${newvalueMsg}</label>
-                    <input type="text" id="newValue-filter" class="form-control" placeholder="${newvalueMsg}"/>
-                </div>
+            </div>
+            <div>
+                <label class="form-label" for="fieldDescription-filter">${fieldnameMsg}</label>
+                <input type="text" id="fieldDescription-filter" class="form-control" placeholder="${fieldnameMsg}"/>
+            </div>
+            <div>
+                <label class="form-label" for="oldValue-filter">${oldvalueMsg}</label>
+                <input type="text" id="oldValue-filter" class="form-control" placeholder="${oldvalueMsg}"/>
+            </div>
+            <div>
+                <label class="form-label" for="newValue-filter">${newvalueMsg}</label>
+                <input type="text" id="newValue-filter" class="form-control" placeholder="${newvalueMsg}"/>
             </div>
         </div>
     </div>

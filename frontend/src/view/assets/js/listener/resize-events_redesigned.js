@@ -11,11 +11,9 @@
     }
 
     viewportChanged = setTimeout(function() {
-      AGN.Lib.CoreInitializer.run(['scrollable', 'truncated-text-popover']);
+      AGN.Lib.CoreInitializer.run(['scrollable', 'truncated-text-popover', 'table-cols-resizer', 'table']);
 
-      _.each(AGN.Lib.Editor.all(), function(editor) {
-        editor.resize();
-      });
+      _.each(AGN.Lib.Editor.all(), editor => editor.resize());
 
       $window.trigger('viewportChanged');
     }, 500);

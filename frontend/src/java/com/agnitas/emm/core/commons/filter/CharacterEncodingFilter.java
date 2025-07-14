@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,14 +12,15 @@ package com.agnitas.emm.core.commons.filter;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.CaseInsensitiveSet;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.CaseInsensitiveSet;
 import org.antlr.v4.runtime.misc.Nullable;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,6 +29,8 @@ public class CharacterEncodingFilter extends org.springframework.web.filter.Char
 	private Set<String> iso_8859_1RdirDomains = new CaseInsensitiveSet();
 	private Set<String> utf8RdirDomains = new CaseInsensitiveSet();
 	private Set<String> jpRdirDomains = new CaseInsensitiveSet();
+
+	private static final Pattern WIDGET__PATTERN = Pattern.compile("^.*/widget/.*$");
 	
 	public void setIsoEncodingDomains(@Nullable String isoEncodingDomainList) {
 		iso_8859_1RdirDomains = new CaseInsensitiveSet();
@@ -65,6 +68,10 @@ public class CharacterEncodingFilter extends org.springframework.web.filter.Char
 				request.setCharacterEncoding("UTF-8");
 			} else if (jpRdirDomains.contains(request.getServerName())) {
 				request.setCharacterEncoding("ISO-2022-JP");
+			}
+
+			if (WIDGET__PATTERN.matcher(request.getRequestURI()).matches()) {
+				request.setCharacterEncoding("UTF-8");
 			}
 		}
 

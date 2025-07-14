@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 
 public class Permission {
 	public static String[] CATEGORY_DISPLAY_ORDER = new String[0];
@@ -239,21 +239,28 @@ public class Permission {
 	/**	user activity log permissions **/
 	public static final Permission MASTERLOG_SHOW = new Permission("masterlog.show", false, PermissionType.System);
 	public static final Permission MASTER_SHOW = new Permission("master.show", false, PermissionType.System);
-	public static final Permission MEDIATYPE_FAX = new Permission("mediatype.fax", false, PermissionType.Premium);
 	public static final Permission MEDIATYPE_POST = new Permission("mediatype.post", false, PermissionType.Premium);
 	public static final Permission MEDIATYPE_SMS = new Permission("mediatype.sms", false, PermissionType.Premium);
 	public static final Permission RECIPIENT_HISTORY_MAILING = new Permission("recipient.history.mailing", false, PermissionType.Premium);
 	public static final Permission RECIPIENT_IMPORT_ENCRYPTED = new Permission("recipient.import.encrypted", false, PermissionType.Premium);
-	public static final Permission USER_ACTIVITY_ACTIONS_EXTENDED = new Permission("user.activity.actions.extended", false, PermissionType.System);
 	public static final Permission ADMIN_MANAGEMENT_SHOW = new Permission("admin.management.show", true, PermissionType.Standard);
+
+	public static final Permission DB_SCHEMA_SNAPSHOT_CREATE = new Permission("master.dbschema.snapshot.create", false, PermissionType.System);
 
 	// Special migration and rollback permissions
 	public static final Permission AI_SUPPORT_CHAT = new Permission("ai.support.chat", false, PermissionType.Migration);
     public static final Permission RECIPIENT_DISTRIBUTION_STAT = new Permission("recipient.stat.distribution", false, PermissionType.Migration);
 
+	// --------- webhooks ---------
+	public static final Permission WEBHOOKS_ADMIN = new Permission("webhooks.admin", true, PermissionType.Standard);
+	public static final Permission WEBHOOKS_ENABLE = new Permission("webhooks.enable", true, PermissionType.Standard);
+	// ------------------
+
 	// ---------- REDESIGN ----------
 	public static final Permission USE_OLD_UI = new Permission("use.old.ui", false, PermissionType.Migration);
 	public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
+	public static final Permission UX_UPDATES = new Permission("ux.updates", false, PermissionType.Migration);
+	public static final Permission UX_UPDATES_ROLLBACK = new Permission("ux.updates.rollback", false, PermissionType.Migration);
 	// ------------------------------
 
 	private final String tokenString;

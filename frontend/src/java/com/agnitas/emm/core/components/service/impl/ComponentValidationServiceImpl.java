@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
-import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+import static com.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import org.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.FileUtils;
@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.form.AttachmentType;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.components.service.ComponentValidationService;
 import com.agnitas.emm.core.mimetypes.service.MimeTypeWhitelistService;
 import com.agnitas.emm.validator.ApacheTikaUtils;
@@ -40,11 +40,11 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
     private static final Logger LOGGER = LogManager.getLogger(ComponentValidationServiceImpl.class);
 
     private final MimeTypeWhitelistService mimetypeWhitelistService;
-    private final ComMailingComponentsService mailingComponentsService;
+    private final MailingComponentsService mailingComponentsService;
 	private final ConfigService configService;
 
     public ComponentValidationServiceImpl(MimeTypeWhitelistService mimetypeWhitelistService,
-                                          ComMailingComponentsService mailingComponentsService,
+                                          MailingComponentsService mailingComponentsService,
                                           ConfigService configService) {
         this.mimetypeWhitelistService = mimetypeWhitelistService;
         this.mailingComponentsService = mailingComponentsService;

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
+<%@ page import="com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>

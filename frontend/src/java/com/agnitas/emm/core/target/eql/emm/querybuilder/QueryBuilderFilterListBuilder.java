@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,21 +17,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.SafeString;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-
-import net.sf.json.JSONSerializer;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.SafeString;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
 
 /**
  * Converts the list of profile fields to the list of filters
@@ -50,15 +47,13 @@ public class QueryBuilderFilterListBuilder {
 	 * @param admin admin that's bound to profile fields
 	 *
 	 * @return JSON string for the QueryBuilder filter list
-	 * @throws Exception 
 	 */
-	public String buildFilterListJson(Admin admin, boolean excludeHiddenFields) throws Exception {
+	public String buildFilterListJson(Admin admin, boolean excludeHiddenFields) {
 		List<ProfileField> profileFields = listProfileFields(admin.getCompanyID(), admin.getAdminID(), excludeHiddenFields);
 		createIndependentFilters(profileFields, admin);
 
 		final List<Map<String, Object>> map = createFilterList(profileFields, admin);
-
-		return JSONSerializer.toJSON(map).toString();
+		return new JSONArray(map).toString();
 	}
 
 	private void createIndependentFilters(final List<ProfileField> profileFields, final Admin admin) {
@@ -81,7 +76,6 @@ public class QueryBuilderFilterListBuilder {
 	 * @return list of filter settings for JSON encoding
 	 */
 	private List<Map<String, Object>> createFilterList(final List<ProfileField> profileFields, Admin admin) {
-
 		// TODO: Respect unknown profile fields somehow
 
 		final List<Map<String, Object>> filterList = new ArrayList<>();
@@ -94,13 +88,11 @@ public class QueryBuilderFilterListBuilder {
 
 			final SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType(), profileField.getNumericScale());
 			switch(dataType) {
-			    case Numeric:
-			    case Float:
+				case Numeric, Float:
 			    	filter.put("type", "double");
 			    	break;
 
-			    case Date:
-			    case DateTime:
+				case Date, DateTime:
 			    	filter.put("type", "date");
 			    	break;
 
@@ -127,30 +119,21 @@ public class QueryBuilderFilterListBuilder {
 	 * @param companyID company ID
 	 *
 	 * @return list of all known profile fields
-	 * @throws Exception 
 	 */
-	private List<ProfileField> listProfileFields(int companyID, int adminID, boolean excludeHidden) throws Exception {
+	private List<ProfileField> listProfileFields(int companyID, int adminID, boolean excludeHidden) {
 		if (excludeHidden) {
 			return profileFieldService.getProfileFields(companyID, adminID).stream().filter(x -> x.getModeEdit() != ProfileFieldMode.NotVisible).collect(Collectors.toList());
 		}
 
-		try {
-			return profileFieldService.getProfileFields(companyID);
-		} catch(final Exception e) {
-			logger.error("Error listing profile fields", e);
-
-			throw new QueryBuilderFilterListBuilderException("Error listing profile fields", e);
-		}
+		return profileFieldService.getProfileFields(companyID);
 	}
 
 	// ------------------------------------------------------------------------------------------------------------------ Dependency Injection
 
-	@Required
 	public void setQueryBuilderConfiguration(QueryBuilderConfiguration queryBuilderConfiguration) {
 		this.queryBuilderConfiguration = queryBuilderConfiguration;
 	}
 
-	@Required
 	public void setProfileFieldService(ProfileFieldService profileFieldService) {
 		this.profileFieldService = profileFieldService;
 	}

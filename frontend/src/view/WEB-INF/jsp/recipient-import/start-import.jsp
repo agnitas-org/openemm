@@ -4,7 +4,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
-<%--@elvariable id="importProfiles" type="java.util.List<org.agnitas.beans.ImportProfile>"--%>
+<%--@elvariable id="importProfiles" type="java.util.List<com.agnitas.beans.ImportProfile>"--%>
 
 <mvc:form id="import-form" servletRelativeAction="/recipient/import/preview.action" modelAttribute="form"
           enctype="multipart/form-data" data-form="resource" data-controller="recipient-import-view">

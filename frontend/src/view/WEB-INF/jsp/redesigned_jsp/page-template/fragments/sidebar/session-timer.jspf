@@ -8,10 +8,8 @@
 </script>
 
 <div id="session-timer-block" class="sidebar__block sidebar__block-item gap-1 position-relative hidden" data-action="display-tooltip">
-    <h4 id="session-time-label">
-        <%-- Loads by JS --%>
-    </h4>
-    <span class="sidebar__tooltip text-nowrap absolute-center-v">
-        <mvc:message code="session.timer.mouseover" />
-    </span>
+    <p id="session-time-label"><%-- Loads by JS --%></p>
+    <div class="sidebar__tooltip absolute-center-v">
+        <p class="text-nowrap"><mvc:message code="session.timer.mouseover" /></p>
+    </div>
 </div>

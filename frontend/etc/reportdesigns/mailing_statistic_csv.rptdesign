@@ -110,6 +110,9 @@ function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
 
+ReportProperties = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties;
+BirtReportSettingsUtils = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils
+
 showSoftbounces = BirtReporUtils.isOptionAllowed("softbounces", params["figures"]);
 showHardbounces = BirtReporUtils.isOptionAllowed("hardbounces", params["figures"]);
 
@@ -121,11 +124,10 @@ if (!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ACTIVATE_LIN
 
 if(showSoftbounces || showHardbounces){
 	bouncesDataSet = new MailingBouncesDataSet();
-	 mailingBounceDataContainer = bouncesDataSet.getBouncesWithDetailByMailings(params["companyID"], params["selectedMailings"], params["language"], params["targetGroups"], MailingBouncesDataSet.BounceType.getByName("BOTH"), hiddenTargetGroup);
+	mailingBounceDataContainer = bouncesDataSet.getBouncesWithDetailByMailings(params["companyID"], params["selectedMailings"], params["language"], params["targetGroups"], MailingBouncesDataSet.BounceType.getByName("BOTH"), hiddenTargetGroup);
 	mailingBounceData = mailingBounceDataContainer.getAllBounces();
-	successTableActivated = bouncesDataSet.successTableActivated(params["companyID"]);
-	reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(successTableActivated));
-	 reportContext.setPersistentGlobalVariable("showBounces", new Boolean(true));
+	reportContext.setPersistentGlobalVariable("successTableActivated", new Boolean(bouncesDataSet.successTableActivated(params["companyID"])));
+	reportContext.setPersistentGlobalVariable("showBounces", new Boolean(true));
 }
 
 mailingStatisticDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingStatisticDataSet();
@@ -142,6 +144,7 @@ deviceStatistic = devicesStatDataSet.getMailingReportDevicesStat(params["company
 
 reportContext.setPersistentGlobalVariable("accountName", mailingStatisticDataSet.getAccountName(params["accountId"]));
 reportContext.setPersistentGlobalVariable("reportName", mailingStatisticDataSet.getReportName(params["reportId"]));
+reportContext.setPersistentGlobalVariable("predefineMailingName", params["mailingFilter"] > 0 ? mailingStatisticDataSet.getPredefineMailingName(params["mailingFilter"], params["predefineMailing"], params["companyID"]) : "");
 
 reportContext.setGlobalVariable("tr", tr);
 
@@ -151,6 +154,9 @@ function hasPercentageRepresentation(categoryKey) {
 			categoryKey != CommonKeys.CLICKS_ANONYMOUS_INDEX &amp;&amp;
 			categoryKey != CommonKeys.OPENERS_PROXY_INDEX;
 }
+
+
+
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
@@ -318,6 +324,37 @@ function hasPercentageRepresentation(categoryKey) {
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
+        <scalar-parameter name="mailingFilter" id="4558">
+            <property name="hidden">false</property>
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">integer</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">0</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
+        <scalar-parameter name="predefineMailing" id="4559">
+            <property name="valueType">static</property>
+            <property name="isRequired">false</property>
+            <property name="dataType">string</property>
+            <property name="distinct">true</property>
+            <simple-property-list name="defaultValue">
+                <value type="constant">0</value>
+            </simple-property-list>
+            <list-property name="selectionList"/>
+            <property name="paramType">simple</property>
+            <property name="controlType">text-box</property>
+            <structure name="format">
+                <property name="category">Unformatted</property>
+            </structure>
+        </scalar-parameter>
     </parameters>
     <data-sources>
         <script-data-source name="DummyDataSource" id="259"/>
@@ -420,6 +457,11 @@ function hasPercentageRepresentation(categoryKey) {
                     <property name="name">hardbouncesDataExists</property>
                     <property name="dataType">boolean</property>
                 </structure>
+                <structure>
+                    <property name="position">20</property>
+                    <property name="name">stopSendingDate</property>
+                    <property name="dataType">date-time</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -478,6 +520,9 @@ function hasPercentageRepresentation(categoryKey) {
                 </structure>
                 <structure>
                     <property name="columnName">hardbouncesDataExists</property>
+                </structure>
+                <structure>
+                    <property name="columnName">stopSendingDate</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -577,6 +622,11 @@ function hasPercentageRepresentation(categoryKey) {
                         <property name="name">hardbouncesDataExists</property>
                         <property name="dataType">boolean</property>
                     </structure>
+                    <structure>
+                        <property name="position">20</property>
+                        <property name="name">stopSendingDate</property>
+                        <property name="dataType">date-time</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -603,6 +653,7 @@ row["stopSending"] = mailingList.get(currentRow).getStopSending();
 if (row["stopSending"] == "-") {
     row["stopSending"] = "";
 }
+row["stopSendingDate"] = mailingList.get(currentRow).getStopSendingDate();
 
 row["scheduledDate"] = mailingList.get(currentRow).getScheduledDate();
 if (row["scheduledDate"] == "-") {
@@ -629,6 +680,18 @@ if(reportContext.getPersistentGlobalVariable("showBounces")) {
 	row["hardbouncesDataExists"] = false;
 	row["undeliveredCount"] = 0;
 }
+
+
+if (reportContext.getGlobalVariable("selectedMailings") == null) {
+    reportContext.setGlobalVariable("selectedMailings", "");
+}
+var namesList = reportContext.getGlobalVariable("selectedMailings");
+if (namesList != "") {
+    namesList += ", ";
+}
+namesList += ("\"\"" + row["mailingName"] + "\"\"");
+reportContext.setGlobalVariable("selectedMailings", namesList);
+
 
 currentRow++;
 return true;]]></method>
@@ -775,30 +838,30 @@ return false;]]></method>
 row["mailingId"] = mailingSummaryData.get(currentrow).getMailingId();
 
 if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.OPENERS_TRACKED_INDEX) {
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("report.opens.measuredWithoutNote", reportContext.getLocale());
+	row["category"] = tr("report.opens.measuredWithoutNote");
 } else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.OPENERS_PC_INDEX) {
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.pc.value", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TRACKED_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_PC_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.pc", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TABLET_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.tablet", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_MOBILE_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.mobile", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_SMARTTV_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.smarttv", reportContext.getLocale());
-} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_PC_AND_MOBILE_INDEX) {	
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker.multiple", reportContext.getLocale());	
+	row["category"] = tr("report.openers.pc.value");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TRACKED_INDEX) {
+	row["category"] = tr("statistic.clicker");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_PC_INDEX) {
+	row["category"] = tr("statistic.clicker.pc");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_TABLET_INDEX) {
+	row["category"] = tr("statistic.clicker.tablet");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_MOBILE_INDEX) {
+	row["category"] = tr("statistic.clicker.mobile");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_SMARTTV_INDEX) {
+	row["category"] = tr("statistic.clicker.smarttv");
+} else if (mailingSummaryData.get(currentrow).getCategoryindex() == CommonKeys.CLICKER_PC_AND_MOBILE_INDEX) {
+	row["category"] = tr("statistic.clicker.multiple");
 } else {
-	row["category"] = Packages.com.agnitas.messages.I18nString.getLocaleString( mailingSummaryData.get(currentrow).getCategory(), reportContext.getLocale());	
+	row["category"] = tr(mailingSummaryData.get(currentrow).getCategory());
 }
 
 row["category_index"] = mailingSummaryData.get(currentrow).getCategoryindex();
 
 // do some i18n stuff
 if (mailingSummaryData.get(currentrow).getTargetgroupindex() == 1) {
-	row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+	row["targetgroup"] = tr("statistic.all_subscribers");
 } else {
 	row["targetgroup"] = mailingSummaryData.get(currentrow).getTargetgroup();
 }
@@ -1024,7 +1087,7 @@ return true;]]></method>
 	row["deleted"] = mailingClicksData.get(currentrow).isDeleted();
 	// do some i18n stuff
 	if (mailingClicksData.get(currentrow).getColumnIndex() == 1) {
-		row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
+		row["targetgroup"] = tr("statistic.all_subscribers");
 	} else {
 		row["targetgroup"] = mailingClicksData.get(currentrow).getTargetgroup();
 	}
@@ -1117,10 +1180,10 @@ return false;]]></method>
 	row["DETAIL"] = mailingBounceData.get(currentrow).getDetail();
 	row["COUNT"] = mailingBounceData.get(currentrow).getCount();
 	row["COUNTPERCENT"] = mailingBounceData.get(currentrow).getCountPercent();
-	
+
 	currentrow++;
 	return true;
-} 
+}
 return false;]]></method>
         </script-data-set>
         <script-data-set name="DevicesStatDataSet" id="578">
@@ -1318,7 +1381,7 @@ return false;]]></method>
 
 	var deviceClassId = parseInt(deviceStatistic.get(currentrow).getDeviceClassId());
 	row["device_class_id"] = deviceClassId;
-	
+
 	var deviceClassLabelKey = "predelivery.desktop";
 	if (deviceClassId == DeviceClass.MOBILE.getId()) {
 		deviceClassLabelKey = "report.openers.mobile.shortname";
@@ -1328,17 +1391,220 @@ return false;]]></method>
 		deviceClassLabelKey = "report.openers.smarttv.shortname";
 	}
 	row["device_class_label"] = tr(deviceClassLabelKey);
-	
+
 	row["category_index"] = deviceStatistic.get(currentrow).getCategoryIndex();
 	row["category"] = deviceStatistic.get(currentrow).getCategory();
-	
+
 	row["mailing_id"] = deviceStatistic.get(currentrow).getMailingId();
-	
+
 
 	currentrow++;
 	return true;
 }
 return false;
+]]></method>
+        </script-data-set>
+        <script-data-set name="TopDomainsDataSet" id="587">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">category_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">category_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">domainname</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">domainname_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">targetgroup</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">targetgroup_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">value</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">mailingId</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">category_name</property>
+                    <text-property name="displayName">Category Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">category_index</property>
+                    <text-property name="displayName">Category Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">domainname</property>
+                    <text-property name="displayName">Domain Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">domainname_index</property>
+                    <text-property name="displayName">Domain Name Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetgroup</property>
+                    <text-property name="displayName">Target Group Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetgroup_index</property>
+                    <text-property name="displayName">Target Group Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">value</property>
+                    <text-property name="displayName">Value</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">rate</property>
+                    <text-property name="displayName">Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailingId</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">category_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">category_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">domainname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">domainname_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">targetgroup</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">targetgroup_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">value</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">mailingId</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
+importPackage(Packages.java.lang);
+
+var mailingIds = (new String(params["selectedMailings"])).split(",").map(function(item) {
+    return parseInt(item);
+});
+
+logger = Packages.org.apache.logging.log4j.LogManager.getLogger('birt logger');
+
+var companyID = params['companyID'].value;
+var selectedTargets = params["targetGroups"].value;
+var maxDomains = 15;
+var language = params['language'].value;
+var topLevelDomain = false;
+
+var topDomainsDataSet = new TopDomainsDataSet();
+
+var tempTableID = topDomainsDataSet.prepareReport(mailingIds[0], companyID, selectedTargets, maxDomains, language, topLevelDomain);
+dataTopDomainsSentEmails = topDomainsDataSet.getResultsFromTempTable(tempTableID);
+
+for (var i = 0; i < dataTopDomainsSentEmails.size(); i++) {
+	dataTopDomainsSentEmails.get(i).setMailingId(mailingIds[0]);				
+}	
+
+for (var i = 1; i < mailingIds.length; i++) {
+	var tempTableID = topDomainsDataSet.prepareReport(mailingIds[i], companyID, selectedTargets, maxDomains, language, topLevelDomain);
+	
+	var mailingDomainsStat = topDomainsDataSet.getResultsFromTempTable(tempTableID)
+
+	for (var j = 0; j < mailingDomainsStat.size(); j++) {
+		mailingDomainsStat.get(j).setMailingId(mailingIds[i]);				
+	}	
+	
+	dataTopDomainsSentEmails.addAll(mailingDomainsStat);
+}
+
+
+currentRow = 0;
+]]></method>
+            <method name="fetch"><![CDATA[if (currentRow >= dataTopDomainsSentEmails.size()) {
+	return false;
+}
+
+var allSubscribersTargetGroupName = Packages.com.agnitas.messages.I18nString.getLocaleString(CommonKeys.ALL_SUBSCRIBERS, reportContext.getLocale());
+
+var currentRowData = dataTopDomainsSentEmails.get(currentRow);
+
+row['category_name'] = Packages.com.agnitas.messages.I18nString.getLocaleString(currentRowData.getCategory(), reportContext.getLocale());
+row['category_index'] = currentRowData.getCategoryindex();
+
+row['domainname'] = currentRowData.getDomainName();
+row['domainname_index'] = currentRowData.getDomainNameIndex();
+
+if (currentRowData.getTargetgroupindex() == CommonKeys.ALL_SUBSCRIBERS_INDEX) {
+	row['targetgroup'] = allSubscribersTargetGroupName;
+} else {
+	row['targetgroup'] = currentRowData.getTargetgroup();
+}
+row['targetgroup_index'] = currentRowData.getTargetgroupindex();
+
+row['value'] = currentRowData.getCount();
+row['rate'] = currentRowData.getRate();
+row['mailingId'] = currentRowData.getMailingId();
+
+currentRow++;
+return true;
 ]]></method>
         </script-data-set>
     </data-sets>
@@ -1614,7 +1880,7 @@ return false;
         </simple-master-page>
     </page-setup>
     <body>
-        <table id="3397">
+        <table name="Report info" id="3397">
             <list-property name="boundDataColumns">
                 <structure>
                     <property name="name">accountName</property>
@@ -1632,6 +1898,12 @@ return false;
                     <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("reportName")</expression>
                     <property name="dataType">string</property>
                 </structure>
+                <structure>
+                    <property name="name">predefineMailingName</property>
+                    <expression name="expression" type="javascript">reportContext.getPersistentGlobalVariable("predefineMailingName")</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
             </list-property>
             <column id="3425"/>
             <column id="3426"/>
@@ -1642,71 +1914,7 @@ return false;
                             <text-property name="text">EMM Report</text-property>
                         </label>
                     </cell>
-                    <cell id="3400"/>
-                </row>
-            </header>
-            <detail>
-                <row id="3401">
-                    <cell id="3402"/>
-                    <cell id="3403"/>
-                </row>
-                <row id="3404">
-                    <cell id="3405">
-                        <text-data id="3771">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.reportdatum", reportContext.getLocale())</expression>
-                        </text-data>
-                        <label id="3772">
-                            <text-property name="text">:</text-property>
-                        </label>
-                    </cell>
-                    <cell id="3406">
-                        <data id="3770">
-                            <property name="resultSetColumn">reportCreateDate</property>
-                        </data>
-                    </cell>
-                </row>
-                <row id="3407">
-                    <cell id="3408">
-                        <text-data id="3430">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.recipient.statistics.account", reportContext.getLocale())</expression>
-                        </text-data>
-                        <label id="3742">
-                            <text-property name="text">:</text-property>
-                        </label>
-                    </cell>
-                    <cell id="3409">
-                        <data id="3743">
-                            <property name="resultSetColumn">accountName</property>
-                        </data>
-                    </cell>
-                </row>
-                <row id="3776">
-                    <cell id="3777">
-                        <text-data id="3779">
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("default.Name", reportContext.getLocale())</expression>
-                        </text-data>
-                        <label id="3780">
-                            <text-property name="text">:</text-property>
-                        </label>
-                    </cell>
-                    <cell id="3778">
-                        <data id="3781">
-                            <property name="resultSetColumn">reportName</property>
-                        </data>
-                    </cell>
-                </row>
-                <row id="3410">
-                    <cell id="3411"/>
-                    <cell id="3412"/>
-                </row>
-                <row id="3413">
-                    <list-property name="visibility">
-                        <structure>
-                            <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">params["selectedMailings"].value == null || params["selectedMailings"].value == ""</expression>
-                        </structure>
-                    </list-property>
-                    <cell id="3414">
+                    <cell id="3400">
                         <text-data id="3431">
                             <property name="fontFamily">sans-serif</property>
                             <property name="fontSize">18pt</property>
@@ -1717,19 +1925,14 @@ return false;
                             <property name="paddingBottom">0pt</property>
                             <property name="paddingRight">0pt</property>
                             <property name="textAlign">left</property>
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.report.mailingStatisticsIndividually", reportContext.getLocale())</expression>
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">params["selectedMailings"].value == null || params["selectedMailings"].value == ""</expression>
+                                </structure>
+                            </list-property>
+                            <expression name="valueExpr">tr("birt.report.mailingStatisticsIndividually")</expression>
                         </text-data>
-                    </cell>
-                    <cell id="3415"/>
-                </row>
-                <row id="3834">
-                    <list-property name="visibility">
-                        <structure>
-                            <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">params["selectedMailings"].value != null &amp;&amp; params["selectedMailings"].value != ""</expression>
-                        </structure>
-                    </list-property>
-                    <cell id="3835">
                         <text-data id="3838">
                             <property name="fontFamily">sans-serif</property>
                             <property name="fontSize">18pt</property>
@@ -1740,22 +1943,165 @@ return false;
                             <property name="paddingBottom">0pt</property>
                             <property name="paddingRight">0pt</property>
                             <property name="textAlign">left</property>
-                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.noDataAvailable", reportContext.getLocale())</expression>
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">params["selectedMailings"].value != null &amp;&amp; params["selectedMailings"].value != ""</expression>
+                                </structure>
+                            </list-property>
+                            <expression name="valueExpr">tr("birt.noDataAvailable")</expression>
                         </text-data>
                     </cell>
-                    <cell id="3836"/>
                 </row>
-                <row id="3416">
-                    <cell id="3417"/>
-                    <cell id="3418"/>
+            </header>
+            <detail>
+                <row id="3401">
+                    <cell id="3402"/>
+                    <cell id="3403"/>
+                </row>
+                <row id="3404">
+                    <cell id="3405">
+                        <text-data id="3771">
+                            <expression name="valueExpr">tr("report.mailing.statistics.reportdatum")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="3406">
+                        <data id="3770">
+                            <property name="resultSetColumn">reportCreateDate</property>
+                        </data>
+                    </cell>
+                </row>
+                <row id="3407">
+                    <cell id="3408">
+                        <text-data id="3430">
+                            <expression name="valueExpr">tr("report.recipient.statistics.account")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="3409">
+                        <data id="3743">
+                            <property name="resultSetColumn">accountName</property>
+                        </data>
+                    </cell>
+                </row>
+                <row id="3776">
+                    <cell id="3777">
+                        <text-data id="3779">
+                            <expression name="valueExpr">tr("default.Name")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="3778">
+                        <data id="3781">
+                            <property name="resultSetColumn">reportName</property>
+                        </data>
+                    </cell>
+                </row>
+                <row id="4560">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">params["mailingFilter"].value &lt;= 0</expression>
+                        </structure>
+                    </list-property>
+                    <cell id="4561">
+                        <text-data id="4567">
+                            <expression name="valueExpr">var filterCode = params["mailingFilter"].value;
+var filterName;
+if (filterCode == '1') {
+	filterName = tr("mailing.archive");
+} else if (filterCode == '2') {
+	filterName = tr("Mailinglist");
+} else if (filterCode == '4') {
+	filterName = tr("target.Target");
+} else {
+    filterName = tr("report.mailing.filter.default");
+}
+
+tr("report.mailing.filter") + ": " + filterName;</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="4562">
+                        <data id="4563">
+                            <property name="resultSetColumn">predefineMailingName</property>
+                        </data>
+                    </cell>
+                </row>
+                <row id="4568">
+                    <cell id="4569">
+                        <text-data id="4571">
+                            <expression name="valueExpr">tr("mailings.selected")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="4570">
+                        <text id="4573">
+                            <property name="dataSet">MailingsDataSet</property>
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">mailingName</property>
+                                    <text-property name="displayName">mailingName</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["mailingName"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <method name="onCreate"><![CDATA[var namesList = reportContext.getGlobalVariable("selectedMailings");
+this.text = "\"" + namesList + "\"";
+]]></method>
+                            <property name="contentType">auto</property>
+                        </text>
+                    </cell>
+                </row>
+                <row id="4597">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!params["startDate"].value</expression>
+                        </structure>
+                    </list-property>
+                    <cell id="4598">
+                        <text-data id="4350">
+                            <property name="fontWeight">normal</property>
+                            <expression name="valueExpr">tr("From")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="4599">
+                        <data id="9927">
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">startDate</property>
+                                    <expression name="expression" type="javascript">params["startDate"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <property name="resultSetColumn">startDate</property>
+                        </data>
+                    </cell>
+                </row>
+                <row id="4600">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!params["stopDate"].value</expression>
+                        </structure>
+                    </list-property>
+                    <cell id="4601">
+                        <text-data id="4355">
+                            <property name="fontWeight">normal</property>
+                            <expression name="valueExpr">tr("To")</expression>
+                        </text-data>
+                    </cell>
+                    <cell id="4602">
+                        <data id="9928">
+                            <list-property name="boundDataColumns">
+                                <structure>
+                                    <property name="name">stopDate</property>
+                                    <expression name="expression" type="javascript">params["stopDate"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                            </list-property>
+                            <property name="resultSetColumn">stopDate</property>
+                        </data>
+                    </cell>
                 </row>
             </detail>
-            <footer>
-                <row id="3422">
-                    <cell id="3423"/>
-                    <cell id="3424"/>
-                </row>
-            </footer>
         </table>
         <list id="3285">
             <property name="dataSet">MailingsDataSet</property>
@@ -1886,36 +2232,129 @@ return false;
                     <property name="dataType">string</property>
                     <property name="allowExport">true</property>
                 </structure>
+                <structure>
+                    <property name="name">stopSendingDate</property>
+                    <expression name="expression" type="javascript">dataSetRow["stopSendingDate"]</expression>
+                    <property name="dataType">date-time</property>
+                    <property name="allowExport">true</property>
+                </structure>
+            </list-property>
+            <list-property name="sort">
+                <structure>
+                    <expression name="key" type="javascript">row["stopSendingDate"]</expression>
+                    <property name="direction">desc</property>
+                    <property name="strength">-1</property>
+                </structure>
             </list-property>
             <detail>
-                <grid id="3286">
+                <grid name="General information" id="3286">
                     <property name="width">100mm</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+	
+BirtReporUtils.BirtReportFigure.MAILING_NAME.value,
+BirtReporUtils.BirtReportFigure.MAILING_ID.value,
+BirtReporUtils.BirtReportFigure.DESCRIPTION.value,
+BirtReporUtils.BirtReportFigure.ARCHIVE.value,
+BirtReporUtils.BirtReportFigure.MAIL_FORMAT.value,
+
+BirtReporUtils.BirtReportFigure.AVERAGE_SIZE.value,
+BirtReporUtils.BirtReportFigure.SUBJECT.value,
+BirtReporUtils.BirtReportFigure.MAILING_LIST.value,
+BirtReporUtils.BirtReportFigure.TARGET_GROUPS.value,
+BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO.value,
+BirtReporUtils.BirtReportFigure.SENDING_STARTED.value,
+BirtReporUtils.BirtReportFigure.SENDING_FINISHED.value,
+BirtReporUtils.BirtReportFigure.SENDER_INFO.value,
+BirtReporUtils.BirtReportFigure.REPLY_TO_INFO.value
+
+], params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
                     <column id="3287">
                         <property name="fontWeight">bold</property>
                         <property name="width">1.5625in</property>
                     </column>
                     <column id="3288"/>
+                    <row id="9903">
+                        <cell id="9904">
+                            <property name="textAlign">left</property>
+                        </cell>
+                        <cell id="9905">
+                            <property name="textAlign">left</property>
+                        </cell>
+                    </row>
+                    <row id="4593">
+                        <cell id="4594">
+                            <property name="textAlign">left</property>
+                            <text-data id="4596">
+                                <property name="fontWeight">normal</property>
+                                <expression name="valueExpr">tr(BirtReportSettingsUtils.GENERAL_INFO_GROUP);</expression>
+                            </text-data>
+                        </cell>
+                        <cell id="4595">
+                            <property name="textAlign">left</property>
+                            <data id="4603"/>
+                        </cell>
+                    </row>
                     <row id="3289">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3290">
                             <property name="textAlign">left</property>
                             <text-data id="3291">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Mailing", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.MAILING_NAME.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3292">
                             <property name="textAlign">left</property>
                             <data id="3293">
+                                <structure name="toc"/>
                                 <property name="resultSetColumn">mailingName</property>
                             </data>
                         </cell>
                     </row>
+                    <row id="4639">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
+                        <cell id="4640">
+                            <property name="textAlign">left</property>
+                            <text-data id="4607">
+                                <property name="fontWeight">normal</property>
+                                <expression name="valueExpr">tr(ReportProperties.MAILING_ID.labelCode);</expression>
+                            </text-data>
+                        </cell>
+                        <cell id="4641">
+                            <property name="textAlign">left</property>
+                            <data id="4612">
+                                <structure name="toc"/>
+                                <property name="resultSetColumn">mailingId</property>
+                            </data>
+                        </cell>
+                    </row>
                     <row id="3294">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3295">
                             <property name="textAlign">left</property>
                             <text-data id="3296">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Description", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.DESCRIPTION.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3297">
@@ -1926,11 +2365,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3299">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3300">
                             <property name="textAlign">left</property>
-                            <text-data id="3301">
+                            <text-data id="4575">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.archive", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.ARCHIVE.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3302">
@@ -1941,11 +2386,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3304">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3305">
                             <property name="textAlign">left</property>
-                            <text-data id="3306">
+                            <text-data id="4576">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailformat", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.MAIL_FORMAT.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3307">
@@ -1956,11 +2407,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3309">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3310">
                             <property name="textAlign">left</property>
-                            <text-data id="3311">
+                            <text-data id="4582">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailsize", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.AVERAGE_SIZE.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3312">
@@ -1971,11 +2428,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3314">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3315">
                             <property name="textAlign">left</property>
-                            <text-data id="3316">
+                            <text-data id="4583">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.Subject", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.SUBJECT.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3317">
@@ -1986,11 +2449,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3319">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3320">
                             <property name="textAlign">left</property>
-                            <text-data id="3321">
+                            <text-data id="4584">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.mailinglist", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.MAILING_LIST.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3322">
@@ -2001,11 +2470,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3324">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3325">
                             <property name="textAlign">left</property>
-                            <text-data id="3326">
+                            <text-data id="4585">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Target-Groups", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.TARGET_GROUPS.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3327">
@@ -2016,11 +2491,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3333">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3334">
                             <property name="textAlign">left</property>
-                            <text-data id="3335">
+                            <text-data id="4586">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Recipients", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.NR_OF_RECIPIENTS_WITH_TRACK_VETO.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3336">
@@ -2034,14 +2515,14 @@ return false;
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!"".equals(params["startDate"])</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3339">
                             <property name="textAlign">left</property>
-                            <text-data id="3340">
+                            <text-data id="4587">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.sendingStarted", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.SENDING_STARTED.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3341">
@@ -2055,14 +2536,14 @@ return false;
                         <list-property name="visibility">
                             <structure>
                                 <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!"".equals(params["stopDate"])</expression>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
                             </structure>
                         </list-property>
                         <cell id="3344">
                             <property name="textAlign">left</property>
-                            <text-data id="3345">
+                            <text-data id="4588">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.sendingFinished", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.SENDING_FINISHED.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3346">
@@ -2072,54 +2553,18 @@ return false;
                             </data>
                         </cell>
                     </row>
-                    <row id="4347">
-                        <list-property name="visibility">
-                            <structure>
-                                <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"])</expression>
-                            </structure>
-                        </list-property>
-                        <cell id="4348">
-                            <property name="textAlign">left</property>
-                            <text-data id="4350">
-                                <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("From", reportContext.getLocale())</expression>
-                            </text-data>
-                        </cell>
-                        <cell id="4349">
-                            <property name="textAlign">left</property>
-                            <data id="4351">
-                                <property name="resultSetColumn">fromDate</property>
-                            </data>
-                        </cell>
-                    </row>
-                    <row id="4352">
-                        <list-property name="visibility">
-                            <structure>
-                                <property name="format">all</property>
-                                <expression name="valueExpr" type="javascript">!"".equals(params["scheduledDate"])</expression>
-                            </structure>
-                        </list-property>
-                        <cell id="4353">
-                            <property name="textAlign">left</property>
-                            <text-data id="4355">
-                                <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("To", reportContext.getLocale())</expression>
-                            </text-data>
-                        </cell>
-                        <cell id="4354">
-                            <property name="textAlign">left</property>
-                            <data id="4356">
-                                <property name="resultSetColumn">toDate</property>
-                            </data>
-                        </cell>
-                    </row>
                     <row id="3821">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3822">
                             <property name="textAlign">left</property>
-                            <text-data id="3827">
+                            <text-data id="4591">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("From", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.SENDER_INFO.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3823">
@@ -2130,11 +2575,17 @@ return false;
                         </cell>
                     </row>
                     <row id="3824">
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
+                            </structure>
+                        </list-property>
                         <cell id="3825">
                             <property name="textAlign">left</property>
-                            <text-data id="3828">
+                            <text-data id="4592">
                                 <property name="fontWeight">normal</property>
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.ReplyEmail", reportContext.getLocale())</expression>
+                                <expression name="valueExpr">tr(ReportProperties.REPLY_TO_INFO.labelCode);</expression>
                             </text-data>
                         </cell>
                         <cell id="3826">
@@ -2145,213 +2596,37 @@ return false;
                         </cell>
                     </row>
                 </grid>
-                <grid id="3355">
+                <grid name="Empty line" id="4621">
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+	
+BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReporUtils.BirtReportFigure.REVENUE.value
+
+], params["figures"].value);</expression>
                         </structure>
                     </list-property>
-                    <column id="3356"/>
-                    <row id="3357">
-                        <cell id="3358"/>
+                    <column id="4622"/>
+                    <column id="4623"/>
+                    <row id="4624">
+                        <cell id="4625"/>
+                        <cell id="4626"/>
                     </row>
                 </grid>
-                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="3126">
-                    <property name="cube">MailingSummaryDataCube</property>
-                    <property name="measures">
-                        <extended-item extensionName="MeasureView" id="3189">
-                            <property name="measure">value</property>
-                            <property name="detail">
-                                <extended-item extensionName="AggregationCell" id="3190">
-                                    <property name="aggregationOnRow">CategoryIndexGroup/category_index</property>
-                                    <property name="borderLeftStyle">solid</property>
-                                    <property name="borderLeftWidth">thin</property>
-                                    <property name="borderLeftColor">#7E7E7E</property>
-                                    <property name="borderBottomStyle">solid</property>
-                                    <property name="borderBottomWidth">thin</property>
-                                    <property name="borderBottomColor">#7E7E7E</property>
-                                    <property name="height">55px</property>
-                                    <property name="content">
-                                        <data id="3191">
-                                            <property name="textAlign">right</property>
-                                            <property name="resultSetColumn">value_CategoryIndexGroup/category_index</property>
-                                        </data>
-                                    </property>
-                                </extended-item>
-                            </property>
-                            <property name="header">
-                                <extended-item extensionName="CrosstabCell" id="3192">
-                                    <property name="content">
-                                        <text-data id="3450">
-                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Recipients", reportContext.getLocale())</expression>
-                                        </text-data>
-                                    </property>
-                                    <property name="backgroundColor">white</property>
-                                    <property name="borderLeftStyle">solid</property>
-                                    <property name="borderLeftWidth">thin</property>
-                                    <property name="borderLeftColor">#7E7E7E</property>
-                                </extended-item>
-                            </property>
-                        </extended-item>
-                        <extended-item extensionName="MeasureView" id="3194">
-                            <property name="measure">rate</property>
-                            <property name="detail">
-                                <extended-item extensionName="AggregationCell" id="3195">
-                                    <property name="aggregationOnRow">CategoryIndexGroup/category_index</property>
-                                    <property name="borderBottomStyle">solid</property>
-                                    <property name="borderBottomWidth">thin</property>
-                                    <property name="borderBottomColor">#7E7E7E</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="borderRightColor">#7E7E7E</property>
-                                    <property name="content">
-                                        <data id="3196">
-                                            <structure name="numberFormat">
-                                                <property name="category">Custom</property>
-                                                <property name="pattern">0.0%</property>
-                                            </structure>
-                                            <property name="textAlign">right</property>
-                                            <property name="resultSetColumn">rate_CategoryIndexGroup/category_index</property>
-                                        </data>
-                                    </property>
-                                </extended-item>
-                            </property>
-                            <property name="header">
-                                <extended-item extensionName="CrosstabCell" id="3197">
-                                    <property name="content">
-                                        <text-data id="3438">
-                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
-                                        </text-data>
-                                    </property>
-                                    <property name="backgroundColor">white</property>
-                                    <property name="borderRightStyle">solid</property>
-                                    <property name="borderRightWidth">thin</property>
-                                    <property name="borderRightColor">#7E7E7E</property>
-                                </extended-item>
-                            </property>
-                        </extended-item>
-                    </property>
-                    <property name="rows">
-                        <extended-item extensionName="CrosstabView" id="3439">
-                            <property name="views">
-                                <extended-item extensionName="DimensionView" id="3445">
-                                    <property name="dimension">CategoryIndexGroup</property>
-                                    <property name="levels">
-                                        <extended-item extensionName="LevelView" name="NewLevel View" id="3446">
-                                            <property name="level">CategoryIndexGroup/category_index</property>
-                                            <property name="filter">
-                                                <filter-condition-element>
-                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
-                                                    <property name="operator">between</property>
-                                                    <simple-property-list name="value1">
-                                                        <value type="javascript">CommonKeys.SENT_HTML_INDEX</value>
-                                                    </simple-property-list>
-                                                    <expression name="value2" type="javascript">CommonKeys.SENT_OFFLINE_HTML_INDEX</expression>
-                                                </filter-condition-element>
-                                            </property>
-                                            <property name="member">
-                                                <extended-item extensionName="CrosstabCell" id="3447">
-                                                    <property name="content">
-                                                        <data name="category" id="3449">
-                                                            <property name="resultSetColumn">category</property>
-                                                        </data>
-                                                    </property>
-                                                </extended-item>
-                                            </property>
-                                        </extended-item>
-                                    </property>
-                                </extended-item>
-                            </property>
-                        </extended-item>
-                    </property>
-                    <property name="columns">
-                        <extended-item extensionName="CrosstabView" id="3128"/>
-                    </property>
-                    <property name="header">
-                        <extended-item extensionName="CrosstabCell" id="3127">
-                            <property name="content">
-                                <text-data id="3451">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.Mailing_Type", reportContext.getLocale())</expression>
-                                </text-data>
-                            </property>
-                        </extended-item>
-                    </property>
-                    <property name="filter">
-                        <filter-condition-element>
-                            <expression name="expr" type="javascript">data._outer["mailingId"]</expression>
-                            <property name="operator">eq</property>
-                            <simple-property-list name="value1">
-                                <value type="javascript">dimension["MailingIdGroup"]["mailingId"]</value>
-                            </simple-property-list>
-                        </filter-condition-element>
-                    </property>
-                    <list-property name="visibility">
-                        <structure>
-                            <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
-                        </structure>
-                    </list-property>
-                    <list-property name="boundDataColumns">
-                        <structure>
-                            <property name="name">value</property>
-                            <expression name="expression">measure["value"]</expression>
-                            <property name="dataType">integer</property>
-                            <property name="aggregateFunction">SUM</property>
-                        </structure>
-                        <structure>
-                            <property name="name">rate</property>
-                            <expression name="expression">measure["rate"]</expression>
-                            <property name="dataType">float</property>
-                            <property name="aggregateFunction">SUM</property>
-                        </structure>
-                        <structure>
-                            <property name="name">category_index</property>
-                            <expression name="expression">dimension["CategoryIndexGroup"]["category_index"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">value_CategoryIndexGroup/category_index</property>
-                            <expression name="expression">measure["value"]</expression>
-                            <property name="dataType">integer</property>
-                            <simple-property-list name="aggregateOn">
-                                <value>CategoryIndexGroup/category_index</value>
-                            </simple-property-list>
-                            <property name="aggregateFunction">SUM</property>
-                        </structure>
-                        <structure>
-                            <property name="name">rate_CategoryIndexGroup/category_index</property>
-                            <expression name="expression">measure["rate"]</expression>
-                            <property name="dataType">float</property>
-                            <simple-property-list name="aggregateOn">
-                                <value>CategoryIndexGroup/category_index</value>
-                            </simple-property-list>
-                            <property name="aggregateFunction">SUM</property>
-                        </structure>
-                        <structure>
-                            <property name="name">category</property>
-                            <expression name="expression">dimension["CategoryIndexGroup"]["category_index"]["category"]</expression>
-                            <property name="dataType">string</property>
-                        </structure>
-                    </list-property>
-                </extended-item>
-                <grid id="3434">
-                    <column id="3435"/>
-                    <row id="3436">
-                        <cell id="3437"/>
-                    </row>
-                    <row id="3454">
-                        <cell id="3455">
-                            <text-data id="3458">
-                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailingStatistics", reportContext.getLocale())</expression>
-                            </text-data>
-                        </cell>
-                    </row>
-                    <row id="3456">
-                        <cell id="3457"/>
-                    </row>
-                </grid>
-                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="3452">
+                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="Summary"
+ id="3452">
                     <property name="cube">MailingSummaryDataCube</property>
                     <property name="measures">
                         <extended-item extensionName="MeasureView" id="3465">
@@ -2426,7 +2701,7 @@ return false;
                                                     <expression name="valueExpr" type="javascript">!hasPercentageRepresentation(data["category_index"]) || data["rate_CategoryIndexGroup/category_index_TargetgroupGroup/targetgroup"] >= 0</expression>
                                                 </structure>
                                             </list-property>
-                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                            <expression name="valueExpr">tr("NotAvailableShort")</expression>
                                             <property name="contentType">auto</property>
                                         </text-data>
                                     </property>
@@ -2449,26 +2724,9 @@ return false;
                                             <property name="level">CategoryIndexGroup/category_index</property>
                                             <property name="filter">
                                                 <filter-condition-element>
-                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
-                                                    <property name="operator">ge</property>
-                                                    <simple-property-list name="value1">
-                                                        <value type="javascript">CommonKeys.DELIVERED_EMAILS_INDEX</value>
-                                                    </simple-property-list>
-                                                </filter-condition-element>
-                                                <filter-condition-element>
-                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
-                                                    <property name="operator">not-between</property>
-                                                    <simple-property-list name="value1">
-                                                        <value type="javascript">CommonKeys.REVENUE_INDEX</value>
-                                                    </simple-property-list>
-                                                    <expression name="value2" type="javascript">CommonKeys.REVENUE_SHIFTED_INDEX - 1</expression>
-                                                </filter-condition-element>
-                                                <filter-condition-element>
-                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
-                                                    <property name="operator">le</property>
-                                                    <simple-property-list name="value1">
-                                                        <value type="javascript">CommonKeys.REVENUE_SHIFTED_INDEX</value>
-                                                    </simple-property-list>
+                                                    <expression name="expr" type="javascript">BirtReporUtils.isCategoryAllowed(data["category_index"], params["figures"])</expression>
+                                                    <property name="operator">is-true</property>
+                                                    <property name="updateAggregation">true</property>
                                                 </filter-condition-element>
                                             </property>
                                             <property name="member">
@@ -2511,7 +2769,7 @@ return false;
                                                             <text-property name="text">;</text-property>
                                                         </label>
                                                         <text-data id="3508">
-                                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                            <expression name="valueExpr">tr("report.mailing.statistics.share")</expression>
                                                         </text-data>
                                                     </property>
                                                 </extended-item>
@@ -2525,8 +2783,9 @@ return false;
                     <property name="header">
                         <extended-item extensionName="CrosstabCell" id="3453">
                             <property name="content">
-                                <text-data id="3739">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("KeydataGeneral", reportContext.getLocale())</expression>
+                                <text-data id="4614">
+                                    <property name="fontWeight">normal</property>
+                                    <expression name="valueExpr">tr(BirtReportSettingsUtils.SUMMARY_GROUP);</expression>
                                 </text-data>
                             </property>
                         </extended-item>
@@ -2540,6 +2799,27 @@ return false;
                             </simple-property-list>
                         </filter-condition-element>
                     </property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+	
+BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReporUtils.BirtReportFigure.REVENUE.value
+
+], params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
                     <list-property name="boundDataColumns">
                         <structure>
                             <property name="name">category_index</property>
@@ -2611,19 +2891,215 @@ return false;
                         </structure>
                     </list-property>
                 </extended-item>
-                <grid id="3484">
+                <grid name="Empty line11" id="4642">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
+                    <column id="4643"/>
+                    <column id="4644"/>
+                    <row id="4645">
+                        <cell id="4646"/>
+                        <cell id="4647"/>
+                    </row>
+                </grid>
+                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="Formats"
+ id="3126">
+                    <property name="cube">MailingSummaryDataCube</property>
+                    <property name="measures">
+                        <extended-item extensionName="MeasureView" id="3189">
+                            <property name="measure">value</property>
+                            <property name="detail">
+                                <extended-item extensionName="AggregationCell" id="3190">
+                                    <property name="aggregationOnRow">CategoryIndexGroup/category_index</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderLeftColor">#7E7E7E</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderBottomColor">#7E7E7E</property>
+                                    <property name="height">55px</property>
+                                    <property name="content">
+                                        <data id="3191">
+                                            <property name="textAlign">right</property>
+                                            <property name="resultSetColumn">value_CategoryIndexGroup/category_index</property>
+                                        </data>
+                                    </property>
+                                </extended-item>
+                            </property>
+                            <property name="header">
+                                <extended-item extensionName="CrosstabCell" id="3192">
+                                    <property name="content">
+                                        <text-data id="3450">
+                                            <expression name="valueExpr">tr("Recipients")</expression>
+                                        </text-data>
+                                    </property>
+                                    <property name="backgroundColor">white</property>
+                                    <property name="borderLeftStyle">solid</property>
+                                    <property name="borderLeftWidth">thin</property>
+                                    <property name="borderLeftColor">#7E7E7E</property>
+                                </extended-item>
+                            </property>
+                        </extended-item>
+                        <extended-item extensionName="MeasureView" id="3194">
+                            <property name="measure">rate</property>
+                            <property name="detail">
+                                <extended-item extensionName="AggregationCell" id="3195">
+                                    <property name="aggregationOnRow">CategoryIndexGroup/category_index</property>
+                                    <property name="borderBottomStyle">solid</property>
+                                    <property name="borderBottomWidth">thin</property>
+                                    <property name="borderBottomColor">#7E7E7E</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderRightColor">#7E7E7E</property>
+                                    <property name="content">
+                                        <data id="3196">
+                                            <structure name="numberFormat">
+                                                <property name="category">Custom</property>
+                                                <property name="pattern">0.0%</property>
+                                            </structure>
+                                            <property name="textAlign">right</property>
+                                            <property name="resultSetColumn">rate_CategoryIndexGroup/category_index</property>
+                                        </data>
+                                    </property>
+                                </extended-item>
+                            </property>
+                            <property name="header">
+                                <extended-item extensionName="CrosstabCell" id="3197">
+                                    <property name="content">
+                                        <text-data id="3438">
+                                            <expression name="valueExpr">tr("report.mailing.statistics.share")</expression>
+                                        </text-data>
+                                    </property>
+                                    <property name="backgroundColor">white</property>
+                                    <property name="borderRightStyle">solid</property>
+                                    <property name="borderRightWidth">thin</property>
+                                    <property name="borderRightColor">#7E7E7E</property>
+                                </extended-item>
+                            </property>
+                        </extended-item>
+                    </property>
+                    <property name="rows">
+                        <extended-item extensionName="CrosstabView" id="3439">
+                            <property name="views">
+                                <extended-item extensionName="DimensionView" id="3445">
+                                    <property name="dimension">CategoryIndexGroup</property>
+                                    <property name="levels">
+                                        <extended-item extensionName="LevelView" name="NewLevel View" id="3446">
+                                            <property name="level">CategoryIndexGroup/category_index</property>
+                                            <property name="filter">
+                                                <filter-condition-element>
+                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
+                                                    <property name="operator">between</property>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">CommonKeys.SENT_HTML_INDEX</value>
+                                                    </simple-property-list>
+                                                    <expression name="value2" type="javascript">CommonKeys.SENT_OFFLINE_HTML_INDEX</expression>
+                                                </filter-condition-element>
+                                            </property>
+                                            <property name="member">
+                                                <extended-item extensionName="CrosstabCell" id="3447">
+                                                    <property name="content">
+                                                        <data name="category" id="3449">
+                                                            <property name="resultSetColumn">category</property>
+                                                        </data>
+                                                    </property>
+                                                </extended-item>
+                                            </property>
+                                        </extended-item>
+                                    </property>
+                                </extended-item>
+                            </property>
+                        </extended-item>
+                    </property>
+                    <property name="columns">
+                        <extended-item extensionName="CrosstabView" id="3128"/>
+                    </property>
+                    <property name="header">
+                        <extended-item extensionName="CrosstabCell" id="3127">
+                            <property name="content">
+                                <text-data id="3451">
+                                    <expression name="valueExpr">tr("mailing.Mailing_Type")</expression>
+                                </text-data>
+                            </property>
+                        </extended-item>
+                    </property>
+                    <property name="filter">
+                        <filter-condition-element>
+                            <expression name="expr" type="javascript">data._outer["mailingId"]</expression>
+                            <property name="operator">eq</property>
+                            <simple-property-list name="value1">
+                                <value type="javascript">dimension["MailingIdGroup"]["mailingId"]</value>
+                            </simple-property-list>
+                        </filter-condition-element>
+                    </property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.HTML.value, BirtReporUtils.BirtReportFigure.TEXT.value, BirtReporUtils.BirtReportFigure.OFFLINE_HTML.value], params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
+                    <list-property name="boundDataColumns">
+                        <structure>
+                            <property name="name">value</property>
+                            <expression name="expression">measure["value"]</expression>
+                            <property name="dataType">integer</property>
+                            <property name="aggregateFunction">SUM</property>
+                        </structure>
+                        <structure>
+                            <property name="name">rate</property>
+                            <expression name="expression">measure["rate"]</expression>
+                            <property name="dataType">float</property>
+                            <property name="aggregateFunction">SUM</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category_index</property>
+                            <expression name="expression">dimension["CategoryIndexGroup"]["category_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">value_CategoryIndexGroup/category_index</property>
+                            <expression name="expression">measure["value"]</expression>
+                            <property name="dataType">integer</property>
+                            <simple-property-list name="aggregateOn">
+                                <value>CategoryIndexGroup/category_index</value>
+                            </simple-property-list>
+                            <property name="aggregateFunction">SUM</property>
+                        </structure>
+                        <structure>
+                            <property name="name">rate_CategoryIndexGroup/category_index</property>
+                            <expression name="expression">measure["rate"]</expression>
+                            <property name="dataType">float</property>
+                            <simple-property-list name="aggregateOn">
+                                <value>CategoryIndexGroup/category_index</value>
+                            </simple-property-list>
+                            <property name="aggregateFunction">SUM</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category</property>
+                            <expression name="expression">dimension["CategoryIndexGroup"]["category_index"]["category"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                    </list-property>
+                </extended-item>
+                <grid name="Empty line1" id="4627">
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
                             <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE.value, BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE.value], params["figures"].value);</expression>
                         </structure>
                     </list-property>
-                    <column id="3485"/>
-                    <row id="3486">
-                        <cell id="3487"/>
+                    <column id="4628"/>
+                    <column id="4629"/>
+                    <row id="4630">
+                        <cell id="4631"/>
+                        <cell id="4632"/>
                     </row>
                 </grid>
-                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="3490">
+                <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="By device types"
+ id="3490">
                     <property name="cube">MailingSummaryDataCube</property>
                     <property name="measures">
                         <extended-item extensionName="MeasureView" id="3515">
@@ -2704,6 +3180,15 @@ return false;
                                                         <value type="javascript">CommonKeys.REVENUE_SHIFTED_INDEX</value>
                                                     </simple-property-list>
                                                 </filter-condition-element>
+                                                <filter-condition-element>
+                                                    <expression name="expr" type="javascript">data["category_index"]</expression>
+                                                    <property name="operator">not-in</property>
+                                                    <simple-property-list name="value1">
+                                                        <value type="javascript">CommonKeys.OPENINGS_ANONYMOUS_INDEX</value>
+                                                        <value type="javascript">CommonKeys.CLICKS_ANONYMOUS_INDEX</value>
+                                                    </simple-property-list>
+                                                    <property name="updateAggregation">true</property>
+                                                </filter-condition-element>
                                             </property>
                                             <property name="member">
                                                 <extended-item extensionName="CrosstabCell" id="3528">
@@ -2745,7 +3230,7 @@ return false;
                                                             <text-property name="text">;</text-property>
                                                         </label>
                                                         <text-data id="3502">
-                                                            <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                            <expression name="valueExpr">tr("report.mailing.statistics.share")</expression>
                                                         </text-data>
                                                     </property>
                                                     <property name="width">525px</property>
@@ -2761,7 +3246,7 @@ return false;
                         <extended-item extensionName="CrosstabCell" id="3491">
                             <property name="content">
                                 <text-data id="3525">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.bydevices", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.bydevices")</expression>
                                 </text-data>
                             </property>
                             <property name="width">196px</property>
@@ -2838,7 +3323,7 @@ return false;
                         </structure>
                     </list-property>
                 </extended-item>
-                <grid id="3803">
+                <grid name="Empty line3" id="3803">
                     <column id="3804"/>
                     <row id="3805">
                         <cell id="3806"/>
@@ -3106,7 +3591,7 @@ return false;
                                                                 <property name="showIfBlank">false</property>
                                                                 <property name="canShrink">false</property>
                                                                 <property name="overflow">hidden</property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.mailing.statistics.share")</expression>
                                                             </text-data>
                                                         </property>
                                                         <property name="backgroundColor">#0071B9</property>
@@ -3545,7 +4030,7 @@ return false;
                                                                 <property name="showIfBlank">false</property>
                                                                 <property name="canShrink">false</property>
                                                                 <property name="overflow">hidden</property>
-                                                                <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.mailing.statistics.share", reportContext.getLocale())</expression>
+                                                                <expression name="valueExpr">tr("report.mailing.statistics.share")</expression>
                                                                 <property name="contentType">html</property>
                                                             </text-data>
                                                         </property>
@@ -3733,7 +4218,13 @@ return false;
                         </footer>
                     </group>
                 </table>
-                <grid id="4357">
+                <grid name="Empty line4" id="4357">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">row["totalCount"] == 0</expression>
+                        </structure>
+                    </list-property>
                     <column id="4358"/>
                     <row id="4359">
                         <cell id="4360"/>
@@ -3844,7 +4335,7 @@ return false;
                         <row id="3785">
                             <cell id="3786">
                                 <text-data id="3546">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Clickstats_Linkclicks", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("Clickstats_Linkclicks")</expression>
                                 </text-data>
                             </cell>
                         </row>
@@ -4069,37 +4560,37 @@ isShowLink = true;	]]></method>
                         <row id="3623">
                             <cell id="3624">
                                 <text-data id="3740">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.number", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.number")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3625">
                                 <text-data id="3664">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("Linkclicks", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("Linkclicks")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3626">
                                 <text-data id="3666">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.Target", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("birt.Target")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3627">
                                 <text-data id="3668">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.Clicks", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("statistic.Clicks")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3628">
                                 <text-data id="3670">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.clicker", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("statistic.clicker")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3629">
                                 <text-data id="3672">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksGrossInPercent", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.clicksGrossInPercent")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3630">
                                 <text-data id="3674">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.clicksNetInPercent", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.clicksNetInPercent")</expression>
                                 </text-data>
                             </cell>
                         </row>
@@ -4334,63 +4825,18 @@ isShowLink = true;	]]></method>
                         </row>
                     </header>
                 </table>
-                <table name="Softbounces row" id="3871">
-                    <property name="dataSet">MailingsDataSet</property>
+                <grid name="Empty line62" id="4658">
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
                             <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
-                    <list-property name="boundDataColumns">
-                        <structure>
-                            <property name="name">COUNT</property>
-                            <text-property name="displayName">COUNT</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNT"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">DETAIL</property>
-                            <text-property name="displayName">DETAIL</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["DETAIL"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">DETAILSTRING</property>
-                            <text-property name="displayName">DETAILSTRING</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["DETAILSTRING"]</expression>
-                            <property name="dataType">string</property>
-                        </structure>
-                        <structure>
-                            <property name="name">COUNTPERCENT</property>
-                            <text-property name="displayName">COUNTPERCENT</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNTPERCENT"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">mailingId</property>
-                            <text-property name="displayName">mailingId</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["mailingId"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                    </list-property>
-                    <column id="3878"/>
-                    <header>
-                        <row id="3872">
-                            <cell id="3873">
-                                <text-data id="4090">
-                                    <expression name="valueExpr">row._outer["mailingId"] + row._outer["mailingName"] + row["DETAILSTRING"]</expression>
-                                    <property name="contentType">html</property>
-                                </text-data>
-                            </cell>
-                        </row>
-                    </header>
-                    <detail>
-                        <row id="4091">
-                            <cell id="4092"/>
-                        </row>
-                    </detail>
-                </table>
+                    <column id="4659"/>
+                    <row id="4660">
+                        <cell id="4661"/>
+                    </row>
+                </grid>
                 <table name="Softbounces" id="3959">
                     <property name="pageBreakAfter">avoid</property>
                     <property name="pageBreakBefore">avoid</property>
@@ -4408,7 +4854,8 @@ isShowLink = true;	]]></method>
                             <property name="name">COUNT</property>
                             <text-property name="displayName">COUNT</text-property>
                             <expression name="expression" type="javascript">dataSetRow["COUNT"]</expression>
-                            <property name="dataType">integer</property>
+                            <property name="dataType">string</property>
+                            <property name="allowExport">true</property>
                         </structure>
                         <structure>
                             <property name="name">DETAIL</property>
@@ -4442,25 +4889,25 @@ isShowLink = true;	]]></method>
                         </structure>
                         <structure>
                             <property name="name">Count</property>
-                            <expression name="expression" type="javascript">row["COUNT"]</expression>
-                            <property name="dataType">integer</property>
+                            <expression name="expression" type="javascript">row["COUNT"] > 0 ? row["COUNT"] : tr('NotAvailableShort')</expression>
+                            <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
                         <structure>
                             <property name="name">Percent</property>
-                            <expression name="expression" type="javascript">"("+row["COUNTPERCENT"]+"%)"</expression>
+                            <expression name="expression" type="javascript">row["COUNTPERCENT"] > 0 ? "("+row["COUNTPERCENT"]+"%)" : tr('NotAvailableShort')</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
                         <structure>
                             <property name="name">Softbounces</property>
-                            <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.qualified.softbounces", reportContext.getLocale())</expression>
+                            <expression name="expression" type="javascript">tr("birt.qualified.softbounces")</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
                         <structure>
                             <property name="name">NotAcailable</property>
-                            <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                            <expression name="expression" type="javascript">tr("NotAvailableShort")</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
@@ -4472,7 +4919,7 @@ isShowLink = true;	]]></method>
                         </structure>
                         <structure>
                             <property name="name">NA</property>
-                            <expression name="expression" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                            <expression name="expression" type="javascript">tr("NotAvailableShort")</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
@@ -4486,6 +4933,13 @@ isShowLink = true;	]]></method>
                     <structure name="toc"/>
                     <property name="repeatHeader">false</property>
                     <property name="pageBreakInterval">2147483647</property>
+                    <list-property name="sort">
+                        <structure>
+                            <expression name="key" type="javascript">row["DETAIL"]</expression>
+                            <property name="direction">asc</property>
+                            <property name="strength">-1</property>
+                        </structure>
+                    </list-property>
                     <list-property name="filter">
                         <structure>
                             <property name="operator">lt</property>
@@ -4514,7 +4968,7 @@ isShowLink = true;	]]></method>
                                     <property name="fontWeight">normal</property>
                                     <property name="color">black</property>
                                     <structure name="toc"/>
-                                    <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("bounces.softbounce", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr" type="javascript">tr("bounces.softbounce")</expression>
                                 </text-data>
                             </cell>
                             <cell id="3963"/>
@@ -4607,18 +5061,18 @@ isShowLink = true;	]]></method>
                                 <text-data id="4196">
                                     <property name="fontWeight">normal</property>
                                     <property name="paddingLeft">1pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.qualified.softbounces", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("birt.qualified.softbounces")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
                             <cell id="4194">
                                 <text-data id="4197">
-                                    <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr" type="javascript">tr("NotAvailableShort")</expression>
                                 </text-data>
                             </cell>
                             <cell id="4195">
                                 <text-data id="4199">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("NotAvailableShort")</expression>
                                 </text-data>
                             </cell>
                         </row>
@@ -4697,7 +5151,7 @@ isShowLink = true;	]]></method>
                                 <text-data id="4205">
                                     <property name="fontWeight">normal</property>
                                     <property name="paddingLeft">1pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("birt.qualified.softbounces", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("birt.qualified.softbounces")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
@@ -4715,69 +5169,26 @@ isShowLink = true;	]]></method>
                         </row>
                     </header>
                 </table>
-                <table name="Softbounces2 row" id="4293">
-                    <property name="dataSet">MailingsDataSet</property>
+                <grid name="Empty line 22" id="9816">
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
                             <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
-                    <list-property name="boundDataColumns">
-                        <structure>
-                            <property name="name">COUNT</property>
-                            <text-property name="displayName">COUNT</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNT"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">DETAIL</property>
-                            <text-property name="displayName">DETAIL</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["DETAIL"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">DETAILSTRING</property>
-                            <text-property name="displayName">DETAILSTRING</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["DETAILSTRING"]</expression>
-                            <property name="dataType">string</property>
-                        </structure>
-                        <structure>
-                            <property name="name">COUNTPERCENT</property>
-                            <text-property name="displayName">COUNTPERCENT</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNTPERCENT"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                        <structure>
-                            <property name="name">mailingId</property>
-                            <text-property name="displayName">mailingId</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["mailingId"]</expression>
-                            <property name="dataType">integer</property>
-                        </structure>
-                    </list-property>
-                    <column id="4299"/>
-                    <header>
-                        <row id="4294">
-                            <cell id="4295">
-                                <text-data id="4296">
-                                    <expression name="valueExpr">row._outer["mailingId"] + row._outer["mailingName"] + row["DETAILSTRING"]</expression>
-                                    <property name="contentType">html</property>
-                                </text-data>
-                            </cell>
-                        </row>
-                    </header>
-                    <detail>
-                        <row id="4297">
-                            <cell id="4298"/>
-                        </row>
-                    </detail>
-                </table>
+                    <column id="9817"/>
+                    <column id="9818"/>
+                    <row id="9819">
+                        <cell id="9820"/>
+                        <cell id="9821"/>
+                    </row>
+                </grid>
                 <table name="Softbounces2" id="4276">
                     <property name="dataSet">BouncesDataSet</property>
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
-                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || (row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false)</expression>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("softbounces", params["figures"]) || ((row._outer["undeliveredCount"] &lt; 1) || (reportContext.getPersistentGlobalVariable("successTableActivated") == false))</expression>
                         </structure>
                     </list-property>
                     <list-property name="boundDataColumns">
@@ -4825,9 +5236,16 @@ isShowLink = true;	]]></method>
                         </structure>
                         <structure>
                             <property name="name">Count</property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNT"]</expression>
+                            <expression name="expression" type="javascript">dataSetRow["COUNT"] > 0 ? dataSetRow["COUNT"] : tr('NotAvailableShort')</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
+                        </structure>
+                    </list-property>
+                    <list-property name="sort">
+                        <structure>
+                            <expression name="key" type="javascript">row["DETAIL"]</expression>
+                            <property name="direction">asc</property>
+                            <property name="strength">-1</property>
                         </structure>
                     </list-property>
                     <list-property name="filter">
@@ -4856,7 +5274,7 @@ isShowLink = true;	]]></method>
                                 <text-data id="4279">
                                     <property name="fontWeight">normal</property>
                                     <property name="paddingLeft">1pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("bounces.softbounce", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("bounces.softbounce")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
@@ -4878,20 +5296,20 @@ isShowLink = true;	]]></method>
                         </row>
                     </detail>
                 </table>
-                <table name="Hardbounces row" id="4069">
+                <grid name="Empty line2" id="4633">
                     <list-property name="visibility">
                         <structure>
                             <property name="format">all</property>
                             <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed("hardbounces", params["figures"])</expression>
                         </structure>
                     </list-property>
-                    <column id="4072"/>
-                    <header>
-                        <row id="4070">
-                            <cell id="4071"/>
-                        </row>
-                    </header>
-                </table>
+                    <column id="4634"/>
+                    <column id="4635"/>
+                    <row id="4636">
+                        <cell id="4637"/>
+                        <cell id="4638"/>
+                    </row>
+                </grid>
                 <table name="Hardbounces" id="4014">
                     <property name="pageBreakAfter">avoid</property>
                     <property name="pageBreakBefore">avoid</property>
@@ -4943,13 +5361,13 @@ isShowLink = true;	]]></method>
                         </structure>
                         <structure>
                             <property name="name">Count</property>
-                            <expression name="expression" type="javascript">dataSetRow["COUNT"]</expression>
+                            <expression name="expression" type="javascript">dataSetRow["COUNT"] > 0 ? dataSetRow["COUNT"] : tr('NotAvailableShort')</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
                         <structure>
                             <property name="name">Percent</property>
-                            <expression name="expression" type="javascript">"("+row["COUNTPERCENT"]+"%)"</expression>
+                            <expression name="expression" type="javascript">row["COUNTPERCENT"] > 0 ? "("+row["COUNTPERCENT"]+"%)" : tr('NotAvailableShort')</expression>
                             <property name="dataType">string</property>
                             <property name="allowExport">true</property>
                         </structure>
@@ -4989,7 +5407,7 @@ isShowLink = true;	]]></method>
                         <row id="4015">
                             <cell id="4016">
                                 <text-data id="4017">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.bounces.hardbounce", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("statistic.bounces.hardbounce")</expression>
                                 </text-data>
                             </cell>
                             <cell id="4018"/>
@@ -5083,18 +5501,18 @@ isShowLink = true;	]]></method>
                                 <text-data id="4322">
                                     <property name="fontWeight">normal</property>
                                     <property name="paddingLeft">1pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.total")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
                             <cell id="4323">
                                 <text-data id="4324">
-                                    <expression name="valueExpr" type="javascript">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr" type="javascript">tr("NotAvailableShort")</expression>
                                 </text-data>
                             </cell>
                             <cell id="4325">
                                 <text-data id="4326">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("NotAvailableShort", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("NotAvailableShort")</expression>
                                 </text-data>
                             </cell>
                         </row>
@@ -5173,7 +5591,7 @@ isShowLink = true;	]]></method>
                                 <text-data id="4333">
                                     <property name="fontWeight">normal</property>
                                     <property name="paddingLeft">1pt</property>
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
+                                    <expression name="valueExpr">tr("report.total")</expression>
                                     <property name="contentType">auto</property>
                                 </text-data>
                             </cell>
@@ -5191,12 +5609,176 @@ isShowLink = true;	]]></method>
                         </row>
                     </header>
                 </table>
-                <grid id="3683">
+                <grid name="Empty line6" id="3683">
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
                     <column id="3684"/>
                     <row id="3685">
                         <cell id="3686"/>
                     </row>
                 </grid>
+                <table name="Top domains" id="9836">
+                    <property name="dataSet">TopDomainsDataSet</property>
+                    <list-property name="visibility">
+                        <structure>
+                            <property name="format">all</property>
+                            <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                        </structure>
+                    </list-property>
+                    <list-property name="boundDataColumns">
+                        <structure>
+                            <property name="name">category_name</property>
+                            <text-property name="displayName">Category Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category_name"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">category_index</property>
+                            <text-property name="displayName">Category Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">domainname</property>
+                            <text-property name="displayName">Domain Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["domainname"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">domainname_index</property>
+                            <text-property name="displayName">Domain Name Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["domainname_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">targetgroup</property>
+                            <text-property name="displayName">Target Group Name</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
+                            <property name="dataType">string</property>
+                        </structure>
+                        <structure>
+                            <property name="name">targetgroup_index</property>
+                            <text-property name="displayName">Target Group Index</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">value</property>
+                            <text-property name="displayName">Value</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["value"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                        <structure>
+                            <property name="name">rate</property>
+                            <text-property name="displayName">Rate</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
+                            <property name="dataType">float</property>
+                        </structure>
+                        <structure>
+                            <property name="name">mailingId</property>
+                            <text-property name="displayName">mailingId</text-property>
+                            <expression name="expression" type="javascript">dataSetRow["mailingId"]</expression>
+                            <property name="dataType">integer</property>
+                        </structure>
+                    </list-property>
+                    <list-property name="filter">
+                        <structure>
+                            <property name="operator">eq</property>
+                            <expression name="expr" type="javascript">row["mailingId"]</expression>
+                            <simple-property-list name="value1">
+                                <value>row._outer["mailingId"]</value>
+                            </simple-property-list>
+                            <property name="updateAggregation">true</property>
+                        </structure>
+                    </list-property>
+                    <column id="9885"/>
+                    <column id="9887"/>
+                    <column id="9889"/>
+                    <column id="9891"/>
+                    <column id="9892"/>
+                    <header>
+                        <row id="9916">
+                            <cell id="9917">
+                                <text-data id="9926">
+                                    <expression name="valueExpr">tr("statistic.TopDomains")</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="9918"/>
+                            <cell id="9919"/>
+                            <cell id="9920"/>
+                            <cell id="9921"/>
+                        </row>
+                        <row id="9837">
+                            <cell id="9838">
+                                <text-data id="9894">
+                                    <expression name="valueExpr">tr("grid.mediapool.category")</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="9842">
+                                <text-data id="9895">
+                                    <expression name="valueExpr">tr("statistic.domain")</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="9846">
+                                <text-data id="9896">
+                                    <expression name="valueExpr">tr("birt.Target")</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="9850">
+                                <text-data id="9900">
+                                    <expression name="valueExpr">tr("value")</expression>
+                                </text-data>
+                            </cell>
+                            <cell id="9852">
+                                <text-data id="9902">
+                                    <expression name="valueExpr">tr("rate")</expression>
+                                </text-data>
+                            </cell>
+                        </row>
+                    </header>
+                    <detail>
+                        <row id="9856">
+                            <cell id="9857">
+                                <data id="9858">
+                                    <property name="resultSetColumn">category_name</property>
+                                </data>
+                            </cell>
+                            <cell id="9861">
+                                <data id="9862">
+                                    <property name="resultSetColumn">domainname</property>
+                                </data>
+                            </cell>
+                            <cell id="9865">
+                                <data id="9866">
+                                    <property name="resultSetColumn">targetgroup</property>
+                                </data>
+                            </cell>
+                            <cell id="9869">
+                                <data id="9870">
+                                    <property name="resultSetColumn">value</property>
+                                </data>
+                            </cell>
+                            <cell id="9871">
+                                <data id="9872">
+                                    <property name="resultSetColumn">rate</property>
+                                </data>
+                            </cell>
+                        </row>
+                    </detail>
+                    <footer>
+                        <row id="9875">
+                            <cell id="9876"/>
+                            <cell id="9878"/>
+                            <cell id="9880"/>
+                            <cell id="9882"/>
+                            <cell id="9883"/>
+                        </row>
+                    </footer>
+                </table>
             </detail>
         </list>
     </body>

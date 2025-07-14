@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,8 +15,6 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
@@ -30,7 +28,7 @@ public final class HashTagEvaluationServiceImpl implements HashTagEvaluationServ
 	private HashTag fallbackHashTag;
 
 	@Override
-	public final String evaluateHashTag(final HashTagContext context, final String string) throws NoMatchingHashTagException, HashTagException {
+	public String evaluateHashTag(HashTagContext context, String string) throws HashTagException {
 		final HashTag hashTag = findHashTagOrFallbackFor(context, string);
 		
 		return hashTag.handle(context, string);
@@ -55,12 +53,10 @@ public final class HashTagEvaluationServiceImpl implements HashTagEvaluationServ
 	}
 	
 	
-	@Required
 	public final void setHashTagRegistry(final HashTagRegistry registry) {
 		this.registry = Objects.requireNonNull(registry, "Hash tag registry is null");
 	}
 	
-	@Required
 	public final void setFallbackHashTag(final HashTag hashTag) {
 		this.fallbackHashTag = Objects.requireNonNull(hashTag, "Fallback hash tag is null");
 	}

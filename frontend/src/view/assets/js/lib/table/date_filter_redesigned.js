@@ -24,13 +24,15 @@ class DateRangeFilter {
   }
 
   doesFilterPass(params) {
-    const date = params.data[this.column]?.date || this.params.valueGetter(params);
     if (!this.fromDate && !this.toDate) {
       return true;
     }
+
+    const date = this.#getDate(params);
     if (!date) {
       return false;
     }
+
     if (this.fromDate && this.toDate) {
       return date >= this.fromDate && date <= this.toDate
     }
@@ -40,6 +42,15 @@ class DateRangeFilter {
     if (this.toDate) {
       return date <= this.toDate
     }
+  }
+
+  #getDate(params) {
+    const value = params.data[this.column];
+    if (typeof value === 'number' && value > 0) {
+      return new Date(value);
+    }
+
+    return value?.date;
   }
 
   getModel() {
@@ -57,6 +68,7 @@ class DateRangeFilter {
     if (this.$toDate?.length) {
       const toDateIso = this.#getIsoVal(this.$toDate);
       this.toDate = toDateIso ? new Date(toDateIso) : null;
+      this.toDate?.setDate(this.toDate?.getDate() + 1);
     }
   }
 

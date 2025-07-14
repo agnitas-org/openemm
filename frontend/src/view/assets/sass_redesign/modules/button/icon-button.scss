@@ -9,17 +9,19 @@ Differs from the <a href="components_-_buttons.html#buttons_01_icon">`.btn-icon`
 Uses <a href="components_-_icons.html">`.icon` component</a> inside.
 
 ```htmlexample
-<a href="#" class="icon-btn text-primary">
+<a href="#" class="icon-btn icon-btn--primary">
     <i class="icon icon-file-download"></i>
 </a>
 
-<button type="button" class="icon-btn">
-  <i class="icon icon-trash-alt text-danger"></i>
+<button type="button" class="icon-btn icon-btn--danger">
+  <i class="icon icon-trash-alt"></i>
 </button>
 ```
 */
 
 .icon-btn {
+  --icon-btn-secondary-color: #{$dark-grey};
+
   border: none;
   background: none;
   color: inherit;
@@ -27,9 +29,37 @@ Uses <a href="components_-_icons.html">`.icon` component</a> inside.
   font-size: $font-size-lg;
   line-height: 0;
 
-  &.disable, &:disabled {
+  &.disabled, &:disabled {
+    pointer-events: none;
+
     > .icon {
       opacity: 0.7;
     }
   }
+
+  &:hover, &:focus {
+    filter: brightness(80%);
+  }
+}
+
+@include color-mode(dark) {
+  .icon-btn {
+    --icon-btn-secondary-color: #{$light-grey};
+  }
+}
+
+.icon-btn--primary {
+  color: $blue-var !important;
+}
+
+.icon-btn--secondary {
+  color: var(--icon-btn-secondary-color) !important;
+}
+
+.icon-btn--danger {
+  color: $danger-var !important;
+}
+
+.icon-btn--info {
+  color: $info !important;
 }

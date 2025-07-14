@@ -5,7 +5,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE%>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK%>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE_2" value="<%= EmmLayoutBase.ThemeType.DARK_CONTRAST%>" scope="page"/>
 
 <tiles:insertAttribute name="page-setup"/>
 
@@ -13,7 +14,7 @@
 <!--[if (gt IE 9)|!(IE)]><!--> <html class=""> <!--<![endif]-->
 <tiles:insertAttribute name="head-tag"/>
 
-<body class="${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
+<body class="${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE or emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE_2 ? 'dark-theme' : ''}">
 
     <div class="loader">
         <i class="icon icon-refresh icon-spin"></i> <mvc:message code="default.loading" />

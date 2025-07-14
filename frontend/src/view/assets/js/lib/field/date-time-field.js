@@ -35,6 +35,8 @@ Option                     |Description                                         
 */
 
 (() => {
+  const TIME_FORMAT = 'HH:mm';
+
   class DateTimeField extends AGN.Lib.Field {
     constructor($field) {
       super($field);
@@ -45,8 +47,20 @@ Option                     |Description                                         
       this.el.on('change', () => this.setDateTimeFieldValue());
     }
 
+    get dateValue() {
+      return moment(this.strValue, `${window.adminDateFormat.toUpperCase()} ${TIME_FORMAT}`).toDate();
+    }
+
+    get strValue() {
+      return this.$hiddenInput.val();
+    }
+
+    get $hiddenInput() {
+      return this.el.find(`[name="${this._propertyName}"]`);
+    }
+
     setDateTimeFieldValue() {
-      this.el.find(`[name="${this._propertyName}"]`).val(this.#prepareDateTimeValue());
+      this.$hiddenInput.val(this.#prepareDateTimeValue());
     }
 
     valid() {
@@ -78,10 +92,7 @@ Option                     |Description                                         
       if (!date) {
         return '';
       }
-      if (this.options.submitDateFormat) {
-        date = AGN.Lib.DateFormat.format(moment(date, window.adminDateFormat.toUpperCase()).toDate(), this.options.submitDateFormat);
-      }
-      return this.#formatDateTime(date, time.replaceAll('_', '0'));
+      return this.#formatDateTime(date, time.replace(/[_hm]/g, '0'));
     }
 
     #getDefaultSubmitTime() {
@@ -90,7 +101,7 @@ Option                     |Description                                         
         return '00:00';
       }
       if (defaultSubmitTime === 'now') {
-        return moment().format('HH:mm');
+        return moment().format(TIME_FORMAT);
       }
       return defaultSubmitTime;
     }
@@ -131,6 +142,8 @@ Option                     |Description                                         
         timeMask: this.options?.timeMask,
         extraAttrs: extraAttrs || ''
       }));
+
+      this.el.find('.js-datepicker').data('datepicker-options', this.el.data('datepicker-options'));
 
       this.el.append($input);
       AGN.runAll(this.el);

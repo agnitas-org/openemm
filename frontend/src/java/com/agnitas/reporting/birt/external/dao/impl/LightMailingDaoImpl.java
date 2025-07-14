@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,18 @@
 
 package com.agnitas.reporting.birt.external.dao.impl;
 
+import com.agnitas.reporting.birt.external.beans.LightMailing;
+import com.agnitas.reporting.birt.external.dao.LightMailingDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+
+import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.sql.DataSource;
-
-import org.agnitas.dao.impl.BaseDaoImpl;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.dao.LightMailingDao;
-
 public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao {
 
-	private static final Logger logger = LogManager.getLogger(LightMailingDaoImpl.class);
-	
 	public LightMailingDaoImpl(DataSource dataSource) {
 		setDataSource(dataSource);
 	}	
@@ -38,7 +31,7 @@ public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao 
 		String targetSql = "SELECT mailing_id, shortname, description, mailinglist_id, target_expression, campaign_id, mailing_type"
 			+ " FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?";
 				
-		return selectObjectDefaultNull(logger, targetSql, new LightMailingRowMapper(), companyId, mailingId);
+		return selectObjectDefaultNull(targetSql, new LightMailingRowMapper(), companyId, mailingId);
 	}
 	
 	private static class LightMailingRowMapper implements RowMapper<LightMailing> {

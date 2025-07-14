@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.components.service.MailingBlockSizeService" %>
 
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -9,7 +9,6 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="enableLinkCheck" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailingListExist" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailtrackExtended" type="java.lang.Boolean"--%>
@@ -36,12 +35,6 @@
         }
     </script>
 
-    <c:set var="usedInTile">
-        <c:if test="${isActionBasedMailing}">
-            <%@ include file="fragments/tiles/mailing-send-dependents-tile.jspf" %>
-        </c:if>
-    </c:set>
-
     <div class="tiles-block flex-column">
         <c:if test="${not isTemplate}">
             <%@ include file="fragments/tiles/delivery-info-tile.jspf" %>
@@ -49,7 +42,7 @@
         <%@ include file="fragments/tiles/send-test-mailing-tile.jspf" %>
     </div>
     <c:if test="${not isTemplate}">
-        <mvc:form id="delivery-settings-form" data-form="resource" modelAttribute="form" cssClass="tiles-block flex-column">
+        <mvc:form id="delivery-settings-form" data-form="resource" modelAttribute="form" cssClass="tiles-block flex-column" data-action="send-mailing">
             <mvc:hidden path="mailingID" />
             <mvc:hidden path="stepping" value="${DEFAULT_STEPPING}" />
 
@@ -63,13 +56,13 @@
         </mvc:form>
     </c:if>
 
-    <c:if test="${displayStatusTile or not empty usedInTile}">
+    <c:if test="${displayStatusTile or isActionBasedMailing}">
         <div class="tiles-block flex-column">
             <c:if test="${displayStatusTile}">
                 <%@ include file="fragments/tiles/status-tile.jspf" %>
             </c:if>
-            <c:if test="${not empty usedInTile}">
-                ${usedInTile}
+            <c:if test="${isActionBasedMailing}">
+                <%@ include file="fragments/tiles/mailing-send-dependents-tile.jspf" %>
             </c:if>
         </div>
     </c:if>
@@ -89,7 +82,7 @@
 
     <script id="warning-mailing-size-modal" type="text/x-mustache-template">
         <div class="modal modal-warning" tabindex="-1">
-            <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h1 class="modal-title"><mvc:message code="warning"/></h1>

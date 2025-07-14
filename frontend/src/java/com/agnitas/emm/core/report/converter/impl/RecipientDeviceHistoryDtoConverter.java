@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,17 +15,17 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComRecipientReaction;
+import com.agnitas.beans.RecipientReaction;
 import com.agnitas.emm.core.report.converter.GenericLocalizableConverter;
 import com.agnitas.emm.core.report.dto.RecipientDeviceHistoryDto;
 import com.agnitas.emm.core.report.dto.impl.RecipientDeviceHistoryDtoImpl;
 import com.agnitas.messages.I18nString;
 
 @Component
-public class RecipientDeviceHistoryDtoConverter implements GenericLocalizableConverter<ComRecipientReaction, RecipientDeviceHistoryDto> {
+public class RecipientDeviceHistoryDtoConverter implements GenericLocalizableConverter<RecipientReaction, RecipientDeviceHistoryDto> {
 
     @Override
-    public RecipientDeviceHistoryDto convert(ComRecipientReaction entity, Locale locale) {
+    public RecipientDeviceHistoryDto convert(RecipientReaction entity, Locale locale) {
         RecipientDeviceHistoryDto deviceHistoryDto = new RecipientDeviceHistoryDtoImpl();
 
         String actionDescription = I18nString.getLocaleString(entity.getReactionType().getMessageKey(), locale);

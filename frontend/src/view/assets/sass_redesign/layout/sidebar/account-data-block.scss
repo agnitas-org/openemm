@@ -12,11 +12,6 @@
   }
 }
 
-.version-container {
-  @include flex-row($gap-sm);
-  align-items: center;
-}
-
 .account-data__label {
   @include font($font-size-base, $font-weight-base);
   white-space: nowrap;

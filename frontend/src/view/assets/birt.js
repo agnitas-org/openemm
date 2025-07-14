@@ -484,9 +484,9 @@
     function initInterval() {
         if (0 !== interval) {
             log("setInterval: " + interval + "ms");
-            intervalTimer = setInterval(function() {
+            intervalTimer = setInterval((function() {
                 sendSize("interval", "setInterval: " + interval);
-            }, Math.abs(interval));
+            }), Math.abs(interval));
         }
     }
     function setupBodyMutationObserver() {
@@ -750,11 +750,11 @@
             log("Trigger event lock on");
         }
         clearTimeout(triggerLockedTimer);
-        triggerLockedTimer = setTimeout(function() {
+        triggerLockedTimer = setTimeout((function() {
             triggerLocked = false;
             log("Trigger event lock off");
             log("--");
-        }, eventCancelTimer);
+        }), eventCancelTimer);
     }
     function triggerReset(triggerEvent) {
         height = getHeight[heightCalcMode]();
@@ -794,9 +794,9 @@
                 target = event.source;
                 init();
                 firstRun = false;
-                setTimeout(function() {
+                setTimeout((function() {
                     initLock = false;
-                }, eventCancelTimer);
+                }), eventCancelTimer);
             },
             reset: function resetFromParent() {
                 if (!initLock) {
@@ -890,9 +890,9 @@
         birtCommunicationManager.postProcess = function() {
             BirtCommunicationManager.prototype.postProcess.call(this);
             if (isFF) {
-                window.setInterval(function() {
+                window.setInterval((function() {
                     window.parentIFrame.size();
-                }, 500);
+                }), 500);
             }
         };
     };

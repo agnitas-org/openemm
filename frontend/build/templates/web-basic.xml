@@ -138,6 +138,24 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
+	<!-- Session Binding -->
+	<!--
+	<filter>
+		<filter-name>SessionBindingFilter</filter-name>
+		<filter-class>com.agnitas.emm.security.sessionbinding.web.filter.SessionBindingRequestFilter</filter-class>
+		<async-supported>true</async-supported>
+
+		<init-param>
+			<param-name>excluded-clients</param-name>
+			<param-value>localhost</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>SessionBindingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+    -->
+
 	<!-- Stores an original request URI to make it available within JSPs -->
 	<filter>
 		<filter-name>OriginUriFilter</filter-name>
@@ -168,7 +186,7 @@
 	<!-- Listener to initialize the backend datasource Note: This listener requires
 		that Springs ContextLoaderListener is loaded before this listener! -->
 	<listener>
-		<listener-class>org.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
+		<listener-class>com.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
 	</listener>
 
 	<!-- listener for resetting jobqueue entries on host startup after crash -->
@@ -206,6 +224,11 @@
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 		<async-supported>true</async-supported>
+		<multipart-config>
+			<max-file-size>419430400</max-file-size> <!-- 400MB -->
+			<max-request-size>524288000</max-request-size> <!-- 500MB -->
+			<file-size-threshold>1048576</file-size-threshold> <!-- 1MB -->
+		</multipart-config>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>spring-mvc</servlet-name>
@@ -219,7 +242,7 @@
 	<!-- servlets to show components and images -->
 	<servlet>
 		<servlet-name>ShowComponent</servlet-name>
-		<servlet-class>org.agnitas.web.ShowComponent</servlet-class>
+		<servlet-class>com.agnitas.web.ShowComponent</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>ShowComponent</servlet-name>
@@ -292,7 +315,7 @@
 	<!-- servlet to download mailing components or attachments -->
 	<servlet>
 		<servlet-name>DownloadComponent</servlet-name>
-		<servlet-class>org.agnitas.web.DownloadComponent</servlet-class>
+		<servlet-class>com.agnitas.web.DownloadComponent</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>DownloadComponent</servlet-name>
@@ -301,7 +324,7 @@
 
 	<servlet>
 		<servlet-name>Manual</servlet-name>
-		<servlet-class>com.agnitas.web.ComManualServlet</servlet-class>
+		<servlet-class>com.agnitas.web.ManualServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
@@ -312,7 +335,7 @@
 	<!-- EMM open count servlet -->
 	<servlet>
 		<servlet-name>OpenrateServlet</servlet-name>
-		<servlet-class>com.agnitas.web.ComOnePixelCount</servlet-class>
+		<servlet-class>com.agnitas.web.OnePixelCountServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>OpenrateServlet</servlet-name>
@@ -364,7 +387,7 @@
 
 	<servlet>
 		<servlet-name>RedirectServletUserForm</servlet-name>
-		<servlet-class>com.agnitas.userform.trackablelinks.web.ComRdirUserForm</servlet-class>
+		<servlet-class>com.agnitas.userform.trackablelinks.web.RdirUserFormServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>RedirectServletUserForm</servlet-name>
@@ -374,7 +397,7 @@
 	<!-- Servlet for automatically unscubscribe -->
 	<servlet>
 		<servlet-name>UnsubscribeServlet</servlet-name>
-		<servlet-class>com.agnitas.emm.core.unsubscribe.ComUnsubscribe</servlet-class>
+		<servlet-class>com.agnitas.emm.core.unsubscribe.UnsubscribeServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>UnsubscribeServlet</servlet-name>
@@ -388,7 +411,7 @@
 	<!-- SWYN servlet -->
 	<servlet>
 		<servlet-name>AnonymousView</servlet-name>
-		<servlet-class>com.agnitas.web.ComAnonymousView</servlet-class>
+		<servlet-class>com.agnitas.web.AnonymousViewServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>AnonymousView</servlet-name>

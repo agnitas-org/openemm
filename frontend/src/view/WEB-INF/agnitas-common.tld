@@ -64,8 +64,8 @@
 
     <tag>
         <name>ShowNavigation</name>
-        <tag-class>org.agnitas.taglib.ShowNavigationTag</tag-class>
-        <tei-class>org.agnitas.taglib.ShowNavigationTagExtraInfo</tei-class>
+        <tag-class>com.agnitas.taglib.ShowNavigationTag</tag-class>
+        <tei-class>com.agnitas.taglib.ShowNavigationTagExtraInfo</tei-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>navigation</name>
@@ -155,7 +155,7 @@
 
     <tag>
         <name>CustomerMatchTarget</name>
-        <tag-class>org.agnitas.taglib.CustomerMatchTargetTag</tag-class>
+        <tag-class>com.agnitas.taglib.CustomerMatchTargetTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>customerID</name>
@@ -173,7 +173,7 @@
  
     <tag>
         <name>ShowColumnInfo</name>
-        <tag-class>com.agnitas.taglib.ComShowColumnInfoTag</tag-class>
+        <tag-class>com.agnitas.taglib.ShowColumnInfoTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>id</name>
@@ -203,7 +203,7 @@
 
     <tag>
         <name>CheckLogon</name>
-        <tag-class>org.agnitas.taglib.CheckLogonTag</tag-class>
+        <tag-class>com.agnitas.taglib.CheckLogonTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
             <name>page</name>
@@ -215,7 +215,7 @@
 
     <tag>
         <name>Permission</name>
-        <tag-class>org.agnitas.taglib.PermissionTag</tag-class>
+        <tag-class>com.agnitas.taglib.PermissionTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>token</name>
@@ -234,7 +234,7 @@
 
     <tag>
         <name>workflowParameters</name>
-        <tag-class>org.agnitas.taglib.WorkflowParamsTag</tag-class>
+        <tag-class>com.agnitas.taglib.WorkflowParamsTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
@@ -247,7 +247,7 @@
 
     <tag>
         <name>ShowByPermission</name>
-        <tag-class>org.agnitas.taglib.ShowByPermissionTag</tag-class>
+        <tag-class>com.agnitas.taglib.ShowByPermissionTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>token</name>
@@ -266,7 +266,7 @@
 
     <tag>
         <name>HideByPermission</name>
-        <tag-class>org.agnitas.taglib.HideByPermissionTag</tag-class>
+        <tag-class>com.agnitas.taglib.HideByPermissionTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>token</name>
@@ -285,7 +285,7 @@
 
     <tag>
         <name>ShowWhenFeatureEnabled</name>
-        <tag-class>org.agnitas.taglib.ShowWhenFeatureEnabledTag</tag-class>
+        <tag-class>com.agnitas.taglib.ShowWhenFeatureEnabledTag</tag-class>
         <body-content>JSP</body-content>
         <attribute>
             <name>feature</name>
@@ -306,7 +306,7 @@
             Formats a date and/or time using the supplied styles and pattern or SimpleDateFormat object
         </description>
         <name>formatDate</name>
-        <tag-class>org.agnitas.taglib.FormatDateTag</tag-class>
+        <tag-class>com.agnitas.taglib.FormatDateTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
             <description>
@@ -399,7 +399,7 @@
 
     <tag>
         <name>include</name>
-        <tag-class>org.agnitas.taglib.IncludeTag</tag-class>
+        <tag-class>com.agnitas.taglib.IncludeTag</tag-class>
         <body-content>empty</body-content>
         <attribute>
             <name>page</name>
@@ -434,7 +434,7 @@
             <name>key</name>
             <required>true</required>
             <rtexprvalue>true</rtexprvalue>
-            <type>org.agnitas.service.WebStorageBundle</type>
+            <type>com.agnitas.service.WebStorageBundle</type>
         </attribute>
     </tag>
     <tag>
@@ -496,6 +496,103 @@
         </attribute>
     </tag>
 
+    <tag>
+        <name>table</name>
+        <tag-class>com.agnitas.taglib.table.TableTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>id</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>modelAttribute</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>requestUri</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>var</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>decorator</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>pageSize</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Integer</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>column</name>
+        <tag-class>com.agnitas.taglib.table.ColumnTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>property</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>sortProperty</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>titleKey</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>sortable</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>boolean</type>
+        </attribute>
+        <attribute>
+            <name>cssClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>headerClass</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <dynamic-attributes>true</dynamic-attributes>
+    </tag>
+
     <function>
         <description>
             Escape a string to make it suitable for use in a JS string literal
@@ -528,7 +625,7 @@
             Get current time represented by java.util.Date object.
         </description>
         <name>now</name>
-        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-class>com.agnitas.util.DateUtilities</function-class>
         <function-signature>java.util.Date now()</function-signature>
         <example>
             &lt;fmt:formatDate var=&quot;currentServerTime&quot; value=&quot;${emm:now()}&quot; pattern=&quot;yyyy-MM-dd&quot;/&gt;
@@ -555,7 +652,7 @@
             Check whether passed date is in the past.
         </description>
         <name>isPast</name>
-        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-class>com.agnitas.util.DateUtilities</function-class>
         <function-signature>boolean isPast(java.util.Date)</function-signature>
         <example>
             &lt;c:if test=&quot;${emm:isPast(someForm.sendDate)}&quot;&gt;
@@ -569,7 +666,7 @@
             Check whether passed date is in the future.
         </description>
         <name>isFuture</name>
-        <function-class>org.agnitas.util.DateUtilities</function-class>
+        <function-class>com.agnitas.util.DateUtilities</function-class>
         <function-signature>boolean isFuture(java.util.Date)</function-signature>
         <example>
             &lt;c:if test=&quot;${emm:isFuture(someForm.sendDate)}&quot;&gt;
@@ -604,7 +701,7 @@
             Additional existing selector parts are preserved.
         </description>
         <name>cssEnclose</name>
-        <function-class>com.agnitas.emm.grid.grid.util.CssUtils</function-class>
+        <function-class>com.agnitas.emm.grid.grid.util.GridCssUtils</function-class>
         <function-signature>java.lang.String enclose(java.lang.String,java.lang.String)</function-signature>
         <example>
             &lt;style type="text/css"&gt;
@@ -618,7 +715,7 @@
             Represent an object as JSON string.
         </description>
         <name>toJson</name>
-        <function-class>org.agnitas.util.HttpUtils</function-class>
+        <function-class>com.agnitas.util.HttpUtils</function-class>
         <function-signature>java.lang.String toJson(java.lang.Object)</function-signature>
         <example>
             &lt;script type="application/json" data-initializer="foo"&gt;
@@ -634,7 +731,7 @@
             Retrieve a origin request URI (as opposed to the one pointing to a JSP page).
         </description>
         <name>originUri</name>
-        <function-class>org.agnitas.util.HttpUtils</function-class>
+        <function-class>com.agnitas.util.HttpUtils</function-class>
         <function-signature>java.lang.String originUri(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;c:set var="originUri" value="${emm:originUri(pageContext.request)}" scope="page"/&gt;
@@ -648,7 +745,7 @@
             The result is cached.
         </description>
         <name>ckEditorPath</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
         <function-signature>java.lang.String getCkEditorPath(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;jsp:include page="/${emm:ckEditorPath(request)}/ckeditor-emm-helper.jsp"&gt;
@@ -659,35 +756,40 @@
 
     <function>
         <description>
+            Searches for the current jodit editor installation with the highest version number.
+            The result is cached.
+        </description>
+        <name>joditEditorPath</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String getJoditEditorPath(jakarta.servlet.http.HttpServletRequest)</function-signature>
+    </function>
+
+    <function>
+        <description>Returns true if jodit usage allowed for user</description>
+        <name>isJoditEditorUsageAllowed</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>boolean isJoditEditorUsageAllowed(jakarta.servlet.http.HttpServletRequest)</function-signature>
+    </function>
+
+    <function>
+        <description>
             Searches for the current aceEditor installation with the highest version number.
             The result is cached.
         </description>
         <name>aceEditorPath</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
         <function-signature>java.lang.String getAceEditorPath(jakarta.servlet.http.HttpServletRequest)</function-signature>
     </function>
 
     <function>
         <description>
-            Return the value for the current type for CKEditor.
+            Returns the toolbar type for WYSIWYG editor
         </description>
-        <name>isCKEditorTrimmed</name>
-        <function-class>org.agnitas.util.CKEditorUtils</function-class>
-        <function-signature>boolean isCKEditorTrimmed(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <name>getWysiwygToolbarType</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>java.lang.String getWysiwygToolbarType(jakarta.servlet.http.HttpServletRequest,java.lang.String)</function-signature>
         <example>
-            &lt;c:set var="editorType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'EMC' : 'EMM'}"/&gt;
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Return the value for the current type for CKEditor.
-        </description>
-        <name>fullPackAllowed</name>
-        <function-class>org.agnitas.util.CKEditorUtils</function-class>
-        <function-signature>boolean fullPackAllowed(jakarta.servlet.http.HttpServletRequest)</function-signature>
-        <example>
-            &lt;c:set var="editorType" value="${emm:fullPackAllowed(pageContext.request) ? 'FULL' : 'EMM'}"/&gt;
+            &lt;c:set var="editorType" value="${emm:getWysiwygToolbarType(pageContext.request, 'EMM')}"/&gt;
         </example>
     </function>
 
@@ -696,7 +798,7 @@
             Return the value for the current type for CKEditor.
         </description>
         <name>formatBytes</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.AgnUtils</function-class>
         <function-signature>java.lang.String formatBytes(int,int,java.lang.String,java.util.Locale)</function-signature>
         <example>
             &lt;span&gt;${emm:formatBytes(bytes, 0, 'iec', pageContext.request.locale)}&lt;/span&gt;
@@ -708,7 +810,7 @@
             Gets a current locale from request object (normally it's an admin's locale).
         </description>
         <name>getLocale</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.AgnUtils</function-class>
         <function-signature>java.util.Locale getLocale(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getLocale(pageContext.request)}
@@ -720,7 +822,7 @@
             Returns date format of admin if exists, Otherwise - default format
         </description>
         <name>getDateFormat</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.AgnUtils</function-class>
         <function-signature>java.lang.String getDateFormat(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getDateFormat(pageContext.request)}
@@ -732,7 +834,7 @@
             Returns date time format of admin if exists, Otherwise - default format
         </description>
         <name>getDateTimeFormat</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.AgnUtils</function-class>
         <function-signature>java.lang.String getDateTimeFormat(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getDateTimeFormat(pageContext.request)}
@@ -781,7 +883,7 @@
         </description>
         <name>asJsTableColumnType</name>
         <function-class>com.agnitas.util.JspUtilities</function-class>
-        <function-signature>java.lang.String asJsTableColumnType(org.agnitas.util.DbColumnType)</function-signature>
+        <function-signature>java.lang.String asJsTableColumnType(com.agnitas.util.DbColumnType)</function-signature>
     </function>
 
     <function>
@@ -807,8 +909,8 @@
             Gets workflow parameters.
         </description>
         <name>getWorkflowParams</name>
-        <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
-        <function-signature>org.agnitas.web.forms.WorkflowParameters find(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <function-class>com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper</function-class>
+        <function-signature>com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters find(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:getWorkflowParams(pageContext.request)}
         </example>
@@ -819,8 +921,8 @@
             Gets workflow parameters and set default workflowID.
         </description>
         <name>getWorkflowParamsWithDefault</name>
-        <function-class>org.agnitas.web.forms.WorkflowParametersHelper</function-class>
-        <function-signature>org.agnitas.web.forms.WorkflowParameters defaultIfEmpty(jakarta.servlet.http.HttpServletRequest, java.lang.Integer)</function-signature>
+        <function-class>com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper</function-class>
+        <function-signature>com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters defaultIfEmpty(jakarta.servlet.http.HttpServletRequest, java.lang.Integer)</function-signature>
         <example>
             ${emm:defaultIfEmpty(pageContext.request, 0)}
         </example>
@@ -843,7 +945,7 @@
             Make a number with unit sign human readable
         </description>
         <name>makeUnitSignNumber</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-class>com.agnitas.util.AgnUtils</function-class>
         <function-signature>java.lang.String getHumanReadableNumber(java.lang.Number, java.lang.String, boolean, jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:makeUnitSignNumber(0, 'B', false, pageContext.request)}
@@ -918,10 +1020,22 @@
 
     <function>
         <description>
+            Gets an ID of admin (if authorized) or null.
+        </description>
+        <name>getLayoutType</name>
+        <function-class>com.agnitas.util.JspUtilities</function-class>
+        <function-signature>com.agnitas.emm.core.admin.enums.UiLayoutType getLayoutType(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            ${emm:getAdminId(pageContext.request)}
+        </example>
+    </function>
+
+    <function>
+        <description>
             Gets an url to manual by helpKey
         </description>
         <name>getHelpUrl</name>
-        <function-class>com.agnitas.util.ComHelpUtil</function-class>
+        <function-class>com.agnitas.util.HelpUtil</function-class>
         <function-signature>java.lang.String getHelpPageUrl(jakarta.servlet.http.HttpServletRequest,java.lang.String)</function-signature>
         <example>
             ${emm:getHelpUrl(pageContext.request, helpKey)}
@@ -937,18 +1051,6 @@
         <function-signature>boolean permissionAllowed(java.lang.String,jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             ${emm:permissionAllowed(token, pageContext.request)}
-        </example>
-    </function>
-
-    <function>
-        <description>
-            Split comma or space separate string to list
-        </description>
-        <name>splitString</name>
-        <function-class>org.agnitas.util.AgnUtils</function-class>
-        <function-signature>java.util.List splitAndTrimList(java.lang.String)</function-signature>
-        <example>
-            ${emm:splitString('str1,str2 str3')}
         </example>
     </function>
 </taglib>

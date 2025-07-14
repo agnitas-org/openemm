@@ -1,4 +1,7 @@
 (() => {
+
+  const Field = AGN.Lib.Field;
+
   AGN.Lib.Validator.new('calendar-comment', {
     valid: function ($e, options) {
       return !this.errors($e, options).length;
@@ -8,6 +11,10 @@
 
       if ($('[name="isCustomRecipients"]').val() === 'true') {
         errors.push(...validateCustomRecipients());
+      }
+
+      if ($('[name="deadline"]').is(':checked')) {
+        errors.push(...validateReminder());
       }
       return errors;
     }
@@ -45,6 +52,13 @@
       }
     });
     return errors;
+  }
+
+  function validateReminder() {
+    const $reminderDate = $('#remind-date');
+    return Field.create($reminderDate).dateValue < new Date()
+      ? [{field: $reminderDate, msg: t('calendar.error.reminderInPast')}]
+      : [];
   }
 
   function byteCount(s) {

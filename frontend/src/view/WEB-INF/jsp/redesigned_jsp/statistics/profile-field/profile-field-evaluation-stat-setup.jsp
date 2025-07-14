@@ -38,14 +38,12 @@
             <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
         </emm:instantiate>
 
-        <c:set var="csvUrl" value="${statUrl}&__format=csv"/>
+        <c:url var="csvExportUrl" value="/profiledb/statisticCsv.action"/>
 
         <%-- Items for dropdown --%>
         <emm:instantiate var="option" type="java.util.LinkedHashMap">
             <c:set target="${optionList}" property="0" value="${option}"/>
-            <c:set target="${option}" property="url">
-                ${csvUrl}
-            </c:set>
+            <c:set target="${option}" property="extraAttributes" value="data-form-target='#stat-form' data-form-url='${csvExportUrl}' data-form-submit-static data-prevent-load"/>
             <c:set target="${option}" property="name"><mvc:message code="export.message.csv"/></c:set>
         </emm:instantiate>
     </emm:instantiate>
@@ -55,8 +53,6 @@
 
         <c:set target="${element}" property="extraAttributes" value="data-form-target='#stat-form' data-form-submit"/>
         <c:set target="${element}" property="iconBefore" value="icon icon-sync"/>
-        <c:set target="${element}" property="name">
-            <mvc:message code="button.Refresh" />
-        </c:set>
+        <c:set target="${element}" property="name"><mvc:message code="button.Refresh" /></c:set>
     </emm:instantiate>
 </emm:instantiate>

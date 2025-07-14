@@ -1,8 +1,5 @@
 
 .popover {
-  background-color: var(--main-bg-color);
-  color: var(--text-color-default);
-
   .popover-arrow {
     display: none;
   }
@@ -17,10 +14,12 @@
   &[data-popper-placement="bottom-end"] {
     border-top-right-radius: 0;
   }
-}
 
-.popover-body {
-  color: var(--text-color-default);
+  .popover__thumbnail {
+    max-width: 200px;
+  }
+
+  @include perfect-scrollbar(var(--scrollbar-color), 5px, 3px);
 }
 
 .popover-header {

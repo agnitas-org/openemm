@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,9 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
@@ -25,36 +25,35 @@ import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.Constants;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.mobile.service.DeviceService;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 import com.agnitas.userform.bean.UserForm;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
 import com.agnitas.util.LinkUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,12 +63,12 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	private static final Logger logger = LogManager.getLogger(UserFormExecutionServiceImpl.class);
 
 	private ConfigService configService;
-	private ComDeviceService deviceService;
+	private DeviceService deviceService;
 	private ClientService clientService;
 	private UserFormDao userFormDao;
 	private ExtensibleUIDService extensibleUIDService;
-	private ComCompanyDao companyDao;
-	private ComRecipientDao recipientDao;
+	private CompanyDao companyDao;
+	private RecipientDao recipientDao;
 	private MailingContentTypeCache mailingContentTypeCache;
 	private FormTrackableLinkDao trackableLinkDao;
 	
@@ -79,12 +78,12 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	private ApplicationContext applicationContext;
 
 	@Override
-	public final UserFormExecutionResult executeForm(final int companyID, final String formName, final HttpServletRequest request, CaseInsensitiveMap<String, Object> params, final boolean useSession) throws Exception {
+	public UserFormExecutionResult executeForm(int companyID, String formName, HttpServletRequest request, CaseInsensitiveMap<String, Object> params, boolean useSession) throws Exception {
 		populateRequestParametersAsVelocityParameters(request, params);
 
 		int deviceID = deviceService.getDeviceId(request.getHeader("User-Agent"));
 		DeviceClass deviceClass = deviceService.getDeviceClassForStatistics(deviceID);
-		if (deviceID == ComDeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
+		if (deviceID == DeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
 			throw new BlacklistedDeviceException();
 		}
 
@@ -98,7 +97,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		final EmmActionOperationErrors actionOperationErrors = populateEmmActionErrorsAsVelocityParameters(params);
 
 		try {
-			final ComExtensibleUID uid = processUID(companyID, request, params, useSession);
+			final ExtensibleUID uid = processUID(companyID, request, params, useSession);
 			
 			logFormAccess(userForm, uid, request.getRemoteAddr(), deviceID, deviceClass, clientID);
 			
@@ -106,7 +105,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	
 			return doExecuteForm(userForm, actionOperationErrors, params, request);
 		} catch(Exception e) {
-			logger.error(String.format("Showing error form due to exception (comapny %d, form: %s)", companyID, formName), e);
+			logger.error(String.format("Showing error form due to exception (company %d, form: %s)", companyID, formName), e);
 			
 			return doExecuteErrorForm(userForm, actionOperationErrors, params, request);
 		}
@@ -134,9 +133,9 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @throws DeprecatedUIDVersionException 
 	 */
 	@SuppressWarnings("unchecked")
-	private final ComExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
+	private final ExtensibleUID processUID(final int companyIdRequestParam, HttpServletRequest req, Map<String, Object> params, boolean useSession) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
 		String uidString = getUidStringFromRequest(req);
-		ComExtensibleUID uidObject = decodeUidStringWithException(uidString);
+		ExtensibleUID uidObject = decodeUidStringWithException(uidString);
 
 		if (Objects.nonNull(uidObject)) {
 			if (companyIdRequestParam == uidObject.getCompanyID()) {
@@ -172,7 +171,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * @param uidString a string defining the uid.
 	 * @return the resulting UID or NULL in case of some problem during parsing.
 	 */
-	private ComExtensibleUID decodeUidString(String uidString) {
+	private ExtensibleUID decodeUidString(String uidString) {
 		try {
 			return decodeUidStringWithException(uidString);
 		} catch (DeprecatedUIDVersionException e) {
@@ -192,7 +191,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return null;
 	}
 
-	private ComExtensibleUID decodeUidStringWithException(String uidString) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
+	private ExtensibleUID decodeUidStringWithException(String uidString) throws DeprecatedUIDVersionException, UIDParseException, InvalidUIDException {
 		return StringUtils.isNotBlank(uidString)
 				? extensibleUIDService.parse(uidString)
 				: null;
@@ -206,7 +205,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return uidString;
 	}
 
-	private void logFormAccess(final UserForm userForm, final ComExtensibleUID uid, String remoteAddress, final int deviceID, final DeviceClass deviceClass, final int clientID) throws Exception {
+	private void logFormAccess(UserForm userForm, ExtensibleUID uid, String remoteAddress, int deviceID, DeviceClass deviceClass, int clientID) {
 		Integer mailingIdInt = null;
 		Integer customerIdInt = null;
 		
@@ -220,8 +219,8 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		}
 
 		// only count statistics if form exists
-		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
-			final ComTrackableUserFormLink formStatisticsDummyLink = trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
+		if (deviceID != DeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
+			final TrackableUserFormLink formStatisticsDummyLink = trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
 			if (formStatisticsDummyLink != null) {
 				/*
 				 * Set default tracking level:
@@ -333,13 +332,11 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * Creates the redirect link to the form content
 	 * 
 	 * @param content form content
-	 * @return
-	 * @throws Exception
 	 */
 	protected String addRedirectLinks(String content, String uidString, UserForm userForm) throws Exception {
 		// create the redirect link for each trackable link or use extensions on direct link
-		Map<String, ComTrackableUserFormLink> trackableLinks = trackableLinkDao.getUserFormTrackableLinks(userForm.getId(), userForm.getCompanyID());
-		for (ComTrackableUserFormLink link : trackableLinks.values()) {
+		Map<String, TrackableUserFormLink> trackableLinks = trackableLinkDao.getUserFormTrackableLinks(userForm.getId(), userForm.getCompanyID());
+		for (TrackableUserFormLink link : trackableLinks.values()) {
 			String replaceFromString = "href=\"" + link.getFullUrl() + "\"";
 
 			if (link.getUsage() != BaseTrackableLink.TRACKABLE_NO) {
@@ -359,15 +356,15 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return content;
 	}
 	
-	private String createDirectLinkWithOptionalExtensions(String uidString, ComTrackableUserFormLink comTrackableUserFormLink) throws UnsupportedEncodingException {
-		String linkString = comTrackableUserFormLink.getFullUrl();
+	private String createDirectLinkWithOptionalExtensions(String uidString, TrackableUserFormLink trackableUserFormLink) throws UnsupportedEncodingException {
+		String linkString = trackableUserFormLink.getFullUrl();
 		CaseInsensitiveMap<String, Object> cachedRecipientData = null;
-		for (LinkProperty linkProperty : comTrackableUserFormLink.getProperties()) {
+		for (LinkProperty linkProperty : trackableUserFormLink.getProperties()) {
 			if (LinkUtils.isExtension(linkProperty)) {
 				String propertyValue = linkProperty.getPropertyValue();
 				if (StringUtils.contains(propertyValue, "##")) {
 					if (cachedRecipientData == null && StringUtils.isNotBlank(uidString)) {
-						final ComExtensibleUID uid = decodeUidString(uidString);
+						final ExtensibleUID uid = decodeUidString(uidString);
 						cachedRecipientData = recipientDao.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID());
 						cachedRecipientData.put("mailing_id", uid.getMailingID());
 					}
@@ -422,57 +419,46 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		this.applicationContext = ctxt;
 	}
 
-	@Required
-	public final void setDeviceService(final ComDeviceService service) {
+	public final void setDeviceService(final DeviceService service) {
 		this.deviceService = service;
 	}
 
-	@Required
 	public final void setClientService(final ClientService service) {
 		this.clientService = service;
 	}
 
-	@Required
 	public final void setUserFormDao(final UserFormDao dao) {
 		this.userFormDao = dao;
 	}
 
-	@Required
 	public final void setExtensibleUIDService(final ExtensibleUIDService service) {
 		this.extensibleUIDService = service;
 	}
 
-	@Required
-	public final void setCompanyDao(final ComCompanyDao dao) {
+	public final void setCompanyDao(final CompanyDao dao) {
 		this.companyDao = dao;
 	}
 
-	@Required
-	public final void setRecipientDao(final ComRecipientDao dao) {
+	public final void setRecipientDao(final RecipientDao dao) {
 		this.recipientDao = dao;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
 	public void setMailingContentTypeCache(MailingContentTypeCache mailingContentTypeCache) {
 		this.mailingContentTypeCache = mailingContentTypeCache;
 	}
 
-	@Required
 	public void setTrackableLinkDao(FormTrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 	
-	@Required
 	public final void setRecipientFactory(final RecipientFactory factory) {
 		this.recipientFactory = Objects.requireNonNull(factory, "recipientFactory is null");
 	}
 	
-	@Required
 	public final void setRecipientService(final RecipientService service) {
 		this.recipientService = Objects.requireNonNull(service, "recipientService is null");
 	}

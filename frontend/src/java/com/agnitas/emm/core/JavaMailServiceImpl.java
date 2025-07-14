@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,14 +19,12 @@ import java.util.Properties;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.impl.DkimKeyEntry;
-import com.agnitas.dao.ComDkimDao;
+import com.agnitas.dao.DkimDao;
 import com.agnitas.emm.dkim.DkimSignedMessage;
 import com.agnitas.util.CryptographicUtilities;
 
@@ -57,14 +55,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 	private final ThreadLocal<Boolean> sendingExceptionMail = ThreadLocal.withInitial(() -> Boolean.FALSE);
 	
 	private ConfigService configService;
-	private ComDkimDao dkimDao;
+	private DkimDao dkimDao;
 
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
-	public void setDkimDao(ComDkimDao dkimDao) {
+	public void setDkimDao(DkimDao dkimDao) {
 		this.dkimDao = dkimDao;
 	}
 
@@ -424,7 +421,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 		}
 	}
 
-	private static InternetAddress[] getEmailAddressesFromList(String listString) throws Exception {
+	private static InternetAddress[] getEmailAddressesFromList(String listString) {
 		List<InternetAddress> emailAddresses = new ArrayList<>();
 		for (String address : AgnUtils.splitAndNormalizeEmails(listString)) {
 			address = StringUtils.trimToEmpty(address);
@@ -437,7 +434,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 					logger.error("Invalid Emailaddress found: " + address);
 				}
 			} else {
-				throw new Exception("Invalid email address: " + address);
+				throw new IllegalArgumentException("Invalid email address: " + address);
 			}
 		}
 

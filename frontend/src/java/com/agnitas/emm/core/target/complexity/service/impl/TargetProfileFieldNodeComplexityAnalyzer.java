@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.complexity.service.impl;
 
-import org.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -79,25 +79,20 @@ public final class TargetProfileFieldNodeComplexityAnalyzer extends AbstractTarg
     private CustomerTableColumnMetadata getCustomerTableColumnMetadata(int companyId, String column) {
         CustomerTableColumnMetadata metadata = new CustomerTableColumnMetadataImpl();
 
-        try {
-            DbColumnType type = profileFieldDao.getColumnType(companyId, column);
+        DbColumnType type = profileFieldDao.getColumnType(companyId, column);
 
-            if (type == null) {
-                ProfileField field = profileFieldDao.getProfileFieldByShortname(companyId, column);
+        if (type == null) {
+            ProfileField field = profileFieldDao.getProfileFieldByShortname(companyId, column);
 
-                if (field == null) {
-                    return null;
-                }
-
-                metadata.setType(field.getSimpleDataType());
-                metadata.setIndexed(profileFieldDao.isColumnIndexed(companyId, field.getColumn()));
-            } else {
-                metadata.setType(type.getSimpleDataType());
-                metadata.setIndexed(profileFieldDao.isColumnIndexed(companyId, column));
+            if (field == null) {
+                return null;
             }
-        } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
-            return null;
+
+            metadata.setType(field.getSimpleDataType());
+            metadata.setIndexed(profileFieldDao.isColumnIndexed(companyId, field.getColumn()));
+        } else {
+            metadata.setType(type.getSimpleDataType());
+            metadata.setIndexed(profileFieldDao.isColumnIndexed(companyId, column));
         }
 
         return metadata;

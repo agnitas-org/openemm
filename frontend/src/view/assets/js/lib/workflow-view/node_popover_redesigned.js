@@ -64,7 +64,7 @@
       }
       const img = new Image();
       img.src = thumbnailSrc;
-      img.style.width = '200px';
+      img.className = 'popover__thumbnail';
       return img;
     }
 

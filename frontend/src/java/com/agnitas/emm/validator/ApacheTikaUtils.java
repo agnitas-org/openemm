@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,20 +18,23 @@ import org.apache.tika.mime.MimeTypeException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class ApacheTikaUtils {
 
     public static boolean isValidFont(byte[] data) {
-    	String detectedContentType = getContentType(data);
-        return "application/octet-stream".equals(detectedContentType)
-        		|| "application/x-font-ttf".equals(detectedContentType)
-        		|| "application/x-font-truetype".equals(detectedContentType)
-        		|| "application/x-font-opentype".equals(detectedContentType)
-        		|| "application/font-woff".equals(detectedContentType)
-        		|| "application/font-woff2".equals(detectedContentType)
-        		|| "application/vnd.ms-fontobject".equals(detectedContentType)
-        		|| "application/font-sfnt".equals(detectedContentType)
-        		|| "image/svg+xml".equals(detectedContentType);
+        return hasExpectedContentType(
+                data,
+                "application/octet-stream",
+                 "application/x-font-ttf",
+                 "application/x-font-truetype",
+                 "application/x-font-opentype",
+                 "application/font-woff",
+                 "application/font-woff2",
+                 "application/vnd.ms-fontobject",
+                 "application/font-sfnt",
+                 "image/svg+xml"
+        );
     }
 
     public static boolean isValidVideo(byte[] data) {
@@ -43,7 +46,11 @@ public class ApacheTikaUtils {
     }
 
     public static boolean isValidPdf(byte[] data) {
-        return isExpectedContentType(data, "application/pdf");
+        return hasExpectedContentType(data, "application/pdf");
+    }
+
+    public static boolean isValidJSON(byte[] data) {
+        return hasExpectedContentType(data, "application/json", "text/plain");
     }
 
     public static boolean isValidImage(InputStream inputStream) {
@@ -59,12 +66,12 @@ public class ApacheTikaUtils {
         return isContentTypeStartsWith(data, "image/");
     }
 
-    public static boolean isExpectedContentType(byte[] data, String contentType) {
-        if (StringUtils.isEmpty(contentType)) {
+    public static boolean hasExpectedContentType(byte[] data, String ... contentTypes) {
+        if (contentTypes.length == 0) {
             return false;
         }
 
-        return contentType.equals(getContentType(data));
+        return Arrays.asList(contentTypes).contains(getContentType(data));
     }
 
     public static boolean isContentTypeStartsWith(byte[] data, String contentTypePart) {
@@ -79,10 +86,6 @@ public class ApacheTikaUtils {
     public static String getFileExtension(InputStream stream, boolean includeDot) {
         String contentType = getContentType(stream);
         return getFileExtension(contentType, includeDot);
-    }
-
-    public static String getFileExtension(byte[] data, boolean includeDot) {
-        return getFileExtension(getContentType(data), includeDot);
     }
 
     private static String getFileExtension(String contentType, boolean includeDot) {

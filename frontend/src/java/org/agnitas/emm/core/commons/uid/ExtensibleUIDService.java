@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionExc
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 
 /**
  * Facade interface. Provides a combined interface for methods dealing with UIDs.
@@ -31,7 +31,7 @@ public interface ExtensibleUIDService {
      * @throws UIDStringBuilderException           on errors during conversion
      * @throws RequiredInformationMissingException when required informations are not encoded in UID
      */
-    String buildUIDString(final ComExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException;
+    String buildUIDString(final ExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException;
 
     /**
      * Parses the string representation of a UID.
@@ -42,7 +42,7 @@ public interface ExtensibleUIDService {
      * @throws InvalidUIDException           on errors indicating an invalid UID
      * @throws DeprecatedUIDVersionException if version of UID encoded in given String is deprecated
      */
-    ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException;
+    ExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException;
 
-    ComExtensibleUID parseOrNull(String uidStr);
+    ExtensibleUID parseOrNull(String uidStr);
 }

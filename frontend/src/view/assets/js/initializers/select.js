@@ -201,11 +201,11 @@
       var $exclusiveOption = $el.find('option[data-exclusive]');
       if ($exclusiveOption.length > 0){
         $el.on('select2-selecting', function (e) {
-          var exclusiveIsChosen = $el.find("option[value='"+e.val+"'][data-exclusive]").length > 0;
+          var $chosenExclusiveOption = $el.find("option[value='"+e.val+"'][data-exclusive]");
 
-          if (exclusiveIsChosen){
+          if ($chosenExclusiveOption.exists()){
             var needUpdate = false;
-            $el.find('option:selected:not([data-exclusive])').each(function (){
+            $el.find('option:selected').not($chosenExclusiveOption).each(function (){
               needUpdate = true;
               $(this).removeAttr("selected");
             });

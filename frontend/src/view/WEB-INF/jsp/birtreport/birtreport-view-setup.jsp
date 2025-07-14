@@ -5,7 +5,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="birtReportForm" type="com.agnitas.emm.core.birtreport.forms.BirtReportForm"--%>
-<%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
+<%--@elvariable id="workflowParameters" type="com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters"--%>
 <%--@elvariable id="hasActiveDelivery" type="java.lang.Boolean"--%>
 
 <c:if test="${empty workflowParameters}">

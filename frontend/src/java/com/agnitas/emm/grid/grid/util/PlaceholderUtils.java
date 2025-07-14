@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,7 +15,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.emm.grid.grid.beans.ComGridPlaceholder;
+import com.agnitas.emm.grid.grid.beans.GridPlaceholder;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 
 public class PlaceholderUtils {
@@ -45,7 +45,7 @@ public class PlaceholderUtils {
         return defaultValues.get(type);
     }
 
-    public static boolean matches(ComGridPlaceholder ph1, ComGridPlaceholder ph2) {
+    public static boolean matches(GridPlaceholder ph1, GridPlaceholder ph2) {
         if (ph1.getPlaceholderType() == ph2.getPlaceholderType()) {
             return StringUtils.equals(ph1.getPlaceholderName(), ph2.getPlaceholderName());
         }
@@ -53,7 +53,7 @@ public class PlaceholderUtils {
         return false;
     }
 
-    public static boolean isMultiPh(ComGridPlaceholder ph) {
+    public static boolean isMultiPh(GridPlaceholder ph) {
         return ph.getPlaceholderType() == GridCustomPlaceholderType.Multi.getId();
     }
 }

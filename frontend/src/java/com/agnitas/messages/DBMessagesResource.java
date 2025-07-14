@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,12 +22,12 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.dao.ComMessageDao;
-import com.agnitas.dao.impl.ComMessageDaoImpl;
+import com.agnitas.dao.MessageDao;
+import com.agnitas.dao.impl.MessageDaoImpl;
 import com.agnitas.util.Version;
 
 /**
@@ -52,22 +52,22 @@ public class DBMessagesResource {
 	
 	private List<String> allMessageKeys = null;
 	
-	private ComMessageDao messageDao;
+	private MessageDao messageDao;
 
-	public ComMessageDao getMessageDao() throws Exception {
+	public MessageDao getMessageDao() throws Exception {
 		if (messageDao == null) {
 			Context initCtx = new InitialContext();
 			Context envCtx = (Context) initCtx.lookup("java:comp/env");
 
 			DataSource dataSource = (DataSource) envCtx.lookup("jdbc/emm_db");
 
-			messageDao = new ComMessageDaoImpl();
-			((ComMessageDaoImpl) messageDao).setDataSource(dataSource);
+			messageDao = new MessageDaoImpl();
+			((MessageDaoImpl) messageDao).setDataSource(dataSource);
 		}
 		return messageDao;
 	}
 
-	public void setMessageDao(ComMessageDao messageDao) {
+	public void setMessageDao(MessageDao messageDao) {
 		this.messageDao = messageDao;
 	}
 	

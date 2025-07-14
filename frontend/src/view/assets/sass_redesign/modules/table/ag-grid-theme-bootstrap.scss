@@ -4,17 +4,22 @@
 $ag-theme: 'bootstrap';
 
 .ag-theme-#{$ag-theme} {
-  --ag-border-radius: $border-radius;
+  --ag-border-radius: #{$border-radius};
   --ag-row-height: calc(#{$table-row-height} - #{$table-spacing} - 1px);
   --ag-cell-horizontal-padding: #{$table-spacing};
-  --ag-row-hover-color: rgba(75, 75, 75, 0.30);
+  --ag-row-hover-color: var(--table-hovered-bg);
   --ag-font-size: #{$font-size-base};
   --ag-font-family: 'Poppins', sans-serif;
   --ag-border-color: var(--table-border-color);
+  --ag-wrapper-border-radius: 0;
 
-  --ag-background-color: var(--main-bg-color);
-  --ag-data-color: var(--text-color-default);
+  --ag-background-color: #{$body-bg-var};
+  --ag-data-color: #{$body-color-var};
   --ag-selected-row-background-color: var(--ag-background-color);
+
+  .ag-row-last {
+    --ag-row-border-color: transparent;
+  }
 
   .ag-row-no-hover {
     --ag-row-hover-color: transparent !important;
@@ -25,7 +30,7 @@ $ag-theme: 'bootstrap';
   }
 
   --ag-header-foreground-color: #{$dark-grey};
-  --ag-header-background-color: var(--table-head-bg-color);
+  --ag-header-background-color: var(--table-head-bg);
 
   //header separator
   --ag-header-column-separator-display: block;
@@ -36,17 +41,21 @@ $ag-theme: 'bootstrap';
   //resizable separator
   --ag-header-column-resize-handle-display: var(--ag-header-column-separator-display);
   --ag-header-column-resize-handle-height: var(--ag-header-column-separator-height);
-  --ag-header-column-resize-handle-width: var(--ag-header-column-separator-width);
+  --ag-header-column-resize-handle-width: 0;
   --ag-header-column-resize-handle-color: var(--ag-header-column-separator-color);
 
   .ag-header {
     border: $table-border;
     border-top: none;
     @include border-bottom-radius;
+
+    :is(.table-wrapper):not(:has(.table-wrapper__header)) & {
+      @include border;
+    }
   }
 
   .ag-header-cell-label {
-    font-weight: $font-weight-semibold;
+    font-weight: var(--table-head-font-weight);
   }
 
   .ag-header-cell {
@@ -60,9 +69,13 @@ $ag-theme: 'bootstrap';
     }
 
     &[aria-sort=ascending], &[aria-sort=descending] {
-      color: var(--table-sortable-color);
+      color: var(--table-head-sorted-color);
       .ag-header-icon {
-        color: var(--table-sortable-color);
+        color: var(--table-head-sorted-color);
+      }
+
+      .ag-header-cell-label {
+        font-weight: var(--table-head-sorted-font-weight);
       }
     }
   }
@@ -79,10 +92,6 @@ $ag-theme: 'bootstrap';
   // To remove this minimum height, add the following CSS:
   .ag-center-cols-clipper {
     min-height: unset !important;
-  }
-
-  .ag-row:last-child {
-    border-bottom: none;
   }
 
   .ag-cell {
@@ -147,21 +156,32 @@ $ag-theme: 'bootstrap';
       margin-top: 0;
 
       &:not(:checked) {
-        background-color: var(--table-checkbox-bg-color);
+        background-color: var(--table-checkbox-bg);
 
         &:disabled {
-          background-color: var(--input-disabled-bg-color);
+          background-color: var(--base-disabled-bg);
         }
       }
     }
     &::after {
       content: '';
     }
+
+    &::before {
+      display: none;
+    }
   }
 
   .ag-body-viewport {
-    @include hide-scroll;
+    overflow: hidden;
     @include table-scrollbar;
+
+    // FF only
+    @supports (-moz-appearance: none) {
+      .ps__rail-y {
+        right: 15px !important;
+      }
+    }
   }
 
   .ag-body-vertical-scroll {
@@ -174,13 +194,17 @@ $ag-theme: 'bootstrap';
     padding-inline: $table-spacing;
   }
 
+  .ag-overlay-no-rows-wrapper .notification-simple {
+    margin-top: $gap-sm;
+  }
+
   .ag-body:not(.no-truncate) {
     .ag-row {
       height: $table-row-height - 1 !important;
     }
 
     .text-truncate-table {
-      @include table-text-truncation;
+      @include text-truncate-lines;
     }
   }
 }

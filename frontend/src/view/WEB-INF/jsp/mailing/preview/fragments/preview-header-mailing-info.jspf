@@ -3,7 +3,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="components" type="java.util.List<org.agnitas.beans.MailingComponent>"--%>
+<%--@elvariable id="components" type="java.util.List<com.agnitas.beans.MailingComponent>"--%>
 <%--@elvariable id="isTagFailureInFromAddress" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTagFailureInSubject" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTagFailureInPreHeader" type="java.lang.Boolean"--%>

@@ -3,7 +3,7 @@
 <%@ page import="java.util.Iterator,
 				 java.util.Collection,
  				 org.eclipse.birt.report.presentation.aggregation.IFragment" %>
-<%@page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 
 <%-----------------------------------------------------------------------------
 	Expected java beans
@@ -25,7 +25,7 @@
                     %>
                     <TR>
                         <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                        <TD><%= ComBirtResources.getMessage( "birt.viewer.error.noparameter", request.getLocale() ) %>
+                        <TD><%= EmmBirtResources.getMessage( "birt.viewer.error.noparameter", request.getLocale() ) %>
                         </TD>
                     </TR>
                     <%
@@ -34,7 +34,7 @@
                     {
                     %>
                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                    <TR><TD COLSPAN="2"><%= ComBirtResources.getMessage( "birt.viewer.required", request.getLocale() ) %></TD></TR>
+                    <TR><TD COLSPAN="2"><%= EmmBirtResources.getMessage( "birt.viewer.required", request.getLocale() ) %></TD></TR>
                     <%
                             if ( fragments != null )
                             {

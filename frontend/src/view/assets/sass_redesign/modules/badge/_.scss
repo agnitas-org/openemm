@@ -22,14 +22,14 @@ parent: badges
 ---
 
 ```htmlexample
-<span class="badge text-bg-primary">Primary</span>
+<span class="badge badge--standard-blue">Primary</span>
 ```
 
 Badges can also contain text and icons in any order and multitude.
 Text inside has to be wrapped inside `<span>`.
 
 ```htmlexample
-<span class="badge text-bg-danger">
+<span class="badge badge--dark-red">
   <i class="icon icon-angle-left"></i>
   <span>Danger</span>
   <i class="icon icon-angle-right"></i>
@@ -39,31 +39,26 @@ Text inside has to be wrapped inside `<span>`.
 You can also use more large version of the badge just using class `.badge--lg`.
 
 ```htmlexample
-<span class="badge badge--lg text-bg-primary">Primary</span>
+<span class="badge badge--lg badge--standard-blue">Primary</span>
 ```
 
 */
 
 /*doc
 ---
-title: States
-name: badges_02_states
+title: Color
+name: badges_02_colors
 parent: badges
 ---
 
-The usual states are supported as `.badge--success`, `.badge--warning` and `.badge--error` respectively.
-
-```htmlexample
-<span class="badge badge--success">
-    <span class="text">Text</span>
-</span>
-<span class="badge badge--warning">
-    <span class="text">Text</span>
-</span>
-<span class="badge badge--error">
-    <span class="text">Text</span>
-</span>
-```
+Color             |Preview                                                                            |
+------------------|-----------------------------------------------------------------------------------|
+Standard blue     |<span class="badge badge--standard-blue">Badge</span>`badge badge--standard-blue`  |
+Green             |<span class="badge badge--green">Badge</span>`badge badge--green`                  |
+Dark red          |<span class="badge badge--dark-red">Badge</span>`badge badge--dark-red`            |
+Dark green        |<span class="badge badge--dark-green">Badge</span>`badge badge--dark-green`        |
+Dark yellow       |<span class="badge badge--dark-yellow">Badge</span>`badge badge--dark-yellow`      |
+Darkest violet    |<span class="badge badge--darkest-violet">Badge</span>`badge badge--darkest-violet`|
 */
 
 /*doc
@@ -87,8 +82,8 @@ parent: badges_03_special
 The square badge can have any color you want. To do this you need to use a class `.square-badge` and give it some kind of background color.
 
 ```htmlexample
-<span class="square-badge text-bg-primary"></span>
-<span class="square-badge text-bg-danger"></span>
+<span class="square-badge badge--standard-blue"></span>
+<span class="square-badge badge--dark-red"></span>
 <span class="square-badge" style="background: orange"></span>
 ```
 
@@ -98,29 +93,62 @@ $status-badge-size: 18px;
 $status-badge-size-lg: 30px;
 $status-badge-font-size: 10px;
 
+$badge-colors: (
+    blue           $badge-blue-var,
+    dark-blue      $badge-dark-blue-var,
+    standard-blue  $badge-standard-blue-var,
+    cyan           $badge-cyan-var,
+    grey           $badge-grey-var,
+    green          $badge-green-var,
+    dark-red       $badge-dark-red-var,
+    dark-green     $badge-dark-green-var,
+    dark-yellow    $badge-dark-yellow-var,
+    darkest-violet $badge-darkest-violet-var
+);
+
 .square-badge {
+  --badge-border-color: transparent;
+
   @include size($status-badge-size);
   @include flex-center;
   border-radius: $border-radius-sm;
   flex: none;
+
+  border: 1px solid var(--badge-border-color);
 }
 
-.table-badge {
-  @extend .badge;
-  padding: 3px $gap-sm;
+@include color-mode(light-contrast) {
+  .square-badge {
+    --badge-border-color: #{$black};
+  }
+}
 
-  font-size: $font-size-base;
-  font-weight: $font-weight-base;
-
-  border: $border-default;
-  border-radius: $border-radius-sm;
-
-  background-color: var(--table-head-bg-color);
-  color: var(--table-badge-color);
+@include color-mode(dark-contrast) {
+  .square-badge {
+    --badge-border-color: #{$white};
+  }
 }
 
 @import "status-badge/_.scss";
 @import "icon-badge";
 @import "image-badge";
-@import "table-badge";
 @import "text-badge";
+@import "table-badge";
+
+@each $conf in $badge-colors {
+  $color: nth($conf, 1);
+  $colorValue: nth($conf, 2);
+
+  .badge--#{$color} {
+    background: $colorValue;
+  }
+}
+
+@each $conf in $stat-colors {
+  $color: nth($conf, 1);
+  $colorValue: nth($conf, 2);
+
+  .badge--stat-#{$color} {
+    background: $colorValue;
+  }
+}

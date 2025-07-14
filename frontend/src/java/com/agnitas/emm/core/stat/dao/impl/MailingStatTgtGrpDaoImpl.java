@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,13 @@
 */
 
 package com.agnitas.emm.core.stat.dao.impl;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
+import com.agnitas.emm.core.stat.beans.StatisticValue;
+import com.agnitas.emm.core.stat.dao.MailingStatTgtGrpDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,27 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
-import com.agnitas.emm.core.stat.beans.StatisticValue;
-import com.agnitas.emm.core.stat.dao.MailingStatTgtGrpDao;
-
 public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStatTgtGrpDao {
 	
-	private static final Logger logger = LogManager.getLogger(MailingStatTgtGrpDaoImpl.class);
-
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int saveMalingStatTgtGrp(MailingStatisticTgtGrp stat) {
 		int newId;
 		if (isOracleDB()) {
-			newId = selectInt(logger, "SELECT mailing_stat_tgtgrp_tbl_seq.NEXTVAL FROM dual");
-			update(logger, "INSERT INTO mailing_statistic_tgtgrp_tbl" +
+			newId = selectInt("SELECT mailing_stat_tgtgrp_tbl_seq.NEXTVAL FROM dual");
+			update("INSERT INTO mailing_statistic_tgtgrp_tbl" +
 			               " (mailing_stat_tgtgrp_id, mailing_stat_job_id, mailing_id, target_group_id, revenue)" +
 					       " VALUES (?, ?, ?, ?, ?)",
 					newId, stat.getJobId(), stat.getMailingId(), stat.getTargetGroupId(), stat.getRevenue());
@@ -50,7 +45,7 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 			
 	        Object[] values = new Object[] { stat.getJobId(), stat.getMailingId(), stat.getTargetGroupId(), stat.getRevenue() };
 
-	        newId = insertIntoAutoincrementMysqlTable(logger, "mailing_stat_tgtgrp_id", insertStatement, values);
+	        newId = insertIntoAutoincrementMysqlTable("mailing_stat_tgtgrp_id", insertStatement, values);
  		}
 		
 		String insStm = "INSERT INTO mailing_statistic_value_tbl (mailing_stat_tgtgrp_id, category_index, stat_value, stat_quotient)"
@@ -60,16 +55,16 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 			parametersValue.add(new Object[]{newId, entry.getKey(), entry.getValue().getValue(), 
 					entry.getValue().getQuotient()});
 		}
-		batchupdate(logger, insStm, parametersValue);
+		batchupdate(insStm, parametersValue);
 		
 		return newId;
 	}
 
 	@Override
 	public MailingStatisticTgtGrp getMailingStatTgtGrpByJobId(int jobId, int targetGroupId) {
-		MailingStatisticTgtGrp statTgtGrp = selectObject(logger, "SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id = ? AND target_group_id = ?",
+		MailingStatisticTgtGrp statTgtGrp = selectObject("SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id = ? AND target_group_id = ?",
 				new MailingStatTgtGrpMapper(), jobId, targetGroupId);
-		List<Map<String,Object>> stats = select(logger, "SELECT * FROM mailing_statistic_value_tbl WHERE mailing_stat_tgtgrp_id = ?", 
+		List<Map<String,Object>> stats = select("SELECT * FROM mailing_statistic_value_tbl WHERE mailing_stat_tgtgrp_id = ?",
 				statTgtGrp.getId());
 		for (Map<String, Object> map : stats) {
 			if (isOracleDB()) {
@@ -99,11 +94,11 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 		final String deleteValuesSql = 
 				"DELETE FROM mailing_statistic_value_tbl "
 				+ "WHERE mailing_stat_tgtgrp_id IN (" + targetGroupIdsSql + ")";
-		update(logger, deleteValuesSql, thresholdDate);
+		update(deleteValuesSql, thresholdDate);
 		
 		// Step 2: Delete target groups
 		final String deleteTargetGroupsSql = "DELETE FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id IN (" + queryJobsSql + ")";
-		update(logger, deleteTargetGroupsSql, thresholdDate);
+		update(deleteTargetGroupsSql, thresholdDate);
 	}
 
     private static class MailingStatTgtGrpMapper implements RowMapper<MailingStatisticTgtGrp> {

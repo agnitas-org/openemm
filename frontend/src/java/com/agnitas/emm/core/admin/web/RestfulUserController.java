@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,9 +22,9 @@ import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.web.LogonController;
-import com.agnitas.service.ComCSVService;
+import com.agnitas.service.CSVService;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
@@ -35,20 +35,20 @@ import com.lowagie.text.DocumentException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.company.service.CompanyService;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.Tuple;
-import org.agnitas.web.forms.FormSearchParams;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.Tuple;
+import com.agnitas.web.forms.FormSearchParams;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,8 +81,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class RestfulUserController implements XssCheckAware {
 
@@ -93,28 +93,28 @@ public class RestfulUserController implements XssCheckAware {
 
     protected final ConfigService configService;
     private final AdminService adminService;
-    private final ComLogonService logonService;
+    private final LogonService logonService;
     private final CompanyService companyService;
     private final AdminGroupService adminGroupService;
     private final WebStorage webStorage;
     private final UserActivityLogService userActivityLogService;
     private final AdminChangesLogService adminChangesLogService;
     private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
-    private final ComCSVService csvService;
+    private final CSVService csvService;
     private final PdfService pdfService;
     private final ConversionService conversionService;
 
     protected static final String FUTURE_TASK = "GET_ADMIN_LIST";
 
     public RestfulUserController(ConfigService configService,
-			AdminService adminService,
-			CompanyService companyService,
-			AdminGroupService adminGroupService, WebStorage webStorage,
-			UserActivityLogService userActivityLogService,
-			AdminChangesLogService adminChangesLogService,
-			ComCSVService csvService, PdfService pdfService,
-			ConversionService conversionService,
-			ComLogonService logonService) {
+                                 AdminService adminService,
+                                 CompanyService companyService,
+                                 AdminGroupService adminGroupService, WebStorage webStorage,
+                                 UserActivityLogService userActivityLogService,
+                                 AdminChangesLogService adminChangesLogService,
+                                 CSVService csvService, PdfService pdfService,
+                                 ConversionService conversionService,
+                                 LogonService logonService) {
         this.configService = configService;
         this.adminService = adminService;
         this.companyService = companyService;
@@ -256,23 +256,27 @@ public class RestfulUserController implements XssCheckAware {
     public String saveRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
         try {
             final boolean isSuccess = saveAdminRightsAndWriteToActivityLog(admin, form, popups);
-            final int adminIdToEdit = form.getAdminID();
-            final int companyID = admin.getCompanyID();
-            final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
-            prepareRightsViewPageData(admin, form, model, adminToEdit);
 
             if (isSuccess) {
-                // Show "changes saved"
                 popups.success(CHANGES_SAVED_MSG);
+            }
+
+            if (admin.isRedesignedUiUsed()) {
+                return "redirect:/restfulUser/" + form.getAdminID() + "/rights/view.action";
+            } else {
+                final int adminIdToEdit = form.getAdminID();
+                final int companyID = admin.getCompanyID();
+                final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+                prepareRightsViewPageData(admin, form, model, adminToEdit);
+                return "settings_restfuluser_permissions";
             }
         } catch (Exception e) {
             LOGGER.error("Exception saving rights", e);
             popups.alert("error.admin.save", e);
             return MESSAGES_VIEW;
         }
-        return "settings_restfuluser_permissions";
     }
-    
+
     private String redirectToView(int adminId) {
         return "redirect:/restfulUser/" + adminId + "/view.action";
     }
@@ -505,7 +509,7 @@ public class RestfulUserController implements XssCheckAware {
 
     protected void loadDataForViewPage(final Admin admin, final Admin adminToEdit, final Model model){
         model.addAttribute("adminGroups", adminGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), admin, adminToEdit));
-        model.addAttribute("layouts", adminService.getEmmLayoutsBase(admin.getCompanyID()));
+        model.addAttribute("layouts", adminService.getEmmLayoutsBase(admin));
         model.addAttribute("availableTimeZones", TimeZone.getAvailableIDs());
         model.addAttribute("createdCompanies", adminService.getCreatedCompanies(admin.getCompanyID()));
     }
@@ -528,6 +532,7 @@ public class RestfulUserController implements XssCheckAware {
         form.setCompanyName(adminToEdit.getCompanyName());
         form.setEmail(adminToEdit.getEmail());
         form.setLayoutBaseId(adminToEdit.getLayoutBaseID());
+        form.setUiLayoutType(adminToEdit.getLayoutType());
         form.setInitialCompanyName(adminToEdit.getInitialCompanyName());
 
         form.setAdminPreferences(

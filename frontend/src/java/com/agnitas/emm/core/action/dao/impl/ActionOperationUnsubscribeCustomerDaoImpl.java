@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,20 +10,15 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
+
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomerParameters;
-
 public class ActionOperationUnsubscribeCustomerDaoImpl
         extends AbstractActionOperationDaoImpl<ActionOperationUnsubscribeCustomerParameters> {
-
-    private static final Logger LOGGER = LogManager.getLogger(ActionOperationUnsubscribeCustomerDaoImpl.class);
 
     @Override
     protected void processGetOperation(ActionOperationUnsubscribeCustomerParameters operation) {
@@ -34,7 +29,7 @@ public class ActionOperationUnsubscribeCustomerDaoImpl
     @Override
     @DaoUpdateReturnValueCheck
     protected void processSaveOperation(ActionOperationUnsubscribeCustomerParameters operation) {
-        update(LOGGER, "INSERT INTO actop_unsubscribe_customer_tbl " +
+        update("INSERT INTO actop_unsubscribe_customer_tbl " +
                         "(action_operation_id, all_mailinglists_selected) VALUES (?,?)",
                 operation.getId(), operation.isAdditionalMailinglists() && operation.isAllMailinglistsSelected());
         if (operation.isAdditionalMailinglists() && !operation.isAllMailinglistsSelected()) {
@@ -52,7 +47,7 @@ public class ActionOperationUnsubscribeCustomerDaoImpl
     @Override
     @DaoUpdateReturnValueCheck
     protected void processDeleteOperation(ActionOperationUnsubscribeCustomerParameters operation) {
-        update(LOGGER, "DELETE FROM actop_unsubscribe_customer_tbl WHERE action_operation_id = ?", operation.getId());
+        update("DELETE FROM actop_unsubscribe_customer_tbl WHERE action_operation_id = ?", operation.getId());
     }
 
     private void saveSelectedMailinglistsToOperation(ActionOperationUnsubscribeCustomerParameters operation) {
@@ -60,17 +55,16 @@ public class ActionOperationUnsubscribeCustomerDaoImpl
                 operation.getId(),
                 mailinglistId
         }).collect(Collectors.toList());
-        batchupdate(LOGGER, "INSERT INTO actop_unsubscribe_mlist_tbl " +
+        batchupdate("INSERT INTO actop_unsubscribe_mlist_tbl " +
                 "(action_operation_id, mailinglist_id) VALUES (?, ?)", params);
     }
 
     private boolean isAllMailinglistsSelected(int operationId) {
-        return selectInt(LOGGER,
-                "SELECT all_mailinglists_selected FROM actop_unsubscribe_customer_tbl WHERE action_operation_id = ?", operationId) > 0;
+        return selectInt("SELECT all_mailinglists_selected FROM actop_unsubscribe_customer_tbl WHERE action_operation_id = ?", operationId) > 0;
     }
 
     private Set<Integer> getMailinglistIds(int operationId) {
-        return select(LOGGER,
+        return select(
                 "SELECT mailinglist_id FROM actop_unsubscribe_mlist_tbl " +
                         "WHERE action_operation_id = ?", operationId).stream()
                 .map(row -> ((Number) row.get("mailinglist_id")).intValue())

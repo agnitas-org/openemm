@@ -370,7 +370,7 @@
 
             case 'mailing':
                 data.mailingId = 0;
-                data.skipEmptyBlocks = false;
+                data.skipEmptyBlocks = true;
                 data.doubleCheck = true;
                 break;
 
@@ -416,13 +416,19 @@
 
         node.setId(object.id);
         node.setCoordinates(object.x, object.y);
-        node.setTitle(object.iconTitle);
         node.setComment(object.iconComment);
         node.setFilled(object.filled);
         node.setEditable(object.editable);
 
         if (['ownWorkflow', 'scBirthday', 'scDOI', 'scABTest'].includes(object.type)) {
             node.setExpandable(true);
+        }
+        if (Node.isMailingNode(node) && data.mailingId) {
+            $
+              .get(AGN.url("/mailing/" + data.mailingId + "/name.action"))
+              .done(name => node.setTitle(name ? name : object.iconTitle));
+        } else {
+            node.setTitle(object.iconTitle);
         }
 
         delete data['id'];

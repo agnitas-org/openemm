@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,22 +11,24 @@
 package com.agnitas.emm.core.calendar.service;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
-
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
-import com.agnitas.emm.core.calendar.beans.ComCalendarCommentRecipient;
+import com.agnitas.emm.core.calendar.beans.CalendarComment;
+import com.agnitas.emm.core.calendar.beans.CalendarCommentRecipient;
 
-import net.sf.json.JSONArray;
+import org.json.JSONArray;
 
 public interface CalendarCommentService {
 
     JSONArray getComments(Admin admin, LocalDate startDate, LocalDate endDate);
 
-    List<ComCalendarCommentRecipient> getRecipients(int notifyAdminId, String recipients);
+    List<CalendarComment> getComments(Date start, Date end, Admin admin);
 
-    int saveComment(ComCalendarComment comment);
+    List<CalendarCommentRecipient> getRecipients(int notifyAdminId, String recipients);
+
+    int saveComment(CalendarComment comment);
 
     boolean removeComment(int commentId, int companyId);
 }

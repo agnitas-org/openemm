@@ -2,18 +2,18 @@
 
   const Template = AGN.Lib.Template;
 
-  AGN.Lib.TableCellWrapper = function (options, data) {
-    if (options?.viewLinkTemplate && !options.isRestoreMode()) {
+  AGN.Lib.TableCellWrapper = function (viewLinkTemplate, viewInModal, isRestoreMode, data) {
+    if (viewLinkTemplate && !isRestoreMode) {
       const cell = document.createElement('a');
 
-      if (!Template.exists(options.viewLinkTemplate)) {
-        Template.register(options.viewLinkTemplate, options.viewLinkTemplate);
+      if (!Template.exists(viewLinkTemplate)) {
+        Template.register(viewLinkTemplate, viewLinkTemplate);
       }
 
-      cell.href = AGN.url(Template.text(options.viewLinkTemplate, data).trim());
+      cell.href = AGN.url(Template.text(viewLinkTemplate, data).trim());
       cell.classList.add('ag-grid-cell-link');
 
-      if (options.viewInModal) {
+      if (viewInModal) {
         cell.setAttribute('data-confirm', '')
       }
 

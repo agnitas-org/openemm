@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -120,9 +120,8 @@ public class CryptographicUtilities {
 
 	/**
 	 * Convert a Key to string encoded as BASE64
-	 * @throws Exception
 	 */
-	public static String getStringFromKey(Key key) throws Exception {
+	public static String getStringFromKey(Key key) {
 		return Base64.getEncoder().encodeToString(key.getEncoded());
 	}
 
@@ -342,11 +341,6 @@ public class CryptographicUtilities {
 
 	/**
 	 * Check if "certificate" was certified by "trustedCertificates"
-	 *
-	 * @param certificate
-	 * @param trustedCertificates
-	 * @return
-	 * @throws Exception
 	 */
 	public static boolean verifyChainOfTrust(final X509Certificate certificate, final Collection<? extends Certificate> trustedCertificates) throws Exception {
 		final X509CertSelector targetConstraints = new X509CertSelector();

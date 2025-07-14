@@ -7,7 +7,7 @@
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm"--%>
-<%--@elvariable id="actions" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="actions" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="admins" type="java.util.List"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="localeTableFormat" type="java.text.SimpleDateFormat"--%>

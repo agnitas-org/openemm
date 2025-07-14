@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,21 +10,20 @@
 
 package com.agnitas.emm.core.action.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.emm.core.action.dto.EmmActionDto;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.service.ServiceResult;
-import net.sf.json.JSONArray;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.dto.EmmActionDto;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ServiceResult;
+import org.json.JSONArray;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface EmmActionService {
 
@@ -71,6 +70,7 @@ public interface EmmActionService {
 
     String getEmmActionName(int actionId, int companyId);
 
+    // TODO: EMMGUI-714 remove after remove of old design
     boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions);
 
     ServiceResult<List<EmmAction>> setActiveness(Set<Integer> ids, int companyId, boolean activate);
@@ -90,4 +90,6 @@ public interface EmmActionService {
     JSONArray getDependencies(int actionId, int companyId);
 
     boolean isActive(int id);
+
+    List<Integer> findActionsUsingProfileField(String fieldName, int companyId);
 }

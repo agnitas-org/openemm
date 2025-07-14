@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,11 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 public class RecipientLightDto {
     
     private int customerId;
-    
     private String email;
-    
     private String firstname;
-    
     private String lastname;
     
     public RecipientLightDto(int customerId, String firstName, String lastName, String email) {
@@ -61,8 +58,8 @@ public class RecipientLightDto {
         this.lastname = lastname;
     }
 
-    public String getReadableName() {
+    public String getMention() {
         String shortname = getFirstname() + " " + getLastname();
-        return StringUtils.isBlank(shortname) ? getEmail() : shortname;
+        return (StringUtils.isBlank(shortname) ? getEmail() : shortname).trim();
     }
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,9 +10,8 @@
 
 package com.agnitas.beans.impl;
 
-import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+import static com.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -29,32 +28,10 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.impl.MailingBaseImpl;
-import org.agnitas.dao.FollowUpType;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.preview.AgnTagError;
-import org.agnitas.preview.TagSyntaxChecker;
-import org.agnitas.service.UserMessageException;
-import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.MailoutClient;
-import org.agnitas.util.SafeString;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
@@ -66,11 +43,11 @@ import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkScanResult;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
@@ -81,11 +58,30 @@ import com.agnitas.service.AgnTagService;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.emm.common.FollowUpType;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.preview.AgnTagError;
+import com.agnitas.preview.TagSyntaxChecker;
+import com.agnitas.service.UserMessageException;
+import com.agnitas.util.AgnTagUtils;
+import com.agnitas.util.MailoutClient;
+import com.agnitas.util.SafeString;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
 
 public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public static final String LINK_SWYN_PREFIX = "SWYN: ";
 
-	private static final transient Logger logger = LogManager.getLogger(MailingImpl.class);
+	private static final Logger logger = LogManager.getLogger(MailingImpl.class);
 
 	protected MailingType mailingType;
 	protected int mailTemplateID;
@@ -112,7 +108,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	private boolean isFrequencyCounterDisabled;
 
 	private LinkService linkService;
-	private ComMailingComponentsService mailingComponentsService;
+	private MailingComponentsService mailingComponentsService;
 
 	// Default Value is non openers.
 	protected String followUpType = FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey();
@@ -129,7 +125,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	protected Date planDate;
 
-	private List<ComMailingParameter> parameters;
+	private List<MailingParameter> parameters;
 
 	private int previewComponentId;
 
@@ -195,11 +191,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	  * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
 	 */
 	@Override
-	public boolean triggerMailing(int maildropStatusID) throws Exception {
+	public boolean triggerMailing(int maildropStatusID) {
 		try {
 			if (maildropStatusID <= 0) {
 				logger.warn( "maildropStatisID is 0");
-				throw new Exception("maildropStatusID is 0");
+				return false;
 			}
 			
 			// Interval Mailings are only triggered by an Jobqueue Worker
@@ -446,7 +442,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		this.followUpType = followUpType;
 	}
 
-	private void setDefaultExtension(TrackableLink link, ApplicationContext con) throws UnsupportedEncodingException {
+	private void setDefaultExtension(TrackableLink link, ApplicationContext con) {
 		ConfigService configService = (ConfigService) con.getBean("ConfigService");
 		String defaultExtensionString = configService.getValue(ConfigValue.DefaultLinkExtension, link.getCompanyID());
 		if (StringUtils.isNotBlank(defaultExtensionString)) {
@@ -480,17 +476,17 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public List<ComMailingParameter> getParameters() {
+	public List<MailingParameter> getParameters() {
 		return parameters;
 	}
 
 	@Override
-	public void setParameters(List<ComMailingParameter> parameters) {
+	public void setParameters(List<MailingParameter> parameters) {
 		this.parameters = parameters;
 	}
 	
 	@Override
-	public Map<String, List<AgnTagError>> checkAgnTagSyntax(ApplicationContext applicationContext) throws Exception {
+	public Map<String, List<AgnTagError>> checkAgnTagSyntax(ApplicationContext applicationContext) {
 		Map<String, List<AgnTagError>> returnMap = new HashMap<>();
 		TagSyntaxChecker tagSyntaxChecker = (TagSyntaxChecker) applicationContext.getBean("TagSyntaxChecker");
 		
@@ -692,37 +688,19 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
                 .map(Map.Entry::getKey).collect(Collectors.toSet());
 
         List<String> measuredSeparatelyLinks = new ArrayList<>();
-        if (duplicates.size() > 0) {
+        if (!duplicates.isEmpty()) {
             Map<String, Integer> duplicateCounters = duplicates.stream().collect(Collectors.toMap(Function.identity(), v -> 1));
 
-            components.values().stream()
-					.filter((component) -> component.getType() == MailingComponentType.Template)
-					.forEach((component) -> component.setEmmBlock(addNumbersToLinks(duplicateCounters, measuredSeparatelyLinks, component.getEmmBlock(), context), component.getMimeType()));
+			components.values().stream()
+					.filter(component -> component.getType() == MailingComponentType.Template)
+					.forEach(component -> component.setEmmBlock(getLinkService(context).addNumbersToLinks(duplicateCounters, measuredSeparatelyLinks, component.getEmmBlock()), component.getMimeType()));
 
             dynTags.values().stream()
-                    .flatMap((tag) -> tag.getDynContent().values().stream())
-                    .forEach((content) -> content.setDynContent(addNumbersToLinks(duplicateCounters, measuredSeparatelyLinks, content.getDynContent(), context)));
+                    .flatMap(tag -> tag.getDynContent().values().stream())
+                    .forEach(content -> content.setDynContent(getLinkService(context).addNumbersToLinks(duplicateCounters, measuredSeparatelyLinks, content.getDynContent())));
         }
 
         return measuredSeparatelyLinks;
-	}
-
-	protected String addNumbersToLinks(Map<String, Integer> linksCounters, List<String> separatelyMeasuredLinks, String originContent, ApplicationContext context) {
-		StringBuilder changedContent = new StringBuilder(originContent);
-        AtomicInteger accumulatedDiff = new AtomicInteger(0);
-
-		getLinkService(context).findAllLinks(originContent, (start, end) -> {
-		    String linkUrlToReplace = originContent.substring(start, end);
-			Integer count = linksCounters.get(linkUrlToReplace);
-			if(count != null){
-				String linkNumber = "#" + count;
-				changedContent.insert(end + accumulatedDiff.get(), linkNumber);
-				accumulatedDiff.addAndGet(linkNumber.length());
-				linksCounters.put(linkUrlToReplace, count + 1);
-				separatelyMeasuredLinks.add(linkUrlToReplace + linkNumber);
-			}
-		});
-		return changedContent.toString();
 	}
 
     @Override
@@ -1438,9 +1416,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     	return linkService;
     }
     
-    protected final ComMailingComponentsService getMailingComponentService(ApplicationContext applicationContext) {
+    protected final MailingComponentsService getMailingComponentService(ApplicationContext applicationContext) {
     	if (mailingComponentsService == null) {
-            mailingComponentsService = applicationContext.getBean("mailingComponentService", ComMailingComponentsService.class);
+            mailingComponentsService = applicationContext.getBean("mailingComponentService", MailingComponentsService.class);
     	}
     	return mailingComponentsService;
     }

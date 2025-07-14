@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,10 +12,6 @@ package com.agnitas.preview;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.preview.PreviewImpl;
-import org.springframework.beans.factory.annotation.Required;
 
 public class PreviewFactoryImpl implements PreviewFactory {
 	private static PreviewFactory instance;
@@ -24,7 +20,6 @@ public class PreviewFactoryImpl implements PreviewFactory {
 	
 	private Preview preview;
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}

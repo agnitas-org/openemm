@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,6 +14,7 @@ public class SendPerDomainStatRow extends SendStatRow {
 
     private String domainName;
     private int domainNameIndex;
+    private int mailingId;
 
     public int getDomainNameIndex() {
         return domainNameIndex;
@@ -31,18 +32,24 @@ public class SendPerDomainStatRow extends SendStatRow {
         this.domainName = domainName;
     }
 
+    public int getMailingId() {
+        return mailingId;
+    }
+
+    public void setMailingId(int mailingId) {
+        this.mailingId = mailingId;
+    }
+
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("SendStatRow : \n");
-        builder.append("Category: " + getCategory()+ "\n" );
-        builder.append("CategoryIndex: " + getCategoryindex()+ "\n" );
-        builder.append("Targetgroup: " + getTargetgroup()+ "\n" );
-        builder.append("TargetgroupIndex: " + getTargetgroupindex()+ "\n" );
-        builder.append("DomainName: " + getDomainName()+ "\n" );
-        builder.append("DomainNameIndex: " + getDomainNameIndex()+ "\n" );
-        builder.append("Value: " + getCount()+"\n");
-        builder.append("Rate: " + getRate()+"\n");
-
-        return  builder.toString();
+        return "SendStatRow : \n" + "Category: " + getCategory() + "\n"
+               + "CategoryIndex: " + getCategoryindex() + "\n"
+               + "Targetgroup: " + getTargetgroup() + "\n"
+               + "TargetgroupIndex: " + getTargetgroupindex() + "\n"
+               + "DomainName: " + getDomainName() + "\n"
+               + "DomainNameIndex: " + getDomainNameIndex() + "\n"
+               + "MailingId: " + getMailingId() + "\n"
+               + "Value: " + getCount() + "\n"
+               + "Rate: " + getRate() + "\n";
     }
 }

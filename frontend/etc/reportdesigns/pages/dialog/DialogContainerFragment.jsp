@@ -4,7 +4,7 @@
 				 org.eclipse.birt.report.context.BaseAttributeBean,
 				 org.eclipse.birt.report.IBirtConstants,
 				 org.eclipse.birt.report.utility.ParameterAccessor" %>
-<%@page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -43,7 +43,7 @@
                         <label class="birtviewer_hidden_label" for="<%= fragment.getClientId( ) %>dialogCloseBtn">
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
                             <%=
-                            ComBirtResources.getMessage( "birt.viewer.dialog.close", locale )
+                            EmmBirtResources.getMessage( "birt.viewer.dialog.close", locale )
                             %>
                         </label>
                         <div id="<%= fragment.getClientId( ) %>dialogCloseBtn" class="dialogCloseBtn dCloseBtn"/>
@@ -76,8 +76,8 @@
                             <div id="<%= fragment.getClientId( ) %>okButtonLeft" class="dialogBtnBarButtonLeftBackgroundEnabled"></div>
                             <div id="<%= fragment.getClientId( ) %>okButtonRight" class="dialogBtnBarButtonRightBackgroundEnabled"></div>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <input type="button" value="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.ok", locale ) %>"
-                                   title="<%= ComBirtResources.getHtmlMessage( "birt.viewer.dialog.ok", locale ) %>"
+                            <input type="button" value="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.ok", locale ) %>"
+                                   title="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.ok", locale ) %>"
                                    class="dialogBtnBarButtonText dialogBtnBarButtonEnabled"/>
                         </div>
                         <div class="dialogBtnBarDivider"></div>
@@ -85,8 +85,8 @@
                             <div class="dialogBtnBarButtonLeftBackgroundEnabled"></div>
                             <div class="dialogBtnBarButtonRightBackgroundEnabled"></div>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <input type="button" value="<%= ComBirtResources.getHtmlMessage( "button.Cancel", locale )%>"
-                                   title="<%= ComBirtResources.getHtmlMessage( "button.Cancel", locale )%>"
+                            <input type="button" value="<%= EmmBirtResources.getHtmlMessage( "button.Cancel", locale )%>"
+                                   title="<%= EmmBirtResources.getHtmlMessage( "button.Cancel", locale )%>"
                                    class="dialogBtnBarButtonText dialogBtnBarButtonEnabled"/>
                         </div>
                     </div>

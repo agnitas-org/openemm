@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,35 +10,37 @@
 
 package com.agnitas.emm.core.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.dao.RecipientFieldDao;
-import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientFieldsCache;
-import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.Const;
-import org.agnitas.util.DbColumnType;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.dao.RecipientFieldDao;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientFieldsCache;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.Const;
+import com.agnitas.util.DbColumnType;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RecipientFieldServiceImpl implements RecipientFieldService {
 
@@ -51,26 +53,55 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	private RecipientProfileHistoryService recipientProfileHistoryService;
 	private BulkActionValidationService<String, String> bulkActionValidationService;
 
+	public Set<String> getStandardFieldsNames(int companyId) {
+		return getRecipientFields(companyId)
+				.stream()
+				.filter(RecipientFieldDescription::isStandardField)
+				.map(RecipientFieldDescription::getColumnName)
+				.collect(Collectors.toSet());
+	}
+
 	@Override
-	public List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception {
+	public List<RecipientFieldDescription> getRecipientFields(int companyID) {
 		return getCachedRecipientFieldsData(companyID);
 	}
 
 	@Override
-	public List<RecipientFieldDescription> getRecipientFields(int companyID, String fieldName, String dbFieldName, String description, DbColumnType.SimpleDataType type, ProfileFieldMode mode) throws Exception {
-		List<RecipientFieldDescription> fields = getRecipientFields(companyID);
+	public List<RecipientFieldDescription> getRecipientFields(ProfileFieldForm profileForm, int companyId) {
+		List<RecipientFieldDescription> fields = getRecipientFields(companyId);
 
+		String fieldName = profileForm.getFilterFieldName();
+		String dbFieldName = profileForm.getFilterDbFieldName();
+		String description = profileForm.getFilterDescription();
+		DbColumnType.SimpleDataType type = profileForm.getFilterType();
+		ProfileFieldMode mode = profileForm.getFilterMode();
+		Boolean historized = profileForm.getHistorized();
 		return fields.stream()
 				.filter(f -> StringUtils.isBlank(fieldName) || f.getShortName().toLowerCase().contains(fieldName.toLowerCase()))
 				.filter(f -> StringUtils.isBlank(dbFieldName) || f.getColumnName().toLowerCase().contains(dbFieldName.toLowerCase()))
 				.filter(f -> StringUtils.isBlank(description) || (f.getDescription() != null && f.getDescription().toLowerCase().contains(description.toLowerCase())))
 				.filter(f -> type == null || type.equals(f.getSimpleDataType()))
 				.filter(f -> mode == null || mode.equals(f.getDefaultPermission()))
+				.filter(f -> historized == null || historized.equals(f.isHistorized()))
 				.collect(Collectors.toList());
 	}
 
 	@Override
-	public RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName) throws Exception {
+	public List<RecipientFieldDescription> getEditableFields(int companyId) {
+		return getRecipientFields(companyId).stream()
+				.filter(t -> EnumSet.of(ProfileFieldMode.Editable).contains(t.getDefaultPermission()))
+				.toList();
+	}
+
+	@Override
+	public Map<String, String> getEditableFieldsMap(int companyId) {
+		return getEditableFields(companyId)
+				.stream()
+				.collect(Collectors.toMap(RecipientFieldDescription::getColumnName, RecipientFieldDescription::getShortName));
+	}
+
+	@Override
+	public RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName) {
 		List<RecipientFieldDescription> recipientFields = getCachedRecipientFieldsData(companyID);
 		for (RecipientFieldDescription recipientFieldDescription : recipientFields) {
 			if (recipientFieldName.equalsIgnoreCase(recipientFieldDescription.getColumnName())
@@ -117,7 +148,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		profileFieldDao.clearProfileStructureCache(companyID);
 	}
 
-	private List<RecipientFieldDescription> getCachedRecipientFieldsData(int companyID) throws Exception {
+	private List<RecipientFieldDescription> getCachedRecipientFieldsData(int companyID) {
 		List<RecipientFieldDescription> recipientFields = recipientFieldsCache.get(companyID);
 		if (recipientFields == null) {
 			recipientFields = recipientFieldDao.getRecipientFields(companyID).stream()
@@ -136,15 +167,11 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	
 	@Override
 	public Map<String, String> getRecipientDBStructure(int companyID) {
-		try {
-			Map<String, String> returnMap = new HashMap<>();
-			for (RecipientFieldDescription field : getRecipientFields(companyID)) {
-				returnMap.put(field.getColumnName(), field.getSimpleDataType().getGenericDbDataTypeName());
-			}
-			return returnMap;
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot read RecipientDBStructure: " + e.getMessage(), e);
+		Map<String, String> returnMap = new HashMap<>();
+		for (RecipientFieldDescription field : getRecipientFields(companyID)) {
+			returnMap.put(field.getColumnName(), field.getSimpleDataType().getGenericDbDataTypeName());
 		}
+		return returnMap;
 	}
 
 	@Override
@@ -158,7 +185,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	}
 
 	@Override
-	public boolean mayAddNewRecipientField(int companyID) throws Exception {
+	public boolean mayAddNewRecipientField(int companyID) {
 		if (companyID <= 0) {
     		return false;
     	} else {
@@ -191,7 +218,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	}
 
 	@Override
-	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) throws Exception {
+	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) {
 		if (getRecipientField(companyID, fieldname) != null) {
 			// Field already exists, so a new default value will only take effect on newly inserted entries, which should not take too much time
 			return true;
@@ -205,7 +232,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	 * Get the current number of profile fields that are not included in the EMM standard fields, but created by the client for special purpose
 	 */
 	@Override
-	public int getClientSpecificFieldCount(int companyID) throws Exception {
+	public int getClientSpecificFieldCount(int companyID) {
 		int companySpecificFieldCount = 0;
 		
 		Set<String> recipientStandardFieldColumnNames = RecipientStandardField.getAllRecipientStandardFieldColumnNames();
@@ -266,14 +293,9 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 
 	@Override
 	public long getCountForOverview(int companyId) {
-        try {
-            return profileFieldDao.getCustomerColumns(companyId).stream()
-                    .filter(col -> !RecipientStandardField.Bounceload.getColumnName().equals(col))
-                    .count();
-        } catch (Exception e) {
-            logger.error("Error occurred when get count of profile fields", e);
-			return -1;
-        }
+		return profileFieldDao.getCustomerColumns(companyId).stream()
+				.filter(col -> !RecipientStandardField.Bounceload.getColumnName().equals(col))
+				.count();
     }
 
 	public void setConfigService(ConfigService configService) {

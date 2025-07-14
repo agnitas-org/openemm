@@ -1,6 +1,6 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
-<%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
+<%@ page import="com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
@@ -10,7 +10,7 @@
 <%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
-<%--@elvariable id="selectedRemovedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
+<%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
 <%--@elvariable id="isCampaignEnableTargetGroups" type="java.lang.Boolean"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
 <%--@elvariable id="worldMailingSend" type="java.lang.Boolean"--%>

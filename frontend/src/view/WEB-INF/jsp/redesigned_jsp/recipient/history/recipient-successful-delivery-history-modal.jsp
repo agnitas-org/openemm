@@ -4,7 +4,7 @@
 
 <%--@elvariable id="mailingShortname" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
-<%--@elvariable id="deliveryHistoryJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="deliveryHistoryJson" type="org.json.JSONArray"--%>
 
 <div class="modal" tabindex="-1">
     <div class="modal-dialog modal-lg">

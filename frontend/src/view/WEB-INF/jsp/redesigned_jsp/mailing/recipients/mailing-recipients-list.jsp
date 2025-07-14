@@ -1,13 +1,12 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.mailing.enums.MailingRecipientType" %>
-<%@ page import="org.agnitas.web.MailingRecipientsAdditionalColumn" %>
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fmt"        uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="fieldsMap" type="java.util.Map"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
@@ -18,7 +17,7 @@
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="recipient" type="com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow"--%>
 <%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
-<%--@elvariable id="recipients" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
+<%--@elvariable id="recipients" type="com.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
 <%--@elvariable id="additionalColumns" type="java.util.Set<java.lang.String>"--%>
 
 <c:set var="RECIPIENT_TYPES" value="<%= MailingRecipientType.values() %>"/>
@@ -45,7 +44,7 @@
             </script>
         </c:if>
 
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <c:if test="${recipientsLimitExceeded}">
                 <div class="notification-simple notification-simple--lg notification-simple--info">
                     <span><mvc:message code="recipient.search.max_recipients" arguments="${countOfRecipients}"/></span>
@@ -86,86 +85,63 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table--borderless js-table" id="recipient" name="${recipients}" partialList="true"
-                                   size="${form.numberOfRows}" requestURI="/mailing/${mailingId}/recipients/list.action" sort="external" excludedParams="*">
-
-                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+                    <emm:table var="recipient" modelAttribute="recipients" cssClass="table table--borderless js-table">
 
                         <c:if test="${not form.loadRecipients}">
-                            <agnDisplay:setProperty name="basic.msg.empty_list_row" value=""/>
+                            <c:set var="agnTableEmptyListMsg" value="" />
                         </c:if>
 
-                        <agnDisplay:column titleKey="Firstname" sortProperty="firstname" sortable="${tableSortable}"
-                                           headerClass="js-table-sort ${form.isSelectedColumn('firstname') ? '' : 'hidden'}" class="${form.isSelectedColumn('firstname') ? '' : 'hidden'}"
-                                           data-table-column="firstname">
-                            <span>${recipient.firstName}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="Firstname" sortProperty="firstname" property="firstName" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn('firstname') ? '' : 'hidden'}" cssClass="${form.isSelectedColumn('firstname') ? '' : 'hidden'}"
+                                           data-table-column="firstname" />
 
-                        <agnDisplay:column titleKey="Lastname" sortProperty="lastname" sortable="${tableSortable}"
-                                           headerClass="js-table-sort ${form.isSelectedColumn('lastname') ? '' : 'hidden'}" class="${form.isSelectedColumn('lastname') ? '' : 'hidden'}"
-                                           data-table-column="lastname">
-                            <span>${recipient.lastName}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="Lastname" sortProperty="lastname" property="lastName" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn('lastname') ? '' : 'hidden'}" cssClass="${form.isSelectedColumn('lastname') ? '' : 'hidden'}"
+                                           data-table-column="lastname" />
 
-                        <agnDisplay:column titleKey="mailing.MediaType.0" sortProperty="email" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span>${recipient.email}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="mailing.MediaType.0" property="email" sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="statistic.mailing.recipient.received" sortProperty="receive_time"
-                                        sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span><fmt:formatDate value="${recipient.receiveTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/></span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="statistic.mailing.recipient.received" sortProperty="receive_time" property="receiveTime"
+                                        sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="statistic.opened" sortProperty="open_time" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span><fmt:formatDate value="${recipient.openTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/></span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="statistic.opened" sortProperty="open_time" property="openTime" sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="statistic.openings" sortProperty="openings" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span>${recipient.openingsCount}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="statistic.openings" sortProperty="openings" property="openingsCount" sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="default.clicked" sortProperty="click_time" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span><fmt:formatDate value="${recipient.clickTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/></span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="default.clicked" sortProperty="click_time" property="clickTime" sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="statistic.Clicks" sortProperty="clicks" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="">
-                            <span>${recipient.clicksCount}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="statistic.Clicks" sortProperty="clicks" property="clicksCount" sortable="${tableSortable}" data-table-column="" />
 
-                        <agnDisplay:column titleKey="recipient.MailingState2" sortProperty="bounce_time" sortable="${tableSortable}"
-                                           headerClass="js-table-sort ${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
-                                           class="${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
-                                           data-table-column="${BOUNCE_TIME_FIELD.name()}">
-                            <span><fmt:formatDate value="${recipient.bounceTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/></span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="recipient.MailingState2" sortProperty="bounce_time" property="bounceTime" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           cssClass="${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           data-table-column="${BOUNCE_TIME_FIELD.name()}" />
 
-                        <agnDisplay:column titleKey="recipient.status.optout" sortProperty="optout_time" sortable="${tableSortable}"
-                                           headerClass="js-table-sort ${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
-                                           class="${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
-                                           data-table-column="${OPT_OUT_TIME_FIELD.name()}">
-                            <span><fmt:formatDate value="${recipient.unsubscribeTime}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/></span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="recipient.status.optout" sortProperty="optout_time" property="unsubscribeTime" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           cssClass="${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           data-table-column="${OPT_OUT_TIME_FIELD.name()}" />
 
                         <c:forEach var="field" items="${form.selectedFields}">
                             <c:if test="${not form.isDefaultColumn(field) and not fn:contains(additionalColumns, field)}">
                                 <c:choose>
                                     <c:when test="${'gender'.equalsIgnoreCase(field)}">
-                                        <agnDisplay:column titleKey="recipient.Salutation" sortProperty="gender" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="${field}">
+                                        <emm:column titleKey="recipient.Salutation" sortProperty="gender" sortable="${tableSortable}" data-table-column="${field}">
                                             <span><mvc:message code="recipient.gender.${recipient.getVal(field)}.short"/></span>
-                                        </agnDisplay:column>
+                                        </emm:column>
                                     </c:when>
 
                                     <c:otherwise>
-                                        <agnDisplay:column title="${fieldsMap.get(field)}" sortProperty="${field}" sortable="${tableSortable}" headerClass="js-table-sort" data-table-column="${field}">
+                                        <emm:column title="${fieldsMap.get(field)}" sortProperty="${field}" sortable="${tableSortable}" data-table-column="${field}">
                                             <span>${recipient.getVal(field)}</span>
-                                        </agnDisplay:column>
+                                        </emm:column>
                                     </c:otherwise>
                                 </c:choose>
                             </c:if>
                         </c:forEach>
 
-                        <agnDisplay:column class="fit-content" headerClass="columns-picker fit-content"/>
-                    </agnDisplay:table>
+                        <emm:column headerClass="columns-picker" />
+                    </emm:table>
                 </div>
 
                 <c:if test="${not form.loadRecipients}">
@@ -182,7 +158,7 @@
     </mvc:form>
 
     <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/mailing/${mailingId}/recipients/search.action" modelAttribute="form"
-              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
+              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
 
         <div class="tile-header">
             <h1 class="tile-title">
@@ -190,34 +166,32 @@
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label for="filter-types" class="form-label"><mvc:message code="default.Type" /></label>
-                    <mvc:select id="filter-types" path="types" cssClass="form-control" placeholder="${allMsg}">
-                        <c:forEach var="recipientType" items="${RECIPIENT_TYPES}">
-                            <mvc:option value="${recipientType}">${recipientType}</mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
-                <div class="col-12">
-                    <mvc:message var="firstnameMsg" code="Firstname" />
-                    <label for="filter-firstname" class="form-label">${firstnameMsg}</label>
-                    <mvc:text id="filter-firstname" path="firstname" cssClass="form-control" placeholder="${firstnameMsg}"/>
-                </div>
-                <div class="col-12">
-                    <mvc:message var="lastnameMsg" code="Lastname" />
-                    <label for="filter-lastname" class="form-label">${lastnameMsg}</label>
-                    <mvc:text id="filter-lastname" path="lastname" cssClass="form-control" placeholder="${lastnameMsg}"/>
-                </div>
-                <div class="col-12">
-                    <label for="filter-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
-                    <mvc:text id="filter-email" path="email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
-                </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label for="filter-types" class="form-label"><mvc:message code="default.Type" /></label>
+                <mvc:select id="filter-types" path="types" cssClass="form-control" placeholder="${allMsg}">
+                    <c:forEach var="recipientType" items="${RECIPIENT_TYPES}">
+                        <mvc:option value="${recipientType}">${recipientType}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+            <div>
+                <mvc:message var="firstnameMsg" code="Firstname" />
+                <label for="filter-firstname" class="form-label">${firstnameMsg}</label>
+                <mvc:text id="filter-firstname" path="firstname" cssClass="form-control" placeholder="${firstnameMsg}"/>
+            </div>
+            <div>
+                <mvc:message var="lastnameMsg" code="Lastname" />
+                <label for="filter-lastname" class="form-label">${lastnameMsg}</label>
+                <mvc:text id="filter-lastname" path="lastname" cssClass="form-control" placeholder="${lastnameMsg}"/>
+            </div>
+            <div>
+                <label for="filter-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
+                <mvc:text id="filter-email" path="email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
             </div>
         </div>
     </mvc:form>

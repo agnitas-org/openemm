@@ -42,8 +42,11 @@
 
     <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
+    <%--here you should put extra css/js links needed for your page that should be loaded before main js/css file --%>
+    <tiles:insertAttribute name="head-pre-links" />
+
     <tiles:insertTemplate template="/WEB-INF/jsp/redesigned_jsp/page-template/assets.jsp" />
 
     <%--here you should put extra css/js links needed for your page--%>
-    <tiles:insertAttribute name="head-extra-links"/>
+    <tiles:insertAttribute name="head-extra-links" />
 </head>

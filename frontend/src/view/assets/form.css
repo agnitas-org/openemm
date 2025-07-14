@@ -1,23 +1,4 @@
 @charset "UTF-8";
-/*
-=================================================================
-  Typography
-=================================================================
-*/
-/*
-=================================================================
-  Colors
-=================================================================
-*/
-/**
- * Browser colors for inbox preview
- */
-/* ==========================================================================
-   $BASE-PICKER
-   ========================================================================== */
-/**
- * Note: the root picker element should *NOT* be styled more than what’s here.
- */
 .picker {
   position: absolute;
   z-index: 10000;
@@ -25,101 +6,65 @@
   font-size: 13px;
   text-align: left;
   line-height: 1.2;
-  color: #000000;
+  color: #000;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  user-select: none;
+  user-select: none
 }
-
-.input-sm + .picker, .form-group-sm .form-control + .picker, .form-group-sm .form-control-small + .picker {
-  top: 20px;
+.form-group-sm .form-control + .picker,
+.form-group-sm .form-control-small + .picker,
+.input-sm + .picker {
+  top: 20px
 }
-
-.input-lg + .picker, .form-group-lg .form-control + .picker, .form-group-lg .form-control-small + .picker {
-  top: 40px;
+.form-group-lg .form-control + .picker,
+.form-group-lg .form-control-small + .picker,
+.input-lg + .picker {
+  top: 40px
 }
-
-/**
- * The picker input element.
- */
 .picker__input {
-  cursor: default;
+  cursor: default
 }
-
-/**
- * When the picker is opened, the input element is “activated”.
- */
 .picker__input.picker__input--active {
-  border-color: #0089ec;
+  border-color: #0089ec
 }
-
-/**
- * The holder is the only “scrollable” top-level container element.
- */
 .picker__holder {
   width: 100%;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch
 }
-
-/*!
- * Classic picker styling for pickadate.js
- * Demo: http://amsul.github.io/pickadate.js
- */
-/**
- * Note: the root picker element should *NOT* be styled more than what’s here.
- */
 .picker {
-  width: 100%;
+  width: 100%
 }
-
 .form-picker {
   width: initial;
-  top: initial;
+  top: initial
 }
-
-/**
- * The holder is the base of the picker.
- */
 .picker__holder {
   position: absolute;
-  background: #ffffff;
-  border: 1px solid #aaaaaa;
+  background: #fff;
+  border: 1px solid #aaa;
   border-top-width: 0;
   border-bottom-width: 0;
   border-radius: 0 0 5px 5px;
   max-height: 0;
   opacity: 0;
-  filter: alpha(opacity=0);
   -webkit-transform: translateY(-1em) perspective(600px) rotateX(10deg);
   -moz-transform: translateY(-1em) perspective(600px) rotateX(10deg);
   transform: translateY(-1em) perspective(600px) rotateX(10deg);
-  -webkit-transition: -webkit-transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s 0.15s, border-width 0s 0.15s;
-  -moz-transition: -moz-transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s 0.15s, border-width 0s 0.15s;
-  -o-transition: -o-transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s 0.15s, border-width 0s 0.15s;
-  transition: transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s 0.15s, border-width 0s 0.15s;
+  -webkit-transition: -webkit-transform .15s ease-out,opacity .15s ease-out,max-height 0s .15s,border-width 0s .15s;
+  -moz-transition: -moz-transform .15s ease-out,opacity .15s ease-out,max-height 0s .15s,border-width 0s .15s;
+  -o-transition: -o-transform .15s ease-out,opacity .15s ease-out,max-height 0s .15s,border-width 0s .15s;
+  transition: transform .15s ease-out,opacity .15s ease-out,max-height 0s .15s,border-width 0s .15s
 }
-
-/**
- * The frame and wrap work together to ensure that
- * clicks within the picker don’t reach the holder.
- */
 .picker__frame {
-  padding: 1px;
+  padding: 1px
 }
-
 .picker__wrap {
-  margin: -1px;
+  margin: -1px
 }
-
-/**
- * When the picker opens...
- */
 .picker--opened .picker__holder {
   max-height: none;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
-  filter: alpha(opacity=100);
   -moz-opacity: 1;
   opacity: 1;
   border-top-width: 1px;
@@ -127,175 +72,130 @@
   -webkit-transform: translateY(0) perspective(600px) rotateX(0);
   -moz-transform: translateY(0) perspective(600px) rotateX(0);
   transform: translateY(0) perspective(600px) rotateX(0);
-  -webkit-transition: -webkit-transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s, border-width 0s;
-  -moz-transition: -moz-transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s, border-width 0s;
-  transition: transform 0.15s ease-out, opacity 0.15s ease-out, max-height 0s, border-width 0s;
-  -webkit-box-shadow: 0 6px 18px 1px rgba(0, 0, 0, 0.12);
-  -moz-box-shadow: 0 6px 18px 1px rgba(0, 0, 0, 0.12);
-  box-shadow: 0 6px 18px 1px rgba(0, 0, 0, 0.12);
+  -webkit-transition: -webkit-transform .15s ease-out,opacity .15s ease-out,max-height 0s,border-width 0s;
+  -moz-transition: -moz-transform .15s ease-out,opacity .15s ease-out,max-height 0s,border-width 0s;
+  transition: transform .15s ease-out,opacity .15s ease-out,max-height 0s,border-width 0s;
+  -webkit-box-shadow: 0 6px 18px 1px rgba(0,0,0,.12);
+  -moz-box-shadow: 0 6px 18px 1px rgba(0,0,0,.12);
+  box-shadow: 0 6px 18px 1px rgba(0,0,0,.12)
 }
-
-/* ==========================================================================
-   $BASE-DATE-PICKER
-   ========================================================================== */
-/**
- * The picker box.
- */
 body.dark-theme .picker__box {
-  background-color: #303030;
+  background-color: #303030
 }
-
-/**
- * The header containing the month and year stuff.
- */
 .picker__header {
   text-align: center;
   position: relative;
   font-size: 13px;
-  color: #707173;
+  color: #707173
 }
-.picker__header:before, .picker__header:after {
+.picker__header:after,
+.picker__header:before {
   content: " ";
-  display: table;
+  display: table
 }
 .picker__header:after {
-  clear: both;
+  clear: both
 }
-
 body.dark-theme .picker__header {
-  color: #fff;
+  color: #fff
 }
-
-/**
- * The month and year labels.
- */
 .picker__month,
 .picker__year {
   font-size: 13px;
   display: inline-block;
   margin-left: 3px;
   margin-right: 3px;
-  margin-top: 10px;
+  margin-top: 10px
 }
-
-/**
- * The month and year selectors.
- */
 .picker__select--month,
 .picker__select--year {
   border: 1px solid #b7b7b7;
   height: 2em;
-  padding: 0.5em;
-  margin-left: 0.25em;
-  margin-right: 0.25em;
+  padding: .5em;
+  margin-left: .25em;
+  margin-right: .25em
 }
-
-@media (min-width: 24.5em) {
+@media (min-width:24.5em) {
   .picker__select--month,
   .picker__select--year {
-    margin-top: -0.5em;
+    margin-top: -.5em
   }
 }
 .picker__select--month {
-  width: 35%;
+  width: 35%
 }
-
 .picker__select--year {
-  width: 22.5%;
+  width: 22.5%
 }
-
 .picker__select--month:focus,
 .picker__select--year:focus {
-  border-color: #0089ec;
+  border-color: #0089ec
 }
-
-/**
- * The month navigation buttons.
- */
-.picker__nav--prev,
-.picker__nav--next {
-  padding: 10px;
+.picker__nav--next,
+.picker__nav--prev {
+  padding: 10px
 }
-
 .picker__nav--prev {
   float: left;
-  padding: 10px;
+  padding: 10px
 }
 .picker__nav--prev:before {
-  font-family: "FontAwesome";
-  content: "\f053";
+  font-family: FontAwesome;
+  content: "\f053"
 }
-
 .picker__nav--next {
-  float: right;
+  float: right
 }
 .picker__nav--next:before {
-  font-family: "FontAwesome";
-  content: "\f054";
+  font-family: FontAwesome;
+  content: "\f054"
 }
-
-.picker__nav--prev:hover,
-.picker__nav--next:hover {
+.picker__nav--next:hover,
+.picker__nav--prev:hover {
   cursor: pointer;
-  color: #000000;
-  background: #b1dcfb;
+  color: #000;
+  background: #b1dcfb
 }
-
-body.dark-theme .picker__nav--prev:hover,
-body.dark-theme .picker__nav--next:hover {
-  background-color: #111111;
-  color: #fff;
+body.dark-theme .picker__nav--next:hover,
+body.dark-theme .picker__nav--prev:hover {
+  background-color: #111;
+  color: #fff
 }
-
 .picker__nav--disabled,
-.picker__nav--disabled:hover,
 .picker__nav--disabled:before,
-.picker__nav--disabled:before:hover {
+.picker__nav--disabled:before:hover,
+.picker__nav--disabled:hover {
   cursor: default;
-  color: #cccdcd;
+  color: #cccdcd
 }
-
-/**
- * The calendar table of dates
- */
 .picker__table {
   text-align: center;
   border-collapse: collapse;
   border-spacing: 0;
   table-layout: fixed;
   font-size: inherit;
-  width: 100%;
+  width: 100%
 }
-
 .picker__table td {
   margin: 0;
-  padding: 0;
+  padding: 0
 }
-
-/**
- * The weekday labels
- */
 .picker__weekday {
   padding: 10px;
   font-weight: 700;
   text-align: left;
   background-color: #e2e3e3;
   border-bottom: 1px solid #cccdcd;
-  border-right: 1px solid #cccdcd;
+  border-right: 1px solid #cccdcd
 }
 .picker__weekday:first-child {
-  border-left: 1px solid #cccdcd;
+  border-left: 1px solid #cccdcd
 }
-
 body.dark-theme .picker__weekday {
   color: #fff;
   background-color: #1e1e1e;
-  border-color: #666;
+  border-color: #666
 }
-
-/**
- * The days on the calendar
- */
 .picker__day {
   height: 40px;
   vertical-align: top;
@@ -303,1032 +203,374 @@ body.dark-theme .picker__weekday {
   border: 1px solid #e2e3e3;
   text-align: left;
   line-height: 1;
-  color: #707173;
+  color: #707173
 }
-.picker__day:hover, .picker__day:focus {
+.picker__day:focus,
+.picker__day:hover {
   background-color: #e5f1f8;
-  border-color: #338dc7;
+  border-color: #338dc7
 }
-
 body.dark-theme .picker__day {
   border-color: #666;
-  color: #cccdcd;
+  color: #cccdcd
 }
-body.dark-theme .picker__day:hover, body.dark-theme .picker__day:focus {
+body.dark-theme .picker__day:focus,
+body.dark-theme .picker__day:hover {
   background-color: #232323;
-  border-color: #0071b9;
+  border-color: #0071b9
 }
-
 .picker__day--today {
   position: relative;
   background-color: #f1f9e6;
-  color: #109e4d;
+  color: #109e4d
 }
-.picker__day--today:hover, .picker__day--today:focus {
-  background-color: #f1f9e6 !important;
-  color: #109e4d !important;
+.picker__day--today:focus,
+.picker__day--today:hover {
+  background-color: #f1f9e6!important;
+  color: #109e4d!important
 }
-
 body.dark-theme .picker__day--today {
   background-color: #0f3306;
-  color: #cccdcd;
+  color: #cccdcd
 }
-body.dark-theme .picker__day--today:hover, body.dark-theme .picker__day--today:focus {
-  background-color: #081c03 !important;
+body.dark-theme .picker__day--today:focus,
+body.dark-theme .picker__day--today:hover {
+  background-color: #081c03!important
 }
 body.dark-theme .picker__day--today .calendar-day-label {
-  color: #cccdcd;
+  color: #cccdcd
 }
-
 .picker__day--disabled:before {
-  border-top-color: #aaaaaa;
+  border-top-color: #aaa
 }
-
 .picker__day--outfocus {
   background-color: #faf9f9;
-  color: #a9aaab;
+  color: #a9aaab
 }
-
 body.dark-theme .picker__day--outfocus {
   background-color: #3d3d3d;
-  color: #cccdcd;
+  color: #cccdcd
 }
-
 .picker__day--infocus:hover,
 .picker__day--outfocus:hover {
-  cursor: pointer;
+  cursor: pointer
 }
-
 .picker__day--highlighted {
-  border-color: #0089ec;
+  border-color: #0089ec
 }
-
-.picker__day--highlighted:hover,
-.picker--focused .picker__day--highlighted {
+.picker--focused .picker__day--highlighted,
+.picker__day--highlighted:hover {
   cursor: pointer;
-  color: #000000;
-  background: #b1dcfb;
+  color: #000;
+  background: #b1dcfb
 }
-
-body.dark-theme .picker__day--highlighted:hover,
-body.dark-theme .picker--focused .picker__day--highlighted {
+body.dark-theme .picker--focused .picker__day--highlighted,
+body.dark-theme .picker__day--highlighted:hover {
   border-color: #0089ec;
   background-color: #2b2b2b;
-  color: #fff;
+  color: #fff
 }
-
 body.dark-theme .picker--focused .picker__day--highlighted:hover {
-  background-color: #232323;
+  background-color: #232323
 }
-
+.picker--focused .picker__day--selected,
 .picker__day--selected,
-.picker__day--selected:hover,
-.picker--focused .picker__day--selected {
+.picker__day--selected:hover {
   background: #0089ec;
-  color: #ffffff;
+  color: #fff
 }
-
+body.dark-theme .picker--focused .picker__day--selected,
 body.dark-theme .picker__day--selected,
-body.dark-theme .picker__day--selected:hover,
-body.dark-theme .picker--focused .picker__day--selected {
+body.dark-theme .picker__day--selected:hover {
   border-color: #0089ec;
   background-color: #0089ec;
-  color: #fff;
+  color: #fff
 }
-
+.picker--focused .picker__day--disabled,
 .picker__day--disabled,
-.picker__day--disabled:hover,
-.picker--focused .picker__day--disabled {
+.picker__day--disabled:hover {
   background: #f5f5f5;
   border-color: #f5f5f5;
-  color: #dddddd;
-  cursor: default;
+  color: #ddd;
+  cursor: default
 }
-
+body.dark-theme .picker--focused .picker__day--disabled,
 body.dark-theme .picker__day--disabled,
-body.dark-theme .picker__day--disabled:hover,
-body.dark-theme .picker--focused .picker__day--disabled {
+body.dark-theme .picker__day--disabled:hover {
   background: #0a0a0a;
   border-color: #666;
-  color: #c7c8c8;
+  color: #c7c8c8
 }
-
 .picker__day--highlighted.picker__day--disabled,
 .picker__day--highlighted.picker__day--disabled:hover {
-  background: #bbbbbb;
+  background: #bbb
 }
-
 body.dark-theme .picker__day--highlighted.picker__day--disabled,
 body.dark-theme .picker__day--highlighted.picker__day--disabled:hover {
-  background: #424242;
+  background: #424242
 }
-
-/**
- * The footer containing the "today", "clear", and "close" buttons.
- */
 .picker__footer {
-  text-align: center;
+  text-align: center
 }
-
-.picker__button--today,
 .picker__button--clear,
-.picker__button--close {
-  border: 1px solid #ffffff;
-  background: #ffffff;
-  font-size: 0.8em;
-  padding: 0.66em 0;
-  font-weight: bold;
+.picker__button--close,
+.picker__button--today {
+  border: 1px solid #fff;
+  background: #fff;
+  font-size: .8em;
+  padding: .66em 0;
+  font-weight: 700;
   width: 33.333%;
   display: inline-block;
-  vertical-align: bottom;
+  vertical-align: bottom
 }
-
-body.dark-theme .picker__button--today,
 body.dark-theme .picker__button--clear,
-body.dark-theme .picker__button--close {
+body.dark-theme .picker__button--close,
+body.dark-theme .picker__button--today {
   border-color: #666;
   background-color: #1e1e1e;
-  color: #fff;
+  color: #fff
 }
-
-.picker__button--today:hover,
 .picker__button--clear:hover,
-.picker__button--close:hover {
+.picker__button--close:hover,
+.picker__button--today:hover {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
-  border-bottom-color: #b1dcfb;
+  border-bottom-color: #b1dcfb
 }
-
-.picker__button--today:focus,
 .picker__button--clear:focus,
-.picker__button--close:focus {
+.picker__button--close:focus,
+.picker__button--today:focus {
   background: #b1dcfb;
   border-color: #0089ec;
-  outline: none;
+  outline: 0
 }
-
-body.dark-theme .picker__button--today:hover, body.dark-theme .picker__button--today:focus,
-body.dark-theme .picker__button--clear:hover,
 body.dark-theme .picker__button--clear:focus,
+body.dark-theme .picker__button--clear:hover,
+body.dark-theme .picker__button--close:focus,
 body.dark-theme .picker__button--close:hover,
-body.dark-theme .picker__button--close:focus {
-  background-color: #282828;
+body.dark-theme .picker__button--today:focus,
+body.dark-theme .picker__button--today:hover {
+  background-color: #282828
 }
-
-.picker__button--today:before,
 .picker__button--clear:before,
-.picker__button--close:before {
+.picker__button--close:before,
+.picker__button--today:before {
   position: relative;
   display: inline-block;
-  height: 0;
+  height: 0
 }
-
-.picker__button--today:before,
-.picker__button--clear:before {
-  content: " ";
-  margin-right: 0.45em;
-}
-
+.picker__button--clear:before,
 .picker__button--today:before {
-  top: -0.05em;
+  content: " ";
+  margin-right: .45em
+}
+.picker__button--today:before {
+  top: -.05em;
   width: 0;
-  border-top: 0.66em solid #0059bc;
-  border-left: 0.66em solid transparent;
+  border-top: .66em solid #0059bc;
+  border-left: .66em solid transparent
 }
-
 .picker__button--clear:before {
-  top: -0.25em;
-  width: 0.66em;
-  border-top: 3px solid #ee2200;
+  top: -.25em;
+  width: .66em;
+  border-top: 3px solid #e20
 }
-
 .picker__button--close:before {
   content: "×";
-  top: -0.1em;
+  top: -.1em;
   vertical-align: top;
   font-size: 1.1em;
-  margin-right: 0.35em;
-  color: #777777;
+  margin-right: .35em;
+  color: #777
 }
-
 .picker__button--today[disabled],
 .picker__button--today[disabled]:hover {
   background: #f5f5f5;
   border-color: #f5f5f5;
-  color: #dddddd;
-  cursor: default;
+  color: #ddd;
+  cursor: default
 }
-
 body.dark-theme .picker__button--today[disabled],
 body.dark-theme .picker__button--today[disabled]:hover {
   background: #171717;
   border-color: #666;
-  color: #cccdcd;
+  color: #cccdcd
 }
-
 .picker__button--today[disabled]:before {
-  border-top-color: #aaaaaa;
+  border-top-color: #aaa
 }
-
 .picker--opened .datepicker__holder {
-  min-width: 400px;
+  min-width: 400px
 }
-
 .picker--opened .datepicker__holder-right {
-  right: 10px;
+  right: 10px
 }
-
-/* ==========================================================================
-   $CLASSIC-DATE-PICKER
-   ========================================================================== */
-/* ==========================================================================
-   $BASE-TIME-PICKER
-   ========================================================================== */
-/**
- * The list of times.
- */
 .picker__list {
   list-style: none;
-  margin: 0;
+  margin: 0
 }
-
-/**
- * The times on the clock.
- */
 .picker__list-item {
-  border-bottom: 1px solid #dddddd;
-  border-top: 1px solid #dddddd;
+  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
   margin-bottom: -1px;
   position: relative;
-  background: #ffffff;
-  padding: 0.75em 1.25em;
+  background: #fff;
+  padding: .75em 1.25em
 }
-
-@media (min-height: 46.75em) {
+@media (min-height:46.75em) {
   .picker__list-item {
-    padding: 0.5em 1em;
+    padding: .5em 1em
   }
 }
-/* Hovered time */
 .picker__list-item:hover {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
   border-color: #0089ec;
-  z-index: 10;
+  z-index: 10
 }
-
-/* Highlighted and hovered/focused time */
 .picker__list-item--highlighted {
   border-color: #0089ec;
-  z-index: 10;
+  z-index: 10
 }
-
-.picker__list-item--highlighted:hover,
-.picker--focused .picker__list-item--highlighted {
+.picker--focused .picker__list-item--highlighted,
+.picker__list-item--highlighted:hover {
   cursor: pointer;
-  color: #000000;
-  background: #b1dcfb;
+  color: #000;
+  background: #b1dcfb
 }
-
-/* Selected and hovered/focused time */
+.picker--focused .picker__list-item--selected,
 .picker__list-item--selected,
-.picker__list-item--selected:hover,
-.picker--focused .picker__list-item--selected {
+.picker__list-item--selected:hover {
   background: #0089ec;
-  color: #ffffff;
-  z-index: 10;
+  color: #fff;
+  z-index: 10
 }
-
-/* Disabled time */
+.picker--focused .picker__list-item--disabled,
 .picker__list-item--disabled,
-.picker__list-item--disabled:hover,
-.picker--focused .picker__list-item--disabled {
+.picker__list-item--disabled:hover {
   background: #f5f5f5;
   border-color: #f5f5f5;
-  color: #dddddd;
+  color: #ddd;
   cursor: default;
-  border-color: #dddddd;
-  z-index: auto;
+  border-color: #ddd;
+  z-index: auto
 }
-
-/**
- * The clear button
- */
 .picker--time .picker__button--clear {
   display: block;
   width: 80%;
   margin: 10px auto;
   padding: 10px 15px;
-  background: none;
+  background: 0 0;
   border: 0;
   font-weight: 500;
-  font-size: 0.67em;
+  font-size: .67em;
   text-align: center;
   text-transform: uppercase;
-  color: #666;
+  color: #666
 }
-
-.picker--time .picker__button--clear:hover,
-.picker--time .picker__button--clear:focus {
-  color: #000000;
+.picker--time .picker__button--clear:focus,
+.picker--time .picker__button--clear:hover {
+  color: #000;
   background: #b1dcfb;
-  background: #ee2200;
-  border-color: #ee2200;
+  background: #e20;
+  border-color: #e20;
   cursor: pointer;
-  color: #ffffff;
-  outline: none;
+  color: #fff;
+  outline: 0
 }
-
 .picker--time .picker__button--clear:before {
-  top: -0.25em;
+  top: -.25em;
   color: #666;
   font-size: 1.25em;
-  font-weight: bold;
+  font-weight: 700
 }
-
-.picker--time .picker__button--clear:hover:before,
-.picker--time .picker__button--clear:focus:before {
-  color: #ffffff;
+.picker--time .picker__button--clear:focus:before,
+.picker--time .picker__button--clear:hover:before {
+  color: #fff
 }
-
-/* ==========================================================================
-   $CLASSIC-TIME-PICKER
-   ========================================================================== */
-/**
- * Note: the root picker element should __NOT__ be styled
- * more than what’s here. Style the `.picker__holder` instead.
- */
 .picker--time {
   min-width: 256px;
-  max-width: 320px;
+  max-width: 320px
 }
-
-/**
- * The holder is the base of the picker.
- */
 .picker--time .picker__holder {
-  background: #e2e3e3;
+  background: #e2e3e3
 }
-
-/**
- * The box contains the list of times.
- */
 .picker--time .picker__box {
   padding: 0;
-  position: relative;
+  position: relative
 }
-
 .picker--opened .timepicker__holder {
   max-height: 250px;
-  margin-bottom: 30px;
+  margin-bottom: 30px
 }
-
-.datepicker-input[readonly], .timepicker-input[readonly] {
+.datepicker-input[readonly],
+.timepicker-input[readonly] {
   cursor: pointer;
-  background-color: #fff;
+  background-color: #fff
 }
-
-.datepicker-input[disabled], .timepicker-input[disabled] {
+.datepicker-input[disabled],
+.timepicker-input[disabled] {
   cursor: not-allowed;
-  background-color: #e2e3e3;
+  background-color: #e2e3e3
 }
-
-.datepicker-input.enableable, .timepicker-input.enableable {
+.datepicker-input.enableable,
+.timepicker-input.enableable {
   cursor: pointer;
-  background-color: #e2e3e3;
+  background-color: #e2e3e3
 }
-.datepicker-input.enableable:hover, .timepicker-input.enableable:hover {
-  background-color: #faf9f9;
+.datepicker-input.enableable:hover,
+.timepicker-input.enableable:hover {
+  background-color: #faf9f9
 }
-.datepicker-input.enableable:focus, .timepicker-input.enableable:focus {
-  background-color: #fff;
+.datepicker-input.enableable:focus,
+.timepicker-input.enableable:focus {
+  background-color: #fff
 }
-
-/*doc
----
-title: Forms
-name: forms
-category: CSS - Forms
----
-*/
-/*doc
----
-title: Basic Example
-name: forms_01_example
-parent: forms
----
-
-By default all forms are horizontally aligned and start stacking vertically for tablets and below.
-`.form-group`s provide vertical spacing and act like grid rows.
-
-`.form-control` should be added to any `<input>`, `<textarea>` or `<select>` to set it to `width: 100%;`.
-
-Alignment and size of form elements should be controlled by the usage of wrapping `.col-` elements.
-
-The label requires the class `.control-label`.
-
-```htmlexample
-<form>
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label for="input1" class="control-label">
-                E-Mail
-                <button class="icon icon-help" data-help="(insert target help message xml here)" tabindex="-1" type="button"></button>
-            </label>
-        </div>
-        <div class="col-sm-8">
-            <input type="text" class="form-control" id="input1" placeholder="Enter E-Mail">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label for="input2" class="control-label">
-              Password
-              <button class="icon icon-help" data-help="(insert target help message xml here)" tabindex="-1" type="button"></button>
-            </label>
-        </div>
-        <div class="col-sm-8">
-            <input type="password" class="form-control" id="input2" placeholder="Enter Password">
-            <p class="help-block">Example block-level help text here.</p>
-        </div>
-    </div>
-
-    <div class="form-group">
-        <div class="col-sm-offset-4 col-sm-8">
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox"> Remember me
-                </label>
-            </div>
-        </div>
-    </div>
-
-    <div class="form-group">
-        <div class="col-sm-offset-4 col-sm-8">
-            <button type="submit" class="btn btn-regular btn-primary">Sign in</button>
-        </div>
-    </div>
-</form>
-```
-
-*/
-/*doc
----
-title: Vertical Form
-name: forms_02_vertical
-parent: forms
----
-
-For vertical alignment the `.form-vertical` modifier is provided.
-
-`.form-group`s no longer act like grid rows, which means the default of using a combination of `.row` and `.col-` elements is required around them.
-
-Note that it is not required for the modifier to be applied to a `<form>` element specifically - any wrapping element will suffice, so you could theoretically have horizontally and vertically aligned elements in a single form, although that is not suggested.
-
-```htmlexample
-<form class="form-vertical">
-    <div class="row">
-        <div class="col-sm-6">
-            <div class="form-group">
-              <label for="input3" class="control-label">E-Mail</label>
-              <input type="text" class="form-control" id="input3" placeholder="Enter E-Mail">
-            </div>
-        </div>
-        <div class="col-sm-6">
-            <div class="form-group">
-              <label for="input4" class="control-label">Password</label>
-              <input type="password" class="form-control" id="input4" placeholder="Enter Password">
-            </div>
-        </div>
-
-        <div class="col-sm-12">
-            <div class="form-group">
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox"> Remember me
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-sm-6">
-            <button type="submit" class="btn btn-regular btn-primary">Sign in</button>
-        </div>
-    </div>
-</form>
-```
-
-*/
-/*doc
----
-title: Supported Controls
-name: forms_03_supported_controls
-parent: forms
----
-
-Examples of supported standard form controls.
-
-*/
-/*doc
----
-title: Inputs
-name: forms_04_inputs
-parent: forms_03_supported_controls
----
-
-Most common, the text-based input field.
-
-Supports all HTML5 types: `text`, `password`, `datetime`, `datetime-local`, `date`, `month`, `time`, `week`, `number`, `email`, `url`, `search`, `tel`, and `color`.
-
-```htmlexample
-<input type="text" class="form-control" placeholder="Text input">
-```
-
-*/
-/*doc
----
-title: Textarea
-name: forms_05_textarea
-parent: forms_03_supported_controls
----
-
-Supports multiple lines of text. Height of input area can be controlled via the `rows` attribute.
-
-```htmlexample
-<textarea class="form-control" rows="3"></textarea>
-```
-*/
-/*doc
----
-title: Checkboxes & Radios
-name: forms_06_checkboxes_radios
-parent: forms_03_supported_controls
----
-
-Checkboxes are for selecting one or several options in a list, while radios are for selecting one option from many.
-
-`.checkbox`, `.checkbox-inline`, `.radio` and `.radio-inline` elements support the `.disabled` modifier.
-`.disabled` will effectively disable the ability to interact with them.
-
-Please note: This doesn't work in IE8-10 and you should additionally set the `disabled` attribute on the corresponding `input`.
-
-
-```htmlexample
-<div class="checkbox">
-    <label>
-        <input type="checkbox" />
-        Option one
-    </label>
-</div>
-<div class="checkbox disabled">
-    <label>
-        <input type="checkbox" disabled />
-        This option is disabled
-    </label>
-</div>
-
-<div class="radio">
-    <label>
-        <input type="radio" name="optionsRadios" checked />
-        Option one
-    </label>
-</div>
-<div class="radio">
-    <label>
-        <input type="radio" name="optionsRadios" />
-        Option two
-    </label>
-</div>
-<div class="radio disabled">
-    <label>
-        <input type="radio" name="optionsRadios" disabled />
-        Option three is disabled
-    </label>
-</div>
-```
-*/
-/*doc
----
-title: Inline Checkboxes & Radios
-name: forms_07_inline_checkboxes_radios
-parent: forms_03_supported_controls
----
-
-Use the `.checkbox-inline` or `.radio-inline` classes on a series of checkboxes or radios for controls that appear on the same line.
-
-```htmlexample
-<div>
-    <label class="checkbox-inline">
-        <input type="checkbox"> 1
-    </label>
-    <label class="checkbox-inline">
-        <input type="checkbox"> 2
-    </label>
-    <label class="checkbox-inline">
-        <input type="checkbox"> 3
-    </label>
-</div>
-
-<div>
-    <label class="radio-inline">
-        <input type="radio"> 1
-    </label>
-    <label class="radio-inline">
-        <input type="radio"> 2
-    </label>
-    <label class="radio-inline">
-        <input type="radio"> 3
-    </label>
-</div>
-```
-
-*/
-/*doc
----
-title: Selects
-name: forms_09_selects
-parent: forms_03_supported_controls
----
-
-Use the default or add the `multiple` attribute for multiple options.
-
-```htmlexample
-<select class="form-control">
-    <option>1</option>
-    <option>2</option>
-    <option>3</option>
-    <option>4</option>
-    <option>5</option>
-</select>
-
-<select multiple class="form-control">
-    <option>1</option>
-    <option>2</option>
-    <option>3</option>
-    <option>4</option>
-    <option>5</option>
-</select>
-```
-*/
-/*doc
----
-title: Static control
-name: forms_10_static_control
-parent: forms_03_supported_controls
----
-
-For when you need to use plain text next to a form label, use `.form-control-static` on a `<p>`.
-
-```htmlexample
-<form>
-    <div class="form-group">
-        <div class="col-sm-4">
-            <label class="control-label">E-Mail</label>
-        </div>
-        <div class="col-sm-8">
-            <p class="form-control-static">email@example.com</p>
-        </div>
-        <div class="col-sm-4">
-            <label class="control-label">Password</label>
-        </div>
-        <div class="col-sm-8">
-            <input type="password" class="form-control" />
-        </div>
-    </div>
-</form>
-```
-*/
-/*doc
----
-title: Disabled inputs
-name: forms_10_disabled_input
-parent: forms
----
-
-Add the `disabled` attribute to prevent user interaction.
-
-```htmlexample
-<input type="text" class="form-control" placeholder="Disabled input" disabled />
-```
-*/
-/*doc
----
-title: Validation States
-name: forms_11_validation_states
-parent: forms
----
-
-The usual validation states are supported for inputs. Apply `.has-success`, `.has-info`, `.has-warning` or `.has-alert` to the parent element. Any `.control-label`, `.form-control` and `.help-block` inside will receive the appropriate styling.
-
-```htmlexample
-<div class="form-group has-success">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputSuccess1">has-success</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputSuccess1" value="Text">
-    </div>
-</div>
-
-<div class="form-group has-info">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputInfo1">has-info</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputInfo1" value="Text">
-    </div>
-</div>
-
-<div class="form-group has-warning">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputWarning1">has-warning</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputWarning1" value="Text">
-    </div>
-</div>
-
-<div class="form-group has-alert">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputAlert1">has-alert</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputAlert1" value="Text">
-    </div>
-</div>
-```
-
-*/
-/*doc
----
-title: With icons & messages
-name: forms_12_validation_states_icons
-parent: forms_11_validation_states
----
-
-For extra emphasis add `.has-feedback` together with extra markup to display an icon as well as a message.
-
-Note: You should leave out the icon when using this for `<select>` as the icon may overlap the dropdown arrow.
-
-
-```htmlexample
-<div class="form-group has-success has-feedback">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputSuccess2">has-success has-feedback</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputSuccess2" value="Text">
-        <span class="icon icon-state-success form-control-feedback"></span>
-        <div class="form-control-feedback-message">Nicely done.</div>
-    </div>
-</div>
-
-<div class="form-group has-info has-feedback">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputInfo2">has-info has-feedback</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputInfo2" value="Text">
-        <span class="icon icon-state-info form-control-feedback"></span>
-        <div class="form-control-feedback-message">This field contains important information.</div>
-    </div>
-</div>
-
-<div class="form-group has-warning has-feedback">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputWarning2">has-warning has-feedback</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputWarning2" value="Text">
-        <span class="icon icon-state-warning form-control-feedback"></span>
-        <div class="form-control-feedback-message">Any changes to this field may have unwanted side-effects.</div>
-    </div>
-</div>
-
-<div class="form-group has-alert has-feedback">
-    <div class="col-sm-4">
-        <label class="control-label" for="inputError2">has-alert has-feedback</label>
-    </div>
-    <div class="col-sm-8">
-        <input type="text" class="form-control" id="inputError2" value="Text">
-        <span class="icon icon-state-alert form-control-feedback"></span>
-        <div class="form-control-feedback-message">Please enter the required information.</div>
-    </div>
-</div>
-```
-*/
-/*doc
----
-title: Icons
-name: forms_13_icons
-parent: forms
----
-
-Use `.has-icon` and `.form-control-icon` (just like `.has-feedback` and `.form-control-feedback`) to display an icon at the left side of a control.
-
-```htmlexample
-<div class="form-group has-icon">
-  <input type="text" class="form-control rounded" placeholder="Search">
-  <i class="form-control-icon icon icon-search"></i>
-</div>
-
-<div class="form-group">
-  <div class="col-sm-4">
-    <label class="control-label" for="formGroupInputHasIcon">Search</label>
-  </div>
-
-  <div class="col-sm-8 has-icon">
-    <input type="text" id="formGroupInputHasIcon" class="form-control">
-    <i class="form-control-icon icon icon-search"></i>
-  </div>
-</div>
-```
-
-*/
-/*doc
----
-title: Sizes
-name: forms_14_sizes
-parent: forms
----
-
-Add `.input-lg` or `.input-sm` to any `.form-control` to make it larger / smaller respectively. The sizes will accurately match up with `.btn` sizes.
-
-```htmlexample
-<input class="form-control input-lg" type="text" placeholder=".input-lg">
-<input type="text" class="form-control" placeholder="Default input">
-<input class="form-control input-sm" type="text" placeholder=".input-sm">
-
-<select class="form-control input-lg">
-    <option>.input-lg</option>
-</select>
-
-<select class="form-control">
-    <option>default</option>
-</select>
-
-<select class="form-control input-sm">
-    <option>.input-sm</option>
-</select>
-
-```
-*/
-/*doc
----
-title: Form Group Sizes
-name: forms_15_form_group_sizes
-parent: forms_14_sizes
----
-
-Add `.form-group-lg` or `.form-group-sm` to a `.form-group` to size single or multiple inputs quickly.
-
-```htmlexample
-<form>
-    <div class="form-group form-group-lg">
-        <div class="col-sm-4">
-            <label class="control-label">Label</label>
-        </div>
-        <div class="col-sm-3">
-            <input class="form-control" type="text" placeholder="Large input">
-        </div>
-        <div class="col-sm-3">
-            <input class="form-control" type="text" placeholder="Large input">
-        </div>
-        <div class="col-sm-2">
-            <input class="form-control" type="text" placeholder="Large input">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <div class="col-sm-4">
-          <label class="control-label" for="formGroupInputDefault">Label</label>
-        </div>
-        <div class="col-sm-8">
-            <input class="form-control" type="text" id="formGroupInputDefault" placeholder="Default input">
-        </div>
-    </div>
-
-    <div class="form-group form-group-sm">
-        <div class="col-sm-4">
-          <label class="control-label" for="formGroupInputSmall">Label</label>
-        </div>
-        <div class="col-sm-8">
-            <input class="form-control" type="text" id="formGroupInputSmall" placeholder="Small input">
-        </div>
-    </div>
-</form>
-
-```
-*/
-/*doc
----
-title: Column sizing
-name: forms_16_column_sizes
-parent: forms_14_sizes
----
-
-Always wrap labels and inputs in grid columns to enforce widths.
-
-Note: Keep in mind, `.form-vertical` requires a completely different markup - see the section about Vertical Forms.
-
-```htmlexample
-<div class="form-group">
-    <div class="col-sm-3">
-        <label class="control-label">col-sm-3</label>
-    </div>
-    <div class="col-sm-2">
-        <input class="form-control" type="text" placeholder="col-sm-2">
-    </div>
-    <div class="col-sm-3">
-        <input class="form-control" type="text" placeholder="col-sm-3">
-    </div>
-    <div class="col-sm-4">
-        <input class="form-control" type="text" placeholder="col-sm-4">
-    </div>
-</div>
-```
-*/
-/*doc
----
-title: Help text
-name: forms_17_help_text
-parent: forms
----
-
-Block level help text for form controls.
-
-Use a `<span>` or `<p>` element with `.help-block` to create a text element that flows with the `.form-control` and can span multiple lines.
-
-```htmlexample
-<div class="form-group">
-    <div class="col-sm-4">
-        <label class="control-label">Label</label>
-    </div>
-    <div class="col-sm-8">
-        <input class="form-control" type="text" />
-        <p class="help-block">
-          A block of text that can span multiple lines.
-          Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
-          sed diam nonumy eirmod tempor invidunt ut labore et dolore
-          magna aliquyam erat, sed diam voluptua.
-        </p>
-    </div>
-</div>
-```
-*/
 fieldset {
   padding: 0;
   margin: 0;
   border: 0;
-  min-width: 0;
+  min-width: 0
 }
-
 label {
   display: inline-block;
   max-width: 100%;
   margin-bottom: 5px;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 13px;
   line-height: 20px;
-  color: #707173;
+  color: #707173
 }
-
 input[type=search] {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  box-sizing: border-box
 }
-
-input[type=radio],
-input[type=checkbox] {
+input[type=checkbox],
+input[type=radio] {
   margin: 4px 0 0;
-  margin-top: 1px \9 ;
-  line-height: normal;
+  line-height: normal
 }
-
 input[type=file] {
-  display: block;
+  display: block
 }
-
 input[type=range] {
   display: block;
-  width: 100%;
+  width: 100%
 }
-
-select.js-select-tags,
-select.js-select {
-  display: none !important;
+select.js-select,
+select.js-select-tags {
+  display: none!important
 }
-
 select[multiple],
 select[size] {
-  height: auto;
+  height: auto
 }
-
-.form-control, .form-control-small {
+.form-control,
+.form-control-small {
   display: block;
   width: 100%;
   height: 30px;
@@ -1340,272 +582,297 @@ select[size] {
   background-image: none;
   border: 1px solid #cccdcd;
   border-radius: 2px;
-  -webkit-box-shadow: inset 0px 1px 1px -1px rgba(0, 0, 0, 0.4);
-  box-shadow: inset 0px 1px 1px -1px rgba(0, 0, 0, 0.4);
-  -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
-  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  -webkit-box-shadow: inset 0 1px 1px -1px rgba(0,0,0,.4);
+  box-shadow: inset 0 1px 1px -1px rgba(0,0,0,.4);
+  -webkit-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s
 }
-.form-control:focus, .form-control-small:focus {
+.form-control-small:focus,
+.form-control:focus {
   border-color: #338dc7;
   outline: 0;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(51, 141, 199, 0.6);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(51, 141, 199, 0.6);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(51,141,199,.6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(51,141,199,.6)
 }
-.form-control:focus::-moz-placeholder, .form-control-small:focus::-moz-placeholder {
-  color: rgba(0, 0, 0, 0);
-  opacity: 1;
+.form-control-small:focus::-moz-placeholder,
+.form-control:focus::-moz-placeholder {
+  color: transparent;
+  opacity: 1
 }
-.form-control:focus:-ms-input-placeholder, .form-control-small:focus:-ms-input-placeholder {
-  color: rgba(0, 0, 0, 0);
+.form-control-small:focus:-ms-input-placeholder,
+.form-control:focus:-ms-input-placeholder {
+  color: transparent
 }
-.form-control:focus::-webkit-input-placeholder, .form-control-small:focus::-webkit-input-placeholder {
-  color: rgba(0, 0, 0, 0);
+.form-control-small:focus::-webkit-input-placeholder,
+.form-control:focus::-webkit-input-placeholder {
+  color: transparent
 }
-.form-control::-moz-placeholder, .form-control-small::-moz-placeholder {
+.form-control-small::-moz-placeholder,
+.form-control::-moz-placeholder {
   color: #a9aaab;
-  opacity: 1;
+  opacity: 1
 }
-.form-control:-ms-input-placeholder, .form-control-small:-ms-input-placeholder {
-  color: #a9aaab;
+.form-control-small:-ms-input-placeholder,
+.form-control:-ms-input-placeholder {
+  color: #a9aaab
 }
-.form-control::-webkit-input-placeholder, .form-control-small::-webkit-input-placeholder {
-  color: #a9aaab;
+.form-control-small::-webkit-input-placeholder,
+.form-control::-webkit-input-placeholder {
+  color: #a9aaab
 }
-.form-control.enableable, .enableable.form-control-small {
+.enableable.form-control-small,
+.form-control.enableable {
   cursor: pointer;
-  background-color: #e2e3e3;
+  background-color: #e2e3e3
 }
-.form-control.enableable:hover, .enableable.form-control-small:hover {
-  background-color: #faf9f9;
+.enableable.form-control-small:hover,
+.form-control.enableable:hover {
+  background-color: #faf9f9
 }
-.form-control.enableable:focus, .enableable.form-control-small:focus {
-  background-color: #fff;
+.enableable.form-control-small:focus,
+.form-control.enableable:focus {
+  background-color: #fff
 }
-.form-control[disabled], [disabled].form-control-small, .form-control[readonly], [readonly].form-control-small, fieldset[disabled] .form-control, fieldset[disabled] .form-control-small {
+.form-control[disabled],
+.form-control[readonly],
+[disabled].form-control-small,
+[readonly].form-control-small,
+fieldset[disabled] .form-control,
+fieldset[disabled] .form-control-small {
   cursor: not-allowed;
   background-color: #e2e3e3;
-  opacity: 1;
+  opacity: 1
 }
-.form-control.rounded, .rounded.form-control-small {
-  border-radius: 15px;
+.form-control.rounded,
+.rounded.form-control-small {
+  border-radius: 15px
 }
-
-body.dark-theme .form-control, body.dark-theme .form-control-small {
-  border-color: #666;
+body.dark-theme .form-control,
+body.dark-theme .form-control-small {
+  border-color: #666
 }
-body.dark-theme .form-control:not(.ace_editor), body.dark-theme .form-control-small:not(.ace_editor) {
+body.dark-theme .form-control-small:not(.ace_editor),
+body.dark-theme .form-control:not(.ace_editor) {
   color: #faf9f9;
-  background-color: #4a4949;
+  background-color: #4a4949
 }
-body.dark-theme .form-control:focus, body.dark-theme .form-control-small:focus {
+body.dark-theme .form-control-small:focus,
+body.dark-theme .form-control:focus {
   border-color: #0071b9;
   outline: 0;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(0, 113, 185, 0.6);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(0, 113, 185, 0.6);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(0,113,185,.6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(0,113,185,.6)
 }
-body.dark-theme .form-control:focus::-moz-placeholder, body.dark-theme .form-control-small:focus::-moz-placeholder {
-  color: rgba(0, 0, 0, 0);
-  opacity: 1;
+body.dark-theme .form-control-small:focus::-moz-placeholder,
+body.dark-theme .form-control:focus::-moz-placeholder {
+  color: transparent;
+  opacity: 1
 }
-body.dark-theme .form-control:focus:-ms-input-placeholder, body.dark-theme .form-control-small:focus:-ms-input-placeholder {
-  color: rgba(0, 0, 0, 0);
+body.dark-theme .form-control-small:focus:-ms-input-placeholder,
+body.dark-theme .form-control:focus:-ms-input-placeholder {
+  color: transparent
 }
-body.dark-theme .form-control:focus::-webkit-input-placeholder, body.dark-theme .form-control-small:focus::-webkit-input-placeholder {
-  color: rgba(0, 0, 0, 0);
+body.dark-theme .form-control-small:focus::-webkit-input-placeholder,
+body.dark-theme .form-control:focus::-webkit-input-placeholder {
+  color: transparent
 }
-body.dark-theme .form-control:disabled, body.dark-theme .form-control-small:disabled, body.dark-theme .form-control[readonly], body.dark-theme [readonly].form-control-small {
-  background-color: #707173;
+body.dark-theme .form-control-small:disabled,
+body.dark-theme .form-control:disabled,
+body.dark-theme .form-control[readonly],
+body.dark-theme [readonly].form-control-small {
+  background-color: #707173
 }
-
 .form-control-small {
   width: auto;
-  float: left;
+  float: left
 }
-
 .form-control-small + .form-control-small {
-  margin-left: 10px;
+  margin-left: 10px
 }
-
 .form-control-unstyled {
   -webkit-box-shadow: none;
   box-shadow: none;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-
-textarea.form-control, textarea.form-control-small {
-  height: auto;
+textarea.form-control,
+textarea.form-control-small {
+  height: auto
 }
-
 input[type=search] {
-  -webkit-appearance: none;
+  -webkit-appearance: none
 }
-
 input[type=date],
-input[type=time],
 input[type=datetime-local],
-input[type=month] {
-  line-height: 30px;
-  line-height: 20px \0 ;
+input[type=month],
+input[type=time] {
+  line-height: 30px
 }
-input[type=date].input-sm, .form-group-sm input[type=date].form-control, .form-group-sm input[type=date].form-control-small,
-input[type=time].input-sm,
-.form-group-sm input[type=time].form-control,
-.form-group-sm input[type=time].form-control-small,
-input[type=datetime-local].input-sm,
+.form-group-sm input[type=date].form-control,
+.form-group-sm input[type=date].form-control-small,
 .form-group-sm input[type=datetime-local].form-control,
 .form-group-sm input[type=datetime-local].form-control-small,
-input[type=month].input-sm,
 .form-group-sm input[type=month].form-control,
-.form-group-sm input[type=month].form-control-small {
-  line-height: 20px;
+.form-group-sm input[type=month].form-control-small,
+.form-group-sm input[type=time].form-control,
+.form-group-sm input[type=time].form-control-small,
+input[type=date].input-sm,
+input[type=datetime-local].input-sm,
+input[type=month].input-sm,
+input[type=time].input-sm {
+  line-height: 20px
 }
-input[type=date].input-lg, .form-group-lg input[type=date].form-control, .form-group-lg input[type=date].form-control-small,
-input[type=time].input-lg,
-.form-group-lg input[type=time].form-control,
-.form-group-lg input[type=time].form-control-small,
-input[type=datetime-local].input-lg,
+.form-group-lg input[type=date].form-control,
+.form-group-lg input[type=date].form-control-small,
 .form-group-lg input[type=datetime-local].form-control,
 .form-group-lg input[type=datetime-local].form-control-small,
-input[type=month].input-lg,
 .form-group-lg input[type=month].form-control,
-.form-group-lg input[type=month].form-control-small {
-  line-height: 40px;
+.form-group-lg input[type=month].form-control-small,
+.form-group-lg input[type=time].form-control,
+.form-group-lg input[type=time].form-control-small,
+input[type=date].input-lg,
+input[type=datetime-local].input-lg,
+input[type=month].input-lg,
+input[type=time].input-lg {
+  line-height: 40px
 }
-
 .form-group-header {
   display: flex;
   align-items: center;
-  float: right;
+  float: right
 }
-
-.form-group, .form-group-header {
-  margin-bottom: 10px;
+.form-group,
+.form-group-header {
+  margin-bottom: 10px
 }
-
-.radio,
-.checkbox {
+.checkbox,
+.radio {
   position: relative;
   display: block;
   min-height: 20px;
   margin-top: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 10px
 }
-.radio label,
-.checkbox label {
+.checkbox label,
+.radio label {
   padding-left: 20px;
   margin-bottom: 0;
-  font-weight: normal;
-  cursor: pointer;
+  font-weight: 400;
+  cursor: pointer
 }
-
-.radio input[type=radio],
-.radio-inline input[type=radio],
 .checkbox input[type=checkbox],
-.checkbox-inline input[type=checkbox] {
+.checkbox-inline input[type=checkbox],
+.radio input[type=radio],
+.radio-inline input[type=radio] {
   position: absolute;
-  margin-left: -20px;
-  margin-top: 4px \9 ;
+  margin-left: -20px
 }
-
-.radio + .radio,
-.checkbox + .checkbox {
-  margin-top: -5px;
+.checkbox + .checkbox,
+.radio + .radio {
+  margin-top: -5px
 }
-
+.checkbox-inline,
 .element-inline,
-.radio-inline,
-.checkbox-inline {
+.radio-inline {
   display: inline-block;
   padding-left: 20px;
   margin-bottom: 0;
   vertical-align: middle;
-  font-weight: normal;
-  cursor: pointer;
+  font-weight: 400;
+  cursor: pointer
 }
-
-.radio-inline + .radio-inline,
-.checkbox-inline + .checkbox-inline {
+.checkbox-inline + .checkbox-inline,
+.radio-inline + .radio-inline {
   margin-top: 0;
-  margin-left: 10px;
+  margin-left: 10px
 }
-
-input[type=radio][disabled], input[type=radio].disabled, fieldset[disabled] input[type=radio],
-input[type=checkbox][disabled],
+fieldset[disabled] input[type=checkbox],
+fieldset[disabled] input[type=radio],
 input[type=checkbox].disabled,
-fieldset[disabled] input[type=checkbox] {
-  cursor: not-allowed;
+input[type=checkbox][disabled],
+input[type=radio].disabled,
+input[type=radio][disabled] {
+  cursor: not-allowed
 }
-
-.radio-inline.disabled, fieldset[disabled] .radio-inline,
 .checkbox-inline.disabled,
-fieldset[disabled] .checkbox-inline {
-  cursor: not-allowed;
+.radio-inline.disabled,
+fieldset[disabled] .checkbox-inline,
+fieldset[disabled] .radio-inline {
+  cursor: not-allowed
 }
-
-.radio.disabled label, fieldset[disabled] .radio label,
 .checkbox.disabled label,
-fieldset[disabled] .checkbox label {
-  cursor: not-allowed;
+.radio.disabled label,
+fieldset[disabled] .checkbox label,
+fieldset[disabled] .radio label {
+  cursor: not-allowed
 }
-
 .form-control-static {
   padding-top: 6px;
   padding-bottom: 6px;
-  margin-bottom: 0;
+  margin-bottom: 0
 }
-.form-control-static.input-lg, .form-group-lg .form-control-static.form-control, .form-group-lg .form-control-static.form-control-small, .form-control-static.input-sm, .form-group-sm .form-control-static.form-control, .form-group-sm .form-control-static.form-control-small {
+.form-control-static.input-lg,
+.form-control-static.input-sm,
+.form-group-lg .form-control-static.form-control,
+.form-group-lg .form-control-static.form-control-small,
+.form-group-sm .form-control-static.form-control,
+.form-group-sm .form-control-static.form-control-small {
   padding-left: 0;
-  padding-right: 0;
+  padding-right: 0
 }
-
-.input-sm, .form-group-sm .form-control, .form-group-sm .form-control-small {
+.form-group-sm .form-control,
+.form-group-sm .form-control-small,
+.input-sm {
   height: 20px;
   padding: 3px 5px;
   font-size: 11px;
   line-height: 14px;
-  border-radius: 2px;
+  border-radius: 2px
 }
-
-select.input-sm, .form-group-sm select.form-control, .form-group-sm select.form-control-small {
+.form-group-sm select.form-control,
+.form-group-sm select.form-control-small,
+select.input-sm {
   height: 20px;
-  line-height: 20px;
+  line-height: 20px
 }
-
-textarea.input-sm, .form-group-sm textarea.form-control, .form-group-sm textarea.form-control-small,
-select[multiple].input-sm,
 .form-group-sm select[multiple].form-control,
-.form-group-sm select[multiple].form-control-small {
-  height: auto;
+.form-group-sm select[multiple].form-control-small,
+.form-group-sm textarea.form-control,
+.form-group-sm textarea.form-control-small,
+select[multiple].input-sm,
+textarea.input-sm {
+  height: auto
 }
-
-.input-lg, .form-group-lg .form-control, .form-group-lg .form-control-small {
+.form-group-lg .form-control,
+.form-group-lg .form-control-small,
+.input-lg {
   height: 40px;
   padding: 10px 15px;
   font-size: 15px;
   line-height: 20px;
-  border-radius: 2px;
+  border-radius: 2px
 }
-
-select.input-lg, .form-group-lg select.form-control, .form-group-lg select.form-control-small {
+.form-group-lg select.form-control,
+.form-group-lg select.form-control-small,
+select.input-lg {
   height: 40px;
-  line-height: 40px;
+  line-height: 40px
 }
-
-textarea.input-lg, .form-group-lg textarea.form-control, .form-group-lg textarea.form-control-small,
-select[multiple].input-lg,
 .form-group-lg select[multiple].form-control,
-.form-group-lg select[multiple].form-control-small {
-  height: auto;
+.form-group-lg select[multiple].form-control-small,
+.form-group-lg textarea.form-control,
+.form-group-lg textarea.form-control-small,
+select[multiple].input-lg,
+textarea.input-lg {
+  height: auto
 }
-
 .has-feedback {
-  position: relative;
+  position: relative
 }
-.has-feedback .form-control, .has-feedback .form-control-small {
-  padding-right: 37.5px;
+.has-feedback .form-control,
+.has-feedback .form-control-small {
+  padding-right: 37.5px
 }
-
 .form-control-feedback {
   position: absolute;
   top: 25px;
@@ -1615,21 +882,22 @@ select[multiple].input-lg,
   width: 30px;
   height: 30px;
   line-height: 30px;
-  text-align: center;
+  text-align: center
 }
-
-.input-lg + .form-control-feedback, .form-group-lg .form-control + .form-control-feedback, .form-group-lg .form-control-small + .form-control-feedback {
+.form-group-lg .form-control + .form-control-feedback,
+.form-group-lg .form-control-small + .form-control-feedback,
+.input-lg + .form-control-feedback {
   width: 40px;
   height: 40px;
-  line-height: 40px;
+  line-height: 40px
 }
-
-.input-sm + .form-control-feedback, .form-group-sm .form-control + .form-control-feedback, .form-group-sm .form-control-small + .form-control-feedback {
+.form-group-sm .form-control + .form-control-feedback,
+.form-group-sm .form-control-small + .form-control-feedback,
+.input-sm + .form-control-feedback {
   width: 20px;
   height: 20px;
-  line-height: 20px;
+  line-height: 20px
 }
-
 .form-control-feedback-message {
   margin-top: -1px;
   padding: 5px 8px;
@@ -1638,148 +906,152 @@ select[multiple].input-lg,
   font-weight: 400;
   color: #fff;
   border-bottom-right-radius: 2px;
-  border-bottom-left-radius: 2px;
+  border-bottom-left-radius: 2px
 }
-
-.has-success .help-block,
-.has-success .control-label,
-.has-success .radio,
 .has-success .checkbox,
-.has-success .radio-inline,
-.has-success .checkbox-inline {
-  color: #109e4d;
+.has-success .checkbox-inline,
+.has-success .control-label,
+.has-success .help-block,
+.has-success .radio,
+.has-success .radio-inline {
+  color: #109e4d
 }
-.has-success .form-control, .has-success .form-control-small {
+.has-success .form-control,
+.has-success .form-control-small {
   border-color: #109e4d;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075)
 }
-.has-success .form-control:focus, .has-success .form-control-small:focus {
+.has-success .form-control-small:focus,
+.has-success .form-control:focus {
   border-color: #0b7036;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #2be97d;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #2be97d;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #2be97d;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #2be97d
 }
 .has-success .form-control-feedback {
-  color: #109e4d;
+  color: #109e4d
 }
 .has-success .form-control-feedback-message {
-  background-color: #109e4d;
+  background-color: #109e4d
 }
-
-.has-info .help-block,
-.has-info .control-label,
-.has-info .radio,
 .has-info .checkbox,
-.has-info .radio-inline,
-.has-info .checkbox-inline {
-  color: #338dc7;
+.has-info .checkbox-inline,
+.has-info .control-label,
+.has-info .help-block,
+.has-info .radio,
+.has-info .radio-inline {
+  color: #338dc7
 }
-.has-info .form-control, .has-info .form-control-small {
+.has-info .form-control,
+.has-info .form-control-small {
   border-color: #338dc7;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075)
 }
-.has-info .form-control:focus, .has-info .form-control-small:focus {
+.has-info .form-control-small:focus,
+.has-info .form-control:focus {
   border-color: #29709e;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #81badf;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #81badf;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #81badf;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #81badf
 }
 .has-info .form-control-feedback {
-  color: #338dc7;
+  color: #338dc7
 }
 .has-info .form-control-feedback-message {
-  background-color: #338dc7;
+  background-color: #338dc7
 }
-
-.has-warning .help-block,
-.has-warning .control-label,
-.has-warning .radio,
 .has-warning .checkbox,
-.has-warning .radio-inline,
-.has-warning .checkbox-inline {
-  color: #ffa300;
+.has-warning .checkbox-inline,
+.has-warning .control-label,
+.has-warning .help-block,
+.has-warning .radio,
+.has-warning .radio-inline {
+  color: #ffa300
 }
-.has-warning .form-control, .has-warning .form-control-small {
+.has-warning .form-control,
+.has-warning .form-control-small {
   border-color: #ffa300;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075)
 }
-.has-warning .form-control:focus, .has-warning .form-control-small:focus {
+.has-warning .form-control-small:focus,
+.has-warning .form-control:focus {
   border-color: #cc8200;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ffc866;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #ffc866;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #ffc866;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #ffc866
 }
 .has-warning .form-control-feedback {
-  color: #ffa300;
+  color: #ffa300
 }
 .has-warning .form-control-feedback-message {
-  background-color: #ffa300;
+  background-color: #ffa300
 }
-
-.has-alert .help-block,
-.has-alert .control-label,
-.has-alert .radio,
 .has-alert .checkbox,
-.has-alert .radio-inline,
-.has-alert .checkbox-inline {
-  color: #fa6861;
+.has-alert .checkbox-inline,
+.has-alert .control-label,
+.has-alert .help-block,
+.has-alert .radio,
+.has-alert .radio-inline {
+  color: #fa6861
 }
-.has-alert .form-control, .has-alert .form-control-small {
+.has-alert .form-control,
+.has-alert .form-control-small {
   border-color: #fa6861;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075)
 }
-.has-alert .form-control:focus, .has-alert .form-control-small:focus {
+.has-alert .form-control-small:focus,
+.has-alert .form-control:focus {
   border-color: #f83930;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #fdc6c4;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #fdc6c4;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #fdc6c4;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #fdc6c4
 }
 .has-alert .form-control-feedback {
-  color: #fa6861;
+  color: #fa6861
 }
 .has-alert .form-control-feedback-message {
-  background-color: #fa6861;
+  background-color: #fa6861
 }
-
-.has-danger .help-block,
-.has-danger .control-label,
-.has-danger .radio,
 .has-danger .checkbox,
-.has-danger .radio-inline,
-.has-danger .checkbox-inline {
-  color: #fa6861;
+.has-danger .checkbox-inline,
+.has-danger .control-label,
+.has-danger .help-block,
+.has-danger .radio,
+.has-danger .radio-inline {
+  color: #fa6861
 }
-.has-danger .form-control, .has-danger .form-control-small {
+.has-danger .form-control,
+.has-danger .form-control-small {
   border-color: #fa6861;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075)
 }
-.has-danger .form-control:focus, .has-danger .form-control-small:focus {
+.has-danger .form-control-small:focus,
+.has-danger .form-control:focus {
   border-color: #f83930;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #fdc6c4;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #fdc6c4;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #fdc6c4;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #fdc6c4
 }
 .has-danger .form-control-feedback {
-  color: #fa6861;
+  color: #fa6861
 }
 .has-danger .form-control-feedback-message {
-  background-color: #fa6861;
+  background-color: #fa6861
 }
-
 .has-feedback label.sr-only ~ .form-control-feedback {
-  top: 0;
+  top: 0
 }
-
 .has-icon {
-  position: relative;
+  position: relative
 }
-.has-icon .form-control, .has-icon .form-control-small {
-  padding-left: 30px;
+.has-icon .form-control,
+.has-icon .form-control-small {
+  padding-left: 30px
 }
-.has-icon .form-control.rounded, .has-icon .rounded.form-control-small {
-  padding-left: 33px;
+.has-icon .form-control.rounded,
+.has-icon .rounded.form-control-small {
+  padding-left: 33px
 }
-
 .form-control-icon {
   position: absolute;
   top: 25px;
@@ -1789,269 +1061,147 @@ select[multiple].input-lg,
   height: 30px;
   line-height: 30px;
   text-align: center;
-  color: #a9aaab;
+  color: #a9aaab
 }
-
-.input-lg + .form-control-icon, .form-group-lg .form-control + .form-control-icon, .form-group-lg .form-control-small + .form-control-icon {
+.form-group-lg .form-control + .form-control-icon,
+.form-group-lg .form-control-small + .form-control-icon,
+.input-lg + .form-control-icon {
   width: 40px;
   height: 40px;
-  line-height: 40px;
+  line-height: 40px
 }
-
-.input-sm + .form-control-icon, .form-group-sm .form-control + .form-control-icon, .form-group-sm .form-control-small + .form-control-icon {
+.form-group-sm .form-control + .form-control-icon,
+.form-group-sm .form-control-small + .form-control-icon,
+.input-sm + .form-control-icon {
   width: 20px;
   height: 20px;
-  line-height: 20px;
+  line-height: 20px
 }
-
 .has-icon .form-control-icon {
-  top: 0;
+  top: 0
 }
-
-.has-icon .form-control.rounded ~ .form-control-icon, .has-icon .rounded.form-control-small ~ .form-control-icon {
-  padding-left: 3px;
+.has-icon .form-control.rounded ~ .form-control-icon,
+.has-icon .rounded.form-control-small ~ .form-control-icon {
+  padding-left: 3px
 }
-
 .has-feedback label.sr-only ~ .form-control-icon {
-  top: 0;
+  top: 0
 }
-
 .help-block {
   display: block;
   margin-top: 5px;
   margin-bottom: 10px;
   font-size: 13px;
   font-weight: 400;
-  color: #707173;
+  color: #707173
 }
-
 body.dark-theme .help-block {
-  color: #cccdcd;
+  color: #cccdcd
 }
-
 .control-label {
-  width: 100%;
+  width: 100%
 }
-
 body.dark-theme label {
-  color: #cccdcd;
+  color: #cccdcd
 }
-
-.radio,
 .checkbox,
+.checkbox-inline,
 .element-inline,
-.radio-inline,
-.checkbox-inline {
+.radio,
+.radio-inline {
   margin-top: 0;
   margin-bottom: 0;
-  padding-top: 6px;
+  padding-top: 6px
 }
-
-.radio,
-.checkbox {
-  min-height: 26px;
+.checkbox,
+.radio {
+  min-height: 26px
 }
-
-.form-group, .form-group-header {
+.form-group,
+.form-group-header {
   margin-left: -7px;
-  margin-right: -7px;
+  margin-right: -7px
 }
-.form-group:before, .form-group-header:before, .form-group:after, .form-group-header:after {
+.form-group-header:after,
+.form-group-header:before,
+.form-group:after,
+.form-group:before {
   content: " ";
-  display: table;
+  display: table
 }
-.form-group:after, .form-group-header:after {
-  clear: both;
+.form-group-header:after,
+.form-group:after {
+  clear: both
 }
-
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .control-label {
     text-align: right;
     margin-bottom: 0;
-    padding-top: 5px;
+    padding-top: 5px
   }
   .checkbox-control-label {
     width: auto;
-    float: right;
+    float: right
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .control-label-left .control-label {
     text-align: left;
     margin-bottom: 0;
-    padding-top: 5px;
+    padding-top: 5px
   }
 }
 .has-feedback .form-control-feedback {
   top: 0;
-  right: 7px;
+  right: 7px
 }
-
 .has-feedback .input-group .form-control-feedback {
-  right: 0;
+  right: 0
 }
-
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .form-group-lg .control-label {
-    padding-top: 10px;
+    padding-top: 10px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .form-group-sm .control-label {
-    padding-top: 0;
+    padding-top: 0
   }
 }
-.form-vertical .form-group, .form-vertical .form-group-header {
+.form-vertical .form-group,
+.form-vertical .form-group-header {
   margin-left: 0;
   margin-right: 0;
-  margin-bottom: 15px;
+  margin-bottom: 15px
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .form-vertical .control-label {
     text-align: left;
     margin-bottom: 5px;
-    padding-top: 0;
+    padding-top: 0
   }
 }
-
-input[type=file].form-control, input[type=file].form-control-small {
+input[type=file].form-control,
+input[type=file].form-control-small {
   padding: 0;
   border: 0;
-  -webkit-box-shadow: inset 0 2px 1px -1px #cccdcd, inset 0 0 0 1px #cccdcd;
-  box-shadow: inset 0 2px 1px -1px #cccdcd, inset 0 0 0 1px #cccdcd;
+  -webkit-box-shadow: inset 0 2px 1px -1px #cccdcd,inset 0 0 0 1px #cccdcd;
+  box-shadow: inset 0 2px 1px -1px #cccdcd,inset 0 0 0 1px #cccdcd
 }
-input[type=file].form-control::-webkit-file-upload-button, input[type=file].form-control-small::-webkit-file-upload-button {
+input[type=file].form-control-small::-webkit-file-upload-button,
+input[type=file].form-control::-webkit-file-upload-button {
   margin-top: 1px;
   margin-left: 1px;
-  padding: 4px 5px;
+  padding: 4px 5px
 }
-
 .checkbox-inline .icon-stack {
-  -webkit-transition: color 0.15s ease-in-out;
-  -o-transition: color 0.15s ease-in-out;
-  transition: color 0.15s ease-in-out;
+  -webkit-transition: color .15s ease-in-out;
+  -o-transition: color .15s ease-in-out;
+  transition: color .15s ease-in-out
 }
 .checkbox-inline input[type=checkbox]:checked + .icon-stack {
-  color: #109e4d;
+  color: #109e4d
 }
-
-/*doc
----
-title: Buttons
-name: buttons
-category: Components - Buttons
----
-
-Button styles should be applied to an `<a>` or `<button>` element.
-
-If your button is actually a link to another page, please use the `<a>` element, while if your button performs an action, such as
-submitting a form or triggering some javascript event, then use a `<button>` element.
-
-*/
-/*doc
----
-title: Button Variants
-name: buttons_01_variants
-parent: buttons
----
-
-Button                                              | Class               | Description
---------------------------------------------------- | ------------------- | -----------
-<button class="btn">Default</button>   | `btn`  | This is what buttons look like, this is the go to button style.
-<button class="btn btn-primary">Primary</button>   | `btn btn-primary`  | Use this button as the primary action
-<button class="btn btn-secondary">Secondary</button>     | `btn btn-secondary`   |
-<button class="btn btn-inverse">Inverse</button> | `btn btn-inverse` |
-<button class="btn btn-success">Success</button>           | `btn btn-success`        |
-<button class="btn btn-info">Info</button>           | `btn btn-info`        |
-<button class="btn btn-warning">Warning</button>           | `btn btn-warning`        |
-<button class="btn btn-alert">Alert</button>           | `btn btn-alert`        |
-
-*/
-/*doc
----
-title: Button Sizes
-name: buttons_02_sizes
-parent: buttons
----
-
-Size modifiers can be applied to any `.btn`
-
-```htmlexample
-<button class="btn btn-primary">default primary button</button>
-<button class="btn btn-primary btn-regular">regular primary button</button>
-<button class="btn btn-primary btn-large">large primary button</button>
-```
-
-A special case is the `.btn-block` modifier which can be applied to any `.btn` in any size to make it occupy the full available width and act like a block element.
-
-Multiple block level buttons below each other will be vertically spaced.
-
-```htmlexample
-<button class="btn btn-primary btn-block">default block level button</button>
-<button class="btn btn-primary btn-regular btn-block">regular block level button</button>
-<button class="btn btn-primary btn-large btn-block">large block level button</button>
-```
-*/
-/*doc
----
-title: Buttons with icons
-name: buttons_03_icons
-parent: buttons
----
-
-Icons in buttons can be used in any combination of icon/text order.
-For optimal spacing this requires a consistent markup, whereas the text content of a button has to be placed within `<span class="text">`
-
-```htmlexample
-<button class="btn btn-primary btn-regular">
-    <i class="icon icon-angle-left"></i>
-    <span class="text">button with icons</span>
-    <i class="icon icon-angle-right"></i>
-</button>
-
-```
-
-For vertically aligned icons in buttons, use the `.btn-vertical` modifier
-
-```htmlexample
-<button class="btn btn-primary btn-regular btn-vertical">
-    <i class="icon icon-angle-up"></i>
-    <span class="text">vertical button</span>
-    <i class="icon icon-angle-down"></i>
-</button>
-```
-*/
-/*doc
----
-title: Special Buttons
-name: buttons_04_special
-parent: buttons
----
-
-Make a button look and behave like a link with `.btn-link`.
-
-```htmlexample
-<button class="btn btn-link">Link button</button>
-```
-*/
-/*doc
----
-title: Button groups
-name: buttons_05_groups
-parent: buttons
----
-
-For optimal spacing between multiple horizontal `.btn`s, they can be nested inside a `.btn-group`.
-
-
-```htmlexample
-<div class="btn-group">
-    <button class="btn btn-primary btn-regular">button</button>
-    <button class="btn btn-primary btn-regular">button</button>
-    <button class="btn btn-primary btn-regular">button</button>
-</div>
-```
-*/
 .btn {
   display: inline-block;
   margin-bottom: 0;
@@ -2069,520 +1219,943 @@ For optimal spacing between multiple horizontal `.btn`s, they can be nested insi
   -ms-user-select: none;
   user-select: none;
   color: #707173;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #e2e3e3;
+  background-color: rgba(0,0,0,0);
+  border-color: #e2e3e3
 }
-.btn:hover, .btn:focus {
-  text-decoration: none;
+.btn:focus,
+.btn:hover {
+  text-decoration: none
 }
-.btn:active, .btn.active {
+.btn.active,
+.btn:active {
   outline: 0;
-  background-image: none;
+  background-image: none
 }
-.btn.disabled, .btn[disabled], fieldset[disabled] .btn {
+.btn.disabled,
+.btn[disabled],
+fieldset[disabled] .btn {
   cursor: not-allowed;
   pointer-events: none;
-  opacity: 0.65;
-  filter: alpha(opacity=65);
+  opacity: .65
 }
 .btn:hover {
   color: #707173;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #c3c5c5;
+  background-color: rgba(0,0,0,0);
+  border-color: #c3c5c5
 }
-.btn:active, .btn.is-active, .btn.active, .open > .btn.dropdown-toggle {
+.btn.active,
+.btn.is-active,
+.btn:active,
+.open > .btn.dropdown-toggle {
   color: #707173;
   background-image: none;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #aeb1b1;
+  background-color: rgba(0,0,0,0);
+  border-color: #aeb1b1
 }
-.btn.disabled, .btn.disabled:hover, .btn.disabled:focus, .btn.disabled:active, .btn.disabled.active, .btn.disabled.is-active, .btn[disabled], .btn[disabled]:hover, .btn[disabled]:focus, .btn[disabled]:active, .btn[disabled].active, .btn[disabled].is-active, fieldset[disabled] .btn, fieldset[disabled] .btn:hover, fieldset[disabled] .btn:focus, fieldset[disabled] .btn:active, fieldset[disabled] .btn.active, fieldset[disabled] .btn.is-active {
+.btn.disabled,
+.btn.disabled.active,
+.btn.disabled.is-active,
+.btn.disabled:active,
+.btn.disabled:focus,
+.btn.disabled:hover,
+.btn[disabled],
+.btn[disabled].active,
+.btn[disabled].is-active,
+.btn[disabled]:active,
+.btn[disabled]:focus,
+.btn[disabled]:hover,
+fieldset[disabled] .btn,
+fieldset[disabled] .btn.active,
+fieldset[disabled] .btn.is-active,
+fieldset[disabled] .btn:active,
+fieldset[disabled] .btn:focus,
+fieldset[disabled] .btn:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 .btn .badge {
-  color: rgba(0, 0, 0, 0);
-  background-color: #707173;
+  color: transparent;
+  background-color: #707173
 }
+.btn .icon + .icon,
 .btn .icon + .text,
 .btn .text + .icon,
-.btn .icon + .icon,
 .btn .text + .text {
   margin-top: 0;
-  margin-left: 5px;
+  margin-left: 5px
 }
-
 body.dark-theme .btn {
   color: #fff;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #666;
+  background-color: rgba(0,0,0,0);
+  border-color: #666
 }
 body.dark-theme .btn:hover {
   color: #fff;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #474747;
+  background-color: rgba(0,0,0,0);
+  border-color: #474747
 }
-body.dark-theme .btn:active, body.dark-theme .btn.is-active, body.dark-theme .btn.active, .open > body.dark-theme .btn.dropdown-toggle {
+.open > body.dark-theme .btn.dropdown-toggle,
+body.dark-theme .btn.active,
+body.dark-theme .btn.is-active,
+body.dark-theme .btn:active {
   color: #fff;
   background-image: none;
-  background-color: rgba(0, 0, 0, 0);
-  border-color: #333333;
+  background-color: rgba(0,0,0,0);
+  border-color: #333
 }
-body.dark-theme .btn.disabled, body.dark-theme .btn.disabled:hover, body.dark-theme .btn.disabled:focus, body.dark-theme .btn.disabled:active, body.dark-theme .btn.disabled.active, body.dark-theme .btn.disabled.is-active, body.dark-theme .btn[disabled], body.dark-theme .btn[disabled]:hover, body.dark-theme .btn[disabled]:focus, body.dark-theme .btn[disabled]:active, body.dark-theme .btn[disabled].active, body.dark-theme .btn[disabled].is-active, fieldset[disabled] body.dark-theme .btn, fieldset[disabled] body.dark-theme .btn:hover, fieldset[disabled] body.dark-theme .btn:focus, fieldset[disabled] body.dark-theme .btn:active, fieldset[disabled] body.dark-theme .btn.active, fieldset[disabled] body.dark-theme .btn.is-active {
+body.dark-theme .btn.disabled,
+body.dark-theme .btn.disabled.active,
+body.dark-theme .btn.disabled.is-active,
+body.dark-theme .btn.disabled:active,
+body.dark-theme .btn.disabled:focus,
+body.dark-theme .btn.disabled:hover,
+body.dark-theme .btn[disabled],
+body.dark-theme .btn[disabled].active,
+body.dark-theme .btn[disabled].is-active,
+body.dark-theme .btn[disabled]:active,
+body.dark-theme .btn[disabled]:focus,
+body.dark-theme .btn[disabled]:hover,
+fieldset[disabled] body.dark-theme .btn,
+fieldset[disabled] body.dark-theme .btn.active,
+fieldset[disabled] body.dark-theme .btn.is-active,
+fieldset[disabled] body.dark-theme .btn:active,
+fieldset[disabled] body.dark-theme .btn:focus,
+fieldset[disabled] body.dark-theme .btn:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 body.dark-theme .btn .badge {
-  color: rgba(0, 0, 0, 0);
-  background-color: #fff;
+  color: transparent;
+  background-color: #fff
 }
-
 .btn-primary {
   color: #fff;
   background-color: #0071b9;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 .btn-primary:hover {
   color: #fff;
   background-color: #005286;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-primary:active, .btn-primary.is-active, .btn-primary.active, .open > .btn-primary.dropdown-toggle {
+.btn-primary.active,
+.btn-primary.is-active,
+.btn-primary:active,
+.open > .btn-primary.dropdown-toggle {
   color: #fff;
   background-image: none;
   background-color: #00426d;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-primary.disabled, .btn-primary.disabled:hover, .btn-primary.disabled:focus, .btn-primary.disabled:active, .btn-primary.disabled.active, .btn-primary.disabled.is-active, .btn-primary[disabled], .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary[disabled].active, .btn-primary[disabled].is-active, fieldset[disabled] .btn-primary, fieldset[disabled] .btn-primary:hover, fieldset[disabled] .btn-primary:focus, fieldset[disabled] .btn-primary:active, fieldset[disabled] .btn-primary.active, fieldset[disabled] .btn-primary.is-active {
+.btn-primary.disabled,
+.btn-primary.disabled.active,
+.btn-primary.disabled.is-active,
+.btn-primary.disabled:active,
+.btn-primary.disabled:focus,
+.btn-primary.disabled:hover,
+.btn-primary[disabled],
+.btn-primary[disabled].active,
+.btn-primary[disabled].is-active,
+.btn-primary[disabled]:active,
+.btn-primary[disabled]:focus,
+.btn-primary[disabled]:hover,
+fieldset[disabled] .btn-primary,
+fieldset[disabled] .btn-primary.active,
+fieldset[disabled] .btn-primary.is-active,
+fieldset[disabled] .btn-primary:active,
+fieldset[disabled] .btn-primary:focus,
+fieldset[disabled] .btn-primary:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 .btn-primary .badge {
   color: #0071b9;
-  background-color: #fff;
+  background-color: #fff
 }
-
 body.dark-theme .btn-primary {
   color: #fff;
   background-color: #0071b9;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 body.dark-theme .btn-primary:hover {
   color: #fff;
   background-color: #005286;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-primary:active, body.dark-theme .btn-primary.is-active, body.dark-theme .btn-primary.active, .open > body.dark-theme .btn-primary.dropdown-toggle {
+.open > body.dark-theme .btn-primary.dropdown-toggle,
+body.dark-theme .btn-primary.active,
+body.dark-theme .btn-primary.is-active,
+body.dark-theme .btn-primary:active {
   color: #fff;
   background-image: none;
   background-color: #00426d;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-primary.disabled, body.dark-theme .btn-primary.disabled:hover, body.dark-theme .btn-primary.disabled:focus, body.dark-theme .btn-primary.disabled:active, body.dark-theme .btn-primary.disabled.active, body.dark-theme .btn-primary.disabled.is-active, body.dark-theme .btn-primary[disabled], body.dark-theme .btn-primary[disabled]:hover, body.dark-theme .btn-primary[disabled]:focus, body.dark-theme .btn-primary[disabled]:active, body.dark-theme .btn-primary[disabled].active, body.dark-theme .btn-primary[disabled].is-active, fieldset[disabled] body.dark-theme .btn-primary, fieldset[disabled] body.dark-theme .btn-primary:hover, fieldset[disabled] body.dark-theme .btn-primary:focus, fieldset[disabled] body.dark-theme .btn-primary:active, fieldset[disabled] body.dark-theme .btn-primary.active, fieldset[disabled] body.dark-theme .btn-primary.is-active {
+body.dark-theme .btn-primary.disabled,
+body.dark-theme .btn-primary.disabled.active,
+body.dark-theme .btn-primary.disabled.is-active,
+body.dark-theme .btn-primary.disabled:active,
+body.dark-theme .btn-primary.disabled:focus,
+body.dark-theme .btn-primary.disabled:hover,
+body.dark-theme .btn-primary[disabled],
+body.dark-theme .btn-primary[disabled].active,
+body.dark-theme .btn-primary[disabled].is-active,
+body.dark-theme .btn-primary[disabled]:active,
+body.dark-theme .btn-primary[disabled]:focus,
+body.dark-theme .btn-primary[disabled]:hover,
+fieldset[disabled] body.dark-theme .btn-primary,
+fieldset[disabled] body.dark-theme .btn-primary.active,
+fieldset[disabled] body.dark-theme .btn-primary.is-active,
+fieldset[disabled] body.dark-theme .btn-primary:active,
+fieldset[disabled] body.dark-theme .btn-primary:focus,
+fieldset[disabled] body.dark-theme .btn-primary:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 body.dark-theme .btn-primary .badge {
   color: #0071b9;
-  background-color: #fff;
+  background-color: #fff
 }
-
 .btn-secondary {
   color: #fff;
   background-color: #004470;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 .btn-secondary:hover {
   color: #fff;
   background-color: #00253d;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-secondary:active, .btn-secondary.is-active, .btn-secondary.active, .open > .btn-secondary.dropdown-toggle {
+.btn-secondary.active,
+.btn-secondary.is-active,
+.btn-secondary:active,
+.open > .btn-secondary.dropdown-toggle {
   color: #fff;
   background-image: none;
   background-color: #001624;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-secondary.disabled, .btn-secondary.disabled:hover, .btn-secondary.disabled:focus, .btn-secondary.disabled:active, .btn-secondary.disabled.active, .btn-secondary.disabled.is-active, .btn-secondary[disabled], .btn-secondary[disabled]:hover, .btn-secondary[disabled]:focus, .btn-secondary[disabled]:active, .btn-secondary[disabled].active, .btn-secondary[disabled].is-active, fieldset[disabled] .btn-secondary, fieldset[disabled] .btn-secondary:hover, fieldset[disabled] .btn-secondary:focus, fieldset[disabled] .btn-secondary:active, fieldset[disabled] .btn-secondary.active, fieldset[disabled] .btn-secondary.is-active {
+.btn-secondary.disabled,
+.btn-secondary.disabled.active,
+.btn-secondary.disabled.is-active,
+.btn-secondary.disabled:active,
+.btn-secondary.disabled:focus,
+.btn-secondary.disabled:hover,
+.btn-secondary[disabled],
+.btn-secondary[disabled].active,
+.btn-secondary[disabled].is-active,
+.btn-secondary[disabled]:active,
+.btn-secondary[disabled]:focus,
+.btn-secondary[disabled]:hover,
+fieldset[disabled] .btn-secondary,
+fieldset[disabled] .btn-secondary.active,
+fieldset[disabled] .btn-secondary.is-active,
+fieldset[disabled] .btn-secondary:active,
+fieldset[disabled] .btn-secondary:focus,
+fieldset[disabled] .btn-secondary:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 .btn-secondary .badge {
   color: #004470;
-  background-color: #fff;
+  background-color: #fff
 }
-
 body.dark-theme .btn-secondary {
   color: #fff;
   background-color: #444;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 body.dark-theme .btn-secondary:hover {
   color: #fff;
   background-color: #2b2b2b;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-secondary:active, body.dark-theme .btn-secondary.is-active, body.dark-theme .btn-secondary.active, .open > body.dark-theme .btn-secondary.dropdown-toggle {
+.open > body.dark-theme .btn-secondary.dropdown-toggle,
+body.dark-theme .btn-secondary.active,
+body.dark-theme .btn-secondary.is-active,
+body.dark-theme .btn-secondary:active {
   color: #fff;
   background-image: none;
   background-color: #1e1e1e;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-secondary.disabled, body.dark-theme .btn-secondary.disabled:hover, body.dark-theme .btn-secondary.disabled:focus, body.dark-theme .btn-secondary.disabled:active, body.dark-theme .btn-secondary.disabled.active, body.dark-theme .btn-secondary.disabled.is-active, body.dark-theme .btn-secondary[disabled], body.dark-theme .btn-secondary[disabled]:hover, body.dark-theme .btn-secondary[disabled]:focus, body.dark-theme .btn-secondary[disabled]:active, body.dark-theme .btn-secondary[disabled].active, body.dark-theme .btn-secondary[disabled].is-active, fieldset[disabled] body.dark-theme .btn-secondary, fieldset[disabled] body.dark-theme .btn-secondary:hover, fieldset[disabled] body.dark-theme .btn-secondary:focus, fieldset[disabled] body.dark-theme .btn-secondary:active, fieldset[disabled] body.dark-theme .btn-secondary.active, fieldset[disabled] body.dark-theme .btn-secondary.is-active {
+body.dark-theme .btn-secondary.disabled,
+body.dark-theme .btn-secondary.disabled.active,
+body.dark-theme .btn-secondary.disabled.is-active,
+body.dark-theme .btn-secondary.disabled:active,
+body.dark-theme .btn-secondary.disabled:focus,
+body.dark-theme .btn-secondary.disabled:hover,
+body.dark-theme .btn-secondary[disabled],
+body.dark-theme .btn-secondary[disabled].active,
+body.dark-theme .btn-secondary[disabled].is-active,
+body.dark-theme .btn-secondary[disabled]:active,
+body.dark-theme .btn-secondary[disabled]:focus,
+body.dark-theme .btn-secondary[disabled]:hover,
+fieldset[disabled] body.dark-theme .btn-secondary,
+fieldset[disabled] body.dark-theme .btn-secondary.active,
+fieldset[disabled] body.dark-theme .btn-secondary.is-active,
+fieldset[disabled] body.dark-theme .btn-secondary:active,
+fieldset[disabled] body.dark-theme .btn-secondary:focus,
+fieldset[disabled] body.dark-theme .btn-secondary:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 body.dark-theme .btn-secondary .badge {
   color: #444;
-  background-color: #fff;
+  background-color: #fff
 }
-
 .btn-inverse {
   color: #0071b9;
   background-color: #fff;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 .btn-inverse:hover {
   color: #0071b9;
   background-color: #e6e6e6;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-inverse:active, .btn-inverse.is-active, .btn-inverse.active, .open > .btn-inverse.dropdown-toggle {
+.btn-inverse.active,
+.btn-inverse.is-active,
+.btn-inverse:active,
+.open > .btn-inverse.dropdown-toggle {
   color: #0071b9;
   background-image: none;
   background-color: #d9d9d9;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-.btn-inverse.disabled, .btn-inverse.disabled:hover, .btn-inverse.disabled:focus, .btn-inverse.disabled:active, .btn-inverse.disabled.active, .btn-inverse.disabled.is-active, .btn-inverse[disabled], .btn-inverse[disabled]:hover, .btn-inverse[disabled]:focus, .btn-inverse[disabled]:active, .btn-inverse[disabled].active, .btn-inverse[disabled].is-active, fieldset[disabled] .btn-inverse, fieldset[disabled] .btn-inverse:hover, fieldset[disabled] .btn-inverse:focus, fieldset[disabled] .btn-inverse:active, fieldset[disabled] .btn-inverse.active, fieldset[disabled] .btn-inverse.is-active {
+.btn-inverse.disabled,
+.btn-inverse.disabled.active,
+.btn-inverse.disabled.is-active,
+.btn-inverse.disabled:active,
+.btn-inverse.disabled:focus,
+.btn-inverse.disabled:hover,
+.btn-inverse[disabled],
+.btn-inverse[disabled].active,
+.btn-inverse[disabled].is-active,
+.btn-inverse[disabled]:active,
+.btn-inverse[disabled]:focus,
+.btn-inverse[disabled]:hover,
+fieldset[disabled] .btn-inverse,
+fieldset[disabled] .btn-inverse.active,
+fieldset[disabled] .btn-inverse.is-active,
+fieldset[disabled] .btn-inverse:active,
+fieldset[disabled] .btn-inverse:focus,
+fieldset[disabled] .btn-inverse:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 .btn-inverse .badge {
   color: #fff;
-  background-color: #0071b9;
+  background-color: #0071b9
 }
-
 body.dark-theme .btn-inverse {
   color: #0071b9;
   background-color: #fff;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
 body.dark-theme .btn-inverse:hover {
   color: #0071b9;
   background-color: #e6e6e6;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-inverse:active, body.dark-theme .btn-inverse.is-active, body.dark-theme .btn-inverse.active, .open > body.dark-theme .btn-inverse.dropdown-toggle {
+.open > body.dark-theme .btn-inverse.dropdown-toggle,
+body.dark-theme .btn-inverse.active,
+body.dark-theme .btn-inverse.is-active,
+body.dark-theme .btn-inverse:active {
   color: #0071b9;
   background-image: none;
   background-color: #d9d9d9;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-inverse.disabled, body.dark-theme .btn-inverse.disabled:hover, body.dark-theme .btn-inverse.disabled:focus, body.dark-theme .btn-inverse.disabled:active, body.dark-theme .btn-inverse.disabled.active, body.dark-theme .btn-inverse.disabled.is-active, body.dark-theme .btn-inverse[disabled], body.dark-theme .btn-inverse[disabled]:hover, body.dark-theme .btn-inverse[disabled]:focus, body.dark-theme .btn-inverse[disabled]:active, body.dark-theme .btn-inverse[disabled].active, body.dark-theme .btn-inverse[disabled].is-active, fieldset[disabled] body.dark-theme .btn-inverse, fieldset[disabled] body.dark-theme .btn-inverse:hover, fieldset[disabled] body.dark-theme .btn-inverse:focus, fieldset[disabled] body.dark-theme .btn-inverse:active, fieldset[disabled] body.dark-theme .btn-inverse.active, fieldset[disabled] body.dark-theme .btn-inverse.is-active {
+body.dark-theme .btn-inverse.disabled,
+body.dark-theme .btn-inverse.disabled.active,
+body.dark-theme .btn-inverse.disabled.is-active,
+body.dark-theme .btn-inverse.disabled:active,
+body.dark-theme .btn-inverse.disabled:focus,
+body.dark-theme .btn-inverse.disabled:hover,
+body.dark-theme .btn-inverse[disabled],
+body.dark-theme .btn-inverse[disabled].active,
+body.dark-theme .btn-inverse[disabled].is-active,
+body.dark-theme .btn-inverse[disabled]:active,
+body.dark-theme .btn-inverse[disabled]:focus,
+body.dark-theme .btn-inverse[disabled]:hover,
+fieldset[disabled] body.dark-theme .btn-inverse,
+fieldset[disabled] body.dark-theme .btn-inverse.active,
+fieldset[disabled] body.dark-theme .btn-inverse.is-active,
+fieldset[disabled] body.dark-theme .btn-inverse:active,
+fieldset[disabled] body.dark-theme .btn-inverse:focus,
+fieldset[disabled] body.dark-theme .btn-inverse:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
 body.dark-theme .btn-inverse .badge {
   color: #fff;
-  background-color: #0071b9;
+  background-color: #0071b9
 }
-
-body.dark-theme .btn-success, .btn-success {
+.btn-success,
+body.dark-theme .btn-success {
   color: #fff;
   background-color: #109e4d;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-success:hover, .btn-success:hover {
+.btn-success:hover,
+body.dark-theme .btn-success:hover {
   color: #fff;
   background-color: #0b7036;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-success:active, body.dark-theme .btn-success.is-active, body.dark-theme .btn-success.active, .open > body.dark-theme .btn-success.dropdown-toggle, .btn-success:active, .btn-success.is-active, .btn-success.active, .open > .btn-success.dropdown-toggle {
+.btn-success.active,
+.btn-success.is-active,
+.btn-success:active,
+.open > .btn-success.dropdown-toggle,
+.open > body.dark-theme .btn-success.dropdown-toggle,
+body.dark-theme .btn-success.active,
+body.dark-theme .btn-success.is-active,
+body.dark-theme .btn-success:active {
   color: #fff;
   background-image: none;
   background-color: #09592b;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-success.disabled, body.dark-theme .btn-success.disabled:hover, body.dark-theme .btn-success.disabled:focus, body.dark-theme .btn-success.disabled:active, body.dark-theme .btn-success.disabled.active, body.dark-theme .btn-success.disabled.is-active, body.dark-theme .btn-success[disabled], body.dark-theme .btn-success[disabled]:hover, body.dark-theme .btn-success[disabled]:focus, body.dark-theme .btn-success[disabled]:active, body.dark-theme .btn-success[disabled].active, body.dark-theme .btn-success[disabled].is-active, fieldset[disabled] body.dark-theme .btn-success, fieldset[disabled] body.dark-theme .btn-success:hover, fieldset[disabled] body.dark-theme .btn-success:focus, fieldset[disabled] body.dark-theme .btn-success:active, fieldset[disabled] body.dark-theme .btn-success.active, fieldset[disabled] body.dark-theme .btn-success.is-active, .btn-success.disabled, .btn-success.disabled:hover, .btn-success.disabled:focus, .btn-success.disabled:active, .btn-success.disabled.active, .btn-success.disabled.is-active, .btn-success[disabled], .btn-success[disabled]:hover, .btn-success[disabled]:focus, .btn-success[disabled]:active, .btn-success[disabled].active, .btn-success[disabled].is-active, fieldset[disabled] .btn-success, fieldset[disabled] .btn-success:hover, fieldset[disabled] .btn-success:focus, fieldset[disabled] .btn-success:active, fieldset[disabled] .btn-success.active, fieldset[disabled] .btn-success.is-active {
+.btn-success.disabled,
+.btn-success.disabled.active,
+.btn-success.disabled.is-active,
+.btn-success.disabled:active,
+.btn-success.disabled:focus,
+.btn-success.disabled:hover,
+.btn-success[disabled],
+.btn-success[disabled].active,
+.btn-success[disabled].is-active,
+.btn-success[disabled]:active,
+.btn-success[disabled]:focus,
+.btn-success[disabled]:hover,
+body.dark-theme .btn-success.disabled,
+body.dark-theme .btn-success.disabled.active,
+body.dark-theme .btn-success.disabled.is-active,
+body.dark-theme .btn-success.disabled:active,
+body.dark-theme .btn-success.disabled:focus,
+body.dark-theme .btn-success.disabled:hover,
+body.dark-theme .btn-success[disabled],
+body.dark-theme .btn-success[disabled].active,
+body.dark-theme .btn-success[disabled].is-active,
+body.dark-theme .btn-success[disabled]:active,
+body.dark-theme .btn-success[disabled]:focus,
+body.dark-theme .btn-success[disabled]:hover,
+fieldset[disabled] .btn-success,
+fieldset[disabled] .btn-success.active,
+fieldset[disabled] .btn-success.is-active,
+fieldset[disabled] .btn-success:active,
+fieldset[disabled] .btn-success:focus,
+fieldset[disabled] .btn-success:hover,
+fieldset[disabled] body.dark-theme .btn-success,
+fieldset[disabled] body.dark-theme .btn-success.active,
+fieldset[disabled] body.dark-theme .btn-success.is-active,
+fieldset[disabled] body.dark-theme .btn-success:active,
+fieldset[disabled] body.dark-theme .btn-success:focus,
+fieldset[disabled] body.dark-theme .btn-success:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
-body.dark-theme .btn-success .badge, .btn-success .badge {
+.btn-success .badge,
+body.dark-theme .btn-success .badge {
   color: #109e4d;
-  background-color: #fff;
+  background-color: #fff
 }
-
-body.dark-theme .btn-info, .btn-info {
+.btn-info,
+body.dark-theme .btn-info {
   color: #fff;
   background-color: #338dc7;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-info:hover, .btn-info:hover {
+.btn-info:hover,
+body.dark-theme .btn-info:hover {
   color: #fff;
   background-color: #29709e;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-info:active, body.dark-theme .btn-info.is-active, body.dark-theme .btn-info.active, .open > body.dark-theme .btn-info.dropdown-toggle, .btn-info:active, .btn-info.is-active, .btn-info.active, .open > .btn-info.dropdown-toggle {
+.btn-info.active,
+.btn-info.is-active,
+.btn-info:active,
+.open > .btn-info.dropdown-toggle,
+.open > body.dark-theme .btn-info.dropdown-toggle,
+body.dark-theme .btn-info.active,
+body.dark-theme .btn-info.is-active,
+body.dark-theme .btn-info:active {
   color: #fff;
   background-image: none;
   background-color: #23628a;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-info.disabled, body.dark-theme .btn-info.disabled:hover, body.dark-theme .btn-info.disabled:focus, body.dark-theme .btn-info.disabled:active, body.dark-theme .btn-info.disabled.active, body.dark-theme .btn-info.disabled.is-active, body.dark-theme .btn-info[disabled], body.dark-theme .btn-info[disabled]:hover, body.dark-theme .btn-info[disabled]:focus, body.dark-theme .btn-info[disabled]:active, body.dark-theme .btn-info[disabled].active, body.dark-theme .btn-info[disabled].is-active, fieldset[disabled] body.dark-theme .btn-info, fieldset[disabled] body.dark-theme .btn-info:hover, fieldset[disabled] body.dark-theme .btn-info:focus, fieldset[disabled] body.dark-theme .btn-info:active, fieldset[disabled] body.dark-theme .btn-info.active, fieldset[disabled] body.dark-theme .btn-info.is-active, .btn-info.disabled, .btn-info.disabled:hover, .btn-info.disabled:focus, .btn-info.disabled:active, .btn-info.disabled.active, .btn-info.disabled.is-active, .btn-info[disabled], .btn-info[disabled]:hover, .btn-info[disabled]:focus, .btn-info[disabled]:active, .btn-info[disabled].active, .btn-info[disabled].is-active, fieldset[disabled] .btn-info, fieldset[disabled] .btn-info:hover, fieldset[disabled] .btn-info:focus, fieldset[disabled] .btn-info:active, fieldset[disabled] .btn-info.active, fieldset[disabled] .btn-info.is-active {
+.btn-info.disabled,
+.btn-info.disabled.active,
+.btn-info.disabled.is-active,
+.btn-info.disabled:active,
+.btn-info.disabled:focus,
+.btn-info.disabled:hover,
+.btn-info[disabled],
+.btn-info[disabled].active,
+.btn-info[disabled].is-active,
+.btn-info[disabled]:active,
+.btn-info[disabled]:focus,
+.btn-info[disabled]:hover,
+body.dark-theme .btn-info.disabled,
+body.dark-theme .btn-info.disabled.active,
+body.dark-theme .btn-info.disabled.is-active,
+body.dark-theme .btn-info.disabled:active,
+body.dark-theme .btn-info.disabled:focus,
+body.dark-theme .btn-info.disabled:hover,
+body.dark-theme .btn-info[disabled],
+body.dark-theme .btn-info[disabled].active,
+body.dark-theme .btn-info[disabled].is-active,
+body.dark-theme .btn-info[disabled]:active,
+body.dark-theme .btn-info[disabled]:focus,
+body.dark-theme .btn-info[disabled]:hover,
+fieldset[disabled] .btn-info,
+fieldset[disabled] .btn-info.active,
+fieldset[disabled] .btn-info.is-active,
+fieldset[disabled] .btn-info:active,
+fieldset[disabled] .btn-info:focus,
+fieldset[disabled] .btn-info:hover,
+fieldset[disabled] body.dark-theme .btn-info,
+fieldset[disabled] body.dark-theme .btn-info.active,
+fieldset[disabled] body.dark-theme .btn-info.is-active,
+fieldset[disabled] body.dark-theme .btn-info:active,
+fieldset[disabled] body.dark-theme .btn-info:focus,
+fieldset[disabled] body.dark-theme .btn-info:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
-body.dark-theme .btn-info .badge, .btn-info .badge {
+.btn-info .badge,
+body.dark-theme .btn-info .badge {
   color: #338dc7;
-  background-color: #fff;
+  background-color: #fff
 }
-
-body.dark-theme .btn-warning, .btn-warning {
+.btn-warning,
+body.dark-theme .btn-warning {
   color: #fff;
   background-color: #ffa300;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-warning:hover, .btn-warning:hover {
+.btn-warning:hover,
+body.dark-theme .btn-warning:hover {
   color: #fff;
   background-color: #cc8200;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-warning:active, body.dark-theme .btn-warning.is-active, body.dark-theme .btn-warning.active, .open > body.dark-theme .btn-warning.dropdown-toggle, .btn-warning:active, .btn-warning.is-active, .btn-warning.active, .open > .btn-warning.dropdown-toggle {
+.btn-warning.active,
+.btn-warning.is-active,
+.btn-warning:active,
+.open > .btn-warning.dropdown-toggle,
+.open > body.dark-theme .btn-warning.dropdown-toggle,
+body.dark-theme .btn-warning.active,
+body.dark-theme .btn-warning.is-active,
+body.dark-theme .btn-warning:active {
   color: #fff;
   background-image: none;
   background-color: #b37200;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-warning.disabled, body.dark-theme .btn-warning.disabled:hover, body.dark-theme .btn-warning.disabled:focus, body.dark-theme .btn-warning.disabled:active, body.dark-theme .btn-warning.disabled.active, body.dark-theme .btn-warning.disabled.is-active, body.dark-theme .btn-warning[disabled], body.dark-theme .btn-warning[disabled]:hover, body.dark-theme .btn-warning[disabled]:focus, body.dark-theme .btn-warning[disabled]:active, body.dark-theme .btn-warning[disabled].active, body.dark-theme .btn-warning[disabled].is-active, fieldset[disabled] body.dark-theme .btn-warning, fieldset[disabled] body.dark-theme .btn-warning:hover, fieldset[disabled] body.dark-theme .btn-warning:focus, fieldset[disabled] body.dark-theme .btn-warning:active, fieldset[disabled] body.dark-theme .btn-warning.active, fieldset[disabled] body.dark-theme .btn-warning.is-active, .btn-warning.disabled, .btn-warning.disabled:hover, .btn-warning.disabled:focus, .btn-warning.disabled:active, .btn-warning.disabled.active, .btn-warning.disabled.is-active, .btn-warning[disabled], .btn-warning[disabled]:hover, .btn-warning[disabled]:focus, .btn-warning[disabled]:active, .btn-warning[disabled].active, .btn-warning[disabled].is-active, fieldset[disabled] .btn-warning, fieldset[disabled] .btn-warning:hover, fieldset[disabled] .btn-warning:focus, fieldset[disabled] .btn-warning:active, fieldset[disabled] .btn-warning.active, fieldset[disabled] .btn-warning.is-active {
+.btn-warning.disabled,
+.btn-warning.disabled.active,
+.btn-warning.disabled.is-active,
+.btn-warning.disabled:active,
+.btn-warning.disabled:focus,
+.btn-warning.disabled:hover,
+.btn-warning[disabled],
+.btn-warning[disabled].active,
+.btn-warning[disabled].is-active,
+.btn-warning[disabled]:active,
+.btn-warning[disabled]:focus,
+.btn-warning[disabled]:hover,
+body.dark-theme .btn-warning.disabled,
+body.dark-theme .btn-warning.disabled.active,
+body.dark-theme .btn-warning.disabled.is-active,
+body.dark-theme .btn-warning.disabled:active,
+body.dark-theme .btn-warning.disabled:focus,
+body.dark-theme .btn-warning.disabled:hover,
+body.dark-theme .btn-warning[disabled],
+body.dark-theme .btn-warning[disabled].active,
+body.dark-theme .btn-warning[disabled].is-active,
+body.dark-theme .btn-warning[disabled]:active,
+body.dark-theme .btn-warning[disabled]:focus,
+body.dark-theme .btn-warning[disabled]:hover,
+fieldset[disabled] .btn-warning,
+fieldset[disabled] .btn-warning.active,
+fieldset[disabled] .btn-warning.is-active,
+fieldset[disabled] .btn-warning:active,
+fieldset[disabled] .btn-warning:focus,
+fieldset[disabled] .btn-warning:hover,
+fieldset[disabled] body.dark-theme .btn-warning,
+fieldset[disabled] body.dark-theme .btn-warning.active,
+fieldset[disabled] body.dark-theme .btn-warning.is-active,
+fieldset[disabled] body.dark-theme .btn-warning:active,
+fieldset[disabled] body.dark-theme .btn-warning:focus,
+fieldset[disabled] body.dark-theme .btn-warning:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
-body.dark-theme .btn-warning .badge, .btn-warning .badge {
+.btn-warning .badge,
+body.dark-theme .btn-warning .badge {
   color: #ffa300;
-  background-color: #fff;
+  background-color: #fff
 }
-
-body.dark-theme .btn-alert, .btn-alert {
+.btn-alert,
+body.dark-theme .btn-alert {
   color: #fff;
   background-color: #fa6861;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-alert:hover, .btn-alert:hover {
+.btn-alert:hover,
+body.dark-theme .btn-alert:hover {
   color: #fff;
   background-color: #f83930;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-alert:active, body.dark-theme .btn-alert.is-active, body.dark-theme .btn-alert.active, .open > body.dark-theme .btn-alert.dropdown-toggle, .btn-alert:active, .btn-alert.is-active, .btn-alert.active, .open > .btn-alert.dropdown-toggle {
+.btn-alert.active,
+.btn-alert.is-active,
+.btn-alert:active,
+.open > .btn-alert.dropdown-toggle,
+.open > body.dark-theme .btn-alert.dropdown-toggle,
+body.dark-theme .btn-alert.active,
+body.dark-theme .btn-alert.is-active,
+body.dark-theme .btn-alert:active {
   color: #fff;
   background-image: none;
   background-color: #f82117;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-alert.disabled, body.dark-theme .btn-alert.disabled:hover, body.dark-theme .btn-alert.disabled:focus, body.dark-theme .btn-alert.disabled:active, body.dark-theme .btn-alert.disabled.active, body.dark-theme .btn-alert.disabled.is-active, body.dark-theme .btn-alert[disabled], body.dark-theme .btn-alert[disabled]:hover, body.dark-theme .btn-alert[disabled]:focus, body.dark-theme .btn-alert[disabled]:active, body.dark-theme .btn-alert[disabled].active, body.dark-theme .btn-alert[disabled].is-active, fieldset[disabled] body.dark-theme .btn-alert, fieldset[disabled] body.dark-theme .btn-alert:hover, fieldset[disabled] body.dark-theme .btn-alert:focus, fieldset[disabled] body.dark-theme .btn-alert:active, fieldset[disabled] body.dark-theme .btn-alert.active, fieldset[disabled] body.dark-theme .btn-alert.is-active, .btn-alert.disabled, .btn-alert.disabled:hover, .btn-alert.disabled:focus, .btn-alert.disabled:active, .btn-alert.disabled.active, .btn-alert.disabled.is-active, .btn-alert[disabled], .btn-alert[disabled]:hover, .btn-alert[disabled]:focus, .btn-alert[disabled]:active, .btn-alert[disabled].active, .btn-alert[disabled].is-active, fieldset[disabled] .btn-alert, fieldset[disabled] .btn-alert:hover, fieldset[disabled] .btn-alert:focus, fieldset[disabled] .btn-alert:active, fieldset[disabled] .btn-alert.active, fieldset[disabled] .btn-alert.is-active {
+.btn-alert.disabled,
+.btn-alert.disabled.active,
+.btn-alert.disabled.is-active,
+.btn-alert.disabled:active,
+.btn-alert.disabled:focus,
+.btn-alert.disabled:hover,
+.btn-alert[disabled],
+.btn-alert[disabled].active,
+.btn-alert[disabled].is-active,
+.btn-alert[disabled]:active,
+.btn-alert[disabled]:focus,
+.btn-alert[disabled]:hover,
+body.dark-theme .btn-alert.disabled,
+body.dark-theme .btn-alert.disabled.active,
+body.dark-theme .btn-alert.disabled.is-active,
+body.dark-theme .btn-alert.disabled:active,
+body.dark-theme .btn-alert.disabled:focus,
+body.dark-theme .btn-alert.disabled:hover,
+body.dark-theme .btn-alert[disabled],
+body.dark-theme .btn-alert[disabled].active,
+body.dark-theme .btn-alert[disabled].is-active,
+body.dark-theme .btn-alert[disabled]:active,
+body.dark-theme .btn-alert[disabled]:focus,
+body.dark-theme .btn-alert[disabled]:hover,
+fieldset[disabled] .btn-alert,
+fieldset[disabled] .btn-alert.active,
+fieldset[disabled] .btn-alert.is-active,
+fieldset[disabled] .btn-alert:active,
+fieldset[disabled] .btn-alert:focus,
+fieldset[disabled] .btn-alert:hover,
+fieldset[disabled] body.dark-theme .btn-alert,
+fieldset[disabled] body.dark-theme .btn-alert.active,
+fieldset[disabled] body.dark-theme .btn-alert.is-active,
+fieldset[disabled] body.dark-theme .btn-alert:active,
+fieldset[disabled] body.dark-theme .btn-alert:focus,
+fieldset[disabled] body.dark-theme .btn-alert:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
-body.dark-theme .btn-alert .badge, .btn-alert .badge {
+.btn-alert .badge,
+body.dark-theme .btn-alert .badge {
   color: #fa6861;
-  background-color: #fff;
+  background-color: #fff
 }
-
-body.dark-theme .btn-danger, .btn-danger {
+.btn-danger,
+body.dark-theme .btn-danger {
   color: #fff;
   background-color: #fa6861;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-danger:hover, .btn-danger:hover {
+.btn-danger:hover,
+body.dark-theme .btn-danger:hover {
   color: #fff;
   background-color: #f83930;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-danger:active, body.dark-theme .btn-danger.is-active, body.dark-theme .btn-danger.active, .open > body.dark-theme .btn-danger.dropdown-toggle, .btn-danger:active, .btn-danger.is-active, .btn-danger.active, .open > .btn-danger.dropdown-toggle {
+.btn-danger.active,
+.btn-danger.is-active,
+.btn-danger:active,
+.open > .btn-danger.dropdown-toggle,
+.open > body.dark-theme .btn-danger.dropdown-toggle,
+body.dark-theme .btn-danger.active,
+body.dark-theme .btn-danger.is-active,
+body.dark-theme .btn-danger:active {
   color: #fff;
   background-image: none;
   background-color: #f82117;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-danger.disabled, body.dark-theme .btn-danger.disabled:hover, body.dark-theme .btn-danger.disabled:focus, body.dark-theme .btn-danger.disabled:active, body.dark-theme .btn-danger.disabled.active, body.dark-theme .btn-danger.disabled.is-active, body.dark-theme .btn-danger[disabled], body.dark-theme .btn-danger[disabled]:hover, body.dark-theme .btn-danger[disabled]:focus, body.dark-theme .btn-danger[disabled]:active, body.dark-theme .btn-danger[disabled].active, body.dark-theme .btn-danger[disabled].is-active, fieldset[disabled] body.dark-theme .btn-danger, fieldset[disabled] body.dark-theme .btn-danger:hover, fieldset[disabled] body.dark-theme .btn-danger:focus, fieldset[disabled] body.dark-theme .btn-danger:active, fieldset[disabled] body.dark-theme .btn-danger.active, fieldset[disabled] body.dark-theme .btn-danger.is-active, .btn-danger.disabled, .btn-danger.disabled:hover, .btn-danger.disabled:focus, .btn-danger.disabled:active, .btn-danger.disabled.active, .btn-danger.disabled.is-active, .btn-danger[disabled], .btn-danger[disabled]:hover, .btn-danger[disabled]:focus, .btn-danger[disabled]:active, .btn-danger[disabled].active, .btn-danger[disabled].is-active, fieldset[disabled] .btn-danger, fieldset[disabled] .btn-danger:hover, fieldset[disabled] .btn-danger:focus, fieldset[disabled] .btn-danger:active, fieldset[disabled] .btn-danger.active, fieldset[disabled] .btn-danger.is-active {
+.btn-danger.disabled,
+.btn-danger.disabled.active,
+.btn-danger.disabled.is-active,
+.btn-danger.disabled:active,
+.btn-danger.disabled:focus,
+.btn-danger.disabled:hover,
+.btn-danger[disabled],
+.btn-danger[disabled].active,
+.btn-danger[disabled].is-active,
+.btn-danger[disabled]:active,
+.btn-danger[disabled]:focus,
+.btn-danger[disabled]:hover,
+body.dark-theme .btn-danger.disabled,
+body.dark-theme .btn-danger.disabled.active,
+body.dark-theme .btn-danger.disabled.is-active,
+body.dark-theme .btn-danger.disabled:active,
+body.dark-theme .btn-danger.disabled:focus,
+body.dark-theme .btn-danger.disabled:hover,
+body.dark-theme .btn-danger[disabled],
+body.dark-theme .btn-danger[disabled].active,
+body.dark-theme .btn-danger[disabled].is-active,
+body.dark-theme .btn-danger[disabled]:active,
+body.dark-theme .btn-danger[disabled]:focus,
+body.dark-theme .btn-danger[disabled]:hover,
+fieldset[disabled] .btn-danger,
+fieldset[disabled] .btn-danger.active,
+fieldset[disabled] .btn-danger.is-active,
+fieldset[disabled] .btn-danger:active,
+fieldset[disabled] .btn-danger:focus,
+fieldset[disabled] .btn-danger:hover,
+fieldset[disabled] body.dark-theme .btn-danger,
+fieldset[disabled] body.dark-theme .btn-danger.active,
+fieldset[disabled] body.dark-theme .btn-danger.is-active,
+fieldset[disabled] body.dark-theme .btn-danger:active,
+fieldset[disabled] body.dark-theme .btn-danger:focus,
+fieldset[disabled] body.dark-theme .btn-danger:hover {
   color: #7f8181;
   background-color: #c8caca;
-  border-color: #c3c5c5;
+  border-color: #c3c5c5
 }
-body.dark-theme .btn-danger .badge, .btn-danger .badge {
+.btn-danger .badge,
+body.dark-theme .btn-danger .badge {
   color: #fa6861;
-  background-color: #fff;
+  background-color: #fff
 }
-
 .btn-toggle {
   color: #fff;
   background-color: #8d8d8f;
-  border-color: #8d8d8f;
+  border-color: #8d8d8f
 }
-.btn-toggle:hover, .btn-toggle:active, .btn-toggle.is-active {
+.btn-toggle.is-active,
+.btn-toggle:active,
+.btn-toggle:hover {
   color: #fff;
   background-color: #0071b9;
-  border-color: #0071b9;
+  border-color: #0071b9
 }
-.btn-toggle.disabled, .btn-toggle.disabled:hover, .btn-toggle.disabled:focus, .btn-toggle.disabled:active, .btn-toggle.disabled.is-active, .btn-toggle[disabled], .btn-toggle[disabled]:hover, .btn-toggle[disabled]:focus, .btn-toggle[disabled]:active, .btn-toggle[disabled].is-active, fieldset[disabled] .btn-toggle, fieldset[disabled] .btn-toggle:hover, fieldset[disabled] .btn-toggle:focus, fieldset[disabled] .btn-toggle:active, fieldset[disabled] .btn-toggle.is-active {
+.btn-toggle.disabled,
+.btn-toggle.disabled.is-active,
+.btn-toggle.disabled:active,
+.btn-toggle.disabled:focus,
+.btn-toggle.disabled:hover,
+.btn-toggle[disabled],
+.btn-toggle[disabled].is-active,
+.btn-toggle[disabled]:active,
+.btn-toggle[disabled]:focus,
+.btn-toggle[disabled]:hover,
+fieldset[disabled] .btn-toggle,
+fieldset[disabled] .btn-toggle.is-active,
+fieldset[disabled] .btn-toggle:active,
+fieldset[disabled] .btn-toggle:focus,
+fieldset[disabled] .btn-toggle:hover {
   color: #fff;
   background-color: #8d8d8f;
-  border-color: #8d8d8f;
+  border-color: #8d8d8f
 }
-
 .btn-regular {
   padding: 5px 10px;
   font-size: 13px;
   line-height: 18px;
-  border-radius: 2px;
+  border-radius: 2px
 }
-
 .btn-large {
   padding: 10px 10px;
   font-size: 13px;
   line-height: 18px;
-  border-radius: 2px;
+  border-radius: 2px
 }
-
 .btn-block {
   display: block;
-  width: 100%;
+  width: 100%
 }
-
 .btn-block + .btn-block {
-  margin-top: 5px;
+  margin-top: 5px
 }
-
-input[type=submit].btn-block,
+input[type=button].btn-block,
 input[type=reset].btn-block,
-input[type=button].btn-block {
-  width: 100%;
+input[type=submit].btn-block {
+  width: 100%
 }
-
 .btn-vertical {
-  text-align: center;
+  text-align: center
 }
-.btn-vertical .icon, .btn-vertical .text {
-  display: block;
+.btn-vertical .icon,
+.btn-vertical .text {
+  display: block
 }
+.btn-vertical .icon + .icon,
 .btn-vertical .icon + .text,
 .btn-vertical .text + .icon,
-.btn-vertical .icon + .icon,
 .btn-vertical .text + .text {
   margin-top: 5px;
-  margin-left: 0;
+  margin-left: 0
 }
-
 .btn-link {
   color: #0071b9;
-  font-weight: normal;
+  font-weight: 400;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 0
 }
-.btn-link, .btn-link:active, .btn-link[disabled], fieldset[disabled] .btn-link {
+.btn-link,
+.btn-link:active,
+.btn-link[disabled],
+fieldset[disabled] .btn-link {
   background-color: transparent;
   -webkit-box-shadow: none;
-  box-shadow: none;
+  box-shadow: none
 }
-.btn-link, .btn-link:hover, .btn-link:focus, .btn-link:active {
-  border-color: transparent;
+.btn-link,
+.btn-link:active,
+.btn-link:focus,
+.btn-link:hover {
+  border-color: transparent
 }
-.btn-link:hover, .btn-link:focus {
+.btn-link:focus,
+.btn-link:hover {
   color: #0071b9;
   text-decoration: underline;
-  background-color: transparent;
+  background-color: transparent
 }
-.btn-link[disabled]:hover, .btn-link[disabled]:focus, fieldset[disabled] .btn-link:hover, fieldset[disabled] .btn-link:focus {
+.btn-link[disabled]:focus,
+.btn-link[disabled]:hover,
+fieldset[disabled] .btn-link:focus,
+fieldset[disabled] .btn-link:hover {
   color: #cccdcd;
-  text-decoration: none;
+  text-decoration: none
 }
-
 .btn-link-light {
-  color: white;
-  font-weight: normal;
+  color: #fff;
+  font-weight: 400;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 0
 }
-.btn-link-light, .btn-link-light:active, .btn-link-light[disabled], fieldset[disabled] .btn-link-light {
+.btn-link-light,
+.btn-link-light:active,
+.btn-link-light[disabled],
+fieldset[disabled] .btn-link-light {
   background-color: transparent;
   -webkit-box-shadow: none;
-  box-shadow: none;
+  box-shadow: none
 }
-.btn-link-light, .btn-link-light:hover, .btn-link-light:focus, .btn-link-light:active {
-  border-color: transparent;
+.btn-link-light,
+.btn-link-light:active,
+.btn-link-light:focus,
+.btn-link-light:hover {
+  border-color: transparent
 }
 .btn-link-light:focus {
-  color: white;
+  color: #fff;
   text-decoration: none;
-  background-color: transparent;
+  background-color: transparent
 }
 .btn-link-light:hover {
-  color: white;
+  color: #fff;
   text-decoration: underline;
-  background-color: transparent;
+  background-color: transparent
 }
-.btn-link-light[disabled]:hover, .btn-link-light[disabled]:focus, fieldset[disabled] .btn-link-light:hover, fieldset[disabled] .btn-link-light:focus {
-  color: white;
-  text-decoration: none;
+.btn-link-light[disabled]:focus,
+.btn-link-light[disabled]:hover,
+fieldset[disabled] .btn-link-light:focus,
+fieldset[disabled] .btn-link-light:hover {
+  color: #fff;
+  text-decoration: none
 }
-
 .btn-filter {
   padding: 3px 7px;
   border-radius: 1px;
-  border-color: transparent;
+  border-color: transparent
 }
-.btn-filter:hover, .btn-filter:active, .btn-filter.is-active, .open > .btn-filter.dropdown-toggle {
+.btn-filter.is-active,
+.btn-filter:active,
+.btn-filter:hover,
+.open > .btn-filter.dropdown-toggle {
   color: #fff;
   background-color: #0071b9;
-  border-color: transparent;
+  border-color: transparent
 }
 .filter-active > .btn-filter {
   color: #fff;
   background-color: #64a70b;
-  border-color: transparent;
+  border-color: transparent
 }
-
 body.dark-theme .filter-active .btn-filter {
   color: #fff;
   background-color: #64a70b;
-  border-color: transparent;
+  border-color: transparent
 }
 body.dark-theme .filter-active .btn-filter:hover {
   color: #fff;
   background-color: #477708;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .filter-active .btn-filter:active, body.dark-theme .filter-active .btn-filter.is-active, body.dark-theme .filter-active .btn-filter.active, .open > body.dark-theme .filter-active .btn-filter.dropdown-toggle {
+.open > body.dark-theme .filter-active .btn-filter.dropdown-toggle,
+body.dark-theme .filter-active .btn-filter.active,
+body.dark-theme .filter-active .btn-filter.is-active,
+body.dark-theme .filter-active .btn-filter:active {
   color: #fff;
   background-image: none;
   background-color: #395f06;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .filter-active .btn-filter.disabled, body.dark-theme .filter-active .btn-filter.disabled:hover, body.dark-theme .filter-active .btn-filter.disabled:focus, body.dark-theme .filter-active .btn-filter.disabled:active, body.dark-theme .filter-active .btn-filter.disabled.active, body.dark-theme .filter-active .btn-filter.disabled.is-active, body.dark-theme .filter-active .btn-filter[disabled], body.dark-theme .filter-active .btn-filter[disabled]:hover, body.dark-theme .filter-active .btn-filter[disabled]:focus, body.dark-theme .filter-active .btn-filter[disabled]:active, body.dark-theme .filter-active .btn-filter[disabled].active, body.dark-theme .filter-active .btn-filter[disabled].is-active, fieldset[disabled] body.dark-theme .filter-active .btn-filter, fieldset[disabled] body.dark-theme .filter-active .btn-filter:hover, fieldset[disabled] body.dark-theme .filter-active .btn-filter:focus, fieldset[disabled] body.dark-theme .filter-active .btn-filter:active, fieldset[disabled] body.dark-theme .filter-active .btn-filter.active, fieldset[disabled] body.dark-theme .filter-active .btn-filter.is-active {
+body.dark-theme .filter-active .btn-filter.disabled,
+body.dark-theme .filter-active .btn-filter.disabled.active,
+body.dark-theme .filter-active .btn-filter.disabled.is-active,
+body.dark-theme .filter-active .btn-filter.disabled:active,
+body.dark-theme .filter-active .btn-filter.disabled:focus,
+body.dark-theme .filter-active .btn-filter.disabled:hover,
+body.dark-theme .filter-active .btn-filter[disabled],
+body.dark-theme .filter-active .btn-filter[disabled].active,
+body.dark-theme .filter-active .btn-filter[disabled].is-active,
+body.dark-theme .filter-active .btn-filter[disabled]:active,
+body.dark-theme .filter-active .btn-filter[disabled]:focus,
+body.dark-theme .filter-active .btn-filter[disabled]:hover,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter.active,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter.is-active,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter:active,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter:focus,
+fieldset[disabled] body.dark-theme .filter-active .btn-filter:hover {
   color: #fff;
   background-color: #64a70b;
-  border-color: transparent;
+  border-color: transparent
 }
 body.dark-theme .filter-active .btn-filter .badge {
   color: #64a70b;
-  background-color: #fff;
+  background-color: #fff
 }
-
 .btn-upload {
   position: relative;
   overflow: hidden;
-  cursor: pointer;
+  cursor: pointer
 }
 .btn-upload input[type=file] {
   position: absolute;
@@ -2591,71 +2164,68 @@ body.dark-theme .filter-active .btn-filter .badge {
   margin: 0;
   padding: 0;
   font-size: 100px;
-  opacity: 0;
-  filter: alpha(opacity=0);
+  opacity: 0
 }
-
 .btn-group .btn + .btn {
-  margin-left: 5px;
+  margin-left: 5px
 }
-
 .btn-workflow-state {
   padding: 2px;
-  border-color: transparent;
+  border-color: transparent
 }
-
 body.dark-theme .btn-workflow-state {
   color: #b7b7b7;
   background-color: #303030;
-  border-color: transparent;
+  border-color: transparent
 }
 body.dark-theme .btn-workflow-state:hover {
   color: #b7b7b7;
   background-color: #171717;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-workflow-state:active, body.dark-theme .btn-workflow-state.is-active, body.dark-theme .btn-workflow-state.active, .open > body.dark-theme .btn-workflow-state.dropdown-toggle {
+.open > body.dark-theme .btn-workflow-state.dropdown-toggle,
+body.dark-theme .btn-workflow-state.active,
+body.dark-theme .btn-workflow-state.is-active,
+body.dark-theme .btn-workflow-state:active {
   color: #b7b7b7;
   background-image: none;
   background-color: #0a0a0a;
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent
 }
-body.dark-theme .btn-workflow-state.disabled, body.dark-theme .btn-workflow-state.disabled:hover, body.dark-theme .btn-workflow-state.disabled:focus, body.dark-theme .btn-workflow-state.disabled:active, body.dark-theme .btn-workflow-state.disabled.active, body.dark-theme .btn-workflow-state.disabled.is-active, body.dark-theme .btn-workflow-state[disabled], body.dark-theme .btn-workflow-state[disabled]:hover, body.dark-theme .btn-workflow-state[disabled]:focus, body.dark-theme .btn-workflow-state[disabled]:active, body.dark-theme .btn-workflow-state[disabled].active, body.dark-theme .btn-workflow-state[disabled].is-active, fieldset[disabled] body.dark-theme .btn-workflow-state, fieldset[disabled] body.dark-theme .btn-workflow-state:hover, fieldset[disabled] body.dark-theme .btn-workflow-state:focus, fieldset[disabled] body.dark-theme .btn-workflow-state:active, fieldset[disabled] body.dark-theme .btn-workflow-state.active, fieldset[disabled] body.dark-theme .btn-workflow-state.is-active {
+body.dark-theme .btn-workflow-state.disabled,
+body.dark-theme .btn-workflow-state.disabled.active,
+body.dark-theme .btn-workflow-state.disabled.is-active,
+body.dark-theme .btn-workflow-state.disabled:active,
+body.dark-theme .btn-workflow-state.disabled:focus,
+body.dark-theme .btn-workflow-state.disabled:hover,
+body.dark-theme .btn-workflow-state[disabled],
+body.dark-theme .btn-workflow-state[disabled].active,
+body.dark-theme .btn-workflow-state[disabled].is-active,
+body.dark-theme .btn-workflow-state[disabled]:active,
+body.dark-theme .btn-workflow-state[disabled]:focus,
+body.dark-theme .btn-workflow-state[disabled]:hover,
+fieldset[disabled] body.dark-theme .btn-workflow-state,
+fieldset[disabled] body.dark-theme .btn-workflow-state.active,
+fieldset[disabled] body.dark-theme .btn-workflow-state.is-active,
+fieldset[disabled] body.dark-theme .btn-workflow-state:active,
+fieldset[disabled] body.dark-theme .btn-workflow-state:focus,
+fieldset[disabled] body.dark-theme .btn-workflow-state:hover {
   color: #b7b7b7;
   background-color: #303030;
-  border-color: transparent;
+  border-color: transparent
 }
 body.dark-theme .btn-workflow-state .badge {
   color: #303030;
-  background-color: #b7b7b7;
+  background-color: #b7b7b7
 }
-
-/*! normalize.css v3.0.1 | MIT License | git.io/normalize */
-/**
- * 1. Set default font family to sans-serif.
- * 2. Prevent iOS text size adjust after orientation change, without disabling
- *    user zoom.
- */
 html {
-  font-family: sans-serif; /* 1 */
-  -ms-text-size-adjust: 100%; /* 2 */
-  -webkit-text-size-adjust: 100%; /* 2 */
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%
 }
-
-/**
- * Remove default margin.
- */
 body {
-  margin: 0;
+  margin: 0
 }
-
-/* HTML5 display definitions
-   ========================================================================== */
-/**
- * Correct `block` display not defined for any HTML5 element in IE 8/9.
- * Correct `block` display not defined for `details` or `summary` in IE 10/11 and Firefox.
- * Correct `block` display not defined for `main` in IE 11.
- */
 article,
 aside,
 details,
@@ -2668,1307 +2238,1139 @@ main,
 nav,
 section,
 summary {
-  display: block;
+  display: block
 }
-
-/**
- * 1. Correct `inline-block` display not defined in IE 8/9.
- * 2. Normalize vertical alignment of `progress` in Chrome, Firefox, and Opera.
- */
 audio,
 canvas,
 progress,
 video {
-  display: inline-block; /* 1 */
-  vertical-align: baseline; /* 2 */
+  display: inline-block;
+  vertical-align: baseline
 }
-
-/**
- * Prevent modern browsers from displaying `audio` without controls.
- * Remove excess height in iOS 5 devices.
- */
 audio:not([controls]) {
   display: none;
-  height: 0;
+  height: 0
 }
-
-/**
- * Address `[hidden]` styling not present in IE 8/9/10.
- * Hide the `template` element in IE 8/9/11, Safari, and Firefox < 22.
- */
 [hidden],
 template {
-  display: none;
+  display: none
 }
-
-/* Links
-   ========================================================================== */
-/**
- * Remove the gray background color from active links in IE 10.
- */
 a {
-  background: transparent;
+  background: 0 0
 }
-
-/**
- * Improve readability when focused and also mouse hovered in all browsers.
- */
 a:active,
 a:hover {
-  outline: 0;
+  outline: 0
 }
-
-/* Text-level semantics
-   ========================================================================== */
-/**
- * Address styling not present in IE 8/9/10/11, Safari, and Chrome.
- */
 abbr[title] {
   border-bottom: 1px dotted;
-  text-decoration: none;
+  text-decoration: none
 }
-
-/**
- * Address style set to `bolder` in Firefox 4+, Safari, and Chrome.
- */
 b,
 strong {
-  font-weight: bold;
+  font-weight: 700
 }
-
-/**
- * Address styling not present in Safari and Chrome.
- */
 dfn {
-  font-style: italic;
+  font-style: italic
 }
-
-/**
- * Address variable `h1` font-size and margin within `section` and `article`
- * contexts in Firefox 4+, Safari, and Chrome.
- */
 h1 {
   font-size: 2em;
-  margin: 0.67em 0;
+  margin: .67em 0
 }
-
-/**
- * Address styling not present in IE 8/9.
- */
 mark {
   background: #ff0;
-  color: #000;
+  color: #000
 }
-
-/**
- * Address inconsistent and variable font size in all browsers.
- */
 small {
-  font-size: 80%;
+  font-size: 80%
 }
-
-/**
- * Prevent `sub` and `sup` affecting `line-height` in all browsers.
- */
 sub,
 sup {
   font-size: 50%;
   line-height: 0;
   position: relative;
-  vertical-align: baseline;
+  vertical-align: baseline
 }
-
 sup {
-  top: -0.9em;
+  top: -.9em
 }
-
 sub {
-  bottom: -0.25em;
+  bottom: -.25em
 }
-
-/* Embedded content
-   ========================================================================== */
-/**
- * Remove border when inside `a` element in IE 8/9/10.
- */
 img {
-  border: 0;
+  border: 0
 }
-
-/**
- * Correct overflow not hidden in IE 9/10/11.
- */
 svg:not(:root) {
-  overflow: hidden;
+  overflow: hidden
 }
-
-/* Grouping content
-   ========================================================================== */
-/**
- * Address margin not present in IE 8/9 and Safari.
- */
 figure {
-  margin: 1em 40px;
+  margin: 1em 40px
 }
-
-/**
- * Address differences between Firefox and other browsers.
- */
 hr {
   -moz-box-sizing: content-box;
   box-sizing: content-box;
-  height: 0;
+  height: 0
 }
-
-/**
- * Contain overflow in all browsers.
- */
 pre {
-  overflow: auto;
+  overflow: auto
 }
-
-/**
- * Address odd `em`-unit font size rendering in all browsers.
- */
 code,
 kbd,
 pre,
 samp {
-  font-family: monospace, monospace;
-  font-size: 1em;
+  font-family: monospace,monospace;
+  font-size: 1em
 }
-
-/* Forms
-   ========================================================================== */
-/**
- * Known limitation: by default, Chrome and Safari on OS X allow very limited
- * styling of `select`, unless a `border` property is set.
- */
-/**
- * 1. Correct color not being inherited.
- *    Known issue: affects color of disabled elements.
- * 2. Correct font properties not being inherited.
- * 3. Address margins set differently in Firefox 4+, Safari, and Chrome.
- */
 button,
 input,
 optgroup,
 select,
 textarea {
-  color: inherit; /* 1 */
-  font: inherit; /* 2 */
-  margin: 0; /* 3 */
+  color: inherit;
+  font: inherit;
+  margin: 0
 }
-
-/**
- * Address `overflow` set to `hidden` in IE 8/9/10/11.
- */
 button {
-  overflow: visible;
+  overflow: visible
 }
-
-/**
- * Address inconsistent `text-transform` inheritance for `button` and `select`.
- * All other form control elements do not inherit `text-transform` values.
- * Correct `button` style inheritance in Firefox, IE 8/9/10/11, and Opera.
- * Correct `select` style inheritance in Firefox.
- */
 button,
 select {
-  text-transform: none;
+  text-transform: none
 }
-
-/**
- * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`
- *    and `video` controls.
- * 2. Correct inability to style clickable `input` types in iOS.
- * 3. Improve usability and consistency of cursor style between image-type
- *    `input` and others.
- */
 button,
 html input[type=button],
 input[type=reset],
 input[type=submit] {
-  -webkit-appearance: button; /* 2 */
-  cursor: pointer; /* 3 */
+  -webkit-appearance: button;
+  cursor: pointer
 }
-
-/**
- * Re-set default cursor for disabled elements.
- */
 button[disabled],
 html input[disabled] {
-  cursor: default;
+  cursor: default
 }
-
-/**
- * Remove inner padding and border in Firefox 4+.
- */
 button::-moz-focus-inner,
 input::-moz-focus-inner {
   border: 0;
-  padding: 0;
+  padding: 0
 }
-
-/**
- * Address Firefox 4+ setting `line-height` on `input` using `!important` in
- * the UA stylesheet.
- */
 input {
-  line-height: normal;
+  line-height: normal
 }
-
-/**
- * It's recommended that you don't attempt to style these elements.
- * Firefox's implementation doesn't respect box-sizing, padding, or width.
- *
- * 1. Address box sizing set to `content-box` in IE 8/9/10.
- * 2. Remove excess padding in IE 8/9/10.
- */
 input[type=checkbox],
 input[type=radio] {
-  box-sizing: border-box; /* 1 */
-  padding: 0; /* 2 */
+  box-sizing: border-box;
+  padding: 0
 }
-
-/**
- * Fix the cursor style for Chrome's increment/decrement buttons. For certain
- * `font-size` values of the `input`, it causes the cursor style of the
- * decrement button to change from `default` to `text`.
- */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  height: auto;
+  height: auto
 }
-
-/**
- * 1. Address `appearance` set to `searchfield` in Safari and Chrome.
- * 2. Address `box-sizing` set to `border-box` in Safari and Chrome
- *    (include `-moz` to future-proof).
- */
 input[type=search] {
-  -webkit-appearance: textfield; /* 1 */
+  -webkit-appearance: textfield;
   -moz-box-sizing: content-box;
-  -webkit-box-sizing: content-box; /* 2 */
-  box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box
 }
-
-/**
- * Remove inner padding and search cancel button in Safari and Chrome on OS X.
- * Safari (but not Chrome) clips the cancel button when the search input has
- * padding (and `textfield` appearance).
- */
 input[type=search]::-webkit-search-cancel-button,
 input[type=search]::-webkit-search-decoration {
-  -webkit-appearance: none;
+  -webkit-appearance: none
 }
-
-/**
- * Define consistent border, margin, and padding.
- */
 fieldset {
-  border: 1px solid #c0c0c0;
+  border: 1px solid silver;
   margin: 0 2px;
-  padding: 0.35em 0.625em 0.75em;
+  padding: .35em .625em .75em
 }
-
-/**
- * 1. Correct `color` not being inherited in IE 8/9/10/11.
- * 2. Remove padding so people aren't caught out if they zero out fieldsets.
- */
 legend {
-  border: 0; /* 1 */
-  padding: 0; /* 2 */
+  border: 0;
+  padding: 0
 }
-
-/**
- * Remove default vertical scrollbar in IE 8/9/10/11.
- */
 textarea {
-  overflow: auto;
+  overflow: auto
 }
-
-/**
- * Don't inherit the `font-weight` (applied by a rule above).
- * NOTE: the default cannot safely be changed in Chrome and Safari on OS X.
- */
 optgroup {
-  font-weight: bold;
+  font-weight: 700
 }
-
-/* Tables
-   ========================================================================== */
-/**
- * Remove most spacing between table cells.
- */
 table {
   border-collapse: collapse;
-  border-spacing: 0;
+  border-spacing: 0
 }
-
 td,
 th {
-  padding: 0;
+  padding: 0
 }
-
-*, *:before, *:after {
+*,
+:after,
+:before {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  box-sizing: border-box
 }
-
-html, body {
-  height: 100%;
+body,
+html {
+  height: 100%
 }
-
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial,sans-serif;
   font-size: 13px;
   line-height: 1.5;
-  background-color: #e2e3e3;
+  background-color: #e2e3e3
 }
-
 body.dark-theme {
-  background-color: #222222;
-  color: #fff;
+  background-color: #222;
+  color: #fff
 }
-
 img {
-  outline: none;
+  outline: 0;
   text-decoration: none;
   -ms-interpolation-mode: bicubic;
   width: 100%;
   max-width: 100%;
-  height: auto;
+  height: auto
 }
-
 p {
-  margin: 0;
+  margin: 0
 }
-
 dl {
-  margin: 0;
+  margin: 0
 }
-
-dt, dd {
-  font-weight: normal;
+dd,
+dt {
+  font-weight: 400
 }
-
-/*doc
----
-title: Headings
-name: headings
-category: CSS - Typography
----
-
-```html_example
-<h1>Heading 1</h1>
-<h2>Heading 2</h2>
-```
-
-*/
-h1, h2 {
+h1,
+h2 {
   line-height: 1.2;
   font-weight: 600;
-  margin: 0;
+  margin: 0
 }
-
-h1, .h1 {
+.h1,
+h1 {
   font-size: 20px;
-  color: #fff;
+  color: #fff
 }
-h1 a, .h1 a {
+.h1 a,
+h1 a {
   font-size: 20px;
-  color: #fff;
+  color: #fff
 }
-
-h2, .h2 {
+.h2,
+h2 {
   font-size: 18px;
-  color: #222326;
+  color: #222326
 }
-h2 a, .h2 a {
+.h2 a,
+h2 a {
   font-size: 18px;
+  color: #222326
+}
+h3,
+h4,
+h5,
+h6 {
   color: #222326;
+  margin: 0
 }
-
-h3, h4, h5, h6 {
-  color: #222326;
-  margin: 0;
+body.dark-theme .l-header h2,
+body.dark-theme .l-header h3,
+body.dark-theme .l-header h4,
+body.dark-theme .l-header h5,
+body.dark-theme .l-header h6,
+body.dark-theme .l-main-view h2,
+body.dark-theme .l-main-view h3,
+body.dark-theme .l-main-view h4,
+body.dark-theme .l-main-view h5,
+body.dark-theme .l-main-view h6,
+body.dark-theme .l-sidebar h2,
+body.dark-theme .l-sidebar h3,
+body.dark-theme .l-sidebar h4,
+body.dark-theme .l-sidebar h5,
+body.dark-theme .l-sidebar h6 {
+  color: #fff
 }
-
-body.dark-theme .l-header h2, body.dark-theme .l-header h3, body.dark-theme .l-header h4, body.dark-theme .l-header h5, body.dark-theme .l-header h6, body.dark-theme .l-sidebar h2, body.dark-theme .l-sidebar h3, body.dark-theme .l-sidebar h4, body.dark-theme .l-sidebar h5, body.dark-theme .l-sidebar h6, body.dark-theme .l-main-view h2, body.dark-theme .l-main-view h3, body.dark-theme .l-main-view h4, body.dark-theme .l-main-view h5, body.dark-theme .l-main-view h6 {
-  color: #fff;
+.small,
+small {
+  font-size: 11px
 }
-
-small, .small {
-  font-size: 11px;
-}
-
 hr {
   border: 0;
-  border-bottom: 1px solid #e6e6e6;
+  border-bottom: 1px solid #e6e6e6
 }
-
 body.dark-theme hr {
-  border-bottom-color: #666;
+  border-bottom-color: #666
 }
-
 ul {
   list-style-type: none;
   margin: 0;
-  padding: 0;
+  padding: 0
 }
-
 ol {
-  margin: 0;
+  margin: 0
 }
-
 i {
-  font-style: normal;
+  font-style: normal
 }
-
 a {
-  text-decoration: none;
+  text-decoration: none
 }
-
 body.dark-theme a {
-  color: #0071b9;
+  color: #0071b9
 }
-
 button {
   padding: 0;
   border: 0;
-  background-color: inherit;
+  background-color: inherit
 }
 button:focus {
-  outline: 0;
+  outline: 0
 }
-
 .hidden {
-  display: none !important;
+  display: none!important
 }
-
 .container {
   margin-right: auto;
   margin-left: auto;
   padding-left: 7px;
-  padding-right: 7px;
+  padding-right: 7px
 }
-.container:before, .container:after {
+.container:after,
+.container:before {
   content: " ";
-  display: table;
+  display: table
 }
 .container:after {
-  clear: both;
+  clear: both
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .container {
-    width: 734px;
+    width: 734px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .container {
-    width: 954px;
+    width: 954px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .container {
-    width: 1154px;
+    width: 1154px
   }
 }
-
 .container-fluid {
   margin-right: auto;
   margin-left: auto;
   padding-left: 7px;
-  padding-right: 7px;
+  padding-right: 7px
 }
-.container-fluid:before, .container-fluid:after {
+.container-fluid:after,
+.container-fluid:before {
   content: " ";
-  display: table;
+  display: table
 }
 .container-fluid:after {
-  clear: both;
+  clear: both
 }
-
 .row {
   margin-left: -7px;
-  margin-right: -7px;
+  margin-right: -7px
 }
-.row:before, .row:after {
+.row:after,
+.row:before {
   content: " ";
-  display: table;
+  display: table
 }
 .row:after {
-  clear: both;
+  clear: both
 }
-
-.col-xs-1, .col-sm-1, .col-md-1, .col-lg-1, .col-xs-2, .col-sm-2, .col-md-2, .col-lg-2, .col-xs-3, .col-sm-3, .col-md-3, .col-lg-3, .col-xs-4, .col-sm-4, .col-md-4, .col-lg-4, .col-xs-5, .col-sm-5, .col-md-5, .col-lg-5, .col-xs-6, .col-sm-6, .col-md-6, .col-lg-6, .col-xs-7, .col-sm-7, .col-md-7, .col-lg-7, .col-xs-8, .col-sm-8, .col-md-8, .col-lg-8, .col-xs-9, .col-sm-9, .col-md-9, .col-lg-9, .col-xs-10, .col-sm-10, .col-md-10, .col-lg-10, .col-xs-11, .col-sm-11, .col-md-11, .col-lg-11, .col-xs-12, .col-sm-12, .col-md-12, .col-lg-12 {
+.col-lg-1,
+.col-lg-10,
+.col-lg-11,
+.col-lg-12,
+.col-lg-2,
+.col-lg-3,
+.col-lg-4,
+.col-lg-5,
+.col-lg-6,
+.col-lg-7,
+.col-lg-8,
+.col-lg-9,
+.col-md-1,
+.col-md-10,
+.col-md-11,
+.col-md-12,
+.col-md-2,
+.col-md-3,
+.col-md-4,
+.col-md-5,
+.col-md-6,
+.col-md-7,
+.col-md-8,
+.col-md-9,
+.col-sm-1,
+.col-sm-10,
+.col-sm-11,
+.col-sm-12,
+.col-sm-2,
+.col-sm-3,
+.col-sm-4,
+.col-sm-5,
+.col-sm-6,
+.col-sm-7,
+.col-sm-8,
+.col-sm-9,
+.col-xs-1,
+.col-xs-10,
+.col-xs-11,
+.col-xs-12,
+.col-xs-2,
+.col-xs-3,
+.col-xs-4,
+.col-xs-5,
+.col-xs-6,
+.col-xs-7,
+.col-xs-8,
+.col-xs-9 {
   position: relative;
   min-height: 1px;
   padding-left: 7px;
-  padding-right: 7px;
+  padding-right: 7px
 }
-
-.col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12 {
-  float: left;
-}
-
-.col-xs-1 {
-  width: 8.3333333333%;
-}
-
-.col-xs-2 {
-  width: 16.6666666667%;
-}
-
-.col-xs-3 {
-  width: 25%;
-}
-
-.col-xs-4 {
-  width: 33.3333333333%;
-}
-
-.col-xs-5 {
-  width: 41.6666666667%;
-}
-
-.col-xs-6 {
-  width: 50%;
-}
-
-.col-xs-7 {
-  width: 58.3333333333%;
-}
-
-.col-xs-8 {
-  width: 66.6666666667%;
-}
-
+.col-xs-1,
+.col-xs-10,
+.col-xs-11,
+.col-xs-12,
+.col-xs-2,
+.col-xs-3,
+.col-xs-4,
+.col-xs-5,
+.col-xs-6,
+.col-xs-7,
+.col-xs-8,
 .col-xs-9 {
-  width: 75%;
+  float: left
 }
-
+.col-xs-1 {
+  width: 8.3333333333%
+}
+.col-xs-2 {
+  width: 16.6666666667%
+}
+.col-xs-3 {
+  width: 25%
+}
+.col-xs-4 {
+  width: 33.3333333333%
+}
+.col-xs-5 {
+  width: 41.6666666667%
+}
+.col-xs-6 {
+  width: 50%
+}
+.col-xs-7 {
+  width: 58.3333333333%
+}
+.col-xs-8 {
+  width: 66.6666666667%
+}
+.col-xs-9 {
+  width: 75%
+}
 .col-xs-10 {
-  width: 83.3333333333%;
+  width: 83.3333333333%
 }
-
 .col-xs-11 {
-  width: 91.6666666667%;
+  width: 91.6666666667%
 }
-
 .col-xs-12 {
-  width: 100%;
+  width: 100%
 }
-
 .col-xs-pull-0 {
-  right: auto;
+  right: auto
 }
-
 .col-xs-pull-1 {
-  right: 8.3333333333%;
+  right: 8.3333333333%
 }
-
 .col-xs-pull-2 {
-  right: 16.6666666667%;
+  right: 16.6666666667%
 }
-
 .col-xs-pull-3 {
-  right: 25%;
+  right: 25%
 }
-
 .col-xs-pull-4 {
-  right: 33.3333333333%;
+  right: 33.3333333333%
 }
-
 .col-xs-pull-5 {
-  right: 41.6666666667%;
+  right: 41.6666666667%
 }
-
 .col-xs-pull-6 {
-  right: 50%;
+  right: 50%
 }
-
 .col-xs-pull-7 {
-  right: 58.3333333333%;
+  right: 58.3333333333%
 }
-
 .col-xs-pull-8 {
-  right: 66.6666666667%;
+  right: 66.6666666667%
 }
-
 .col-xs-pull-9 {
-  right: 75%;
+  right: 75%
 }
-
 .col-xs-pull-10 {
-  right: 83.3333333333%;
+  right: 83.3333333333%
 }
-
 .col-xs-pull-11 {
-  right: 91.6666666667%;
+  right: 91.6666666667%
 }
-
 .col-xs-pull-12 {
-  right: 100%;
+  right: 100%
 }
-
 .col-xs-push-0 {
-  left: auto;
+  left: auto
 }
-
 .col-xs-push-1 {
-  left: 8.3333333333%;
+  left: 8.3333333333%
 }
-
 .col-xs-push-2 {
-  left: 16.6666666667%;
+  left: 16.6666666667%
 }
-
 .col-xs-push-3 {
-  left: 25%;
+  left: 25%
 }
-
 .col-xs-push-4 {
-  left: 33.3333333333%;
+  left: 33.3333333333%
 }
-
 .col-xs-push-5 {
-  left: 41.6666666667%;
+  left: 41.6666666667%
 }
-
 .col-xs-push-6 {
-  left: 50%;
+  left: 50%
 }
-
 .col-xs-push-7 {
-  left: 58.3333333333%;
+  left: 58.3333333333%
 }
-
 .col-xs-push-8 {
-  left: 66.6666666667%;
+  left: 66.6666666667%
 }
-
 .col-xs-push-9 {
-  left: 75%;
+  left: 75%
 }
-
 .col-xs-push-10 {
-  left: 83.3333333333%;
+  left: 83.3333333333%
 }
-
 .col-xs-push-11 {
-  left: 91.6666666667%;
+  left: 91.6666666667%
 }
-
 .col-xs-push-12 {
-  left: 100%;
+  left: 100%
 }
-
 .col-xs-offset-0 {
-  margin-left: 0%;
+  margin-left: 0
 }
-
 .col-xs-offset-1 {
-  margin-left: 8.3333333333%;
+  margin-left: 8.3333333333%
 }
-
 .col-xs-offset-2 {
-  margin-left: 16.6666666667%;
+  margin-left: 16.6666666667%
 }
-
 .col-xs-offset-3 {
-  margin-left: 25%;
+  margin-left: 25%
 }
-
 .col-xs-offset-4 {
-  margin-left: 33.3333333333%;
+  margin-left: 33.3333333333%
 }
-
 .col-xs-offset-5 {
-  margin-left: 41.6666666667%;
+  margin-left: 41.6666666667%
 }
-
 .col-xs-offset-6 {
-  margin-left: 50%;
+  margin-left: 50%
 }
-
 .col-xs-offset-7 {
-  margin-left: 58.3333333333%;
+  margin-left: 58.3333333333%
 }
-
 .col-xs-offset-8 {
-  margin-left: 66.6666666667%;
+  margin-left: 66.6666666667%
 }
-
 .col-xs-offset-9 {
-  margin-left: 75%;
+  margin-left: 75%
 }
-
 .col-xs-offset-10 {
-  margin-left: 83.3333333333%;
+  margin-left: 83.3333333333%
 }
-
 .col-xs-offset-11 {
-  margin-left: 91.6666666667%;
+  margin-left: 91.6666666667%
 }
-
 .col-xs-offset-12 {
-  margin-left: 100%;
+  margin-left: 100%
 }
-
-@media (min-width: 768px) {
-  .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 {
-    float: left;
+@media (min-width:768px) {
+  .col-sm-1,
+  .col-sm-10,
+  .col-sm-11,
+  .col-sm-12,
+  .col-sm-2,
+  .col-sm-3,
+  .col-sm-4,
+  .col-sm-5,
+  .col-sm-6,
+  .col-sm-7,
+  .col-sm-8,
+  .col-sm-9 {
+    float: left
   }
   .col-sm-1 {
-    width: 8.3333333333%;
+    width: 8.3333333333%
   }
   .col-sm-2 {
-    width: 16.6666666667%;
+    width: 16.6666666667%
   }
   .col-sm-3 {
-    width: 25%;
+    width: 25%
   }
   .col-sm-4 {
-    width: 33.3333333333%;
+    width: 33.3333333333%
   }
   .col-sm-5 {
-    width: 41.6666666667%;
+    width: 41.6666666667%
   }
   .col-sm-6 {
-    width: 50%;
+    width: 50%
   }
   .col-sm-7 {
-    width: 58.3333333333%;
+    width: 58.3333333333%
   }
   .col-sm-8 {
-    width: 66.6666666667%;
+    width: 66.6666666667%
   }
   .col-sm-9 {
-    width: 75%;
+    width: 75%
   }
   .col-sm-10 {
-    width: 83.3333333333%;
+    width: 83.3333333333%
   }
   .col-sm-11 {
-    width: 91.6666666667%;
+    width: 91.6666666667%
   }
   .col-sm-12 {
-    width: 100%;
+    width: 100%
   }
   .col-sm-pull-0 {
-    right: auto;
+    right: auto
   }
   .col-sm-pull-1 {
-    right: 8.3333333333%;
+    right: 8.3333333333%
   }
   .col-sm-pull-2 {
-    right: 16.6666666667%;
+    right: 16.6666666667%
   }
   .col-sm-pull-3 {
-    right: 25%;
+    right: 25%
   }
   .col-sm-pull-4 {
-    right: 33.3333333333%;
+    right: 33.3333333333%
   }
   .col-sm-pull-5 {
-    right: 41.6666666667%;
+    right: 41.6666666667%
   }
   .col-sm-pull-6 {
-    right: 50%;
+    right: 50%
   }
   .col-sm-pull-7 {
-    right: 58.3333333333%;
+    right: 58.3333333333%
   }
   .col-sm-pull-8 {
-    right: 66.6666666667%;
+    right: 66.6666666667%
   }
   .col-sm-pull-9 {
-    right: 75%;
+    right: 75%
   }
   .col-sm-pull-10 {
-    right: 83.3333333333%;
+    right: 83.3333333333%
   }
   .col-sm-pull-11 {
-    right: 91.6666666667%;
+    right: 91.6666666667%
   }
   .col-sm-pull-12 {
-    right: 100%;
+    right: 100%
   }
   .col-sm-push-0 {
-    left: auto;
+    left: auto
   }
   .col-sm-push-1 {
-    left: 8.3333333333%;
+    left: 8.3333333333%
   }
   .col-sm-push-2 {
-    left: 16.6666666667%;
+    left: 16.6666666667%
   }
   .col-sm-push-3 {
-    left: 25%;
+    left: 25%
   }
   .col-sm-push-4 {
-    left: 33.3333333333%;
+    left: 33.3333333333%
   }
   .col-sm-push-5 {
-    left: 41.6666666667%;
+    left: 41.6666666667%
   }
   .col-sm-push-6 {
-    left: 50%;
+    left: 50%
   }
   .col-sm-push-7 {
-    left: 58.3333333333%;
+    left: 58.3333333333%
   }
   .col-sm-push-8 {
-    left: 66.6666666667%;
+    left: 66.6666666667%
   }
   .col-sm-push-9 {
-    left: 75%;
+    left: 75%
   }
   .col-sm-push-10 {
-    left: 83.3333333333%;
+    left: 83.3333333333%
   }
   .col-sm-push-11 {
-    left: 91.6666666667%;
+    left: 91.6666666667%
   }
   .col-sm-push-12 {
-    left: 100%;
+    left: 100%
   }
   .col-sm-offset-0 {
-    margin-left: 0%;
+    margin-left: 0
   }
   .col-sm-offset-1 {
-    margin-left: 8.3333333333%;
+    margin-left: 8.3333333333%
   }
   .col-sm-offset-2 {
-    margin-left: 16.6666666667%;
+    margin-left: 16.6666666667%
   }
   .col-sm-offset-3 {
-    margin-left: 25%;
+    margin-left: 25%
   }
   .col-sm-offset-4 {
-    margin-left: 33.3333333333%;
+    margin-left: 33.3333333333%
   }
   .col-sm-offset-5 {
-    margin-left: 41.6666666667%;
+    margin-left: 41.6666666667%
   }
   .col-sm-offset-6 {
-    margin-left: 50%;
+    margin-left: 50%
   }
   .col-sm-offset-7 {
-    margin-left: 58.3333333333%;
+    margin-left: 58.3333333333%
   }
   .col-sm-offset-8 {
-    margin-left: 66.6666666667%;
+    margin-left: 66.6666666667%
   }
   .col-sm-offset-9 {
-    margin-left: 75%;
+    margin-left: 75%
   }
   .col-sm-offset-10 {
-    margin-left: 83.3333333333%;
+    margin-left: 83.3333333333%
   }
   .col-sm-offset-11 {
-    margin-left: 91.6666666667%;
+    margin-left: 91.6666666667%
   }
   .col-sm-offset-12 {
-    margin-left: 100%;
+    margin-left: 100%
   }
 }
-@media (min-width: 1200px) {
-  .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
-    float: left;
+@media (min-width:1200px) {
+  .col-md-1,
+  .col-md-10,
+  .col-md-11,
+  .col-md-12,
+  .col-md-2,
+  .col-md-3,
+  .col-md-4,
+  .col-md-5,
+  .col-md-6,
+  .col-md-7,
+  .col-md-8,
+  .col-md-9 {
+    float: left
   }
   .col-md-1 {
-    width: 8.3333333333%;
+    width: 8.3333333333%
   }
   .col-md-2 {
-    width: 16.6666666667%;
+    width: 16.6666666667%
   }
   .col-md-3 {
-    width: 25%;
+    width: 25%
   }
   .col-md-4 {
-    width: 33.3333333333%;
+    width: 33.3333333333%
   }
   .col-md-5 {
-    width: 41.6666666667%;
+    width: 41.6666666667%
   }
   .col-md-6 {
-    width: 50%;
+    width: 50%
   }
   .col-md-7 {
-    width: 58.3333333333%;
+    width: 58.3333333333%
   }
   .col-md-8 {
-    width: 66.6666666667%;
+    width: 66.6666666667%
   }
   .col-md-9 {
-    width: 75%;
+    width: 75%
   }
   .col-md-10 {
-    width: 83.3333333333%;
+    width: 83.3333333333%
   }
   .col-md-11 {
-    width: 91.6666666667%;
+    width: 91.6666666667%
   }
   .col-md-12 {
-    width: 100%;
+    width: 100%
   }
   .col-md-pull-0 {
-    right: auto;
+    right: auto
   }
   .col-md-pull-1 {
-    right: 8.3333333333%;
+    right: 8.3333333333%
   }
   .col-md-pull-2 {
-    right: 16.6666666667%;
+    right: 16.6666666667%
   }
   .col-md-pull-3 {
-    right: 25%;
+    right: 25%
   }
   .col-md-pull-4 {
-    right: 33.3333333333%;
+    right: 33.3333333333%
   }
   .col-md-pull-5 {
-    right: 41.6666666667%;
+    right: 41.6666666667%
   }
   .col-md-pull-6 {
-    right: 50%;
+    right: 50%
   }
   .col-md-pull-7 {
-    right: 58.3333333333%;
+    right: 58.3333333333%
   }
   .col-md-pull-8 {
-    right: 66.6666666667%;
+    right: 66.6666666667%
   }
   .col-md-pull-9 {
-    right: 75%;
+    right: 75%
   }
   .col-md-pull-10 {
-    right: 83.3333333333%;
+    right: 83.3333333333%
   }
   .col-md-pull-11 {
-    right: 91.6666666667%;
+    right: 91.6666666667%
   }
   .col-md-pull-12 {
-    right: 100%;
+    right: 100%
   }
   .col-md-push-0 {
-    left: auto;
+    left: auto
   }
   .col-md-push-1 {
-    left: 8.3333333333%;
+    left: 8.3333333333%
   }
   .col-md-push-2 {
-    left: 16.6666666667%;
+    left: 16.6666666667%
   }
   .col-md-push-3 {
-    left: 25%;
+    left: 25%
   }
   .col-md-push-4 {
-    left: 33.3333333333%;
+    left: 33.3333333333%
   }
   .col-md-push-5 {
-    left: 41.6666666667%;
+    left: 41.6666666667%
   }
   .col-md-push-6 {
-    left: 50%;
+    left: 50%
   }
   .col-md-push-7 {
-    left: 58.3333333333%;
+    left: 58.3333333333%
   }
   .col-md-push-8 {
-    left: 66.6666666667%;
+    left: 66.6666666667%
   }
   .col-md-push-9 {
-    left: 75%;
+    left: 75%
   }
   .col-md-push-10 {
-    left: 83.3333333333%;
+    left: 83.3333333333%
   }
   .col-md-push-11 {
-    left: 91.6666666667%;
+    left: 91.6666666667%
   }
   .col-md-push-12 {
-    left: 100%;
+    left: 100%
   }
   .col-md-offset-0 {
-    margin-left: 0%;
+    margin-left: 0
   }
   .col-md-offset-1 {
-    margin-left: 8.3333333333%;
+    margin-left: 8.3333333333%
   }
   .col-md-offset-2 {
-    margin-left: 16.6666666667%;
+    margin-left: 16.6666666667%
   }
   .col-md-offset-3 {
-    margin-left: 25%;
+    margin-left: 25%
   }
   .col-md-offset-4 {
-    margin-left: 33.3333333333%;
+    margin-left: 33.3333333333%
   }
   .col-md-offset-5 {
-    margin-left: 41.6666666667%;
+    margin-left: 41.6666666667%
   }
   .col-md-offset-6 {
-    margin-left: 50%;
+    margin-left: 50%
   }
   .col-md-offset-7 {
-    margin-left: 58.3333333333%;
+    margin-left: 58.3333333333%
   }
   .col-md-offset-8 {
-    margin-left: 66.6666666667%;
+    margin-left: 66.6666666667%
   }
   .col-md-offset-9 {
-    margin-left: 75%;
+    margin-left: 75%
   }
   .col-md-offset-10 {
-    margin-left: 83.3333333333%;
+    margin-left: 83.3333333333%
   }
   .col-md-offset-11 {
-    margin-left: 91.6666666667%;
+    margin-left: 91.6666666667%
   }
   .col-md-offset-12 {
-    margin-left: 100%;
+    margin-left: 100%
   }
 }
-@media (min-width: 1600px) {
-  .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12 {
-    float: left;
+@media (min-width:1600px) {
+  .col-lg-1,
+  .col-lg-10,
+  .col-lg-11,
+  .col-lg-12,
+  .col-lg-2,
+  .col-lg-3,
+  .col-lg-4,
+  .col-lg-5,
+  .col-lg-6,
+  .col-lg-7,
+  .col-lg-8,
+  .col-lg-9 {
+    float: left
   }
   .col-lg-1 {
-    width: 8.3333333333%;
+    width: 8.3333333333%
   }
   .col-lg-2 {
-    width: 16.6666666667%;
+    width: 16.6666666667%
   }
   .col-lg-3 {
-    width: 25%;
+    width: 25%
   }
   .col-lg-4 {
-    width: 33.3333333333%;
+    width: 33.3333333333%
   }
   .col-lg-5 {
-    width: 41.6666666667%;
+    width: 41.6666666667%
   }
   .col-lg-6 {
-    width: 50%;
+    width: 50%
   }
   .col-lg-7 {
-    width: 58.3333333333%;
+    width: 58.3333333333%
   }
   .col-lg-8 {
-    width: 66.6666666667%;
+    width: 66.6666666667%
   }
   .col-lg-9 {
-    width: 75%;
+    width: 75%
   }
   .col-lg-10 {
-    width: 83.3333333333%;
+    width: 83.3333333333%
   }
   .col-lg-11 {
-    width: 91.6666666667%;
+    width: 91.6666666667%
   }
   .col-lg-12 {
-    width: 100%;
+    width: 100%
   }
   .col-lg-pull-0 {
-    right: auto;
+    right: auto
   }
   .col-lg-pull-1 {
-    right: 8.3333333333%;
+    right: 8.3333333333%
   }
   .col-lg-pull-2 {
-    right: 16.6666666667%;
+    right: 16.6666666667%
   }
   .col-lg-pull-3 {
-    right: 25%;
+    right: 25%
   }
   .col-lg-pull-4 {
-    right: 33.3333333333%;
+    right: 33.3333333333%
   }
   .col-lg-pull-5 {
-    right: 41.6666666667%;
+    right: 41.6666666667%
   }
   .col-lg-pull-6 {
-    right: 50%;
+    right: 50%
   }
   .col-lg-pull-7 {
-    right: 58.3333333333%;
+    right: 58.3333333333%
   }
   .col-lg-pull-8 {
-    right: 66.6666666667%;
+    right: 66.6666666667%
   }
   .col-lg-pull-9 {
-    right: 75%;
+    right: 75%
   }
   .col-lg-pull-10 {
-    right: 83.3333333333%;
+    right: 83.3333333333%
   }
   .col-lg-pull-11 {
-    right: 91.6666666667%;
+    right: 91.6666666667%
   }
   .col-lg-pull-12 {
-    right: 100%;
+    right: 100%
   }
   .col-lg-push-0 {
-    left: auto;
+    left: auto
   }
   .col-lg-push-1 {
-    left: 8.3333333333%;
+    left: 8.3333333333%
   }
   .col-lg-push-2 {
-    left: 16.6666666667%;
+    left: 16.6666666667%
   }
   .col-lg-push-3 {
-    left: 25%;
+    left: 25%
   }
   .col-lg-push-4 {
-    left: 33.3333333333%;
+    left: 33.3333333333%
   }
   .col-lg-push-5 {
-    left: 41.6666666667%;
+    left: 41.6666666667%
   }
   .col-lg-push-6 {
-    left: 50%;
+    left: 50%
   }
   .col-lg-push-7 {
-    left: 58.3333333333%;
+    left: 58.3333333333%
   }
   .col-lg-push-8 {
-    left: 66.6666666667%;
+    left: 66.6666666667%
   }
   .col-lg-push-9 {
-    left: 75%;
+    left: 75%
   }
   .col-lg-push-10 {
-    left: 83.3333333333%;
+    left: 83.3333333333%
   }
   .col-lg-push-11 {
-    left: 91.6666666667%;
+    left: 91.6666666667%
   }
   .col-lg-push-12 {
-    left: 100%;
+    left: 100%
   }
   .col-lg-offset-0 {
-    margin-left: 0%;
+    margin-left: 0
   }
   .col-lg-offset-1 {
-    margin-left: 8.3333333333%;
+    margin-left: 8.3333333333%
   }
   .col-lg-offset-2 {
-    margin-left: 16.6666666667%;
+    margin-left: 16.6666666667%
   }
   .col-lg-offset-3 {
-    margin-left: 25%;
+    margin-left: 25%
   }
   .col-lg-offset-4 {
-    margin-left: 33.3333333333%;
+    margin-left: 33.3333333333%
   }
   .col-lg-offset-5 {
-    margin-left: 41.6666666667%;
+    margin-left: 41.6666666667%
   }
   .col-lg-offset-6 {
-    margin-left: 50%;
+    margin-left: 50%
   }
   .col-lg-offset-7 {
-    margin-left: 58.3333333333%;
+    margin-left: 58.3333333333%
   }
   .col-lg-offset-8 {
-    margin-left: 66.6666666667%;
+    margin-left: 66.6666666667%
   }
   .col-lg-offset-9 {
-    margin-left: 75%;
+    margin-left: 75%
   }
   .col-lg-offset-10 {
-    margin-left: 83.3333333333%;
+    margin-left: 83.3333333333%
   }
   .col-lg-offset-11 {
-    margin-left: 91.6666666667%;
+    margin-left: 91.6666666667%
   }
   .col-lg-offset-12 {
-    margin-left: 100%;
+    margin-left: 100%
   }
 }
-.clearfix:before, .clearfix:after {
+.clearfix:after,
+.clearfix:before {
   content: " ";
-  display: table;
+  display: table
 }
 .clearfix:after {
-  clear: both;
+  clear: both
 }
-
 .center-block {
   display: block;
   margin-left: auto;
-  margin-right: auto;
+  margin-right: auto
 }
-
 .pull-right {
-  float: right !important;
+  float: right!important
 }
-
 .pull-left {
-  float: left !important;
+  float: left!important
 }
-
 .text-right {
-  text-align: right;
+  text-align: right
 }
-
 .text-left {
-  text-align: left;
+  text-align: left
 }
-
 .hide {
-  display: none !important;
+  display: none!important
 }
-
 .show {
-  display: block !important;
+  display: block!important
 }
-
 .invisible {
-  visibility: hidden;
+  visibility: hidden
 }
-
 .text-hide {
   font: 0/0 a;
   color: transparent;
   text-shadow: none;
   background-color: transparent;
-  border: 0;
+  border: 0
 }
-
 .transparent {
-  opacity: 0;
+  opacity: 0
 }
-
 .translucent {
-  opacity: 0.5;
+  opacity: .5
 }
-
 .hidden {
-  display: none !important;
-  visibility: hidden !important;
+  display: none!important;
+  visibility: hidden!important
 }
-
 .invisible {
-  clip: rect(0, 0, 0, 0) !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-  margin: 0 !important;
+  clip: rect(0,0,0,0)!important;
+  width: 0!important;
+  height: 0!important;
+  overflow: hidden!important;
+  margin: 0!important
 }
-
 .affix {
   position: fixed;
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0)
 }
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -3976,540 +3378,495 @@ button:focus {
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  border: 0;
+  clip: rect(0,0,0,0);
+  border: 0
 }
-
 .align-top {
-  vertical-align: top !important;
+  vertical-align: top!important
 }
-
 .align-middle {
-  vertical-align: middle !important;
+  vertical-align: middle!important
 }
-
 .align-bottom {
-  vertical-align: bottom !important;
+  vertical-align: bottom!important
 }
-
 .align-left {
-  text-align: left !important;
+  text-align: left!important
 }
-
 .align-center {
-  text-align: center !important;
+  text-align: center!important
 }
-
 .align-right {
-  text-align: right !important;
+  text-align: right!important
 }
-
 .block {
-  display: block !important;
+  display: block!important
 }
-
 .inline-block {
-  display: inline-block !important;
+  display: inline-block!important
 }
-
 .full-width {
-  width: 100%;
+  width: 100%
 }
-
 .vspacer-10 {
   display: block;
   width: 100%;
   font-size: 10px;
   line-height: 10px;
-  height: 10px;
+  height: 10px
 }
-
 .vspace-top-10 {
-  margin-top: 10px !important;
+  margin-top: 10px!important
 }
-
 .vspace-top-20 {
-  margin-top: 20px !important;
+  margin-top: 20px!important
 }
-
 .vspace-bottom-10 {
-  margin-bottom: 10px !important;
+  margin-bottom: 10px!important
 }
-
 .vspace-bottom-20 {
-  margin-bottom: 20px !important;
+  margin-bottom: 20px!important
 }
-
 .vspace-top-0 {
-  margin-top: 0 !important;
+  margin-top: 0!important
 }
-
 .vspace-bottom-0 {
-  margin-bottom: 0 !important;
+  margin-bottom: 0!important
 }
-
-.no-hover, .no-hover a {
+.no-hover,
+.no-hover a {
   pointer-events: none;
-  cursor: default !important;
+  cursor: default!important
 }
-
-[class^=multiline-], [class*=" multiline-"] {
+[class*=" multiline-"],
+[class^=multiline-] {
   display: inline-block;
   word-break: break-all;
-  white-space: normal;
+  white-space: normal
 }
-
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-100 {
-    max-width: 100px;
+    max-width: 100px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-150 {
-    max-width: 150px;
+    max-width: 150px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-200 {
-    max-width: 200px;
+    max-width: 200px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-250 {
-    max-width: 250px;
+    max-width: 250px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-300 {
-    max-width: 300px;
+    max-width: 300px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-350 {
-    max-width: 350px;
+    max-width: 350px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-400 {
-    max-width: 400px;
+    max-width: 400px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-xs-max {
-    max-width: none;
+    max-width: none
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-100 {
-    max-width: 100px;
+    max-width: 100px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-150 {
-    max-width: 150px;
+    max-width: 150px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-200 {
-    max-width: 200px;
+    max-width: 200px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-250 {
-    max-width: 250px;
+    max-width: 250px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-300 {
-    max-width: 300px;
+    max-width: 300px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-350 {
-    max-width: 350px;
+    max-width: 350px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-400 {
-    max-width: 400px;
+    max-width: 400px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-sm-max {
-    max-width: none;
+    max-width: none
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-100 {
-    max-width: 100px;
+    max-width: 100px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-150 {
-    max-width: 150px;
+    max-width: 150px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-200 {
-    max-width: 200px;
+    max-width: 200px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-250 {
-    max-width: 250px;
+    max-width: 250px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-300 {
-    max-width: 300px;
+    max-width: 300px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-350 {
-    max-width: 350px;
+    max-width: 350px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-400 {
-    max-width: 400px;
+    max-width: 400px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-md-max {
-    max-width: none;
+    max-width: none
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-100 {
-    max-width: 100px;
+    max-width: 100px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-150 {
-    max-width: 150px;
+    max-width: 150px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-200 {
-    max-width: 200px;
+    max-width: 200px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-250 {
-    max-width: 250px;
+    max-width: 250px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-300 {
-    max-width: 300px;
+    max-width: 300px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-350 {
-    max-width: 350px;
+    max-width: 350px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-400 {
-    max-width: 400px;
+    max-width: 400px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-lg-max {
-    max-width: none;
+    max-width: none
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-100 {
-    min-width: 100px;
+    min-width: 100px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-150 {
-    min-width: 150px;
+    min-width: 150px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-200 {
-    min-width: 200px;
+    min-width: 200px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-250 {
-    min-width: 250px;
+    min-width: 250px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-300 {
-    min-width: 300px;
+    min-width: 300px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-350 {
-    min-width: 350px;
+    min-width: 350px
   }
 }
-@media (min-width: 480px) {
+@media (min-width:480px) {
   .multiline-min-xs-400 {
-    min-width: 400px;
+    min-width: 400px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-100 {
-    min-width: 100px;
+    min-width: 100px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-150 {
-    min-width: 150px;
+    min-width: 150px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-200 {
-    min-width: 200px;
+    min-width: 200px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-250 {
-    min-width: 250px;
+    min-width: 250px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-300 {
-    min-width: 300px;
+    min-width: 300px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-350 {
-    min-width: 350px;
+    min-width: 350px
   }
 }
-@media (min-width: 768px) {
+@media (min-width:768px) {
   .multiline-min-sm-400 {
-    min-width: 400px;
+    min-width: 400px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-100 {
-    min-width: 100px;
+    min-width: 100px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-150 {
-    min-width: 150px;
+    min-width: 150px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-200 {
-    min-width: 200px;
+    min-width: 200px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-250 {
-    min-width: 250px;
+    min-width: 250px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-300 {
-    min-width: 300px;
+    min-width: 300px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-350 {
-    min-width: 350px;
+    min-width: 350px
   }
 }
-@media (min-width: 1200px) {
+@media (min-width:1200px) {
   .multiline-min-md-400 {
-    min-width: 400px;
+    min-width: 400px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-100 {
-    min-width: 100px;
+    min-width: 100px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-150 {
-    min-width: 150px;
+    min-width: 150px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-200 {
-    min-width: 200px;
+    min-width: 200px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-250 {
-    min-width: 250px;
+    min-width: 250px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-300 {
-    min-width: 300px;
+    min-width: 300px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-350 {
-    min-width: 350px;
+    min-width: 350px
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .multiline-min-lg-400 {
-    min-width: 400px;
+    min-width: 400px
   }
 }
 .state-success {
-  background-color: #109e4d !important;
-  border-color: #109e4d !important;
+  background-color: #109e4d!important;
+  border-color: #109e4d!important
 }
-
 .text-state-success {
-  color: #109e4d !important;
+  color: #109e4d!important
 }
-
 .state-info {
-  background-color: #338dc7 !important;
-  border-color: #338dc7 !important;
+  background-color: #338dc7!important;
+  border-color: #338dc7!important
 }
-
 .text-state-info {
-  color: #338dc7 !important;
+  color: #338dc7!important
 }
-
 .state-warning {
-  background-color: #ffa300 !important;
-  border-color: #ffa300 !important;
+  background-color: #ffa300!important;
+  border-color: #ffa300!important
 }
-
 .text-state-warning {
-  color: #ffa300 !important;
+  color: #ffa300!important
 }
-
 .state-alert {
-  background-color: #fa6861 !important;
-  border-color: #fa6861 !important;
+  background-color: #fa6861!important;
+  border-color: #fa6861!important
 }
-
 .text-state-alert {
-  color: #fa6861 !important;
+  color: #fa6861!important
 }
-
 .state-danger {
-  background-color: #fa6861 !important;
-  border-color: #fa6861 !important;
+  background-color: #fa6861!important;
+  border-color: #fa6861!important
 }
-
 .text-state-danger {
-  color: #fa6861 !important;
+  color: #fa6861!important
 }
-
-@media (max-width: 480px) {
+@media (max-width:480px) {
   .hidden-xs {
-    display: none !important;
+    display: none!important
   }
 }
-@media (min-width: 768px) and (max-width: 1199px) {
+@media (min-width:768px) and (max-width:1199px) {
   .hidden-sm {
-    display: none !important;
+    display: none!important
   }
 }
-@media (min-width: 1200px) and (max-width: 1599px) {
+@media (min-width:1200px) and (max-width:1599px) {
   .hidden-md {
-    display: none !important;
+    display: none!important
   }
 }
-@media (min-width: 1600px) {
+@media (min-width:1600px) {
   .hidden-lg {
-    display: none !important;
+    display: none!important
   }
 }
 .uppercase {
-  text-transform: uppercase;
+  text-transform: uppercase
 }
-
 .lowercase {
-  text-transform: lowercase;
+  text-transform: lowercase
 }
-
 .capitalize {
-  text-transform: capitalize;
+  text-transform: capitalize
 }
-
 .non-resizable {
-  resize: none;
+  resize: none
 }
-
 .v-resizable {
-  resize: vertical;
+  resize: vertical
 }
-
 .h-resizable {
-  resize: horizontal;
+  resize: horizontal
 }
-
 .clickable {
-  cursor: pointer !important;
+  cursor: pointer!important
 }
-
 .unselectable {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-  user-select: none;
+  user-select: none
 }
-
 .break-word {
-  word-wrap: break-word;
+  word-wrap: break-word
 }
-
 .relative {
-  position: relative !important;
+  position: relative!important
 }
-
 .nowrap {
-  white-space: nowrap;
+  white-space: nowrap
 }
-
 .bold {
-  font-weight: bold;
+  font-weight: 700
 }
-
 .only-child-stub {
-  display: none;
+  display: none
 }
 .only-child-stub:only-child {
-  display: block;
+  display: block
 }
-
 .gray-text {
-  color: #707173;
+  color: #707173
 }
-
 .btn {
   padding: 5px 10px;
   font-size: 13px;
   line-height: 18px;
-  border-radius: 2px;
+  border-radius: 2px
 }
-
 label {
-  color: inherit;
+  color: inherit
 }
-
 .radio-group label {
-  margin-left: 5px;
+  margin-left: 5px
 }
-
 .checkbox-group label input {
-  margin-right: 5px;
+  margin-right: 5px
 }
-
-.form-group, .form-group-header {
+.form-group,
+.form-group-header {
   margin-right: inherit;
-  margin-left: inherit;
+  margin-left: inherit
 }
-
 /*# sourceMappingURL=form.css.map */

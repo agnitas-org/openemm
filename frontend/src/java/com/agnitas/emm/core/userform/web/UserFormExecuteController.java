@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.web.UserFormSupportForm;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.ViciousFormDataException;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.components.service.ComponentService;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.text.StringEscapeUtils;
@@ -39,12 +39,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.Company;
 import com.agnitas.beans.FormComponent.FormComponentType;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.commons.web.ParameterOverwritingHttpServletRequestWrapper;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.mobile.service.DeviceService;
 import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
@@ -76,15 +76,15 @@ public class UserFormExecuteController {
 
 	protected ConfigService configService;
 	protected UserFormExecutionService userFormExecutionService;
-	protected ComCompanyDao companyDao;
+	protected CompanyDao companyDao;
 	protected AgnTagService agnTagService;
-	protected ComDeviceService deviceService;
+	protected DeviceService deviceService;
 	protected ComponentService componentService;
 	
 	/** Service dealing with company tokens. */
 	protected final CompanyTokenService companyTokenService;
 
-	public UserFormExecuteController(final ConfigService configService, final UserFormExecutionService userFormExecutionService, final ComCompanyDao companyDao, final CompanyTokenService companyTokenService, final AgnTagService agnTagService, final ComDeviceService deviceService, final ComponentService componentService) {
+	public UserFormExecuteController(final ConfigService configService, final UserFormExecutionService userFormExecutionService, final CompanyDao companyDao, final CompanyTokenService companyTokenService, final AgnTagService agnTagService, final DeviceService deviceService, final ComponentService componentService) {
 		this.configService = configService;
 		this.userFormExecutionService = userFormExecutionService;
 		this.companyDao = companyDao;
@@ -164,7 +164,7 @@ public class UserFormExecuteController {
 			String responseContent = result.responseContent;
 			
 	    	final int deviceID = deviceService.getDeviceId(request.getHeader("User-Agent"));
-	    	if (deviceID == ComDeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
+	    	if (deviceID == DeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
 				throw new BlacklistedDeviceException();
 			}
 	    	DeviceClass deviceClass = deviceService.getDeviceClassForStatistics(deviceID);

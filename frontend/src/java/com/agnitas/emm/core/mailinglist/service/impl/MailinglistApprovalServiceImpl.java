@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,14 +14,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.MailinglistApprovalDao;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -196,4 +197,11 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
 	public List<Integer> getMailinglistsWithMailinglistApproval(int companyId) {
 		return mailinglistApprovalDao.getMailinglistsWithMailinglistApproval(companyId);
 	}
+
+    @Override
+    public Map<Integer, String> getMailinglistsMap(Admin admin) {
+            return getEnabledMailinglistsForAdmin(admin)
+                .stream()
+                .collect(Collectors.toMap(Mailinglist::getId, Mailinglist::getShortname));
+    }
 }

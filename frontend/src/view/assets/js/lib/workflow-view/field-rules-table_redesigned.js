@@ -70,11 +70,11 @@
     #hideFirstChainOperatorSwitch() {
       this.$container
         .find('[data-name="chainOperator"]:first')
-        .closest('.text-switch').prop('checked', false)
+        .closest('.switch').prop('checked', false)
         .closest('td').hide();
       this.$container
         .find('[data-name="chainOperator"]:not(:first)')
-        .closest('.text-switch')
+        .closest('.switch')
         .show();
     }
     
@@ -95,10 +95,10 @@
       return `
           <tr>
               <td style="max-width: 70px">
-                  <label class="text-switch">
+                  <label class="switch">
                       <input type="checkbox" data-name="chainOperator" value="true" {{- chainOperator ? 'checked' : ''}} ${this.readonlyAttr}>
                       <span>AND</span>
-                      <span class="flex-center" style="min-width: 33px;">OR</span>
+                      <span class="flex-center flex-grow-1">OR</span>
                   </label>
               </td>
               <td style="max-width: 45px">

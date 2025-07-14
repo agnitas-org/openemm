@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   /** Representation of <th> element that located inside the DOM */
   class TableColumn {
@@ -105,6 +105,7 @@
 
     toEditMode() {
       this.#toggleMode();
+      this._columnsBeforeEdit = this.#findVisibleColumns();
     }
 
     applyChanges() {
@@ -112,9 +113,19 @@
       this.$el.trigger($.Event('table-column-manager:apply'), {columns: this.#collectSelectedColumns()});
     }
 
+    discardChanges() {
+      if (!this.isInEditMode()) {
+        return;
+      }
+
+      this.columns.forEach(c => c.toggle(!this._columnsBeforeEdit.includes(c)));
+      this.#toggleMode();
+    }
+
     removeColumn($th) {
       const column = TableColumn.get($th);
       this.#removeColumn(column);
+      AGN.Lib.CoreInitializer.run(['table-cols-resizer', 'table'], this.$el);
     }
 
     isInEditMode() {
@@ -157,7 +168,7 @@
       this.$el.toggleClass('is-edit-mode');
       this.$columnPicker.toggleClass('hidden');
       this.#updateToggleModeBtn();
-      AGN.Lib.CoreInitializer.run('table', this.$columnPickerCell);
+      AGN.Lib.CoreInitializer.run(['table-cols-resizer', 'table'], this.$el);
     }
 
     #addColumnPicker() {
@@ -202,6 +213,7 @@
 
         if (tableColumn) {
           tableColumn.toggle();
+          AGN.Lib.CoreInitializer.run(['table-cols-resizer', 'table'], this.$el);
         } else {
           const columns = this.#collectSelectedColumns().concat(columnName);
           this.$el.trigger($.Event('table-column-manager:add'), {columns});

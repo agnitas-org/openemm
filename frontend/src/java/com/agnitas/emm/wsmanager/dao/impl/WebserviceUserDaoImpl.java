@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,7 @@
 
 package com.agnitas.emm.wsmanager.dao.impl;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
 import com.agnitas.emm.wsmanager.common.WebserviceUserCredential;
@@ -39,13 +21,26 @@ import com.agnitas.emm.wsmanager.common.impl.WebserviceUserListItemImpl;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDaoException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Implementation of {@link WebserviceUserDao} interface.
  */
 public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements WebserviceUserDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(WebserviceUserDaoImpl.class);
 
 	/** Row mapper for list items. */
 	private static final WebserviceUserListItemRowMapper LIST_ITEM_ROWMAPPER = new WebserviceUserListItemRowMapper();
@@ -66,7 +61,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		}
 
 		try {
-			return selectPaginatedList(logger, "SELECT username, company_id, default_data_source_id, active FROM webservice_user_tbl WHERE company_id = ?", WS_USER_TBL_NAME, sortColumn, sortDirectionAscending, pageNumber, pageSize, LIST_ITEM_ROWMAPPER, companyID);
+			return selectPaginatedList("SELECT username, company_id, default_data_source_id, active FROM webservice_user_tbl WHERE company_id = ?", WS_USER_TBL_NAME, sortColumn, sortDirectionAscending, pageNumber, pageSize, LIST_ITEM_ROWMAPPER, companyID);
 		} catch (Exception e) {
 			logger.error("Error listing webservice user", e);
 			throw new WebserviceUserDaoException("Error listing webservice user", e);
@@ -84,15 +79,15 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 			PaginatedListImpl list;
 			if (sortColumn.equals("company_name")) {
 				String sortClause = "ORDER BY LOWER(company_name) " + (filter.ascending() ? "ASC" : "DESC");
-				list = selectPaginatedListWithSortClause(logger, query.toString(), sortClause, sortColumn, filter.ascending(),
+				list = selectPaginatedListWithSortClause(query.toString(), sortClause, sortColumn, filter.ascending(),
 						filter.getPage(), filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
 			} else {
-				list = selectPaginatedList(logger, query.toString(), WS_USER_TBL_NAME, sortColumn, filter.ascending(), filter.getPage(),
+				list = selectPaginatedList(query.toString(), WS_USER_TBL_NAME, sortColumn, filter.ascending(), filter.getPage(),
 						filter.getNumberOfRows(), LIST_ITEM_ROWMAPPER, params.toArray());
 			}
 
 			if (filter.isUiFiltersSet()) {
-				list.setNotFilteredFullListSize(selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl w JOIN company_tbl c ON c.company_id = w.company_id"));
+				list.setNotFilteredFullListSize(selectInt("SELECT COUNT(*) FROM webservice_user_tbl w JOIN company_tbl c ON c.company_id = w.company_id"));
 			}
 
 			return list;
@@ -137,7 +132,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		}
 
 		try {
-			return selectPaginatedList(logger, "SELECT username, company_id, default_data_source_id, active FROM webservice_user_tbl", WS_USER_TBL_NAME, sortColumn, sortDirectionAscending, pageNumber, pageSize, LIST_ITEM_ROWMAPPER);
+			return selectPaginatedList("SELECT username, company_id, default_data_source_id, active FROM webservice_user_tbl", WS_USER_TBL_NAME, sortColumn, sortDirectionAscending, pageNumber, pageSize, LIST_ITEM_ROWMAPPER);
 		} catch (Exception e) {
 			logger.error("Error listing webservice user", e);
 			throw new WebserviceUserDaoException("Error listing webservice user", e);
@@ -145,8 +140,8 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	}
 
 	@Override
-	public WebserviceUser getWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserDaoException {
-		WebserviceUser webserviceUser = selectObjectDefaultNull(logger, "SELECT * FROM webservice_user_tbl WHERE username = ?", USER_ROWMAPPER, username);
+	public WebserviceUser getWebserviceUser(String username) throws WebserviceUserException {
+		WebserviceUser webserviceUser = selectObjectDefaultNull("SELECT * FROM webservice_user_tbl WHERE username = ?", USER_ROWMAPPER, username);
 		
 		if (webserviceUser != null) {
 			webserviceUser.setGrantedPermissions(loadGrantedPermissions(username));
@@ -160,7 +155,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	@Override
 	public void updateUser(final WebserviceUser user) throws WebserviceUserDaoException {
 		try {
-			int count = update(logger, "UPDATE webservice_user_tbl SET active = ?, contact_email = ? WHERE username = ?", user.isActive(), user.getContactEmail(), user.getUsername());
+			int count = update("UPDATE webservice_user_tbl SET active = ?, contact_email = ? WHERE username = ?", user.isActive(), user.getContactEmail(), user.getUsername());
 			if (count == 0) {
 				if (logger.isInfoEnabled()) {
 					logger.info("Unknown webservice user '" + user.getUsername() + "'");
@@ -174,9 +169,9 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	}
 
 	@Override
-	public void updatePasswordHash(final String username, final String passwordHash) throws WebserviceUserException, WebserviceUserDaoException {
+	public void updatePasswordHash(final String username, final String passwordHash) throws WebserviceUserDaoException {
 		try {
-			int rows = update(logger, "UPDATE webservice_user_tbl SET password_encrypted = ? WHERE username = ?", passwordHash, username);
+			int rows = update("UPDATE webservice_user_tbl SET password_encrypted = ? WHERE username = ?", passwordHash, username);
 			if (rows == 0) {
 				if (logger.isInfoEnabled()) {
 					logger.info("Unknown webservice user '" + username + "'");
@@ -191,7 +186,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 
 	@Override
 	public boolean webserviceUserExists(final String username) {
-		int count = selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl WHERE username = ?", username);
+		int count = selectInt("SELECT COUNT(*) FROM webservice_user_tbl WHERE username = ?", username);
 		return count > 0;
 	}
 
@@ -203,7 +198,7 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		}
 
 		try {
-			update(logger, "INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email) VALUES (?, ?, ?, ?, ?, 1, ?)",
+			update("INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email) VALUES (?, ?, ?, ?, ?, 1, ?)",
 					username, user.getCompanyID(), user.getDefaultDatasourceID(), bulkSizeLimit, user.getPasswordHash(), user.getContactEmail());
 		} catch(Exception e) {
 			logger.error("Error creating new webservice user", e);
@@ -252,22 +247,22 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	@Override
 	public int getNumberOfWebserviceUsers(int companyID) {
 		if (companyID > 0) {
-			return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl WHERE company_id = ?", companyID);
+			return selectInt("SELECT COUNT(*) FROM webservice_user_tbl WHERE company_id = ?", companyID);
 		} else {
-			return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl");
+			return selectInt("SELECT COUNT(*) FROM webservice_user_tbl");
 		}
 	}
 	
 	private final Set<String> loadGrantedPermissions(final String username) {
 		final String sql = "SELECT endpoint FROM webservice_permission_tbl WHERE username=?";
 		
-		return new HashSet<>(select(logger, sql, StringRowMapper.INSTANCE, username));
+		return new HashSet<>(select(sql, StringRowMapper.INSTANCE, username));
 	}
 	
 	private final Set<Integer> loadGrantedPermissionGroups(final String username) {
 		final String sql = "SELECT group_ref FROM webservice_user_group_tbl WHERE username=?";
 		
-		return new HashSet<>(select(logger, sql, IntegerRowMapper.INSTANCE, username));
+		return new HashSet<>(select(sql, IntegerRowMapper.INSTANCE, username));
 	}
 
 	@Override
@@ -278,28 +273,28 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	
 	private final void saveGrantedPermissions(final WebserviceUser user) {
 		final String deletePermissions = "DELETE FROM webservice_permission_tbl WHERE username=?";
-		this.update(logger, deletePermissions, user.getUsername());
+		this.update(deletePermissions, user.getUsername());
 		
 		final String insertPermission = "INSERT INTO webservice_permission_tbl (username, endpoint) VALUES (?,?)";
 		for(final String permission : user.getGrantedPermissions()) {
-			this.update(logger, insertPermission, user.getUsername(), permission);
+			this.update(insertPermission, user.getUsername(), permission);
 		}
 	}
 	
 	private final void saveGrantedPermissionGroups(final WebserviceUser user) {
 		final String deleteGroupsSql = "DELETE FROM webservice_user_group_tbl WHERE username=?";
-		this.update(logger, deleteGroupsSql, user.getUsername());
+		this.update(deleteGroupsSql, user.getUsername());
 		
 		final String insertGroups = "INSERT INTO webservice_user_group_tbl (username, group_ref) VALUES (?,?)";
 		for(final int groupID : user.getGrantedPermissionGroupIDs()) {
-			this.update(logger, insertGroups, user.getUsername(), groupID);
+			this.update(insertGroups, user.getUsername(), groupID);
 		}
 	}
 
 	@Override
 	public boolean deleteWebserviceUser(String username) {
-		update(logger, "DELETE FROM webservice_user_group_tbl WHERE username = ?", username);
-		update(logger, "DELETE FROM webservice_permission_tbl WHERE username = ?", username);
-		return update(logger, "DELETE FROM webservice_user_tbl WHERE username = ?", username) == 1;
+		update("DELETE FROM webservice_user_group_tbl WHERE username = ?", username);
+		update("DELETE FROM webservice_permission_tbl WHERE username = ?", username);
+		return update("DELETE FROM webservice_user_tbl WHERE username = ?", username) == 1;
 	}
 }

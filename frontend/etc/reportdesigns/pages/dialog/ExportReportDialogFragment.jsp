@@ -2,7 +2,7 @@
 <%@ page session="false" buffer="none"%>
 <%@ page import="org.eclipse.birt.report.presentation.aggregation.IFragment,
 				 org.eclipse.birt.report.utility.ParameterAccessor"%>
-<%@page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -22,7 +22,7 @@
     <TR>
         <TD>
             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-            <label for="exportFormat"><%=ComBirtResources.getMessage( "birt.viewer.dialog.export.format", locale )%></label>
+            <label for="exportFormat"><%=EmmBirtResources.getMessage( "birt.viewer.dialog.export.format", locale )%></label>
             <SELECT	ID="exportFormat" NAME="format" CLASS="birtviewer_exportreport_dialog_select">
                 <%
                     ParameterAccessor.sortSupportedFormatsByDisplayName(supportedFormats);
@@ -45,7 +45,7 @@
     <TR>
         <TD>
             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-            <label for="exportPages"><%=ComBirtResources.getMessage( "birt.viewer.dialog.page", locale )%></label>
+            <label for="exportPages"><%=EmmBirtResources.getMessage( "birt.viewer.dialog.page", locale )%></label>
         </TD>
     </TR>
     <TR>
@@ -56,17 +56,17 @@
                         <TD>
                             <INPUT TYPE="radio" ID="exportPageAll" NAME="exportPages" CHECKED/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportPageAll"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.page.all", locale )%></label>
+                            <label for="exportPageAll"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.page.all", locale )%></label>
                         </TD>
                         <TD STYLE="padding-left:5px">
                             <INPUT TYPE="radio" ID="exportPageCurrent" NAME="exportPages"/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportPageCurrent"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.page.current", locale )%></label>
+                            <label for="exportPageCurrent"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.page.current", locale )%></label>
                         </TD>
                         <TD STYLE="padding-left:5px">
                             <INPUT TYPE="radio" ID="exportPageRange" NAME="exportPages"/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportPageRange"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.page.range", locale )%></label>
+                            <label for="exportPageRange"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.page.range", locale )%></label>
                             <INPUT TYPE="text" CLASS="birtviewer_exportreport_dialog_input" ID="exportPageRange_input" DISABLED="true"/>
                         </TD>
                     </TR>
@@ -76,7 +76,7 @@
     </TR>
     <TR>
         <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-        <TD>&nbsp;&nbsp;<%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.page.range.description", locale )%></TD>
+        <TD>&nbsp;&nbsp;<%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.page.range.description", locale )%></TD>
     </TR>
     <TR HEIGHT="5px"><TD><HR/></TD></TR>
     <TR>
@@ -86,24 +86,24 @@
                     <TR>
                         <TD>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportFitToAuto"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fitto", locale )%></label>
+                            <label for="exportFitToAuto"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fitto", locale )%></label>
                         </TD>
                     </TR>
                     <TR>
                         <TD>
                             <INPUT TYPE="radio" ID="exportFitToAuto" NAME="exportFit" CHECKED/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportFitToAuto"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoauto", locale )%></label>
+                            <label for="exportFitToAuto"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoauto", locale )%></label>
                         </TD>
                         <TD>
                             <INPUT TYPE="radio" ID="exportFitToActual" NAME="exportFit"/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportFitToActual"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoactual", locale )%></label>
+                            <label for="exportFitToActual"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittoactual", locale )%></label>
                         </TD>
                         <TD STYLE="padding-left:5px">
                             <INPUT TYPE="radio" ID="exportFitToWhole" NAME="exportFit"/>
                             <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                            <label for="exportFitToWhole"><%=ComBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittowhole", locale )%></label>
+                            <label for="exportFitToWhole"><%=EmmBirtResources.getHtmlMessage( "birt.viewer.dialog.export.pdf.fittowhole", locale )%></label>
                         </TD>
                     </TR>
                 </TABLE>

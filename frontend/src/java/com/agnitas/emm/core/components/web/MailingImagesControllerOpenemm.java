@@ -1,15 +1,15 @@
 package com.agnitas.emm.core.components.web;
 
 import com.agnitas.emm.core.components.form.MailingImagesFormSearchParams;
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserActivityLogService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 @SessionAttributes(types = MailingImagesFormSearchParams.class)
 public class MailingImagesControllerOpenemm extends MailingImagesController {
 
-    public MailingImagesControllerOpenemm(ComMailingBaseService mailingBaseService, PreviewImageService previewImageService,
+    public MailingImagesControllerOpenemm(MailingBaseService mailingBaseService, PreviewImageService previewImageService,
                                           MaildropService maildropService, UserActivityLogService userActivityLogService,
-                                          ComMailingComponentsService mailingComponentsService,
+                                          MailingComponentsService mailingComponentsService,
                                           MailinglistApprovalService mailinglistApprovalService, ConfigService configService, WebStorage webStorage) {
         super(mailingBaseService, previewImageService, maildropService, userActivityLogService,
                 mailingComponentsService, configService, mailinglistApprovalService, webStorage);

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.birtreport.converter;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILINGS_TO_SEND_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.ENABLED_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.SORT_MAILINGS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.SORT_NAME;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGETS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportMailingSettings.MAILINGS_TO_SEND_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.ENABLED_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGLISTS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.SORT_MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.SORT_NAME;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.TARGETS_KEY;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.END_DATE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.START_DATE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.packProperties;
@@ -24,7 +24,7 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.packP
 import java.util.HashMap;
 import java.util.Map;
 
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 

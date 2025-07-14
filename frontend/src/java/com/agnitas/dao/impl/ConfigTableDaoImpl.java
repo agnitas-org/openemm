@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,19 @@
 */
 
 package com.agnitas.dao.impl;
+
+import com.agnitas.dao.ConfigTableDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.util.Version;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.ServerCommand.Server;
+import com.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -21,29 +34,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.ServerCommand.Server;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.dao.ConfigTableDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.util.Version;
-
 /**
  * This class is intended to simplify access to the config_tbl.
  */
 public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ConfigTableDaoImpl.class);
 
 	@Override
 	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
@@ -54,7 +48,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			sql = "SELECT TRIM(LEADING '.' FROM CONCAT(class, '.', name)) AS key_for_value, hostname, value AS value FROM config_tbl WHERE hostname IS NULL OR TRIM(hostname) = '' OR hostname = ? ORDER BY key_for_value, hostname";
 		}
 		
-		List<Map<String, Object>> results = select(logger, sql, AgnUtils.getHostName());
+		List<Map<String, Object>> results = select(sql, AgnUtils.getHostName());
 		Map<String, Map<Integer, String>> returnMap = new HashMap<>();
 		for (Map<String, Object> resultRow : results) {
 			String configValueName = (String) resultRow.get("key_for_value");
@@ -96,25 +90,25 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 		}
 		
 		if (StringUtils.isBlank(hostName)) {
-			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", classString, name);
+			List<Map<String, Object>> results = select("SELECT value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", classString, name);
 			if (results != null && results.size() > 0) {
-				update(logger, "UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", value, description, classString, name);
+				update("UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND (hostname IS NULL OR hostname = '')", value, description, classString, name);
 			} else {
-				update(logger, "INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, value, description);
+				update("INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, value, description);
 			}
 		} else {
-			List<Map<String, Object>> results = select(logger, "SELECT value FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", classString, name, hostName);
+			List<Map<String, Object>> results = select("SELECT value FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", classString, name, hostName);
 			if (results != null && results.size() > 0) {
-				update(logger, "UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND hostname = ?", value, description, classString, name, hostName);
+				update("UPDATE config_tbl SET value = ?, description = ?, change_date = CURRENT_TIMESTAMP WHERE class = ? AND name = ? AND hostname = ?", value, description, classString, name, hostName);
 			} else {
-				update(logger, "INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, hostName, value, description);
+				update("INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)", classString, name, hostName, value, description);
 			}
 		}
 	}
 
 	@Override
 	public void deleteEntry(String classString, String name) {
-		update(logger, "DELETE FROM config_tbl WHERE class = ? AND name = ?", classString, name);
+		update("DELETE FROM config_tbl WHERE class = ? AND name = ?", classString, name);
 	}
 
 	@Override
@@ -124,7 +118,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 		String classValue = configValueName.substring(0, configValueName.indexOf("."));
 		String nameValue = configValueName.substring(configValueName.indexOf(".") + 1);
 		int returnValueWithoutExactHostnameMatch = 0;
-		for (Map<String, Object> row : select(logger, "SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ?) ORDER BY hostname", classValue, nameValue, AgnUtils.getHostName())) {
+		for (Map<String, Object> row : select("SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ?) ORDER BY hostname", classValue, nameValue, AgnUtils.getHostName())) {
 			String hostname = (String) row.get("hostname");
 			int value = Integer.parseInt((String) row.get("value"));
 			if (AgnUtils.getHostName().equals(hostname)) {
@@ -161,7 +155,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 		
 		if (applicationType != null) {
 			// Only keep data for 1 year
-			update(logger, "DELETE FROM release_log_tbl WHERE host_name = ? AND application_name = ? AND startup_timestamp < ?", AgnUtils.getHostName(), applicationType.name(), DateUtilities.getDateOfDaysAgo(365));
+			update("DELETE FROM release_log_tbl WHERE host_name = ? AND application_name = ? AND startup_timestamp < ?", AgnUtils.getHostName(), applicationType.name(), DateUtilities.getDateOfDaysAgo(365));
 			
 			String versionString = ConfigService.getInstance().getValue(ConfigValue.ApplicationVersion);
 			String lastStartedVersion = null;
@@ -171,9 +165,9 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			
 			List<Map<String, Object>> result;
 			if (ConfigService.isOracleDB()) {
-				result = select(logger, "SELECT version_number, startup_timestamp FROM (SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", AgnUtils.getHostName(), applicationType.name());
+				result = select("SELECT version_number, startup_timestamp FROM (SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", AgnUtils.getHostName(), applicationType.name());
 			} else {
-				result = select(logger, "SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", AgnUtils.getHostName(), applicationType.name());
+				result = select("SELECT version_number, startup_timestamp FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", AgnUtils.getHostName(), applicationType.name());
 			}
 			if (result != null && result.size() > 0) {
 				lastStartedVersion = (String) result.get(0).get("version_number");
@@ -181,7 +175,7 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			}
 			if (!versionString.equals(lastStartedVersion)) {
 				lastStartedVersionStartupTime = new Date();
-				update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", AgnUtils.getHostName(), applicationType.name(), versionString, buildTime, buildHost, buildUser, lastStartedVersionStartupTime);
+				update("INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", AgnUtils.getHostName(), applicationType.name(), versionString, buildTime, buildHost, buildUser, lastStartedVersionStartupTime);
 			}
 			ConfigService.setApplicationVersionInstallationTime(lastStartedVersionStartupTime);
 		}
@@ -198,12 +192,12 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			if (runtimeVersion != null) {
 				String lastStartedRuntimeVersion;
 				if (ConfigService.isOracleDB()) {
-					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
+					lastStartedRuntimeVersion = selectObjectDefaultNull("SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
 				} else {
-					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
+					lastStartedRuntimeVersion = selectObjectDefaultNull("SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
 				}
 				if (!runtimeVersion.toString().equals(lastStartedRuntimeVersion)) {
-					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "RUNTIME", runtimeVersion.toString(), null, null, null);
+					update("INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "RUNTIME", runtimeVersion.toString(), null, null, null);
 				}
 			}
 		}
@@ -224,19 +218,19 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			if (manualVersion != null) {
 				String lastStartedManualVersion;
 				if (ConfigService.isOracleDB()) {
-					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
+					lastStartedManualVersion = selectObjectDefaultNull("SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
 				} else {
-					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
+					lastStartedManualVersion = selectObjectDefaultNull("SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
 				}
 				if (!manualVersion.toString().equals(lastStartedManualVersion)) {
-					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "MANUAL", manualVersion.toString(), null, null, null);
+					update("INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "MANUAL", manualVersion.toString(), null, null, null);
 				}
 			}
 		}
 	}
 
 	@Override
-	public List<Map<String, Object>> getReleaseData(String hostNamePattern, String applicationTypePattern) throws Exception {
+	public List<Map<String, Object>> getReleaseData(String hostNamePattern, String applicationTypePattern) {
 		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT startup_timestamp, host_name, application_name, version_number, build_time, build_host, build_user FROM release_log_tbl");
 		if (StringUtils.isNotBlank(hostNamePattern)) {
 			sqlPreparedStatementManager.addWhereClause("host_name LIKE ?", hostNamePattern.replace("?", "_").replace("*", "%"));
@@ -245,29 +239,29 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			sqlPreparedStatementManager.addWhereClause("application_name LIKE ?", applicationTypePattern.replace("?", "_").replace("*", "%"));
 		}
 		
-		return select(logger, sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY startup_timestamp DESC", sqlPreparedStatementManager.getPreparedSqlParameters());
+		return select(sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY startup_timestamp DESC", sqlPreparedStatementManager.getPreparedSqlParameters());
 	}
 
 	@Override
 	public Date getCurrentDbTime() {
 		if (isOracleDB()) {
-			return select(logger, "SELECT CURRENT_TIMESTAMP FROM dual", Date.class);
+			return select("SELECT CURRENT_TIMESTAMP FROM dual", Date.class);
 		} else {
-			return select(logger, "SELECT CURRENT_TIMESTAMP", Date.class);
+			return select("SELECT CURRENT_TIMESTAMP", Date.class);
 		}
 	}
 
 	@Override
 	public int getStartupCountOfLtsVersion(Version versionToCheck) {
 		if (isOracleDB()) {
-			return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND REGEXP_LIKE(version_number, '^0*' || ? || '.0*' || ? || '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
+			return selectInt("SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND REGEXP_LIKE(version_number, '^0*' || ? || '.0*' || ? || '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
 		} else {
-			return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND version_number REGEXP CONCAT('^0*', ?, '.0*', ?, '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
+			return selectInt("SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND version_number REGEXP CONCAT('^0*', ?, '.0*', ?, '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
 		}
 	}
 
 	@Override
 	public int getStartupCount() {
-		return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ?", Server.EMM.name());
+		return selectInt("SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ?", Server.EMM.name());
 	}
 }

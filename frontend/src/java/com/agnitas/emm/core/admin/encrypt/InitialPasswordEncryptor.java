@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +151,6 @@ public class InitialPasswordEncryptor {
 	 * @param obfuscatingValue a value used for obfuscation
 	 * 
 	 * @return encrypted password
-	 * @throws Exception
 	 */
 	public String encrypt(String password, int obfuscatingValue, String encoding) throws Exception {
 		try {
@@ -181,7 +181,7 @@ public class InitialPasswordEncryptor {
 		} else {
 			hexSaltBytes = hexSalt.getBytes();
 		}
-		return sha1Encoder.encode(plus(hexSaltBytes, Integer.toString(obfuscatingValue, 16).getBytes("UTF-8")));
+		return sha1Encoder.encode(plus(hexSaltBytes, Integer.toString(obfuscatingValue, 16).getBytes(StandardCharsets.UTF_8)));
 	}
 	
 	/**
@@ -263,7 +263,7 @@ public class InitialPasswordEncryptor {
 		return secureRandom.nextInt(excludedMaximum);
 	}
 
-	public static char[] generatePassword(int passwordLength) throws Exception {
+	public static char[] generatePassword(int passwordLength) {
 		List<Character> passwordLetters = new ArrayList<>();
 
 		char[] upperCase = "abcdefghijklmnopqrstuvwxyz".toCharArray();

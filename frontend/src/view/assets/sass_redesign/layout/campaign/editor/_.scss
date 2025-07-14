@@ -1,15 +1,35 @@
 
 $campaign-icon-height: 40px;
-$campaign-empty-icon-color: $gray-600;
-$campaign-icon-color: $blue;
-$campaign-focused-icon-color: $light-blue;
-$campaign-icon-title-color: var(--label-color);
 
 @import 'context-menu';
 @import 'comment';
 @import 'node-editor.scss';
 
 #pageCampaignEditorContainer {
+  --workflow-node-editing-image-color: #{$dark-blue};
+  --workflow-node-empty-image-color: #{$gray-600};
+  --workflow-node-active-image-color: #{$blue};
+  --workflow-node-hover-color: #{$con-light-blue};
+  --workflow-node-bg: #{$body-bg-var};
+  --workflow-node-hover-bg: #{$body-bg-var};
+  --workflow-node-editing-bg: #{$body-bg-var};
+  --workflow-slider-handle-color: #{$light-grey};
+  --workflow-zoom-handle-color: #{$dark-grey};
+  --workflow-title-color: #{$dark-grey};
+
+  --workflow-grid-color: #{$light-grey};
+
+  --workflow-connection-color: #{$light-grey};
+  --workflow-connection-hover-color: var(--workflow-node-hover-color);
+  --workflow-connection-label-color: #{$dark-grey};
+  --workflow-connection-button-color: var(--workflow-node-active-image-color);
+
+  --workflow-minimap-panner-bg: #{$dark-grey};
+  --workflow-minimap-panner-opacity: 0.3;
+  --workflow-minimap-panner-z-index: 48;
+  --workflow-minimap-element-color: #{$blue};
+  --workflow-minimap-handle-color: #{$dark-grey};
+
   @import 'toolbar';
   @import 'canvas';
   @import 'node';
@@ -17,6 +37,62 @@ $campaign-icon-title-color: var(--label-color);
   @import 'connection';
   @import 'minimap';
   @import 'zoom';
+}
+
+@include color-mode(dark) {
+  #pageCampaignEditorContainer {
+    --workflow-node-editing-image-color: #{$white};
+    --workflow-node-empty-image-color: #{$light-grey};
+    --workflow-zoom-handle-color: #{$light-grey};
+    --workflow-minimap-handle-color: #{$light-grey};
+    --workflow-title-color: #{$light-grey};
+    --workflow-connection-label-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  #pageCampaignEditorContainer {
+    --workflow-node-hover-color: #{$con-dark-blue};
+    --workflow-node-active-image-color: #{$con-dark-blue};
+    --workflow-node-empty-image-color: #{$dark-grey};
+    --workflow-node-hover-bg: #{$con-grey};
+    --workflow-node-editing-bg: #{$con-light-blue};
+
+    --workflow-slider-handle-color: #{$con-dark-blue};
+    --workflow-zoom-handle-color: var(--workflow-slider-handle-color);
+
+    --workflow-minimap-panner-bg: #{$con-light-blue};
+    --workflow-minimap-panner-opacity: 1;
+    --workflow-minimap-panner-z-index: 46;
+    --workflow-minimap-element-color: #{$con-dark-blue};
+    --workflow-minimap-handle-color: var(--workflow-slider-handle-color);
+
+    --workflow-connection-color: #{$con-dark-blue};
+    --workflow-grid-color: #{$border-color-var};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #pageCampaignEditorContainer {
+    --workflow-node-hover-color: #{$white};
+    --workflow-node-active-image-color: #{$white};
+    --workflow-node-empty-image-color: #{$con-grey};
+    --workflow-node-editing-image-color: #{$white};
+    --workflow-node-hover-bg: #{$dark-grey};
+    --workflow-node-editing-bg: #{$con-blue};
+    --workflow-slider-handle-color: #{$white};
+    --workflow-zoom-handle-color: var(--workflow-slider-handle-color);
+
+    --workflow-minimap-panner-bg: #{$con-blue};
+    --workflow-minimap-panner-opacity: 1;
+    --workflow-minimap-panner-z-index: 46;
+    --workflow-minimap-element-color: #{$white};
+    --workflow-minimap-handle-color: var(--workflow-slider-handle-color);
+
+    --workflow-title-color: #{$white};
+    --workflow-grid-color: #{$border-color-var};
+    --workflow-connection-button-color: #{$con-dark-blue};
+  }
 }
 
 .ui-selectable {
@@ -38,5 +114,5 @@ $campaign-icon-title-color: var(--label-color);
   border: $border-default;
   border-radius: $border-radius;
   padding: $gap-x-sm;
-  background-color: var(--main-bg-color);
+  background-color: $body-bg-var;
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,13 +15,13 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.beans.ComRecipientMailing;
-import com.agnitas.beans.ComRecipientReaction;
+import com.agnitas.beans.RecipientHistory;
+import com.agnitas.beans.RecipientMailing;
+import com.agnitas.beans.RecipientReaction;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.emm.core.report.bean.RecipientBindingHistory;
 import com.agnitas.emm.core.report.bean.RecipientEntity;
-import net.sf.json.JSONArray;
+import org.json.JSONArray;
 
 public interface RecipientReportService {
 
@@ -42,7 +42,7 @@ public interface RecipientReportService {
      * @param companyId   identifier of company.
      * @return list with profile changes for current recipient.
      */
-    List<ComRecipientHistory> getProfileHistory(int recipientId, int companyId);
+    List<RecipientHistory> getProfileHistory(int recipientId, int companyId);
 
     /**
      * Represents merged history of profile changes and binding changes for current recipient.
@@ -51,7 +51,7 @@ public interface RecipientReportService {
      * @param companyId   identifier of company.
      * @return list with profile changes for current recipient.
      */
-    List<ComRecipientHistory> getStatusHistory(int recipientId, int companyId);
+    List<RecipientHistory> getStatusHistory(int recipientId, int companyId);
 
     /**
      * Represents history of already sent out mailings like count of clicks, openings etc.
@@ -60,7 +60,7 @@ public interface RecipientReportService {
      * @param companyId   identifier of company.
      * @return list with already sent out mailings statistic.
      */
-    List<ComRecipientMailing> getMailingHistory(int recipientId, int companyId);
+    List<RecipientMailing> getMailingHistory(int recipientId, int companyId);
 
     /**
      * Represents history of user changes.
@@ -80,7 +80,7 @@ public interface RecipientReportService {
      * @param companyId   identifier of company.
      * @return list of recipient's devices and actions.
      */
-    List<ComRecipientReaction> getDeviceHistory(int recipientId, int companyId);
+    List<RecipientReaction> getDeviceHistory(int recipientId, int companyId);
 
     /**
      * Represent common and specific customer's information.

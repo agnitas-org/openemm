@@ -1,0 +1,39 @@
+#new-mailing-modal {
+  .modal-header {
+    @include mobile {
+      border-bottom: $border-default;
+    }
+  }
+
+  .modal-body {
+    @include mobile {
+      padding: 0;
+
+      .horizontal-card {
+        border: none;
+        border-radius: 0;
+
+        &:not(:last-child) {
+          border-bottom: $border-default;
+        }
+      }
+    }
+
+    > div {
+      height: 100%;
+      display: grid;
+      gap: $gap-md;
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: minmax(min-content, 1fr);
+
+      > *:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+      }
+
+      @include mobile {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+  }
+}

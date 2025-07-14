@@ -263,7 +263,7 @@ Here's an example:
 
 <script id="styleguide-upload-modal" type="text/x-mustache-template">
     <form id="upload-modal" class="modal" tabindex="-1" enctype="multipart/form-data" data-custom-loader="true" data-initializer="upload" data-linked-dropzone="#dropzone-modal">
-        <div class="modal-dialog modal-fullscreen-xl-down modal-xl">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">Upload</h1>
@@ -331,6 +331,10 @@ AGN.Lib.DomInitializer.new('upload', function ($e) {
   const form = AGN.Lib.Form.get($e);
   const $form = form.get$();
   if ($form.exists()) {
+    if (form instanceof AGN.Lib.StaticForm) {
+      $file.attr('name', inputUploadName);
+    }
+
     const $progress = findProgressArea();
     const progressBarTemplate = $progress.data('upload-progress-template') || 'progress';
 
@@ -352,7 +356,7 @@ AGN.Lib.DomInitializer.new('upload', function ($e) {
       exposeSelection();
       if ($dropzone.data('upload-dropzone') === 'submit') {
         $dropzone.hide(); // progress shown instead
-        form.submit();
+        form.submit(!!$form.data('action') ? 'event' : '');
       }
     });
   }
@@ -382,13 +386,18 @@ AGN.Lib.DomInitializer.new('upload', function ($e) {
 
   function setFormValues() {
     const selection = getSelection();
-
-    if (isInputIndexed) {
-      selection.forEach((s, index) => {
-        form.setValueOnce(getIndexedUploadName(index), s);
-      });
+    if (form instanceof AGN.Lib.StaticForm && $file.exists() && $file[0].files.length === 0) {
+      const dataTransfer = new DataTransfer();
+      selection.forEach(file => dataTransfer.items.add(file));
+      $file[0].files = dataTransfer.files;
     } else {
-      form.setValueOnce(inputUploadName, selection);
+      if (isInputIndexed) {
+        selection.forEach((s, index) => {
+          form.setValueOnce(getIndexedUploadName(index), s);
+        });
+      } else {
+        form.setValueOnce(inputUploadName, selection);
+      }
     }
   }
 

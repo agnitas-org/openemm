@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,20 +14,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.Tuple;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.AdminNameNotFoundException;
 import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.news.enums.NewsType;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.impl.PaginatedListImpl;
 
 public interface AdminDao {
     List<Map<String, Object>> getAdminsNames(int companyID, List<Integer> adminsIds);
@@ -38,11 +35,6 @@ public interface AdminDao {
 
     List<AdminEntry> getAllAdminsByCompanyIdOnlyHasEmail(int companyID);
 
-	/**
-	 * <Admin ID, Username> list sorted by username
-	 */
-    List<Tuple<Integer, String>> getAdminsUsernames(int companyID);
-    
     int getNumberOfGuiAdmins(int companyID);
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
@@ -72,8 +64,6 @@ public interface AdminDao {
 	 * @param username user name of admin
 	 * 
 	 * @return {@link Admin} for given user name
-	 * @throws AdminNameNotFoundException
-	 * @throws AdminNameNotUniqueException
 	 */
 	Admin getByNameAndActiveCompany(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
 	
@@ -87,7 +77,7 @@ public interface AdminDao {
 
 	Admin getAdminByLogin(String name, String password);
 
-	void save(Admin admin) throws Exception;
+	void save(Admin admin);
 
     /**
      * Deletes an admin and his permissions.
@@ -131,17 +121,16 @@ public interface AdminDao {
      *              The id of the admin whose right are to be stored
      * @param userRights
      *               Set of permissions
-     * @return
      */
     int saveAdminRights(int adminID, Set<String> userRights);
 
     boolean isPermissionGranted(int adminId, Permission permission);
+
     void grantPermission(int adminId, Permission permission);
 
     void revokePermission(int adminId, Permission permission);
 
     Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
-    String getAdminName(int adminID, int companyID);
 
 	/**
 	 * Get timezone id for an admin referenced by {@code adminId}.
@@ -189,6 +178,7 @@ public interface AdminDao {
 	PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
 
     List<AdminEntry> findAllByEmailPart(String email, int companyID);
+
     List<AdminEntry> findAllByEmailPart(String email);
 
     void updateEmail(String email, int id, int companyId);

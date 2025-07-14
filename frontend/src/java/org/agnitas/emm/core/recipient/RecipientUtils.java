@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,24 +28,22 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
-import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
-import org.agnitas.service.WebStorageBundle;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.MapUtils;
+import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
+import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
+import com.agnitas.service.WebStorageBundle;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RecipientUtils {
     
@@ -217,7 +215,7 @@ public class RecipientUtils {
 
     public static String formatRecipientDateValue(Admin admin, String value) throws Exception {
         if (DbUtilities.isNowKeyword(value)) {
-            return LocalDate.now(AgnUtils.getZoneId(admin)).format(admin.getDateFormatter());
+            return LocalDate.now(admin.getZoneId()).format(admin.getDateFormatter());
         }
 
         if (StringUtils.isNotEmpty(value)) {
@@ -229,7 +227,7 @@ public class RecipientUtils {
 
     public static String formatRecipientDateTimeValue(Admin admin, String value) throws Exception {
         if (DbUtilities.isNowKeyword(value)) {
-            return LocalDateTime.now(AgnUtils.getZoneId(admin)).format(admin.getDateTimeFormatter());
+            return LocalDateTime.now(admin.getZoneId()).format(admin.getDateTimeFormatter());
         }
 
         if (StringUtils.isNotEmpty(value)) {

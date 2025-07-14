@@ -4,8 +4,8 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="form" type="org.agnitas.web.forms.PaginationForm"--%>
-<%--@elvariable id="profile" type="org.agnitas.beans.ImportProfile"--%>
+<%--@elvariable id="form" type="com.agnitas.web.forms.PaginationForm"--%>
+<%--@elvariable id="profile" type="com.agnitas.beans.ImportProfile"--%>
 <%--@elvariable id="defaultProfileId" type="java.lang.Integer"--%>
 
 <mvc:form servletRelativeAction="/import-profile/list.action" modelAttribute="form">

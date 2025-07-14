@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,38 +10,41 @@
 
 package com.agnitas.emm.core.preview.service.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Vector;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
+import com.agnitas.emm.core.preview.service.PreviewSettings;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
 import com.agnitas.messages.I18nString;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
-import org.agnitas.preview.AgnTagException;
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.preview.PreviewHelper;
-import org.agnitas.preview.TAGCheck;
-import org.agnitas.preview.TAGCheckFactory;
-import org.agnitas.util.SafeString;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.preview.PreviewFactory;
+import com.agnitas.preview.TAGCheckFactory;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
+import com.agnitas.preview.AgnTagException;
+import com.agnitas.preview.Page;
+import com.agnitas.preview.Preview;
+import com.agnitas.preview.PreviewHelper;
+import com.agnitas.preview.TAGCheck;
+import com.agnitas.util.SafeString;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import java.util.stream.Collectors;
 
 public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
 
@@ -51,76 +54,24 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     private PreviewFactory previewFactory;
     private TAGCheckFactory tagCheckFactory;
 
-    @Override
-    public String getPreviewWidth(Preview.Size size) {
-        int width;
-
-        switch (size) {
-            case DESKTOP:
-                return "100%";
-            case MOBILE_PORTRAIT:
-                width = 320;
-                break;
-            case MOBILE_LANDSCAPE:
-                width = 356;
-                break;
-            case TABLET_PORTRAIT:
-                width = 768;
-                break;
-            case TABLET_LANDSCAPE:
-                width = 1024;
-                break;
-            default:
-                width = 800;
-                break;
-        }
-
-        return width + 2 + "px";
-    }
 
     @Override
-    public String getMediaQuery(Preview.Size size) {
-        String mediaQuery;
-
-        switch (size) {
-            case MOBILE_PORTRAIT:
-            case MOBILE_LANDSCAPE:
-            case TABLET_PORTRAIT:
-                mediaQuery = "true";
-                break;
-            case TABLET_LANDSCAPE:
-            case DESKTOP:
-            default:
-                mediaQuery = "false";
-                break;
-        }
-
-        return mediaQuery;
-    }
-
-    @Override
-    public String getPreview(PreviewForm previewForm, int companyId, Admin admin) throws Exception {
+    public PreviewResult getPreview(PreviewSettings settings, int companyId, Admin admin) throws Exception {
         if (companyId <= 0) {
-            companyId = admin.getCompanyID();
+            throw new UnknownCompanyIdException(companyId);
         }
 
-        int previewFormat = previewForm.getFormat();
-
-        Mailing mailing = mailingDao.getMailing(previewForm.getMailingId(), companyId);
+        final Mailing mailing = mailingDao.getMailing(settings.getMailingId(), companyId);
         if (mailing == null) {
-            return "preview." + previewFormat;
+            return new PreviewResult(settings.getFormat(), Optional.empty());
         }
 
-        MediaTypes mediaType = castPreviewFormatToMediaType(previewFormat);
+        MediaTypes mediaType = castPreviewFormatToMediaType(settings.getFormat());
         if (mediaType == null) {
             mediaType = MediaTypes.EMAIL;
-            previewFormat = MailingWebPreviewService.INPUT_TYPE_TEXT;
-            previewForm.setFormat(previewFormat);
         }
 
-        renderMailingTypeDependentPreview(mediaType, previewFormat, mailing, admin, previewForm);
-
-        return "preview." + previewFormat;
+        return renderMailingTypeDependentPreview(mediaType, mailing, admin.getLocale(), settings);
     }
 
     @Override
@@ -135,7 +86,7 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
                 .map(Mediatype::getMediaType)
                 .map(MediaTypes::getMediaCode)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -153,18 +104,53 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         Page output;
         switch (previewForm.getModeType()) {
             case TARGET_GROUP:
-                output = preview.makePreview(previewForm.getMailingId(), 0, previewForm.getTargetGroupId(), isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
+                output = preview.makePreview(previewForm.getMailingId(), 0, previewForm.getTargetGroupId(), isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks(), null);
                 break;
             case RECIPIENT:
             case MANUAL:
             default:
-                output = preview.makePreview(previewForm.getMailingId(), previewForm.getCustomerID(), false, isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks());
+                output = preview.makePreview(previewForm.getMailingId(), previewForm.getCustomerID(), false, isMobileView, previewForm.isAnon(), previewForm.isOnAnonPreserveLinks(), null);
                 break;
         }
 
         preview.done();
         return output;
     }
+
+    @Override
+    public Page generateBackEndPreview(PreviewSettings settings) {
+        final Preview.Size size = settings.getPreviewSize();
+        final boolean isMobileView = size == Preview.Size.MOBILE_PORTRAIT || size == Preview.Size.MOBILE_LANDSCAPE;
+
+        final Preview preview = previewFactory.createPreview();
+
+        final Page output = switch (settings.getMode()) {
+            case TARGET_GROUP ->
+                    preview.makePreview(
+                            settings.getMailingId(),
+                            0,
+                            settings.getTargetGroupId(),
+                            isMobileView,
+                            settings.isAnonymous(),
+                            settings.isPreserveLinksWhenAnonymous(),
+                            settings.getRdirDomain()
+                    );
+            default ->
+                    preview.makePreview(
+                            settings.getMailingId(),
+                            settings.getCustomerId(),
+                            false,
+                            isMobileView,
+                            settings.isAnonymous(),
+                            settings.isPreserveLinksWhenAnonymous(),
+                            settings.getRdirDomain()
+                    );
+        };
+
+        preview.done();
+        return output;
+    }
+
 
     private MediaTypes castPreviewFormatToMediaType(int previewFormat) {
         int mediaTypeCode = previewFormat == INPUT_TYPE_TEXT ? INPUT_TYPE_TEXT : previewFormat - 1;
@@ -181,58 +167,59 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         return false;
     }
 
-    protected void renderMailingTypeDependentPreview(MediaTypes mediaType, int previewFormat, Mailing mailing, Admin admin, PreviewForm previewForm) throws Exception {
+    protected PreviewResult renderMailingTypeDependentPreview(MediaTypes mediaType, Mailing mailing, Locale locale, PreviewSettings settings) throws Exception {
         if (MediaTypes.EMAIL == mediaType) {
-            Page previewPage = generateBackEndPreview(previewForm);
+            Page previewPage = generateBackEndPreview(settings);
 
-            if (MailingWebPreviewService.INPUT_TYPE_HTML == previewFormat) {
-                String previewContent = previewForm.isNoImages() ? previewPage.getStrippedHTML() : previewPage.getHTML();
+            if (MailingWebPreviewService.INPUT_TYPE_HTML == settings.getFormat()) {
+                final String previewContent = settings.isNoImages() ? previewPage.getStrippedHTML() : previewPage.getHTML();
 
-                if (previewContent != null) {
-                    //mobile image urls are resolved in makePreview by isMobile parameter
-                    previewForm.setPreviewContent(previewContent);
-                } else {
-                    analyzeErrors(admin, mailing.getHtmlTemplate().getEmmBlock(), mailing.getId(), mailing);
+                if (previewContent == null) {
+                    analyzeErrors(locale, mailing.getHtmlTemplate().getEmmBlock(), mailing);
                 }
-            }
 
-            if (MailingWebPreviewService.INPUT_TYPE_TEXT == previewFormat) {
+                return new PreviewResult(settings.getFormat(), Optional.ofNullable(previewContent));
+            } else if (MailingWebPreviewService.INPUT_TYPE_TEXT == settings.getFormat()) {
                 final String previewContent = previewPage.getText();
 
                 if (previewContent != null) {
-                    previewForm.setPreviewContent(StringUtils.defaultIfBlank(
+                    final Optional<String> content = Optional.of(StringUtils.defaultIfBlank(
                             StringUtils.substringBetween(previewContent, "<pre>", "</pre>"),
                             previewContent));
+                    return new PreviewResult(settings.getFormat(), content);
+
                 } else {
-                    analyzeErrors(admin, mailing.getTextTemplate().getEmmBlock(), mailing.getId(), mailing);
+                    analyzeErrors(locale, mailing.getTextTemplate().getEmmBlock(), mailing);
                 }
+            } else {
+                return new PreviewResult(settings.getFormat(), Optional.empty());
             }
         } else if (isPostPreview(mediaType, mailing)) {
-            previewForm.setPreviewContent(I18nString.getLocaleString("noPostalPreview.html", admin.getLocale()));
+            return new PreviewResult(settings.getFormat(), Optional.of(I18nString.getLocaleString("noPostalPreview.html", locale)));
         } else {
             MailingComponent component = mailing.getTemplate(mediaType);
 
             if (component != null) {
-                final String previewContent = previewFormat == MailType.TEXT.getIntValue()
-                        ? previewService.renderTextPreview(mailing.getId(), previewForm.getCustomerID())
-                        : previewService.renderHtmlPreview(mailing.getId(), previewForm.getCustomerID());
+                final String previewContent = settings.getFormat() == MailType.TEXT.getIntValue()
+                        ? previewService.renderTextPreview(mailing.getId(), settings.getCustomerId())
+                        : previewService.renderHtmlPreview(mailing.getId(), settings.getCustomerId());
 
-                if (previewContent != null) {
-                    previewForm.setPreviewContent(previewContent);
-                }
+                return new PreviewResult(settings.getFormat(), Optional.ofNullable(previewContent));
             }
         }
+
+        return new PreviewResult(settings.getFormat(), Optional.empty());
     }
 
-    private void analyzeErrors(Admin admin, String template, int mailingId, Mailing mailing) throws Exception {
+    private void analyzeErrors(Locale locale, String template, Mailing mailing) throws Exception {
         Map<String, DynamicTag> dynTagsMap = mailing.getDynTags();
-        analyzePreviewError(admin, template, dynTagsMap, mailingId);
+        analyzePreviewError(locale, template, dynTagsMap, mailing.getId());
     }
 
-    private void analyzePreviewError(Admin admin, String template, Map<String, DynamicTag> dynTagsMap, int mailingID) throws Exception {
+    private void analyzePreviewError(Locale locale, String template, Map<String, DynamicTag> dynTagsMap, int mailingID) throws Exception {
         List<String[]> errorReports = new ArrayList<>();
         Vector<String> outFailures = new Vector<>();
-        TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailingID, admin.getLocale());
+        TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailingID, locale);
 
         StringBuffer templateReport = new StringBuffer();
         if (!tagCheck.checkContent(template, templateReport, outFailures)) {
@@ -251,8 +238,8 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
             }
         }
 
-        if (errorReports.size() == 0) {
-            errorReports.add(new String[]{SafeString.getLocaleString("preview.error.empty", admin.getLocale())});
+        if (errorReports.isEmpty()) {
+            errorReports.add(new String[]{SafeString.getLocaleString("preview.error.empty", locale)});
         }
 
         throw new AgnTagException("error.template.dyntags", errorReports);
@@ -332,27 +319,22 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         return UNDEFINED_PREVIEW_FORMAT;
     }
 
-    @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    @Required
     public void setMediatypeFactory(MediatypeFactory mediatypeFactory) {
         this.mediatypeFactory = mediatypeFactory;
     }
 
-    @Required
     public void setPreviewFactory(PreviewFactory previewFactory) {
         this.previewFactory = previewFactory;
     }
 
-    @Required
     public void setTagCheckFactory(TAGCheckFactory tagCheckFactory) {
         this.tagCheckFactory = tagCheckFactory;
     }
 
-    @Required
     public void setPreviewService(MailingPreviewService previewService) {
         this.previewService = previewService;
     }

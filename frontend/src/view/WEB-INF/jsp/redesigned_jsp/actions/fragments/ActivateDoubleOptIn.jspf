@@ -1,35 +1,34 @@
+<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 
 <script id="module-ActivateDoubleOptIn" type="text/x-mustache-template">
     <emm:ShowByPermission token="actions.change">
-        <div class="tile-body" data-module-content="{{- index}}">
+        <div class="tile-body vstack gap-3" data-module-content="{{- index}}">
             <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="ActivateDoubleOptIn"/>
             <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
-            <div class="row g-3">
-                <div class="col-12">
-                    <label for="module_{{- index}}.mediaTypeCode" class="form-label">
-                        <mvc:message code="action.op.ActivateDOI.mediatype"/>
+            <div>
+                <label for="module_{{- index}}.mediaTypeCode" class="form-label">
+                    <mvc:message code="action.op.ActivateDOI.mediatype"/>
+                </label>
+
+                <select name="modules[].mediaTypeCode" id="module_{{- index}}.mediaTypeCode" class="form-control js-select">
+                    <c:forEach items="${MediaTypes.values()}" var="mediaType">
+                        <emm:ShowByPermission token="${mediaType.requiredPermission}">
+                            {{var code = ${mediaType.mediaCode};}}
+                            {{ var selectedSign = '${mediaType.mediaCode}' == mediaTypeCode ? 'selected' : ''; }}
+                            <option value="${mediaType.mediaCode}" {{- selectedSign}}><mvc:message code="mailing.MediaType.${mediaType.mediaCode}" /></option>
+                        </emm:ShowByPermission>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <div>
+                <div class="form-check form-switch">
+                    <input type="checkbox" name="modules[].forAllLists" id="module_{{- index}}.forAllLists" class="form-check-input" role="switch" {{ forAllLists ? print('checked') : ''}}/>
+
+                    <label class="form-label form-check-label" for="module_{{- index}}.forAllLists">
+                        <mvc:message code="action.op.ActivateDOI.mailinglists"/>
                     </label>
-
-                    <select name="modules[].mediaTypeCode" id="module_{{- index}}.mediaTypeCode" class="form-control js-select">
-                        <c:forEach items="${MediaTypes.values()}" var="mediaType">
-                            <emm:ShowByPermission token="${mediaType.requiredPermission}">
-                                {{var code = ${mediaType.mediaCode};}}
-                                {{ var selectedSign = '${mediaType.mediaCode}' == mediaTypeCode ? 'selected="selected"' : ''; }}
-                                <option value="${mediaType.mediaCode}" {{- selectedSign}}><mvc:message code="mailing.MediaType.${mediaType.mediaCode}" /></option>
-                            </emm:ShowByPermission>
-                        </c:forEach>
-                    </select>
-                </div>
-
-                <div class="col-12">
-                    <div class="form-check form-switch">
-                        <input type="checkbox" name="modules[].forAllLists" id="module_{{- index}}.forAllLists" class="form-check-input" role="switch" {{ forAllLists ? print('checked="checked"') : ''}}/>
-
-                        <label class="form-label form-check-label" for="module_{{- index}}.forAllLists">
-                            <mvc:message code="action.op.ActivateDOI.mailinglists"/>
-                        </label>
-                    </div>
                 </div>
             </div>
         </div>

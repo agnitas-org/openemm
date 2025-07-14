@@ -1,5 +1,5 @@
 /* <%@ page contentType="application/javascript" %> */
-/* <%@ page import="org.agnitas.util.AgnUtils" %> */
+/* <%@ page import="com.agnitas.util.AgnUtils" %> */
 /* <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %> */
 /* <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %> */
 
@@ -34,18 +34,20 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
 </c:choose> */
 
 /* <c:set var="adminId" value="${emm:getAdminId(pageContext.request)}"/> */
-        window.adminId = '${adminId}';
+window.adminId = '${adminId}';
 
 /* <c:set var="companyId" value="${emm:getCompanyId(pageContext.request)}"/> */
-        window.companyId = '${companyId}';
+window.companyId = '${companyId}';
 
 /* <c:set var="dateFormat" value="${emm:getDateFormat(pageContext.request)}"/> */
-        window.adminDateFormat = '${dateFormat}';
+window.adminDateFormat = '${dateFormat}';
 /* <c:set var="dateTimeFormat" value="${emm:getDateTimeFormat(pageContext.request)}"/> */
-        window.adminDateTimeFormat = '${dateTimeFormat}';
+window.adminDateTimeFormat = '${dateTimeFormat}';
 
 /* <c:set var="aceEditorPath" value="${emm:aceEditorPath(pageContext.request)}"/> */
-        window.aceEditorPath = '${aceEditorPath}';
+window.aceEditorPath = '${aceEditorPath}';
+
+window.helpLanguage = `${helplanguage}`;
 
 /* <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
    <c:set var="adminLocale" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].locale}" />*/

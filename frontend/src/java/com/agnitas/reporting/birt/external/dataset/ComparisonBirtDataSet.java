@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,21 +10,16 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.emm.common.MailingStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.DateUtilities;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DateUtilities;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
 public class ComparisonBirtDataSet extends BIRTDataSet {
- 
-    private static final transient Logger logger = LogManager.getLogger(ComparisonBirtDataSet.class);
  
 	/**
      * Create a List of targets with the "all subscribers"-target on index 0 and the given targets after that
@@ -63,7 +58,7 @@ public class ComparisonBirtDataSet extends BIRTDataSet {
         countOfOnceSending.append(" AND mst.senddate < CURRENT_DATE");
         countOfOnceSending.append(" AND senddate >= ?");
         
-        int companyId = selectInt(logger, "SELECT company_id FROM mailing_tbl WHERE mailing_id = ?", mailingId);
+        int companyId = selectInt("SELECT company_id FROM mailing_tbl WHERE mailing_id = ?", mailingId);
         int successExpirationDays = getConfigService().getIntegerValue(ConfigValue.ExpireSuccess, companyId);
         Date successExpirationDate = DateUtilities.getDateOfDaysAgo(successExpirationDays);
 
@@ -73,6 +68,6 @@ public class ComparisonBirtDataSet extends BIRTDataSet {
         unitedCount.append(countOfPeriodicallySending).append(" UNION ").append(countOfOnceSending);
         unitedCount.append(") not_expired_mailings");
 
-        return selectInt(logger, unitedCount.toString(), mailingId, mailingId, successExpirationDate) > 0;
+        return selectInt(unitedCount.toString(), mailingId, mailingId, successExpirationDate) > 0;
     }
 }

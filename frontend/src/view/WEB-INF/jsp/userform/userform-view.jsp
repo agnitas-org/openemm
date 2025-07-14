@@ -12,8 +12,8 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.userform.form.UserFormForm"--%>
 <%--@elvariable id="userFormURLPattern" type="java.lang.String"--%>
 <%--@elvariable id="userFormFullURLPattern" type="java.lang.String"--%>
-<%--@elvariable id="emmActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
-<%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
+<%--@elvariable id="emmActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
+<%--@elvariable id="workflowParameters" type="com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters"--%>
 <%--@elvariable id="companyToken" type="java.lang.String"--%>
 
 <c:url var="actionEditUrlPattern" value="/action/:action-ID:/view.action"/>

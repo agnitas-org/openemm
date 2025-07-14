@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailing.forms;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -47,7 +47,7 @@ public class MailingSettingsForm {
     private MailingType mailingType = MailingType.NORMAL;
     private Collection<Integer> targetGroupIds;
     private MailingContentType mailingContentType;
-    private List<ComMailingParameter> params = new ArrayList<>();
+    private List<MailingParameter> params = new ArrayList<>();
     protected Map<Integer, MediatypeForm> mediatypes = new HashMap<>();
 
     public int getParentId() {
@@ -223,11 +223,11 @@ public class MailingSettingsForm {
         return CollectionUtils.isEmpty(keys) ? 0 : Collections.max(keys) + 1;
     }
 
-    public List<ComMailingParameter> getParams() {
+    public List<MailingParameter> getParams() {
         return params;
     }
 
-    public void setParams(List<ComMailingParameter> params) {
+    public void setParams(List<MailingParameter> params) {
         this.params = params;
     }
 

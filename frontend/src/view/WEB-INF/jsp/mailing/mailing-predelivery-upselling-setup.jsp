@@ -4,7 +4,6 @@
 
 <%--@elvariable id="upsellingForm" type="com.agnitas.emm.core.upselling.form.UpsellingForm"--%>
 <%--@elvariable id="navigationKey" type="java.lang.String"--%>
-<%--@elvariable id="predeliveryForm" type="org.agnitas.web.forms.ComPredeliveryForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 
 <%--TODO: GWUA-4803: migrate upselling page after migration code test successfully --%>

@@ -45,7 +45,7 @@
 		Note: This listener requires that Springs ContextLoaderListener is loaded before this listener!
 	-->
     <listener>
-		<listener-class>org.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
+		<listener-class>com.agnitas.backend.BackendDatasourceInitializationContextListener</listener-class>
 	</listener>
 
 	<!-- Check validity of installation configuration -->
@@ -58,9 +58,9 @@
     <!--  Spring WS servlet -->
     <servlet>
 		<servlet-name>spring-ws</servlet-name>
-		<servlet-class>org.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class>
+		<servlet-class>com.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class>
 		<!--  <servlet-class>org.springframework.ws.transport.http.MessageDispatcherServlet</servlet-class-->
-		<!--  <servlet-class>org.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class-->
+		<!--  <servlet-class>com.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class-->
     </servlet>
     <servlet-mapping>
         <servlet-name>spring-ws</servlet-name>

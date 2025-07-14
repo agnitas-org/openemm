@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,39 +10,67 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.archive.service.CampaignService;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.dto.DateTimeRange;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
+import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.beans.MailingSendStatus;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.company.service.CompanyService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.Tuple;
-import org.agnitas.web.MailingAdditionalColumn;
-import org.agnitas.web.forms.FormDateTime;
+import com.agnitas.beans.MailingSendStatus;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
+import com.agnitas.web.forms.FormDateTime;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,34 +83,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class MailingBirtStatController implements XssCheckAware {
 	
@@ -99,22 +99,24 @@ public class MailingBirtStatController implements XssCheckAware {
             BOUNCES
     );
 
-    protected ComMailingBaseService mailingBaseService;
-    protected MailinglistApprovalService mailinglistApprovalService;
-    protected WebStorage webStorage;
-    protected ConversionService conversionService;
-    protected UserActivityLogService userActivityLogService;
-    protected AdminService adminService;
-    protected GridServiceWrapper gridServiceWrapper;
-    protected BirtStatisticsService birtStatisticsService;
-    protected CompanyService companyService;
-    protected ComTargetService targetService;
-    protected ComBirtReportService birtReportService;
-    protected ComOptimizationService optimizationService;
+    protected final BirtStatisticsService birtStatisticsService;
+    protected final CompanyService companyService;
+    protected final BirtReportService birtReportService;
+    private final MailingBaseService mailingBaseService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final WebStorage webStorage;
+    private final ConversionService conversionService;
+    private final UserActivityLogService userActivityLogService;
+    private final AdminService adminService;
+    private final GridServiceWrapper gridServiceWrapper;
+    private final TargetService targetService;
+    private final OptimizationService optimizationService;
     private final MaildropService maildropService;
+    private final CampaignService campaignService;
+    private final WorkflowStatisticsService workflowStatisticsService;
 
     public MailingBirtStatController(
-            ComMailingBaseService mailingBaseService,
+            MailingBaseService mailingBaseService,
             MailinglistApprovalService mailinglistApprovalService,
             WebStorage webStorage,
             ConversionService conversionService,
@@ -123,10 +125,11 @@ public class MailingBirtStatController implements XssCheckAware {
             GridServiceWrapper gridServiceWrapper,
             BirtStatisticsService birtStatisticsService,
             CompanyService companyService,
-            ComTargetService targetService,
-            ComBirtReportService birtReportService,
-            ComOptimizationService optimizationService,
-            MaildropService maildropService) {
+            TargetService targetService,
+            BirtReportService birtReportService,
+            OptimizationService optimizationService,
+            MaildropService maildropService, CampaignService campaignService,
+            WorkflowStatisticsService workflowStatisticsService) {
         this.mailingBaseService = mailingBaseService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.webStorage = webStorage;
@@ -140,6 +143,8 @@ public class MailingBirtStatController implements XssCheckAware {
         this.birtReportService = birtReportService;
         this.optimizationService = optimizationService;
         this.maildropService = maildropService;
+        this.campaignService = campaignService;
+        this.workflowStatisticsService = workflowStatisticsService;
     }
 
     @RequestMapping("/list.action")
@@ -157,7 +162,8 @@ public class MailingBirtStatController implements XssCheckAware {
         model.addAttribute("mailingStatisticList", mailingBaseService.getPaginatedMailingsData(admin, props));
         model.addAttribute("availableAdditionalFields", getAvailableAdditionalFields(admin));
         model.addAttribute("availableMailingLists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
-        if (!isRedesignedUiUsed(admin)) {
+        model.addAttribute("availableArchives", campaignService.getCampaigns(admin.getCompanyID()));
+        if (!admin.isRedesignedUiUsed()) {
             model.addAttribute("availableTargetGroups", targetService.getTargetLights(admin));
         }
 
@@ -165,7 +171,7 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     private static MailingAdditionalColumn[] getAvailableAdditionalFields(Admin admin) {
-        if (isRedesignedUiUsed(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             return new MailingAdditionalColumn[]{
                     MailingAdditionalColumn.CREATION_DATE,
                     MailingAdditionalColumn.TEMPLATE,
@@ -179,10 +185,6 @@ public class MailingBirtStatController implements XssCheckAware {
         }
     }
 
-    private static boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
     @PostMapping("/setSelectedFields.action")
     public @ResponseBody BooleanResponseDto updateSelectedFields(@RequestParam(required = false) List<String> selectedFields, Popups popups) {
         webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> storage.setSelectedFields(selectedFields));
@@ -192,15 +194,16 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     @RequestMapping("/{mailingId:\\d+}/view.action")
-    public String view(Admin admin, Model model, @PathVariable int mailingId, MailingStatisticForm form, Popups popups) throws Exception {
+    public String view(@RequestParam(required = false) Integer statWorkflowId, Admin admin, Model model,
+                       @PathVariable int mailingId, MailingStatisticForm form, Popups popups) {
         if (!validateDates(admin, form, popups)){
             return MESSAGES_VIEW;
         }
         
         Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
-    
+
         if (mailing == null) {
-            return "/statistics/mailing/list.action";
+            return "redirect:/statistics/mailing/list.action";
         }
 
         boolean show10HoursTab = mailing.getMailingType().equals(MailingType.NORMAL) && birtStatisticsService.isWorldMailing(mailing);
@@ -224,7 +227,14 @@ public class MailingBirtStatController implements XssCheckAware {
         MailingStatisticDto mailingStatisticDto = convertFormToDto(form, admin, mailing);
 
         if (form.getStatisticType() == SUMMARY) {
-            prepareForSummaryStatistic(mailingStatisticDto, admin.getCompanyID(), mailingId, model);
+            int optimizationId = optimizationService.getOptimizationIdByFinalMailing(mailingId, admin.getCompanyID());
+            if (optimizationId > 0 && !form.isIgnoreAutoOptSummary()) {
+                mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
+                mailingStatisticDto.setDateMode(DateMode.NONE);
+                mailingStatisticDto.setOptimizationId(optimizationId);
+                model.addAttribute("hideStatActions", true);
+            }
+            model.addAttribute("isTotalAutoOpt", optimizationId > 0);
         }
 
         if (mailingStatisticDto.getType() == TOP_DOMAINS) {
@@ -233,38 +243,45 @@ public class MailingBirtStatController implements XssCheckAware {
 
         processStatisticView(admin, model, mailingStatisticDto, form, mailing);
 
-        model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
+        int workflowId = mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID());
+        model.addAttribute("workflowId", workflowId);
+        if (admin.isRedesignedUiUsed() && statWorkflowId != null && statWorkflowId > 0) {
+            model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(statWorkflowId, admin));
+            model.addAttribute("statWorkflowId", statWorkflowId);
+        }
 
         userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + mailingId + ")" + " active tab - statistics", logger);
 
         return "stats_mailing_view";
     }
 
-    protected MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final Admin admin, Mailing mailing) {
-        int mailingId = mailing.getId();
-
-        List<Date> sendDates = Arrays.stream(new Date[]{mailing.getSenddate(), mailingBaseService.getMailingLastSendDate(mailingId)})
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        Date mailingStartDate = null;
-        if (!sendDates.isEmpty()) {
-            mailingStartDate = Collections.min(sendDates);
-        }
+    private MailingStatisticDto convertFormToDto(MailingStatisticForm form, Admin admin, Mailing mailing) {
+        Date mailingStartDate = getMinSendDate(mailing);
 
         final MailingStatisticDto mailingStatisticDto = conversionService.convert(form, MailingStatisticDto.class);
         mailingStatisticDto.setMailingStartDate(mailingStartDate);
         final DateTimeFormatter dateFormatter = admin.getDateFormatter();
 
-        LocalDateTime mailingSendLocalDate = mailingStartDate != null ? DateUtilities.toLocalDateTime(mailingStartDate, AgnUtils.getZoneId(admin)) : null;
-        Tuple<LocalDateTime, LocalDateTime> dateRestrictions = dateTimeRestrictions(form, mailingSendLocalDate, dateFormatter);
+        LocalDateTime mailingSendLocalDate = mailingStartDate != null ? DateUtilities.toLocalDateTime(mailingStartDate, admin.getZoneId()) : null;
+        DateTimeRange dateRestrictions = getDateTimeRestrictions(form, mailingSendLocalDate, dateFormatter);
 
-        mailingStatisticDto.setStartDate(dateRestrictions.getFirst());
-        mailingStatisticDto.setEndDate(dateRestrictions.getSecond());
-        form.getStartDate().set(dateRestrictions.getFirst(), dateFormatter);
-        form.getEndDate().set(dateRestrictions.getSecond(), dateFormatter);
+        mailingStatisticDto.setDateRange(dateRestrictions);
+        form.getStartDate().set(dateRestrictions.getFrom(), dateFormatter);
+        form.getEndDate().set(dateRestrictions.getTo(), dateFormatter);
 
         return mailingStatisticDto;
+    }
+
+    private Date getMinSendDate(Mailing mailing) {
+        List<Date> sendDates = Stream.of(mailing.getSenddate(), mailingBaseService.getMailingLastSendDate(mailing.getId()))
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!sendDates.isEmpty()) {
+            return Collections.min(sendDates);
+        }
+
+        return null;
     }
 
     protected MailingsListProperties getMailingsListProperties(final Admin admin, final MailingStatatisticListForm statForm) {
@@ -274,7 +291,7 @@ public class MailingBirtStatController implements XssCheckAware {
         props.setSearchDescription(statForm.isSearchDescriptionChecked());
         props.setSearchNameStr(statForm.getFilterName());
         props.setSearchDescriptionStr(statForm.getFilterDescription());
-        props.setRedesignedUiUsed(isRedesignedUiUsed(admin));
+        props.setRedesignedUiUsed(admin.isRedesignedUiUsed());
         props.setMailingStatisticsOverview(true);
         props.setTypes("0,1,2,3,4"); // all mailing types
         props.setStatuses(Collections.singletonList(MailingStatus.SENT.getDbKey())); // just sent mailings
@@ -282,9 +299,10 @@ public class MailingBirtStatController implements XssCheckAware {
         props.setDirection(StringUtils.defaultString(statForm.getDir(), "desc")); // desc order by default
         props.setPage(statForm.getPage());
         props.setRownums(statForm.getNumberOfRows());
-        props.setAdditionalColumns(statForm.getAdditionalFieldsSet());
+        props.setAdditionalColumns(SetUtils.union(Set.of("archives"), statForm.getAdditionalFieldsSet()));
         props.setMailingLists(statForm.getFilteredMailingListsAsList());
-        if (isRedesignedUiUsed(admin)) {
+        props.setArchives(statForm.getFilterArchives());
+        if (admin.isRedesignedUiUsed()) {
             props.setSendDateBegin(tryParseDate(statForm.getFilterSendDateBegin(), admin));
             props.setSendDateEnd(tryParseDate(statForm.getFilterSendDateEnd(), admin));
         } else {
@@ -305,7 +323,7 @@ public class MailingBirtStatController implements XssCheckAware {
         }
     }
 
-    protected void processStatisticView(Admin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) throws Exception {
+    protected void processStatisticView(Admin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) {
         String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
         String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
         String birtDownloadUrl = "";
@@ -314,7 +332,7 @@ public class MailingBirtStatController implements XssCheckAware {
         }
         SimpleDateFormat localeFormat = admin.getDateFormat();
 
-        if (isRedesignedUiUsed(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
             model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
         } else {
@@ -329,7 +347,7 @@ public class MailingBirtStatController implements XssCheckAware {
         model.addAttribute("downloadBirtUrl", StringUtils.defaultString(birtDownloadUrl));
     }
 
-    protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) throws Exception {
+    protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) {
         if(mailingStatisticDto.getType() == null) {
             return null;
         }
@@ -353,7 +371,7 @@ public class MailingBirtStatController implements XssCheckAware {
         return ALLOWED_STATISTIC.contains(statisticType);
     }
 
-    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) throws Exception {
+    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) {
         DateMode dateMode = statisticType != null ? statisticType.getDateMode() : DateMode.NONE;
         if (dateMode != DateMode.NONE && SUMMARY == statisticType) {
         	MailingType mailingType = mailingBaseService.getMailingType(mailingId);
@@ -371,7 +389,7 @@ public class MailingBirtStatController implements XssCheckAware {
         webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0) {
                 storage.setRowsCount(form.getNumberOfRows());
-                if (isRedesignedUiUsed(admin)) {
+                if (admin.isRedesignedUiUsed()) {
                     if (!form.isInEditColumnsMode()) {
                         form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
                     }
@@ -388,7 +406,7 @@ public class MailingBirtStatController implements XssCheckAware {
     private boolean validate(MailingStatatisticListForm form, Popups popups) {
         if (form.isSearchNameChecked() || form.isSearchDescriptionChecked()) {
             for (String error : DbUtilities.validateFulltextSearchQueryText(form.getSearchQueryText())) {
-                popups.field("invalid_search_query", error);
+                popups.alert(error);
             }
         }
 
@@ -454,50 +472,17 @@ public class MailingBirtStatController implements XssCheckAware {
         }
     }
 
-    private Tuple<LocalDateTime, LocalDateTime> dateTimeRestrictions(MailingStatisticForm form, LocalDateTime mailingStart, DateTimeFormatter dateFormatter) {
-        DateMode dateMode = form.getDateMode();
-
+    private DateTimeRange getDateTimeRestrictions(MailingStatisticForm form, LocalDateTime mailingStart, DateTimeFormatter dateFormatter) {
         LocalDateTime startDate = form.getStartDate().get(dateFormatter);
         LocalDateTime endDate = form.getEndDate().get(dateFormatter);
-        switch (dateMode) {
-            case LAST_TENHOURS:
-                if (mailingStart != null) {
-                    return new Tuple<>(mailingStart,  mailingStart.plusHours(10));
-                } else {
-                    return new Tuple<>(LocalDateTime.now().minusHours(10),  LocalDateTime.now());
-                }
-            case SELECT_DAY:
-                //this mode is hour scale, don't ignore hour values
-                if (startDate == null) {
-                    return new Tuple<>(LocalDateTime.now().withHour(0), LocalDateTime.now().withHour(23));
-                } else {
-                    //ignore endDate
-                    return new Tuple<>(startDate.withHour(0), startDate.plusDays(1));
-                }
-            case LAST_MONTH:
-                //ignore start and end dates an always set values of first and last day of month
-                return new Tuple<>(LocalDateTime.now().with(firstDayOfMonth()), LocalDateTime.now().with(lastDayOfMonth()));
-            case SELECT_MONTH:
-                //ignore start and end dates, take into account only year and month selected on GUI dropdown
-                LocalDateTime selectedMonth = LocalDateTime.now()
-                        .withYear(form.getYear())
-                        .withMonth(form.getMonthValue().getValue()).truncatedTo(ChronoUnit.DAYS);
 
-                return new Tuple<>(selectedMonth.with(firstDayOfMonth()), selectedMonth.with(firstDayOfNextMonth()));
-            case SELECT_PERIOD:
-                if(startDate == null) {
-                    startDate = LocalDateTime.now().with(firstDayOfMonth());
-                }
-
-                if(endDate == null){
-                    endDate = LocalDateTime.now();
-                }
-                return new Tuple<>(startDate, endDate);
-                default:
-                    //do nothing
-        }
-
-        return new Tuple<>(startDate, endDate);
+        return birtStatisticsService.getDateTimeRestrictions(
+                new DateTimeRange(startDate, endDate),
+                form.getDateMode(),
+                mailingStart,
+                form.getYear(),
+                form.getMonthValue()
+        );
     }
 
     private void checkAbsentDateFields(MailingStatisticForm form) {
@@ -506,17 +491,6 @@ public class MailingBirtStatController implements XssCheckAware {
         }
         if (form.getYear() == 0) {
             form.setYear(YearMonth.now().getYear());
-        }
-    }
-
-    private void prepareForSummaryStatistic(MailingStatisticDto mailingStatisticDto, int companyId, int mailingId, Model model) {
-        int optimizationId = optimizationService.getOptimizationIdByFinalMailing(mailingId, companyId);
-        if (optimizationId > 0) {
-            mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
-            mailingStatisticDto.setDateMode(DateMode.NONE);
-            mailingStatisticDto.setOptimizationId(optimizationId);
-
-            model.addAttribute("isTotalAutoOpt", true);
         }
     }
 }

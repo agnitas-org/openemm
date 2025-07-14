@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,14 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
+import com.agnitas.beans.BindingEntry.UserType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,24 +26,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
 
 /**
  * BIRT-DataSet for mailing url clicks statistics
  */
 public class MailingURLClicksDataSet extends BIRTDataSet {
-
-	private static final Logger logger = LogManager.getLogger(MailingURLClicksDataSet.class);
 
 	private static String getTempTableName(int companyId) {
 		return "tmp_report_aggregation_" + companyId + "_tbl";
@@ -162,17 +157,17 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 				.append(" GROUP BY rlog.url_id")
 				.append(" ORDER BY rlog.url_id");
 
-		List<Map<String, Object>> result = select(logger, sql.toString(), parameters.toArray(new Object[0]));
+		List<Map<String, Object>> result = select(sql.toString(), parameters.toArray(new Object[0]));
 		for (Map<String, Object> row : result) {
-			int urlID = ((Number) row.get("url_id")).intValue();
+			int urlID = toInt(row.get("url_id"));
 			addClickGrossAndNetValues(clicksItems.get(urlID), row);
 		}
 	}
 
 	private void addClickGrossAndNetValues(MailingClickStatsPerTargetRow targetRow, Map<String, Object> row) {
 		if (targetRow != null) {
-			targetRow.addClicksGross(((Number) row.get("clicks_gross")).intValue());
-			targetRow.addClicksNet(((Number) row.get("clicks_net")).intValue());
+			targetRow.addClicksGross(toInt(row.get("clicks_gross")));
+			targetRow.addClicksNet(toInt(row.get("clicks_net")));
 		}
 	}
 
@@ -190,9 +185,9 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 			+ " WHERE mailing_id = ? AND deleted = 0"
 			+ " ORDER BY url_id";
 
-		List<Map<String, Object>> resultAllLinks = select(logger, queryAllLinks, mailingID);
+		List<Map<String, Object>> resultAllLinks = select(queryAllLinks, mailingID);
 		for (Map<String, Object> row : resultAllLinks) {
-			int urlID = ((Number) row.get("url_id")).intValue();
+			int urlID = toInt(row.get("url_id"));
 
 			allDeviceClassesClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, false));
 			mobileClickItems.put(urlID, getMailingClickStatByTargetRow(urlID, columnIndex, targetName, row, true));
@@ -211,7 +206,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 		statsRow.setUrlId(urlId);
 		statsRow.setMobile(isMobile);
 		statsRow.setUrl((String) row.get("url"));
-		statsRow.setAdminLink(((Number) row.get("admin_link")).intValue() == 1);
+		statsRow.setAdminLink(toInt(row.get("admin_link")) == 1);
 		statsRow.setColumnIndex(columnIndex);
 		statsRow.setTargetgroup(targetName);
 		statsRow.setDeleted(extractBooleanValue(row.get("deleted")));
@@ -220,7 +215,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 
 	public List<MailingClickStatsPerTargetRow> getUrlClicksData(int tempTableID) throws Exception {
 		String select = "SELECT url, url_id, admin_link, target_group_index, target_group, clicks_gross, clicks_net, mobile, rate_gross, rate_net, deleted, anonymous FROM " + getTempTableName(tempTableID) + " ORDER BY clicks_gross DESC, target_group_index, url_id";
-		return selectEmbedded(logger, select, (resultSet, rowIndex) -> {
+		return selectEmbedded(select, (resultSet, rowIndex) -> {
 			MailingClickStatsPerTargetRow row = new MailingClickStatsPerTargetRow();
 
 			row.setAdminLink(resultSet.getBigDecimal("admin_link").intValue() == 1);
@@ -246,15 +241,15 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	@DaoUpdateReturnValueCheck
 	private void updateRates(int tempTableID, List<LightTarget> targets) throws Exception {
 		for (int targetIndex = ALL_SUBSCRIBERS_INDEX; targetIndex <= targets.size() + 1; targetIndex++) {
-			int totalGross = selectEmbeddedIntWithDefault(logger, "SELECT COALESCE(SUM(clicks_gross), 0) total_click_gross FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
-			int totalNet = selectEmbeddedIntWithDefault(logger, "SELECT COALESCE(SUM(clicks_net), 0) total_click_net FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
+			int totalGross = selectEmbeddedIntWithDefault("SELECT COALESCE(SUM(clicks_gross), 0) total_click_gross FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
+			int totalNet = selectEmbeddedIntWithDefault("SELECT COALESCE(SUM(clicks_net), 0) total_click_net FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
 	
-			updateEmbedded(logger, "UPDATE " + getTempTableName(tempTableID) + " SET rate_gross = " + (totalGross > 0 ? "(" + "clicks_gross" + " * 1.0) / ?" : "?") + ", rate_net = " + (totalNet > 0 ? "(" + "clicks_net" + " * 1.0) / ?" : "?") + " WHERE target_group_index = ?", totalGross, totalNet, targetIndex);
+			updateEmbedded("UPDATE " + getTempTableName(tempTableID) + " SET rate_gross = " + (totalGross > 0 ? "(" + "clicks_gross" + " * 1.0) / ?" : "?") + ", rate_net = " + (totalNet > 0 ? "(" + "clicks_net" + " * 1.0) / ?" : "?") + " WHERE target_group_index = ?", totalGross, totalNet, targetIndex);
 		}
 	}
 
 	private boolean extractBooleanValue(Object intValue){
-		return intValue != null && (((Number) intValue).intValue() == 1);
+		return intValue != null && toInt(intValue) == 1;
 	}
 
 	@DaoUpdateReturnValueCheck
@@ -275,7 +270,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 				row.isAnonymous() ? 1 : 0
 			});
 		}
-		batchupdateEmbedded(logger, insertQuery, values);
+		batchupdateEmbedded(insertQuery, values);
 	}
 
 	/**
@@ -289,7 +284,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	 */
 	private int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(logger,
+		executeEmbedded(
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
 				+ "url VARCHAR(2000),"
 				+ " url_id INTEGER,"

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package com.agnitas.emm.core.maildrop.service;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.util.importvalues.MailType;
 
 import java.util.Collection;
 import java.util.Date;
@@ -48,7 +48,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 
 	Optional<MaildropEntry> findMaildrop(int mailingId, int companyId, MaildropStatus... statuses);
 
-	int saveMaildropEntry(final MaildropEntry entry) throws Exception;
+	int saveMaildropEntry(final MaildropEntry entry);
 
 	void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays);
 

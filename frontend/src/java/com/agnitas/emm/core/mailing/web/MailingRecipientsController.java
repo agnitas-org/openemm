@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,7 +14,7 @@ import static com.agnitas.web.mvc.Pollable.LONG_TIMEOUT;
 import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateTimeValue;
 import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateValue;
 import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDoubleValue;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -30,15 +30,16 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.service.GenericExportWorker;
-import org.agnitas.service.MailingRecipientExportWorker;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.FileUtils;
-import org.agnitas.web.MailingRecipientsAdditionalColumn;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.service.GenericExportWorker;
+import com.agnitas.service.MailingRecipientExportWorker;
+import com.agnitas.service.MailingRecipientExportWorkerFactory;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.FileUtils;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.Resource;
@@ -63,8 +64,7 @@ import com.agnitas.emm.core.components.service.MailingRecipientsService;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsFormSearchParams;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.MailingRecipientsExportWorker;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.GridServiceWrapper;
@@ -84,21 +84,24 @@ public class MailingRecipientsController implements XssCheckAware {
     private static final String MAILING_RECIPIENT_TMP_DIRECTORY = AgnUtils.getTempDir() + File.separator + "MailingRecipientsExport";
 
     private final UserActivityLogService userActivityLogService;
-    protected final ComMailingBaseService mailingBaseService;
+    protected final MailingBaseService mailingBaseService;
     private final ColumnInfoService columnInfoService;
     private final GridServiceWrapper gridService;
     private final WebStorage webStorage;
     private final MailingRecipientsService mailingRecipientsService;
+    private final MailingRecipientExportWorkerFactory exportWorkerFactory;
 
     public MailingRecipientsController(UserActivityLogService userActivityLogService, WebStorage webStorage,
-                                       ColumnInfoService columnInfoService, ComMailingBaseService mailingBaseService,
-                                       GridServiceWrapper gridService, MailingRecipientsService mailingRecipientsService) {
+                                       ColumnInfoService columnInfoService, MailingBaseService mailingBaseService,
+                                       GridServiceWrapper gridService, MailingRecipientsService mailingRecipientsService,
+                                       MailingRecipientExportWorkerFactory exportWorkerFactory) {
         this.webStorage = webStorage;
         this.gridService = gridService;
         this.columnInfoService = columnInfoService;
         this.mailingBaseService = mailingBaseService;
         this.userActivityLogService = userActivityLogService;
         this.mailingRecipientsService = mailingRecipientsService;
+        this.exportWorkerFactory = exportWorkerFactory;
     }
 
     @ModelAttribute
@@ -110,7 +113,7 @@ public class MailingRecipientsController implements XssCheckAware {
     public Pollable<ModelAndView> list(@PathVariable int mailingId, @ModelAttribute("form") MailingRecipientsOverviewFilter filter,
                                        @RequestParam(required = false) boolean restoreSort,
                                        @ModelAttribute MailingRecipientsFormSearchParams searchParams,
-                                       Admin admin, Model model, HttpSession session) throws Exception {
+                                       Admin admin, Model model, HttpSession session) {
         FormUtils.updateSortingState(webStorage, WebStorage.MAILING_RECIPIENT_OVERVIEW, filter, restoreSort);
         if (isRedesignedUiUsed(admin)) {
             FormUtils.syncSearchParams(searchParams, filter, true);
@@ -155,8 +158,7 @@ public class MailingRecipientsController implements XssCheckAware {
     }
 
     private PaginatedListImpl<MailingRecipientStatRow> getRecipientsList(int mailingId, MailingRecipientsOverviewFilter filter,
-                                                                         Map<String, ProfileField> profileFields,
-                                                                         Admin admin) throws Exception {
+                                                                         Map<String, ProfileField> profileFields, Admin admin) {
         PaginatedListImpl<MailingRecipientStatRow> recipients;
 
         if (isRedesignedUiUsed(admin)) {
@@ -295,9 +297,9 @@ public class MailingRecipientsController implements XssCheckAware {
     }
 
     private void writeCsvToTmpFile(File exportTmpFile, int mailingId, MailingRecipientsOverviewFilter filter, Admin admin) throws Exception {
-        GenericExportWorker exportWorker = null;
+        GenericExportWorker exportWorker;
         if (isRedesignedUiUsed(admin)) {
-            exportWorker = new MailingRecipientsExportWorker(filter, mailingId, admin.getCompanyID(), mailingRecipientsService, admin.getLocale());
+            exportWorker = exportWorkerFactory.newWorker(filter, mailingId, admin.getCompanyID(), admin.getLocale());
         } else {
             exportWorker = new MailingRecipientExportWorker(admin.getCompanyID(), mailingId, filter.getRecipientsFilter(),
                     new ArrayList<>(filter.getSelectedFields()), filter.getSort(),

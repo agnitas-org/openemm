@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,18 +11,32 @@
 package com.agnitas.web;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.dao.RdirTrafficAmountDao;
+import com.agnitas.beans.Company;
+import com.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.RdirTrafficAmountDao;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.responseheaders.common.UsedFor;
+import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
+import com.agnitas.emm.responseheaders.web.NullHttpResonseHeaderApplier;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.ImageUtils;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,22 +44,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.Company;
-import com.agnitas.beans.EmmLayoutBase;
-import com.agnitas.dao.MailingComponentDao;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
-import com.agnitas.emm.responseheaders.common.UsedFor;
-import com.agnitas.emm.responseheaders.web.HttpResponseHeaderApplier;
-import com.agnitas.emm.responseheaders.web.NullHttpResonseHeaderApplier;
-import com.agnitas.util.ImageUtils;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This servlet loads and shows a image from the mailing_component_tbl.
@@ -68,7 +66,7 @@ public class ShowImageServlet extends HttpServlet {
 	private static final long serialVersionUID = -595094416663851734L;
 
 	protected MailingComponentDao componentDao;
-	protected ComDeviceService deviceService;
+	protected DeviceService deviceService;
 	protected ImageCache imageCache;
 	protected CdnCache cdnCache;
     protected RdirTrafficAmountDao rdirTrafficAmountDao;
@@ -87,7 +85,7 @@ public class ShowImageServlet extends HttpServlet {
 		this.componentDao = componentDao;
 	}
 
-	public void setDeviceService(ComDeviceService deviceService) {
+	public void setDeviceService(DeviceService deviceService) {
 		this.deviceService = deviceService;
 	}
 
@@ -122,7 +120,7 @@ public class ShowImageServlet extends HttpServlet {
 	 * 		https://rdir.de/image?ci=2270&mi=105141&name=logo.jpg&lic=1
 	 */
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         try {
             if (request.getAttribute("clearComShowImageCache") != null) {
                 if (request.getAttribute("clearComShowImageCache").toString().equals("doClear")) {
@@ -132,9 +130,8 @@ public class ShowImageServlet extends HttpServlet {
                 return;
             }
 
-
             if (logger.isDebugEnabled()) {
-				logger.debug("ShowImageServlet execute start: " + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_MS).format(new Date()));
+				logger.debug("ShowImageServlet execute start: {}", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_MS).format(new Date()));
 			}
 			String companyIdString = request.getParameter("ci");
 			String mailingIdString = request.getParameter("mi");
@@ -268,17 +265,11 @@ public class ShowImageServlet extends HttpServlet {
 			throw new ServletException("Error occurred when loading image", e);
 		} finally {
 			if (logger.isDebugEnabled()) {
-				logger.debug("ShowImageServlet execute end: " + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_MS).format(new Date()));
+				logger.debug("ShowImageServlet execute end: {}", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_MS).format(new Date()));
 			}
 		}
 	}
 
-	/**
-	 * @param companyID
-	 * @param elementID
-	 * @param noCache
-	 * @param isMobileDevice
-	 */
 	protected DeliverableImage getMediapoolImage(int companyID, int elementID, boolean noCache, boolean isMobileDevice) {
 		return null;
 	}
@@ -287,12 +278,6 @@ public class ShowImageServlet extends HttpServlet {
 		return null;
 	}
 
-	/**
-	 * @param companyID
-	 * @param elementID
-	 * @param noCache
-	 * @param isMobileDevice
-	 */
 	protected CdnImage getMediapoolCdnImage(int companyID, int elementID) {
 		return null;
 	}
@@ -301,13 +286,6 @@ public class ShowImageServlet extends HttpServlet {
 	 * Look up mobile image data in cache and DB.
 	 * If not found there, it will be looked up with standard name.
 	 * If found there, it will be cached as mobile image too for later requests
-	 *
-	 * @param request
-	 * @param companyID
-	 * @param mailingID
-	 * @param imageName
-	 * @return
-	 * @throws Exception
 	 */
 	private DeliverableImage getImageForMobileRequest(HttpServletRequest request, int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key for mobile image
@@ -339,9 +317,7 @@ public class ShowImageServlet extends HttpServlet {
 				newImage.name = comp.getComponentName();
 				if (checkImageCacheSize(newImage)) {
 					getImageCache().put(mobileCacheKey, newImage);
-					if (logger.isDebugEnabled()) {
-						logger.debug("mobile image added to cache: " + mobileCacheKey);
-					}
+					logger.debug("mobile image added to cache: {}", mobileCacheKey);
 				}
 
 				return newImage;
@@ -361,13 +337,6 @@ public class ShowImageServlet extends HttpServlet {
 	 * Look up image data in cache and DB.
 	 * If found there, it will be cached.
 	 * If requested as mobile image, images will be cached by their mobile name too for later mobile requests
-	 *
-	 * @param request
-	 * @param companyID
-	 * @param mailingID
-	 * @param imageName
-	 * @return
-	 * @throws Exception
 	 */
 	private DeliverableImage getImageForStandardRequest(HttpServletRequest request, int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key
@@ -399,9 +368,7 @@ public class ShowImageServlet extends HttpServlet {
 				newImage.name = comp.getComponentName();
 				if (checkImageCacheSize(newImage)) {
 					getImageCache().put(cacheKey, newImage);
-					if (logger.isDebugEnabled()) {
-						logger.debug("image added to cache: " + cacheKey);
-					}
+					logger.debug("image added to cache: {}", cacheKey);
 				}
 			} else if (comp != null && !checkValidityPeriod(comp)) {
 				// Image is outdated and replaced by a default image
@@ -411,28 +378,20 @@ public class ShowImageServlet extends HttpServlet {
 					newImage = NOT_FOUND_IMAGE;
 					getImageCache().put(cacheKey, newImage);
 
-					if (logger.isDebugEnabled()) {
-						logger.debug("default image not found: " + cacheKey);
-					}
+					logger.debug("default image not found: {}", cacheKey);
 				} else {
 					// default image found
 					if (checkImageCacheSize(newImage)) {
 						getImageCache().put(cacheKey, newImage);
-						if (logger.isDebugEnabled()) {
-							logger.debug("default image added to cache: " + cacheKey);
-						}
+						logger.debug("default image added to cache: {}", cacheKey);
 					}
 				}
 			} else {
 				Company company = getCompanyDaoCache().getItem(companyID);
 				if (company == null) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("image not found for not existing company: " + cacheKey);
-					}
+					logger.debug("image not found for not existing company: {}", cacheKey);
 				} else if (!(CompanyStatus.ACTIVE == company.getStatus())) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("image not found for inactive company: " + cacheKey);
-					}
+					logger.debug("image not found for inactive company: {}", cacheKey);
 				}
 				
 				newImage = NOT_FOUND_IMAGE;
@@ -449,10 +408,6 @@ public class ShowImageServlet extends HttpServlet {
 
 	/**
 	 * Write imagedata to output stream
-	 *
-	 * @param request
-	 * @param response
-	 * @param image
 	 */
 	private void writeImageToResponse(HttpServletRequest request, HttpServletResponse response, DeliverableImage image, final int companyID) {
 		try {
@@ -491,7 +446,7 @@ public class ShowImageServlet extends HttpServlet {
 		if (defaultImageData == null) {
 			// Default image data was not found so write some text
 			newImage.mtype = "text/html";
-			newImage.imageData = "Defaultimage not found".getBytes("UTF-8");
+			newImage.imageData = "Defaultimage not found".getBytes(StandardCharsets.UTF_8);
 			newImage.name = "";
 		} else {
 			// Use the default image
@@ -504,15 +459,8 @@ public class ShowImageServlet extends HttpServlet {
 
 	/**
 	 * Generate key for lookup in cache
-	 *
-	 * @param companyID
-	 * @param mailingID
-	 * @param name
-	 * @return
-	 * @throws Exception
-	 *             on missing parameters
 	 */
-	private String generateCachingKey(int companyID, int mailingID, String name) throws Exception {
+	private String generateCachingKey(int companyID, int mailingID, String name) {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append(companyID);
 		cacheKeyBuilder.append("-");
@@ -524,9 +472,6 @@ public class ShowImageServlet extends HttpServlet {
 
 	/**
 	 * Check if the optional validity period is valid for now
-	 *
-	 * @param comp
-	 * @return
 	 */
 	private boolean checkValidityPeriod(MailingComponent comp) {
 		Date now = new Date();
@@ -582,9 +527,9 @@ public class ShowImageServlet extends HttpServlet {
 	/**
 	 * @return the deviceService
 	 */
-	private ComDeviceService getDeviceService() {
+	private DeviceService getDeviceService() {
 		if (deviceService == null) {
-			deviceService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("DeviceService", ComDeviceService.class);
+			deviceService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("DeviceService", DeviceService.class);
 		}
 		return deviceService;
 	}

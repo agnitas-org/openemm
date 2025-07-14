@@ -1,17 +1,33 @@
 
-#help-center-modal {
-  .modal-content {
+#help-center-modal .modal-content {
+  @include desktop {
     height: 600px;
-    
-    @include media-breakpoint-down(lg) {
-      height: 100vh;
-    }
   }
 }
 
 #help-center-docs-tab {
+  --manual-title-color: #{$black};
+
   .card-title {
     color: var(--manual-title-color);
+  }
+}
+
+@include color-mode(dark) {
+  #help-center-docs-tab {
+    --manual-title-color: #{$light-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  #help-center-docs-tab {
+    --manual-title-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #help-center-docs-tab {
+    --manual-title-color: #{$white};
   }
 }
 

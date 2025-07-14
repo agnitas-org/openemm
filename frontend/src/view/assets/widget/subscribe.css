@@ -1,0 +1,52 @@
+form {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	max-width: 400px;
+}
+
+label {
+	margin-bottom: 0.5em;
+}
+
+input, select {
+	padding: 0.5em;
+	margin-bottom: 1em;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+}
+
+select {
+	background-color: #fff;
+}
+
+button[type="submit"] {
+	padding: 0.5em 1em;
+	border-radius: 4px;
+	border: none;
+	background-color: #007bff;
+	color: #fff;
+	cursor: pointer;
+}
+
+button[type="submit"]:hover {
+	background-color: #0069d9;
+}
+
+.widget-message {
+	padding: 10px;
+	margin: 10px 0;
+	border-radius: 5px;
+}
+
+.widget-message--success {
+	background-color: #d4edda;
+	color: #155724;
+	border: 1px solid #c3e6cb;
+}
+
+.widget-message--error {
+	background-color: #f8d7da;
+	color: #721c24;
+	border: 1px solid #f5c6cb;
+}

@@ -1,0 +1,58 @@
+
+<c:choose>
+    <c:when test="${empty form.tags}">
+        <div id="content-blocks-tab" class="tile-body">
+            <div class="notification-simple">
+                <i class="icon icon-info-circle"></i>
+                <mvc:message code="mailing.content.empty"/>
+            </div>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div id="content-blocks-tab" class="tile-body">
+            <div id="dyn-tag-list">
+
+                <select id="mobile-dyn-tags-list" class="form-control js-select has-arrows select-dropdown--long mobile-visible"
+                        data-result-template="dyntag-option-template"
+                        data-action="switch-dyn-tag">
+                    <c:forEach items="${form.tags}" var="dynTag" varStatus="status">
+                        <option value="${dynTag.value.id}"
+                                data-id="${dynTag.value.id}"
+                                data-key="${dynTag.key}"
+                                data-preview-text="${fn:escapeXml(dynTag.value.previewText)}"
+                                data-targets="${dynTag.value.targetGroupNamesStr}">${dynTag.key}</option>
+                    </c:forEach>
+                </select>
+
+                <div class="search-container mobile-hidden">
+                    <input type="text" class="form-control" data-action="search-content-blocks" placeholder="<mvc:message code='default.filter.name'/>">
+                </div>
+
+                <div class="list-group flex-grow-1 mobile-hidden">
+                    <div class="p-2" data-blocks-not-found-msg style="display: none">
+                        <div class="notification-simple">
+                            <i class="icon icon-info-circle"></i>
+                            <span><mvc:message code="noResultsFound" /></span>
+                        </div>
+                    </div>
+                    <c:forEach items="${form.tags}" var="dynTag" varStatus="status">
+                        <button type="button" class="dyn-tag dyn-tag--new-ux list-group-item list-group-item-action ${status.index eq 0 ? 'active' : ''}" value="${dynTag.value.id}" data-action="switch-dyn-tag">
+                            <small>${dynTag.key}</small>
+                            <span><i class="icon icon-file-alt"></i><p class="dyn-tag__preview" style="--text-truncate-lines: 2">${fn:escapeXml(dynTag.value.previewText)}</p></span>
+                            <c:if test="${not empty dynTag.value.targetGroupNamesStr}">
+                                <span><i class="icon icon-users"></i><p>${dynTag.value.targetGroupNamesStr}</p></span>
+                            </c:if>
+                        </button>
+                    </c:forEach>
+                </div>
+            </div>
+            <div id="dyn-tag-settings">
+                <%-- populated with js. see content-editor-template.jspf --%>
+            </div>
+        </div>
+    </c:otherwise>
+</c:choose>
+
+<%@ include file="dyn-tag-option-template-mobile.jspf" %>
+
+<%@ include file="content-editor-template-new-ux.jspf" %>

@@ -5,8 +5,8 @@
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="export" type="org.agnitas.beans.ExportPredef"--%>
-<%--@elvariable id="exports" type="java.util.List<org.agnitas.beans.ExportPredef>"--%>
+<%--@elvariable id="export" type="com.agnitas.beans.ExportPredef"--%>
+<%--@elvariable id="exports" type="java.util.List<com.agnitas.beans.ExportPredef>"--%>
 
 <mvc:form servletRelativeAction="/export/list.action" modelAttribute="form">
     <div class="tile" data-controller="export">

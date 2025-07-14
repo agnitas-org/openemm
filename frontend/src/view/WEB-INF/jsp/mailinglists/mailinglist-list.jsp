@@ -4,8 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="mailinglistForm" type="com.agnitas.web.forms.ComMailinglistForm"--%>
-<%--@elvariable id="mailingListsJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="mailingListsJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
 
 <div class="tile js-data-table" data-sizing="container" data-table="mailing-lists" data-controller="mailinglist-list">
@@ -73,7 +72,9 @@
     <c:set value="true" var="hideFrequencyCounterInfo"/>
     <%@include file="diactivate-hide-frequency-counter-property.jspf" %>
 
-    <c:forEach var="entry" items="${mailingListsJson}">
+    <c:set var="mailinglistsList" value="${mailingListsJson.toList()}" />
+
+    <c:forEach var="entry" items="${mailinglistsList}">
         <c:url var="viewLink" value="/mailinglist/${entry['id']}/view.action"/>
         <c:set target="${entry}" property="show" value="${viewLink}"/>
 		<emm:ShowByPermission token="mailinglist.delete">
@@ -141,7 +142,7 @@
                     "type": "deleteColumn"
                 }
             ],
-            "data": ${mailingListsJson}
+            "data": ${emm:toJson(mailinglistsList)}
         }
     </script>
 </div>

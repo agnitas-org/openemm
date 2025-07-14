@@ -30,7 +30,7 @@
     <c:if test="${needsOutsideApproval}">
         <br />
         <div class="well block">
-            <b><mvc:message code="ENTW.Note"/>:</b> <mvc:message code="ENTW.needs.approval"/>
+            <b><mvc:message code="default.note"/>:</b> <mvc:message code="mailing.send.approval.note"/>
         </div>
     </c:if>
 

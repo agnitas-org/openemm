@@ -237,7 +237,8 @@ AGN.Lib.Controller.new('auto-import-export', function() {
 
     function getContentSourceDataParts() {
         if (contentSourceTypeExists()) {
-            return $('#contentSourceId').val().split('/');
+            const selectedVal = $('#contentSourceId').val();
+            return selectedVal ? selectedVal.split('/') : [];
         }
 
         return [];

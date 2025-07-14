@@ -1,7 +1,8 @@
+// TODO EMMGUI-953 check usage and remove after ux-update has been successfully tested
 (() => {
   const DateFormat = AGN.Lib.DateFormat;
   const Template = AGN.Lib.Template;
-  const CalendarBase = AGN.Lib.Dashboard.CalendarBase;
+  const CalendarBase = AGN.Lib.Dashboard.CalendarBaseUxUpdateRollback;
 
   const monthMailingsUrl = AGN.url('/calendar/mailingsLight.action');
   const mailingsPopoverInfoUrl = AGN.url("/calendar/mailingsPopoverInfo.action");
@@ -104,7 +105,11 @@
         .get(mailingsPopoverInfoUrl, { mailingIds })
         .done(mailings => mailings
           .map(mailing => ({ ...mailing, $el: $(`.schedule__day-mailing[data-mailing-id="${mailing.mailingId}"]`)}))
-          .forEach(mailing => CalendarBase.createMailingPopover(mailing)));
+          .forEach(mailing => CalendarBase.createMailingPopover({
+            ...mailing,
+            sent: mailing.sentCount,
+            showLoader: false
+          })));
     }
 
     switchMonth() {

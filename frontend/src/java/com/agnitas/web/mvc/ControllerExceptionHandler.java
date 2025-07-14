@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import com.agnitas.exception.DetailedRequestErrorException;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.exception.NoPreviewImageException;
-import org.agnitas.util.HttpUtils;
+import com.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -27,7 +27,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 
 import java.util.Map;
 
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {

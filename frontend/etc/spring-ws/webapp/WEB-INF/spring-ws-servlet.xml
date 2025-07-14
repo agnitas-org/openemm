@@ -20,26 +20,17 @@
 	<bean id="marshaller" class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
 		<property name="contextPaths">
 			<list>
-				<value>org.agnitas.emm.springws.jaxb</value>
 				<value>com.agnitas.emm.springws.jaxb</value>
+				<value>com.agnitas.emm.springws.jaxb.extended</value>
 			</list>
 		</property>
 
 		<property name="validationEventHandler" ref="validationHandler" />
 	</bean>
 
-	<bean id="validationHandler" class="org.agnitas.emm.springws.handlers.ValidationHandler"/>
+	<bean id="validationHandler" class="com.agnitas.emm.springws.handlers.ValidationHandler"/>
 	
-	<bean id="xsdSchema" class="org.springframework.xml.xsd.commons.CommonsXsdSchemaCollection">
-		<property name="xsds">
-			<list>
-				<value>OpenEmm.xsd</value>
-				<value>Emm.xsd</value>
-			</list>
-		</property>
-	</bean>
-
-	<bean id="emmservices" class="org.agnitas.emm.springws.WsDefinitionWrapper">
+	<bean id="emmservices" class="com.agnitas.emm.springws.WsDefinitionWrapper">
 		<constructor-arg name="configService" ref="ConfigService" />
 
 		<property name="schemaCollection" ref="xsdSchema" />
@@ -51,9 +42,8 @@
 		<property name="exceptionMappings">
 			<map>
 				<entry key="com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException" value=""/>
-                <entry key="org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException" value="Unknown target group ID"/>
+                <entry key="com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException" value="Unknown target group ID"/>
                 <entry key="com.agnitas.emm.core.target.exception.EqlFormatException" value="Invalid EQL."/>
-				<entry key="org.agnitas.emm.core.mailing.exception.UnknownMailingIdException" value="Unknown mailing id."/>
 			</map>
 		</property>
         <property name="mappedEndpoints">
@@ -68,7 +58,7 @@
 	</bean>
 
 		<!-- Common resolver -->
-	<bean id="defaultExceptionResolver" class="org.agnitas.emm.springws.exceptionresolver.DefaultExceptionResolver">
+	<bean id="defaultExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.DefaultExceptionResolver">
 		<property name="mappedEndpoints">
 			<set>
                 <ref bean="addMailinglistEndpoint"/>
@@ -123,9 +113,8 @@
 	<import resource="spring-ws-mapping-emm.xml" />
 
 	<sws:interceptors>
-		<bean class="org.springframework.ws.server.endpoint.interceptor.PayloadLoggingInterceptor"/>
-
-		<ref bean="schemaValidatingInterceptor" />	
+		<ref bean="payloadLoggingInterceptor" />
+		<ref bean="schemaValidatingInterceptor" />
 		<ref bean="wsSecurityInterceptor"/>
 		<ref bean="permissionInterceptor" />
 		<ref bean="throttlingInterceptor"/>

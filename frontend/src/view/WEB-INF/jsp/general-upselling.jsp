@@ -4,7 +4,7 @@
 
 <%--@elvariable id="featureNameKey" type="java.lang.String"--%>
 
-<c:url var="upsellingImageSrc" value="assets/core/images/facelift/general-upselling.png"/>
+<c:url var="upsellingImageSrc" value="assets/core/images/facelift/general-upselling_old.png"/>
 
 <div class="tile" data-sizing="container">
     <div class="tile-header" data-sizing="top">

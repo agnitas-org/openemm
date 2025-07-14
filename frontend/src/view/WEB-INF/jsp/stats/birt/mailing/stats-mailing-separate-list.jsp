@@ -6,7 +6,7 @@
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="mailingStatatisticListForm" type="com.agnitas.emm.core.birtstatistics.mailing.forms.mailingStatatisticListForm"--%>
-<%--@elvariable id="mailingStatisticList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="mailingStatisticList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="availableAdditionalFields" type="java.util.List"--%>
 <%--@elvariable id="availableMailingLists" type="java.util.List"--%>
 <%--@elvariable id="availableTargetGroups" type="java.util.List"--%>

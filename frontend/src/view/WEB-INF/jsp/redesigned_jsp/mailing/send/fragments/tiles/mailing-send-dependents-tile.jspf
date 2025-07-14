@@ -1,4 +1,3 @@
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
 
 <%--@elvariable id="dependents" type="java.util.List<Dependent<MailingDependentType>>"--%>
 
@@ -18,7 +17,7 @@
             <div class="table-wrapper__header">
                 <h1 class="table-wrapper__title">
                     <mvc:message code="default.usedIn"/>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/MailingDependentsList.xml"></a>
+                    <a href="#" class="icon icon-question-circle" data-help="mailing/MailingDependentsList.xml"></a>
                 </h1>
                 <div class="table-wrapper__controls">
                     <%@include file="../../../../common/table/toggle-truncation-btn.jspf" %>
@@ -29,53 +28,39 @@
             </div>
 
             <div class="table-wrapper__body">
-                <agnDisplay:table class="table table-hover table--borderless js-table" id="item" list="${dependents}"
-                               pagesize="${form.numberOfRows}" sort="list" excludedParams="*" requestURI="/mailing/send/${tmpMailingID}/view.action"
-                               partialList="false">
+                <mvc:message var="agnTableEmptyListMsg" code="warning.mailing.action.sending.non" />
 
-                    <%@ include file="../../../../common/displaytag/displaytag-properties.jspf" %>
-
-                    <agnDisplay:setProperty name="basic.msg.empty_list_row">
-                        <tr class="empty">
-                            <td colspan="{0}">
-                                <div class="notification-simple">
-                                    <i class="icon icon-info-circle"></i>
-                                    <span><mvc:message code="warning.mailing.action.sending.non" /></span>
-                                </div>
-                            </td>
-                        </tr>
-                    </agnDisplay:setProperty>
-
-                    <agnDisplay:column headerClass="js-table-sort" sortProperty="type" sortable="true" titleKey="default.Type">
+                <emm:table var="dependency" modelAttribute="dependents" pageSize="${form.numberOfRows}" cssClass="table table-hover table--borderless js-table">
+                    <emm:column sortProperty="type" sortable="true" titleKey="default.Type">
                         <c:choose>
-                            <c:when test="${item.type == 'ACTION'}">
+                            <c:when test="${dependency.type == 'ACTION'}">
                                 <emm:ShowByPermission token="actions.show">
-                                    <c:url var="actionViewLink" value="/action/${item.id}/view.action" />
+                                    <c:url var="actionViewLink" value="/action/${dependency.id}/view.action" />
                                     <a href="${actionViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
                                 <span><mvc:message code="action.Action"/></span>
                             </c:when>
-                            <c:when test="${item.type == 'WORKFLOW'}">
+                            <c:when test="${dependency.type == 'WORKFLOW'}">
                                 <emm:ShowByPermission token="workflow.show">
-                                    <c:url var="workflowViewLink" value="/workflow/${item.id}/view.action" />
+                                    <c:url var="workflowViewLink" value="/workflow/${dependency.id}/view.action" />
                                     <a href="${workflowViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
                                 <span><mvc:message code="workflow.single"/></span>
                             </c:when>
 
-                            <c:when test="${item.type == 'BOUNCE_FILTER'}">
+                            <c:when test="${dependency.type == 'BOUNCE_FILTER'}">
                                 <emm:ShowByPermission token="mailloop.show">
-                                    <c:url var="bounceViewLink" value="/administration/bounce/${item.id}/view.action" />
+                                    <c:url var="bounceViewLink" value="/administration/bounce/${dependency.id}/view.action" />
                                     <a href="${bounceViewLink}" class="hidden" data-view-row="page"></a>
                                 </emm:ShowByPermission>
                                 <span><mvc:message code="settings.Mailloop"/></span>
                             </c:when>
                         </c:choose>
-                    </agnDisplay:column>
-                    <agnDisplay:column headerClass="js-table-sort" sortProperty="name" sortable="true" titleKey="Name">
-                        <span>${fn:escapeXml(item.shortname)}</span>
-                    </agnDisplay:column>
-                </agnDisplay:table>
+                    </emm:column>
+                    <emm:column sortProperty="name" sortable="true" titleKey="Name">
+                        <span>${fn:escapeXml(dependency.shortname)}</span>
+                    </emm:column>
+                </emm:table>
             </div>
         </div>
     </div>

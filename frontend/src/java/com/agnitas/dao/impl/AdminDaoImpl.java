@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import static java.text.MessageFormat.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.sql.ResultSet;
@@ -19,6 +18,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -27,55 +27,50 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import com.agnitas.beans.impl.AdminImpl;
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.impl.AdminEntryImpl;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailinglistApprovalDao;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.util.Tuple;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.IntEnum;
+import com.agnitas.beans.impl.AdminImpl;
 import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.AdminGroupDao;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.AdminNameNotFoundException;
 import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
 import com.agnitas.emm.core.admin.encrypt.PasswordEncryptor;
+import com.agnitas.emm.core.admin.enums.UiLayoutType;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.news.enums.NewsType;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.impl.AdminEntryImpl;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * DAO handler for Admin-Objects
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
-	private static final Logger logger = LogManager.getLogger(AdminDaoImpl.class);
 
 	private final RowMapper<Admin> adminRowMapper = new Admin_RowMapper();
 	
@@ -83,7 +78,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
     protected AdminGroupDao adminGroupDao;
     
     /** DAO for accessing company data. */
-	protected ComCompanyDao companyDao;
+	protected CompanyDao companyDao;
 	
 	protected MailinglistApprovalDao mailinglistApprovalDao;
 	
@@ -97,7 +92,6 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
      * 
      * @param adminGroupDao DAO for accessing admin group data
      */
-    @Required
     public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
         this.adminGroupDao = adminGroupDao;
     }
@@ -107,17 +101,14 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
      * 
      * @param companyDao DAO for accessing company data
      */
-    @Required
-    public void setCompanyDao(ComCompanyDao companyDao) {
+    public void setCompanyDao(CompanyDao companyDao) {
         this.companyDao = companyDao;
     }
     
-    @Required
     public void setMailinglistApprovalDao(MailinglistApprovalDao mailinglistApprovalDao) {
     	this.mailinglistApprovalDao = mailinglistApprovalDao;
     }
     
-    @Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -164,31 +155,20 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			return null;
 		} else if (companyID == 1) {
 			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
-			return selectObjectDefaultNull(logger,
+			return selectObjectDefaultNull(
 					"SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, timestamp,"
+							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id, timestamp,"
 							+ " last_login_date, gender, title, news_date, message_date, phone_number, restful, password_reminder" + additionalColumns
 							+ " FROM admin_tbl WHERE admin_id = ?",
 					getAdminRowMapper(), adminID);
 		} else {
 			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
-			return selectObjectDefaultNull(logger,
+			return selectObjectDefaultNull(
 					"SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, timestamp,"
+							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id, timestamp,"
 							+ " last_login_date, gender, title, news_date, message_date, phone_number, restful, password_reminder" + additionalColumns
 							+ " FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != '" + CompanyStatus.DELETED.getDbValue() + "'))",
 					getAdminRowMapper(), adminID, companyID, companyID);
-		}
-	}
-	@Override
-	public String getAdminName(int adminID, int companyID) {
-		if (adminID == 0 || companyID == 0) {
-			return null;
-		} else {
-			return selectObjectDefaultNull(logger,
-					"SELECT username FROM admin_tbl " +
-							"WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != '" + CompanyStatus.DELETED.getDbValue() + "'))",
-					StringRowMapper.INSTANCE, adminID, companyID, companyID);
 		}
 	}
 
@@ -207,7 +187,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		//Using "SELECT * ...", because of huge number of needed fields
 		String sql = "SELECT * FROM admin_tbl WHERE username = ? AND company_id"
 				+ " IN (SELECT company_id FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "')";
-		List<Admin> adminList = select(logger, sql, getAdminRowMapper(), name);
+		List<Admin> adminList = select(sql, getAdminRowMapper(), name);
 		if (adminList.size() == 1) {
 			return adminList.get(0);
 		} else if (adminList.isEmpty()) {
@@ -221,9 +201,9 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void save(Admin admin) throws Exception {
+	public void save(Admin admin) {
 		if (admin == null) {
-			throw new Exception("Invalid empty Admin for storage");
+			throw new IllegalArgumentException("Invalid empty Admin for storage");
 		}
 
 		boolean isNewAdmin = (admin.getAdminID() == 0);
@@ -241,7 +221,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			// store new Admin and set its AdminID
 			if (isOracleDB()) {
 				// Insert new Admin into DB
-				int newAdminId = selectInt(logger, "SELECT admin_tbl_seq.nextval FROM DUAL");
+				int newAdminId = selectInt("SELECT admin_tbl_seq.nextval FROM DUAL");
 
 				final List<Object> params = new ArrayList<>(Arrays.asList(newAdminId,
 						admin.getUsername(),
@@ -260,6 +240,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 						admin.getAdminLangVariant(),
 						admin.getAdminTimezone(),
 						admin.getLayoutBaseID(),
+						admin.getLayoutType().getId(),
 						admin.getDefaultImportProfileID(),
 						new Date(),
 						admin.getGender(),
@@ -270,9 +251,9 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
                         admin.getPasswordReminderState() == null ? null : admin.getPasswordReminderState().ordinal()));
 				params.addAll(getAdditionalExtendedParams(admin));
 
-				int touchedLines = update(logger,
+				int touchedLines = update(
 					"INSERT INTO admin_tbl (admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash,"
-						+ " creation_date, pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id,"
+						+ " creation_date, pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id,"
 						+ " timestamp, gender, title, news_date, message_date, phone_number, password_reminder" + additionalColumns
 						+ ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")",
 						params.toArray()
@@ -302,6 +283,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 						admin.getAdminLangVariant(),
 						admin.getAdminTimezone(),
 						admin.getLayoutBaseID(),
+						admin.getLayoutType().getId(),
 						admin.getDefaultImportProfileID(),
 						new Date(),
 						admin.getGender(),
@@ -312,9 +294,9 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
                         admin.getPasswordReminderState() == null ? null : admin.getPasswordReminderState().ordinal()));
 				params.addAll(getAdditionalExtendedParams(admin));
 
-				int newAdminId = insertIntoAutoincrementMysqlTable(logger, "admin_id",
+				int newAdminId = insertIntoAutoincrementMysqlTable("admin_id",
 					"INSERT INTO admin_tbl (username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date,"
-						+ " pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id,"
+						+ " pwdchange_date, admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id,"
 						+ " timestamp, gender, title, news_date, message_date, phone_number, password_reminder" + additionalColumns
 						+ ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")",
 						params.toArray()
@@ -364,6 +346,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 					admin.getAdminLangVariant(),
 					admin.getAdminTimezone(),
 					admin.getLayoutBaseID(),
+					admin.getLayoutType().getId(),
 					admin.getDefaultImportProfileID(),
 					new Date(),
 					admin.getGender(),
@@ -376,11 +359,11 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			params.add(admin.getAdminID());
 
 			// Update Admin in DB
-			int touchedLines = update(logger,
+			int touchedLines = update(
 				"UPDATE admin_tbl SET username = ?, fullname = ?, firstname = ?, employee_id = ?, company_id = ?,"
 					+ " company_name = ?, email = ?, stat_email = ?, secure_password_hash = ?, creation_date = ?,"
 					+ " pwdchange_date = ?, admin_country = ?, admin_lang = ?, admin_lang_variant = ?, admin_timezone = ?,"
-					+ " layout_base_id = ?, default_import_profile_id = ?, timestamp = ?, gender = ?,"
+					+ " layout_base_id = ?, layout_type = ?, default_import_profile_id = ?, timestamp = ?, gender = ?,"
 					+ " title = ?, phone_number = ?, password_reminder = ?, restful = ?"
 					+ DbUtilities.joinColumnsNamesForUpdate(getAdditionalExtendedColumns(), true)
 					+ " WHERE admin_id = ?",
@@ -391,7 +374,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			}
 
             // clear permissions of existing user for new storing afterwards
-			update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", admin.getAdminID());
+			update("DELETE FROM admin_permission_tbl WHERE admin_id = ?", admin.getAdminID());
 
 	        // write permissions
 			if (CollectionUtils.isNotEmpty(admin.getAdminPermissions())){
@@ -399,11 +382,11 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	            for (Permission permission : admin.getAdminPermissions()) {
 					parameterList.add(new Object[] { admin.getAdminID(), permission.getTokenString()});
 	            }
-	            batchupdate(logger, "INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", parameterList);
+	            batchupdate("INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", parameterList);
 	        }
 			
 			// clear group references of existing user for new storing afterwards
-			update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", admin.getAdminID());
+			update("DELETE FROM admin_to_group_tbl WHERE admin_id = ?", admin.getAdminID());
 	
 	        // write group references
 			if (CollectionUtils.isNotEmpty(admin.getGroups())){
@@ -411,7 +394,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	            for (AdminGroup group : admin.getGroups()) {
 					parameterList.add(new Object[] { admin.getAdminID(), group.getGroupID() });
 	            }
-	            batchupdate(logger, "INSERT INTO admin_to_group_tbl (admin_id, admin_group_id) VALUES (?, ?)", parameterList);
+	            batchupdate("INSERT INTO admin_to_group_tbl (admin_id, admin_group_id) VALUES (?, ?)", parameterList);
 	        }
             saveExtendedProperties(admin);
         }
@@ -450,21 +433,21 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			}
 
 			deleteAdminDependentData(adminID);
-			int touchedLines = update(logger, "DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != '" + CompanyStatus.DELETED.getDbValue() + "'))", adminID, companyID, companyID);
+			int touchedLines = update("DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != '" + CompanyStatus.DELETED.getDbValue() + "'))", adminID, companyID, companyID);
 			return touchedLines == 1;
 		}
 	}
 
 	protected void deleteAdminDependentData(int adminID) {
-		update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
-		update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
-		update(logger, "DELETE FROM undo_workflow_tbl WHERE admin_id = ?", adminID);
+		update("DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
+		update("DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
+		update("DELETE FROM undo_workflow_tbl WHERE admin_id = ?", adminID);
 	}
 
 	@Override
 	public boolean adminExists(String username) {
 		try {
-			return selectInt(logger, "SELECT admin_id FROM admin_tbl WHERE username = ?", username) > 0;
+			return selectInt("SELECT admin_id FROM admin_tbl WHERE username = ?", username) > 0;
 		} catch (DataAccessException e) {
 			return false;
 		}
@@ -473,7 +456,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	@Override
 	public boolean isEnabled(Admin admin) {
 		try {
-			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE admin_id = ? AND company_id = ?", admin.getAdminID(), admin.getCompanyID()) > 0;
+			return selectInt("SELECT COUNT(*) FROM admin_tbl WHERE admin_id = ? AND company_id = ?", admin.getAdminID(), admin.getCompanyID()) > 0;
 		} catch (DataAccessException e) {
 			return false;
 		}
@@ -486,7 +469,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				+ " adm.last_login_date, adm.timestamp, adm.gender, adm.title, adm.news_date, adm.message_date, comp.shortname"
 				+ " FROM admin_tbl adm, company_tbl comp WHERE adm.company_id = comp.company_id ORDER BY LOWER(adm.username)";
 
-		return select(logger, sql, new AdminEntry_RowMapper_Shortname());
+		return select(sql, new AdminEntry_RowMapper_Shortname());
     }
 
 	@Override
@@ -496,22 +479,22 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				+ " adm.last_login_date, adm.timestamp, adm.gender, adm.title, adm.news_date, adm.message_date, comp.shortname"
 				+ " FROM admin_tbl adm, company_tbl comp WHERE adm.company_id = comp.company_id AND restful = ? ORDER BY LOWER(adm.username)";
 
-		return select(logger, sql, new AdminEntry_RowMapper_Shortname(), BooleanUtils.toInteger(restful));
+		return select(sql, new AdminEntry_RowMapper_Shortname(), BooleanUtils.toInteger(restful));
 	}
 
 	@Override
     public List<AdminEntry> getAllAdminsByCompanyIdOnly(int companyID) {
-        return select(logger, "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ?", new AdminEntry_RowMapper(), companyID);
+        return select("SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ?", new AdminEntry_RowMapper(), companyID);
 	}
 
 	@Override
 	public List<AdminEntry> getAllAdminsByCompanyIdOnlyHasEmail(int companyID) {
-        return select(logger, "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? and email IS NOT NULL", new AdminEntry_RowMapper(), companyID);
+        return select("SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? and email IS NOT NULL", new AdminEntry_RowMapper(), companyID);
 	}
 
 	@Override
 	public List<AdminEntry> getAllAdminsByCompanyId(int companyID) {
-        return select(logger, "SELECT adm.company_id, adm.admin_id, adm.username, last_login_date, adm.fullname, adm.firstname, adm.creation_date, adm.timestamp, comp.shortname FROM admin_tbl adm, company_tbl comp WHERE (adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND comp.company_ID = adm.company_id ORDER BY adm.username", new AdminEntry_RowMapper_Shortname(), companyID, companyID);
+        return select("SELECT adm.company_id, adm.admin_id, adm.username, last_login_date, adm.fullname, adm.firstname, adm.creation_date, adm.timestamp, comp.shortname FROM admin_tbl adm, company_tbl comp WHERE (adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)) AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND comp.company_ID = adm.company_id ORDER BY adm.username", new AdminEntry_RowMapper_Shortname(), companyID, companyID);
 	}
 
 	@Override
@@ -520,7 +503,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				"comp.shortname FROM admin_tbl adm, company_tbl comp WHERE (adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)) " +
 				"AND status = ? AND comp.company_ID = adm.company_id AND restful = ? ORDER BY adm.username";
 
-		return select(logger, query, new AdminEntry_RowMapper_Shortname(), companyID, companyID, CompanyStatus.ACTIVE.getDbValue(), BooleanUtils.toInteger(restful));
+		return select(query, new AdminEntry_RowMapper_Shortname(), companyID, companyID, CompanyStatus.ACTIVE.getDbValue(), BooleanUtils.toInteger(restful));
 	}
 
 	@Override
@@ -532,14 +515,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
         
         String adminsIdsStr = StringUtils.join(new LinkedHashSet<>(adminsIds).toArray(), ", ");
         String sql = "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? AND admin_id in (" + adminsIdsStr + ")";
-        return select(logger, sql, companyID);
-	}
-
-	@Override
-	public List<Tuple<Integer, String>> getAdminsUsernames(int companyID){
-		return select(logger, "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? ORDER BY LOWER(username)",
-				(resultSet, i) -> new Tuple<>(resultSet.getInt("admin_id"), resultSet.getString("username")),
-				companyID);
+        return select(sql, companyID);
 	}
 
 	@Override
@@ -547,7 +523,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		Map<Integer, String> map = new LinkedHashMap<>();
 
 		String sqlGetNames = "SELECT admin_id, username FROM admin_tbl WHERE company_id = ? ORDER BY username";
-		query(logger, sqlGetNames, new NameMapCallback(map), companyId);
+		query(sqlGetNames, new NameMapCallback(map), companyId);
 
 		return map;
 	}
@@ -555,14 +531,14 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	@Override
 	public PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize) {
 		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ?";
-		return selectPaginatedList(logger, query, "admin_tbl", sort, AgnUtils.sortingDirectionToBoolean(dir), pageNumber, pageSize, new AdminEntry_RowMapper(), companyId);
+		return selectPaginatedList(query, "admin_tbl", sort, AgnUtils.sortingDirectionToBoolean(dir), pageNumber, pageSize, new AdminEntry_RowMapper(), companyId);
 	}
 
 	@Override
 	public List<AdminEntry> findAllByEmailPart(String email, int companyID) {
 		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? AND "
 				+ getPartialSearchFilter("email");
-		return select(logger, query, new AdminEntry_RowMapper(), companyID, email);
+		return select(query, new AdminEntry_RowMapper(), companyID, email);
 	}
 
 	@Override
@@ -570,18 +546,20 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE "
 				+ getPartialSearchFilter("email");
 
-		return select(logger, query, new AdminEntry_RowMapper(), email);
-	}
-
-	@Override
-	public void updateEmail(String email, int id, int companyId) {
-		update(logger, "UPDATE admin_tbl SET email = ? WHERE admin_id = ? AND company_id = ?", email, id, companyId);
+		return select(query, new AdminEntry_RowMapper(), email);
 	}
 
 	@Override
 	public AdminEntry findByEmail(String email, int companyId) {
 		String query = "SELECT company_id, admin_id, username, last_login_date, fullname, firstname, creation_date, timestamp FROM admin_tbl WHERE company_id = ? AND email = ?";
-		return selectObjectDefaultNull(logger, query, new AdminEntry_RowMapper(), companyId, email);
+		return select(query, new AdminEntry_RowMapper(), companyId, email).stream()
+				.findFirst()
+				.orElse(null);
+	}
+
+	@Override
+	public void updateEmail(String email, int id, int companyId) {
+		update("UPDATE admin_tbl SET email = ? WHERE admin_id = ? AND company_id = ?", email, id, companyId);
 	}
 
 	@Override
@@ -595,50 +573,45 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
 
-		try {
-			SqlPreparedStatementManager sqlPreparedStatementManager = createBaseOverviewQuery(showRestfulUsers, companyID, false);
+		SqlPreparedStatementManager sqlPreparedStatementManager = createBaseOverviewQuery(showRestfulUsers, companyID, false);
 
-			addAdminListFilters(
-					searchFirstName,
-					searchLastName,
-					searchEmail,
-					searchCompanyName,
-					filterCompanyId,
-					filterAdminGroupId,
-					filterMailinglistId,
-					filterLanguage,
-					creationDate,
-					lastLoginDate,
-					username,
-					sqlPreparedStatementManager
-			);
+		addAdminListFilters(
+				searchFirstName,
+				searchLastName,
+				searchEmail,
+				searchCompanyName,
+				filterCompanyId,
+				filterAdminGroupId,
+				filterMailinglistId,
+				filterLanguage,
+				creationDate,
+				lastLoginDate,
+				username,
+				sqlPreparedStatementManager
+		);
 
-			PaginatedListImpl<AdminEntry> list;
+		PaginatedListImpl<AdminEntry> list;
 
-			if ("last_login".equalsIgnoreCase(sortColumn)) {
-				String sortClause = " ORDER BY last_login_date " + (sortDirectionAscending ? "ASC" : "DESC");
-				list = selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, sortColumn,
-						sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
-			} else {
-				list = selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "admin_tbl", sortColumn,
-						sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
-			}
-
-			if (isNotBlank(searchFirstName) || isNotBlank(searchLastName) || isNotBlank(searchEmail) || isNotBlank(searchCompanyName)
-					|| filterCompanyId != null || filterAdminGroupId != null || filterMailinglistId != null || isNotBlank(filterLanguage)
-					|| creationDate.isPresent() || lastLoginDate.isPresent() || isNotBlank(username)) {
-				SqlPreparedStatementManager totalCountStatement = createBaseOverviewQuery(showRestfulUsers, companyID, true);
-				list.setNotFilteredFullListSize(selectInt(logger, totalCountStatement.getPreparedSqlString(), totalCountStatement.getPreparedSqlParameters()));
-			}
-
-			return list;
-		} catch (Exception e) {
-			logger.error("Invalid filters", e);
-			return new PaginatedListImpl<>();
+		if ("last_login".equalsIgnoreCase(sortColumn)) {
+			String sortClause = " ORDER BY last_login_date " + (sortDirectionAscending ? "ASC" : "DESC");
+			list = selectPaginatedListWithSortClause(sqlPreparedStatementManager.getPreparedSqlString(), sortClause, sortColumn,
+					sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
+		} else {
+			list = selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(), "admin_tbl", sortColumn,
+					sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
 		}
+
+		if (isNotBlank(searchFirstName) || isNotBlank(searchLastName) || isNotBlank(searchEmail) || isNotBlank(searchCompanyName)
+				|| filterCompanyId != null || filterAdminGroupId != null || filterMailinglistId != null || isNotBlank(filterLanguage)
+				|| creationDate.isPresent() || lastLoginDate.isPresent() || isNotBlank(username)) {
+			SqlPreparedStatementManager totalCountStatement = createBaseOverviewQuery(showRestfulUsers, companyID, true);
+			list.setNotFilteredFullListSize(selectInt(totalCountStatement.getPreparedSqlString(), totalCountStatement.getPreparedSqlParameters()));
+		}
+
+		return list;
     }
 
-	private SqlPreparedStatementManager createBaseOverviewQuery(boolean showRestfulUsers, int companyID, boolean useCountQuery) throws Exception {
+	private SqlPreparedStatementManager createBaseOverviewQuery(boolean showRestfulUsers, int companyID, boolean useCountQuery) {
         StringBuilder query = new StringBuilder().append("SELECT ")
 				.append(useCountQuery ? "COUNT(*)" : "adm.admin_id, adm.username, adm.fullname, adm.firstname, adm.last_login_date, adm.company_name, adm.email, adm.admin_lang, comp.shortname, adm.company_id, adm.creation_date, adm.timestamp, adm.pwdchange_date")
 				.append(" FROM admin_tbl adm JOIN company_tbl comp ON (comp.company_ID = adm.company_id) WHERE comp.status = ? AND restful = ?");
@@ -660,7 +633,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	}
 
     protected void addAdminListFilters(String searchFirstName, String searchLastName, String searchEmail, String searchCompanyName, Integer filterCompanyId, Integer filterAdminGroupId, Integer filterMailinglistId, String filterLanguage, DateRange creationDate,
-									   DateRange lastLoginDate, String username, SqlPreparedStatementManager statementManager) throws Exception {
+									   DateRange lastLoginDate, String username, SqlPreparedStatementManager statementManager) {
 		if (searchFirstName != null && !searchFirstName.isEmpty()) {
 			if (isOracleDB()) {
 				statementManager.addWhereClause("UPPER(adm.firstname) LIKE ('%' || UPPER(?) || '%')", searchFirstName);
@@ -734,7 +707,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
             sqlGetAdmin = "SELECT admin_id, company_id, secure_password_hash FROM admin_tbl WHERE company_id = ? LIMIT 1";
         }
 
-        return selectObjectDefaultNull(logger, sqlGetAdmin, new AdminEntry_RowMapper_ForReport(), companyID);
+        return selectObjectDefaultNull(sqlGetAdmin, new AdminEntry_RowMapper_ForReport(), companyID);
 	}
 	
     protected class Admin_RowMapper implements RowMapper<Admin> {
@@ -758,6 +731,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			readAdmin.setAdminLangVariant(resultSet.getString("admin_lang_variant"));
 			readAdmin.setAdminTimezone(resultSet.getString("admin_timezone"));
 			readAdmin.setLayoutBaseID(resultSet.getInt("layout_base_id"));
+			readAdmin.setLayoutType(IntEnum.fromId(UiLayoutType.class, resultSet.getInt("layout_type")));
 			readAdmin.setDefaultImportProfileID(resultSet.getInt("default_import_profile_id"));
 			readAdmin.setGender(resultSet.getInt("gender"));
 			readAdmin.setTitle(resultSet.getString("title"));
@@ -770,7 +744,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 			// Read additional data
 
-			List<String> tokens = select(logger, "SELECT permission_name FROM admin_permission_tbl WHERE admin_id = ?", StringRowMapper.INSTANCE, readAdmin.getAdminID());
+			List<String> tokens = select("SELECT permission_name FROM admin_permission_tbl WHERE admin_id = ?", StringRowMapper.INSTANCE, readAdmin.getAdminID());
 
 			Set<Permission> adminPermissions = Permission.fromTokens(tokens);
 			readAdmin.setAdminPermissions(adminPermissions);
@@ -780,7 +754,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			Set<Permission> companyPermissions = companyDao.getCompanyPermissions(readAdmin.getCompanyID());
 			readAdmin.setCompanyPermissions(companyPermissions);
 			
-			List<Integer> adminGroupIds = select(logger, "SELECT admin_group_id FROM admin_to_group_tbl WHERE admin_id = ? ORDER BY admin_group_id", IntegerRowMapper.INSTANCE, readAdmin.getAdminID());
+			List<Integer> adminGroupIds = select("SELECT admin_group_id FROM admin_to_group_tbl WHERE admin_id = ? ORDER BY admin_group_id", IntegerRowMapper.INSTANCE, readAdmin.getAdminID());
 			
 			List<AdminGroup> adminGroups = new ArrayList<>();
 			for (int adminGroupId : adminGroupIds) {
@@ -812,7 +786,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		}
 	}
 
-	protected class AdminEntry_RowMapper_Shortname implements RowMapper<AdminEntry> {
+	protected static class AdminEntry_RowMapper_Shortname implements RowMapper<AdminEntry> {
 		@Override
 		public AdminEntry mapRow(ResultSet resultSet, int row) throws SQLException {
             AdminEntry readAdminEntry = new AdminEntryImpl(
@@ -880,7 +854,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		}
 	}
 	
-	protected class AdminEntry_RowMapper_ForReport implements RowMapper<Admin> {
+	protected static class AdminEntry_RowMapper_ForReport implements RowMapper<Admin> {
 		@Override
 		public Admin mapRow(ResultSet resultSet, int row) throws SQLException {
 			Admin admin = new AdminImpl();
@@ -927,7 +901,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				return this.passwordEncryptor.isAdminPassword(password, admin);
 			}
 		} catch (Exception e) {
-			logger.error(format("Cannot check admin password: {0}", e.getMessage()), e);
+			logger.error("Cannot check admin password", e);
 			return false;
 		}
 	}
@@ -944,7 +918,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	 * If one of these conditions is not met, the password is stored as
 	 * plain text.
 	 */
-	private String createSecurePasswordHash(int adminId, String password) throws Exception {
+	private String createSecurePasswordHash(int adminId, String password) {
 		if (adminId == 0) {
 			// No admin ID? Then we cannot set a secure password hash
 			logger.error("illegal adminid for password storage");
@@ -955,45 +929,45 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			return "";
 		}
 		else if (passwordEncryptor == null) {
-			if (logger.isInfoEnabled()) {
-				logger.info("password encryptor not set - using old-style password");
-			}
+			logger.info("password encryptor not set - using old-style password");
 			return "";
-		}
-		else {
-			if (logger.isInfoEnabled()) {
-				logger.info("setting secure password hash for admin {}", adminId);
-			}
-			return passwordEncryptor.computeAdminPasswordHash(password, adminId);
-		}
+		} else {
+			logger.info("setting secure password hash for admin {}", adminId);
+            try {
+                return passwordEncryptor.computeAdminPasswordHash(password, adminId);
+            } catch (Exception e) {
+				logger.error("Can't create password hash. AdminID: {}, password: {}", adminId, password, e);
+                throw new RuntimeException(e);
+            }
+        }
 	}
 
 	@Override
 	public boolean isPermissionGranted(int adminId, Permission permission) {
 		String query = "SELECT COUNT(*) FROM admin_permission_tbl WHERE admin_id = ? AND permission_name = ?";
-		return selectInt(logger, query, adminId, permission.getTokenString()) > 0;
+		return selectInt(query, adminId, permission.getTokenString()) > 0;
 	}
 
 	@Override
 	public void grantPermission(int adminId, Permission permission) {
-		update(logger, "INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", adminId, permission.getTokenString());
+		update("INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", adminId, permission.getTokenString());
 	}
 
 	@Override
 	public void revokePermission(int adminId, Permission permission) {
-		update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ? AND permission_name = ?", adminId, permission.getTokenString());
+		update("DELETE FROM admin_permission_tbl WHERE admin_id = ? AND permission_name = ?", adminId, permission.getTokenString());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
     public int saveAdminRights(int adminID, Set<String> userRights) {
-    	update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
+    	update("DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
         List<Object[]> parameterList = new ArrayList<>();
         for (String permission : userRights) {
         	parameterList.add(new Object[] { adminID, permission });
         }
 
-        int[] result =  batchupdate(logger, "INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", parameterList);
+        int[] result =  batchupdate("INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", parameterList);
         
         int touchedRows = 0;
         for (int rows : result) {
@@ -1008,16 +982,16 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	@Override
     public List<AdminEntry> getAllWsAdmins() {
         String query = "SELECT wsadm.username, comp.shortname FROM webservice_user_tbl wsadm, company_tbl comp WHERE wsadm.company_id = comp.company_id ORDER BY LOWER(wsadm.username)";
-        return select(logger, query, new WsAdminEntry_RowMapper());
+        return select(query, new WsAdminEntry_RowMapper());
     }
 
 	@Override
     public List<AdminEntry> getAllWsAdminsByCompanyId(int companyID) {
         String query = "SELECT wsadm.username, comp.shortname FROM webservice_user_tbl wsadm, company_tbl comp WHERE wsadm.company_id = comp.company_id AND wsadm.company_id = ? ORDER BY LOWER(wsadm.username)";
-        return select(logger, query, new WsAdminEntry_RowMapper(), companyID);
+        return select(query, new WsAdminEntry_RowMapper(), companyID);
     }
 	
-	protected class WsAdminEntry_RowMapper implements RowMapper<AdminEntry> {
+	protected static class WsAdminEntry_RowMapper implements RowMapper<AdminEntry> {
 		@Override
 		public AdminEntry mapRow(ResultSet resultSet, int row) throws SQLException {
 			String username = resultSet.getString("username");
@@ -1029,22 +1003,22 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	@Override
 	public int getNumberOfGuiAdmins(int companyID) {
 		if (companyID > 0) {
-			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 0 AND company_id = ?", companyID);
+			return selectInt("SELECT COUNT(*) FROM admin_tbl WHERE restful = 0 AND company_id = ?", companyID);
 		} else {
-			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 0");
+			return selectInt("SELECT COUNT(*) FROM admin_tbl WHERE restful = 0");
 		}
 	}
 
 	@Override
 	public boolean updateNewsDate(final int adminID, Date newsDate, NewsType type) {
 		String columnName = type.name().toLowerCase() + "_date";
-		return update(logger, "UPDATE admin_tbl SET " + columnName + " = ? WHERE admin_id = ?", newsDate, adminID) == 1;
+		return update("UPDATE admin_tbl SET " + columnName + " = ? WHERE admin_id = ?", newsDate, adminID) == 1;
 	}
 
 	@Override
 	public String getAdminTimezone(int adminId, int companyId) {
 		String sqlGetAdminTimezone = "SELECT admin_timezone FROM admin_tbl WHERE admin_id = ? AND company_id = ?";
-		return selectWithDefaultValue(logger, sqlGetAdminTimezone, String.class, null, adminId, companyId);
+		return selectWithDefaultValue(sqlGetAdminTimezone, String.class, null, adminId, companyId);
 	}
 
 	@Override
@@ -1053,9 +1027,9 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			return null;
 		} else {
 			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
-			return selectObjectDefaultNull(logger,
+			return selectObjectDefaultNull(
 				"SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-					+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, timestamp,"
+					+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id, timestamp,"
 					+ " gender, title, news_date, message_date, phone_number, last_login_date, limiting_target_id, restful, password_reminder" + additionalColumns
 				+ " FROM admin_tbl WHERE company_id = ? AND admin_id = (SELECT MIN(admin_id) FROM admin_tbl WHERE company_id = ?)",
 					getAdminRowMapper(), companyID, companyID);
@@ -1064,7 +1038,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 	@Override
 	public boolean checkBlacklistedAdminNames(String username) {
-		return selectInt(logger, "SELECT COUNT(*) FROM admin_blacklist_tbl WHERE username = ?", username) > 0;
+		return selectInt("SELECT COUNT(*) FROM admin_blacklist_tbl WHERE username = ?", username) > 0;
 	}
 
 	protected Collection<String> getAdditionalExtendedColumns() {
@@ -1081,104 +1055,106 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 
 	@Override
 	public int getAdminWelcomeMailingId(String language) {
-		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "AdminWelcomeMail_" + language.toUpperCase());
+		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "AdminWelcomeMail_" + language.toUpperCase());
 	}
 
 	@Override
 	public int getPasswordResetMailingId(String language) {
-		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordResetMail_" + language.toUpperCase());
+		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordResetMail_" + language.toUpperCase());
 	}
 
 	@Override
 	public int getPasswordChangedMailingId(String language) {
-		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordChangedMail_" + language.toUpperCase());
+		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordChangedMail_" + language.toUpperCase());
 	}
 
 	@Override
 	public int getSecurityCodeMailingId(String language) {
-		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "SecurityCodeMail_" + language.toUpperCase());
+		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "SecurityCodeMail_" + language.toUpperCase());
 	}
 
     @Override
    	public int getPasswordExpirationMailingId(String language) {
-   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordExpirationMail_" + language.toUpperCase());
+   		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "PasswordExpirationMail_" + language.toUpperCase());
    	}
 
     @Override
    	public int getEmailChangedMailingId(String language) {
-   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "EMailAddressChangedMail_" + language.toUpperCase());
+   		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "EMailAddressChangedMail_" + language.toUpperCase());
    	}
 
     @Override
    	public int getOpenEmmDemoAccountWaitingMailingID(String language) {
-   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "OpenEmmDemoAccountWaitingMail_" + language.toUpperCase());
+   		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "OpenEmmDemoAccountWaitingMail_" + language.toUpperCase());
    	}
 
     @Override
    	public int getOpenEmmDemoAccountDataMailingID(String language) {
-   		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "OpenEmmDemoAccountDataMail_" + language.toUpperCase());
+   		return selectIntWithDefaultValue("SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "OpenEmmDemoAccountDataMail_" + language.toUpperCase());
    	}
 
     @Override
     public void setPasswordReminderState(int adminId, PasswordReminderState state) {
-        update(logger, "UPDATE admin_tbl SET password_reminder = ? WHERE admin_id = ?", state.ordinal(), adminId);
+        update("UPDATE admin_tbl SET password_reminder = ? WHERE admin_id = ?", state.ordinal(), adminId);
     }
 
 	@Override
 	public List<Admin> getAdmins(int companyID, boolean restful) {
 		if (companyID == 0) {
-			return null;
-		} else if (companyID == 1) {
-			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
-			return select(logger,
-					"SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, timestamp,"
-							+ " last_login_date, gender, title, news_date, message_date, phone_number, restful, password_reminder" + additionalColumns
-							+ " FROM admin_tbl WHERE restful = ?",
-					getAdminRowMapper(), restful ? 1 : 0);
-		} else {
-			final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
-			return select(logger,
-					"SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
-							+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, default_import_profile_id, timestamp,"
-							+ " last_login_date, gender, title, news_date, message_date, phone_number, restful, password_reminder" + additionalColumns
-							+ " FROM admin_tbl WHERE restful = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != '" + CompanyStatus.DELETED.getDbValue() + "'))",
-					getAdminRowMapper(), restful ? 1 : 0, companyID, companyID);
+			return Collections.emptyList();
 		}
+
+		final String additionalColumns = DbUtilities.joinColumnsNames(getAdditionalExtendedColumns(), true);
+
+		String query = "SELECT admin_id, username, fullname, firstname, employee_id, company_id, company_name, email, stat_email, secure_password_hash, creation_date, pwdchange_date,"
+				+ " admin_country, admin_lang, admin_lang_variant, admin_timezone, layout_base_id, layout_type, default_import_profile_id, timestamp,"
+				+ " last_login_date, gender, title, news_date, message_date, phone_number, restful, password_reminder" + additionalColumns
+				+ " FROM admin_tbl WHERE restful = ?";
+		List<Object> params = new ArrayList<>();
+		params.add(restful ? 1 : 0);
+
+		if (companyID != 1) {
+			query += " AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status != ?))";
+			params.add(companyID);
+			params.add(companyID);
+			params.add(CompanyStatus.DELETED.getDbValue());
+		}
+
+		return select(query, getAdminRowMapper(), params.toArray());
 	}
 
 	@Override
 	public List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID) {
-		return null;
+		return Collections.emptyList();
 	}
 
 	@Override
 	public int getNumberOfRestfulUsers(int companyID) {
 		if (companyID > 0) {
-			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 1 AND company_id = ?", companyID);
+			return selectInt("SELECT COUNT(*) FROM admin_tbl WHERE restful = 1 AND company_id = ?", companyID);
 		} else {
-			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 1");
+			return selectInt("SELECT COUNT(*) FROM admin_tbl WHERE restful = 1");
 		}
 	}
 
 	@Override
 	public void deleteAdminPermissionsForCompany(int companyID) {
-		update(logger, "UPDATE admin_tbl SET limiting_target_id = NULL WHERE limiting_target_id IS NOT NULL AND company_id = ?", companyID);
-		update(logger, "DELETE FROM disabled_mailinglist_tbl WHERE company_id = ?", companyID);
+		update("UPDATE admin_tbl SET limiting_target_id = NULL WHERE limiting_target_id IS NOT NULL AND company_id = ?", companyID);
+		update("DELETE FROM disabled_mailinglist_tbl WHERE company_id = ?", companyID);
 	}
 
 	@Override
 	public List<Map<String, Object>> getAdminsLight(int companyID, boolean restful) {
-		return select(logger, "SELECT admin_id, username, fullname, firstname, employee_id, email FROM admin_tbl WHERE company_id = ? AND restful = ? ORDER BY LOWER(username)", companyID, restful ? 1 : 0);
+		return select("SELECT admin_id, username, fullname, firstname, employee_id, email FROM admin_tbl WHERE company_id = ? AND restful = ? ORDER BY LOWER(username)", companyID, restful ? 1 : 0);
 	}
 
 	@Override
 	public void saveDashboardLayout(String layout, int adminId) {
-		update(logger, "UPDATE admin_tbl SET dashboard_layout = ? WHERE admin_id = ?", layout, adminId);
+		update("UPDATE admin_tbl SET dashboard_layout = ? WHERE admin_id = ?", layout, adminId);
 	}
 
 	@Override
 	public String getDashboardLayout(int adminId) {
-		return selectWithDefaultValue(logger, "SELECT dashboard_layout FROM admin_tbl WHERE admin_id = ?", String.class, "", adminId);
+		return selectWithDefaultValue("SELECT dashboard_layout FROM admin_tbl WHERE admin_id = ?", String.class, "", adminId);
 	}
 }

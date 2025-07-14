@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,12 +14,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class HttpResponse {
+
 	private final int httpCode;
 	private final String message;
 	private final String content;
 	private final String contentType;
 	private final Map<String, String> headers;
 	private final Map<String, String> cookieData;
+
+	public HttpResponse(int httpCode, String content, String contentType, Map<String, String> headers) {
+		this.httpCode = httpCode;
+		this.content = content;
+		this.contentType = contentType;
+		this.headers = headers;
+		this.message = null;
+		this.cookieData = null;
+	}
 
 	public HttpResponse(final int httpCode, String message, final String content, final String contentType, final Map<String, String> headers, final Map<String, String> cookieData) {
 		this.httpCode = httpCode;

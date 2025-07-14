@@ -13,8 +13,6 @@ AGN.Opt.Templates              = window.AGN.Opt.Templates || (window.AGN.Opt.Tem
 AGN.Opt.TableCellRenderers     = window.AGN.Opt.TableCellRenderers || (window.AGN.Opt.TableCellRenderers = {});
 AGN.Opt.TableActionsConditions = window.AGN.Opt.TableActionsConditions || (window.AGN.Opt.TableActionsConditions = {});
 AGN.Opt.Table                  = window.AGN.Opt.Table || (window.AGN.Opt.Table = {'filters': {}, 'comparators': {}});
-AGN.Opt.TableHeaderComponents  = window.AGN.Opt.TableHeaderComponents || (window.AGN.Opt.TableHeaderComponents = {});
-AGN.Opt.Charts                 = window.AGN.Opt.Charts || (window.AGN.Opt.Charts = {});
 AGN.Opt.Validators             = window.AGN.Opt.Validators || (window.AGN.Opt.Validators = {});
 AGN.Opt.Components             = window.AGN.Opt.Components || (window.AGN.Opt.Components = {});
 

@@ -3,10 +3,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
+<%--@elvariable id="simpleActionForm" type="com.agnitas.web.forms.SimpleActionForm"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" method="POST" servletRelativeAction="/target/delete.action" modelAttribute="simpleActionForm">
             <mvc:hidden path="id"/>
 

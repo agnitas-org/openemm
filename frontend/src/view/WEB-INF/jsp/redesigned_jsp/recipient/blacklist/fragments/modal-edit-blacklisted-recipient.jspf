@@ -1,6 +1,6 @@
 <script id="modal-edit-blacklisted-recipient" type="text/x-mustache-template">
     <mvc:form servletRelativeAction="/recipients/blacklist/update.action" data-form="resource" cssClass="modal" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="recipient.RecipientEdit"/></h1>
@@ -9,18 +9,16 @@
                     </button>
                 </div>
 
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label for="blacklist-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
-                            <input id="blacklist-email" type="text" class="form-control" value="{{- email}}" readonly>
-                            <input type="hidden" name="email" value="{{- email}}"/>
-                        </div>
+                <div class="modal-body vstack gap-3">
+                    <div>
+                        <label for="blacklist-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
+                        <input id="blacklist-email" type="text" class="form-control" value="{{- email}}" readonly>
+                        <input type="hidden" name="email" value="{{- email}}"/>
+                    </div>
 
-                        <div class="col-12">
-                            <label for="blacklist-reason" class="form-label"><mvc:message code="blacklist.reason" /></label>
-                            <input id="blacklist-reason" type="text" class="form-control" name="reason" value="{{- reason}}">
-                        </div>
+                    <div>
+                        <label for="blacklist-reason" class="form-label"><mvc:message code="blacklist.reason" /></label>
+                        <input id="blacklist-reason" type="text" class="form-control" name="reason" value="{{- reason}}">
                     </div>
                 </div>
 

@@ -1,23 +1,25 @@
 (() => {
-  const Template = AGN.Lib.Template;
-
   const mailingSettingsView = AGN.url('/mailing/:mailingId:/settings.action');
   const mailingStatView = AGN.url('/statistics/mailing/:mailingId:/view.action?init=true');
 
   class CalendarBase {
 
+    static DATE_FORMAT = 'DD-MM-YYYY';
+
     constructor($el, conf) {
       this.$el = $el;
+      this.config = conf;
       this.firstDayOfWeek = conf.firstDayOfWeek;
       this.statisticsViewAllowed = conf.statisticsViewAllowed;
+      this.$el.data('calendar', this);
     }
 
     get $year() {
-      throw this.notImplementedError("$year()");
+      // overridden
     }
 
     get $month() {
-      throw this.notImplementedError("$month()");
+      // overridden
     }
 
     get removeCurrentCalendar() {
@@ -76,9 +78,9 @@
     }
 
     getMailingLink(mailing) {
-      return mailing.sent && mailing.workstatus !== 'mailing.status.test' && this.statisticsViewAllowed
-        ? mailingStatView.replace(':mailingId:', mailing.mailingId)
-        : mailingSettingsView.replace(':mailingId:', mailing.mailingId);
+      return mailing.status === 'mailing.status.sent' && mailing.status !== 'mailing.status.test' && this.statisticsViewAllowed
+        ? mailingStatView.replace(':mailingId:', mailing.id)
+        : mailingSettingsView.replace(':mailingId:', mailing.id);
     }
 
     addYearOption() {
@@ -139,22 +141,6 @@
       var L = Math.floor(d4 / 1460);
       var d1 = ((d4 - L) % 365) + L;
       return Math.floor(d1 / 7) + 1;
-    }
-
-    static createMailingPopover(mailing) {
-      mailing.thumbnailUrl = AGN.url(CalendarBase.getMailingThumbnailSrc(mailing.thumbnailComponentId, mailing.post));
-      const content = Template.dom("calendar-mailing-popover-content", mailing);
-      AGN.Lib.Popover.getOrCreate(mailing.$el, {trigger: 'hover', html: true, content})
-    }
-
-    static getMailingThumbnailSrc(previewComp, isPostType) {
-      if (isPostType) {
-        return "/assets/core/images/facelift/post_thumbnail.jpg";
-      }
-      if (previewComp) {
-        return "/sc?compID=" + previewComp;
-      }
-      return "/assets/core/images/facelift/no_preview.svg";
     }
   }
 

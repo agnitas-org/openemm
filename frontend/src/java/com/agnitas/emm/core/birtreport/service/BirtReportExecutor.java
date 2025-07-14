@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,31 +16,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.agnitas.emm.core.JavaMailAttachment;
+import com.agnitas.emm.core.birtreport.bean.BirtReport;
+import com.agnitas.emm.core.export.exception.ExportException;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.impl.ServiceLookupFactory;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.FileDownload;
-import org.agnitas.web.ExportException;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.FileDownload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.emm.core.JavaMailAttachment;
-import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.impl.ServiceLookupFactory;
-
 public class BirtReportExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(BirtReportExecutor.class);
 
 	private ServiceLookupFactory serviceLookupFactory;
-	private ComBirtReport birtReport;
+	private BirtReport birtReport;
 	private Map<String, String> urlsMap;
 	
-	public BirtReportExecutor(ServiceLookupFactory serviceLookupFactory, ComBirtReport birtReport, Map<String, String> urlsMap) {
+	public BirtReportExecutor(ServiceLookupFactory serviceLookupFactory, BirtReport birtReport, Map<String, String> urlsMap) {
 		this.serviceLookupFactory = serviceLookupFactory;
 		this.birtReport = birtReport;
 		this.urlsMap = urlsMap;

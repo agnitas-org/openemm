@@ -1,20 +1,12 @@
-AGN.Lib.Controller.new('side-menu', function() {
-  const WebStorage = AGN.Lib.WebStorage;
-  let TOOLTIP_CLOSE_DELAY;
-  let cursorExists = true;
+AGN.Lib.Controller.new('side-menu', function () {
 
-  this.addDomInitializer('side-menu', function() {
-      cursorExists = !!window.matchMedia("(pointer: fine)").matches;
-      TOOLTIP_CLOSE_DELAY = cursorExists ? 400 : 0;
-  });
+  const cursorExists = !!window.matchMedia("(pointer: fine)").matches;
+  const TOOLTIP_CLOSE_DELAY = cursorExists ? 400 : 0;
 
-  this.addAction({
-    click: 'switch-to-classic-design'
-  }, function() {
+  this.addAction({click: 'switch-to-classic-design'}, function () {
     const $el = this.el;
-    const $tooltip = $el.parent().parent().find('.sidebar__tooltip');
 
-    handleSidebarItemClick($tooltip, this.event, () => {
+    handleSidebarItemClick($el.parent().parent(), this.event, () => {
       $.post(AGN.url('/ui-design/switch.action')).done(() => {
         $el.prop('disabled', true);
         // hack for wait for visual toggle switch.
@@ -23,30 +15,21 @@ AGN.Lib.Controller.new('side-menu', function() {
     });
   });
 
-  this.addAction({
-    click: 'logout'
-  }, function() {
-    const $tooltip = this.el.find('.sidebar__tooltip');
-
-    handleSidebarItemClick($tooltip, this.event, () => AGN.Lib.Form.get($('#logoutForm')).submit('static'));
+  this.addAction({click: 'logout'}, function () {
+    handleSidebarItemClick(
+      this.el,
+      this.event,
+      () => AGN.Lib.Form.get($('#logoutForm')).submit('static')
+    );
   });
 
-  this.addAction({
-    click: 'open-account-data'
-  }, function() {
-    const $tooltip = this.el.find('.sidebar__tooltip');
-
-    handleSidebarItemClick($tooltip, this.event, () => AGN.Lib.Page.reload(AGN.url(this.el.data('url'))));
+  this.addAction({click: 'open-help'}, function () {
+    handleSidebarItemClick(this.el, this.event, AGN.Lib.Helpers.openHelpModal);
   });
 
-  this.addAction({
-    click: 'open-help'
-  }, function() {
-    const $tooltip = this.el.find('.sidebar__tooltip');
-    handleSidebarItemClick($tooltip, this.event, AGN.Lib.Helpers.openHelpModal);
-  });
+  function handleSidebarItemClick($el, event, callback) {
+    const $tooltip = $el.find('.sidebar__tooltip');
 
-  function handleSidebarItemClick($tooltip, event, callback) {
     if (!cursorExists && !$tooltip.hasClass('open')) {
       displayTooltip($tooltip);
       event.preventDefault();
@@ -55,52 +38,55 @@ AGN.Lib.Controller.new('side-menu', function() {
     }
   }
 
-  this.addAction({
-    mouseenter: 'display-tooltip'
-  }, function() {
-    if (cursorExists) {
+  if (cursorExists) {
+    this.addAction({mouseenter: 'display-tooltip'}, function () {
       const $tooltip = this.el.find('.sidebar__tooltip');
       displayTooltip($tooltip);
-    }
-  });
+    });
+
+    this.addAction({mouseleave: 'display-tooltip'}, function () {
+      const $tooltip = this.el.find('.sidebar__tooltip');
+      $tooltip.data('closeTimerId', setTimeout(() => closeTooltip($tooltip), TOOLTIP_CLOSE_DELAY));
+    });
+
+    this.addAction({mouseenter: 'activateSubmenu'}, function () {
+      openSubMenu(this.el);
+    });
+
+    this.addAction({mouseleave: 'activateSubmenu'}, function () {
+      const $item = $(this.el).find('.menu-item');
+      const $submenu = $item.next('.submenu');
+
+      $item.data('closeTimerId', setTimeout(() => closeSubmenu($submenu), TOOLTIP_CLOSE_DELAY));
+    });
+  } else {
+    this.addAction({click: 'activateSubmenu'}, function () {
+      const $submenu = this.el.find('.menu-item').next('.submenu');
+
+      if ($submenu.hasClass('open')) {
+        const $link = $(this.event.target).closest('a');
+        if ($link.exists() && !$link.is('[data-confirm]')) {
+          AGN.Lib.Page.reload($link.attr('href'));
+        }
+      } else {
+        openSubMenu(this.el);
+      }
+    });
+
+    this.addAction({click: 'open-account-data'}, function () {
+      handleSidebarItemClick(
+        this.el,
+        this.event,
+        () => AGN.Lib.Page.reload(AGN.url(this.el.data('url')))
+      );
+    });
+  }
 
   function displayTooltip($tooltip) {
     closeAnotherSidebarTooltips($tooltip);
     clearTimeout($tooltip.data('closeTimerId'));
     $tooltip.addClass('open');
   }
-
-  this.addAction({
-    mouseleave: 'display-tooltip'
-  }, function() {
-    const $tooltip = this.el.find('.sidebar__tooltip');
-    $tooltip.data('closeTimerId',setTimeout(()=> closeTooltip($tooltip), TOOLTIP_CLOSE_DELAY));
-  });
-
-  this.addAction({
-    mouseenter: 'activateSubmenu'
-  }, function() {
-    if (!cursorExists) {
-      return;
-    }
-
-    openSubMenu(this.el);
-  });
-
-  this.addAction({
-    click: 'activateSubmenu'
-  }, function() {
-    const $submenu = this.el.find('.menu-item').next('.submenu');
-
-    if ($submenu.hasClass('open')) {
-      const $link = $(this.event.target).closest('a');
-      if ($link.exists() && !$link.is('[data-confirm]')) {
-        AGN.Lib.Page.reload($link.attr('href'));
-      }
-    } else {
-      openSubMenu(this.el);
-    }
-  });
 
   function openSubMenu($el) {
     const $item = $el.find('.menu-item');
@@ -116,21 +102,12 @@ AGN.Lib.Controller.new('side-menu', function() {
     $submenuItemsContainer.addClass('open');
   }
 
-  this.addAction({
-    mouseleave: 'activateSubmenu'
-  }, function() {
-    const $item = $(this.el).find('.menu-item');
-    const $submenu = $item.next('.submenu');
-
-    $item.data('closeTimerId', setTimeout(()=> closeSubmenu($submenu), TOOLTIP_CLOSE_DELAY));
-  });
-
   function closeAnotherSidebarTooltips($el) {
-    $('.sidebar__tooltip.open').not($el).each(function() {
+    $('.sidebar__tooltip.open').not($el).each(function () {
       closeTooltip($(this));
     });
 
-    $('.submenu.open').not($el).each(function() {
+    $('.submenu.open').not($el).each(function () {
       closeSubmenu($(this));
     });
   }
@@ -139,7 +116,7 @@ AGN.Lib.Controller.new('side-menu', function() {
     $el.removeClass('open');
   }
 
-  function closeSubmenu($submenu){
+  function closeSubmenu($submenu) {
     $submenu.removeClass('open');
     $submenu.find('.submenu-items-container').removeClass('open');
   }

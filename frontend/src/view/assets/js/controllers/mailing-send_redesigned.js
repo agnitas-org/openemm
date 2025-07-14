@@ -90,6 +90,11 @@ AGN.Lib.Controller.new('mailing-send', function () {
     }
   });
 
+  this.addAction({enterdown: 'send-mailing'}, function () {
+    this.event.preventDefault();
+    $('#send-btn').trigger('click');
+  });
+
   this.addAction({click: 'check-links'}, function () {
     $.post(config.urls.CHECK_LINKS).done(resp => AGN.Lib.RenderMessages($(resp)));
   });
@@ -110,7 +115,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
     };
 
     if (config.approximateMaxDeliverySize > config.warningSizeThreshold) {
-      Confirm.createFromTemplate({}, 'warning-mailing-size-modal').done(formSubmissionCallback);
+      Confirm.from('warning-mailing-size-modal').done(formSubmissionCallback);
       return;
     }
 

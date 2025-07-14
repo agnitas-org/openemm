@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,19 +11,19 @@
 package com.agnitas.emm.core.serverstatus.service.job;
 
 import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.company.service.ComCompanyService;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
-import org.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorker;
 
 public class DiskSpaceCheckJobWorker extends JobWorker {
 
     private static final int DISK_SPACE_THRESHOLD_PERCENTAGE = 25;
 
     @Override
-    public String runJob() throws Exception {
+    public String runJob() {
         ServerStatusService serverStatusService = serviceLookupFactory.getBeanServerStatusService();
         JavaMailService javaMailService = serviceLookupFactory.getBeanJavaMailService();
-        ComCompanyService companyService = serviceLookupFactory.getBeanCompanyService();
+        CompanyService companyService = serviceLookupFactory.getBeanCompanyService();
 
         int percentage = serverStatusService.calcDiskSpaceFreePercentage();
 

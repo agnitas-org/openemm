@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,14 +19,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.util.Tuple;
+import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -42,8 +40,8 @@ import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
-import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
 import com.agnitas.util.LinkUtils;
 
 
@@ -62,9 +60,9 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
         try {
 			if (userFormId > 0) {
-				List<ComTrackableUserFormLink> trackableLinks = getValidTrackableLinks(admin, userFormId, userFormDto, errors, warnings);
+				List<TrackableUserFormLink> trackableLinks = getValidTrackableLinks(admin, userFormId, userFormDto, errors, warnings);
 				if (!trackableLinkDao.existsDummyFormLink(companyId, userFormId)) {
-					ComTrackableUserFormLink dummyStatisticLinks = new ComTrackableUserFormLinkImpl();
+					TrackableUserFormLink dummyStatisticLinks = new TrackableUserFormLinkImpl();
 					dummyStatisticLinks.setFormID(userFormId);
 					dummyStatisticLinks.setCompanyID(companyId);
 					dummyStatisticLinks.setFullUrl("Form");
@@ -80,8 +78,8 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
 	@Override
 	public List<FormTrackableLinkDto> getFormTrackableLinks(Admin admin, int formId) {
-		List<ComTrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
-		return conversionService.convert(formTrackableLinks, ComTrackableUserFormLink.class, FormTrackableLinkDto.class);
+		List<TrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
+		return conversionService.convert(formTrackableLinks, TrackableUserFormLink.class, FormTrackableLinkDto.class);
 	}
 
 	@Override
@@ -102,11 +100,11 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	}
 
 	private void bulkUpdateTrackableLinks(Admin admin, int formId, List<FormTrackableLinkDto> links, int trackable, boolean updateProperties, List<LinkProperty> commonExtensions) {
-		List<ComTrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
+		List<TrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
 		List<LinkProperty> commonProperties = getFormTrackableLinkCommonExtensions(admin, formId);
 
 		Map<Integer, FormTrackableLinkDto> linkMap = links.stream().collect(Collectors.toMap(BaseTrackableLinkDto::getId, Function.identity()));
-		for (ComTrackableUserFormLink trackableLink : formTrackableLinks) {
+		for (TrackableUserFormLink trackableLink : formTrackableLinks) {
 			int id = trackableLink.getId();
 			FormTrackableLinkDto linkDto = linkMap.get(id);
 			if (linkDto != null) {
@@ -136,7 +134,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		}
 
 		try {
-			List<ComTrackableUserFormLink> links = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
+			List<TrackableUserFormLink> links = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
 			Map<Integer, List<LinkProperty>> linksMap = links.stream().map(link -> new Tuple<>(link.getId(), link.getProperties())).collect(Collectors.toMap(Tuple::getFirst, Tuple::getSecond));
 			return LinkUtils.collectCommonExtensions(linksMap);
 		} catch (Exception e) {
@@ -147,7 +145,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
 	@Override
 	public FormTrackableLinkDto getFormTrackableLink(Admin admin, int formId, int linkId) {
-		ComTrackableUserFormLink userFormTrackableLink = trackableLinkDao.getUserFormTrackableLink(admin.getCompanyID(), formId, linkId);
+		TrackableUserFormLink userFormTrackableLink = trackableLinkDao.getUserFormTrackableLink(admin.getCompanyID(), formId, linkId);
 		if (userFormTrackableLink == null) {
 			return null;
 		}
@@ -161,7 +159,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 			return false;
 		}
 
-		ComTrackableUserFormLink userFormLink = trackableLinkDao.getUserFormTrackableLink(admin.getCompanyID(), formId, trackableLinkDto.getId());
+		TrackableUserFormLink userFormLink = trackableLinkDao.getUserFormTrackableLink(admin.getCompanyID(), formId, trackableLinkDto.getId());
 		if (userFormLink == null) {
 			//don't create new link because all links are obtained while saving user form
 			return false;
@@ -177,13 +175,13 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		return true;
 	}
 
-	private List<ComTrackableUserFormLink> getValidTrackableLinks(Admin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
+	private List<TrackableUserFormLink> getValidTrackableLinks(Admin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
             throws Exception {
         int companyId = admin.getCompanyID();
         LinkService.LinkScanResult successSettingsLinkResult = validateLinks(userFormDto.getSuccessSettings(), admin, errors, warnings);
         LinkService.LinkScanResult errorSettingsLinkResult = validateLinks(userFormDto.getErrorSettings(), admin, errors, warnings);
 
-        Map<String, ComTrackableUserFormLink> existingLinks = trackableLinkDao.getUserFormTrackableLinks(userFormId, companyId);
+        Map<String, TrackableUserFormLink> existingLinks = trackableLinkDao.getUserFormTrackableLinks(userFormId, companyId);
 
         List<TrackableLink> trackableLinks = successSettingsLinkResult.getTrackableLinks();
         trackableLinks.addAll(errorSettingsLinkResult.getTrackableLinks());
@@ -191,12 +189,12 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
         List<LinkProperty> defaultExtensions = linkService.getDefaultExtensions(companyId);
 
         //collect objects with new links
-        List<ComTrackableUserFormLink> userFormLinks = new ArrayList<>();
+        List<TrackableUserFormLink> userFormLinks = new ArrayList<>();
         for(TrackableLink link: trackableLinks) {
             String url = link.getFullUrl();
-            ComTrackableUserFormLink trackableLink = existingLinks.get(url);
+            TrackableUserFormLink trackableLink = existingLinks.get(url);
             if (trackableLink == null) {
-                trackableLink = new ComTrackableUserFormLinkImpl();
+                trackableLink = new TrackableUserFormLinkImpl();
                 trackableLink.setCompanyID(companyId);
                 trackableLink.setFormID(userFormId);
                 trackableLink.setUsage(BaseTrackableLink.TRACKABLE_NO);
@@ -238,17 +236,14 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		return links;
 	}
 
-	@Required
 	public void setTrackableLinkDao(FormTrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 
-	@Required
 	public void setLinkService(LinkService linkService) {
 		this.linkService = linkService;
 	}
 
-	@Required
 	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
 	}

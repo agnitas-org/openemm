@@ -1,0 +1,1 @@
+1) ISSUE: https://github.com/xdan/jodit/issues/1223. Fix editor initialize in iframe with editHTMLDocumentMode

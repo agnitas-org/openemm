@@ -3,41 +3,36 @@
   const Table = AGN.Lib.Table;
   const WebStorage = AGN.Lib.WebStorage;
   const Confirm = AGN.Lib.Confirm;
+
   const RESTORE_ROW_SELECTOR = '[data-restore-row]';
   const BULK_RESTORE_ROWS_SELECTOR = '[data-bulk-action="restore"]';
 
-  $(document).on('click', '.js-data-table-first-page', function(e) {
-    handlePagination($(this), api => api.paginationGoToFirstPage());
-  });
-
-  $(document).on('click', '.js-data-table-prev-page', function(e) {
-    handlePagination($(this), api => api.paginationGoToPreviousPage());
-  });
-
-  $(document).on('click', '.js-data-table-page', function(e) {
+  $(document).on('click', '[data-js-table-page]', function () {
     const $el = $(this);
-    handlePagination($el, api => api.paginationGoToPage($el.data('page')));
-  });
+    const page = $el.data('js-table-page');
 
-  $(document).on('click', '.js-data-table-next-page', function(e) {
-    handlePagination($(this), api => api.paginationGoToNextPage());
-  });
-
-  $(document).on('click', '.js-data-table-last-page', function(e) {
-    handlePagination($(this), api => api.paginationGoToLastPage());
-  });
-
-  function handlePagination($el, callback) {
     const api = Table.get($el).api;
-    callback(api);
-    api.deselectAll();
-  }
 
-  $(document).on('change', "[data-js-table] [data-number-of-rows]", function(e) {
+    if (page === 'first') {
+      api.paginationGoToFirstPage();
+    } else if (page === 'prev') {
+      api.paginationGoToPreviousPage();
+    } else if (page === 'next') {
+      api.paginationGoToNextPage();
+    } else if (page === 'last') {
+      api.paginationGoToLastPage();
+    } else {
+      api.paginationGoToPage(page);
+    }
+
+    api.deselectAll();
+  });
+
+  $(document).on('change', "[data-js-table] [data-number-of-rows]", function () {
     const $e = $(this);
     const pageSize = $e.val();
 
-    Table.get($e).api.paginationSetPageSize(pageSize);
+    Table.get($e).api.setGridOption('paginationPageSize', pageSize);
 
     const bundle = $e.closest('.table-wrapper').data('web-storage');
     if (bundle) {
@@ -45,13 +40,13 @@
     }
   });
 
-  $(window).on('viewportChanged', function(e) {
-    $(document).all('.table-wrapper').each(function() {
+  $(window).on('viewportChanged', function () {
+    $(document).all('.table-wrapper').each(function () {
       AGN.Lib.Table.get($(this))?.redraw();
     })
   });
 
-  $(document).on('click', '.js-data-table-delete', function(e) {
+  $(document).on('click', '.js-data-table-delete', function (e) {
     const $el = $(this);
     const table = Table.get($el);
 
@@ -62,7 +57,7 @@
           if (row) {
             row.data.deleted = true;
             row.data.active = 'false';
-            table.api?.applyTransaction(isRestoreModeAvailable() ? { update: [ row.data ] } : { remove: [ row.data ] });
+            table.api?.applyTransaction(isRestoreModeAvailable() ? {update: [row.data]} : {remove: [row.data]});
           }
           if (typeof positiveResp === 'object') {
             AGN.Lib.JsonMessages(positiveResp.popups, true);
@@ -79,9 +74,7 @@
   });
 
   $(document).on('click', '.js-data-table-bulk-delete', e => deleteRows($(e.currentTarget)));
-
-  $(document).on('click', `${BULK_RESTORE_ROWS_SELECTOR},
-                           ${RESTORE_ROW_SELECTOR}`, e => restoreRows($(e.currentTarget)));
+  $(document).on('click', `${BULK_RESTORE_ROWS_SELECTOR}, ${RESTORE_ROW_SELECTOR}`, e => restoreRows($(e.currentTarget)));
 
   function deleteRows($el) {
     hideRowsAfterAction($el, false);
@@ -106,7 +99,7 @@
       row.active = 'false';
       row.deleted = !restore;
     });
-    tableApi.applyTransaction(isRestoreModeAvailable() ? { update: rows } : { remove: rows });
+    tableApi.applyTransaction(isRestoreModeAvailable() ? {update: rows} : {remove: rows});
   }
 
   function isRestoreModeAvailable() {
@@ -120,7 +113,7 @@
       const jqxhr = $.ajax(url, {
         method,
         traditional: true,
-        data: { bulkIds }
+        data: {bulkIds}
       }).fail(() => deferred.reject());
 
       Confirm.request(jqxhr)
@@ -132,4 +125,5 @@
 
     return deferred.promise();
   }
+
 })();

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="org.agnitas.dao.LicenseType"%>
+<%@ page import="com.agnitas.emm.common.LicenseType"%>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
-<%@ page import="com.agnitas.util.ComHelpUtil" %>
+<%@ page import="com.agnitas.util.HelpUtil" %>
 <%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
 <%@ page import="com.agnitas.service.WebStorage" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.commons.web.ConnectionSpeedTestController" %>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -18,7 +18,8 @@
 <c:set var="MENU_POSITION_LEFT" value="<%= EmmLayoutBase.MENU_POSITION_LEFT%>" scope="page"/>
 <c:set var="MENU_POSITION_TOP" value="<%= EmmLayoutBase.MENU_POSITION_TOP%>" scope="page"/>
 <c:set var="isWideSidebarWebStorageBundleKey" value="<%= WebStorage.IS_WIDE_SIDEBAR%>" scope="page"/>
-<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE%>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK%>" scope="page"/>
+<c:set var="DARK_MODE_THEME_TYPE_2" value="<%= EmmLayoutBase.ThemeType.DARK_CONTRAST%>" scope="page"/>
 <c:set var="SPEED_TEST_RESOURCE_SIZE" value="<%= ConnectionSpeedTestController.SPEED_TEST_RESOURCE_SIZE%>" scope="page"/>
 <c:set var="SLOW_CONNECTION_THRESHOLD_KBPS" value="<%= ConfigService.getInstance().getIntegerValue(ConfigValue.SlowConnectionThresholdKbps, AgnUtils.getCompanyID(request)) %>" scope="page"/>
 
@@ -35,7 +36,7 @@
 <tiles:insertAttribute name="head-tag"/>
 
 <emm:webStorage var="isWideSidebarBundle" key="${isWideSidebarWebStorageBundleKey}"/>
-<body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''} ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE ? 'dark-theme' : ''}">
+<body class="${isWideSidebarBundle.isTrue() ? 'wide-sidebar' : ''} ${emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE or  emmLayoutBase.getThemeType() eq DARK_MODE_THEME_TYPE_2 ? 'dark-theme' : ''}">
 
     <div class="loader">
         <i class="icon icon-refresh icon-spin"></i> <mvc:message code="default.loading" />
@@ -117,7 +118,7 @@
         </ul>
         <ul class="header-actions">
             <li>
-                <c:set var="helpPageUrl" value="<%= ComHelpUtil.getHelpPageUrl(request) %>" />
+                <c:set var="helpPageUrl" value="<%= HelpUtil.getHelpPageUrl(request) %>" />
                 <button class="btn btn-secondary btn-regular" type="button" data-popup="${helpPageUrl}">
                     <i class="icon icon-question-circle"></i>
                     <span class="text"><mvc:message code="help"/></span>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,7 +12,6 @@ package com.agnitas.emm.core.target.eql.codegen.sql;
 
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
-import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidator;
 import com.agnitas.emm.core.target.eql.codegen.validate.MailingIdValidator;
 import com.agnitas.emm.core.target.eql.emm.resolver.EmmMailingTypeResolverFactory;
@@ -40,7 +39,7 @@ public final class DefaultCommonSqlCodeGeneratorCallbackFactory implements SqlCo
 	}
 	
 	@Override
-	public final SqlCodeGeneratorCallback newCodeGeneratorCallback(final int companyId) throws ProfileFieldResolveException, ReferenceTableResolveException {
+	public SqlCodeGeneratorCallback newCodeGeneratorCallback(int companyId) throws ProfileFieldResolveException {
 		final EmmProfileFieldResolver profileFieldResolver = this.profileFieldResolverFactory.newInstance(companyId);
 		final MailingTypeResolver mailingTypeResolver = this.mailingTypeResolverFactory.newResolver();
 		

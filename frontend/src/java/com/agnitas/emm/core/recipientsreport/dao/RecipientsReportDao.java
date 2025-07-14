@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package com.agnitas.emm.core.recipientsreport.dao;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
 
 import java.io.File;
 import java.util.Date;
@@ -27,6 +27,7 @@ public interface RecipientsReportDao {
 
     String getReportTextContent(int companyId, int reportId);
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
     PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
@@ -39,7 +40,7 @@ public interface RecipientsReportDao {
 
 	void createNewSupplementalReport(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
 
-	byte[] getReportFileData(int companyId, int reportId) throws Exception;
+	byte[] getReportFileData(int companyId, int reportId);
     
     RecipientsReport.EntityType getReportType(int companyId, int reportId);
 }

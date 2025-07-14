@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!--
-    This file contains the server-side security policy for Spring webservices. 
- -->
- 
-<xwss:SecurityConfiguration xmlns:xwss="http://java.sun.com/xml/ns/xwss/config">
-    <xwss:RequireUsernameToken passwordDigestRequired="true" nonceRequired="true"/>
-</xwss:SecurityConfiguration>

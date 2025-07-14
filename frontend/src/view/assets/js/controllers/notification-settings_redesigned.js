@@ -142,8 +142,8 @@ AGN.Lib.Controller.new('notification-settings', function () {
       {
         label: data1[0],
         data: data1.slice(1),
-        borderColor: $chart.css('--chart-very-dark-blue-color'),
-        backgroundColor: $chart.css('--chart-very-dark-blue-color'),
+        borderColor: $chart.css('--chart-darkest-blue-color'),
+        backgroundColor: $chart.css('--chart-darkest-blue-color'),
         pointRadius: pointRadius
       },
       {

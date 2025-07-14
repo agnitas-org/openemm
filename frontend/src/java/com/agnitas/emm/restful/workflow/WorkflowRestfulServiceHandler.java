@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,8 +16,8 @@ import java.util.Date;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +26,8 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.JsonRequestResponse;
 import com.agnitas.emm.restful.ResponseType;
@@ -54,10 +54,10 @@ public class WorkflowRestfulServiceHandler implements RestfulServiceHandler {
 
 	private ConfigService configService;
 	private RestfulUserActivityLogDao userActivityLogDao;
-	private ComWorkflowService workflowService;
-	private ComWorkflowActivationService workflowActivationService;
+	private WorkflowService workflowService;
+	private WorkflowActivationService workflowActivationService;
 
-	public WorkflowRestfulServiceHandler(ConfigService configService, RestfulUserActivityLogDao userActivityLogDao, ComWorkflowService workflowService, ComWorkflowActivationService workflowActivationService) {
+	public WorkflowRestfulServiceHandler(ConfigService configService, RestfulUserActivityLogDao userActivityLogDao, WorkflowService workflowService, WorkflowActivationService workflowActivationService) {
 		this.configService = configService;
 		this.userActivityLogDao = userActivityLogDao;
 		this.workflowService = workflowService;
@@ -65,7 +65,7 @@ public class WorkflowRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -142,7 +142,7 @@ public class WorkflowRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object changeWorkflowStatus(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.WORKFLOW_ACTIVATE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.WORKFLOW_ACTIVATE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.WORKFLOW_ACTIVATE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 2, 2);
@@ -200,7 +200,7 @@ public class WorkflowRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	public void pauseWorkflow(Workflow workflow) throws Exception {
+	public void pauseWorkflow(Workflow workflow) {
 		workflowService.savePausedSchemaForUndo(workflow);
 		workflowService.changeWorkflowStatus(workflow.getWorkflowId(), workflow.getCompanyId(), Workflow.WorkflowStatus.STATUS_PAUSED);
 	}

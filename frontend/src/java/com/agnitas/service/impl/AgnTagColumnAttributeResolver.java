@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,8 +16,8 @@ import com.agnitas.beans.AgnTagSelectAttributeDto;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.service.AgnTagAttributeResolver;
-import org.agnitas.backend.AgnTag;
-import org.agnitas.beans.LightProfileField;
+import com.agnitas.backend.AgnTag;
+import com.agnitas.beans.LightProfileField;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -34,7 +34,7 @@ public class AgnTagColumnAttributeResolver implements AgnTagAttributeResolver {
     }
 
     @Override
-    public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) throws Exception {
+    public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) {
         if (attribute.equals("column")) {
             List<ProfileField> fields;
             if (AgnTag.DB.getName().equals(tag)) {

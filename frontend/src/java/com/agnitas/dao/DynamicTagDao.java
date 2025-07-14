@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -76,28 +76,22 @@ public interface DynamicTagDao {
 
     /**
      * Deletes all dyn content by dyn tag name
-	 * @param mailingId
-	 * @param companyId
-	 * @param dynName
      * @return true if at least con row was affected otherwise return false
      */
 	boolean cleanupContentForDynNames(int mailingId, int companyId, List<String> dynNames);
 
     /**
      * Deletes all dyn content by dyn tag name
-	 * @param mailingId
-	 * @param companyId
-	 * @param dynName
      * @return true if at least con row was affected otherwise return false
      */
 	boolean cleanupContentForDynName(int mailingId, int companyId, String dynName);
 
-	void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
+	void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags);
 
-	void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
+	void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags);
 
-	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags) throws Exception;
-	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags, final boolean removeUnusedContent) throws Exception;
+	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags);
+	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags, boolean removeUnusedContent);
 
 	void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag);
 

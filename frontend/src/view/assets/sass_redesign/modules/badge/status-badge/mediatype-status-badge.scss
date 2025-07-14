@@ -17,9 +17,9 @@ parent: badges_04_status
 */
 
 $mailing-mediatype-badges-defs: (
-  email: (background: $stat-or-badge-dark-blue, icon: $fa-var-envelope),
-  post:  (background: $stat-or-badge-orange,    icon: $fa-var-envelope-open-text),
-  sms:   (background: $stat-or-badge-cyan,      icon: $fa-var-mobile-alt),
+  email: (background: $badge-dark-blue-var,   icon: $fa-var-envelope),
+  post:  (background: $badge-dark-yellow-var, icon: $fa-var-envelope-open-text),
+  sms:   (background: $badge-cyan-var,        icon: $fa-var-mobile-alt),
 );
 
 @mixin mailing-mediatype-badge($state) {

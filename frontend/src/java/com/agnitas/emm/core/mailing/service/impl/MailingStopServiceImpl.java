@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,20 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.company.service.CompanyService;
-import org.agnitas.emm.core.commons.util.CompanyInfoDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.util.AgnUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -35,108 +24,97 @@ import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
 import com.agnitas.emm.core.mailing.service.MailtrackingNotEnabledException;
 import com.agnitas.emm.core.serverprio.server.ServerPrioService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags.Flag;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
+import com.agnitas.emm.common.MailingStatus;
+import org.agnitas.emm.core.commons.util.CompanyInfoDao;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.util.AgnUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-/**
- * Implementation of {@link MailingStopService} interface.
- */
 public final class MailingStopServiceImpl implements MailingStopService {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(MailingStopServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(MailingStopServiceImpl.class);
 
-	/** Service dealing with mailings. */
 	private MailingService mailingService;
-	
-	/** Service dealing with maildrops. */
 	private MaildropService maildropService;
-	
-	/** Service dealing with server prios. */
-	private ServerPrioService serverPrioService;
-	
+	private ServerPrioService serverPrioService; // Service dealing with server prios.
 	private CopyMailingService copyMailingService;
 	private CompanyInfoDao companyInfoDao;
 	private EqlFacade eqlFacade;
 	private CompanyService companyService;
-	private ConfigService configService;
-	
+
 	@Override
-	public final boolean isStopped(final int mailingID) {
+	public boolean isStopped(final int mailingID) {
 		return serverPrioService.isMailGenerationAndDeliveryPaused(mailingID);
 	}
 
 	@Override
-	public final boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException {
+	public boolean stopMailing(final int companyID, final int mailingID, final boolean includeUnscheduled) throws MailingStopServiceException {
 		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
-		
+
 		// Check that designated mailing can be stopped
 		requireStoppableMailing(mailing);
-		
+
 		return stopMailing(mailing, includeUnscheduled);
 	}
-	
-	private final boolean stopMailing(final LightweightMailing mailing, final boolean includeUnscheduled) {
+
+	private boolean stopMailing(final LightweightMailing mailing, final boolean includeUnscheduled) {
 		assert canStopMailing(mailing);		// Ensured by caller
-		
+
 		// Try to cancel mailing before starting generation
 		final boolean mailingStoppedBeforeGeneration = this.maildropService.stopWorldMailingBeforeGeneration(mailing.getCompanyID(), mailing.getMailingID());
 
-		if(mailingStoppedBeforeGeneration) {
+		if (mailingStoppedBeforeGeneration) {
             mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED);
 			stopFollowUpMailings(mailing, includeUnscheduled);
-			
 			return true;
-		} else {
-			// Stopping before generation was not successful. Generation or delivery is in progress.
-			final boolean result = serverPrioService.pauseMailGenerationAndDelivery(mailing.getMailingID());
-			
-			if(result) {
-                mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED);
-    			stopFollowUpMailings(mailing, includeUnscheduled);
-			}
-			
-			return result;
 		}
+        // Stopping before generation was not successful. Generation or delivery is in progress.
+        final boolean result = serverPrioService.pauseMailGenerationAndDelivery(mailing.getMailingID());
+
+        if (result) {
+            mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED);
+            stopFollowUpMailings(mailing, includeUnscheduled);
+        }
+        return result;
 	}
-	
-	private final void stopFollowUpMailings(final LightweightMailing mailing, final boolean includeUnscheduled) {
+
+	private void stopFollowUpMailings(final LightweightMailing mailing, final boolean includeUnscheduled) {
         final List<Integer> followupMailings = mailingService.listFollowupMailingIds(mailing.getCompanyID(), mailing.getMailingID(), includeUnscheduled);
-        
+
         for (int followupMailingID : followupMailings) {
         	final LightweightMailing followupMailing = mailingService.getLightweightMailing(mailing.getCompanyID(), followupMailingID);
-        	
+
         	stopMailing(followupMailing, includeUnscheduled);
         }
 	}
 
 	@Override
-	public final boolean resumeMailing(int companyID, int mailingID) throws MailingStopServiceException {
-		final LightweightMailing mailing = mailingService.getLightweightMailing(companyID, mailingID);
-		
-		// Check that designated mailing can be resumed
-		requireResumableMailing(mailing);
-		
+	public boolean resumeMailing(int companyId, int mailingId) throws MailingStopServiceException {
+		final LightweightMailing mailing = mailingService.getLightweightMailing(companyId, mailingId);
+		requireResumableMailing(mailing); // Check that designated mailing can be resumed
+
 		// Resuming mailing is only possible with a ServerPriorService set for this service
-		final boolean result = serverPrioService.resumeMailGenerationAndDelivery(mailingID);
-		
-		// Update status to "generation finished" is resuming was successful
-		if(result) {
-    		mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.GENERATION_FINISHED);
+		final boolean result = serverPrioService.resumeMailGenerationAndDelivery(mailingId);
+
+		if (result) {
+    		mailingService.updateStatus(companyId, mailingId, MailingStatus.SCHEDULED);
 		}
-		
 		return result;
 	}
 
 	@Override
-	public final int copyMailingForResume(Admin admin, int mailingID) throws MailingStopServiceException {
+	public int copyMailingForResume(Admin admin, int mailingID) throws MailingStopServiceException {
 		final int companyId = admin.getCompanyID();
 
 		checkMailtrackingEnabled(companyId);
-		
+
 		try {
 			final LightweightMailing mailing = mailingService.getLightweightMailing(admin.getCompanyID(), mailingID);
 
@@ -147,7 +125,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 					companyId,
 	    			mailing.getShortname(),
 	    			AgnUtils.makeCloneName(admin.getLocale(), mailing.getShortname()));
-	
+
 	    	try {
 		    	// Create and register exclusion SQL
 		    	final String exclusionEQL = String.format("NOT RECEIVED MAILING %d", mailingID);
@@ -155,54 +133,51 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		    			exclusionEQL,
 						companyId,
 		    			CodeGenerationFlags.DEFAULT_FLAGS.setFlag(Flag.IGNORE_TRACKING_VETO));
-		    	
+
 		    	companyInfoDao.writeConfigValue(
 						companyId,
 		    			String.format("fixed-target-clause[%d]", newMailingId),
 		    			exclusionSqlCode.getSql(),
 		    			"Added by copying stopped mailing");
-		    	
+
 		    	// Mark original mailing as canceled and copied
 		    	mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED_AND_COPIED);
-		
+
 		    	return newMailingId;
-	    	} catch(final Exception e) {
+	    	} catch (final Exception e) {
 	    		// Clean up (delete copy of mailing)
 		    	final MailingModel mailingToDelete = new MailingModel();
 		    	mailingToDelete.setCompanyId(companyId);
 		    	mailingToDelete.setMailingId(newMailingId);
 		    	mailingToDelete.setTemplate(false);
-	    		
+
 	    		this.mailingService.deleteMailing(mailingToDelete);
-	    		
+
 	    		throw e;
 	    	}
-		} catch(final Exception e) {
+		} catch (final Exception e) {
 			final String msg = String.format("Error creating copy of mailing %d", mailingID);
 			LOGGER.error(msg, e);
-			
 			throw new MailingStopServiceException(msg, e);
 		}
 	}
-	
-	@Override
-	public final boolean canStopMailing(final int companyID, final int mailingID) {
-		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 
+	@Override
+	public boolean canStopMailing(final int companyID, final int mailingID) {
+		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 		return canStopMailing(mailing);
 	}
-	
-	private final boolean canStopMailing(final LightweightMailing mailing) {
+
+	private boolean canStopMailing(final LightweightMailing mailing) {
 		final boolean inProgress = this.maildropService.hasMaildropStatus(mailing.getMailingID(), mailing.getCompanyID(), MaildropStatus.WORLD)
 				&& !this.mailingService.isDeliveryComplete(mailing);
-		
+
 		return inProgress && !isStopped(mailing);
 	}
-	
-	@Override
-	public final boolean isStopped(final int companyID, final int mailingID) {
-		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 
+	@Override
+	public boolean isStopped(final int companyID, final int mailingID) {
+		final LightweightMailing mailing = this.mailingService.getLightweightMailing(companyID, mailingID);
 		return isStopped(mailing);
 	}
 
@@ -211,83 +186,63 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		return serverPrioService.getDeliveryPauseDate(companyId, mailingId);
 	}
 
-	private final boolean isStopped(final LightweightMailing mailing) {
+	private boolean isStopped(final LightweightMailing mailing) {
 		return isStopped(mailing.getMailingID());
 	}
-	
-	private final void requireStoppableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
-		if(!canStopMailing(mailing)) {
+
+	private void requireStoppableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
+		if (!canStopMailing(mailing)) {
 			final String msg = String.format("Mailing %d cannot be stopped", mailing.getMailingID());
-			
-			if(LOGGER.isInfoEnabled()) {
-				LOGGER.info(msg);
-			}
-			
+            LOGGER.info(msg);
 			throw new MailingStopServiceException(msg);
 		}
 	}
-	
-	private final void requireResumableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
-		if(!isStopped(mailing)) {
+
+	private void requireResumableMailing(final LightweightMailing mailing) throws MailingStopServiceException {
+		if (!isStopped(mailing)) {
 			final String msg = String.format("Mailing %d cannot be resumed", mailing.getMailingID());
-			
-			if(LOGGER.isInfoEnabled()) {
-				LOGGER.info(msg);
-			}
-			
+            LOGGER.info(msg);
 			throw new MailingStopServiceException(msg);
 		}
 	}
-	
-	private final void checkMailtrackingEnabled(final int companyID) throws MailingStopServiceException {
-		try {
-			final Company company = this.companyService.getCompany(companyID);
 
-			if(company.getMailtracking() == 0) {
-				throw new MailtrackingNotEnabledException(companyID);
-			}
-		} catch (final UnknownCompanyIdException e) {
-			throw new MailingStopServiceException(e);
+	private void checkMailtrackingEnabled(final int companyID) throws MailingStopServiceException {
+		final Company company = this.companyService.getCompany(companyID);
+
+		if (company == null) {
+			throw new MailingStopServiceException("Company not found!");
+		}
+
+		if (company.getMailtracking() == 0) {
+			throw new MailtrackingNotEnabledException(companyID);
 		}
 	}
 
-	@Required
-	public final void setMailingService(final MailingService service) {
+	public void setMailingService(final MailingService service) {
 		this.mailingService = Objects.requireNonNull(service, "Mailing service is null");
 	}
-	
-	@Required
-	public final void setMaildropService(final MaildropService service) {
+
+	public void setMaildropService(final MaildropService service) {
 		this.maildropService = Objects.requireNonNull(service, "Maildrop service is null");
 	}
-	
-	@Required
-	public final void setServerPrioService(final ServerPrioService service) {
+
+	public void setServerPrioService(final ServerPrioService service) {
 		this.serverPrioService =Objects.requireNonNull(service, "Server prio service is null");
 	}
-	
-	@Required
-	public final void setCopyMailingService(final CopyMailingService service) {
+
+	public void setCopyMailingService(final CopyMailingService service) {
 		this.copyMailingService = Objects.requireNonNull(service, "Mailing copy service is null");
 	}
-	
-	@Required
-	public final void setCompanyInfoDao(final CompanyInfoDao dao) {
+
+	public void setCompanyInfoDao(final CompanyInfoDao dao) {
 		this.companyInfoDao = Objects.requireNonNull(dao, "Company info DAO is null");
 	}
-	
-	@Required
-	public final void setEqlFacade(final EqlFacade facade) {
+
+	public void setEqlFacade(final EqlFacade facade) {
 		this.eqlFacade = Objects.requireNonNull(facade, "EQL facade is null");
 	}
-	
-	@Required
-	public final void setCompanyService(final CompanyService service) {
+
+	public void setCompanyService(final CompanyService service) {
 		this.companyService = Objects.requireNonNull(service, "companyService");
-	}
-	
-	@Required
-	public final void setConfigService(final ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "configService");
 	}
 }

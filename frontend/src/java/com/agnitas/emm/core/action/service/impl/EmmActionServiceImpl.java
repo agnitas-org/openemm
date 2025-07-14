@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,49 +10,7 @@
 
 package com.agnitas.emm.core.action.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.action.bean.EmmActionDependency;
-import com.agnitas.emm.core.action.component.EmmActionChangesCollector;
-import com.agnitas.emm.core.action.dto.EmmActionDto;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionOperationService;
-import com.agnitas.emm.core.commons.ActivenessStatus;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.userform.service.UserformService;
-import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonReader;
-import com.agnitas.json.JsonWriter;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.impl.ActionExporter;
-import org.agnitas.service.impl.ActionImporter;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,10 +22,49 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.dao.EmmActionDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.bean.EmmActionDependency;
+import com.agnitas.emm.core.action.component.EmmActionChangesCollector;
+import com.agnitas.emm.core.action.dao.EmmActionOperationDao;
+import com.agnitas.emm.core.action.dto.EmmActionDto;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationService;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.ActivenessStatus;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader;
+import com.agnitas.json.JsonWriter;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.impl.ActionExporter;
+import com.agnitas.service.impl.ActionImporter;
+import com.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.transaction.annotation.Transactional;
 
 public class EmmActionServiceImpl implements EmmActionService {
 	
@@ -195,9 +192,8 @@ public class EmmActionServiceImpl implements EmmActionService {
         if (actionID != 0) {
             List<AbstractActionOperationParameters> operations = emmActionOperationDao.getOperations(actionID, companyID);
             for (AbstractActionOperationParameters operation : operations) {
-                if (operation instanceof ActionOperationSendMailingParameters) {
-                    int mailingID = ((ActionOperationSendMailingParameters) operation).getMailingID();
-                    mailinglistIDs.add(mailingDao.getMailinglistId(mailingID, companyID));
+                if (operation instanceof ActionOperationSendMailingParameters sendMailingParams) {
+                    mailinglistIDs.add(mailingDao.getMailinglistId(sendMailingParams.getMailingID(), companyID));
                 }
             }
         }
@@ -237,20 +233,21 @@ public class EmmActionServiceImpl implements EmmActionService {
         for (EmmAction action: emmActionDao.getEmmActions(admin.getCompanyID(), true)) {
             JSONObject entry = new JSONObject();
 
-            entry.element("id", action.getId());
-            entry.element("shortname", action.getShortname());
-            entry.element("description", action.getDescription());
-            entry.element("formNames", emmActionDao.getActionUserFormNames(action.getId(), admin.getCompanyID()));
-            entry.element("creationDate", DateUtilities.toLong(action.getCreationDate()));
-            entry.element("changeDate", DateUtilities.toLong(action.getChangeDate()));
-            entry.element("deleted", action.isDeleted());
+            entry.put("id", action.getId());
+            entry.put("shortname", action.getShortname());
+            entry.put("description", action.getDescription());
+            entry.put("formNames", emmActionDao.getActionUserFormNames(action.getId(), admin.getCompanyID()));
+            entry.put("creationDate", DateUtilities.toLong(action.getCreationDate()));
+            entry.put("changeDate", DateUtilities.toLong(action.getChangeDate()));
+            entry.put("deleted", action.isDeleted());
             if (admin.isRedesignedUiUsed()) {
-                entry.element("active", String.valueOf(action.getIsActive()));
+                entry.put("active", String.valueOf(action.getIsActive()));
+                entry.put("operationTypes", emmActionOperationDao.getOperationsTypes(action.getId(), action.getCompanyID()));
             } else {
-                entry.element("activeStatus", action.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
+                entry.put("activeStatus", action.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
             }
 
-            actionsJson.add(entry);
+            actionsJson.put(entry);
         }
         return actionsJson;
     }
@@ -289,7 +286,6 @@ public class EmmActionServiceImpl implements EmmActionService {
     @Override
     @Transactional
     @Deprecated
-    // TODO: EMMGUI-714 remove after remove of old design
     public boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions) {
         if (MapUtils.isEmpty(changeMap) || companyId <= 0) {
             return false;
@@ -360,7 +356,7 @@ public class EmmActionServiceImpl implements EmmActionService {
         if (validationResult.isSuccess()) {
             List<Integer> allowedIds = validationResult.getResult().stream()
                     .map(EmmAction::getId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             emmActionDao.setActiveness(allowedIds, activate, companyId);
         }
@@ -395,17 +391,14 @@ public class EmmActionServiceImpl implements EmmActionService {
     public boolean isReadonlyOperation(AbstractActionOperationParameters operation, Admin admin) {
         switch (operation.getOperationType()) {
             case UPDATE_CUSTOMER:
-                return operation instanceof ActionOperationUpdateCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationUpdateCustomerParameters)operation).getColumnName(), admin);
+                return operation instanceof ActionOperationUpdateCustomerParameters updateCustomerParams
+                        && isReadonlyOperationRecipientField(updateCustomerParams.getColumnName(), admin);
             case SUBSCRIBE_CUSTOMER:
-                return operation instanceof ActionOperationSubscribeCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationSubscribeCustomerParameters)operation).getKeyColumn(), admin);
+                return operation instanceof ActionOperationSubscribeCustomerParameters subscribeCustomerParams
+                        && isReadonlyOperationRecipientField(subscribeCustomerParams.getKeyColumn(), admin);
             case IDENTIFY_CUSTOMER:
-                return operation instanceof ActionOperationIdentifyCustomerParameters
-                        && isReadonlyOperationRecipientField(
-                                ((ActionOperationIdentifyCustomerParameters)operation).getKeyColumn(), admin);
+                return operation instanceof ActionOperationIdentifyCustomerParameters identifyCustomerParams
+                        && isReadonlyOperationRecipientField(identifyCustomerParams.getKeyColumn(), admin);
             default:
                 return false;
         }
@@ -416,8 +409,7 @@ public class EmmActionServiceImpl implements EmmActionService {
             ProfileField field = columnInfoService.getColumnInfo(admin.getCompanyID(), column, admin.getAdminID());
             return isReadonlyOperationRecipientField(field);
         } catch (Exception e) {
-            LOGGER.warn(
-                    "Error reading meta data for profile field '{}' (company ID {}, admin ID {})",
+            LOGGER.warn("Error reading meta data for profile field '{}' (company ID {}, admin ID {})",
                     column, admin.getCompanyID(), admin.getAdminID(), e);
             return false;
         }
@@ -432,7 +424,7 @@ public class EmmActionServiceImpl implements EmmActionService {
     public List<String> getActionsNames(Set<Integer> bulkIds, int companyID) {
         return bulkIds.stream()
                 .map(id -> getEmmActionName(id, companyID))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -440,20 +432,20 @@ public class EmmActionServiceImpl implements EmmActionService {
         List<EmmActionDependency> forms = userformService.getUserFormNamesByActionID(companyId, actionId)
                 .stream()
                 .map(t -> new EmmActionDependency(t.getFirst(), EmmActionDependency.Type.FORM, t.getSecond()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<EmmActionDependency> mailings = mailingService.getMailingsUsingEmmAction(actionId, companyId)
                 .stream()
                 .map(m -> new EmmActionDependency(m.getMailingID(), EmmActionDependency.Type.MAILING, m.getShortname()))
-                .collect(Collectors.toList());
+                .toList();
 
         JSONArray jsonArray = new JSONArray();
         for (EmmActionDependency dependency : CollectionUtils.union(forms, mailings)) {
             JSONObject entry = new JSONObject();
-            entry.element("id", dependency.getId());
-            entry.element("name", dependency.getName());
-            entry.element("type", dependency.getType());
-            jsonArray.add(entry);
+            entry.put("id", dependency.getId());
+            entry.put("name", dependency.getName());
+            entry.put("type", dependency.getType());
+            jsonArray.put(entry);
         }
 
         return jsonArray;
@@ -464,57 +456,51 @@ public class EmmActionServiceImpl implements EmmActionService {
         return emmActionDao.isActive(id);
     }
 
-    @Required
+    @Override
+    public List<Integer> findActionsUsingProfileField(String fieldName, int companyId) {
+        return emmActionDao.findActionsUsingProfileField(fieldName, companyId);
+    }
+
     public void setUserformService(UserformService userformService) {
         this.userformService = userformService;
     }
 
-    @Required
     public void setBulkActionValidationService(BulkActionValidationService<Integer, EmmAction> bulkActionValidationService) {
         this.bulkActionValidationService = bulkActionValidationService;
     }
 
-    @Required
     public void setMailingService(MailingService mailingService) {
         this.mailingService = mailingService;
     }
 
-    @Required
     public void setEmmActionDao(EmmActionDao emmActionDao) {
         this.emmActionDao = emmActionDao;
     }
 
-    @Required
     public void setEmmActionOperationDao(EmmActionOperationDao emmActionOperationDao) {
         this.emmActionOperationDao = emmActionOperationDao;
     }
 
-    @Required
     public void setEmmActionOperationService(EmmActionOperationService emmActionOperationService) {
         this.emmActionOperationService = emmActionOperationService;
     }
 
-    @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    @Required
     public void setConversionService(ExtendedConversionService conversionService) {
         this.conversionService = conversionService;
     }
 
-    @Required
     public void setActionExporter(ActionExporter actionExporter) {
         this.actionExporter = actionExporter;
     }
 
-    @Required
     public void setActionImporter(ActionImporter actionImporter) {
         this.actionImporter = actionImporter;
     }
 
-    @Required
     public void setChangesCollector(EmmActionChangesCollector changesCollector) {
         this.changesCollector = changesCollector;
     }

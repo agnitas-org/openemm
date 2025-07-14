@@ -10,8 +10,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
-<%--@elvariable id="workflowsJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="workflowsJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="dateFormatPattern" type="java.lang.String"--%>
 
 <c:set var="STATUS_ACTIVE" value="<%= WorkflowStatus.STATUS_ACTIVE %>" scope="page"/>
@@ -105,9 +104,15 @@
         <div class="js-data-table-body" data-web-storage="workflow-overview" style="height: 100%;"></div>
     </div>
 
-    <c:forEach var="entry" items="${workflowsJson}">
+    <c:set var="workflowsList" value="${workflowsJson.toList()}" />
+
+    <c:forEach var="entry" items="${workflowsList}">
         <c:url var="viewLink" value="/workflow/${entry['id']}/view.action"/>
-        <c:set target="${entry}" property="show" value="${viewLink}"/>
+
+        <c:if test="${not entry['readonly']}">
+            <c:set target="${entry}" property="show" value="${viewLink}"/>
+        </c:if>
+
 		<emm:ShowByPermission token="workflow.delete">
 	        <c:url var="deleteLink" value="/workflow/${entry['id']}/confirmDelete.action"/>
 	        <c:set target="${entry}" property="delete" value="${deleteLink}"/>
@@ -163,7 +168,10 @@
                     "type": "deleteColumn"
                 }
             ],
-            "data": ${workflowsJson}
+            "data": ${emm:toJson(workflowsList)},
+            "options": {
+                "readonlyRowMessage": "<mvc:message code='warning.workflow.mailing.split.redesign'/>"
+            }
         }
     </script>
 </div>

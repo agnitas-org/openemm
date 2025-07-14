@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,18 +12,18 @@
 package com.agnitas.beans;
 
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
-import org.agnitas.beans.AdminGroup;
-
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.enums.UiLayoutType;
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.CollectionUtils;
 
 public interface Admin {
@@ -66,8 +66,6 @@ public interface Admin {
 
     /**
      * Setter for the password, which will not be stored in the db directly, but will be encrypted by the PasswordEncryptor before storage
-     * 
-     * @param password
      */
     void setPasswordForStorage(String password);
 
@@ -109,6 +107,8 @@ public interface Admin {
     void setAdminPermissions(Set<Permission> permissions);
 
     String getAdminTimezone();
+
+    ZoneId getZoneId();
 
     Company getCompany();
 
@@ -163,6 +163,10 @@ public interface Admin {
 
     boolean isRedesignedUiUsed();
 
+    boolean isUpdatedUxUsed();
+    boolean isUpdatedUxUsed(HttpServletRequest req);
+    boolean isUxUpdateRollback();
+
     Locale getLocale();
 
     int getDefaultImportProfileID();
@@ -213,4 +217,8 @@ public interface Admin {
     PasswordReminderState getPasswordReminderState();
 
     void setPasswordReminderState(PasswordReminderState passwordReminderState);
+
+    UiLayoutType getLayoutType();
+
+    void setLayoutType(UiLayoutType layoutType);
 }

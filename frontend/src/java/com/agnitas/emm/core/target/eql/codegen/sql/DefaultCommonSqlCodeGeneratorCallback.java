@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -958,7 +958,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	}
 
 	@Override
-	public void terminalNumericConstantAtomEqlNode(NumericConstantAtomEqlNode node) throws CodeGeneratorException {
+	public void terminalNumericConstantAtomEqlNode(NumericConstantAtomEqlNode node) {
 		codeStack.push(new CodeFragment(node.getValue(), DataType.NUMERIC, null));
 	}
 
@@ -977,7 +977,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	}
 
 	@Override
-	public void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
+	public void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) {
 		/*
 		 * We do not need to check, if the string constant is used as matching pattern
 		 * (-> LIKE operator), because, for the LIKE operator, this method is never
@@ -989,7 +989,7 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	}
 	
 	@Override
-	public void terminalTodayAtomEqlNode(AbstractAtomEqlNode node) throws CodeGeneratorException {
+	public void terminalTodayAtomEqlNode(AbstractAtomEqlNode node) {
 		codeStack.push(new CodeFragment(sqlDialect.today(), DataType.DATE, null));
 	}
 
@@ -1034,27 +1034,28 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	// --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Unused callbacks
 	@Override
-	public void postOrderRelationalBooleanEqlNode(RelationalBooleanEqlNode node) throws CodeGeneratorException {
+	public void postOrderRelationalBooleanEqlNode(RelationalBooleanEqlNode node) {
 		/* No code generation here. */ }
 
 	@Override
-	public void postOrderAbstractRelationalEqlNode(AbstractRelationalEqlNode node) throws CodeGeneratorException {
+	public void postOrderAbstractRelationalEqlNode(AbstractRelationalEqlNode node) {
 		/* No code generation here. */ }
 
 	@Override
-	public void postOrderAbstractBooleanEqlNode(AbstractBooleanEqlNode node) throws CodeGeneratorException {
+	public void postOrderAbstractBooleanEqlNode(AbstractBooleanEqlNode node) {
 		/* No code generation here. */ }
 
 	@Override
-	public void postOrderAbstractExpressionalEqlNode(AbstractExpressionalEqlNode node) throws CodeGeneratorException {
+	public void postOrderAbstractExpressionalEqlNode(AbstractExpressionalEqlNode node) {
 		/* No code generation here. */ }
 
 	@Override
-	public void postOrderAtomExpressionalEqlNode(AtomExpressionalEqlNode node) throws CodeGeneratorException {
+	public void postOrderAtomExpressionalEqlNode(AtomExpressionalEqlNode node) {
 		/* No code generation here. */ }
 
 	@Override
-	public void finished() throws CodeGeneratorException {
-		/* No code generation here. */ }
+	public void finished() {
+		/* No code generation here. */
+	}
 
 }

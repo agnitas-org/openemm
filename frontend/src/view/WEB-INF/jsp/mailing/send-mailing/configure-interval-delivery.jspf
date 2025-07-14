@@ -1,15 +1,15 @@
-<%@ page import="com.agnitas.emm.core.mailing.dao.ComMailingParameterDao" %>
+<%@ page import="com.agnitas.emm.core.mailing.dao.MailingParameterDao" %>
 <%@ page import="com.agnitas.emm.core.Permission" %>
 
 <emm:ShowByPermission token="mailing.interval">
     <c:set var="MAILING_CONTENT_CHANGE_ALWAYS" value="<%= Permission.MAILING_CONTENT_CHANGE_ALWAYS.toString() %>"/>
 
-    <c:set var="INTERVAL_NONE" value="<%= ComMailingParameterDao.IntervalType.None %>"/>
-    <c:set var="INTERVAL_SHORT" value="<%= ComMailingParameterDao.IntervalType.Short %>"/>
-    <c:set var="INTERVAL_WEEKLY" value="<%= ComMailingParameterDao.IntervalType.Weekly %>"/>
-    <c:set var="INTERVAL_TWO_WEEKLY" value="<%= ComMailingParameterDao.IntervalType.TwoWeekly %>"/>
-    <c:set var="INTERVAL_MONTHLY" value="<%= ComMailingParameterDao.IntervalType.Monthly %>"/>
-    <c:set var="INTERVAL_WEEKDAILY" value="<%= ComMailingParameterDao.IntervalType.Weekdaily %>"/>
+    <c:set var="INTERVAL_NONE" value="<%= MailingParameterDao.IntervalType.None %>"/>
+    <c:set var="INTERVAL_SHORT" value="<%= MailingParameterDao.IntervalType.Short %>"/>
+    <c:set var="INTERVAL_WEEKLY" value="<%= MailingParameterDao.IntervalType.Weekly %>"/>
+    <c:set var="INTERVAL_TWO_WEEKLY" value="<%= MailingParameterDao.IntervalType.TwoWeekly %>"/>
+    <c:set var="INTERVAL_MONTHLY" value="<%= MailingParameterDao.IntervalType.Monthly %>"/>
+    <c:set var="INTERVAL_WEEKDAILY" value="<%= MailingParameterDao.IntervalType.Weekdaily %>"/>
 
     <c:set var="isEditingDenied" value="${form.worldMailingSend}"/>
     <emm:ShowByPermission token="${MAILING_CONTENT_CHANGE_ALWAYS}">

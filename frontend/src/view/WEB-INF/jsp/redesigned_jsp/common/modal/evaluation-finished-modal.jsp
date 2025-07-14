@@ -21,7 +21,7 @@
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
-            <div class="modal-body text-dark">
+            <div class="modal-body text-secondary">
                 <c:choose>
                     <c:when test="${success}">
                         <c:if test="${not empty message}">

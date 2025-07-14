@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import java.util.Enumeration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.dao.ComMessageDao;
+import com.agnitas.dao.MessageDao;
 
 /**
  * Importer for new_messages.properties file into EMM database messages_tbl
@@ -40,7 +40,7 @@ public class NewMessagesPropertiesImporter {
 	
     private static final String DELETE_KEY_SIGN = "DELETE";
 
-	public static void importNewMessagesProperties(ComMessageDao messageDao) {
+	public static void importNewMessagesProperties(MessageDao messageDao) {
         OrderedProperties newMessagesProperties = new OrderedProperties();
         try (InputStream newMessagesPropertiesInputStream = NewMessagesPropertiesImporter.class.getClassLoader().getResourceAsStream(NEWMESSAGES_FILENAME)) {
             if (newMessagesPropertiesInputStream == null) {

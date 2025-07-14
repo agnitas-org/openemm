@@ -1,12 +1,16 @@
 
 .context-menu-root.context-menu-list {
+  --context-menu-item-hover-bg: #{$blue};
+  --context-menu-item-hover-color: #{$white};
+  --context-menu-item-color: #{$dark-grey};
+
   @include border;
   @include flex-column;
   overflow: hidden;
   padding: $gap-x-sm;
   z-index: 40 !important; /* be careful modifying this, synchronize with JS: Z_INDEX_CONTEXT_MENU */
-  color: $campaign-icon-title-color;
-  background-color: var(--main-bg-color);
+  color: var(--context-menu-item-color);
+  background-color: $body-bg-var;
   
   &::before { // inner border
     content: "";
@@ -21,7 +25,7 @@
   .context-menu-item {
     @include flex-row($gap-x-sm);
     align-items: center;
-    background-color: var(--main-bg-color);
+    background-color: $body-bg-var;
     @include font($font-size-base, $font-weight-base);
     padding: $gap-x-sm $gap-sm;
 
@@ -38,8 +42,29 @@
     }
 
     &:hover {
-      background-color: $primary;
-      color: $white;
+      background-color: var(--context-menu-item-hover-bg);
+      color: var(--context-menu-item-hover-color);
     }
+  }
+}
+
+@include color-mode(dark) {
+  .context-menu-root.context-menu-list {
+    --context-menu-item-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .context-menu-root.context-menu-list {
+    --context-menu-item-hover-bg: #{$con-dark-blue};
+    --context-menu-item-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .context-menu-root.context-menu-list {
+    --context-menu-item-hover-bg: #{$white};
+    --context-menu-item-hover-color: #{$con-dark-blue};
+    --context-menu-item-color: #{$white};
   }
 }

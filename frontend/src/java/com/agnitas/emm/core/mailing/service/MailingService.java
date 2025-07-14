@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
@@ -17,27 +22,25 @@ import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.springframework.context.ApplicationContext;
-
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public interface MailingService {
 	
@@ -65,15 +68,15 @@ public interface MailingService {
 
 	List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException;
 
-	void sendMailing(MailingModel model, List<UserAction> userActions) throws Exception;
+	void sendMailing(MailingModel model, List<UserAction> userActions);
 
 	boolean isMissingNecessaryTargetGroup(Mailing mailing);
 
-	boolean isFollowupMailingDateBeforeDate(Mailing mailing, Date boundDate) throws Exception;
+	boolean isFollowupMailingDateBeforeDate(Mailing mailing, Date boundDate);
 
 	boolean isMailingLocked(Mailing mailing);
 
-	MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions) throws Exception;
+	MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions);
 	
 	/**
 	 * Returns the number of minutes, a mailing is generated before delivery.
@@ -122,7 +125,9 @@ public interface MailingService {
 
 	boolean switchStatusmailOnErrorOnly(int companyID, int mailingId, boolean statusmailOnErrorOnly);
 
-	List<LightweightMailing> listAllActionBasedMailingsForMailinglist(final int companyID, final int mailinglistID);
+	Map<Integer, List<LightweightMailingWithMailingList>> findActionBasedMailingsForMailinglists(List<Mailinglist> mailinglists, int companyId);
+
+	List<LightweightMailingWithMailingList> listAllActionBasedMailingsForMailinglist(final int companyID, final int mailinglistID);
 
 	LightweightMailing getLightweightMailing(final int companyID, final int mailingId) throws MailingNotExistException;
 
@@ -147,11 +152,7 @@ public interface MailingService {
 
 	List<LightweightMailing> getLightweightMailings(Admin admin);
 
-	List<LightweightMailing> getLightweightIntervalMailings(Admin admin);
-
-	List<Mailing> getTemplates(Admin admin);
-
-	List<MailingBase> getTemplatesWithPreview(MediaTypes mediaType, Admin admin);
+	List<MailingBase> getTemplatesWithPreview(MailingTemplateSelectionFilter filter, Admin admin);
 
     List<MailingBase> getMailingsByStatusE(int companyId);
 
@@ -159,15 +160,18 @@ public interface MailingService {
 
 	boolean isThresholdClearanceExceeded(int companyId, int mailingId);
 
-	int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks) throws Exception;
+	int saveMailingWithNewContent(Mailing mailing) throws Exception;
+	int saveMailingWithNewContent(Mailing mailing, Admin admin) throws Exception;
 	int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
 	int saveMailing(final Mailing mailing, final boolean preserveTrackableLinks);
 
-    List<UserAction> deleteMailing(int mailingId, Admin admin) throws Exception;
+    List<UserAction> deleteMailing(int mailingId, Admin admin);
 
     boolean usedInRunningWorkflow(int mailingId, int companyId);
 
     void updateMailingsWithDynamicTemplate(Mailing mailing, ApplicationContext applicationContext);
+
+	Date getMailingLastSendDate(int mailingId);
 
     boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin);
 
@@ -219,6 +223,8 @@ public interface MailingService {
 
 	MailingStatus getMailingStatus(int companyID, int id);
 
+	boolean hasMailingStatus(int mailingId, MailingStatus status, int companyID);
+
 	boolean saveMailingDescriptiveData(Mailing mailing);
 
 	List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
@@ -229,8 +235,12 @@ public interface MailingService {
 
 	String getMailingRdirDomain(int mailingID, int companyID);
 
-	MailingType getMailingType(final int mailingID) throws Exception;
+	MailingType getMailingType(int mailingID);
 
 	boolean isSettingsReadonly(Admin admin, int mailingId);
 	boolean isSettingsReadonly(Admin admin, boolean isTemplate);
+
+	boolean isMarkedAsDeleted(int mailingId, int companyID);
+
+	boolean isTemplate(int mailingId, int companyId);
 }

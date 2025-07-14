@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,23 +20,21 @@ import java.util.Map.Entry;
 import java.util.TimeZone;
 
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Target;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.ComTargetImpl;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
+import com.agnitas.beans.impl.TargetImpl;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -65,38 +63,33 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "target";
 
 	protected RestfulUserActivityLogDao userActivityLogDao;
-	protected ComTargetService targetService;
-	protected ComTargetDao targetDao;
-	protected ComRecipientDao recipientDao;
+	protected TargetService targetService;
+	protected TargetDao targetDao;
+	protected RecipientDao recipientDao;
 	protected ColumnInfoService columnInfoService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
-	public void setTargetService(ComTargetService targetService) {
+	public void setTargetService(TargetService targetService) {
 		this.targetService = targetService;
 	}
 	
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
+	public void setTargetDao(TargetDao targetDao) {
 		this.targetDao = targetDao;
 	}
 	
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
+	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 	
-	@Required
 	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -152,7 +145,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
 			writeActivityLog(restfulContext[0], request, admin);
 
-			ComTarget target;
+			Target target;
 			if (AgnUtils.isNumber(restfulContext[0])) {
 				int targetID = Integer.parseInt(restfulContext[0]);
 				target = targetDao.getTarget(targetID, admin.getCompanyID());
@@ -230,7 +223,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
 		writeActivityLog(restfulContext[0], request, admin);
 
-		ComTarget target;
+		Target target;
 		if (AgnUtils.isNumber(restfulContext[0])) {
 			int targetID = Integer.parseInt(restfulContext[0]);
 			target = targetDao.getTarget(targetID, admin.getCompanyID());
@@ -268,7 +261,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
 					JsonObject jsonObject = (JsonObject) jsonNode.getValue();
-					ComTarget target = new ComTargetImpl();
+					Target target = new TargetImpl();
 					target.setCompanyID(admin.getCompanyID());
 					for (Entry<String, Object> entry : jsonObject.entrySet()) {
 						if ("name".equals(entry.getKey())) {
@@ -320,7 +313,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 					} else if (StringUtils.isBlank(target.getEQL()) ) {
 						throw new RestfulClientException("Missing mandatory value for property value for 'eql'");
 					} else {
-						ComTarget targetItem = targetDao.getTargetByName(target.getTargetName(), admin.getCompanyID());
+						Target targetItem = targetDao.getTargetByName(target.getTargetName(), admin.getCompanyID());
 						if (targetItem != null) {
 							throw new RestfulClientException("Target with name '" + target.getTargetName() + "' already exists");
 						}
@@ -361,7 +354,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 				JsonNode jsonNode = jsonReader.read();
 				if (JsonDataType.OBJECT == jsonNode.getJsonDataType()) {
 					JsonObject jsonObject = (JsonObject) jsonNode.getValue();
-					ComTarget target;
+					Target target;
 					if (restfulContext.length == 1) {
 						if (AgnUtils.isNumber(restfulContext[0])) {
 							int targetID = Integer.parseInt(restfulContext[0]);
@@ -374,7 +367,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 							throw new RestfulNoDataFoundException("No data found for update");
 						}
 					} else {
-						target = new ComTargetImpl();
+						target = new TargetImpl();
 						target.setCompanyID(admin.getCompanyID());
 					}
 					
@@ -417,7 +410,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 						throw new RestfulClientException("Missing mandatory value for property value for 'eql'");
 					} else {
 						if (restfulContext.length == 0) {
-							ComTarget targetItem = targetDao.getTargetByName(target.getTargetName(), admin.getCompanyID());
+							Target targetItem = targetDao.getTargetByName(target.getTargetName(), admin.getCompanyID());
 							if (targetItem != null) {
 								throw new RestfulClientException("Target with name '" + target.getTargetName() + "' already exists");
 							}
@@ -443,7 +436,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	protected JsonObject getTargetJsonObject(Admin admin, ComTarget target) {
+	protected JsonObject getTargetJsonObject(Admin admin, Target target) {
 		JsonObject targetJsonObject = new JsonObject();
 		targetJsonObject.add("target_id", target.getId());
 		targetJsonObject.add("name", target.getTargetName());
@@ -459,7 +452,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@SuppressWarnings("unused")
-	protected boolean handleExtendedAttribute(Admin admin, ComTarget target, String key, Object value) throws RestfulClientException {
+	protected boolean handleExtendedAttribute(Admin admin, Target target, String key, Object value) throws RestfulClientException {
 		return false;
 	}
 

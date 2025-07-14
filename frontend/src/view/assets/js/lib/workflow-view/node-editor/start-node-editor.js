@@ -1,4 +1,5 @@
-(function () {
+(() => {
+
   const MailingSelector = AGN.Lib.WM.MailingSelector;
   const FieldRulesTable = AGN.Lib.WM.FieldRulesTable;
   const EditorsHelper = AGN.Lib.WM.EditorsHelper;
@@ -9,10 +10,11 @@
   const Def = AGN.Lib.WM.Definitions;
 
   class StartStopNodeEditor extends AGN.Lib.WM.NodeEditor {
-    constructor(editor, config) {
+    constructor(editor, config, submitWorkflowForm) {
       super();
       this.editor = editor;
       this.config = config;
+      this.submitWorkflowForm = submitWorkflowForm;
       this.startMailingSelector = new MailingSelector(config.form, config.selectedName, config.noMailingOption);
       this.isStartEditor = false;
       this.timePattern = /^(\d{2}):(\d{2})$/;
@@ -92,6 +94,7 @@
       EditorsHelper.fillFormFromObject(this.formName, data, '');
       this.startMailingSelector.setMailingId(data.mailingId);
       this.startMailingSelector.cleanOptions();
+      this.#updateMailingEditBtn(data.mailingId);
 
       //init datepickers
       const currentDate = new Date();
@@ -126,6 +129,21 @@
       this.endTypeSelect.setReadonly(forceAutomaticEndType);
 
       this.rulesTable = new FieldRulesTable(this.$rulesContainer, data.rules, EditorsHelper.isReadOnlyMode(), this.config.profileFields);
+    }
+
+    #updateMailingEditBtn(mailingId) {
+      const $btn = $('#edit-start-editor-mailing-btn');
+      $btn.toggleClass('hidden', !mailingId);
+
+      if (mailingId) {
+        $btn.attr('href', AGN.url(`/mailing/${mailingId}/settings.action`));
+      }
+    }
+
+    editMailing() {
+      const elementId = `form[name="${this.formName}"] select[name=mailingId]`;
+      $('#forwardTargetItemId').val($(elementId).val());
+      EditorsHelper.processForward(Def.constants.forwards.MAILING_EDIT.name, elementId, this.submitWorkflowForm);
     }
 
     saveEditor() {
@@ -489,8 +507,8 @@
     }
 
     onMailingSelectChange(value, selectedValue) {
-      var $linkSelect = this.$find('select[name="linkId"]');
-      var mailingId = parseInt(value, 10);
+      const $linkSelect = this.$find('select[name="linkId"]');
+      const mailingId = parseInt(value, 10);
 
       if (mailingId > 0) {
         $linkSelect.attr('readonly', 'readonly');
@@ -518,6 +536,8 @@
       } else {
         $linkSelect.empty();
       }
+
+      this.#updateMailingEditBtn(mailingId);
     }
 
     updateVisibility() {

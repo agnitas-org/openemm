@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@page import="org.agnitas.dao.UserStatus"%>
-<%@page import="org.agnitas.service.RecipientExportWorker"%>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@page import="com.agnitas.emm.common.UserStatus"%>
+<%@page import="com.agnitas.service.RecipientExportWorker"%>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -9,11 +9,11 @@
 
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 <%--@elvariable id="timeZones" type="java.lang.String[]"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="targetGroups" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
 <%--@elvariable id="profileFields" type="java.util.List<com.agnitas.beans.ProfileField>"--%>
-<%--@elvariable id="dateFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
-<%--@elvariable id="dateTimeFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
+<%--@elvariable id="dateFormats" type="com.agnitas.util.importvalues.DateFormat[]"--%>
+<%--@elvariable id="dateTimeFormats" type="com.agnitas.util.importvalues.DateFormat[]"--%>
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 <%--@elvariable id="id" type="java.lang.Integer"--%>
 <%--@elvariable id="isManageAllowed" type="java.lang.Boolean"--%>

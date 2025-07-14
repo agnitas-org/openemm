@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,7 +14,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionExc
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 
 /**
@@ -34,7 +34,7 @@ public interface ExtensibleUIDParser {
      * @throws InvalidUIDException           on errors during validation
      * @throws DeprecatedUIDVersionException if version of UID encoded in given String is deprecated
      */
-    ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException;
+    ExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException;
 
     /**
      * Checks if given UID is of format supported by the implementation.

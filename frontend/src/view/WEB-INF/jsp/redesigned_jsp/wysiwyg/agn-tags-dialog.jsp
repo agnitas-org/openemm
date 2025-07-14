@@ -19,24 +19,20 @@
                 </button>
             </div>
 
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="notification-simple notification-simple--lg notification-simple--info">
-                            <span><mvc:message code="info.manual.agnTags" arguments="${emm:getHelpUrl(pageContext.request, 'agnTags')}" /></span>
-                        </div>
-                    </div>
+            <div class="modal-body vstack gap-3">
+                <div class="notification-simple notification-simple--lg notification-simple--info">
+                    <span><mvc:message code="info.manual.agnTags" arguments="${emm:getHelpUrl(pageContext.request, 'agnTags')}" /></span>
+                </div>
 
-                    <div class="col-12">
-                        <label for="agn-tag-name" class="form-label"><mvc:message code="htmled.tag"/></label>
-                        <select id="agn-tag-name" class="form-control js-select" data-action="select-agn-tag">
-                            <%-- To be populated by JS --%>
-                        </select>
-                    </div>
-
-                    <div id="agn-tag-attributes" class="col-12 d-flex flex-column gap-3">
+                <div>
+                    <label for="agn-tag-name" class="form-label"><mvc:message code="htmled.tag"/></label>
+                    <select id="agn-tag-name" class="form-control js-select" data-action="select-agn-tag">
                         <%-- To be populated by JS --%>
-                    </div>
+                    </select>
+                </div>
+
+                <div id="agn-tag-attributes" class="d-flex flex-column gap-inherit">
+                    <%-- To be populated by JS --%>
                 </div>
             </div>
 

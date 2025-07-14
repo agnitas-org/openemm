@@ -48,7 +48,7 @@
             <div class="col" data-field="password">
                 <label for="password" class="form-label">
                     <mvc:message code="password.new"/>
-                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/webserviceuser/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
+                    <a href="#" class="icon icon-question-circle" data-help="webserviceuser/AdminPasswordRules.xml" tabindex="-1" type="button"></a>
                 </label>
                 <mvc:password path="password" id="password" cssClass="form-control js-password-strength" size="52" maxlength="99" data-rule="${PASSWORD_POLICY}"/>
             </div>
@@ -85,8 +85,8 @@
                     </div>
 
                     <div id="0-category-permissions" class="tile">
-                        <div class="tile-header text-dark">
-                            <h1 class="tile-title text-truncate"><mvc:message code="webserviceuser.permissionGroups"/></h1>
+                        <div class="tile-header">
+                            <h1 class="tile-title tile-title--grey text-truncate"><mvc:message code="webserviceuser.permissionGroups"/></h1>
                             <div class="tile-controls">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-0" data-toggle-checkboxes="on">
@@ -117,8 +117,8 @@
                         <c:if test="${not empty category}">
                             <c:set var="categoryIndex" value="${status.index + 1}"/>
                             <div id="${categoryIndex}-category-permissions" class="tile">
-                                <div class="tile-header text-dark">
-                                    <h1 class="tile-title text-truncate"><mvc:message code="webservice.permissionCategory.${category}"/></h1>
+                                <div class="tile-header">
+                                    <h1 class="tile-title tile-title--grey text-truncate"><mvc:message code="webservice.permissionCategory.${category}"/></h1>
                                     <div class="tile-controls">
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-${categoryIndex}" data-toggle-checkboxes="on">
@@ -155,7 +155,7 @@
                         <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
                     </h1>
                     <div class="tile-controls">
-                        <a class="btn btn-icon btn-inverse" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                        <a class="btn btn-icon btn-secondary" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                         <a class="btn btn-icon btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
                     </div>
                 </div>

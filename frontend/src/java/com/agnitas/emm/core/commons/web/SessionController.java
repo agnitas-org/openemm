@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,30 +10,31 @@
 
 package com.agnitas.emm.core.commons.web;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
-import org.agnitas.util.AgnUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.web.perm.annotations.Anonymous;
-
-import net.sf.json.JSONObject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import com.agnitas.util.AgnUtils;
+import org.json.JSONObject;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/session")
 public class SessionController {
+
 	@Anonymous
     @RequestMapping("/info.action")
-    public JSONObject info(HttpServletRequest request) {
-    	Admin sessionAdmin = AgnUtils.getAdmin(request);
-    	if (sessionAdmin == null) {
-    		return null;
-    	} else {
-    		return sessionToJsonObject(request);
-    	}
+    public ResponseEntity<Map<String, Object>> info(HttpServletRequest request) {
+        Admin sessionAdmin = AgnUtils.getAdmin(request);
+        if (sessionAdmin == null) {
+            return ResponseEntity.ok(null);
+        }
+
+        return ResponseEntity.ok(sessionToJsonObject(request).toMap());
     }
 
     private JSONObject sessionToJsonObject(HttpServletRequest request) {

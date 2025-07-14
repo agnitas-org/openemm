@@ -2,7 +2,7 @@
 <%@ page session="false" buffer="none" %>
 <%@ page import="org.eclipse.birt.report.presentation.aggregation.IFragment,
 				 org.eclipse.birt.report.resource.ResourceConstants"  %>
-<%@page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -37,11 +37,11 @@
                                 <TD>
                                     <DIV ID="showTraceLabel" CLASS="birtviewer_exception_dialog_label">
                                         <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                        <%= ComBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_SHOW_STACK_TRACE, locale ) %>
+                                        <%= EmmBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_SHOW_STACK_TRACE, locale ) %>
                                     </DIV>
                                     <DIV ID="hideTraceLabel" CLASS="birtviewer_exception_dialog_label" STYLE="display:none">
                                         <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                        <%= ComBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_HIDE_STACK_TRACE, locale ) %>
+                                        <%= EmmBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_HIDE_STACK_TRACE, locale ) %>
                                     </DIV>
                                 </TD>
                             </TR>
@@ -53,7 +53,7 @@
                                                 <TD>
                                                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
                                                     <%=
-                                                    ComBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_STACK_TRACE, locale )
+                                                    EmmBirtResources.getMessage( ResourceConstants.EXCEPTION_DIALOG_STACK_TRACE, locale )
                                                     %><BR>
                                                 </TD>
                                             </TR>

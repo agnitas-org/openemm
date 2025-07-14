@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.importvalues.Gender" %>
-<%@ page import="org.agnitas.backend.AgnTag" %>
+<%@ page import="com.agnitas.util.importvalues.Gender" %>
+<%@ page import="com.agnitas.backend.AgnTag" %>
+<%@ page import="com.agnitas.util.Title" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -105,28 +106,24 @@
                     <div class="border rounded-2 p-2 d-flex flex-column gap-2 flex-grow-1">
                         <select id="recipient" class="form-control" data-action="switch-salutation">
                             <c:forEach var="recipient" items="${recipients}">
-                                <option value="${recipient.email}"
-                                        data-firstname="${recipient.firstname}"
-                                        data-lastname="${recipient.lastname}"
-                                        data-title="${recipient.title}"
-                                        data-gender="${recipient.gender}">${recipient.firstname} ${recipient.lastname} (${recipient.email})</option>
+                                <option value="${recipient.recipientId()}"
+                                        data-firstname="${recipient.firstname()}"
+                                        data-lastname="${recipient.lastname()}"
+                                        data-title="${recipient.title()}"
+                                        data-gender="${recipient.gender()}">${recipient.firstname()} ${recipient.lastname()} (${recipient.email()})</option>
                             </c:forEach>
                         </select>
-                        <select id="agnTag" class="form-control" data-action="switch-salutation">
-                            <option value='${AGN_TAG_TITLE}'>${AGN_TAG_TITLE}</option>
-                            <option value='${AGN_TAG_TITLE_FULL}'>${AGN_TAG_TITLE_FULL}</option>
-                            <option value='${AGN_TAG_TITLE_FIRST}'>${AGN_TAG_TITLE_FIRST}</option>
+                        <select id="tagType" class="form-control" data-action="switch-salutation">
+                            <option value='${AGN_TAG_TITLE}' data-id='<%= Title.TITLE_DEFAULT %>'>${AGN_TAG_TITLE}</option>
+                            <option value='${AGN_TAG_TITLE_FULL}' data-id='<%= Title.TITLE_FULL %>'>${AGN_TAG_TITLE_FULL}</option>
+                            <option value='${AGN_TAG_TITLE_FIRST}' data-id='<%= Title.TITLE_FIRST %>'>${AGN_TAG_TITLE_FIRST}</option>
                         </select>
                         <div class="border rounded-2 p-2 flex-grow-1 d-flex flex-column gap-3">
                             <p id="salutation-preview"></p>
-                            <p class="text-muted">
+                            <p class="text-secondary">
                                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ex magna lorem ex nibh eiusmod placerat nihil erat veniam voluptua cupiditat nostrud molestie.
                             </p>
-                            <p class="text-muted" style="
-                                display: -webkit-box;
-                                -webkit-line-clamp: 5;
-                                -webkit-box-orient: vertical;
-                                overflow: hidden;">
+                            <p class="text-secondary text-truncate-lines" style="--text-truncate-lines: 5;">
                                 Voluptate clita in nihil culpa aliquam congue congue quis culpa, elitr eum mazim placerat vel nibh ut ex tempor sadipscing ad doming nostrud nobis sint proident sea labore te. Diam dolores takimata deserunt aliqua duo, eiusmod id dignissim ea aliquyam eu aliquam liber voluptua cum takimata magna option laborum tempor obcaecat anim. Sanctus illum delenit euismod diam placerat est duo soluta culpa dolores feugiat obcaecat nibh amet ea anim sea quis elit iure adipiscing. Sea facilisi sunt.
                             </p>
                         </div>

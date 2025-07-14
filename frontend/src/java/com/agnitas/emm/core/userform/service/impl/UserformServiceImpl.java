@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,12 +12,12 @@ package com.agnitas.emm.core.userform.service.impl;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.beans.impl.RecipientLiteImpl;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.commons.ActivenessStatus;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
@@ -36,24 +36,24 @@ import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
 import com.helger.commons.url.URLValidator;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.dao.EmmActionDao;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import com.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
 import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
 import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.service.UserFormExporter;
-import org.agnitas.service.UserFormImporter;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.FileUtils;
-import org.agnitas.util.Tuple;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.service.UserFormExporter;
+import com.agnitas.service.UserFormImporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.FileUtils;
+import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -61,8 +61,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -85,9 +83,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class UserformServiceImpl implements UserformService {
 
@@ -102,7 +99,7 @@ public class UserformServiceImpl implements UserformService {
     private FormTrackableLinkService trackableLinkService;
     private ConfigService configService;
     private ExtensibleUIDService uidService;
-    private ComRecipientDao comRecipientDao;				// TODO Replace by RecipientService
+    private RecipientDao recipientDao;				// TODO Replace by RecipientService
     private ProfileFieldService profileFieldService;
     private RecipientService recipentService;
     private BulkActionValidationService<Integer, UserForm> bulkActionValidationService;
@@ -132,7 +129,8 @@ public class UserformServiceImpl implements UserformService {
         return errors;
     }
 
-    private boolean isValidFormName(String formName) {
+    @Override
+    public boolean isValidFormName(String formName) {
         Matcher matcher = FORM_NAME_PATTERN.matcher(formName);
         return matcher.matches();
     }
@@ -169,8 +167,8 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
-    public final UserForm getUserForm(final int companyID, final String formName) throws FormNotFoundException {
-        final UserForm form = doGetUserForm(companyID, formName);
+    public UserForm getUserForm(int companyID, String formName) throws FormNotFoundException {
+        final UserForm form = userFormDao.getUserFormByName(formName, companyID);
 
         if(form == null) {
             throw new FormNotFoundException(companyID, formName);
@@ -235,14 +233,6 @@ public class UserformServiceImpl implements UserformService {
         org.apache.commons.io.FileUtils.writeStringToFile(userFormTempFile, content, StandardCharsets.UTF_8);
     }
 
-    private UserForm doGetUserForm(final int companyID, final String formName) throws FormNotFoundException {
-        try {
-            return this.userFormDao.getUserFormByName(formName, companyID);
-        }catch(final Exception e) {
-            throw new FormNotFoundException(companyID, formName, e);
-        }
-    }
-
     @Override
     public void restore(Set<Integer> bulkIds, int companyId) {
         userFormDao.restore(bulkIds, companyId);
@@ -265,7 +255,6 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
-    // TODO: EMMGUI-714: Remove after remove of old design
     public UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness) {
         if (MapUtils.isEmpty(activeness) || companyId <= 0) {
             return null;
@@ -338,7 +327,7 @@ public class UserformServiceImpl implements UserformService {
         if (validationResult.isSuccess()) {
             List<Integer> allowedIds = validationResult.getResult().stream()
                     .map(UserForm::getId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             updateActiveness(companyId, allowedIds, activate);
         }
@@ -378,36 +367,36 @@ public class UserformServiceImpl implements UserformService {
 		for (final UserForm userForm: userForms) {
             final JSONObject entry = new JSONObject();
 
-			entry.element("id", userForm.getId());
-			entry.element("name", userForm.getFormName());
-			entry.element("description", userForm.getDescription());
+			entry.put("id", userForm.getId());
+			entry.put("name", userForm.getFormName());
+			entry.put("description", userForm.getDescription());
 
 			final JSONArray actions = new JSONArray();
 			int actionId = userForm.getStartActionID();
             if (actionId > 0) {
-                actions.add(actionNames.get(actionId));
+                actions.put(actionNames.get(actionId));
             }
             actionId = userForm.getEndActionID();
             if (actionId > 0) {
-                actions.add(actionNames.get(actionId));
+                actions.put(actionNames.get(actionId));
             }
 
             final String url = userFormUrlPattern.replace(URLEncoder.encode(placeholder, StandardCharsets.UTF_8), userForm.getFormName());
 
-			entry.element("actionNames", actions);
-			entry.element("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
-			entry.element("changeDate", DateUtilities.toLong(userForm.getChangeDate()));
+			entry.put("actionNames", actions);
+			entry.put("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
+			entry.put("changeDate", DateUtilities.toLong(userForm.getChangeDate()));
             if (admin.isRedesignedUiUsed()) {
-                entry.element("deleted", userForm.isDeleted());
+                entry.put("deleted", userForm.isDeleted());
             }
             if (admin.isRedesignedUiUsed()) {
-                entry.element("active", String.valueOf(userForm.isActive()));
+                entry.put("active", String.valueOf(userForm.isActive()));
             } else {
-                entry.element("activeStatus", userForm.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
+                entry.put("activeStatus", userForm.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
             }
-			entry.element("webformUrl", url);
+			entry.put("webformUrl", url);
 
-			actionsJson.add(entry);
+			actionsJson.put(entry);
 		}
 		return actionsJson;
     }
@@ -506,9 +495,9 @@ public class UserformServiceImpl implements UserformService {
 	@Override
 	public String getUserFormUrlPattern(final Admin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken) {
 		try {
-			int testCustomerId = comRecipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
+			int testCustomerId = recipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
 			final int licenseID = configService.getLicenseID();
-			final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), testCustomerId);
+			final ExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), testCustomerId);
             final String uidString = uidService.buildUIDString(uid);
 
 
@@ -527,13 +516,13 @@ public class UserformServiceImpl implements UserformService {
 	@Override
 	public final List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final Admin admin, final String formName, final Optional<String> companyToken) {
 		try {
-			final List<ComRecipientLiteImpl> recipients = this.recipentService.listAdminAndTestRecipients(admin);
+			final List<RecipientLiteImpl> recipients = this.recipentService.listAdminAndTestRecipients(admin);
 			final List<UserFormTestUrl> urls = new ArrayList<>();
 			
 			final int licenseID = configService.getLicenseID();
 			
-			for(final ComRecipientLiteImpl recipient : recipients) {
-				final ComExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), recipient.getId());
+			for(final RecipientLiteImpl recipient : recipients) {
+				final ExtensibleUID uid = UIDFactory.from(licenseID, admin.getCompanyID(), recipient.getId());
 	            final String uidString = uidService.buildUIDString(uid);
 
 	            final String url = WebFormUrlBuilder.from(admin.getCompany(), formName)
@@ -571,14 +560,14 @@ public class UserformServiceImpl implements UserformService {
     public List<String> getUserFormNames(final int companyId) {
         final List<UserForm> userForms = userFormDao.getUserForms(companyId);
 
-        return userForms.stream().map(UserForm::getFormName).collect(Collectors.toList());
+        return userForms.stream().map(UserForm::getFormName).toList();
     }
 
     @Override
     public List<String> getUserFormNames(Set<Integer> bulkIds, int companyID) {
         return bulkIds.stream()
                 .map(id -> getUserFormName(id, companyID))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -617,47 +606,38 @@ public class UserformServiceImpl implements UserformService {
     	}
     }
 
-    @Required
     public void setEmmActionDao(EmmActionDao emmActionDao) {
         this.emmActionDao = emmActionDao;
     }
     
-    @Required
     public void setConversionService(ExtendedConversionService conversionService) {
         this.conversionService = conversionService;
     }
 
-    @Required
     public void setTrackableLinkService(FormTrackableLinkService trackableLinkService) {
         this.trackableLinkService = trackableLinkService;
     }
     
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }
 
-    @Required
     public void setUidService(ExtensibleUIDService uidService) {
         this.uidService = uidService;
     }
 
-    @Required
-    public void setComRecipientDao(ComRecipientDao comRecipientDao) {
-        this.comRecipientDao = comRecipientDao;
+    public void setRecipientDao(RecipientDao recipientDao) {
+        this.recipientDao = recipientDao;
     }
 
-    @Required
     public void setProfileFieldService(ProfileFieldService profileFieldService) {
         this.profileFieldService = profileFieldService;
     }
 
-    @Required
     public final void setRecipientService(final RecipientService service) {
     	this.recipentService = Objects.requireNonNull(service, "RecipientService is null");
     }
 
-    @Required
     public void setBulkActionValidationService(BulkActionValidationService<Integer, UserForm> bulkActionValidationService) {
         this.bulkActionValidationService = bulkActionValidationService;
     }
@@ -670,22 +650,18 @@ public class UserformServiceImpl implements UserformService {
         this.userFormExporter = userFormExporter;
     }
 
-    @Required
     public void setUserFormImporter(UserFormImporter userFormImporter) {
         this.userFormImporter = userFormImporter;
     }
 
-    @Required
     public void setCompanyTokenService(CompanyTokenService companyTokenService) {
         this.companyTokenService = companyTokenService;
     }
 
-    @Required
     public void setVelocityValidator(VelocityDirectiveScriptValidator velocityValidator) {
         this.velocityValidator = velocityValidator;
     }
 
-    @Required
     public void setLinkService(LinkService linkService) {
         this.linkService = linkService;
     }

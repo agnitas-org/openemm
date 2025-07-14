@@ -1,17 +1,16 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" import="java.util.Locale,org.agnitas.emm.core.logintracking.*" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
+<%@ page import="com.agnitas.emm.core.admin.enums.UiLayoutType" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="selfForm" type="com.agnitas.emm.core.user.form.UserSelfForm"--%>
 <%--@elvariable id="passwordPolicy" type="java.lang.String"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="availableLayouts" type="java.util.List<com.agnitas.beans.EmmLayoutBase>"--%>
-<%--@elvariable id="availableAdminGroups" type="java.util.List<org.agnitas.beans.AdminGroup>"--%>
+<%--@elvariable id="availableAdminGroups" type="java.util.List<com.agnitas.beans.AdminGroup>"--%>
 <%--@elvariable id="availableTimezones" type="java.lang.String[]"--%>
 <%--@elvariable id="showSupervisorPermissionManagement" type="java.lang.Boolean"--%>
 
@@ -96,7 +95,7 @@
                 <div class="col-12">
                     <div class="tile tile--sm">
                         <div class="tile-header border-bottom">
-                            <h3 class="tile-title text-truncate text-dark"><mvc:message code="password.change" /></h3>
+                            <h3 class="tile-title tile-title--grey text-truncate"><mvc:message code="password.change" /></h3>
                         </div>
                         <div class="tile-body row g-3" data-field="password">
                             <div class="col">
@@ -107,8 +106,8 @@
                             </div>
                             <div class="col">
                                 <label class="form-label" for="password">
-                                    <mvc:message code="password"/>
-                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/settings/AdminPasswordRules.xml"></a>
+                                    <mvc:message code="password.new"/>
+                                    <a href="#" class="icon icon-question-circle" data-help="settings/AdminPasswordRules.xml"></a>
                                 </label>
                                 <input type="password" name="password" id="password" class="form-control js-password-strength" size="52" data-rule="${passwordPolicy}" />
                             </div>
@@ -148,6 +147,15 @@
                 </div>
 
                 <div class="col-12">
+                    <label class="form-label" for="uiLayoutType"><mvc:message code="gui.layout"/></label>
+                    <mvc:select path="uiLayoutType" id="uiLayoutType" cssClass="form-control js-select">
+                        <c:forEach var="layoutType" items="${UiLayoutType.values()}">
+                            <mvc:option value="${layoutType}"><mvc:message code="${layoutType.messageKey}"/></mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
+
+                <div class="col-12">
                     <label class="form-label" for="statisticLoadType"><mvc:message code="statistic.summary"/></label>
                     <mvc:select path="statisticLoadType" id="statisticLoadType" cssClass="form-control js-select">
                         <mvc:option value="${STATISTIC_LOADTYPE_ON_CLICK}"><mvc:message code="statistic.summary.load.onclick"/></mvc:option>
@@ -181,21 +189,15 @@
                     </div>
 
                     <div class="table-wrapper__body">
-                        <agnDisplay:table class="table table--borderless table-hover js-table" id="loginData" name="loginTrackingList"
-                                       pagesize="${selfForm.numberOfRows}" sort="list" requestURI="/user/self/view.action" excludedParams="*">
-
-                            <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
+                        <emm:table var="loginData" modelAttribute="loginTrackingList" pageSize="${selfForm.numberOfRows}"
+                                   cssClass="table table--borderless table-hover js-table">
 
                             <%--@elvariable id="loginData" type="org.agnitas.emm.core.logintracking.bean.LoginData"--%>
 
-                            <agnDisplay:column titleKey="warning.failed_login.date">
-                                <span>${loginData.loginDate}</span>
-                            </agnDisplay:column>
-                            <agnDisplay:column titleKey="statistic.IPAddress">
-                                <span>${loginData.loginIP}</span>
-                            </agnDisplay:column>
+                            <emm:column titleKey="warning.failed_login.date" property="loginDate" sortable="true" />
+                            <emm:column titleKey="statistic.IPAddress" property="loginIP" sortable="true" />
 
-                            <agnDisplay:column titleKey="warning.failed_login.status">
+                            <emm:column titleKey="warning.failed_login.status">
                                 <span>
                                     <c:choose>
                                         <c:when test="${loginData.loginStatus.statusCode == LOGIN_STATUS_SUCCESS}">
@@ -209,8 +211,8 @@
                                         </c:when>
                                     </c:choose>
                                 </span>
-                            </agnDisplay:column>
-                        </agnDisplay:table>
+                            </emm:column>
+                        </emm:table>
                     </div>
                 </div>
             </div>

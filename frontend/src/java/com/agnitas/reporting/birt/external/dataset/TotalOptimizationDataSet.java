@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,20 +14,9 @@ import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRI
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CLICKER_TRACKED_INDEX;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
@@ -35,10 +24,14 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 public class TotalOptimizationDataSet extends MailingSummaryDataSet {
-	
-	private static final Logger logger = LogManager.getLogger(TotalOptimizationDataSet.class);
 	
 	private int mailingTempTableId;
 	private int summaryTempTableId;
@@ -75,7 +68,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		List<Integer> mailingIds = new ArrayList<>();
 		for (OptimizationMailingData data : optimizationMailingsData) {
 			insertSendIntoTempTable(tempSummaryTableID, data, companyID, targetSQL);
-			insertClickersIntoTempTable(tempSummaryTableID, data, companyID, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS);
+			insertClickersIntoTempTable(tempSummaryTableID, data, companyID, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS, null, null);
 			insertClicksAnonymousIntoTempTable(tempSummaryTableID, data, companyID);
 			insertOpenersIntoTempTable(tempSummaryTableID, data, companyID, targetSQL);
 			insertOpenedInvisibleIntoTempTable(tempSummaryTableID, data, companyID, targetSQL);
@@ -99,7 +92,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		String sql = "SELECT mailing_id, mailing_name, mailing_subject, group_id, is_winner, base_mailing_id, " +
 				"target_group_id, target_group_name, avg_mailing_size, send_date" +
 						" FROM tmp_report_aggregation_" + mailingTempTableId + "_tbl ORDER BY mailing_id";
-		return selectEmbedded(logger, sql, (resultSet, i) -> {
+		return selectEmbedded(sql, (resultSet, i) -> {
 			OptimizationMailingData mdata = new OptimizationMailingData();
 			mdata.setMailingId(resultSet.getInt("mailing_id"));
 			mdata.setMailingName(resultSet.getString("mailing_name"));
@@ -129,7 +122,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				"LEFT JOIN tmp_report_aggregation_" + mailingTempTableId + "_tbl mt ON mt.mailing_id = st.mailing_id AND mt.group_id = st.group_id " +
 				"ORDER BY st.category_index, st.mailing_id";
 
-		return selectEmbedded(logger, query, (resultSet, rowNum) -> {
+		return selectEmbedded(query, (resultSet, rowNum) -> {
 			OptimizationMailingSummaryRow row = new OptimizationMailingSummaryRow();
 			row.setCategory(resultSet.getString("category"));
 			row.setCategoryindex(resultSet.getInt("category_index"));
@@ -175,7 +168,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				" LEFT JOIN (SELECT mailing_id AS mid, MIN(mintime) AS mintime FROM mailing_account_sum_tbl WHERE status_field = 'W' GROUP BY mailing_id) mac ON res.mid = mac.mid" +
 				" LEFT JOIN (SELECT mailing_id AS mid, MAX(senddate) AS senddate FROM maildrop_status_tbl WHERE status_field = 'W' GROUP BY mailing_id) mds ON res.mid = mds.mid";
 
-		return select(logger, query, (resultSet, i) -> {
+		return select(query, (resultSet, i) -> {
 			OptimizationMailingData mdata = new OptimizationMailingData();
 			mdata.setMailingId(resultSet.getInt("mid"));
 			mdata.setMailingName(resultSet.getString("name"));
@@ -206,16 +199,16 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				" FROM mailing_account_tbl" +
 				" WHERE mailing_id = ?" +
 				" AND status_field NOT IN ('A', 'T', 'V')";
-		return selectObject(logger, query, (resultSet, i) -> {
+		return selectObject(query, (resultSet, i) -> {
 			try {
 				long numberOfSentEmails = resultSet.getLong("mails");
 				long numberOfBytes = resultSet.getLong("bytes");
 
 
-				long dataAmountRequestedFromRdirHistoric = selectLong(logger, "SELECT SUM(content_size * amount) AS bytes FROM rdir_traffic_agr_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
+				long dataAmountRequestedFromRdirHistoric = selectLong("SELECT SUM(content_size * amount) AS bytes FROM rdir_traffic_agr_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
 				numberOfBytes += dataAmountRequestedFromRdirHistoric;
 
-				long dataAmountRequestedFromRdirCurrentDay = selectLong(logger, "SELECT SUM(content_size) AS bytes FROM rdir_traffic_amount_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
+				long dataAmountRequestedFromRdirCurrentDay = selectLong("SELECT SUM(content_size) AS bytes FROM rdir_traffic_amount_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
 				numberOfBytes += dataAmountRequestedFromRdirCurrentDay;
 
 				// averageMailsize is in kilobytes
@@ -237,29 +230,11 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
             categoryIndexes.add(i);
         }
 
-        updateRatesByCategories(tempTableID, Collections.singletonList(CommonKeys.DELIVERED_EMAILS_INDEX), mailingIds, categoryIndexes);
-        updateDeliveredRatesByCategories(tempTableID, Collections.singletonList(CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX), mailingIds, categoryIndexes);
+        updateRatesByCategories(tempTableID, List.of(CommonKeys.DELIVERED_EMAILS_INDEX), mailingIds, categoryIndexes);
+        updateDeliveredRatesByCategories(tempTableID, List.of(CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX), mailingIds, categoryIndexes);
 
-        // mobile/PC clicks
-        List<Integer> clickerIndexes = Arrays.asList(CommonKeys.CLICKER_PC_INDEX,
-                CommonKeys.CLICKER_MOBILE_INDEX,
-                CommonKeys.CLICKER_TABLET_INDEX,
-                CommonKeys.CLICKER_SMARTTV_INDEX,
-                CommonKeys.CLICKER_PC_AND_MOBILE_INDEX,
-                CommonKeys.CLICKS_ANONYMOUS_INDEX
-        );
-        updateRatesByCategories(tempTableID, Collections.singletonList(CommonKeys.CLICKER_TRACKED_INDEX), mailingIds, clickerIndexes);
-
-        // mobile/PC openings
-        List<Integer> openingIndexes = Arrays.asList(
-        		CommonKeys.OPENERS_PC_INDEX,
-                CommonKeys.OPENERS_TABLET_INDEX,
-                CommonKeys.OPENERS_MOBILE_INDEX,
-                CommonKeys.OPENERS_SMARTTV_INDEX,
-                CommonKeys.OPENERS_PC_AND_MOBILE_INDEX,
-                CommonKeys.OPENINGS_ANONYMOUS_INDEX
-        );
-        updateRatesByCategories(tempTableID, Collections.singletonList(CommonKeys.OPENERS_TRACKED_INDEX), mailingIds, openingIndexes);
+        updateRatesByCategories(tempTableID, List.of(CommonKeys.CLICKER_TRACKED_INDEX), mailingIds, CLICKER_INDEXES);
+        updateRatesByCategories(tempTableID, List.of(CommonKeys.OPENERS_TRACKED_INDEX), mailingIds, OPENING_INDEXES);
 
         Integer[] measuredCategories = {
                 CommonKeys.CLICKER_TRACKED_INDEX,
@@ -274,10 +249,10 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
                 StringUtils.join(measuredCategories, ", ") +
                 ")";
 
-        updateEmbedded(logger, sqlUpdateMeasuredCategories);
+        updateEmbedded(sqlUpdateMeasuredCategories);
 
         // Gross openings / gross clicks
-        updateEmbedded(logger, getUpdateResponseRateQuery(tempTableID), CommonKeys.ACTIVITY_RATE, CommonKeys.ACTIVITY_RATE_INDEX);
+        updateEmbedded(getUpdateResponseRateQuery(tempTableID), CommonKeys.ACTIVITY_RATE, CommonKeys.ACTIVITY_RATE_INDEX);
 	}
 	
 	private String getUpdateResponseRateQuery(int tempTableID) {
@@ -304,8 +279,8 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
                 .append(" SET t.rate = (CASE WHEN (? <= 0) THEN -1 ELSE 1.0 * t.value / ? END)")
                 .append(" WHERE t.mailing_id = ? AND t.category_index IN (").append(StringUtils.join(categoryIndex, ", ")).append(")");
 
-        for (Map<String, Object> row: selectEmbedded(logger, totalCountQuery.toString())) {
-        	updateEmbedded(logger, updateRateQuery.toString(), ((Number) row.get("total")).intValue(), ((Number) row.get("total")).intValue(), ((Number) row.get("mailing_id")).intValue());
+        for (Map<String, Object> row: selectEmbedded(totalCountQuery.toString())) {
+        	updateEmbedded(updateRateQuery.toString(), toInt(row.get("total")), toInt(row.get("total")), toInt(row.get("mailing_id")));
         }
     }
     
@@ -326,8 +301,8 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 						" ELSE (CASE WHEN (? <= 0) THEN -1 ELSE 1.0 * t.value / ? END) END) ")
                 .append(" WHERE t.mailing_id = ? AND t.category_index IN (").append(StringUtils.join(categoryIndex, ", ")).append(")");
 
-        for (Map<String, Object> row: selectEmbedded(logger, totalCountQuery.toString())) {
-        	updateEmbedded(logger, updateRateQuery.toString(), ((Number) row.get("total")).intValue(), ((Number) row.get("total")).intValue(), ((Number) row.get("mailing_id")).intValue());
+        for (Map<String, Object> row: selectEmbedded(totalCountQuery.toString())) {
+        	updateEmbedded(updateRateQuery.toString(), toInt(row.get("total")), toInt(row.get("total")), toInt(row.get("mailing_id")));
         }
     }
 	
@@ -358,7 +333,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 					" WHERE mailing_id =? AND category_index IN (" + CommonKeys.DELIVERED_EMAILS_INDEX + ", " + CommonKeys.HARD_BOUNCES_INDEX + ")" +
 					" GROUP BY mailing_id";
 				
-				value = selectEmbeddedInt(logger, queryBuilder, mailingId);
+				value = selectEmbeddedInt(queryBuilder, mailingId);
 			
 			}
 				
@@ -415,7 +390,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		String query = "SELECT value FROM tmp_report_aggregation_" + tempTableID + "_tbl WHERE category = ? AND mailing_id = ?";
         int value;
         try {
-            value = selectEmbedded(logger, query, Integer.class, category, mailingId);
+            value = selectEmbedded(query, Integer.class, category, mailingId);
         } catch (EmptyResultDataAccessException e) {
             logger.error("No data found for category: " + category + ", mailingId: " + mailingId);
             value = 0;
@@ -456,7 +431,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	@DaoUpdateReturnValueCheck
 	private void insertOpenedInvisibleIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSQL) throws Exception {
 		int mailingId = data.getMailingId();
-		int measuredOpeners = selectEmbeddedInt(logger,
+		int measuredOpeners = selectEmbeddedInt(
 				"SELECT value FROM tmp_report_aggregation_" + tempTableID + "_tbl WHERE category_index = ? AND mailing_id = ?",
 				CommonKeys.OPENERS_MEASURED_INDEX, mailingId);
 		boolean isAllRecipientGroup = StringUtils.isBlank(targetSQL) || targetSQL.replace(" ", "").equals("1=1");
@@ -572,7 +547,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	}
 	
 	@DaoUpdateReturnValueCheck
-	public void insertClickersIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSql, String recipientsType) throws Exception {
+	public void insertClickersIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSql, String recipientsType, String startDate, String endDate) throws Exception {
         int mailingId = data.getMailingId();
 		int totalClicks = selectClicks(companyID, mailingId, recipientsType, targetSql, null, null);
 		int totalClickers = selectClickers(companyID, mailingId, recipientsType, targetSql, null, null);
@@ -626,7 +601,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				", rate DOUBLE" +
 				", rate_delivered DOUBLE" +
 				")";
-		updateEmbedded(logger, createTable);
+		updateEmbedded(createTable);
 		return tempTableID;
 	}
 	
@@ -646,14 +621,14 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				", avg_mailing_size DOUBLE" +
 				", send_date TIMESTAMP DEFAULT NULL" +
 				")";
-		updateEmbedded(logger, createTable);
+		updateEmbedded(createTable);
 		return tempTableID;
 	}
 	
 	private void insertIntoSummaryTempTable(int tempTableID, String category, int categoryIndex, int mailingId, int value, int groupId) throws Exception {
 		String insertSql = "INSERT INTO tmp_report_aggregation_" + tempTableID + "_tbl " +
 				"(category, category_index, mailing_id, group_id, value, rate) VALUES (?, ?, ?, ?, ?, 0)";
-        updateEmbedded(logger, insertSql, category, categoryIndex, mailingId, groupId, value);
+        updateEmbedded(insertSql, category, categoryIndex, mailingId, groupId, value);
     }
     
     private void insertTotalValueByCategories(int tempTableID, List<Integer> mailingIds) throws Exception {
@@ -663,14 +638,14 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				" FROM tmp_report_aggregation_" + tempTableID + "_tbl a WHERE a.mailing_id IN (" + StringUtils.join(mailingIds, ", ") + ")" +
 				" GROUP BY a.category, a.category_index";
 		
-		updateEmbedded(logger, insertSql);
+		updateEmbedded(insertSql);
     }
     
 	private void insertOptimizationMailingData(int tempTableID, OptimizationMailingData mailing) throws Exception {
 		String insertSql = "INSERT INTO tmp_report_aggregation_" + tempTableID + "_tbl " +
 				"(mailing_id, mailing_name, mailing_subject, group_id, is_winner, base_mailing_id, " +
 				"target_group_id, target_group_name, avg_mailing_size, send_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        updateEmbedded(logger, insertSql, mailing.getMailingId(), mailing.getMailingName(), mailing.getMailingSubject(),
+        updateEmbedded(insertSql, mailing.getMailingId(), mailing.getMailingName(), mailing.getMailingSubject(),
 				mailing.getGroupId(), mailing.isWinner(), mailing.getResultMailing(),
 				mailing.getTargetGroupId(), mailing.getTargetGroupName(),
 				mailing.getAvgMailSize(), mailing.getSendDate());

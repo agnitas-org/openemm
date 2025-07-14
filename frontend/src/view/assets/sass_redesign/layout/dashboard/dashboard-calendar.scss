@@ -1,0 +1,316 @@
+
+@mixin dashboard-calendar-scrollbar() {
+  @include perfect-scrollbar(var(--scrollbar-color), 4px, 3px);
+}
+
+#dashboard-calendar {
+  --xl-calendar-alien-day-bg: #{$gray-100};
+  --xl-calendar-hovered-day-bg: #e5f0f9;
+  --xl-calendar-day-header-color: #{$dark-grey};
+  --xl-calendar-cell-day-header-color: #{$gray-600};
+  --xl-calendar-hovered-day-color: var(--xl-calendar-cell-day-header-color);
+  --xl-calendar-cell-border-color: #{$light-grey};
+  --xl-calendar-today-border-color: #{$blue};
+  --xl-calendar-label-color: #{$dark-grey};
+
+  .search-container {
+    max-width: 260px;
+  }
+
+  > .tile-body {
+    @include dashboard-calendar-scrollbar;
+    display: grid;
+    grid-template-columns: 1fr minmax(160px, 300px);
+    gap: $gap-md;
+    padding: $gap-sm $gap-sm 0;
+  }
+
+  &:has([data-action="switch-mode"]:checked) {
+    #dashboard-calendar-grid {
+      margin-left: 0;
+    }
+  }
+
+  &:has(#toggle-calendar-scroll:checked) {
+    #dashboard-calendar-grid {
+      grid-auto-rows: minmax(min-content, auto);
+    }
+  }
+
+  &:has(#toggle-calendar-scroll:not(:checked)) {
+    #dashboard-calendar-grid {
+      min-height: 0;
+      grid-auto-rows: minmax(0, auto);
+    }
+  }
+
+  &:not(:has(#dashboard-calendar-unsent-tile)) {
+    #dashboard-calendar-unsent-wrapper {
+      display: none;
+    }
+    > .tile-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @import 'dashboard-calendar-period-picker';
+}
+
+#dashboard-calendar-table {
+  display: grid;
+  grid-template-rows:    auto 1fr;
+  min-height: 0;
+}
+
+#dashboard-calendar-grid-wrapper {
+  min-height: 0;
+  display: grid;
+}
+
+#dashboard-calendar-grid {
+  @include border($border-radius);
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: minmax(min-content, auto);
+  position: relative;
+  margin-left: 25px; // margin for the week numbers
+  margin-bottom: $gap-sm;
+
+  // background-color + gap = table grid
+  //background-color: var(--xl-calendar-cell-border-color); // added with js
+  gap: 1px;
+}
+
+#dashboard-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+  margin-bottom: $gap-x-sm;
+
+  div {
+    @include font($font-size-md, $font-weight-medium);
+    color: var(--xl-calendar-day-header-color);
+    text-align: center;
+  }
+}
+
+.dashboard-calendar-day {
+  @include dashboard-calendar-scrollbar;
+  @extend .unselectable;
+  @include flex-column(0);
+  position: relative;
+  background-color: $body-bg-var;
+
+  > *:last-child {
+    margin-bottom: $gap-sm;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: $form-label-font-weight;
+    color: var(--xl-calendar-cell-day-header-color);
+    padding: $gap-sm;
+  }
+
+  &__body {
+    position: relative;
+    @include flex-column($gap-x-sm);
+    padding-inline: $gap-sm;
+    flex-grow: 1;
+  }
+
+  &--alien {
+    background-color: var(--xl-calendar-alien-day-bg);
+  }
+
+  &--today {
+    border: 2px solid var(--xl-calendar-today-border-color);
+  }
+
+  &:hover, &--hovered {
+    background-color: var(--xl-calendar-hovered-day-bg);
+    --xl-calendar-cell-day-header-color: var(--xl-calendar-hovered-day-color);
+
+    [data-action="create-comment"] {
+      display: block;
+    }
+  }
+
+  [data-action="create-comment"] {
+    display: none;
+    text-align: right;
+    font-size: $gap-sm;
+    color: $blue;
+  }
+
+  [data-action="show-more-mailings"] {
+    color: $white;
+    text-align: center;
+    font-size: $font-size-sm;
+    padding: 4px $gap-x-sm;
+    font-weight: $font-weight-normal;
+    border-radius: $border-radius-sm;
+    border: none;
+  }
+}
+
+.dashboard-calendar-cell {
+  display: grid;
+  position: relative;
+
+  &:first-child {
+    border-top-left-radius: $border-radius;
+    .dashboard-calendar-day {
+      border-top-left-radius: $border-radius;
+    }
+  }
+  &:nth-child(7) {
+    border-top-right-radius: $border-radius;
+    .dashboard-calendar-day {
+      border-top-right-radius: $border-radius;
+    }
+  }
+  &:nth-last-child(7) {
+    border-bottom-left-radius: $border-radius;
+    .dashboard-calendar-day {
+      border-bottom-left-radius: $border-radius;
+    }
+  }
+  &:last-child {
+    border-bottom-right-radius: $border-radius;
+    .dashboard-calendar-day {
+      border-bottom-right-radius: $border-radius;
+    }
+  }
+}
+
+#dashboard-calendar-unsent-wrapper {
+  min-height: 0;
+  margin-bottom: $gap-sm;
+}
+
+#dashboard-calendar-unsent-tile {
+  .tile-header {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+
+  .btn-header-tab {
+    border-top-left-radius: $border-radius !important;
+    cursor: default;
+  }
+}
+
+@keyframes labelEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dashboard-calendar__label {
+  animation: labelEntrance 300ms ease-out forwards;
+  animation-fill-mode: backwards;
+  display: flex;
+  outline: none;
+  overflow: hidden;
+  border-radius: 5px;
+  min-height: fit-content;
+  flex-shrink: 0;
+
+  > span:first-child, > span:nth-child(3) {
+    @include flex-center;
+    width: 20px;
+    height: auto;
+    border-radius: 0;
+  }
+
+  > span:nth-child(2) {
+    color: var(--xl-calendar-label-color);
+    min-height: 24px;
+    padding: 4px $gap-x-sm;
+    font-size: $font-size-sm;
+    flex-grow: 1;
+    align-items: center;
+    min-width: 0;
+  }
+
+  @each $state, $values in $mailing-status-badges-defs {
+    &--mailing\.status\.#{$state} {
+      $background: map-get(map-get($mailing-status-badges-defs, $state), background);
+      $icon: map-get(map-get($mailing-status-badges-defs, $state), icon);
+
+      > span:first-child {
+        background-color: $background;
+        &:before {
+          content: fa-content($icon);
+        }
+      }
+
+      > span:nth-child(2) { // 30% transparent background
+        position: relative;
+        &::before {
+          content: "";
+          background: $background;
+          position: absolute;
+          inset: 0;
+          opacity: 0.3;
+        }
+      }
+    }
+  }
+
+  &--comment {
+    > span:first-child {
+      background-color: $stat-light-blue;
+    }
+    > span:nth-child(2) {
+      background-color: rgba($stat-light-blue, 0.3);
+    }
+  }
+}
+
+.dashboard-calendar__week-number {
+  position: absolute;
+  left: -25px;
+  width: 20px;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@include color-mode(dark) {
+  #dashboard-calendar {
+    --xl-calendar-alien-day-bg: #{$dark-grey};
+    --xl-calendar-hovered-day-bg: #{$grey-blue};
+    --xl-calendar-cell-day-header-color: #{$white};
+    --xl-calendar-day-header-color: #{$light-grey};
+    --xl-calendar-label-color: #{$x-light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  #dashboard-calendar {
+    --xl-calendar-hovered-day-bg: #{$con-light-blue};
+    --xl-calendar-cell-day-header-color: #{$con-dark-blue};
+    --xl-calendar-cell-border-color: #{$con-dark-blue};
+    --xl-calendar-today-border-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #dashboard-calendar {
+    --xl-calendar-alien-day-bg: #{$dark-grey};
+    --xl-calendar-hovered-day-color: #{$white};
+    --xl-calendar-hovered-day-bg: #{$con-light-blue};
+    --xl-calendar-cell-day-header-color: #{$white};
+    --xl-calendar-day-header-color: #{$white};
+    --xl-calendar-cell-border-color: #{$white};
+    --xl-calendar-today-border-color: #{$con-grey};
+  }
+}

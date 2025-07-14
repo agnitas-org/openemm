@@ -1,10 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 
-<%--@elvariable id="contactHistoryJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="contactHistoryJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="deliveryHistoryEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="recipient" type="org.agnitas.emm.core.recipient.dto.RecipientLightDto"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
@@ -57,7 +58,8 @@
         <div class="js-data-table-body" data-web-storage="recipient-mailing-history-overview" style="height: 100%;"></div>
     </div>
 
-    <c:forEach var="entry" items="${contactHistoryJson}">
+    <c:set var="contactHistoryList" value="${contactHistoryJson.toList()}" />
+    <c:forEach var="entry" items="${contactHistoryList}">
         <c:set target="${entry}" property="typeTitle" value=""/>
         <c:if test="${not empty entry['typeMessageKey']}">
             <mvc:message var="typeTitle" code="${entry['typeMessageKey']}"/>
@@ -127,7 +129,7 @@
                     "cellRendererParams": {"templateName": "clicks-cell"}
                 }
             ],
-            "data": ${contactHistoryJson}
+            "data": ${emm:toJson(contactHistoryList)}
         }
     </script>
 </div>

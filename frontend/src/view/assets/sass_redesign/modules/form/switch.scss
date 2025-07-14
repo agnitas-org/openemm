@@ -1,0 +1,452 @@
+/*doc
+---
+title: Switches & Checkboxes
+name: checkboxes
+category: Components - Switches & Checkboxes
+---
+*/
+
+/*doc
+---
+title: Switch
+name: switch
+parent: checkboxes
+---
+
+Toggle switches are used best as on/off like switches and should be preferred over checkboxes or radiobuttons.
+
+<small class="text-muted">You can apply a <a href="components_-_show%7Chide_by_checkbox%7Cselect.html#checkbox-hider"><i>show|hide by checkbox</i></a> component to this.</small>
+
+```htmlexample
+<div class="form-check form-switch">
+    <input class="form-check-input" id="switch-example" type="checkbox" role="switch">
+    <label class="form-label form-check-label" for="switch-example">Hyperspace Jump</label>
+</div>
+<div class="form-check form-switch">
+    <input class="form-check-input" id="switch-example" type="checkbox" role="switch" checked disabled>
+    <label class="form-label form-check-label" for="switch-example">Put your crocs in sport mode</label>
+</div>
+<div class="form-check form-check-reverse form-switch">
+    <input class="form-check-input" type="checkbox" role="switch" id="reversed-label-switch">
+    <label class="form-label form-check-label" for="reversed-label-switch">Label first</label>
+</div>
+```
+*/
+
+/*doc
+---
+title: Icon & Text Switch
+name: switches_03_icon_text
+parent: checkboxes
+---
+
+Uses icons or a text instead of a toggle.
+
+```htmlexample
+<div class="d-flex gap-1">
+  <label class="switch">
+      <input type="checkbox">
+      <i class="icon icon-image"></i>
+      <i class="icon icon-th-list"></i>
+  </label>
+  <label class="switch">
+      <input type="checkbox" checked/>
+      <span>Basic</span>
+      <span>Extended</span>
+  </label>
+  <label class="switch">
+      <input type="checkbox" disabled/>
+      <span>Disabled</span>
+      <span>State</span>
+  </label>
+  <label class="switch">
+      <input type="checkbox" checked readonly/>
+      <span>Readonly</span>
+      <span>State</span>
+  </label>
+</div>
+```
+*/
+
+/*doc
+---
+title: Radio switch
+name: switches_04_radio
+parent: checkboxes
+---
+
+Sometimes a binary choice needs values that are distinguishable from `true` and `false`,
+in which case you can use a radio switch with a possibility to set custom `[value]`
+
+```htmlexample
+<div class="d-flex gap-1">
+  <div class="switch">
+      <input type="radio" id="combinator-and" name="combinator" value="and" checked/>
+      <label for="combinator-and">AND</label>
+      <input type="radio" id="combinator-or" name="combinator" value="or"/>
+      <label for="combinator-or">OR</label>
+  </div>
+  <div class="switch" data-preview-table="#styleguide-full-table">
+    <input type="radio" id="type-foo" name="switch-type" value="foo" />
+    <label for="type-foo" class="icon icon-image"></label>
+    <input type="radio" id="type-bar" name="switch-type" value="bar" />
+    <label for="type-bar" class="icon icon-th-list"></label>
+    <input type="radio" id="type-baz" name="switch-type" value="baz" checked />
+    <label for="type-baz" class="icon icon-align-justify"></label>
+  </div>
+  <div class="switch">
+      <input type="radio" id="combinator-and-disabled" name="combinator-disabled" value="and" disabled/>
+      <label for="combinator-and-disabled">AND</label>
+      <input type="radio" id="combinator-or-disabled" name="combinator-disabled" value="or" disabled checked/>
+      <label for="combinator-or-readonly">OR</label>
+  </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Mirrored switch
+name: switches_05_mirrored
+parent: checkboxes
+---
+
+Sometimes is necessary to mirror switch content to display left side of switch as active when checkbox enabled.
+In this case `.switch-mirrored` class should be added
+
+```htmlexample
+<label class="switch switch--mirrored">
+    <input type="checkbox" checked />
+    <span>OR</span>
+    <span>AND</span>
+</label>
+```
+*/
+
+@function switch-toggle-variant($circle-color) {
+  @return escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='4.1' fill='#{$circle-color}'/></svg>"));
+}
+
+.form-switch {
+  --slider-bg: #{$white};
+  --slider-checked-bg: #{$blue};
+  --slider-disabled-bg: #{$gray-100};
+  --slider-disabled-checked-bg: #{$dark-grey};
+
+  --slider-circle-bg: #{switch-toggle-variant($light-grey)};
+  --slider-checked-circle-bg: #{switch-toggle-variant($white)};
+  --slider-disabled-circle-bg: #{switch-toggle-variant($dark-grey)};
+  --slider-disabled-checked-circle-bg: #{switch-toggle-variant($white)};
+
+  --slider-checked-border-color: var(--slider-checked-bg);
+
+  display: inline-flex;
+  align-items: center;
+  gap: $gap-x-sm;
+
+  .form-check-input {
+    --checkbox-border-color: #{$border-color-var};
+
+    margin-top: 0;
+    cursor: pointer;
+    flex: none; // prevents resize inside flex container
+    @include size(24px, 12px);
+    background-image: var(--slider-circle-bg);
+
+    &:checked {
+      background-color: var(--slider-checked-bg);
+      --slider-circle-bg: var(--slider-checked-circle-bg);
+      border-color: var(--slider-checked-border-color);
+    }
+
+    &:disabled, &[readonly] {
+      background-color: var(--slider-disabled-bg);
+
+      &:checked {
+        background-color: var(--slider-disabled-checked-bg);
+        --slider-disabled-bg: #{$dark-grey};
+        background-image: var(--slider-disabled-checked-circle-bg);
+        border-color: inherit;
+      }
+
+      &:not(:checked) {
+        --checkbox-border-color: #{$dark-grey};
+        background-image: var(--slider-disabled-circle-bg);
+      }
+    }
+  }
+
+  .form-check-label {
+    margin-bottom: 0;
+    font-size: $font-size-base;
+  }
+}
+
+@include color-mode(dark) {
+  .form-switch {
+    --slider-bg: #{$body-bg-var};
+    --slider-disabled-bg: #{$light-grey};
+    --slider-disabled-checked-circle-bg: #{switch-toggle-variant($light-grey)};
+    --slider-disabled-circle-bg: #{switch-toggle-variant($dark-grey)};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .form-switch {
+    --slider-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+    --slider-checked-bg: #{$con-dark-blue};
+    --slider-disabled-checked-circle-bg: #{switch-toggle-variant($con-grey)};
+    --slider-disabled-bg: #{$con-grey};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .form-switch {
+    --slider-bg: #{$con-dark-blue};
+    --slider-circle-bg: #{switch-toggle-variant($white)};
+    --slider-checked-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+    --slider-checked-bg: #{$white};
+    --slider-disabled-checked-circle-bg: #{switch-toggle-variant($dark-grey)};
+    --slider-disabled-checked-bg: #{$con-grey};
+    --slider-disabled-bg: #{$dark-grey};
+    --slider-disabled-circle-bg: #{switch-toggle-variant($con-grey)};
+  }
+}
+
+.form-check-reverse {
+  flex-direction: row-reverse;
+}
+
+.switch {
+  --switch-active-bg: #{$blue};
+  --switch-inactive-bg: #{$light-grey};
+  --switch-color: #{$white};
+  --switch-selected-color: var(--switch-color);
+  --switch-disabled-color: #{$white};
+  --switch-disabled-bg: #{$light-grey};
+
+  &--editor {
+    --switch-color: var(--label-color);
+    --switch-selected-color: #{$white};
+    --switch-inactive-bg: var(--bs-btn-bg);
+  }
+
+  display: inline-flex;
+  border: $border-default;
+  border-radius: $border-radius;
+  background-color: var(--switch-inactive-bg);
+
+  > * {
+    color: var(--switch-color);
+    border-radius: inherit;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    z-index: 0;
+  }
+
+  > input {
+    clip: rect(0 0 0 0);
+    position: absolute;
+  }
+
+  // checkbox switch styles
+  &:has(input[type=checkbox]) {
+    > * {
+      // off state
+      &:not(:last-child) {
+        background-color: var(--switch-active-bg);
+        margin: -1px -1px -1px -3px; // hide contrast pixels near border radius
+      }
+
+      &:last-child {
+        background-color: transparent;
+      }
+    }
+
+    > input[type=checkbox] {
+      // on state
+      &:checked {
+        & ~ *:not(:last-child) {
+          background-color: transparent;
+          margin: 0;
+        }
+
+        & ~ *:last-child {
+          background-color: var(--switch-active-bg);
+          margin: -1px -3px -1px -1px; // hide contrast pixels near border radius
+          color: var(--switch-selected-color);
+        }
+      }
+
+      // off state
+      &:not(:checked) ~ *:not(:last-child) {
+        color: var(--switch-selected-color);
+      }
+    }
+  }
+
+  // radio switch styles
+  &:has(input[type=radio]) {
+    user-select: none;
+    min-width: max-content;
+
+    > input[type=radio] {
+      & + label:not(.icon) {
+        @include flex-center;
+        padding: 3px $gap-x-sm;
+      }
+
+      &:checked + label {
+        background-color: var(--switch-active-bg);
+        color: var(--switch-selected-color);
+        margin: -1px;
+        z-index: 1;
+      }
+
+      &:not(:checked) + label {
+        background-color: var(--switch-inactive-bg);
+      }
+
+      &:first-child:checked + label {
+        margin: -1px 0 -1px -3px; // hide contrast pixels near border radius
+      }
+
+      &:nth-last-child(2):checked + label {
+        margin: -1px -3px -1px -1px; // hide contrast pixels near border radius
+      }
+    }
+  }
+
+  // disabled styles
+  &:has(input:disabled), &:has(input[readonly]) {
+    background-color: var(--switch-disabled-color);
+    pointer-events: none;
+
+    // checkbox switch styles
+    > input[type=checkbox] {
+      &:checked {
+        & ~ *:last-child {
+          color: var(--switch-disabled-color);
+          background-color: var(--switch-disabled-bg);
+        }
+
+        & ~ *:not(:last-child) {
+          color: var(--switch-disabled-bg);
+          background-color: var(--switch-disabled-color);
+        }
+      }
+      &:not(:checked) {
+        & ~ *:last-child {
+          color: var(--switch-disabled-bg);
+          background-color: var(--switch-disabled-color);
+        }
+
+        & ~ *:not(:last-child) {
+          color: var(--switch-disabled-color);
+          background-color: var(--switch-disabled-bg);
+        }
+      }
+    }
+
+    // radio switch styles
+    > input[type=radio] {
+      &:checked + label {
+        background-color: var(--switch-disabled-bg);
+        color: var(--switch-disabled-color);
+      }
+
+      &:not(:checked) + label {
+        background-color: var(--switch-disabled-color);
+        color: var(--switch-disabled-bg);
+      }
+    }
+  }
+
+  // icon switch
+  &:has(.icon) {
+    @include size(min-content, 30px);
+    flex: none;
+
+    .icon {
+      flex: 1;
+      @include flex-center;
+      font-size: $font-size-md;
+      min-width: 30px;
+    }
+  }
+
+  // text switch
+  &:has(> span) {
+    min-width: 0; // to allow shrink and text truncation when not enough space to display completely
+
+    > span {
+      @extend .text-truncate;
+      user-select: none;
+      padding: 3.5px;
+    }
+  }
+
+  // icon-text switch
+  &:has(> span > .icon) {
+    > span {
+      @include flex-center;
+      flex-grow: 1;
+      padding: 0 7px 0 0;
+      font-weight: $font-weight-semibold;
+    }
+
+    .icon {
+      max-width: 30px;
+    }
+  }
+
+  &--sm {
+    // icon switch small
+    &:has(> i) {
+      @include size(36px, 18px);
+      border-radius: $border-radius-sm;
+
+      i {
+        font-size: 8px;
+      }
+    }
+  }
+
+  &--mirrored {
+    @include flipHorizontally;
+
+    > * {
+      @include flipHorizontally;
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .switch {
+    --switch-inactive-bg: #{$grey-blue};
+    --switch-disabled-color: #{$dark-grey};
+    --switch-disabled-bg: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .switch {
+    --switch-inactive-bg: #{$white};
+    --switch-color: #{$con-dark-blue};
+    --switch-selected-color: #{$white};
+    --switch-active-bg: #{$con-dark-blue};
+    --switch-disabled-color: #{$dark-grey};
+    --switch-disabled-bg: #{$light-grey};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .switch {
+    --switch-active-bg: #{$white};
+    --switch-inactive-bg: #{$con-dark-blue};
+    --switch-color: #{$white};
+    --switch-selected-color: #{$con-dark-blue};
+    --switch-disabled-color: #{$dark-grey};
+    --switch-disabled-bg: #{$light-grey};
+  }
+}

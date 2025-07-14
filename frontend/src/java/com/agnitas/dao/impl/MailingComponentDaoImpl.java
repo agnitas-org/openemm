@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,35 +10,7 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.TrackableLinkImpl;
-import com.agnitas.dao.MailingComponentDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.TrackableLinkDao;
-import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.web.CdnImage;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.factory.MailingComponentFactory;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
+import static com.agnitas.util.ImageUtils.MOBILE_IMAGE_PREFIX;
 
 import java.io.InputStream;
 import java.sql.Blob;
@@ -56,12 +28,33 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.agnitas.util.ImageUtils.MOBILE_IMAGE_PREFIX;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.web.CdnImage;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.factory.MailingComponentFactory;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements MailingComponentDao {
 
-	private static final Logger logger = LogManager.getLogger(MailingComponentDaoImpl.class);
-	
 	/**
 	 * Factory to create new mailing components.
 	 */
@@ -80,12 +73,10 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		this.mailingComponentFactory = mailingComponentFactory;
 	}
 
-	@Required
 	public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 	
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "configService");
 	}
@@ -101,7 +92,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? " +
 				"ORDER BY compname ASC";
 
-		return select(logger, sqlGetComponents, new MailingComponentRowMapper(includeContent), companyID, mailingID, componentType.getCode());
+		return select(sqlGetComponents, new MailingComponentRowMapper(includeContent), companyID, mailingID, componentType.getCode());
 	}
 
 	public List<MailingComponent> getMailingComponents(int mailingID, int companyID) {
@@ -113,7 +104,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				(includeContent ? ", emmblock, binblock " : " ") +
 				" FROM component_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY compname ASC";
 
-		List<MailingComponent> mailingComponentList = select(logger, componentSelect, new MailingComponentRowMapper(includeContent), companyID, mailingID);
+		List<MailingComponent> mailingComponentList = select(componentSelect, new MailingComponentRowMapper(includeContent), companyID, mailingID);
 
 		// Sort results (mobile components after their base components)
 		mailingComponentList.sort((mailingComponent1, mailingComponent2) -> {
@@ -145,7 +136,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				"WHERE company_id = ? AND mailing_id = ? AND " + makeBulkInClauseForInteger("component_id", componentIds) +
 				"ORDER BY compname ASC";
 
-		return select(logger, sqlGetComponents, new MailingComponentRowMapper(true), companyID, mailingID);
+		return select(sqlGetComponents, new MailingComponentRowMapper(true), companyID, mailingID);
     }
 
 	public MailingComponent getMailingComponent(int compID, int companyID) {
@@ -156,7 +147,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE component_id = ? AND company_id = ? ORDER BY compname ASC";
 
 		try {
-			return selectObjectDefaultNull(logger, componentSelect, new MailingComponentRowMapper(), compID, companyID);
+			return selectObjectDefaultNull(componentSelect, new MailingComponentRowMapper(), compID, companyID);
 		} catch (Exception e) {
 			logger.error("Cannot read MailingComponent: " + e.getMessage(), e);
 			return mailingComponentFactory.newMailingComponent();
@@ -167,7 +158,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		String sqlGetComponent = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp " +
 				"FROM component_tbl WHERE mailing_id = ? AND component_id = ? AND company_id = ?";
 
-		return selectObjectDefaultNull(logger, sqlGetComponent, new MailingComponentRowMapper(), mailingId, componentId, companyId);
+		return selectObjectDefaultNull(sqlGetComponent, new MailingComponentRowMapper(), mailingId, componentId, companyId);
 	}
 
 	public MailingComponent getMailingComponentByName(int mailingID, int companyID, String name) {
@@ -178,7 +169,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE (mailing_id = ? OR mailing_id = 0) AND company_id = ? AND compname = ? ORDER BY component_id DESC";
 
 		try {
-			List<MailingComponent> components = select(logger, componentSelect, new MailingComponentRowMapper(), mailingID, companyID, name);
+			List<MailingComponent> components = select(componentSelect, new MailingComponentRowMapper(), mailingID, companyID, name);
 			if (!components.isEmpty()) {
 				// return the first of all results
 				return components.get(0);
@@ -192,8 +183,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	}
 
 	@DaoUpdateReturnValueCheck
-	public void saveMailingComponent(MailingComponent mailingComponent) throws Exception {
-
+	public void saveMailingComponent(MailingComponent mailingComponent) {
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
 		int mailtemplateID = 0;
 		int comppresent = 1;
@@ -202,91 +192,85 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		try {
 			HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
 		} catch(final HtmlCheckerException e) {
-			throw new Exception("Mailing component name contains unallowed HTML tags");
+			throw new IllegalArgumentException("Mailing component name contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
 		} catch(final HtmlCheckerException e) {
-			throw new Exception("Mailing component description contains unallowed HTML tags");
+			throw new IllegalArgumentException("Mailing component description contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getEmmBlock(), true);
 		} catch(final HtmlCheckerException e) {
-			throw new Exception("Mailing component description contains unallowed HTML tags");
+			throw new IllegalArgumentException("Mailing component description contains unallowed HTML tags");
 		}
 
-		try {
-			if (mailingComponent.getType() != MailingComponentType.Template && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
-				Set<String> existingLinkUrls = trackableLinkDao.getTrackableLinks(mailingComponent.getCompanyID(), mailingComponent.getMailingID())
-					.stream().map(TrackableLink::getFullUrl).collect(Collectors.toSet());
-				// Only create new link if its url does not exist by now
-				if (!existingLinkUrls.contains(mailingComponent.getLink())) {
-					final TrackableLink newTrackableLink = new TrackableLinkImpl();
-					newTrackableLink.setCompanyID(mailingComponent.getCompanyID());
-					newTrackableLink.setFullUrl(mailingComponent.getLink());
-					newTrackableLink.setMailingID(mailingComponent.getMailingID());
-					newTrackableLink.setUsage(this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, mailingComponent.getCompanyID()));
-					newTrackableLink.setActionID(0);
-					trackableLinkDao.saveTrackableLink(newTrackableLink);
-					mailingComponent.setUrlID(newTrackableLink.getId());
-				} else {
-					final TrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
-					mailingComponent.setUrlID(existingTrackableLink.getId());
-				}
-			}
-
-			validateDescription(mailingComponent.getDescription());
-
-			if (mailingComponent.getId() == 0 || !exists(mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getId())) {
-                mailingComponent.setTimestamp(new Date());
-
-                if (isOracleDB()) {
-                	int newID = selectInt(logger, "SELECT component_tbl_seq.NEXTVAL FROM DUAL");
-                	String sql = "INSERT INTO component_tbl (component_id, mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
-                    int touchedLines = update(logger, sql, newID, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
-                    if (touchedLines != 1) {
-                        throw new RuntimeException("Illegal insert result");
-                    } else {
-						try {
-							updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
-							updateClob(logger, "UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
-						} catch (Exception e) {
-							logger.error(String.format("Error saving mailing component %d (mailing ID %d, company ID %d)", mailingComponent.getId(), mailingComponent.getMailingID(), mailingComponent.getCompanyID()), e);
-
-							update(logger, "DELETE FROM component_tbl WHERE component_id = ?", newID);
-							throw e;
-						}
-					}
-
-                    mailingComponent.setId(newID);
-                } else {
-                	String insertStatement = "INSERT INTO component_tbl (mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 11, ", ") + ")";
-                    int newID = insertIntoAutoincrementMysqlTable(logger, "component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
-					try {
-						updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
-						updateClob(logger, "UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
-					} catch (Exception e) {
-						update(logger, "DELETE FROM component_tbl WHERE component_id = ?", newID);
-						throw e;
-					}
-                    mailingComponent.setId(newID);
-                }
-
+		if (mailingComponent.getType() != MailingComponentType.Template && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
+			Set<String> existingLinkUrls = trackableLinkDao.getTrackableLinks(mailingComponent.getCompanyID(), mailingComponent.getMailingID())
+				.stream().map(TrackableLink::getFullUrl).collect(Collectors.toSet());
+			// Only create new link if its url does not exist by now
+			if (!existingLinkUrls.contains(mailingComponent.getLink())) {
+				final TrackableLink newTrackableLink = new TrackableLinkImpl();
+				newTrackableLink.setCompanyID(mailingComponent.getCompanyID());
+				newTrackableLink.setFullUrl(mailingComponent.getLink());
+				newTrackableLink.setMailingID(mailingComponent.getMailingID());
+				newTrackableLink.setUsage(this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, mailingComponent.getCompanyID()));
+				newTrackableLink.setActionID(0);
+				trackableLinkDao.saveTrackableLink(newTrackableLink);
+				mailingComponent.setUrlID(newTrackableLink.getId());
 			} else {
-                mailingComponent.setTimestamp(new Date());
-
-				String sql = "UPDATE component_tbl SET mailing_id = ?, company_id = ?, compname = ?, comptype = ?, mtype = ?, target_id = ?, url_id = ?, comppresent = ?, timestamp = ?, description = ? WHERE component_id = ?";
-				int touchedLines = update(logger, sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
-				if (touchedLines != 1) {
-					throw new RuntimeException("Illegal update result");
-				} else {
-					updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), mailingComponent.getId());
-					updateClob(logger, "UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), mailingComponent.getId());
-				}
+				final TrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
+				mailingComponent.setUrlID(existingTrackableLink.getId());
 			}
-		} catch (Exception e) {
-			logger.error("Error saving component " + mailingComponent.getId() + " for mailing " + mailingComponent.getMailingID(), e);
-			throw e;
+		}
+
+		validateDescription(mailingComponent.getDescription());
+
+		if (mailingComponent.getId() == 0 || !exists(mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getId())) {
+			mailingComponent.setTimestamp(new Date());
+
+			if (isOracleDB()) {
+				int newID = selectInt("SELECT component_tbl_seq.NEXTVAL FROM DUAL");
+				String sql = "INSERT INTO component_tbl (component_id, mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
+				int touchedLines = update(sql, newID, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
+				if (touchedLines != 1) {
+					throw new RuntimeException("Illegal insert result");
+				} else {
+					try {
+						updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
+						updateClob("UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
+					} catch (Exception e) {
+						logger.error(String.format("Error saving mailing component %d (mailing ID %d, company ID %d)", mailingComponent.getId(), mailingComponent.getMailingID(), mailingComponent.getCompanyID()), e);
+						update("DELETE FROM component_tbl WHERE component_id = ?", newID);
+						throw new RuntimeException(e);
+					}
+				}
+
+				mailingComponent.setId(newID);
+			} else {
+				String insertStatement = "INSERT INTO component_tbl (mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 11, ", ") + ")";
+				int newID = insertIntoAutoincrementMysqlTable("component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
+				try {
+					updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
+					updateClob("UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
+				} catch (Exception e) {
+					update("DELETE FROM component_tbl WHERE component_id = ?", newID);
+					throw new RuntimeException(e);
+				}
+				mailingComponent.setId(newID);
+			}
+
+		} else {
+			mailingComponent.setTimestamp(new Date());
+
+			String sql = "UPDATE component_tbl SET mailing_id = ?, company_id = ?, compname = ?, comptype = ?, mtype = ?, target_id = ?, url_id = ?, comppresent = ?, timestamp = ?, description = ? WHERE component_id = ?";
+			int touchedLines = update(sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
+			if (touchedLines != 1) {
+				throw new RuntimeException("Illegal update result");
+			} else {
+				updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), mailingComponent.getId());
+				updateClob("UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), mailingComponent.getId());
+			}
 		}
 	}
 
@@ -294,7 +278,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	public void deleteMailingComponent(MailingComponent comp) {
 		String sql = "DELETE FROM component_tbl WHERE component_id = ?";
 		try {
-			update(logger, sql, comp.getId());
+			update(sql, comp.getId());
 		} catch (Exception e) {
 			logger.error("Error deleting component " + comp.getId(), e);
 		}
@@ -308,7 +292,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 					.map(MailingComponent::getId)
 					.toArray();
 
-			update(logger, sql, componentsIds);
+			update(sql, componentsIds);
 		}
 	}
 
@@ -323,7 +307,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			sql = "SELECT COALESCE(OCTET_LENGTH(binblock), 0) image_size, component_id FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)";
 		}
 
-		query(logger, sql, rs -> map.put(rs.getInt("component_id"), rs.getInt("image_size")), sqlParameters);
+		query(sql, rs -> map.put(rs.getInt("component_id"), rs.getInt("image_size")), sqlParameters);
 		return map;
 	}
 
@@ -345,7 +329,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 
 		Map<Integer, String> map = new HashMap<>();
-		query(logger, sqlGetNames, rs -> map.put(rs.getInt("component_id"), rs.getString("compname")), sqlParameters.toArray());
+		query(sqlGetNames, rs -> map.put(rs.getInt("component_id"), rs.getString("compname")), sqlParameters.toArray());
 		return map;
 	}
 
@@ -354,14 +338,14 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		Object[] sqlParameters = new Object[]{companyID, mailingID, MailingComponentType.Image.getCode(), MailingComponentType.HostedImage.getCode()};
 
 		Map<Integer, Date> map = new HashMap<>();
-		query(logger, sql, rs -> map.put(rs.getInt("component_id"), rs.getTimestamp("timestamp")), sqlParameters);
+		query(sql, rs -> map.put(rs.getInt("component_id"), rs.getTimestamp("timestamp")), sqlParameters);
 		return map;
 	}
 
 	public Date getComponentTime(int companyID, int mailingID, String name) {
 		String sql = "SELECT timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?";
 		try {
-			return select(logger, sql, Date.class, companyID, mailingID, name);
+			return select(sql, Date.class, companyID, mailingID, name);
 		} catch (Exception e) {
 			logger.error("Error getting time of component " + name, e);
 			return null;
@@ -370,17 +354,17 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 	public List<MailingComponent> getMailingComponentsByType(MailingComponentType componentType, int companyID) {
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND comptype = ? ORDER BY compname ASC";
-		return select(logger, componentSelect, new MailingComponentRowMapper(), companyID, componentType.getCode());
+		return select(componentSelect, new MailingComponentRowMapper(), companyID, componentType.getCode());
 	}
 
 	public boolean exists(int mailingID, int companyID, int componentID) {
 		String sql = "SELECT COUNT(component_id) FROM component_tbl WHERE mailing_id = ? AND company_id = ? AND component_id = ?";
-		int total = selectInt(logger, sql, mailingID, companyID, componentID);
+		int total = selectInt(sql, mailingID, companyID, componentID);
 		return total > 0;
 	}
 
 	public boolean attachmentExists(int companyId, int mailingId, String name, int targetId) {
-		return selectInt(logger,
+		return selectInt(
 				"SELECT COUNT(*) FROM component_tbl " +
 						" WHERE (comptype = ? OR comptype = ?) AND compname = ? AND target_id = ?" +
 						" AND mailing_id = ? AND company_id = ?  ORDER BY component_id",
@@ -392,11 +376,11 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	@DaoUpdateReturnValueCheck
 	public boolean deleteMailingComponentsByCompanyID(int companyID) {
 		String deleteSQL = "DELETE FROM component_tbl WHERE company_id = ?";
-		int affectedRows = update(logger, deleteSQL, companyID);
+		int affectedRows = update(deleteSQL, companyID);
 		if(affectedRows > 0) {
 			return true;
 		} else {
-			int remainingComponents = selectInt(logger, "SELECT COUNT(*) FROM component_tbl WHERE company_id = ?", companyID);
+			int remainingComponents = selectInt("SELECT COUNT(*) FROM component_tbl WHERE company_id = ?", companyID);
 			return remainingComponents == 0;
 		}
 	}
@@ -406,7 +390,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				"FROM component_tbl " +
 				"WHERE component_id = ? AND company_id = ?";
 
-		return selectObjectDefaultNull(logger, query, new MailingComponentRowMapper(false), id, companyId);
+		return selectObjectDefaultNull(query, new MailingComponentRowMapper(false), id, companyId);
 	}
 
 	public List<Integer> filterComponentsOfNotSentMailings(List<Integer> components) {
@@ -422,7 +406,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				"WHERE m.work_status != ? " +
 				"  AND " + componentsIdsInClause;
 
-		return select(logger, query, IntegerRowMapper.INSTANCE, MailingStatus.SENT.getDbKey());
+		return select(query, IntegerRowMapper.INSTANCE, MailingStatus.SENT.getDbKey());
 	}
 
 	public List<Integer> findTargetDependentMailingsComponents(int targetGroupId, int companyId) {
@@ -431,12 +415,12 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				"    ON c.mailing_id = m.mailing_id " +
 				"WHERE m.company_id = ? AND m.deleted = 0 AND c.target_id = ?";
 
-		return select(logger, sql, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
+		return select(sql, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
 	}
 
 	public void deleteMailingComponentsByMailing(int mailingID) {
 		String deleteSQL = "DELETE FROM component_tbl WHERE mailing_id = ?";
-		update(logger, deleteSQL, mailingID);
+		update(deleteSQL, mailingID);
 	}
 
 	public boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds) {
@@ -446,7 +430,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 		String sqlDeleteImages = "DELETE FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?) AND component_id IN (" + StringUtils.join(bulkIds, ", ") + ")";
 
-		return update(logger, sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
+		return update(sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
 	}
 
 	public List<String> getImagesNames(int mailingId, Set<Integer> ids, int companyID) {
@@ -455,7 +439,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			query += " AND " + makeBulkInClauseForInteger("component_id", ids);
 		}
 
-		return select(logger, query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
+		return select(query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
 	}
 
 	public PaginatedListImpl<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter) {
@@ -476,8 +460,8 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			query.append(" ORDER BY comptype DESC, compname ASC");
 		}
 
-		PaginatedListImpl<MailingComponent> list = selectPaginatedList(logger, query.toString(), sortTable, filter.getSort(), filter.ascending(), filter.getPage(),
-				filter.getNumberOfRows(), new MailingComponentRowMapper(), params.toArray());
+		PaginatedListImpl<MailingComponent> list = selectPaginatedList(query.toString(), sortTable, filter,
+				new MailingComponentRowMapper(), params.toArray());
 
 		if (filter.isUiFiltersSet()) {
 			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(mailingID, companyID));
@@ -489,7 +473,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	public List<String> getMailingImagesNamesForMobileAlternative(int mailingId, int companyId) {
 		StringBuilder query = new StringBuilder("SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)")
 				.append(" AND compname NOT LIKE '").append(MOBILE_IMAGE_PREFIX).append("%' ORDER BY comptype DESC, compname ASC");
-		return select(logger, query.toString(), StringRowMapper.INSTANCE, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
+		return select(query.toString(), StringRowMapper.INSTANCE, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
 	}
 
 	private List<Object> applyOverviewFilter(MailingImagesOverviewFilter filter, int mailingId, int companyId, StringBuilder query) {
@@ -500,14 +484,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			params.add(filter.getFileName());
 		}
 
-		if (filter.getUploadDate().getFrom() != null) {
-			query.append(" AND timestamp >= ?");
-			params.add(filter.getUploadDate().getFrom());
-		}
-		if (filter.getUploadDate().getTo() != null) {
-			query.append(" AND timestamp < ?");
-			params.add(DateUtilities.addDaysToDate(filter.getUploadDate().getTo(), 1));
-		}
+		query.append(getDateRangeFilterWithAnd("timestamp", filter.getUploadDate(), params));
 
 		if (CollectionUtils.isNotEmpty(filter.getMimetypes())) {
 			query.append(" AND mtype IN (").append(AgnUtils.csvQMark(filter.getMimetypes().size())).append(")");
@@ -529,7 +506,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM component_tbl");
 		List<Object> params = applyRequiredOverviewFilter(query, mailingId, companyId);
 
-		return selectIntWithDefaultValue(logger, query.toString(), 0, params.toArray());
+		return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
 	}
 
 	private List<Object> applyRequiredOverviewFilter(StringBuilder query, int mailingId, int companyId) {
@@ -544,7 +521,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
         String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ?"
         	+ " AND comptype IN (" + types.stream().map(e -> Integer.toString(e.getCode())).collect(Collectors.joining(", ")) + ") ORDER BY comptype DESC, compname ASC";
 
-		return select(logger, componentSelect, new MailingComponentRowMapper(), companyID, mailingID);
+		return select(componentSelect, new MailingComponentRowMapper(), companyID, mailingID);
     }
 
 	protected class MailingComponentRowMapper implements RowMapper<MailingComponent> {
@@ -617,23 +594,23 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			sqlGetComponentId += " LIMIT 1";
 		}
 
-        return selectInt(logger, sqlGetComponentId, companyId, mailingId, componentType.getCode());
+        return selectInt(sqlGetComponentId, companyId, mailingId, componentType.getCode());
     }
 
 	public List<MailingComponent> getPreviewHeaderComponents(int mailingID, int companyID) {
 		// Using "SELECT * ...", because of flexible used fields in RowMapper
-		return select(logger, "SELECT * FROM component_tbl WHERE (comptype = ? OR comptype = ?) AND mailing_id = ? AND company_id = ? ORDER BY component_id", new MailingComponentRowMapper(),
+		return select("SELECT * FROM component_tbl WHERE (comptype = ? OR comptype = ?) AND mailing_id = ? AND company_id = ? ORDER BY component_id", new MailingComponentRowMapper(),
 				MailingComponentType.Attachment.getCode(), MailingComponentType.PersonalizedAttachment.getCode(), mailingID, companyID);
 	}
 
 	public void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes) {
 		try {
 			String sql = "UPDATE component_tbl SET timestamp = ? WHERE component_id = ?";
-			int touchedLines = update(logger, sql, new Date(), componentID);
+			int touchedLines = update(sql, new Date(), componentID);
 			if (touchedLines != 1) {
 				throw new RuntimeException("Illegal insert result");
 			} else {
-				updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE component_id = ?", imageBytes, componentID);
+				updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", imageBytes, componentID);
 			}
 		} catch (Exception e) {
 			logger.error("Error saving component " + componentID, e);
@@ -648,16 +625,16 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		List<Map<String, Object>> results = null;
 		if (mobile) {
 			if (isOracleDB()) {
-				results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
+				results = select("SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
 			} else {
-				results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
+				results = select("SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
 			}
 		}
 		if (results == null || results.isEmpty()) {
 			if (isOracleDB()) {
-				results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+				results = select("SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
 			} else {
-				results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+				results = select("SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
 			}
 		}
 		if (results.isEmpty()) {
@@ -668,20 +645,20 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			if (cdnID == null) {
 				int componentID = ((Number) result.get("component_id")).intValue();
 				cdnID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
-				int touchedLines = update(logger, "UPDATE component_tbl SET cdn_id = ? WHERE company_id = ? AND mailing_id = ? AND component_id = ? AND cdn_id IS NULL", cdnID, companyID, mailingID, componentID);
+				int touchedLines = update("UPDATE component_tbl SET cdn_id = ? WHERE company_id = ? AND mailing_id = ? AND component_id = ? AND cdn_id IS NULL", cdnID, companyID, mailingID, componentID);
 				if (touchedLines == 0) {
 					if (mobile) {
 						if (isOracleDB()) {
-							results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
+							results = select("SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
 						} else {
-							results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
+							results = select("SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, MOBILE_IMAGE_PREFIX + imageName);
 						}
 					}
 					if (results == null || results.isEmpty()) {
 						if (isOracleDB()) {
-							results = select(logger, "SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+							results = select("SELECT component_id, cdn_id, DBMS_LOB.GETLENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
 						} else {
-							results = select(logger, "SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
+							results = select("SELECT component_id, cdn_id, OCTET_LENGTH(binblock) AS blobsize FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?", companyID, mailingID, imageName);
 						}
 					}
 					result = results.get(0);
@@ -698,7 +675,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	}
 
 	public MailingComponent getComponentByCdnID(String cdnID) {
-		return selectObjectDefaultNull(logger, "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE cdn_id = ?", new MailingComponentRowMapper(), cdnID);
+		return selectObjectDefaultNull("SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE cdn_id = ?", new MailingComponentRowMapper(), cdnID);
 	}
 
 	public int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents) {
@@ -717,10 +694,11 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
         }
 
 		String sql = "UPDATE component_tbl SET comppresent = 0 WHERE mailing_id = ? AND component_id NOT IN (" + idBuilder.toString() + ")";
-        return update(logger, sql, mailingId);
+        return update(sql, mailingId);
 	}
 
-	public boolean updateBinBlockBulk(int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception {
+	@Override
+	public boolean updateBinBlockBulk(int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) {
 		if (companyId < 0 || CollectionUtils.isEmpty(mailingIds) || CollectionUtils.isEmpty(namePatterns)) {
 			return false;
 		}
@@ -734,14 +712,14 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		String sqlFilterByMailingId = DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), "mailing_id", mailingIds, null, true);
 		String sqlFilterByName = AgnUtils.repeatString("compname LIKE ?", namePatterns.size(), " OR ");
 		
-		updateBlob(logger, "UPDATE component_tbl SET binblock = ? WHERE company_id = ? AND comptype = ? AND " + sqlFilterByMailingId + " AND (" + sqlFilterByName + ")", value, sqlParameters.toArray());
+		updateBlob("UPDATE component_tbl SET binblock = ? WHERE company_id = ? AND comptype = ? AND " + sqlFilterByMailingId + " AND (" + sqlFilterByName + ")", value, sqlParameters.toArray());
 		
-		return update(logger, "UPDATE component_tbl SET timestamp = CURRENT_TIMESTAMP WHERE company_id = ? AND comptype = ? AND " + sqlFilterByMailingId + " AND (" + sqlFilterByName + ")", sqlParameters.toArray()) > 0;
+		return update("UPDATE component_tbl SET timestamp = CURRENT_TIMESTAMP WHERE company_id = ? AND comptype = ? AND " + sqlFilterByMailingId + " AND (" + sqlFilterByName + ")", sqlParameters.toArray()) > 0;
 	}
 
 	private void validateDescription(String description) {
 		if (description != null && description.length() > 200) {
-			throw new RuntimeException("Value for component_tbl.description is to long (Maximum: 200, Current: " + description.length() + ")");
+			throw new IllegalArgumentException("Value for component_tbl.description is to long (Maximum: 200, Current: " + description.length() + ")");
 		}
 	}
 }

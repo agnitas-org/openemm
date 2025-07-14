@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.forms.validation;
 
-import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
+import static com.agnitas.emm.core.mailing.dao.MailingParameterDao.ReservedMailingParam.isReservedParam;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -21,29 +21,13 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
 
-import jakarta.mail.internet.InternetAddress;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.CharacterEncodingValidator;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DynTagException;
-import org.agnitas.util.HtmlUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
@@ -51,9 +35,23 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.web.MailingSettingsOptions;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.web.mvc.Popups;
+import jakarta.mail.internet.InternetAddress;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.exception.CharacterEncodingValidationExceptionMod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.CharacterEncodingValidator;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DynTagException;
+import com.agnitas.util.HtmlUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailingSettingsFormValidator {
 
@@ -70,7 +68,7 @@ public class MailingSettingsFormValidator {
     protected ConfigService configService;
     private CharacterEncodingValidator characterEncodingValidator;
     private MailinglistService mailinglistService;
-    private ComWorkflowService workflowService;
+    private WorkflowService workflowService;
     private AgnTagService agnTagService;
     private LinkService linkService;
 
@@ -102,8 +100,8 @@ public class MailingSettingsFormValidator {
             popups.alert("error.mailing.parameter.emptyName");
         }
         form.getParams().stream()
-                .map(ComMailingParameter::getName)
-                .filter(ComMailingParameterDao.ReservedMailingParam::isReservedParam)
+                .map(MailingParameter::getName)
+                .filter(MailingParameterDao.ReservedMailingParam::isReservedParam)
                 .forEach(param -> LOGGER.error("User tried to use reserved mailing parameter name: {}", param));
         if (form.getParams().stream()
                 .filter(param -> !isReservedParam(param.getName()))
@@ -222,7 +220,7 @@ public class MailingSettingsFormValidator {
     }
     
     private void validateSubject(EmailMediatypeForm form, Popups popups) {
-        if (form.getSubject().length() < 2) {
+        if (StringUtils.length(form.getSubject()) < 2) {
             popups.fieldError(SUBJECT_FIELD, "error.mailing.subject.too_short");
         }
     }
@@ -375,37 +373,30 @@ public class MailingSettingsFormValidator {
         return form.getTargetMode() == Mailing.TARGET_MODE_AND;
     }
     
-    @Required
 	public void setMailingService(MailingService mailingService) {
 		this.mailingService = mailingService;
 	}
 	
-    @Required
     public void setCharacterEncodingValidator(CharacterEncodingValidator characterEncodingValidator) {
         this.characterEncodingValidator = characterEncodingValidator;
     }
     
-    @Required
     public void setMailinglistService(MailinglistService mailinglistService) {
         this.mailinglistService = mailinglistService;
     }
 
-    @Required
-    public void setWorkflowService(ComWorkflowService workflowService) {
+    public void setWorkflowService(WorkflowService workflowService) {
         this.workflowService = workflowService;
     }
     
-    @Required
     public void setLinkService(LinkService linkService) {
         this.linkService = linkService;
     }
     
-    @Required
     public void setAgnTagService(final AgnTagService agnTagService) {
         this.agnTagService = agnTagService;
     }
     
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }

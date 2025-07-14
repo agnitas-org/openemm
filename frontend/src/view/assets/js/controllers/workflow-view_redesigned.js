@@ -138,7 +138,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
       editor.fitPdfPage();
     }
 
-    window.status = config.initializerFinishStatus || '';
+    window.waitStatus = config.initializerFinishStatus || '';
     addShowStatisticListener(config.showStatisticWithoutSave);
   });
 
@@ -213,6 +213,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
     EditorsHelper.registerEditor('parameter', new AGN.Lib.WM.ParameterNodeEditor(editor));
   });
 
+  this.addDomInitializer('split-editor-initializer', function () {
+    EditorsHelper.registerEditor('split', new AGN.Lib.WM.SplitNodeEditor(editor));
+  });
+
   this.addDomInitializer('deadline-editor-initializer', function () {
     const nodeEditor = EditorsHelper.registerEditor('deadline', new AGN.Lib.WM.DeadlineNodeEditor());
 
@@ -252,7 +256,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
   });
 
   this.addDomInitializer('start-editor-initializer', function () {
-    const nodeEditor = new AGN.Lib.WM.StartStopNodeEditor(editor, this.config);
+    const nodeEditor = new AGN.Lib.WM.StartStopNodeEditor(editor, this.config, saveWorkflowFormData);
     EditorsHelper.registerEditor('start', nodeEditor);
     EditorsHelper.registerEditor('stop', nodeEditor);
 
@@ -476,7 +480,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
   this.addAction({click: 'delete-selected'}, () => editor.deleteSelected());
   this.addAction({click: 'show-grid' }, () => editor.toggleGrid());
-  this.addAction({click: 'workflow-save'}, () => saveWorkflowFormData(true, {}));
+  this.addAction({submission: 'workflow-save'}, () => saveWorkflowFormData(true, {}));
   this.addAction({click: 'align-all'}, () => editor.alignAll());
   this.addAction({click: 'undo'}, () => editor.undo());
   
@@ -607,7 +611,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
   function isValidWorkflowBaseData() {
     if ($('#name').val().length < 3) {
-      AGN.Lib.Messages.alert('error.workflow.shortName');
+      getWorkflowForm().showFieldError('shortname', t('error.workflow.shortName'));
       return false;
     }
     return true;

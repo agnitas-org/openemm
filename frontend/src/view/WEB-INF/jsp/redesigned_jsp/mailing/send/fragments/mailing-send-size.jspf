@@ -13,7 +13,7 @@
         <div class="col-12">
             <label class="form-label">
                 <mvc:message code="mailing.size" />
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/MailingMaxSize.xml"></a>
+                <a href="#" class="icon icon-question-circle" data-help="mailing/MailingMaxSize.xml"></a>
             </label>
 
             <c:if test="${shouldDisplaySizeWithImages}">

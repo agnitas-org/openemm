@@ -9,7 +9,7 @@
             <div class="modal-header">
                 <img src="<c:url value="/assets/core/images/upselling/Generic.svg" />" alt="Feature">
             </div>
-            <div class="modal-body d-flex flex-column gap-3">
+            <div class="modal-body vstack gap-3">
                 <h2><mvc:message code="upselling.headline.generic"/></h2>
                 <p><mvc:message code="upselling.description.generic"/></p>
                 <p><mvc:message code="upselling.feature.interest" /></p>
@@ -24,7 +24,7 @@
                     </c:otherwise>
                 </c:choose>
 
-                <button type="button" class="btn btn-inverse flex-none" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary flex-none" data-bs-dismiss="modal">
                     <i class="icon icon-reply"></i>
                     <span class="text"> <mvc:message code="button.Back"/></span>
                 </button>

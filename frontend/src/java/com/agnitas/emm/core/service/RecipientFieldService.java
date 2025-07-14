@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,18 +10,17 @@
 
 package com.agnitas.emm.core.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.DbColumnType;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 
 public interface RecipientFieldService {
 
@@ -77,22 +76,25 @@ public interface RecipientFieldService {
 		"twitter_status",
 		"xing_status"
 	);
-	
-	List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception;
-	List<RecipientFieldDescription> getRecipientFields(int companyID, String fieldName, String dbFieldName, String description, DbColumnType.SimpleDataType type, ProfileFieldMode mode) throws Exception;
+
+	Set<String> getStandardFieldsNames(int companyId);
+	List<RecipientFieldDescription> getRecipientFields(int companyID);
+	List<RecipientFieldDescription> getEditableFields(int companyId);
+	List<RecipientFieldDescription> getRecipientFields(ProfileFieldForm profileForm, int companyId);
 	Map<String, String> getRecipientDBStructure(int companyID);
-	RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName) throws Exception;
+	RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName);
 	void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception;
 	void deleteRecipientField(int companyID, String recipientFieldName) throws Exception;
 	boolean isReservedKeyWord(String fieldname);
 	void clearCachedData(int companyID);
 	boolean hasRecipients(int companyID);
 	boolean hasRecipientsWithNullValue(int companyID, String columnName);
-    boolean mayAddNewRecipientField(int companyID) throws Exception;
+    boolean mayAddNewRecipientField(int companyID);
 	int countCustomerEntries(int companyID);
-	boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) throws Exception;
-	int getClientSpecificFieldCount(int companyID) throws Exception;
+	boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault);
+	int getClientSpecificFieldCount(int companyID);
 	ServiceResult<List<String>> filterAllowedForDelete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	ServiceResult<UserAction> delete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	long getCountForOverview(int companyId);
+	Map<String, String> getEditableFieldsMap(int companyId);
 }

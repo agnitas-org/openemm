@@ -99,7 +99,7 @@ AGN.Lib.Controller.new('recipient-view', function () {
     const mediatypeCode = this.el.data('mediatype');
     const isChecked = this.el.is(":checked");
 
-    this.el.closest('[data-mailinglist-tile]').find(`.icon-mediatype-${mediatypeCode}`).toggleClass('text-primary', isChecked);
+    this.el.closest('[data-mailinglist-tile]').find(`.icon-mediatype-${mediatypeCode}`).toggleClass('icon-mediatype--active', isChecked);
     this.el.closest('.tile').find('[data-binding-usertype]').prop('disabled', !isChecked);
   });
 

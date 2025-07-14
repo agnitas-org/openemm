@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -69,7 +69,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void finishedWithEmptyTargetRule() throws CodeGeneratorException {
+	public final void finishedWithEmptyTargetRule() {
 		assert codeStack.isEmpty();
 		
 		// Create some dummy condition
@@ -253,7 +253,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void postOrderEmptyRelationalEqlNode(final EmptyRelationalEqlNode node) throws CodeGeneratorException {
+	public final void postOrderEmptyRelationalEqlNode(final EmptyRelationalEqlNode node) {
 		assert !codeStack.empty();
 		
 		final CodeFragment code = codeStack.pop();
@@ -389,7 +389,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void terminalNumericConstantAtomEqlNode(final NumericConstantAtomEqlNode node) throws CodeGeneratorException {
+	public final void terminalNumericConstantAtomEqlNode(NumericConstantAtomEqlNode node) {
 		codeStack.push(new CodeFragment(
 				String.format("%s", node.getValue()),
 				DataType.NUMERIC,
@@ -412,7 +412,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void terminalStringConstantWithoutEscapeCharsAtomEqlNode(final StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
+	public final void terminalStringConstantWithoutEscapeCharsAtomEqlNode(final StringConstantWithEscapeCharsAtomEqlNode node) {
 		codeStack.push(new CodeFragment(
 				String.format("\"%s\"", quote(node)),
 				DataType.TEXT,
@@ -420,7 +420,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void terminalTodayAtomEqlNode(final AbstractAtomEqlNode node) throws CodeGeneratorException {
+	public final void terminalTodayAtomEqlNode(final AbstractAtomEqlNode node) {
 		codeStack.push(new CodeFragment(
 				"new Date()",
 				DataType.DATE,
@@ -470,32 +470,32 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 
 	// -------------------------------------------------------=[ unused callback ]=--- 
 	@Override
-	public final void postOrderAbstractExpressionalEqlNode(final AbstractExpressionalEqlNode node) throws CodeGeneratorException {
+	public final void postOrderAbstractExpressionalEqlNode(final AbstractExpressionalEqlNode node) {
 		// No code generation here
 	}
 
 	@Override
-	public final void postOrderRelationalBooleanEqlNode(final RelationalBooleanEqlNode node) throws CodeGeneratorException {
+	public final void postOrderRelationalBooleanEqlNode(RelationalBooleanEqlNode node) {
 		// No code generation here
 	}
 
 	@Override
-	public final void postOrderAbstractRelationalEqlNode(final AbstractRelationalEqlNode node) throws CodeGeneratorException {
+	public final void postOrderAbstractRelationalEqlNode(AbstractRelationalEqlNode node) {
 		// No code generation here
 	}
 
 	@Override
-	public final void postOrderAbstractBooleanEqlNode(final AbstractBooleanEqlNode node) throws CodeGeneratorException {
+	public final void postOrderAbstractBooleanEqlNode(AbstractBooleanEqlNode node) {
 		// No code generation here
 	}
 
 	@Override
-	public final void postOrderAtomExpressionalEqlNode(final AtomExpressionalEqlNode node) throws CodeGeneratorException {
+	public final void postOrderAtomExpressionalEqlNode(AtomExpressionalEqlNode node) {
 		// No code generation here
 	}
 
 	@Override
-	public final void finished() throws CodeGeneratorException {
+	public final void finished() {
 		// No code generation here
 	}
 

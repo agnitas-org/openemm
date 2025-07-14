@@ -54,7 +54,7 @@
     #updatePipetteColor(selectedColor) {
       const color = selectedColor
         ? this.#invertColor(selectedColor.toHexString())
-        : this.$el.css('--text-color-default');
+        : this.$el.css('--bs-body-color');
 
       this.$el.parent().find('.sp-preview').css('color', color);
     }

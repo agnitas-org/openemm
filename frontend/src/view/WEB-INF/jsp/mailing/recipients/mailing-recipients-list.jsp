@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.service.MailingRecipientExportWorker" %>
+<%@ page import="com.agnitas.service.MailingRecipientExportWorker" %>
 
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="tiles"   uri="http://tiles.apache.org/tags-tiles" %>

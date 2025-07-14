@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,14 +17,13 @@ import com.agnitas.emm.core.datasource.enums.DataSourceType;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.FailedCreateDataSourceException;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.impl.DatasourceDescriptionImpl;
-import org.agnitas.dao.SourceGroupType;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
@@ -35,7 +34,11 @@ public class DataSourceServiceImpl implements DataSourceService {
 	
 	private DatasourceDescriptionDao datasourceDescriptionDao;
 	private WebserviceUserDao webserviceUserDao;
- 
+
+	@Override
+	public int save(DatasourceDescription dsDescription) {
+		return datasourceDescriptionDao.save(dsDescription);
+	}
 
 	@Override
 	@Transactional
@@ -56,7 +59,7 @@ public class DataSourceServiceImpl implements DataSourceService {
 		ds.setUrl(uri);
 		
 		try {
-			return datasourceDescriptionDao.save(ds);
+			return save(ds);
 		} catch (Exception e) {
 			throw new FailedCreateDataSourceException(e.getMessage(), e);
 		}
@@ -89,7 +92,7 @@ public class DataSourceServiceImpl implements DataSourceService {
 				entry.put("sourceGroupType", dataSource.getSourceGroupType());
 				entry.put("extraData", dataSource.getExtraData());
 			}
-            jsonArray.add(entry);
+            jsonArray.put(entry);
         }
         return jsonArray;
     }
@@ -104,9 +107,13 @@ public class DataSourceServiceImpl implements DataSourceService {
 		return datasourceDescriptionDao.getDatasourceDescription(datasourceId);
 	}
 
+	@Override
+	public DatasourceDescription getByDescription(SourceGroupType sourceGroupType, String description, int companyID) {
+		return datasourceDescriptionDao.getByDescription(sourceGroupType, companyID, description);
+	}
+
 	private int getDataSourceId(int companyId, SourceGroupType sourceGroupType, String dsDescription) {
-		DatasourceDescription dataSource = datasourceDescriptionDao.getByDescription(sourceGroupType, companyId, dsDescription);
-		
+		DatasourceDescription dataSource = getByDescription(sourceGroupType, dsDescription, companyId);
 		return Objects.nonNull(dataSource) ? dataSource.getId() : 0;
 	}
 	
@@ -114,12 +121,10 @@ public class DataSourceServiceImpl implements DataSourceService {
 		return getDataSourceId(companyId, sourceGroupType, dsDescription) > 0;
 	}
 
-	@Required
 	public void setDatasourceDescriptionDao(DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
 	}
 	
-	@Required
 	public void setWebserviceUserDao(WebserviceUserDao webserviceUserDao) {
 		this.webserviceUserDao = webserviceUserDao;
 	}

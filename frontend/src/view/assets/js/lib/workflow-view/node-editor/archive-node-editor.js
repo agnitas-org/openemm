@@ -1,12 +1,14 @@
-(function () {
+(() => {
+
   const Def = AGN.Lib.WM.Definitions;
   const EditorsHelper = AGN.Lib.WM.EditorsHelper;
   const NodeTitleHelper = AGN.Lib.WM.NodeTitleHelper;
 
   class ArchiveNodeEditor extends AGN.Lib.WM.NodeEditor {
-    constructor() {
+    constructor(submitWorkflowForm) {
       super();
       this.safeToSave = true;
+      this._submitWorkflowForm = submitWorkflowForm;
     }
 
     get formName() {
@@ -30,15 +32,33 @@
     }
 
     createNewArchive() {
+      const forwardParams = this.#getCreateArchiveForwardParams();
       AGN.Lib.Confirm.request($.get(
         AGN.url(Def.constants.forwards.ARCHIVE_CREATE.url),
-        {workflowId: Def.workflowId}
+        {workflowId: Def.workflowId, workflowForwardParams: forwardParams}
       )).done(({ archiveId, archiveName }) => {
         this.#addArchiveOption(archiveId, archiveName);
         this.archiveSelect.selectOption(archiveId);
         EditorsHelper.saveCurrentEditorWithUndo();
-        AGN.Lib.Messages.defaultSaved();
+
+        if (Def.workflowId === 0) {
+          _.defer(() => {
+            this._submitWorkflowForm(false, {forwardParams: forwardParams, forwardTargetItemId: archiveId});
+          });
+        } else {
+          AGN.Lib.Messages.defaultSaved();
+        }
       });
+    }
+
+    #getCreateArchiveForwardParams() {
+      const params = {
+        nodeId: EditorsHelper.curEditingNode.getId()
+      }
+
+      return Object.entries(params)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join(';')
     }
     
     #addArchiveOption(id, name) {

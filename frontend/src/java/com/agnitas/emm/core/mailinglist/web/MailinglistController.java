@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,21 +22,18 @@ import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import net.sf.json.JSONArray;
-import org.agnitas.beans.Mailinglist;
+import org.json.JSONArray;
+import com.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.GuiConstants;
+import com.agnitas.web.forms.BulkActionForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,15 +56,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class MailinglistController implements XssCheckAware {
+
 	private static final Logger logger = LogManager.getLogger(MailinglistController.class);
 
 	private static final String YEAR_LIST = "yearlist";
@@ -79,29 +75,26 @@ public class MailinglistController implements XssCheckAware {
 	protected final UserActivityLogService userActivityLogService;
 	private final ConversionService conversionService;
 	private final BirtStatisticsService birtStatisticsService;
-	private final WebStorage webStorage;
 	protected final AdminService adminService;
 	protected final ConfigService configService;
 
-	public MailinglistController(MailinglistService mailinglistService, UserActivityLogService userActivityLogService,
-								 ConversionService conversionService, BirtStatisticsService birtStatisticsService,
-								 WebStorage webStorage, AdminService adminService, ConfigService configService, final MailinglistApprovalService mailinglistApprovalService) {
+	public MailinglistController(MailinglistService mailinglistService, UserActivityLogService userActivityLogService, ConversionService conversionService,
+								 BirtStatisticsService birtStatisticsService, AdminService adminService, ConfigService configService,
+								 MailinglistApprovalService mailinglistApprovalService) {
 		this.mailinglistService = mailinglistService;
 		this.userActivityLogService = userActivityLogService;
 		this.conversionService = conversionService;
 		this.birtStatisticsService = birtStatisticsService;
-		this.webStorage = webStorage;
 		this.adminService = adminService;
 		this.configService = configService;
 		this.mailinglistApprovalService = mailinglistApprovalService;
 	}
 
 	@RequestMapping("/list.action")
-	public String list(Admin admin, @ModelAttribute("mailinglistsForm") PaginationForm form, Model model, Popups popups) {
+	public String list(Admin admin, Model model, Popups popups) {
 		JSONArray mailingListsJson = new JSONArray();
 
 		try {
-			FormUtils.syncNumberOfRows(webStorage, WebStorage.MAILINGLIST_OVERVIEW, form);
 			mailingListsJson = mailinglistService.getMailingListsJson(admin);
 			userActivityLogService.writeUserActivityLog(admin, "mailing lists", "active tab - mailing lists");
 		} catch (Exception e) {
@@ -116,7 +109,7 @@ public class MailinglistController implements XssCheckAware {
 	}
 
 	@RequestMapping("/{id:\\d+}/view.action")
-	public String view(Admin admin, @PathVariable int id, ModelMap model) throws Exception {
+	public String view(Admin admin, @PathVariable int id, ModelMap model) {
 		if (id == 0) {
 			return "redirect:/mailinglist/create.action";
 		}
@@ -190,7 +183,7 @@ public class MailinglistController implements XssCheckAware {
 			}
 			return "redirect:/mailinglist/" + id + "/view.action";
 		} catch(final ShortnameTooShortException e) {
-			popups.field("shortname",  "error.name.too.short");
+			popups.fieldError("shortname",  "error.name.too.short");
 
 			return MESSAGES_VIEW;
 		}
@@ -199,13 +192,9 @@ public class MailinglistController implements XssCheckAware {
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
 	public String confirmDelete(Admin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
-        Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
-        if (mailinglist == null) {
-            popups.alert(ERROR_MSG);
-            return MESSAGES_VIEW;
-        }
+        final Mailinglist mailinglist;
 
-		if (isRedesign(admin)) {
+		if (admin.isRedesignedUiUsed()) {
 			ServiceResult<List<Mailinglist>> result
 					= mailinglistService.getAllowedForDeletion(Set.of(mailinglistId), admin);
 			popups.addPopups(result);
@@ -213,7 +202,15 @@ public class MailinglistController implements XssCheckAware {
 			if (!result.isSuccess()) {
 				return MESSAGES_VIEW;
 			}
+
+			mailinglist = result.getResult().get(0);
 		} else {
+			mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
+			if (mailinglist == null) {
+				popups.alert(ERROR_MSG);
+				return MESSAGES_VIEW;
+			}
+
 			if (isMailinglistsDependent(Collections.singleton(mailinglistId), admin, model)) {
 				return MESSAGES_VIEW;
 			}
@@ -234,7 +231,7 @@ public class MailinglistController implements XssCheckAware {
             return MESSAGES_VIEW;
         }
 
-        if (isRedesign(admin)) {
+		if (admin.isRedesignedUiUsed()) {
 			ServiceResult<List<Mailinglist>> result = mailinglistService.getAllowedForDeletion(bulkIds, admin);
 			popups.addPopups(result);
 
@@ -242,7 +239,7 @@ public class MailinglistController implements XssCheckAware {
 				return MESSAGES_VIEW;
 			}
 
-			model.addAttribute("items", result.getResult().stream().map(Mailinglist::getShortname).collect(Collectors.toList()));
+			model.addAttribute("items", result.getResult().stream().map(Mailinglist::getShortname).toList());
         } else {
 			if (isMailinglistsDependent(bulkIds, admin, model)) {
 				return MESSAGES_VIEW;
@@ -252,15 +249,11 @@ public class MailinglistController implements XssCheckAware {
         return "mailinglist_bulk_delete";
     }
 
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
 	@RequestMapping("/{id:\\d+}/delete.action")
 	public String delete(Admin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
 
-		if (isRedesign(admin)) {
+		if (admin.isRedesignedUiUsed()) {
 			List<Integer> ids = mailinglistService.delete(Set.of(mailinglistId), admin);
 
 			writeDeleteUAL(admin, ids);
@@ -285,7 +278,7 @@ public class MailinglistController implements XssCheckAware {
 	public Object bulkDelete(Admin admin, BulkActionForm form, Model model, Popups popups) {
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
 
-		if (isRedesign(admin)) {
+		if (admin.isRedesignedUiUsed()) {
 			List<Integer> ids = mailinglistService.delete(bulkIds, admin);
 
 			writeDeleteUAL(admin, ids);
@@ -347,22 +340,22 @@ public class MailinglistController implements XssCheckAware {
 	private boolean isValid(int companyId, MailinglistForm form, Popups popups) {
 		final String shortname = form.getShortname();
 		if(StringUtils.isBlank(shortname)) {
-			popups.field("shortname",  "error.name.is.empty");
+			popups.fieldError("shortname",  "error.name.is.empty");
 			return false;
 		}
 		if(shortname.length() < 3) {
-			popups.field("shortname",  "error.name.too.short");
+			popups.fieldError("shortname",  "error.name.too.short");
 			return false;
 		}
 		if (!mailinglistService.isShortnameUnique(shortname, form.getId(), companyId)) {
-			popups.field("shortname", "error.mailinglist.duplicate", shortname);
+			popups.fieldError("shortname", "error.mailinglist.duplicate", shortname);
 			return false;
 		}
 
 		return true;
 	}
 
-	private void loadStatistics(Admin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) throws Exception {
+	private void loadStatistics(Admin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) {
 		if (statistic == null) {
 			statistic = new RecipientProgressStatisticDto();
 		}
@@ -399,8 +392,7 @@ public class MailinglistController implements XssCheckAware {
 
 	// TODO: EMMGUI-714: remove after remove of old design
 	private void addAffectedMailingsToModel(Model model, List<Mailing> affectedMailings) {
-        if (model instanceof RedirectAttributes) {
-            RedirectAttributes attributes = (RedirectAttributes) model;
+        if (model instanceof RedirectAttributes attributes) {
             attributes.addFlashAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
             attributes.addFlashAttribute("affectedMailingsMessageKey", "error.mailinglist.cannot_delete_mailinglists");
             attributes.addFlashAttribute("affectedMailings", affectedMailings);

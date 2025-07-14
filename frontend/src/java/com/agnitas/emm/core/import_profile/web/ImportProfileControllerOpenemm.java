@@ -1,8 +1,9 @@
 package com.agnitas.emm.core.import_profile.web;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.service.ImportProfileService;
+import com.agnitas.service.UserActivityLogService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -28,10 +29,10 @@ public class ImportProfileControllerOpenemm extends ImportProfileController {
                                           ExtendedConversionService conversionService, ImportProfileChangesDetector changesDetector,
                                           ImportProfileColumnMappingChangesDetector mappingsChangesDetector, ImportProfileFormValidator formValidator,
                                           RecipientService recipientService, ImportProfileColumnMappingsValidator mappingsValidator,
-                                          ImportProfileMappingsReadService mappingsReadService) {
+                                          ImportProfileMappingsReadService mappingsReadService, ConfigService configService) {
 
         super(importProfileService, userActivityLogService, adminService, webStorage, recipientFieldService, mailinglistApprovalService,
                 conversionService, changesDetector, mappingsChangesDetector, formValidator, recipientService,
-                mappingsValidator, mappingsReadService);
+                mappingsValidator, mappingsReadService, configService);
     }
 }

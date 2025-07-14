@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
@@ -12,6 +12,7 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -22,10 +23,10 @@
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
 <%--@elvariable id="isMailtrackingActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
-<%--@elvariable id="statisticUrl" type="java.lang.String"--%>
 <%--@elvariable id="showStatisticsImmediately" type="java.lang.Boolean"--%>
 <%--@elvariable id="pauseTime" type="java.lang.Long"--%>
 <%--@elvariable id="pauseExpirationHours" type="java.lang.Integer"--%>
+<%--@elvariable id="statisticUrls" type="java.util.Map<java.lang.String, java.lang.String>"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
@@ -213,8 +214,7 @@
                 "localeDateTimePattern": "${localeDateTimePattern}",
                 "isAltgExtended" : ${isExtendedAltgEnabled}
 	        },
-            "accessLimitTargetId": ${accessLimitTargetId},
-            "statisticUrl": "${statisticUrl}"
+            "accessLimitTargetId": ${accessLimitTargetId}
         }
     </script>
 
@@ -771,6 +771,17 @@
                     <i class="icon tile-toggle icon-angle-up"></i>
                     <mvc:message code="statistic.workflow" />
                 </a>
+
+                <c:if test="${isActive or isComplete or showStatisticsImmediately}">
+                    <ul class="tile-header-nav">
+                        <select id="stat-url" class="form-control select2-offscreen js-select" data-action="change-statistic">
+                            <c:forEach var="url" items="${statisticUrls}">
+                                <option value="${url.key}">${url.value}</option>
+                            </c:forEach>
+                        </select>
+                    </ul>
+                </c:if>
+
                 <ul class="tile-header-actions">
                     <li>
                         <c:choose>
@@ -799,7 +810,14 @@
                     </c:when>
                     <c:otherwise>
                         <c:if test="${showStatisticsImmediately}">
-                            <iframe src="${statisticUrl}" border="0" scrolling="auto" width="100%" height="600px" frameborder="0">
+                            <c:set var="statisticUrl">
+                                <c:forEach var="url" items="${statisticUrls}" varStatus="status">
+                                    <c:if test="${status.first}">
+                                        ${url.key}
+                                    </c:if>
+                                </c:forEach>
+                            </c:set>
+                            <iframe id="statistic-iframe" src="${statisticUrl}" border="0" scrolling="auto" width="100%" height="600px" frameborder="0">
                                 Your Browser does not support IFRAMEs, please update!
                             </iframe>
                         </c:if>

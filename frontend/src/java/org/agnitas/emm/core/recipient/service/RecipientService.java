@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,34 +17,32 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
-import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.springframework.cache.annotation.Cacheable;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.impl.ComRecipientLiteImpl;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.beans.impl.RecipientLiteImpl;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.RecipientException;
 import com.agnitas.emm.core.recipient.dto.BindingAction;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
+import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
 import com.agnitas.emm.core.recipient.dto.RecipientSearchParamsDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-
-import net.sf.json.JSONArray;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.UserStatus;
+import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
+import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.json.JSONArray;
+import org.springframework.cache.annotation.Cacheable;
 
 public interface RecipientService {
 
@@ -80,7 +78,7 @@ public interface RecipientService {
 
 	RecipientDto getRecipientDto(Admin admin, int recipientId);
 
-    List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyId, int mailinglistId);
+    List<RecipientLiteImpl> getAdminAndTestRecipients(int companyId, int mailinglistId);
 
 	List<RecipientSalutationDto> getAdminAndTestRecipientsSalutation(Admin admin);
 
@@ -98,7 +96,7 @@ public interface RecipientService {
 	
 	void updateRecipientWithEmailChangeConfiguration(final Recipient recipient, final int mailingID, final String profileFieldForConfirmationCode) throws Exception;
 
-	void confirmEmailAddressChange(ComExtensibleUID uid, String confirmationCode) throws Exception;
+	void confirmEmailAddressChange(ExtensibleUID uid, String confirmationCode) throws Exception;
 	
 	List<ProfileField> getRecipientBulkFields(int companyID, int adminID);
     
@@ -128,8 +126,6 @@ public interface RecipientService {
 
 	boolean importRequestParameters(Recipient recipient, Map<String, Object> requestParameters, String suffix);
 
-	void updateBindingsFromRequest(Recipient recipient, Map<String, Object> params, boolean doubleOptIn) throws Exception;
-
 	void updateBindingsFromRequest(Recipient recipient, Map<String, Object> params, boolean doubleOptIn, String remoteAddr, String referrer) throws Exception;
 
 	Map<String, Object> getCustomerDataFromDb(int companyId, int customerId, DateFormat dateFormat);
@@ -149,15 +145,13 @@ public interface RecipientService {
 	int saveNewCustomer(Recipient recipient) throws Exception;
 
     List<Recipient> findAllByEmailPart(String email, List<Integer> companiesIds);
-    List<Recipient> findRecipientByData(int companyID, Map<String, Object> dataMap) throws Exception;
-
-	BindingEntry getBindingsByMailinglistId(int companyID, int customerID, int mailinglistID, int mediaType);
+    List<Recipient> findRecipientByData(int companyID, Map<String, Object> dataMap);
 
 	List<Integer> getRecipientIds(int companyID, String recipientEmail, String customerEmail);
 
     void deleteRecipient(int companyId, int recipientId);
 
-    void updateBindings(List<BindingEntry> bindings, int companyId) throws Exception;
+    void updateBindings(List<BindingEntry> bindings, int companyId);
 
 	@Cacheable(cacheManager = "requestCacheManager", cacheNames = "editableFields")
 	Map<String, ProfileField> getEditableColumns(Admin admin);
@@ -172,16 +166,14 @@ public interface RecipientService {
 
 	JSONArray getRecipientStatusChangesHistory(Admin admin, int recipientId);
 
-	BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistID, int mediaCode) throws Exception;
+	BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistID, int mediaCode);
 
-	List<ComRecipientLiteImpl> listAdminAndTestRecipients(final Admin admin);
+	List<RecipientLiteImpl> listAdminAndTestRecipients(final Admin admin);
 
 	int getMinimumCustomerId(int companyID);
 	
 	boolean isRecipientTrackingAllowed(final int companyID, final int recipientID);
 	
-	int countSubscribers(final int companyID);
-
 	boolean isColumnsIndexed(List<String> columns, int companyId);
 
 	List<String> fetchRecipientNames(Set<Integer> bulkIds, int companyID);
@@ -192,7 +184,7 @@ public interface RecipientService {
 
 	boolean recipientExists(int companyID, int customerID);
 
-	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int id, MediaTypes email, String targetSql, List<String> profileFieldsToShow, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
+	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int id, MediaTypes email, String targetSql, List<String> profileFieldsToShow, List<UserStatus> userstatusList, TimeZone timeZone);
 
     ServiceResult<List<RecipientLightDto>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
 	ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
@@ -201,4 +193,6 @@ public interface RecipientService {
 	void updateEmail(String newEmail, int id, int companyId);
 
 	List<Integer> findIdsByEmail(String email, int companyId);
+
+	boolean existsWithEmail(String email, int companyId);
 }

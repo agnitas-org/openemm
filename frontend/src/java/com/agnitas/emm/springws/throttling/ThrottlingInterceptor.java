@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,8 +13,7 @@ package com.agnitas.emm.springws.throttling;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.agnitas.emm.springws.util.SecurityContextAccess;
-import org.springframework.beans.factory.annotation.Required;
+import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
@@ -40,23 +39,21 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 	 * 
 	 * @param throttlingService {@link QuotaService}
 	 */
-	@Required
 	public void setThrottlingService(QuotaService throttlingService) {
 		this.throttlingService = throttlingService;
 	}
 	
-	@Required
 	public final void setSecurityContextAccess(final SecurityContextAccess securityContextAccess) {
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
 	@Override
-	public boolean handleFault(MessageContext paramMessageContext, Object paramObject) throws Exception {
+	public boolean handleFault(MessageContext paramMessageContext, Object paramObject) {
 		return true;
 	}
 
 	@Override
-	public boolean handleRequest(MessageContext messageContext, Object paramObject) throws Exception {
+	public boolean handleRequest(MessageContext messageContext, Object paramObject) {
 		final WebserviceUserDetails webserviceUser = this.securityContextAccess.getWebserviceUserDetails();
 		final String endpointName = EndpointClassUtil.endpointNameFromInstance(paramObject);
 		
@@ -72,7 +69,7 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 	}
 
 	@Override
-	public boolean handleResponse(MessageContext paramMessageContext, Object paramObject) throws Exception {
+	public boolean handleResponse(MessageContext paramMessageContext, Object paramObject) {
 		return true;
 	}
 
@@ -82,7 +79,7 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 	}
 
 	@Override
-	public void afterCompletion(MessageContext arg0, Object arg1, Exception arg2) throws Exception {
+	public void afterCompletion(MessageContext arg0, Object arg1, Exception arg2) {
 		// do nothing
 	}
 }

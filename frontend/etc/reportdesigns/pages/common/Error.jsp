@@ -3,7 +3,7 @@
 <%@ page import="org.eclipse.birt.core.exception.BirtException,
 				 org.eclipse.birt.report.utility.ParameterAccessor,
 				 java.io.PrintWriter" %>
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 
 <%-----------------------------------------------------------------------------
 	Expected java beans
@@ -18,7 +18,7 @@
 <HEAD>
     <TITLE>
         <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-        <%= ComBirtResources.getMessage("birt.viewer.title.error", request.getLocale())%>
+        <%= EmmBirtResources.getMessage("birt.viewer.title.error", request.getLocale())%>
     </TITLE>
     <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
     <LINK REL="stylesheet" HREF="<%= request.getContextPath( ) + "/webcontent/birt/styles/style.css" %>" TYPE="text/css">
@@ -35,8 +35,7 @@
                 }
                 else
                 {
-                    PrintWriter writer = new PrintWriter( out );
-                    error.printStackTrace( writer );
+                    out.println( ParameterAccessor.htmlEncode("An error has occurred. Please contact our support team.") );
                 }
             }
         %>

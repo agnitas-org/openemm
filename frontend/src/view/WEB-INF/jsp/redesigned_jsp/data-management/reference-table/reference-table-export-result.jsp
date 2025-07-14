@@ -15,7 +15,7 @@
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
             </div>
-            <div class="modal-body text-dark">
+            <div class="modal-body text-secondary">
                 <p><mvc:message code="${isFailed ? 'Error' : 'report.file.download'}"/></p>
             </div>
             <c:if test="${not isFailed}">

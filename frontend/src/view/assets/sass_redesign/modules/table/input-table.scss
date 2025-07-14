@@ -21,6 +21,30 @@
         width: $btn-icon-size;
       }
     }
+
+    @include mobile {
+      display: grid;
+      grid-template-columns: 1fr 30px;
+
+      td {
+        &:first-child {
+          order: -1;
+        }
+
+        &:not(:last-child, :first-child) {
+          order: 1;
+        }
+
+        &:last-child {
+          order: 0;
+          grid-row: span calc(var(--column-count) - 1);
+
+          .btn {
+            height: 100%;
+          }
+        }
+      }
+    }
   }
 
   &.input-table--readonly {

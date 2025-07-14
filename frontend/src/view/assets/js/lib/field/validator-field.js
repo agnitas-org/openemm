@@ -64,16 +64,11 @@ This field prevents form submission when an input is not valid.
     }
 
     valid() {
-      if (!this.$target.exists() || this.$target.prop('disabled')) {
-        return true;
-      }
-
-      return this.#getValidators()
-        .every(v => v.valid(this.$target, this.options));
+      return !this.errors().length;
     }
 
     errors() {
-      if (!this.$target.exists()) {
+      if (!this.$target.exists() || this.$target.prop('disabled')) {
         return [];
       }
 

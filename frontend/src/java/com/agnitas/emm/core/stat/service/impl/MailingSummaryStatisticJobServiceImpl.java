@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -240,12 +239,10 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		this.mailingStatTgtGrpDao = mailingStatTgtGrpDao;
 	}
 
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }
 
-    @Required
     public void setWorkerExecutorService(ExecutorService workerExecutorService) {
         this.workerExecutorService = workerExecutorService;
     }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,12 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.wsmanager.common.WebserviceUserException;
-import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
-
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Bucket4j;
@@ -31,6 +25,8 @@ import io.github.bucket4j.ConfigurationBuilder;
 import io.github.bucket4j.Refill;
 import io.github.bucket4j.TokensInheritanceStrategy;
 import io.github.bucket4j.local.LocalBucketBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Abstract implementation of {@link BucketManager} that does not 
@@ -38,8 +34,7 @@ import io.github.bucket4j.local.LocalBucketBuilder;
  */
 public abstract class AbstractLocalBucketManager implements BucketManager {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AbstractLocalBucketManager.class);
+	private static final Logger LOGGER = LogManager.getLogger(AbstractLocalBucketManager.class);
 	
 	/** Map containing one bucket for each user name. */
 	private final Map<String, Bucket> bucketMap;
@@ -55,37 +50,28 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 	public final Bucket getOrCreateBucket(final String username, final int companyId) throws BucketManagerException {
 		Bucket bucket = this.bucketMap.get(username);
 		
-		try {
-			if(bucket == null) {
-				bucket = createNewBucket(username, companyId);
-				this.bucketMap.put(username, bucket);
-			}
-			
-			updateBucketSettings(bucket, username, companyId);
-			
-			return bucket;
-		} catch(final WebserviceUserException | WebserviceUserServiceException e) {
-			throw BucketManagerException.cannotCreateBucket(username, companyId, e);
+		if(bucket == null) {
+			bucket = createNewBucket(username, companyId);
+			this.bucketMap.put(username, bucket);
 		}
+
+		updateBucketSettings(bucket, username, companyId);
+
+		return bucket;
 	}
 
 	/**
 	 * Updates bucket settings if configuration changes have been detected.
 	 * 
 	 * @param bucket token bucket
-	 * @param webserviceUser webservice user
-	 * 
-	 * @throws WebserviceUserException on errors reading configuration of webservice user
-	 * @throws WebserviceUserServiceException on errors reading configuration of webservice user
-	 * @throws BucketManagerException on errors updating token bucket configuration
 	 */
-	private final void updateBucketSettings(final Bucket bucket, final String username, final int companyId) throws WebserviceUserException, WebserviceUserServiceException, BucketManagerException {
+	private void updateBucketSettings(Bucket bucket, String username, int companyId) throws BucketManagerException {
 		final List<Bandwidth> bandwidthListOrNull = readBandwidthOrNull(username, companyId);
 		
 		// Simply replacing the configuration resets the bucket and will break the desired bahviour.
 		if(bandwidthListOrNull != null) {
 			final ConfigurationBuilder builder = Bucket4j.configurationBuilder();
-			bandwidthListOrNull.forEach(bw -> builder.addLimit(bw));
+			bandwidthListOrNull.forEach(builder::addLimit);
 			
 			bucket.replaceConfiguration(builder.build(), TokensInheritanceStrategy.AS_IS);
 		}
@@ -97,12 +83,9 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 	 * @param webserviceUser webservice user
 	 * 
 	 * @return new token bucket for webservice user
-	 * 
-	 * @throws WebserviceUserException on errors reading configuration of webservice user
-	 * @throws WebserviceUserServiceException on errors reading configuration of webservice user
 	 * @throws BucketManagerException on errors creating new token bucket
 	 */
-	private final Bucket createNewBucket(final String username, final int companyId) throws WebserviceUserException, WebserviceUserServiceException, BucketManagerException {
+	private Bucket createNewBucket(String username, int companyId) throws BucketManagerException {
 		if(LOGGER.isDebugEnabled()) {
 			LOGGER.debug(String.format("Create new token bucket for webservice user '%s'", username));
 		}
@@ -127,12 +110,9 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 	 * @param webserviceUser webservice user
 	 * 
 	 * @return bandwidths or <code>null</code>
-	 * 
-	 * @throws WebserviceUserException on errors reading configuration of webservice user
-	 * @throws WebserviceUserServiceException on errors reading configuration of webservice user
 	 * @throws BucketManagerException on errors reading bandwidths
 	 */
-	private final List<Bandwidth> readBandwidthOrNull(final String username, final int companyId) throws WebserviceUserException, WebserviceUserServiceException, BucketManagerException {
+	private List<Bandwidth> readBandwidthOrNull(String username, int companyId) throws BucketManagerException {
 		if(LOGGER.isDebugEnabled()) {
 			LOGGER.debug(String.format("Reading bandwidths for webservice user '%s' of company %d", username, companyId));
 		}
@@ -204,11 +184,8 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 	 * @param webserviceUser webservice user
 	 * 
 	 * @return bandwidths specification or <code>null</code>
-	 * 
-	 * @throws WebserviceUserException on errors reading configuration of webservice user
-	 * @throws WebserviceUserServiceException on errors reading configuration of webservice user
 	 */
-	private final String readBandwidthSpec(final String username, final int companyId) throws WebserviceUserException, WebserviceUserServiceException {
+	private String readBandwidthSpec(String username, int companyId) {
 		final Optional<String> settings = findBandwidthSettingsForUser(username, companyId);
 		
 		return settings.isPresent() 

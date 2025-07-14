@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,25 +10,31 @@
 
 package com.agnitas.emm.core.imports.web;
 
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.util.Map;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.imports.form.ImportForm;
 import com.agnitas.emm.core.imports.service.MailingImportService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
+import com.agnitas.service.ImportResult;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.service.ImportResult;
-import org.agnitas.service.UserActivityLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
-
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 public class ImportController {
 
@@ -37,13 +43,15 @@ public class ImportController {
     public enum ImportType {
         MAILING, TEMPLATE, USER_FORM, BUILDING_BLOCK
     }
-    
+
     private final MailingImportService mailingImportService;
     private final UserActivityLogService userActivityLogService;
+    private final MailingService mailingService;
 
-    public ImportController(MailingImportService mailingImportService, UserActivityLogService userActivityLogService) {
+    public ImportController(MailingImportService mailingImportService, UserActivityLogService userActivityLogService, MailingService mailingService) {
         this.mailingImportService = mailingImportService;
         this.userActivityLogService = userActivityLogService;
+        this.mailingService = mailingService;
     }
 
     @GetMapping("/view.action")
@@ -57,27 +65,43 @@ public class ImportController {
     }
 
     @PostMapping("/execute.action")
-    public String execute(@ModelAttribute ImportForm form, Popups popups, Admin admin) throws Exception {
+    public Object execute(@ModelAttribute ImportForm form, Popups popups, Admin admin, HttpServletRequest req) throws Exception {
+        boolean isWorkflowDriven = admin.isRedesignedUiUsed() && !WorkflowParametersHelper.isEmptyParams(req);
         if (!existsUploadedFile(form.getUploadFile(), popups)) {
-            return MESSAGES_VIEW;
+            return isWorkflowDriven ? ResponseEntity.ok().body(new BooleanResponseDto(popups, false)) : MESSAGES_VIEW;
         }
 
         ImportResult importResult = mailingImportService.importMailing(form, admin);
 
         if (importResult == null) {
             popups.alert("error.import.data.missing");
-            return MESSAGES_VIEW;
+            return isWorkflowDriven ? ResponseEntity.ok().body(new BooleanResponseDto(popups, false)) : MESSAGES_VIEW;
         }
 
         if (!importResult.isSuccess()) {
             addImportErrors(importResult, popups);
-            return MESSAGES_VIEW;
+            return isWorkflowDriven ? ResponseEntity.ok().body(new BooleanResponseDto(popups, false)) : MESSAGES_VIEW;
         }
 
-        popups.success("mailing.imported");
-        addImportWarnings(importResult, popups);
+        if (isWorkflowDriven) {
+            Map<String, ?> responseData = Map.of(
+                    "mailingId", importResult.getMailingID(),
+                    "mailingName", mailingService.getMailingName(importResult.getMailingID(), admin.getCompanyID())
+            );
 
-        return viewImportedItem(importResult, admin);
+            // mark as deleted to prevent mailing displaying on overview in case if workflow will not be saved
+            mailingService.deleteMailing(importResult.getMailingID(), admin);
+
+            return ResponseEntity.ok().body(new DataResponseDto<>(
+                    responseData,
+                    true
+            ));
+        } else {
+            popups.success("mailing.imported");
+            addImportWarnings(importResult, popups);
+
+            return viewImportedItem(importResult, admin);
+        }
     }
 
     protected String viewImportedItem(ImportResult result, Admin admin) {

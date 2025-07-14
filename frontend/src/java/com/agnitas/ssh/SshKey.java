@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -42,7 +42,7 @@ public class SshKey {
 	/**
 	 * Create a SSH key with given keypair
 	 */
-	public SshKey(final SshKeyFormat format, final String comment, final KeyPair keyPair) throws Exception {
+	public SshKey(SshKeyFormat format, String comment, KeyPair keyPair) {
 		this.format = format == null ? SshKeyFormat.Undefined : format;
 		this.comment = comment;
 
@@ -120,7 +120,7 @@ public class SshKey {
 		return KeyPairUtilities.getSha512FingerprintBase64(keyPair);
 	}
 
-	public KeyPair getKeyPair() throws Exception {
+	public KeyPair getKeyPair() {
 		return keyPair;
 	}
 

@@ -23,7 +23,7 @@
                         <div class="col">
                             <label for="maxRecipients" class="form-label text-truncate">
                                 <mvc:message code="setMaxRecipients" />
-                                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/MailingMaxsendquantyMsg.xml"></a>
+                                <a href="#" class="icon icon-question-circle" data-help="mailing/MailingMaxsendquantyMsg.xml"></a>
                             </label>
 
                             <mvc:message var="maxRecipientsPlaceholder" code="mailing.unlimited" />

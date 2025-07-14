@@ -1,6 +1,6 @@
 
 .btn-category {
-  @extend .btn-inverse;
+  @extend .btn-secondary;
   justify-content: space-between;
   font-size: $font-size-md;
 
@@ -8,8 +8,8 @@
   padding: $gap-sm;
 
   &[disabled], &[readonly] {
-    color: var(--input-disabled-color);
-    background-color: var(--input-disabled-bg-color);
+    color: var(--base-disabled-color);
+    background-color: var(--base-disabled-bg);
     opacity: 1;
   }
 }

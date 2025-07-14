@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,39 +10,7 @@
 
 package com.agnitas.emm.core.mailinglist.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
-import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.MailinglistApprovalDao;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGLISTS_KEY;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +21,38 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Target;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.TargetDao;
+import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
+import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
+import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.exception.RequestErrorException;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.MailinglistImpl;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.transaction.annotation.Transactional;
 
 public class MailinglistServiceImpl implements MailinglistService {
 
@@ -63,52 +62,44 @@ public class MailinglistServiceImpl implements MailinglistService {
     
     private MailingDao mailingDao;
     
-    private ComBindingEntryDao bindingEntryDao;
+    private BindingEntryDao bindingEntryDao;
     
-    private ComBirtReportDao birtReportDao;
+    private BirtReportDao birtReportDao;
     
-    private ComRecipientDao recipientDao;
+    private RecipientDao recipientDao;
     
-    private ComTargetDao targetDao;
+    private TargetDao targetDao;
     private BulkActionValidationService<Integer, Mailinglist> bulkActionValidationService;
 
-    @Required
-    public void setBindingEntryDao(ComBindingEntryDao bindingEntryDao) {
+    public void setBindingEntryDao(BindingEntryDao bindingEntryDao) {
         this.bindingEntryDao = bindingEntryDao;
     }
 
-    @Required
     public void setBulkActionValidationService(BulkActionValidationService<Integer, Mailinglist> bulkActionValidationService) {
         this.bulkActionValidationService = bulkActionValidationService;
     }
 
-    @Required
     public void setMailinglistDao(MailinglistDao mailinglistDao) {
         this.mailinglistDao = mailinglistDao;
     }
 
-    @Required
     public void setMailinglistApprovalDao(MailinglistApprovalDao mailinglistApprovalDao) {
         this.mailinglistApprovalDao = mailinglistApprovalDao;
     }
 
-    @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    @Required
-    public void setBirtReportDao(ComBirtReportDao birtReportDao) {
+    public void setBirtReportDao(BirtReportDao birtReportDao) {
         this.birtReportDao = birtReportDao;
     }
  
-	@Required
-    public void setRecipientDao(ComRecipientDao recipientDao) {
+    public void setRecipientDao(RecipientDao recipientDao) {
         this.recipientDao = recipientDao;
     }
 
-    @Required
-    public void setTargetDao(ComTargetDao targetDao) {
+    public void setTargetDao(TargetDao targetDao) {
         this.targetDao = targetDao;
     }
     
@@ -196,7 +187,7 @@ public class MailinglistServiceImpl implements MailinglistService {
                 .map(id -> getMailinglistForDeletion(id, admin))
                 .filter(ServiceResult::isSuccess)
                 .map(r -> r.getResult().getId())
-                .collect(Collectors.toList());
+                .toList();
 
         bulkDelete(allowedIds, admin.getCompanyID());
 
@@ -229,7 +220,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 
         List<ObjectUsage> usages = affectedMailings.stream()
                 .map(m -> new ObjectUsage(ObjectUserType.MAILING, m.getId(), m.getShortname()))
-                .collect(Collectors.toList());
+                .toList();
 
         return new ObjectUsages(usages);
     }
@@ -240,15 +231,15 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId) {
+    public List<LightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId) {
         List<Map<String, Object>> reportParams = birtReportDao.getReportParamValues(companyId, "selectedMailinglists");
-        List<ComLightweightBirtReport> allReportslist = birtReportDao.getLightweightBirtReportList(companyId);
+        List<LightweightBirtReport> allReportslist = birtReportDao.getLightweightBirtReportList(companyId);
         // Put reports to Map to avoid several iterations on List of all reports
-        Map<Integer, ComLightweightBirtReport> allReportsMap = new HashMap<>();
-        for (ComLightweightBirtReport report: allReportslist) {
+        Map<Integer, LightweightBirtReport> allReportsMap = new HashMap<>();
+        for (LightweightBirtReport report: allReportslist) {
             allReportsMap.put(report.getId(), report);
         }
-        List<ComLightweightBirtReport> connectedReports = new ArrayList<>();
+        List<LightweightBirtReport> connectedReports = new ArrayList<>();
         for (Map<String, Object> paramRow : reportParams) {
             String value = (String) paramRow.get("parameter_value");
             List<String> mailinglistIds = AgnUtils.splitAndTrimStringlist(value);
@@ -298,7 +289,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 		if (mailinglist.getId() == 0) {
 			mailinglistId = mailinglistDao.createMailinglist(companyId, mailinglistForSave);
 			int targetId = mailinglist.getTargetId();
-            ComTarget target = targetDao.getTarget(targetId, companyId);
+            Target target = targetDao.getTarget(targetId, companyId);
             
             // Add recipients from a target group (if specified)
             if (target != null) {
@@ -369,17 +360,17 @@ public class MailinglistServiceImpl implements MailinglistService {
         for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID(), admin.getAdminID())) {
             JSONObject entry = new JSONObject();
 
-            entry.element("id", mailinglist.getId());
-            entry.element("shortname", mailinglist.getShortname());
-            entry.element("description", mailinglist.getDescription());
-            entry.element("changeDate", DateUtilities.toLong(mailinglist.getChangeDate()));
-            entry.element("creationDate", DateUtilities.toLong(mailinglist.getCreationDate()));
-            entry.element("isFrequencyCounterEnabled", mailinglist.isFrequencyCounterEnabled());
+            entry.put("id", mailinglist.getId());
+            entry.put("shortname", mailinglist.getShortname());
+            entry.put("description", mailinglist.getDescription());
+            entry.put("changeDate", DateUtilities.toLong(mailinglist.getChangeDate()));
+            entry.put("creationDate", DateUtilities.toLong(mailinglist.getCreationDate()));
+            entry.put("isFrequencyCounterEnabled", mailinglist.isFrequencyCounterEnabled());
             if (admin.isRedesignedUiUsed()) {
-                entry.element("restrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
+                entry.put("restrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
             }
 
-            mailingListsJson.element(entry);
+            mailingListsJson.put(entry);
         }
 
         return mailingListsJson;

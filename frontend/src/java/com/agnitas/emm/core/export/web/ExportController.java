@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.export.form.ExportForm;
 import com.agnitas.emm.core.export.util.ExportUtils;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ColumnInfoService;
@@ -28,21 +28,22 @@ import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.ExportColumnMapping;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.RecipientExportWorker;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.util.importvalues.DateFormat;
-import org.agnitas.web.RecipientExportReporter;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.beans.ExportColumnMapping;
+import com.agnitas.beans.ExportPredef;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.RecipientExportWorker;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.emm.core.export.reporter.RecipientExportReporter;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.forms.PaginationForm;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -77,13 +78,13 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-import static org.agnitas.util.UserActivityUtil.addChangedFieldLog;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static com.agnitas.util.UserActivityUtil.addChangedFieldLog;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 public class ExportController implements XssCheckAware {
@@ -93,7 +94,7 @@ public class ExportController implements XssCheckAware {
     public static final String EXPORT_KEY = "EXPORT_RECIPIENTS";
     private static final String SHORTNAME_FIELD = "shortname";
 
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final ExportPredefService exportService;
     private final ColumnInfoService columnInfoService;
     private final MailinglistService mailinglistService;
@@ -101,7 +102,7 @@ public class ExportController implements XssCheckAware {
     private final RecipientExportReporter recipientExportReporter;
     private final WebStorage webStorage;
 
-    public ExportController(ColumnInfoService columnInfoService, ComTargetService targetService,
+    public ExportController(ColumnInfoService columnInfoService, TargetService targetService,
                             ExportPredefService exportService, MailinglistService mailinglistService,
                             UserActivityLogService userActivityLogService,
                             RecipientExportReporter recipientExportReporter, WebStorage webStorage) {
@@ -175,7 +176,7 @@ public class ExportController implements XssCheckAware {
 
         String changelog = changelog(oldExport, export, admin);
         if (StringUtils.isNotBlank(changelog)) {
-            writeUserActivityLog(admin, "edit export", export.toString() + ". " + changelog);
+            writeUserActivityLog(admin, "edit export", export + ". " + changelog);
         }
     }
 
@@ -188,7 +189,7 @@ public class ExportController implements XssCheckAware {
         return newId;
     }
 
-    private void formToExport(ExportForm form, ExportPredef export, Admin admin) throws Exception {
+    private void formToExport(ExportForm form, ExportPredef export, Admin admin) {
         export.setShortname(form.getShortname());
         export.setDescription(form.getDescription());
         export.setMailinglists(StringUtils.join(ArrayUtils.toObject(form.getMailinglists()), ";"));
@@ -254,7 +255,7 @@ public class ExportController implements XssCheckAware {
         }
     }
 
-    private void setColumnsToExport(ExportForm form, ExportPredef export, Admin admin) throws Exception {
+    private void setColumnsToExport(ExportForm form, ExportPredef export, Admin admin) {
         List<ExportColumnMapping> columns = Arrays.stream(form.getUserColumns())
                 .map(ExportColumnMapping::new)
                 .collect(Collectors.toList());
@@ -266,8 +267,8 @@ public class ExportController implements XssCheckAware {
         export.setExportColumnMappings(columns);
     }
 
-    private List<ExportColumnMapping> getExportCustomColumns(ExportPredef export, Admin admin) throws Exception {
-        if (isUiRedesign(admin)) {
+    private List<ExportColumnMapping> getExportCustomColumns(ExportPredef export, Admin admin) {
+        if (admin.isRedesignedUiUsed()) {
             List<ExportColumnMapping> customCols = ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
             customCols.sort(Comparator.comparing(ExportColumnMapping::getDbColumn));
             return customCols;
@@ -360,7 +361,7 @@ public class ExportController implements XssCheckAware {
         exportColumnsToForm(export, form, admin);
     }
 
-    private void exportColumnsToForm(ExportPredef export, ExportForm form, Admin admin) throws Exception {
+    private void exportColumnsToForm(ExportPredef export, ExportForm form, Admin admin) {
         form.setUserColumns(export.getExportColumnMappings().stream()
                 .map(ExportColumnMapping::getDbColumn)
                 .toArray(String[]::new));
@@ -377,7 +378,11 @@ public class ExportController implements XssCheckAware {
 
     private void setRecipientsInfoToForm(ExportPredef export, ExportForm form) {
         form.setMailinglistId(export.getMailinglistID());
-        form.setMailinglistIds(export.getMailinglistIds());
+        if (CollectionUtils.isEmpty(export.getMailinglistIds())) {
+            form.setMailinglistIds(Set.of(RecipientExportWorker.NO_MAILINGLIST));
+        } else {
+            form.setMailinglistIds(export.getMailinglistIds());
+        }
         form.setTargetId(export.getTargetID());
         form.setUserType(export.getUserType());
         form.setUserStatus(export.getUserStatus());
@@ -459,8 +464,7 @@ public class ExportController implements XssCheckAware {
             return MESSAGES_VIEW;
         }
 
-        List<String> names = result.getResult().stream().map(ExportPredef::getShortname).collect(Collectors.toList());
-        MvcUtils.addDeleteAttrs(model, names,
+        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(ExportPredef::getShortname).toList(),
                 "export.ExportDelete", "export.delete.question",
                 "bulk.export.delete", "bulk.export.delete.question");
         return DELETE_VIEW;
@@ -503,7 +507,7 @@ public class ExportController implements XssCheckAware {
             worker.call();
             createExportReport(worker, admin, popups);
             writeEvaluationLog(form, admin, worker);
-            if (isUiRedesign(admin)) {
+            if (admin.isRedesignedUiUsed()) {
                 model.addAttribute("titleKey", "export.finish")
                         .addAttribute("message", I18nString.getLocaleString("export.finished.result", admin.getLocale(), worker.getExportedLines()))
                         .addAttribute("downloadUrl", String.format("/export/%d/download.action", id))
@@ -523,10 +527,6 @@ public class ExportController implements XssCheckAware {
                 new ModelAndView("export_progress", Map.of("exportStartTime", form.getExportStartTime())),
                 exportWorker);
     }
-    
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
 
     private void updateProgressStatus(Model model, ExportForm form) {
         if (form.getExportStartTime() <= 0) {
@@ -536,7 +536,7 @@ public class ExportController implements XssCheckAware {
                 .calculateProgressPercentage(new Date(form.getExportStartTime())));
     }
 
-    private ExportPredef prepareExportToEvaluate(int id, ExportForm form, Admin admin) throws Exception {
+    private ExportPredef prepareExportToEvaluate(int id, ExportForm form, Admin admin) {
         ExportPredef export = new ExportPredef();
         export.setId(id);
         export.setCompanyID(admin.getCompanyID());
@@ -544,7 +544,7 @@ public class ExportController implements XssCheckAware {
         return export;
     }
 
-    private void createExportReport(RecipientExportWorker worker, Admin admin, Popups popups) throws Exception {
+    private void createExportReport(RecipientExportWorker worker, Admin admin, Popups popups) {
         if (worker.getError() != null) {
             recipientExportReporter.sendExportErrorMail(worker);
             recipientExportReporter.createAndSaveExportReport(worker, admin, true);

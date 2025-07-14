@@ -1,9 +1,10 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
-<%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@ page import="com.agnitas.emm.common.MailingStatus" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isPostMailing" type="java.lang.Boolean"--%>
 <%--@elvariable id="templateId" type="java.lang.Integer"--%>
@@ -19,19 +20,15 @@
 <c:set var="isActionBasedMailing" value="${form.mailingtype eq MailingType.ACTION_BASED.code}" scope="request" />
 <c:set var="canLoadStatusBox" value="${isNormalMailing or isFollowUpMailing}" scope="request" />
 
-<c:set var="activeStatusKey" value="<%= MailingStatus.ACTIVE.getMessageKey() %>"/>
-<c:set var="disableStatusKey" value="<%= MailingStatus.DISABLE.getMessageKey() %>"/>
-<c:set var="newStatusKey" value="<%= MailingStatus.NEW.getMessageKey() %>"/>
-
 <c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, form.workflowId)}" scope="request"/>
 <c:set var="isWorkflowDriven" value="${workflowParams.workflowId gt 0}" scope="request"/>
 
 <c:set var="tmpMailingID" value="${form.mailingID}" scope="request" />
 <c:set var="isTemplate" value="${form.isTemplate}" scope="request" />
 
-<c:set var="sidemenu_active" 		value="Mailings"	            scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 	            scope="request" />
-<c:set var="agnHelpKey" 			value="preview" 	            scope="request" />
+<c:set var="sidemenu_active" 	   value="Mailings" scope="request" />
+<c:set var="agnBreadcrumbsRootKey" value="Mailings" scope="request" />
+<c:set var="agnHelpKey" 		   value="preview"  scope="request" />
 
 <c:set var="agnEditViewKey" value="${isTemplate ? 'template-send-view' : 'mailing-send-view'}" scope="request" />
 
@@ -118,7 +115,7 @@
                         <emm:instantiate var="element" type="java.util.LinkedHashMap">
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                            <c:set target="${element}" property="extraAttributes" value="data-action='send-world'"/>
+                            <c:set target="${element}" property="extraAttributes" value="id='send-btn' data-form-target='#delivery-settings-form' data-action='send-world'"/>
                             <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                             <c:set target="${element}" property="name">
                                 <mvc:message code="button.Send"/>
@@ -184,7 +181,7 @@
                                         <c:url var="confirmDateBasedActivationUrl" value="/mailing/send/datebased/activation/confirm.action"/>
                                         <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#delivery-settings-form' data-form-confirm='' data-form-url='${confirmDateBasedActivationUrl}'"/>
+                                        <c:set target="${element}" property="extraAttributes" value="id='send-btn' data-form-target='#delivery-settings-form' data-form-confirm='' data-form-url='${confirmDateBasedActivationUrl}'"/>
                                         <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                                         <c:set target="${element}" property="name">
                                             <mvc:message code="button.Activate"/>
@@ -210,7 +207,7 @@
                 </c:when>
 
                 <c:when test="${isIntervalMailing}">
-                    <c:if test="${form.workStatus eq activeStatusKey}">
+                    <c:if test="${form.workStatus eq MailingStatus.ACTIVE.getDbKey()}">
                         <emm:instantiate var="element" type="java.util.LinkedHashMap">
                             <c:url var="deactivateIntervalUrl" value="/mailing/send/${form.mailingID}/deactivate-interval.action"/>
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
@@ -224,12 +221,12 @@
                         </emm:instantiate>
                     </c:if>
 
-                    <c:if test="${(form.workStatus eq disableStatusKey or form.workStatus eq newStatusKey) and canSendOrActivateMailing and not form.hasDeletedTargetGroups}">
+                    <c:if test="${(form.workStatus eq MailingStatus.DISABLE.getDbKey() or form.workStatus eq MailingStatus.NEW.getDbKey()) and canSendOrActivateMailing and not form.hasDeletedTargetGroups}">
                         <c:url var="activateIntervalUrl" value="/mailing/send/activate-interval.action" />
                         <emm:instantiate var="element" type="java.util.LinkedHashMap">
                             <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                            <c:set target="${element}" property="extraAttributes" value="data-form-target='#delivery-settings-form' data-form-url='${activateIntervalUrl}' data-form-submit" />
+                            <c:set target="${element}" property="extraAttributes" value="id='send-btn' data-form-target='#delivery-settings-form' data-form-url='${activateIntervalUrl}' data-form-submit" />
                             <c:set target="${element}" property="iconBefore" value="icon-paper-plane"/>
                             <c:set target="${element}" property="name">
                                 <mvc:message code="button.Activate"/>

@@ -1,7 +1,7 @@
 <%@page import="org.agnitas.emm.core.commons.util.ConfigValue"%>
 <%@page import="java.text.MessageFormat"%>
 <%@page import="java.util.Enumeration"%>
-<%@page import="com.agnitas.messages.I18nString, org.agnitas.emm.core.commons.util.ConfigService, org.agnitas.util.AgnUtils"%>
+<%@page import="com.agnitas.messages.I18nString, org.agnitas.emm.core.commons.util.ConfigService, com.agnitas.util.AgnUtils"%>
 <%@page import="org.apache.logging.log4j.Logger"%>
 <%@page import="org.apache.logging.log4j.LogManager"%>
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" import="org.springframework.web.context.support.WebApplicationContextUtils" %>
@@ -51,8 +51,8 @@
 </head>
 <body class="systempage">
 
-    <c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500.svg"/>
-    <c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500.png"/>
+    <c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500_old.svg"/>
+    <c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500_old.png"/>
 
     <div class="msg-tile msg-tile-error">
         <div class="msg-tile-header">

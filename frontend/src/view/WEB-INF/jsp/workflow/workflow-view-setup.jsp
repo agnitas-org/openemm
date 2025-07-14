@@ -7,8 +7,6 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
-<%--@elvariable id="isTotalStatisticAvailable" type="java.lang.Boolean"--%>
-<%--@elvariable id="autoOptData" type="com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight"--%>
 
 <c:set var="STATUS_OPEN" 		value="<%= WorkflowStatus.STATUS_OPEN %>" 		scope="page" />
 <c:set var="STATUS_ACTIVE" 		value="<%= WorkflowStatus.STATUS_ACTIVE %>" 	scope="page" />
@@ -102,7 +100,6 @@
                         </c:set>
                     </emm:instantiate>
 
-
 	                <%--Start test button --%>
 	                <c:if test="${workflowToggleTestingButtonEnabled}">
 	                    <c:choose>
@@ -131,20 +128,6 @@
 	                </c:if>
                 
                 </emm:ShowByPermission>
-
-                <%-- Auto Opt Total Statistics button --%>
-                <c:if test="${isTotalStatisticAvailable}">
-                    <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
-                        <c:set target="${options}" property="2" value="${option}"/>
-                        <c:set target="${option}" property="url">
-                            <c:url value="/workflow/${workflowForm.workflowId}/getTotalStatistics.action"/>
-                        </c:set>
-                        <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
-                        <c:set target="${option}" property="name">
-                            <mvc:message code="statistic.total"/>
-                        </c:set>
-                    </emm:instantiate>
-                </c:if>
 
                 <emm:ShowByPermission token="workflow.delete">
                     <%--Delete button --%>

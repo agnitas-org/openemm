@@ -1,18 +1,26 @@
 //Some connection styles defined in Editor.defaults of editor_redesigned.js 
 
-//#connectRapidButton, // todo
 .node-connect-button {
   position: absolute;
   visibility: hidden;
   @extend .square-badge;
-  background-color: #dadada;
+  background-color: #dadada; // TODO: EMMGUI-714: Change for existing color?
   border-radius: 3px;
-}
 
-.node-connect-button {
   top: 0;
   right: 0;
-  color: $campaign-icon-color;
+  color: var(--workflow-connection-button-color);
+
+  &:hover {
+    background-color: #cccccc; // TODO: EMMGUI-714: Change for existing color?
+  }
+
+  svg {
+    display: block;
+    position: absolute;
+    @include size(100%);
+    z-index: 1;
+  }
 }
 
 .node-status-badge {
@@ -21,38 +29,30 @@
   right: 0;
 }
 
-//#connectRapidButton:hover,
-.node-connect-button:hover {
-  background-color: #cccccc; // todo
+.jtk-connector {
+  &.jtk-hover {
+    z-index: 11; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_HOVER */
+  }
+
+  &.js-connection-drop-forbidden {
+    cursor: no-drop !important;
+  }
 }
 
-//#connectRapidButton img, // todo
-.node-connect-button svg {
-  display: block;
-  position: absolute;
-  @include size(100%, 100%);
-  z-index: 1;
-}
+.jtk-overlay {
+  &.connection-label {
+    @include border(4px);
+    background: $body-bg-var;
+    opacity: 0.7;
+    padding: 0 5px;
+    cursor: default;
+    z-index: 9; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY */
 
-.jtk-connector.jtk-hover {
-  z-index: 11; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_HOVER */
-}
-
-.jtk-connector.js-connection-drop-forbidden {
-  cursor: no-drop !important;
-}
-
-.jtk-overlay.connection-label {
-  @include border(4px);
-  opacity: 0.7;
-  padding: 0 5px;
-  cursor: default;
-  z-index: 9; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY */
-}
-
-.jtk-overlay.connection-label.jtk-hover {
-  border: 1px solid $dark-grey;
-  color: $campaign-icon-title-color;
-  opacity: 1;
-  z-index: 12; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY_HOVER */
+    &.jtk-hover {
+      color: var(--workflow-connection-label-color);
+      border: 1px solid var(--workflow-connection-label-color);
+      opacity: 1;
+      z-index: 12; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY_HOVER */
+    }
+  }
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,16 @@
 */
 
 package com.agnitas.reporting.birt.external.dataset;
+
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.emm.common.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,23 +29,9 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import static org.agnitas.util.DateUtilities.YYYY_MM_DD;
+import static com.agnitas.util.DateUtilities.YYYY_MM_DD;
 
 public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
-
-    private static final Logger logger = LogManager.getLogger(RecipientsDetailedStatisticDataSet.class);
 
     private final List<RecipientsDetailedStatisticsRow> statList = new ArrayList<>();
     private final List<RecipientsDetailedStatisticsRow> dynamicStatList = new ArrayList<>();
@@ -175,7 +171,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
             sql += " GROUP BY " + changeDateField + ", user_status";
             sql += " ORDER BY " + changeDateField + ", user_status";
 
-            List<Map<String, Object>> result = select(logger, sql, mailinglistId, startDate, endDate);
+            List<Map<String, Object>> result = select(sql, mailinglistId, startDate, endDate);
             for (Map<String, Object> resultRow : result) {
                 calculateAmount(resultRow, dataMap);
             }
@@ -186,7 +182,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                         .replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId))
                         .replace("COUNT(*) AS amount", "COUNT(DISTINCT(bind.customer_id)) AS amount");
 
-                List<Map<String, Object>> hstResult = select(logger, hstSql, mailinglistId, startDate, endDate);
+                List<Map<String, Object>> hstResult = select(hstSql, mailinglistId, startDate, endDate);
                 for (Map<String, Object> resultRow : hstResult) {
                     calculateAmount(resultRow, dataMap);
                 }
@@ -272,7 +268,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
         }
         sql += " GROUP BY dates.selected_date, user_status ORDER BY dates.selected_date, user_status";
 
-        List<Map<String, Object>> result = select(logger, sql, mailinglistId);
+        List<Map<String, Object>> result = select(sql, mailinglistId);
         for (Map<String, Object> resultRow : result) {
             calculateAmount(resultRow, dataMap);
         }
@@ -282,11 +278,11 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
         return getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId);
     }
 
-    private static void calculateAmount(final Map<String, Object> resultRow, final TreeMap<String, RecipientsDetailedStatisticsRow> dataMap) {
+    private void calculateAmount(final Map<String, Object> resultRow, final TreeMap<String, RecipientsDetailedStatisticsRow> dataMap) {
         final Date entryDate = (Date) resultRow.get("changedate");
         final RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
-        final int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
-        final int amount = ((Number) resultRow.get("amount")).intValue();
+        final int userStatusCode = toInt(resultRow.get("user_status"));
+        final int amount = toInt(resultRow.get("amount"));
         final UserStatus status = getUserStatus(userStatusCode);
         calculateAmount(status, amount, row);
     }

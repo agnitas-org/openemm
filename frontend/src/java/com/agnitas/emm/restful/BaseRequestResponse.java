@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,38 +17,38 @@ public abstract class BaseRequestResponse {
 	protected ErrorCode errorCode = null;
 	protected Throwable error = null;
 
-	public void setClientError(Throwable t) throws Exception {
+	public void setClientError(Throwable t) {
 		setClientError(t, ErrorCode.UNKNOWN);
 	}
 	
-	public void setError(Throwable t) throws Exception {
+	public void setError(Throwable t) {
 		setError(t, ErrorCode.UNKNOWN);
 	}
 
-	public void setAuthentificationError(Throwable error, ErrorCode errorCode) throws Exception {
+	public void setAuthentificationError(Throwable error, ErrorCode errorCode) {
 		responseState = State.AUTHENTIFICATION_ERROR;
 		this.error = error;
 		this.errorCode = errorCode;
 	}
 
-	public void setNoDataFoundError(Throwable error) throws Exception {
+	public void setNoDataFoundError(Throwable error) {
 		responseState = State.NO_DATA_FOUND_ERROR;
 		this.error = error;
 	}
 
-	public void setClientError(Throwable error, ErrorCode errorCode) throws Exception {
+	public void setClientError(Throwable error, ErrorCode errorCode) {
 		responseState = State.CLIENT_ERROR;
 		this.error = error;
 		this.errorCode = errorCode;
 	}
 
-	public void setError(Throwable error, ErrorCode errorCode) throws Exception {
+	public void setError(Throwable error, ErrorCode errorCode) {
 		responseState = State.ERROR;
 		this.error = error;
 		this.errorCode = errorCode;
 	}
 
-	public abstract String getMimeType() throws Exception;
+	public abstract String getMimeType();
 
 	public abstract String getString() throws Exception;
 

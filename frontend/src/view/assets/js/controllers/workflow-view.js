@@ -28,7 +28,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
         Def.constants = config.constants;
         Def.workflowId = config.workflowId;
         Def.shortname = config.shortname;
-        Def.statisticUrl = config.statisticUrl;
 
         var nodes = config.icons.map(Node.deserialize);
         var connections = Node.deserializeConnections(config.icons, Node.toMap(nodes));
@@ -87,7 +86,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
             editor.fitPdfPage();
         }
 
-        window.status = config.initializerFinishStatus || '';
+        window.waitStatus = config.initializerFinishStatus || '';
     });
 
     this.addDomInitializer('mailing-data-transfer-modal', function($e) {
@@ -2938,10 +2937,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
         }
     });
 
-    this.addAction({click: 'evaluate-statistic'}, function() {
+    this.addAction({click: 'evaluate-statistic', change: 'change-statistic'}, function() {
         const $iframe = $('#statistic-iframe');
         $iframe.removeClass('hidden');
-        $iframe.attr('src', Def.statisticUrl);
+        $iframe.attr('src', $('#stat-url').val());
     });
 
     this.addAction({click: 'undo'}, function() {

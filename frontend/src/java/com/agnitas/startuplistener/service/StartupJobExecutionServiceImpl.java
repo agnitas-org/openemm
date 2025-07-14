@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,7 +27,6 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -116,10 +115,14 @@ public final class StartupJobExecutionServiceImpl implements StartupJobExecution
 			final JobContext context = createJobContext(entry);
 		
 			job.runStartupJob(context);
-			
-			// Mark job as "done"
-			this.startupJobEntryDao.updateJobState(entry.getId(), JobState.DONE);
-			
+
+			if (job.isRepeatedJob()) {
+				this.startupJobEntryDao.updateJobState(entry.getId(), JobState.PENDING);
+			} else {
+				// Mark job as "done"
+				this.startupJobEntryDao.updateJobState(entry.getId(), JobState.DONE);
+			}
+
 			return new ExecutionResult(1, 0);
 		} catch(final ReflectiveOperationException e) {
 			LOGGER.error(String.format("Cannot instantiate startup job %d", entry.getId()), e);
@@ -155,7 +158,6 @@ public final class StartupJobExecutionServiceImpl implements StartupJobExecution
 		return new JobContext(entry.getId(), entry.getCompanyId(), dataSource, configService, this.applicationContext);
 	}
 	
-	@Required
 	public final void setStartupJobEntryDao(final StartupJobEntryDao dao) {
 		this.startupJobEntryDao = Objects.requireNonNull(dao, "StartupJobEntryDao is null");
 	}
@@ -164,12 +166,10 @@ public final class StartupJobExecutionServiceImpl implements StartupJobExecution
 		this.dataSource = Objects.requireNonNull(dataSource, "JDBC DataSource is null");
 	}
 	
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 
-	@Required
 	@Override
 	public final void setApplicationContext(final ApplicationContext context) throws BeansException {
 		this.applicationContext = Objects.requireNonNull(context, "Application context is null");

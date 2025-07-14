@@ -11,7 +11,7 @@ function tr(key) {
 	return Packages.com.agnitas.messages.I18nString.getLocaleString(key, reportContext.getLocale());
 }
 
-monthList = Packages.org.agnitas.util.AgnUtils.getMonthList(); 
+monthList = Packages.com.agnitas.util.AgnUtils.getMonthList();
 
 function monthI18n(number) {
 	return tr(monthList.get(number - 1)[1]);

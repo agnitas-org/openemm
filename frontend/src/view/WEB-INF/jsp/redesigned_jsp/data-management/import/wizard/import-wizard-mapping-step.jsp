@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@page import="org.agnitas.util.importvalues.ImportMode"%>
+<%@page import="com.agnitas.util.importvalues.ImportMode"%>
 <%@page import="com.agnitas.beans.ProfileFieldMode"%>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -13,9 +13,8 @@
 <%--@elvariable id="_agnTbl_editable" type="com.agnitas.beans.ProfileFieldMode"--%>
 <%--@elvariable id="_agnTbl_column_name" type="java.lang.String"--%>
 <%--@elvariable id="_agnTbl_shortname" type="java.lang.String"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
-<c:set var="customerID_allowed" value="${emm:permissionAllowed('import.customerid', pageContext.request)}" scope="page" />
+<c:set var="customerIdImportAllowed" value="${emm:permissionAllowed('import.customerid', pageContext.request)}" scope="page" />
 
 <c:set var="step" value="3"/>
 <c:url var="backUrl" value="/recipient/import/wizard/step/mode.action"/>
@@ -28,11 +27,11 @@
                 <%@ include file="fragments/import-wizard-steps-navigation.jspf" %>
             </div>
         </div>
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <div class="notification-simple notification-simple--lg notification-simple--info">
                 <span>
                     <mvc:message code="export.CsvMappingMsg"/>
-                    <a href="#" type="button" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_3/Csvmapping.xml"></a>
+                    <a href="#" type="button" class="icon icon-question-circle" data-help="importwizard/step_3/Csvmapping.xml"></a>
                 </span>
             </div>
 
@@ -68,7 +67,7 @@
                                             <c:set var="dbColumnAlias" value="${dbColumn.value.name}" />
                                             <c:set var="mode" value="${importWizardSteps.helper.mode}" />
                                             <c:choose>
-                                                <c:when test="${customerIdAllowed and (not dbColumnName.equalsIgnoreCase('CUSTOMER_ID') or (dbColumnName.equalsIgnoreCase('CUSTOMER_ID') and mode != ImportMode.ADD.intValue && mode != ImportMode.ADD_AND_UPDATE.intValue))}">
+                                                <c:when test="${customerIdImportAllowed and (not dbColumnName.equalsIgnoreCase('CUSTOMER_ID') or (dbColumnName.equalsIgnoreCase('CUSTOMER_ID') and mode != ImportMode.ADD.intValue && mode != ImportMode.ADD_AND_UPDATE.intValue))}">
                                                     <option value="${dbColumnName}" ${((columnMapping != null && columnMapping.containsKey(csvColumn.getName().trim())
                                                             && dbColumnName.trim().equalsIgnoreCase((columnMapping.get(csvColumn.getName().trim())).getName().trim()))
                                                             || (columnMapping == null && dbColumnName.trim().replace("-", "").replace("_", "").equalsIgnoreCase(csvColumn.getName().replace("-", "").replace("_", "").trim())))

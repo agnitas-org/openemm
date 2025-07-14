@@ -104,6 +104,8 @@ AGN.Lib.Controller.new('action-view', function () {
           break;
         case 'GetArchiveList':
           data.campaignID = 0;
+          data.limitType = null;
+          data.limitValue = null;
           break;
         case 'GetArchiveMailing':
           data.expireDate = null;
@@ -164,7 +166,7 @@ AGN.Lib.Controller.new('action-view', function () {
     static toJson($module, index) {
       const moduleJson = {};
       moduleJson.index = index;
-      $module.find('[name^="modules[]"]').each(function (i, field) {
+      $module.find('[name^="modules[]"]:not(:disabled)').each(function (i, field) {
         const $field = $(field);
         const name = $field.prop('name') || '';
 

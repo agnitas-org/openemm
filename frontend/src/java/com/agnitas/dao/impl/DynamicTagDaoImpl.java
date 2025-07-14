@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,16 +18,11 @@ import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagContentRowMapper;
 import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagRowMapper;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
-
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.dao.DynamicTagContentDao;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -48,22 +43,19 @@ import java.util.stream.Collectors;
 
 public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
-    private static final transient Logger logger = LogManager.getLogger(DynamicTagDaoImpl.class);
-
     private DynamicTagContentDao dynamicTagContentDao;
 
-    @Required
     public void setDynamicTagContentDao(DynamicTagContentDao dynamicTagContentDao) {
         this.dynamicTagContentDao = dynamicTagContentDao;
     }
 
     @Override
     public List<DynamicTag> getNameList(int companyId, int mailingId) {
-        return select(logger, "SELECT company_id, dyn_name_id, dyn_name FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND deleted = 0", new DynamicTag_RowMapper(), mailingId,
+        return select("SELECT company_id, dyn_name_id, dyn_name FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND deleted = 0", new DynamicTag_RowMapper(), mailingId,
                 companyId);
     }
 
-    private class DynamicTag_RowMapper implements RowMapper<DynamicTag> {
+    private static class DynamicTag_RowMapper implements RowMapper<DynamicTag> {
         @Override
         public DynamicTag mapRow(ResultSet resultSet, int row) throws SQLException {
             DynamicTag dynamicTag = new DynamicTagImpl();
@@ -124,7 +116,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
         updateSql += " WHERE mailing_id = ? AND " + makeBulkInClauseForString("dyn_name", nameList);
 
-        update(logger, updateSql, mailingID);
+        update(updateSql, mailingID);
     }
 
     @Override
@@ -135,15 +127,15 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         threshold.add(Calendar.DAY_OF_MONTH, -retentionTime);
 
         // Deleted marked and outdated records
-        update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE deleted = 1 AND deletion_date IS NOT NULL AND deletion_date < ?)", threshold);
-        update(logger, "DELETE FROM dyn_name_tbl WHERE deleted = 1 AND deletion_date IS NOT NULL AND deletion_date < ?", threshold);
+        update("DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE deleted = 1 AND deletion_date IS NOT NULL AND deletion_date < ?)", threshold);
+        update("DELETE FROM dyn_name_tbl WHERE deleted = 1 AND deletion_date IS NOT NULL AND deletion_date < ?", threshold);
     }
 
     @Override
     public boolean deleteDynamicTagsByCompany(int companyID) {
         try {
-            update(logger, "DELETE FROM dyn_content_tbl WHERE company_id = ?", companyID);
-            update(logger, "DELETE FROM dyn_name_tbl WHERE company_id = ?", companyID);
+            update("DELETE FROM dyn_content_tbl WHERE company_id = ?", companyID);
+            update("DELETE FROM dyn_name_tbl WHERE company_id = ?", companyID);
             return true;
         } catch (Exception e) {
             logger.error("Error deleting content data (company ID: " + companyID + ")", e);
@@ -153,13 +145,13 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     public String getDynamicTagInterestGroup(int companyId, int mailingId, int dynTagId) {
-        return select(logger, "SELECT interest_group FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?", String.class, mailingId, companyId, dynTagId);
+        return select("SELECT interest_group FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?", String.class, mailingId, companyId, dynTagId);
     }
 
     @Override
     public int getId(int companyId, int mailingId, String dynTagName) {
         String sqlGetId = "SELECT dyn_name_id FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name = ?";
-        return selectInt(logger, sqlGetId, companyId, mailingId, dynTagName);
+        return selectInt(sqlGetId, companyId, mailingId, dynTagName);
     }
 
     @Override
@@ -171,9 +163,9 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
             sqlGetDynName += " LIMIT 1";
         }
 
-        List<String> nameResults = select(logger, sqlGetDynName, StringRowMapper.INSTANCE, companyId, mailingId, dynTagId);
+        List<String> nameResults = select(sqlGetDynName, StringRowMapper.INSTANCE, companyId, mailingId, dynTagId);
 
-        if (nameResults.size() > 0) {
+        if (!nameResults.isEmpty()) {
             return nameResults.get(0);
         } else {
             return null;
@@ -189,7 +181,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
         String sql = "SELECT dyn_name, dyn_name_id FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? " +
                 "AND " + makeBulkInClauseForString("dyn_name", dynNames);
-        query(logger, sql, new DynNamesMapCallback(dynNameIds), companyId, mailingId);
+        query(sql, new DynNamesMapCallback(dynNameIds), companyId, mailingId);
         return dynNameIds;
     }
 
@@ -217,11 +209,11 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                 "WHERE company_id = ? AND dyn_name_id = ? " +
                 "ORDER BY dyn_order, dyn_content_id ASC";
 
-        final DynamicTag tag = selectObjectDefaultNull(logger, sqlGetTags, new DynamicTagRowMapper(), companyId, dynNameId);
+        final DynamicTag tag = selectObjectDefaultNull(sqlGetTags, new DynamicTagRowMapper(), companyId, dynNameId);
 
         if (tag != null) {
             // Retrieve content entries for the tag.
-            select(logger, sqlGetContents, new DynamicTagContentRowMapper(), companyId, dynNameId)
+            select(sqlGetContents, new DynamicTagContentRowMapper(), companyId, dynNameId)
                     .forEach(tag::addContent);
         }
 
@@ -235,7 +227,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                 "WHERE company_id = ? AND mailing_id = ? AND (deleted = 0 OR 1 = ?) " +
                 "ORDER BY dyn_group, dyn_name ASC";
 
-        final List<DynamicTag> tags = select(logger, sqlGetTags, new DynamicTagRowMapper(), companyId, mailingId, includeDeletedDynTags ? 1 : 0);
+        final List<DynamicTag> tags = select(sqlGetTags, new DynamicTagRowMapper(), companyId, mailingId, includeDeletedDynTags ? 1 : 0);
 
         if (!tags.isEmpty()) {
             final Map<Integer, Map<Integer, DynamicTagContent>> contentMapsMap = new HashMap<>();
@@ -249,7 +241,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
             String sqlGetContents = "SELECT company_id, mailing_id, dyn_content_id, dyn_name_id, target_id, dyn_order, dyn_content" +
                     " FROM dyn_content_tbl WHERE " + makeBulkInClauseForInteger("dyn_name_id", contentMapsMap.keySet())  + " ORDER BY dyn_order, dyn_content_id ASC";
             // Retrieve contents for found tags
-            List<DynamicTagContent> contents = select(logger, sqlGetContents, new DynamicTagContentRowMapper());
+            List<DynamicTagContent> contents = select(sqlGetContents, new DynamicTagContentRowMapper());
 
             for (final DynamicTagContent dynamicTagContent : contents) {
                 contentMapsMap.get(dynamicTagContent.getDynNameID()).put(dynamicTagContent.getDynOrder(), dynamicTagContent);
@@ -262,8 +254,8 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteAllDynTags(final int mailingId) {
-        update(logger, "DELETE FROM dyn_content_tbl WHERE mailing_id = ?", mailingId);
-        update(logger, "DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
+        update("DELETE FROM dyn_content_tbl WHERE mailing_id = ?", mailingId);
+        update("DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
     }
 
     /**
@@ -294,15 +286,15 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                 " (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? " +
                 " AND " + makeBulkInClauseForString("dyn_name", dynNames) + ")";
 
-        return update(logger, deleteContentSQL, mailingId, companyId, mailingId, companyId) > 0;
+        return update(deleteContentSQL, mailingId, companyId, mailingId, companyId) > 0;
     }
 
     @Override
-    public void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+    public void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) {
         updateDynamicTags(companyID, mailingID, encodingCharset, dynamicTags, false);
     }
 
-    private void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, final boolean removeUnusedContent) throws Exception {
+    private void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, boolean removeUnusedContent) {
         if (CollectionUtils.isEmpty(dynamicTags)) {
             return;
         }
@@ -322,20 +314,20 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         }).collect(Collectors.toList());
 
         final String updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, dyn_name = ?, dyn_group = ?, interest_group = ?, deleted = 0, no_link_extension = ? WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?";
-        batchupdate(logger, updateSql, parameterList);
+        batchupdate(updateSql, parameterList);
 
         dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags, removeUnusedContent);
     }
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags) throws Exception {
+    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags) {
         saveDynamicTags(mailing, dynTags, false);
     }
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags, final boolean removeUnusedContent) throws Exception {
+    public void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags, boolean removeUnusedContent) {
         int companyId = mailing.getCompanyID();
         int mailingId = mailing.getId();
 
@@ -352,12 +344,12 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         for (final DynamicTag tag : dynTags.values()) {
             if (StringUtils.isBlank(tag.getDynName())) {
                 if (tag.getId() > 0) {
-                    logger.warn("Could not update dynName ID " + tag.getId());
+                    logger.warn("Could not update dynName ID {}", tag.getId());
                     dynNamesToIdsMap.entrySet().stream().filter(entry -> entry.getValue() == tag.getId())
                             .map(Entry::getKey).findAny()
                             .ifPresent(tag::setDynName);
                 } else {
-                    logger.warn("Could not create a dynamic tag without an assigned name for mailingID: " + mailing.getId());
+                    logger.warn("Could not create a dynamic tag without an assigned name for mailingID: {}", mailing.getId());
                 }
             }
 
@@ -388,7 +380,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     }
 
     @Override
-    public void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+    public void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) {
         if (CollectionUtils.isEmpty(dynamicTags)) {
             return;
         } else {
@@ -397,7 +389,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
             }
 
             if (isOracleDB()) {
-                dynamicTags.forEach(tag -> tag.setId(selectInt(logger, "SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
+                dynamicTags.forEach(tag -> tag.setId(selectInt("SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
 
                 List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
                         mailingID,
@@ -408,7 +400,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                         tag.getDynInterestGroup(),
                         tag.isDisableLinkExtension() ? 1 : 0
                 }).collect(Collectors.toList());
-                batchupdate(logger,
+                batchupdate(
                         "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_name_id, dyn_group, dyn_name, interest_group, no_link_extension) VALUES (?, ?, ?, ?, ?, ?, ?)",
                         parameterList);
             } else {
@@ -421,7 +413,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                         tag.isDisableLinkExtension() ? 1 : 0
                 }).collect(Collectors.toList());
 
-                int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable(logger, "dyn_name_id",
+                int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable("dyn_name_id",
                         "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_group, dyn_name, interest_group, no_link_extension, creation_date) VALUES (?, ?, ?, ?, ?, ?, current_timestamp)",
                         parameterList);
 
@@ -464,7 +456,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	public List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(int targetId, int companyID) {
 		final String sql = "SELECT c.dyn_content_id AS contentblock_id, n.dyn_name as contentblock_name, c.mailing_id AS mailing_id, m.shortname AS mailing_name FROM dyn_content_tbl c, dyn_name_tbl n, mailing_tbl m WHERE c.company_id=? AND c.target_id=? AND n.dyn_name_id=c.dyn_name_id AND m.mailing_id=c.mailing_id";
 
-		return select(logger, sql, new ContentBlockAndMailingMetaDataRowMapper(), companyID, targetId);
+		return select(sql, new ContentBlockAndMailingMetaDataRowMapper(), companyID, targetId);
 	}
     
     

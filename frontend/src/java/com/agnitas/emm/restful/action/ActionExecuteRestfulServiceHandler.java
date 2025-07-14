@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,11 +17,9 @@ import java.util.Map.Entry;
 
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.emm.core.velocity.Constants;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
@@ -53,18 +51,16 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private EmmActionService emmActionService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
 	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}

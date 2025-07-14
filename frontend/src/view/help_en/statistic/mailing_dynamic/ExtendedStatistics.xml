@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Extended statistics]]></title>
+	<content><![CDATA[<strong>X% of sent mailings were opened on average</strong><br/>Displays the average percentage of recipients who opened the mailings.<br/><br/><strong>Best performing mailing (with send date)</strong><br/>Identifies the best-performing mailing based on the combined metrics of clickers, openers, and revenue generated.<br/><br/><strong>Worst performing mailing (with send date)</strong><br/>Highlights the worst-performing mailing using the metrics of clickers, openers, and revenue generated.<br/><br/><strong>Average revenue</strong><br/>Shows the average total revenue generated.]]></content>
+</HelpBalloon>

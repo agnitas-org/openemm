@@ -73,21 +73,55 @@
   };
 
   Tooltip.remove = function($e) {
-    const tooltip = bootstrap.Tooltip.getInstance($e);
-    tooltip?.dispose();
+    Tooltip.get($e)?.dispose();
   };
 
   Tooltip.setShown = function($e, isShown) {
-    if (isShown || isShown === undefined) {
-      $e.tooltip('show');
-    } else {
-      $e.tooltip('hide');
+    const tooltip = Tooltip.get($e);
+    if (!tooltip) {
+      return;
     }
+
+    if (isShown || isShown === undefined) {
+      tooltip.show();
+    } else {
+      tooltip.hide();
+    }
+  };
+
+  Tooltip.setContent = function ($el, content = '') {
+    const tooltip = Tooltip.get($el);
+    if (!tooltip) {
+      return;
+    }
+
+    tooltip.setContent({
+      '.tooltip-inner': content
+    });
+  };
+
+  Tooltip.restoreContent = function ($el) {
+    const tooltip = Tooltip.get($el);
+    if (!tooltip) {
+      return;
+    }
+
+    Tooltip.setContent($el, tooltip._getTitle());
   };
 
   Tooltip.createTip = function($e, text, style, trigger) {
     return Tooltip.create($e, getTooltipOptions(text, style, trigger));
   };
+
+  Tooltip.toggleState = function ($e, enable = true) {
+    const tooltip = Tooltip.get($e);
+
+    if (enable) {
+      tooltip?.enable();
+    } else {
+      tooltip?.disable();
+    }
+  }
 
   AGN.Lib.Tooltip = Tooltip;
 

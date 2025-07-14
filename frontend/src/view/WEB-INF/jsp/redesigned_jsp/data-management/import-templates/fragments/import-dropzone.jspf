@@ -1,0 +1,13 @@
+<div class="flex-center flex-column h-100">
+    <div id="dropzone" class="dropzone flex-grow-1 w-100" data-upload-dropzone="submit" style="min-height: 300px">
+        <div class="dropzone-text">
+            <b><i class="icon icon-reply"></i>&nbsp;<mvc:message code="upload_dropzone.title"/></b>
+            <span class="btn btn-primary btn-upload">
+                <i class="icon icon-file-upload"></i>
+                <span class="text"><mvc:message code="button.multiupload.select"/></span>
+                <input type="file" data-upload="uploadFile"/>
+            </span>
+        </div>
+    </div>
+    <div data-upload-progress style="display:none; width: 100%"><%-- Loads by JS--%></div>
+</div>

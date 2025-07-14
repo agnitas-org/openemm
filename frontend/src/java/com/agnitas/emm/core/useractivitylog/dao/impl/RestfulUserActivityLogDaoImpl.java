@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,29 +10,25 @@
 
 package com.agnitas.emm.core.useractivitylog.dao.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
-import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements RestfulUserActivityLogDao {
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.SqlPreparedStatementManager;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
-    private static final Logger LOGGER = LogManager.getLogger(RestfulUserActivityLogDaoImpl.class);
+public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements RestfulUserActivityLogDao {
 
     @Override
     public void writeUserActivityLog(String endpoint, String description, String httpMethod, String host, Admin admin) {
@@ -43,11 +39,11 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         String supervisorName = admin.getSupervisor() != null ? admin.getSupervisor().getSupervisorName() : null;
 
         String sql = "INSERT INTO restful_usage_log_tbl (timestamp, endpoint, description, request_method, company_id, username, supervisor_name, host_name) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)";
-        update(LOGGER, sql, endpoint, description, httpMethod, admin.getCompanyID(), admin.getUsername(), supervisorName, host);
+        update(sql, endpoint, description, httpMethod, admin.getCompanyID(), admin.getUsername(), supervisorName, host);
     }
 
     @Override
-    public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) throws Exception {
+    public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
         if (StringUtils.isBlank(sortColumn)) {
             sortColumn = "timestamp";
         }
@@ -57,16 +53,16 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         SqlPreparedStatementManager sqlPreparedStatementManager =
                 prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to, description);
 
-        return selectPaginatedList(LOGGER, sqlPreparedStatementManager.getPreparedSqlString(), "restful_usage_log_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new RestfulUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+        return selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(), "restful_usage_log_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new RestfulUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
     }
 
     @Override
     public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntriesRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
-        StringBuilder queryBuilder = new StringBuilder();
-        List<Object> params = buildOverviewSelectQuery(queryBuilder, filter, visibleAdmins);
+        StringBuilder query = new StringBuilder();
+        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
 
-        PaginatedListImpl<RestfulUserActivityAction> list = selectPaginatedList(LOGGER, queryBuilder.toString(), "restful_usage_log_tbl", filter.getSort(), filter.ascending(),
-                filter.getPage(), filter.getNumberOfRows(), new RestfulUserActionRowMapper(), params.toArray());
+        PaginatedListImpl<RestfulUserActivityAction> list = selectPaginatedList(query.toString(), "restful_usage_log_tbl",
+                filter, new RestfulUserActionRowMapper(), params.toArray());
 
         if (filter.isUiFiltersSet()) {
             list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins, filter.getCompanyId()));
@@ -87,14 +83,7 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
     private List<Object> applyFilter(RestfulUserActivityLogFilter filter, StringBuilder query) {
         List<Object> params = applyRequiredOverviewFilter(query, filter.getCompanyId());
 
-        if (filter.getTimestamp().getFrom() != null) {
-            query.append(" AND timestamp >= ?");
-            params.add(filter.getTimestamp().getFrom());
-        }
-        if (filter.getTimestamp().getTo() != null) {
-            query.append(" AND timestamp < ?");
-            params.add(DateUtilities.addDaysToDate(filter.getTimestamp().getTo(), 1));
-        }
+        query.append(getDateRangeFilterWithAnd("timestamp", filter.getTimestamp(), params));
 
         if (StringUtils.isNotBlank(filter.getUsername())) {
             query.append(" AND username = ?");
@@ -124,7 +113,7 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         List<Object> params = applyRequiredOverviewFilter(query, companyId);
 
         addVisibleAdminsCondition(query, visibleAdmins);
-        return selectIntWithDefaultValue(LOGGER, query.toString(), 0, params.toArray());
+        return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
     }
 
     private void addVisibleAdminsCondition(StringBuilder query, List<AdminEntry> admins) {
@@ -142,7 +131,7 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
     }
 
     @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description) throws Exception {
+    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description) {
         SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT timestamp, username, endpoint, description, request_method, supervisor_name FROM restful_usage_log_tbl");
         sqlPreparedStatementManager.addWhereClause("timestamp >= ?", from);
         sqlPreparedStatementManager.addWhereClause("timestamp <= ?", DateUtilities.addDaysToDate(to, 1));

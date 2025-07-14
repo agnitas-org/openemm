@@ -8,7 +8,7 @@
 <%--@elvariable id="numberOfRecipients" type="java.lang.Integer"--%>
 
 <mvc:form cssClass="modal modal-adaptive" tabindex="-1" servletRelativeAction="/target/${targetIdToDeleteRecipients}/delete/recipients.action" method="POST">
-    <div class="modal-dialog modal-fullscreen-lg-down">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="target.delete.recipients"/></h1>

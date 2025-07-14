@@ -1,5 +1,5 @@
 <%@page import="com.agnitas.messages.Message"%>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.util.importvalues.ImportMode" errorPage="/error.action" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.util.importvalues.ImportMode" errorPage="/error.action" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -12,7 +12,7 @@
 <emm:Permission token="wizard.importclassic"/>
 
 <%--@elvariable id="importWizardSteps" type="com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps"--%>
-<%--@elvariable id="mailinglists" type="java.util.Map<java.lang.String, org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglists" type="java.util.Map<java.lang.String, com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="importIsDone" type="java.lang.Boolean"--%>
 <%--@elvariable id="importError" type="java.lang.String"--%>
 <%--@elvariable id="resultMLAdded" type="java.util.Map"--%>

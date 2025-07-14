@@ -62,7 +62,7 @@
     </mvc:select>
 
     <c:if test="${isTargetExpressionComplex}">
-        <div class="form-control-feedback-message js-form-field-msg">
+        <div class="form-control-feedback-message">
             <i class="icon icon-exclamation-triangle"></i>
             <mvc:message code="targetgroup.tooComplex"/>
         </div>

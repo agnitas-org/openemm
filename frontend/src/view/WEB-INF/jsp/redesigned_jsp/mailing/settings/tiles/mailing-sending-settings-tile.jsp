@@ -7,7 +7,6 @@
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="isCopying" type="java.lang.Boolean"--%>
 <%--@elvariable id="isSettingsReadonly" type="java.lang.Boolean"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="companyDomainAddresses" type="java.util.List<com.agnitas.emm.core.companydomain.beans.impl.DomainAddressEntryDto>"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
@@ -23,7 +22,7 @@
     <div class="tile-header">
         <h1 class="tile-title text-truncate"><mvc:message code="mailing.settings.sender"/></h1>
     </div>
-    <div class="tile-body grid gap-3 js-scrollable" style="--bs-columns: 1">
+    <div class="tile-body vstack gap-3 js-scrollable">
         <c:if test="${not isTemplate}">
             <div>
                 <label class="form-label" for="mailingPlanDate"><mvc:message code="mailing.plan.date"/></label>
@@ -90,7 +89,7 @@
                     <div id="envelope-email-field">
                         <label class="form-label" for="emailEnvelopeEmail">
                             <mvc:message code="EnvelopeEmail"/>
-                            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/EnvelopeAddress.xml"></a>
+                            <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/EnvelopeAddress.xml"></a>
                         </label>
                         <mvc:text path="emailMediatype.envelopeEmail" id="emailEnvelopeEmail" cssClass="form-control" readonly="${emailSettingsDisabled}" disabled="${isSettingsReadonly}"/>
                     </div>

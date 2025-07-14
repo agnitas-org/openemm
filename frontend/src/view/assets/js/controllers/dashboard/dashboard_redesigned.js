@@ -37,6 +37,7 @@ AGN.Lib.Controller.new('dashboard', function() {
       }
     });
     toggleEditMode(false);
+    new AGN.Lib.Dashboard.News();
   });
 
   function infoIfDashboardEmpty() {

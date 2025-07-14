@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,30 +16,30 @@ import java.util.Map;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
 
 public interface FormTrackableLinkDao {
 
 	boolean existsDummyFormLink(int companyId, int userFormId);
 
 	@DaoUpdateReturnValueCheck
-	void saveUserFormTrackableLinks(int userFormId, int companyId, List<ComTrackableUserFormLink> trackableLinks);
+	void saveUserFormTrackableLinks(int userFormId, int companyId, List<TrackableUserFormLink> trackableLinks);
 
 	@DaoUpdateReturnValueCheck
-	int saveUserFormTrackableLink(int userFormId, int companyId, ComTrackableUserFormLink trackableLink);
+	int saveUserFormTrackableLink(int userFormId, int companyId, TrackableUserFormLink trackableLink);
 
 	@DaoUpdateReturnValueCheck
-	void storeUserFormTrackableLinkProperties(ComTrackableUserFormLink link);
+	void storeUserFormTrackableLinkProperties(TrackableUserFormLink link);
 
-	ComTrackableUserFormLink getUserFormTrackableLink(int linkID) throws Exception;
+	TrackableUserFormLink getUserFormTrackableLink(int linkID);
 
-	ComTrackableUserFormLink getUserFormTrackableLink(int companyId, int formId, int linkId);
+	TrackableUserFormLink getUserFormTrackableLink(int companyId, int formId, int linkId);
 
-	ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(int companyID, int formID) throws Exception;
+	TrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(int companyID, int formID);
 
-	Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, int companyID);
+	Map<String, TrackableUserFormLink> getUserFormTrackableLinks(int formID, int companyID);
 
-	List<ComTrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID);
+	List<TrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID);
 
 	@DaoUpdateReturnValueCheck
 	boolean deleteUserFormTrackableLink(int linkID, int companyID);
@@ -52,7 +52,7 @@ public interface FormTrackableLinkDao {
 	 * @param remoteAddr the ip address of the recipient.
 	 * @return True on success.
 	 */
-	boolean logUserFormTrackableLinkClickInDB(ComTrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
+	boolean logUserFormTrackableLinkClickInDB(TrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 
 	boolean logUserFormCallInDB(int companyID, int formID, int linkID, Integer mailingID, Integer customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,13 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.LightProfileField;
-import org.agnitas.util.DbColumnType;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.LightProfileField;
+import com.agnitas.util.DbColumnType;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 /**
  * @deprecated Use RecipientFieldService instead
@@ -30,35 +29,32 @@ import com.agnitas.beans.ProfileFieldMode;
 public interface ProfileFieldDao {
 	int MAX_SORT_INDEX = 1000;
 
-	boolean mayAdd(int companyID);
+    ProfileField getProfileField(int companyID, String column, int adminId);
 
-    ProfileField getProfileField(int companyID, String column, int adminId) throws Exception;
+    List<ProfileField> getComProfileFields(int companyID);
 
-    List<ProfileField> getComProfileFields(int companyID) throws Exception;
+    List<ProfileField> getComProfileFields(int companyID, int adminID);
 
-    List<ProfileField> getComProfileFields(int companyID, int adminID) throws Exception;
+    List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting);
 
-    List<ProfileField> getComProfileFields(int companyID, int adminID, boolean customSorting) throws Exception;
+	List<LightProfileField> getLightProfileFields(int companyId);
 
-	List<LightProfileField> getLightProfileFields(int companyId) throws Exception;
-
-	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID);
 
 	@Deprecated	// Due to cachine, default values must always be determined. See EMM-9446 for details.
-	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, @Deprecated boolean determineDefaultValues) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, @Deprecated boolean determineDefaultValues);
 
-    CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getComProfileFieldsMap(int companyID, int adminID);
 
     boolean existWithExactShortname(int companyID, String shortName);
 
-    ProfileField getProfileFieldByShortname(int companyID, String shortName, int adminID) throws Exception;
+    ProfileField getProfileFieldByShortname(int companyID, String shortName, int adminID);
 
+	List<ProfileField> getProfileFieldsWithInterest(int companyID, int adminID);
 
-	List<ProfileField> getProfileFieldsWithInterest(int companyID, int adminID) throws Exception;
+	List<ProfileField> getHistorizedProfileFields(int companyID);
 
-	List<ProfileField> getHistorizedProfileFields(int companyID) throws Exception;
-
-	boolean checkAllowedDefaultValue(int companyID, String columnName, String fieldDefault) throws Exception;
+	boolean checkAllowedDefaultValue(int companyID, String columnName, String fieldDefault);
 
 	/**
 	 * Check whether or not a {@code column} exists (either a default (built-in) column or a custom profile field).
@@ -81,11 +77,9 @@ public interface ProfileFieldDao {
 
 	int countCustomerEntries(final int companyID);
 
-	boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase) throws Exception;
+	boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase);
 
-	int getMaximumCompanySpecificFieldCount(int companyID) throws Exception;
-
-	int getCurrentCompanySpecificFieldCount(int companyID) throws Exception;
+	int getMaximumCompanySpecificFieldCount(int companyID);
 
 	DbColumnType getColumnType(int companyId, String columnName);
 
@@ -101,9 +95,8 @@ public interface ProfileFieldDao {
      * @param companyID The companyID for the profile field.
      * @param column    The column name for profile field.
      * @return The ProfileField or null on failure or if companyID is 0.
-     * @throws Exception
      */
-    ProfileField getProfileField(int companyID, String column) throws Exception;
+    ProfileField getProfileField(int companyID, String column);
 
     /**
      * Loads all profile fields of certain company.
@@ -111,7 +104,7 @@ public interface ProfileFieldDao {
      * @param companyID The companyID for the profile fields.
      * @return List of ProfileFields or empty list.
      */
-    List<ProfileField> getProfileFields(int companyID) throws Exception;
+    List<ProfileField> getProfileFields(int companyID);
 
     /**
      * Loads all profile fields of certain company.
@@ -119,7 +112,7 @@ public interface ProfileFieldDao {
      * @param companyID The companyID for the profile fields.
      * @return List of ProfileFields or empty list.
      */
-    List<ProfileField> getProfileFields(int companyID, int adminID) throws Exception;
+    List<ProfileField> getProfileFields(int companyID, int adminID);
 
     /**
      * Loads all profile fields of certain company.
@@ -127,7 +120,7 @@ public interface ProfileFieldDao {
      * @param companyID The companyID for the profile fields.
      * @return List of ProfileFields or empty list.
      */
-    CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID);
 
     /**
      * Loads all profile fields of certain company.
@@ -135,13 +128,12 @@ public interface ProfileFieldDao {
      * @param companyID The companyID for the profile fields.
      * @return List of ProfileFields or empty list.
      */
-    CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID, int adminID);
 
     /**
      * Saves or updates the profile field.
      *
      * @param field The profile field to save.
-     * @throws Exception
      */
     boolean saveProfileField(ProfileField field, Admin admin) throws Exception;
 
@@ -152,7 +144,7 @@ public interface ProfileFieldDao {
      * @param shortName The shortname for the profile field.
      * @return The ProfileField or null on failure or if companyID is 0.
      */
-    ProfileField getProfileFieldByShortname(int companyID, String shortName) throws Exception;
+    ProfileField getProfileFieldByShortname(int companyID, String shortName);
 
     /**
      * Creates a new custom column in customer_tbl for given company_id.
@@ -164,7 +156,6 @@ public interface ProfileFieldDao {
      * @param fieldDefault Default column value.
      * @param notNull      Column NOT NULL constraint.
      * @return true on success.
-     * @throws Exception
      */
     boolean addColumnToDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
 
@@ -177,5 +168,5 @@ public interface ProfileFieldDao {
 
 	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;
 
-	Set<String> getCustomerColumns(int companyId) throws Exception;
+	Set<String> getCustomerColumns(int companyId);
 }

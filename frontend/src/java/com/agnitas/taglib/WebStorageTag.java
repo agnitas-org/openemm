@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,12 +11,13 @@
 
 package com.agnitas.taglib;
 
-import org.agnitas.beans.WebStorageEntry;
+import com.agnitas.beans.WebStorageEntry;
 import com.agnitas.service.WebStorage;
-import org.agnitas.service.WebStorageBundle;
+import com.agnitas.service.WebStorageBundle;
 import org.apache.taglibs.standard.tag.common.core.SetSupport;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+// TODO: check usage and rempve when EMMGUI-714 will be finished and old design will be removed
 public class WebStorageTag extends SetSupport {
 
     private static final long serialVersionUID = 7998564739091137943L;

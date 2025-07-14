@@ -4,7 +4,7 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/send/deactivate.action">
 
             <input type="hidden" name="mailingID" value="${mailingId}">

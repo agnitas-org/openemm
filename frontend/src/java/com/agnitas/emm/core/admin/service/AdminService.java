@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,13 @@
 */
 
 package com.agnitas.emm.core.admin.service;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
@@ -22,23 +29,15 @@ import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.news.enums.NewsType;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.Tuple;
-
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.CompaniesConstraints;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.Tuple;
 
 public interface AdminService {
 
@@ -56,10 +55,6 @@ public interface AdminService {
 
 	Map<String, String> mapIdToUsernameByCompanyAndEmail(int companyId);
 
-	Supervisor getSupervisor(String supervisorName);
-
-    List<Tuple<Integer, String>> getAdminsUsernames(int companyID);
-    
     List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
@@ -92,8 +87,6 @@ public interface AdminService {
     void revokePermission(Admin admin, Permission permission);
 
     Admin getAdmin(int adminID, int companyID);
-
-    String getAdminName(int adminID, int companyID);
 
     boolean adminExists(String username);
 
@@ -142,7 +135,7 @@ public interface AdminService {
 
     AdminPreferences getAdminPreferences(int adminId);
 
-    List<EmmLayoutBase> getEmmLayoutsBase(int companyID);
+    List<EmmLayoutBase> getEmmLayoutsBase(Admin admin);
 
     boolean isDarkmodeEnabled(Admin admin);
 
@@ -150,7 +143,7 @@ public interface AdminService {
 	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
 	Admin getOldestAdminOfCompany(int companyId);
 
-	void save(Admin admin) throws Exception;
+	void save(Admin admin);
 
 	boolean isAdminPassword(Admin admin, String password);
 	boolean isEnabled(Admin admin);
@@ -215,11 +208,11 @@ public interface AdminService {
     List<AdminEntry> findAllByEmailPart(String email, int companyID);
     List<AdminEntry> findAllByEmailPart(String email);
 
+    AdminEntry findByEmail(String email, int companyId);
+
     ServiceResult<List<Admin>> getAllowedForDeletion(Set<Integer> ids, int companyID);
     List<Admin> delete(Set<Integer> ids, int companyId);
     SimpleServiceResult delete(int id, int companyId);
 
     void updateEmail(String email, int id, int companyId);
-
-    AdminEntry findByEmail(String email, int companyId);
 }

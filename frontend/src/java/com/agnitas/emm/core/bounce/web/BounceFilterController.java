@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,7 +24,7 @@ import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
 import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
 import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
 import com.agnitas.emm.core.bounce.util.BounceUtils;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.exception.RequestErrorException;
@@ -34,10 +34,10 @@ import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -59,12 +59,11 @@ import java.net.IDN;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 
 public class BounceFilterController implements XssCheckAware {
 
@@ -79,7 +78,7 @@ public class BounceFilterController implements XssCheckAware {
     private static final String IS_ALLOWED_MAILLOOP_DOMAIN = "isAllowedMailloopDomain";
 
     private final BounceFilterService bounceFilterService;
-    private final ComMailingBaseService mailingService;
+    private final MailingBaseService mailingService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final UserformService userFormService;
     private final ConversionService conversionService;
@@ -88,7 +87,7 @@ public class BounceFilterController implements XssCheckAware {
 
     private final BounceFilterFormValidator bounceFilterFormValidator = new BounceFilterFormValidator();
 
-    public BounceFilterController(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, @Qualifier("MailingBaseService") ComMailingBaseService mailingService,
+    public BounceFilterController(@Qualifier("BounceFilterService") BounceFilterService bounceFilterService, @Qualifier("MailingBaseService") MailingBaseService mailingService,
                                   final MailinglistApprovalService mailinglistApprovalService,
                                   UserformService userFormService, ConversionService conversionService,
                                   WebStorage webStorage,
@@ -102,14 +101,10 @@ public class BounceFilterController implements XssCheckAware {
         this.mailinglistApprovalService = mailinglistApprovalService;
     }
 
-    private boolean responseProcessingRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
     @RequestMapping(value = "/list.action")
     public Pollable<ModelAndView> list(Admin admin, HttpSession session, BounceFilterListForm form, BounceFilterSearchParams searchParams,
-                                       @RequestParam(required = false) boolean restoreSort, Model model) {
-        if (responseProcessingRedesign(admin)) {
+                                       @RequestParam(required = false) Boolean restoreSort, Model model) {
+        if (admin.isRedesignedUiUsed()) {
             form.setCompanyId(admin.getCompanyID());
             form.setCompanyDomain(admin.getCompany().getMailloopDomain());
             FormUtils.syncSearchParams(searchParams, form, true);
@@ -121,7 +116,7 @@ public class BounceFilterController implements XssCheckAware {
             .build();
 
         Callable<ModelAndView> worker = () -> {
-            model.addAttribute("bounceFilterList", responseProcessingRedesign(admin)
+            model.addAttribute("bounceFilterList", admin.isRedesignedUiUsed()
                     ? bounceFilterService.overview(form)
                     : bounceFilterService.getPaginatedBounceFilterList(
                             admin,
@@ -175,7 +170,7 @@ public class BounceFilterController implements XssCheckAware {
 
     @PostMapping(value = "/save.action")
     public String save(@ModelAttribute BounceFilterForm form, Admin admin, Popups popups,
-                       @RequestParam(required = false, defaultValue = "0") int forAddress) throws Exception {
+                       @RequestParam(required = false, defaultValue = "0") int forAddress) {
         if (isValid(admin, form, popups)) {
             BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
             try {
@@ -211,7 +206,7 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     protected String redirectAfterSave(int filterId, int forAddress, Admin admin) {
-        return responseProcessingRedesign(admin)
+        return admin.isRedesignedUiUsed()
                 ? REDIRECT_TO_OVERVIEW + "?restoreSort=true"
                 : "redirect:/administration/bounce/" + filterId + "/view.action";
     }
@@ -263,7 +258,7 @@ public class BounceFilterController implements XssCheckAware {
         String singleDeletionQuestion = bulkIds.size() == 1 && bounceFilterService.containsReply(bulkIds.iterator().next())
                 ? "mailloop.delete.inbox.question" : "settings.mailloop.delete.question";
 
-        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(BounceFilterDto::getShortName).collect(Collectors.toList()),
+        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(BounceFilterDto::getShortName).toList(),
                 "mailloop.mailloopDelete", singleDeletionQuestion,
                 "mailloop.mailloopDelete", "bulkAction.settings.mailloop.delete");
         return DELETE_VIEW;
@@ -306,7 +301,7 @@ public class BounceFilterController implements XssCheckAware {
         final String companyMailloopDomain = admin.getCompany().getMailloopDomain();
         if(!isAllowedMailloopDomain(companyMailloopDomain) || form.isOwnForwardEmailSelected()) {
             if(StringUtils.isBlank(form.getFilterEmail())) {
-                popups.field("filterEmail", "error.mailloop.address.empty");
+                popups.fieldError("filterEmail", "error.mailloop.address.empty");
                 success = false;
             }
         }

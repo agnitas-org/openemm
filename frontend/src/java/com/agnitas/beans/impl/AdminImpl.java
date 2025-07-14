@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,7 @@
 package com.agnitas.beans.impl;
 
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -24,9 +25,13 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.admin.enums.UiLayoutType;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
+import com.agnitas.util.AgnUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
@@ -39,6 +44,7 @@ public class AdminImpl implements Admin {
 	protected int adminID;
 	protected int layoutID;
 	protected int layoutBaseID;
+	protected UiLayoutType layoutType = UiLayoutType.STANDARD;
 	protected int gender = 2;
 	protected String title;
 	protected String adminCountry;
@@ -141,6 +147,11 @@ public class AdminImpl implements Admin {
 	}
 
 	@Override
+	public void setLayoutType(UiLayoutType layoutType) {
+		this.layoutType = layoutType;
+	}
+
+	@Override
 	public void setAdminCountry(String adminCountry) {
 		this.adminCountry = adminCountry;
 	}
@@ -206,6 +217,11 @@ public class AdminImpl implements Admin {
 	}
 
 	@Override
+	public ZoneId getZoneId() {
+		return ZoneId.of(adminTimezone);
+	}
+
+	@Override
 	public int getLayoutID() {
 		return layoutID;
 	}
@@ -213,6 +229,11 @@ public class AdminImpl implements Admin {
 	@Override
 	public int getLayoutBaseID() {
 		return layoutBaseID;
+	}
+
+	@Override
+	public UiLayoutType getLayoutType() {
+		return layoutType;
 	}
 
 	@Override
@@ -241,11 +262,6 @@ public class AdminImpl implements Admin {
 	    return groupIds;
 	}
 
-	/**
-	 * Setter for property groupID.
-	 * 
-	 * @param group
-	 */
 	@Override
 	public void setGroups(List<AdminGroup> groups) {
 		this.groups = groups;
@@ -421,6 +437,35 @@ public class AdminImpl implements Admin {
 	@Override
 	public boolean isRedesignedUiUsed() {
 		return !permissionAllowed(Permission.USE_OLD_UI);
+	}
+
+	@Override
+	public boolean isUpdatedUxUsed() {
+		return isRedesignedUiUsed() && permissionAllowed(Permission.UX_UPDATES);
+	}
+
+	@Override
+	public boolean isUxUpdateRollback() {
+		return permissionAllowed(Permission.UX_UPDATES_ROLLBACK);
+	}
+
+	@Override
+	public boolean isUpdatedUxUsed(HttpServletRequest req) {
+		if (req == null) {
+			return isUpdatedUxUsed();
+		}
+		return isUpdatedUxUsed() || (isRedesignedUiUsed() && isUxUpdateFromWorkflow(req));
+	}
+
+	private static boolean isUxUpdateFromWorkflow(HttpServletRequest req) {
+		WorkflowParameters workflowParameters = WorkflowParametersHelper.find(req);
+		if (!WorkflowParametersHelper.isEmpty(workflowParameters)) {
+			if (workflowParameters.getParamsAsMap() != null) {
+				return !workflowParameters.getParamsAsMap().containsKey("preventUxUpdateParamsCheck");
+			}
+			return true;
+		}
+		return false;
 	}
 
 	@Override

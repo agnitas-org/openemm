@@ -5,7 +5,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
+<%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
 <%--@elvariable id="allMailinglists" type="java.util.List"--%>
 <%--@elvariable id="allTargets" type="java.util.List"--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>

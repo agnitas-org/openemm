@@ -1,10 +1,11 @@
 ;(() => {
+
   const Template = AGN.Lib.Template;
-  const Select = AGN.Lib.Select;
+  const CoreInitializer = AGN.Lib.CoreInitializer;
 
   const SCROLLBAR_DATA_KEY = 'agn:select-scrollbar';
 
-  AGN.Lib.CoreInitializer.new('select', ['template'], function($scope = $(document)) {
+  CoreInitializer.new('select', ['template'], function($scope = $(document)) {
     _.each($scope.all('select'), el=> {
       const $el = $(el);
 
@@ -12,13 +13,9 @@
         $el.select2('destroy');
       }
 
-      if ($el.hasClass('has-arrows')) {
-        new SelectWithArrows($el);
-      }
-
       let options = {
         placeholder: $el.attr('placeholder'),
-        minimumResultsForSearch: 10,
+        minimumResultsForSearch: $el.hasClass('js-select') ? 10 : 0,
         showSearchIcon: true,
         width: '100%',
         searchInputPlaceholder: t('tables.searchOoo'),
@@ -27,10 +24,6 @@
         dropdownParent: getDropdownParent($el),
         preventPlaceholderClear: false // custom option
       };
-
-      if (!$el.hasClass('js-select')) {
-        options.minimumResultsForSearch = 0;
-      }
 
       if ($el.is('[data-sort]') ) {
         if ($el.data('sort') === 'alphabetic') {
@@ -90,6 +83,7 @@
       };
 
       if ( $el.hasClass('dynamic-tags') ) {
+        $el.find('option').prop('selected', true);
         options.tags = true;
         options.preventPlaceholderClear = true;
       }
@@ -118,11 +112,22 @@
         const $btn = addCreateBtn($el);
         if (options.tags) {
           AGN.Lib.Tooltip.createTip($btn, t('defaults.add'));
-          $btn.on('click', function () {
-            const value = $el.data('select2').selection.$search.val();
-            AGN.Lib.Select.get($el).selectOption(value);
-          });
+
+          if (options.selectOnClose) {
+            $el.on('select2:unselect', () => {
+              $el.find('option:not(:selected)').remove();
+            });
+          } else {
+            $btn.on('click', () => {
+              const value = $el.data('select2').selection.$search.val();
+              AGN.Lib.Select.get($el).selectOption(value);
+            });
+          }
         }
+      }
+
+      if ($el.hasClass('has-arrows')) {
+        new SelectWithArrows($el);
       }
 
       $el.on('select2:open', e => {
@@ -139,33 +144,26 @@
       });
 
       $el.on('select2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
-      // focusing by label is now handled in listener/label-events
 
-      const $exclusiveOption = $el.find('option[data-exclusive]');
-      if ($exclusiveOption.length > 0){
-        $el.on('select2:select', function (e) {
-          var exclusiveIsChosen = $el.find(`option[value='${e.params.data?.element?.value}'][data-exclusive]`).length > 0;
+      $el.on('change.select2', e => CoreInitializer.run('truncated-text-popover', $el.next('.select2')));
 
-          if (exclusiveIsChosen){
-            var needUpdate = false;
-            $el.find('option:selected:not([data-exclusive])').each(function (){
-              needUpdate = true;
-              Select.get($el).unselectValue($(this).val());
-            });
-            if (needUpdate) {
-              $el.trigger('change');
-            }
-          } else {
-            needUpdate = false;
-            $el.find('option:selected[data-exclusive]').each(function (){
-              needUpdate = true;
-              Select.get($el).unselectValue($(this).val());
-            });
-            if (needUpdate) {
-              $el.trigger('change');
-            }
+      const $exclusiveOptions = $el.find('option[data-exclusive]');
+      if ($exclusiveOptions.exists()) {
+        const exclusiveOptionsCallback = () => {
+          const $selectedExclusiveOption = $exclusiveOptions.filter(':selected');
+          const $options = $el.find('option');
+          $options.prop('disabled', false);
+
+          if ($selectedExclusiveOption.exists()) {
+            $el.find('option').not($selectedExclusiveOption).prop('disabled', true);
+          } else if ($options.filter(':selected').exists()) {
+            $exclusiveOptions.prop('disabled', true);
           }
-        })
+        };
+
+        exclusiveOptionsCallback();
+        $el.on('select2:select', exclusiveOptionsCallback);
+        $el.on('select2:unselect', exclusiveOptionsCallback);
       }
     });
   });
@@ -233,27 +231,16 @@
     if ($el.closest('.dropdown-menu').exists() ) {
       return $el.closest('.dropdown-menu');
     }
-    return $('#main-view').exists() ? '#main-view' : 'body';
+    return 'body';
   }
 
   class SelectWithArrows {
 
     constructor($select) {
-      const selectWithArrows = $select.data('selectWithArrows');
-      if (selectWithArrows) {
-        selectWithArrows.toggleArrows();
-        return selectWithArrows; // return the existing object
-      }
       this.$select = $select;
-      this.init();
-    }
-
-    init() {
       this.#createPrevBtn();
       this.#createNextBtn();
-
-      this.$select.wrap($('<div>').addClass('select-container'));
-      this.$select.closest('.select-container').prepend(this.$prevBtn).append(this.$nextBtn);
+      this.$select.next('.select2').find('.selection').prepend(this.$prevBtn).append(this.$nextBtn);
       this.$select.on('change', () => this.toggleArrows());
       this.toggleArrows();
       this.$select.data('selectWithArrows', this);

@@ -50,11 +50,10 @@
 	min-height: 100vh;
 	display: grid;
 	grid-template-columns: 1fr;
-	grid-template-rows: 50px 1fr min-content;
+	grid-template-rows: 50px 1fr;
 	grid-template-areas:
 	"header"
-	"body"
-	"footer";
+	"body";
 	row-gap: 40px;
 	align-items: stretch;
 	justify-items: stretch;
@@ -180,14 +179,6 @@
 	font-size: 16px;
 	line-height: 24px;
 	padding: 5px 10px;
-}
-
-.sysstat__page-footer {
-	grid-area: footer;
-	padding: 0 10px 10px 10px;
-	display: flex;
-	justify-content: flex-end;
-	color: #6F6F6F;
 }
 
 .sysstat__footer {

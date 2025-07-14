@@ -1,12 +1,12 @@
-<%@ page import="org.agnitas.util.AgnUtils" errorPage="/error.action" %>
+<%@ page import="com.agnitas.util.AgnUtils" errorPage="/error.action" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="campaignList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
-<%--@elvariable id="form" type="org.agnitas.web.forms.PaginationForm"--%>
+<%--@elvariable id="campaignList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="form" type="com.agnitas.web.forms.PaginationForm"--%>
 
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>

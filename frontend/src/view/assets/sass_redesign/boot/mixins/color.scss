@@ -1,0 +1,8 @@
+@function rgb-from-hex($hex-color) {
+  $r: red($hex-color);
+  $g: green($hex-color);
+  $b: blue($hex-color);
+
+  @return $r, $g, $b;
+}
+

@@ -1,19 +1,18 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.beans.BindingEntry" %>
-<%@ page import="org.agnitas.web.forms.FormSearchParams" %>
-<%@ page import="org.agnitas.util.importvalues.Gender" %>
+<%@ page import="com.agnitas.beans.BindingEntry" %>
+<%@ page import="com.agnitas.web.forms.FormSearchParams" %>
+<%@ page import="com.agnitas.util.importvalues.Gender" %>
 <%@ page import="org.agnitas.emm.core.recipient.RecipientUtils" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="listForm" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 <%--@elvariable id="fieldsMap" type="java.util.Map<java.lang.String, java.lang.String>"--%>
 <%--@elvariable id="deactivatePagination" type="java.lang.Boolean"--%>
-<%--@elvariable id="recipientList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="recipientList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
 <%--@elvariable id="loadRecipients" type="java.lang.Boolean"--%>
 <%--@elvariable id="forceShowAdvancedSearchTab" type="java.lang.Boolean"--%>
@@ -36,6 +35,10 @@
           data-action="search-recipient" data-validator-options="ignore_qb_validation: true, skip_empty: true" data-form="resource"
           data-controller="recipient-list" data-initializer="recipient-list" data-editable-view="${agnEditViewKey}">
 
+    <mvc:hidden path="page" />
+    <mvc:hidden path="sort" />
+    <mvc:hidden path="dir" />
+
     <script id="config:recipient-list" type="application/json">
         {
             "initialRules": ${emm:toJson(listForm.searchQueryBuilderRules)},
@@ -53,7 +56,7 @@
     </script>
 
     <div id="table-tile" class="tile" data-editable-tile="main">
-        <div class="tile-body d-flex flex-column gap-3">
+        <div class="tile-body vstack gap-3">
             <c:if test="${recipientList.fullListSize > countOfRecipients}">
                 <div class="notification-simple notification-simple--lg notification-simple--info">
                     <span><mvc:message code="recipient.search.max_recipients" arguments="${countOfRecipients}"/></span>
@@ -71,7 +74,7 @@
                                     <mvc:message code="default.list.entry.select" />
                                 </p>
                                 <div class="bulk-actions__controls">
-                                    <a href="#" class="icon-btn text-danger" data-tooltip="${deletionTooltip}" data-form-url="${deleteUrl}" data-form-method="GET" data-form-confirm>
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deletionTooltip}" data-form-url="${deleteUrl}" data-form-method="GET" data-form-confirm>
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
                                 </div>
@@ -89,34 +92,30 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table-hover table--borderless js-table"
-                                   id="recipient" name="recipientList"
-                                   sort="external" requestURI="/recipient/list.action?loadRecipients=true"
-                                   partialList="true" size="${listForm.numberOfRows}" excludedParams="*">
-
-                        <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
+                    <emm:table var="recipient" modelAttribute="recipientList" cssClass="table table-hover table--borderless js-table"
+                                   requestUri="/recipient/list.action?loadRecipients=true">
 
                         <c:if test="${allowedDeletion}">
                             <c:set var="checkboxSelectAll">
                                 <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
                             </c:set>
 
-                            <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                            <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
                                 <input class="form-check-input" type="checkbox" name="bulkIds" value="${recipient.id}" data-bulk-checkbox />
-                            </agnDisplay:column>
+                            </emm:column>
                         </c:if>
 
-                        <agnDisplay:column headerClass="js-table-sort" titleKey="mailing.MediaType.0" sortable="true" sortProperty="email" data-table-column="">
-                            <div class="d-flex align-items-center gap-2 overflow-wrap-anywhere">
+                        <emm:column titleKey="mailing.MediaType.0" sortable="true" sortProperty="email" data-table-column="">
+                            <div class="hstack gap-2 overflow-wrap-anywhere">
                                 <emm:ShowByPermission token="mailing.encrypted.send">
                                     <c:choose>
                                         <c:when test="${recipient.encryptedSend}">
-                                            <span class="icon-badge text-bg-danger">
+                                            <span class="icon-badge badge--dark-red">
                                                 <i class="icon icon-lock"></i>
                                             </span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="icon-badge text-bg-success">
+                                            <span class="icon-badge badge--green">
                                                 <i class="icon icon-lock-open text-white"></i>
                                             </span>
                                         </c:otherwise>
@@ -125,37 +124,37 @@
 
                                 <span class="text-truncate-table">${recipient.email}</span>
                             </div>
-                        </agnDisplay:column>
+                        </emm:column>
 
                         <%@include file="fragments/additional-fields.jspf"%>
 
-                        <agnDisplay:column headerClass="${allowedDeletion ? 'fit-content columns-picker' : 'hidden'}" class="${allowedDeletion ? '' : 'hidden'}" sortable="false">
+                        <emm:column headerClass="columns-picker">
                             <c:if test="${allowedShow}">
                                 <c:url var="viewLink" value="/recipient/${recipient.id}/view.action"/>
                                 <a href="${viewLink}" class="hidden" data-view-row="page"></a>
                             </c:if>
 
                             <c:if test="${allowedDeletion}">
-                                <a href="${deleteUrl}?bulkIds=${recipient.id}" class="icon-btn text-danger js-row-delete" data-tooltip="${deletionTooltip}">
+                                <a href="${deleteUrl}?bulkIds=${recipient.id}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deletionTooltip}">
                                     <i class="icon icon-trash-alt"></i>
                                 </a>
                             </c:if>
-                        </agnDisplay:column>
-                    </agnDisplay:table>
+                        </emm:column>
+                    </emm:table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
+    <div id="filter-tile" class="tile" data-toggle-tile data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/recipient/SearchMsg.xml"></a>
+                <a href="#" class="icon icon-question-circle" data-help="recipient/SearchMsg.xml"></a>
             </h1>
             <div class="tile-controls flex-grow-1">
-                <label class="text-switch me-auto">
+                <label class="switch me-auto">
                     <input id="use-advanced-filter" type="checkbox" name="recipients-advanced-search" data-action="toggle-filter"
                            data-stored-field ${forceShowAdvancedSearchTab ? 'checked' : ''}>
                     <span><mvc:message code="default.basic" /></span>
@@ -171,128 +170,123 @@
                     <c:param name="${RESET_SEARCH_PARAM_NAME}" value="true"/>
                 </c:url>
 
-                <a class="btn btn-icon btn-inverse" data-form-url="${resetSearchLink}" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" data-form-url="${resetSearchLink}" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-action="search" data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div id="basic-filters-block" class="col-12">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label" for="filter-email"><mvc:message code="mailing.MediaType.0" /></label>
-                            <mvc:text path="searchEmail" id="filter-email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label" for="filter-gender"><mvc:message code="Gender" /></label>
-                            <mvc:message var="allMsg" code="default.All"/>
-
-                            <mvc:select path="filterGender" cssClass="form-control" multiple="false" id="filter-gender">
-                                <mvc:option value="">${allMsg}</mvc:option>
-
-                                <mvc:option value="${Gender.MALE.getStorageValue()}"><mvc:message code="recipient.gender.0.short"/></mvc:option>
-                                <mvc:option value="${Gender.FEMALE.getStorageValue()}"><mvc:message code="recipient.gender.1.short"/></mvc:option>
-                                <emm:ShowByPermission token="recipient.gender.extended">
-                                    <mvc:option value="${Gender.PRAXIS.getStorageValue()}"><mvc:message code="recipient.gender.4.short"/></mvc:option>
-                                    <mvc:option value="${Gender.COMPANY.getStorageValue()}"><mvc:message code="recipient.gender.5.short"/></mvc:option>
-                                </emm:ShowByPermission>
-                                <mvc:option value="${Gender.UNKNOWN.getStorageValue()}"><mvc:message code="recipient.gender.2.short"/></mvc:option>
-                            </mvc:select>
-                        </div>
-
-                        <div class="col-12">
-                            <mvc:message var="firstnameMsg" code="Firstname" />
-                            <label class="form-label" for="filter-firstname">${firstnameMsg}</label>
-                            <mvc:text path="searchFirstName" id="filter-firstname" cssClass="form-control" placeholder="${firstnameMsg}"/>
-                        </div>
-
-                        <div class="col-12">
-                            <mvc:message var="lastnameMsg" code="Lastname" />
-                            <label class="form-label" for="filter-lastname">${lastnameMsg}</label>
-                            <mvc:text path="searchLastName" id="filter-lastname" cssClass="form-control" placeholder="${lastnameMsg}"/>
-                        </div>
-                    </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div id="basic-filters-block" class="vstack gap-inherit flex-grow-0">
+                <div>
+                    <label class="form-label" for="filter-email"><mvc:message code="mailing.MediaType.0" /></label>
+                    <mvc:text path="searchEmail" id="filter-email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
                 </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-mailinglist"><mvc:message code="Mailinglist" /></label>
-                    <mvc:select path="filterMailinglistId" cssClass="form-control" id="filter-mailinglist" data-action="change-mailinglist-id" multiple="false">
-                        <mvc:option value="0">${allMsg}</mvc:option>
-                        <c:if test="${not hasAnyDisabledMailingLists}">
-                            <mvc:option value="-1"><mvc:message code="No_Mailinglist"/></mvc:option>
-                        </c:if>
-                        <c:forEach var="mailinglist" items="${mailinglists}">
-                            <mvc:option value="${mailinglist.id}">${mailinglist.shortname}</mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
+                <div>
+                    <label class="form-label" for="filter-gender"><mvc:message code="Gender" /></label>
+                    <mvc:message var="allMsg" code="default.All"/>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-target"><mvc:message code="Target" /></label>
+                    <mvc:select path="filterGender" cssClass="form-control" multiple="false" id="filter-gender">
+                        <mvc:option value="">${allMsg}</mvc:option>
 
-                    <mvc:select path="filterTargetId" cssClass="form-control" id="filter-target" multiple="false">
-                        <mvc:option value="0">${allMsg}</mvc:option>
-                        <c:forEach var="target" items="${targets}">
-                            <mvc:option value="${target.id}">${target.targetName}</mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
-
-                <%@include file="fragments/search-altg-select.jspf" %>
-
-                <div class="col-12">
-                    <label class="form-label" for="filter-type"><mvc:message code="recipient.RecipientType" /></label>
-                    <mvc:select path="filterUserTypes" cssClass="form-control" id="filter-type" placeholder="${allMsg}">
-                        <mvc:option value="${USER_TYPE_ADMIN.typeCode}"><mvc:message code="recipient.Administrator"/></mvc:option>
-                        <mvc:option value="${USER_TYPE_TEST.typeCode}"><mvc:message code="TestSubscriber"/></mvc:option>
-                        <%@include file="fragments/recipient-novip-test.jspf" %>
-                        <mvc:option value="${USER_TYPE_NORMAL.typeCode}"><mvc:message code="NormalSubscriber"/></mvc:option>
-                        <%@include file="fragments/recipient-novip-normal.jspf" %>
-                    </mvc:select>
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label" for="filter-status"><mvc:message code="recipient.RecipientStatus" /></label>
-                    <mvc:select path="filterUserStatus" cssClass="form-control" multiple="false" id="filter-status">
-                        <mvc:option value="0">${allMsg}</mvc:option>
-                        <mvc:option value="1"><mvc:message code="recipient.MailingState1"/></mvc:option>
-                        <mvc:option value="2"><mvc:message code="recipient.MailingState2"/></mvc:option>
-                        <mvc:option value="3"><mvc:message code="recipient.OptOutAdmin"/></mvc:option>
-                        <mvc:option value="4"><mvc:message code="recipient.OptOutUser"/></mvc:option>
-                        <mvc:option value="5"><mvc:message code="recipient.MailingState5"/></mvc:option>
-                        <emm:ShowByPermission token="blacklist">
-                            <mvc:option value="6"><mvc:message code="recipient.MailingState6"/></mvc:option>
+                        <mvc:option value="${Gender.MALE.getStorageValue()}"><mvc:message code="recipient.gender.0.short"/></mvc:option>
+                        <mvc:option value="${Gender.FEMALE.getStorageValue()}"><mvc:message code="recipient.gender.1.short"/></mvc:option>
+                        <emm:ShowByPermission token="recipient.gender.extended">
+                            <mvc:option value="${Gender.PRAXIS.getStorageValue()}"><mvc:message code="recipient.gender.4.short"/></mvc:option>
+                            <mvc:option value="${Gender.COMPANY.getStorageValue()}"><mvc:message code="recipient.gender.5.short"/></mvc:option>
                         </emm:ShowByPermission>
-                        <mvc:option value="7"><mvc:message code="recipient.MailingState7"/></mvc:option>
+                        <mvc:option value="${Gender.UNKNOWN.getStorageValue()}"><mvc:message code="recipient.gender.2.short"/></mvc:option>
                     </mvc:select>
                 </div>
 
-                <div id="filter-query-builder-block" class="col-12" data-initializer="target-group-query-builder" data-multi-editor>
-                    <div class="d-flex gap-1 align-items-center mb-1">
-                        <label class="form-label m-0"><mvc:message code="recipient.AdvancedSearch" /></label>
-                        <button class="btn btn-icon btn-inverse" type="button" data-enlarged-modal data-tooltip="<mvc:message code="editor.enlargeEditor" />"
-                                data-modal-set="title: <mvc:message code="recipient.AdvancedSearch"/>, btnText: <mvc:message code="button.recipient.search.filter"/>">
-                            <i class="icon icon-expand-arrows-alt"></i>
-                        </button>
-                    </div>
-
-                    <div>
-                        <div id="targetgroup-querybuilder" data-enlarge-target>
-                            <mvc:hidden path="searchQueryBuilderRules" id="queryBuilderRules" />
-                        </div>
-                    </div>
-
-                    <script id="config:target-group-query-builder" type="application/json">
-                        {
-                            "mailTrackingAvailable": ${mailTrackingAvailable},
-                            "helpLanguage": "${helplanguage}",
-                            "queryBuilderRules": ${emm:toJson(listForm.searchQueryBuilderRules)},
-                            "queryBuilderFilters": ${queryBuilderFilters}
-                        }
-                    </script>
+                <div>
+                    <mvc:message var="firstnameMsg" code="Firstname" />
+                    <label class="form-label" for="filter-firstname">${firstnameMsg}</label>
+                    <mvc:text path="searchFirstName" id="filter-firstname" cssClass="form-control" placeholder="${firstnameMsg}"/>
                 </div>
+
+                <div>
+                    <mvc:message var="lastnameMsg" code="Lastname" />
+                    <label class="form-label" for="filter-lastname">${lastnameMsg}</label>
+                    <mvc:text path="searchLastName" id="filter-lastname" cssClass="form-control" placeholder="${lastnameMsg}"/>
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-mailinglist"><mvc:message code="Mailinglist" /></label>
+                <mvc:select path="filterMailinglistId" cssClass="form-control" id="filter-mailinglist" data-action="change-mailinglist-id" multiple="false">
+                    <mvc:option value="0">${allMsg}</mvc:option>
+                    <c:if test="${not hasAnyDisabledMailingLists}">
+                        <mvc:option value="-1"><mvc:message code="No_Mailinglist"/></mvc:option>
+                    </c:if>
+                    <c:forEach var="mailinglist" items="${mailinglists}">
+                        <mvc:option value="${mailinglist.id}">${mailinglist.shortname}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-target"><mvc:message code="Target" /></label>
+
+                <mvc:select path="filterTargetId" cssClass="form-control" id="filter-target" multiple="false">
+                    <mvc:option value="0">${allMsg}</mvc:option>
+                    <c:forEach var="target" items="${targets}">
+                        <mvc:option value="${target.id}">${target.targetName}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+
+            <%@include file="fragments/search-altg-select.jspf" %>
+
+            <div>
+                <label class="form-label" for="filter-type"><mvc:message code="recipient.RecipientType" /></label>
+                <mvc:select path="filterUserTypes" cssClass="form-control" id="filter-type" placeholder="${allMsg}">
+                    <mvc:option value="${USER_TYPE_ADMIN.typeCode}"><mvc:message code="recipient.Administrator"/></mvc:option>
+                    <mvc:option value="${USER_TYPE_TEST.typeCode}"><mvc:message code="TestSubscriber"/></mvc:option>
+                    <%@include file="fragments/recipient-novip-test.jspf" %>
+                    <mvc:option value="${USER_TYPE_NORMAL.typeCode}"><mvc:message code="NormalSubscriber"/></mvc:option>
+                    <%@include file="fragments/recipient-novip-normal.jspf" %>
+                </mvc:select>
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-status"><mvc:message code="recipient.RecipientStatus" /></label>
+                <mvc:select path="filterUserStatus" cssClass="form-control" multiple="false" id="filter-status">
+                    <mvc:option value="0">${allMsg}</mvc:option>
+                    <mvc:option value="1"><mvc:message code="recipient.MailingState1"/></mvc:option>
+                    <mvc:option value="2"><mvc:message code="recipient.MailingState2"/></mvc:option>
+                    <mvc:option value="3"><mvc:message code="recipient.OptOutAdmin"/></mvc:option>
+                    <mvc:option value="4"><mvc:message code="recipient.OptOutUser"/></mvc:option>
+                    <mvc:option value="5"><mvc:message code="recipient.MailingState5"/></mvc:option>
+                    <emm:ShowByPermission token="blacklist">
+                        <mvc:option value="6"><mvc:message code="recipient.MailingState6"/></mvc:option>
+                    </emm:ShowByPermission>
+                    <mvc:option value="7"><mvc:message code="recipient.MailingState7"/></mvc:option>
+                </mvc:select>
+            </div>
+
+            <div id="filter-query-builder-block" data-initializer="target-group-query-builder" data-multi-editor>
+                <div class="hstack gap-1 mb-1">
+                    <label class="form-label m-0"><mvc:message code="recipient.AdvancedSearch" /></label>
+                    <button class="btn btn-icon btn-secondary" type="button" data-enlarged-modal data-tooltip="<mvc:message code="editor.enlargeEditor" />"
+                            data-modal-set="title: <mvc:message code="recipient.AdvancedSearch"/>, btnText: <mvc:message code="button.recipient.search.filter"/>">
+                        <i class="icon icon-expand-arrows-alt"></i>
+                    </button>
+                </div>
+
+                <div>
+                    <div id="targetgroup-querybuilder" data-enlarge-target>
+                        <mvc:hidden path="searchQueryBuilderRules" id="queryBuilderRules" />
+                    </div>
+                </div>
+
+                <script id="config:target-group-query-builder" type="application/json">
+                    {
+                        "mailTrackingAvailable": ${mailTrackingAvailable},
+                        "queryBuilderRules": ${emm:toJson(listForm.searchQueryBuilderRules)},
+                        "queryBuilderFilters": ${queryBuilderFilters}
+                    }
+                </script>
             </div>
         </div>
     </div>
@@ -302,7 +296,7 @@
     <mvc:form servletRelativeAction="/recipient/createTargetGroup.action" cssClass="modal" tabindex="-1" data-form-focus="newTargetName">
         <input type="hidden" name="queryBuilderRules" value="{{- rules}}">
 
-        <div class="modal-dialog modal-fullscreen-lg-down modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="recipient.saveSearch"/></h1>
@@ -311,20 +305,18 @@
                     </button>
                 </div>
 
-                <div class="modal-body js-scrollable">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <mvc:message var="nameMsg" code="default.Name"/>
-                            <label for="newTargetName" class="form-label">${nameMsg}</label>
-                            <input type="text" id="newTargetName" name="shortname" maxlength="99" class="form-control"
-                                   data-field="required" placeholder="${nameMsg}"/>
-                        </div>
+                <div class="modal-body vstack gap-3 js-scrollable">
+                    <div>
+                        <mvc:message var="nameMsg" code="default.Name"/>
+                        <label for="newTargetName" class="form-label">${nameMsg}</label>
+                        <input type="text" id="newTargetName" name="shortname" maxlength="99" class="form-control"
+                               data-field="required" placeholder="${nameMsg}"/>
+                    </div>
 
-                        <div class="col-12">
-                            <mvc:message var="descriptionMsg" code="Description"/>
-                            <label for="newTargetDescription" class="form-label">${descriptionMsg}</label>
-                            <textarea id="newTargetDescription" name="description" class="form-control" placeholder="${descriptionMsg}" rows="1"></textarea>
-                        </div>
+                    <div>
+                        <mvc:message var="descriptionMsg" code="Description"/>
+                        <label for="newTargetDescription" class="form-label">${descriptionMsg}</label>
+                        <textarea id="newTargetDescription" name="description" class="form-control" placeholder="${descriptionMsg}" rows="1"></textarea>
                     </div>
                 </div>
 

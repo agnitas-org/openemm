@@ -1,6 +1,6 @@
 
-<%--@elvariable id="summedStatuses" type="net.sf.json.JSONArray"--%>
-<%--@elvariable id="notSummedStatuses" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="summedStatuses" type="org.json.JSONArray"--%>
+<%--@elvariable id="notSummedStatuses" type="org.json.JSONArray"--%>
 
 <div class="row h-100">
     <div class="col-6 h-100">

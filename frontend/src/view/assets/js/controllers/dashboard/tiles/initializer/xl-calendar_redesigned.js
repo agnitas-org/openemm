@@ -10,7 +10,7 @@
   const MailingLabel = AGN.Lib.Dashboard.XlCalendarMailingLabel;
   const AutoOptLabel = AGN.Lib.Dashboard.XlCalendarAutoOptLabel;
   const PushLabel = AGN.Lib.Dashboard.XlCalendarPushLabel;
-  const CalendarBase = AGN.Lib.Dashboard.CalendarBase;
+  const CalendarBase = AGN.Lib.Dashboard.CalendarBaseUxUpdateRollback;
 
   class XlCalendar extends CalendarBase {
 
@@ -26,7 +26,7 @@
       super($el, config);
 
       this.config = config;
-      this.dayMailingsLimit = config.showALlMailingsPerDay ? -1 : 5;
+      this.dayMailingsLimit = config.showALlMailingsPerDay ? -1 : 6; // 6 = 5 allowed by default +1 to detect if more mailings are present
       this.initCalendarTable();
       this.initUnsentMailings();
     }
@@ -278,13 +278,13 @@
 
     getMailings(startDate, endDate, limit) {
       $
-        .get(AGN.url('/calendar/mailings.action'), {startDate, endDate, limit: this.dayMailingsLimit + 1}) // +1 in order to detect if more mailings are present
+        .get(AGN.url('/calendar/mailings.action'), {startDate, endDate, limit})
         .done(mailings => _.each(mailings, mailing => this.addMailingLabel(mailing, limit)));
     }
 
     addMailingLabel(mailing, limit) {
       const $day = this.$day(mailing.sendDate);
-      if (limit > 0 && $day.find('[id^="xl-calendar-mailing-"]').length >= limit) {
+      if (limit > 0 && $day.find('[id^="xl-calendar-mailing-"]').length >= limit - 1) {
         if (!$day.find('[data-action="load-more-day-mailings"]').exists()) {
           $day.find(`${XlCalendar.DAY_SELECTOR}__body`).append(Template.text('xl-calendar-showMore-btn'));
         }

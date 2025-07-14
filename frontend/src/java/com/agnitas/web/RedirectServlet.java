@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.emm.core.commons.exceptions.HttpMethodNotAllowedException;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -30,21 +30,20 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.Constants;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.PunycodeCodec;
-import org.agnitas.util.TimeoutLRUMap;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.PunycodeCodec;
+import com.agnitas.util.TimeoutLRUMap;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.Company;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -53,8 +52,8 @@ import com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettings;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettingsCache;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdTrackingData;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdTrackingStringParser;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID.NamedUidBit;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.deeptracking.web.DeepTrackingCookieUtil;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
@@ -62,8 +61,8 @@ import com.agnitas.emm.core.mailing.cache.SnowflakeMailingCache;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
-import com.agnitas.emm.core.mobile.service.ComAccessDataService;
-import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.mobile.service.AccessDataService;
+import com.agnitas.emm.core.mobile.service.DeviceService;
 import com.agnitas.emm.core.trackablelinks.common.DeepTrackingMode;
 import com.agnitas.honeypot.service.HoneypotLinkService;
 import com.agnitas.rdir.processing.SubstituteLinkRdirPostProcessor;
@@ -73,7 +72,6 @@ import com.agnitas.util.backend.Decrypt;
 import com.agnitas.web.cookies.SameSiteCookiePolicy;
 import com.agnitas.web.util.RequestUtils;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -82,8 +80,7 @@ public class RedirectServlet extends HttpServlet {
 	/** Serial version UID. */
 	private static final long serialVersionUID = 7767318643176056518L;
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(RedirectServlet.class);
+	private static final Logger logger = LogManager.getLogger(RedirectServlet.class);
 
     protected TimeoutLRUMap<Integer, TrackableLink> urlCache;
 
@@ -92,13 +89,13 @@ public class RedirectServlet extends HttpServlet {
 
 	private ApplicationContext applicationContext;
 	private LinkService linkService;
-	private ComAccessDataService accessDataService;
-	private ComDeviceService deviceService;
+	private AccessDataService accessDataService;
+	private DeviceService deviceService;
 	private ClientService clientService;
 	private ExtensibleUIDService extensibleUIDService;
 	private TrackableLinkDao trackableLinkDao;
 	private EmmActionService emmActionService;
-	private ComCompanyDao companyDao;
+	private CompanyDao companyDao;
 	private ConfigService configService;
 	private MailingDao mailingDao;
 	private IntelliAdMailingSettingsCache intelliAdMailingSettingsCache;
@@ -114,7 +111,7 @@ public class RedirectServlet extends HttpServlet {
 	 * Service-Method, gets called everytime a User calls the servlet
 	 */
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		try {
 			doResolveLink(request, response);
 		} catch(final HttpMethodNotAllowedException e) {
@@ -142,7 +139,7 @@ public class RedirectServlet extends HttpServlet {
 
         try {
         	// Decode UID string
-			ComExtensibleUID uid = decodeUid(agnUidString, request);
+			ExtensibleUID uid = decodeUid(agnUidString, request);
 			if (uid == null) {
 				logger.warn("got no UID for " + agnUidString);
 				throw new RedirectException(String.format("Got no UID for '%s'", agnUidString));
@@ -156,7 +153,7 @@ public class RedirectServlet extends HttpServlet {
 			final int deviceID = getDeviceService().getDeviceId(request.getHeader("User-Agent"));
 			final int clientID = getClientService().getClientId(request.getHeader("User-Agent"));
 			
-			if (deviceID == ComDeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
+			if (deviceID == DeviceService.DEVICE_BLACKLISTED_NO_SERVICE) {
 				response.setContentType("text/plain");
 				response.getOutputStream().write("No service".getBytes("UTF-8"));
 			}
@@ -219,7 +216,7 @@ public class RedirectServlet extends HttpServlet {
 				
 				final int rangeHeaderStartByte = RequestUtils.getRangeRequestStart(request);
 				if (rangeHeaderStartByte <= 0) {
-	            	if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
+	            	if (deviceID != DeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 						if (!noCount && company != null && company.getId() != 0 && !(CompanyStatus.TODELETE == company.getStatus() || CompanyStatus.DELETED == company.getStatus())) {
 							getClickTrackingService().trackLinkClick(uid, request.getRemoteAddr(), deviceClass, deviceID, clientID);
 						}
@@ -284,10 +281,10 @@ public class RedirectServlet extends HttpServlet {
 		return agnUidString;
 	}
 	
-	private final boolean showHoneypotLinkIntermediatePage(final String fullUrl, final HttpServletRequest request, final HttpServletResponse response, final Company company, final String uidString, final ComExtensibleUID uid) throws IOException {
+	private final boolean showHoneypotLinkIntermediatePage(final String fullUrl, final HttpServletRequest request, final HttpServletResponse response, final Company company, final String uidString, final ExtensibleUID uid) throws IOException {
 		final HoneypotLinkService service = getHoneypotLinkService();
 		
-		// Service not set, so feature is not supported / available. Do not show imtermediate page.
+		// Service not set, so feature is not supported / available. Do not show intermediate page.
 		if(service == null) {
 			return false;
 		}
@@ -341,7 +338,7 @@ public class RedirectServlet extends HttpServlet {
 		return this.substituteLinkRdirPostProcessor;
 	}
 
-	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final Company company) {
+	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final Company company) {
 		String newFullUrl = fullUrl;
 		
 		if(!recipient.isDoNotTrackMe()) {
@@ -371,7 +368,7 @@ public class RedirectServlet extends HttpServlet {
 		return newFullUrl;
 	}
 	
-	private final ComExtensibleUID decodeUid(final String uid, final HttpServletRequest request ) throws Exception {
+	private final ExtensibleUID decodeUid(final String uid, final HttpServletRequest request ) throws Exception {
 		if (uid == null) {
 			// See Wiki for DeepTracking documentation:
 			// http://wiki.agnitas.local/doku.php?id=support:howtos:shopmessung
@@ -410,7 +407,7 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 
-	private void executeLinkActions(final ComExtensibleUID uid, final int deviceID, final DeviceClass deviceClass, final TrackableLink trackableLink, final HttpServletRequest request) throws Exception {
+	private void executeLinkActions(final ExtensibleUID uid, final int deviceID, final DeviceClass deviceClass, final TrackableLink trackableLink, final HttpServletRequest request) throws Exception {
 		final int companyID = uid.getCompanyID();
         final int mailingID = uid.getMailingID();
 
@@ -422,7 +419,7 @@ public class RedirectServlet extends HttpServlet {
         executeLinkAction(linkActionID, deviceID, uid, deviceClass, request);
 	}
 	
-	private void executeLinkAction(int actionID, int deviceID, ComExtensibleUID uid, DeviceClass deviceClass, HttpServletRequest request) throws Exception {
+	private void executeLinkAction(int actionID, int deviceID, ExtensibleUID uid, DeviceClass deviceClass, HttpServletRequest request) throws Exception {
 		if (actionID == 0) {
 			return;
 		}
@@ -485,7 +482,7 @@ public class RedirectServlet extends HttpServlet {
 		this.deprecatedUIDCache = deprecatedUIDCache;
 	}
 
-	private ComExtensibleUID decodeTag(String tag) {
+	private ExtensibleUID decodeTag(String tag) {
 		DeepTrackingToken deepTrackingToken;
 		try {
 			deepTrackingToken = DeepTrackingToken.parseTokenString(tag);
@@ -496,7 +493,7 @@ public class RedirectServlet extends HttpServlet {
 			return null;
 		}
 		
-		final ComExtensibleUID uid = UIDFactory.from(
+		final ExtensibleUID uid = UIDFactory.from(
 				null,
 				getConfigService().getLicenseID(),
 				deepTrackingToken.getCompanyID(),
@@ -530,24 +527,24 @@ public class RedirectServlet extends HttpServlet {
 		return linkService;
 	}
 
-	public void setAccessDataService(ComAccessDataService accessDataService) {
+	public void setAccessDataService(AccessDataService accessDataService) {
 		this.accessDataService = accessDataService;
 	}
 
-	private ComAccessDataService getAccessDataService() {
+	private AccessDataService getAccessDataService() {
 		if (accessDataService == null) {
-			accessDataService = (ComAccessDataService) getApplicationContext().getBean("AccessDataService");
+			accessDataService = (AccessDataService) getApplicationContext().getBean("AccessDataService");
 		}
 		return accessDataService;
 	}
 
-	public void setDeviceService(ComDeviceService comDeviceService) {
-		this.deviceService = comDeviceService;
+	public void setDeviceService(DeviceService deviceService) {
+		this.deviceService = deviceService;
 	}
 
-	private ComDeviceService getDeviceService() {
+	private DeviceService getDeviceService() {
 		if (deviceService == null) {
-			deviceService = (ComDeviceService) getApplicationContext().getBean("DeviceService");
+			deviceService = (DeviceService) getApplicationContext().getBean("DeviceService");
 		}
 		return deviceService;
 	}
@@ -574,7 +571,6 @@ public class RedirectServlet extends HttpServlet {
 		return extensibleUIDService;
 	}
 
-	@Required
 	public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
@@ -586,7 +582,6 @@ public class RedirectServlet extends HttpServlet {
 		return trackableLinkDao;
 	}
 
-	@Required
 	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
 	}
@@ -598,19 +593,17 @@ public class RedirectServlet extends HttpServlet {
 		return emmActionService;
 	}
 
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 
-	private ComCompanyDao getCompanyDao() {
+	private CompanyDao getCompanyDao() {
 		if (companyDao == null) {
-			companyDao = (ComCompanyDao) getApplicationContext().getBean("CompanyDao");
+			companyDao = (CompanyDao) getApplicationContext().getBean("CompanyDao");
 		}
 		return companyDao;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -622,7 +615,6 @@ public class RedirectServlet extends HttpServlet {
 		return configService;
 	}
 
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
@@ -634,7 +626,6 @@ public class RedirectServlet extends HttpServlet {
 		return mailingDao;
 	}
 
-	@Required
 	public final void setRecipientService(final RecipientService service) {
 		this.recipientService = Objects.requireNonNull(service, "Recipient service is null");
 	}
@@ -687,7 +678,7 @@ public class RedirectServlet extends HttpServlet {
 		return this.honeypotLinkService;
 	}
 	
-	private final String applyIntelliAd(final String fullUrl, final TrackableLink trackableLink) {
+	private String applyIntelliAd(final String fullUrl, final TrackableLink trackableLink) {
 		return isIntelliAdUsed(trackableLink.getMailingID(), trackableLink.getCompanyID())
 			? createIntelliAdLink(fullUrl, trackableLink.getMailingID(), trackableLink.getCompanyID())
 			: fullUrl;
@@ -733,7 +724,7 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
-	private static final String referenceTableRecordSelector(final HttpServletRequest request, final Company company, final long customerID) {
+	private static String referenceTableRecordSelector(final HttpServletRequest request, final Company company, final long customerID) {
 		final String encrypted = request.getParameter("ref");
 		
 		if (encrypted == null) {
@@ -751,11 +742,11 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
-	private final String getRdirUndecodableLinkUrl() {
+	private String getRdirUndecodableLinkUrl() {
 		return getConfigService().getValue(ConfigValue.RdirUndecodableLinkUrl);
 	}
 	
-	private final TrackableLink loadTrackableLink(final ComExtensibleUID uid, final boolean cachingDisabled) throws Exception {
+	private TrackableLink loadTrackableLink(final ExtensibleUID uid, final boolean cachingDisabled) throws Exception {
 		TrackableLink trackableLink;
 		
 		if (!cachingDisabled) {
@@ -763,14 +754,14 @@ public class RedirectServlet extends HttpServlet {
 			trackableLink = getUrlCache().get(uid.getUrlID());
 			if (trackableLink == null || trackableLink.getCompanyID() != uid.getCompanyID()) {
 				// get link and do actions
-				trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
+				trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID(), true);
 				if (trackableLink != null) {
 					getUrlCache().put(uid.getUrlID(), trackableLink);
 				}
 			}
 		} else {
 			// If caching is disabled, always read link from DB and do not cache it.
-			trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());
+			trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID(), true);
 		}
 
 		if (trackableLink == null) {

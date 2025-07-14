@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,15 +10,23 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
@@ -29,7 +37,7 @@ import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ExtendedConversionService;
@@ -41,12 +49,12 @@ import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.UserMessageException;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserMessageException;
+import com.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
@@ -58,17 +66,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
 public class MailingContentController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingContentController.class);
@@ -78,11 +75,11 @@ public class MailingContentController implements XssCheckAware {
     protected final MediaTypesService mediaTypesService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final MaildropService maildropService;
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final UserActivityLogService userActivityLogService;
     private final ProfileFieldDao profileFieldDao;
     private final MailingPropertiesRules mailingPropertiesRules;
-    private final ComMailingBaseService mailingBaseService;
+    private final MailingBaseService mailingBaseService;
     private final GridServiceWrapper gridServiceWrapper;
     private final AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
     private final AgnTagService agnTagService;
@@ -91,9 +88,9 @@ public class MailingContentController implements XssCheckAware {
     private final ExtendedConversionService extendedConversionService;
 
     public MailingContentController(MailinglistApprovalService mailinglistApprovalService, MailingService mailingService, MaildropService maildropService,
-                                    MailingContentService mailingContentService, ComTargetService targetService,
+                                    MailingContentService mailingContentService, TargetService targetService,
                                     UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
-                                    ComMailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
+                                    MailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
                                     AgnTagService agnTagService, PreviewImageService previewImageService, DynTagChainValidator dynTagChainValidator,
                                     ExtendedConversionService extendedConversionService, MediaTypesService mediaTypesService) {
         this.mailinglistApprovalService = mailinglistApprovalService;
@@ -141,6 +138,7 @@ public class MailingContentController implements XssCheckAware {
 
     @PostMapping("/save.action")
     public @ResponseBody
+    // TODO: EMMGUI-714: Check usages and remove if not used after remove of old design
     DataResponseDto<DynTagDto> save(Admin admin, HttpSession session, @RequestBody DynTagDto dynTagDto, Popups popups) {
         if (mailingService.isSettingsReadonly(admin, dynTagDto.getMailingId())) {
             popups.alert(ERROR_MSG);
@@ -251,7 +249,7 @@ public class MailingContentController implements XssCheckAware {
         boolean isTextGenerationEnabled = !mailing.isIsTemplate() && mailingContentService.isGenerationAvailable(mailing);
         boolean isWorldMailingSend = maildropService.isActiveMailing(mailingId, admin.getCompanyID());
 
-        if (isUiRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
         } else {
             boolean isLimitedRecipientOverview = isWorldMailingSend &&
@@ -266,7 +264,7 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("isMailingExclusiveLockingAcquired", isMailingExclusiveLockingAcquired);
         model.addAttribute("contentGenerationTonalities", ContentGenerationTonality.values());
         model.addAttribute("isContentGenerationAllowed", false);
-        if (isUiRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("mailFormat", mailing.getEmailParam().getMailFormat());
             model.addAttribute("isSettingsReadonly", mailingService.isSettingsReadonly(admin, mailing.isIsTemplate()));
             model.addAttribute("MAILING_EDITABLE", isMailingEditable(mailingId, admin));
@@ -279,10 +277,6 @@ public class MailingContentController implements XssCheckAware {
     private boolean isMailingEditable(int mailingId, Admin admin) {
         return !maildropService.isActiveMailing(mailingId, admin.getCompanyID());
     }
-
-    protected boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }    
 
     private void prepareForm(Mailing mailing, MailingContentForm form, Admin admin) {
         int mailingId = mailing.getId();
@@ -310,8 +304,12 @@ public class MailingContentController implements XssCheckAware {
     }
 
     protected void loadAdditionalData(Mailing mailing, MailingContentForm form, Admin admin, Model model) {
-        loadDynTags(mailing, form);
-        if (isUiRedesign(admin)) {
+        if (admin.isUpdatedUxUsed()) {
+            form.setTags(mailingContentService.loadDynTags(mailing, admin.getLocale()), true);
+        } else {
+            loadDynTags(mailing, form);
+        }
+        if (admin.isRedesignedUiUsed()) {
             loadTargets(admin, model);
         } else {
             loadTargetGroups(form, admin);
@@ -324,6 +322,7 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("targets", targetService.getTargetLights(admin, true, false, showContentBlockTargetGroupsOnly));
     }
 
+    // TODO check usage and remove after ux redesign finished
     private void loadDynTags(Mailing mailing, MailingContentForm form) {
         Map<String, DynamicTag> tags = mailing.getDynTags();
 
@@ -344,6 +343,7 @@ public class MailingContentController implements XssCheckAware {
         form.setTags(dynTags, true);
     }
 
+    // TODO check usage and remove after ux redesign finished
     private void clearBuildingBlocksFromTags(Mailing mailing, Map<String, DynamicTag> dynTags) {
         MailingComponent htmlComponent = mailing.getComponents().get("agnHtml");
         if (htmlComponent != null) {
@@ -354,10 +354,11 @@ public class MailingContentController implements XssCheckAware {
         }
     }
 
+    // TODO check usage and remove after ux redesign finished
     private List<String> findTocItemDynNames(String dynName, Collection<String> dynNames) {
         return dynNames.stream()
                 .filter(n -> n.startsWith(dynName + AgnUtils.TOC_ITEM_SUFFIX))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     protected boolean isMailingEditable(Admin admin, int mailingId) {
@@ -373,13 +374,7 @@ public class MailingContentController implements XssCheckAware {
     }
 
     private void loadAvailableInterestGroups(MailingContentForm form, Admin admin) {
-        List<ProfileField> availableInterestFields = Collections.emptyList();
-        try {
-            availableInterestFields = profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
-        } catch (Exception e) {
-            logger.error(String.format("Error occurred: %s", e.getMessage()), e);
-        }
-        form.setAvailableInterestGroups(availableInterestFields);
+        form.setAvailableInterestGroups(profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID()));
     }
 
     private boolean tryToLock(int mailingId, Admin admin, Model model) {
@@ -399,6 +394,7 @@ public class MailingContentController implements XssCheckAware {
         }
     }
 
+    // TODO check usage and remove after ux redesign finished
     private List<String> getAgnTags(String content, int companyId) {
         return agnTagService.getDynTagsNames(content, agnDynTagGroupResolverFactory.create(companyId, 0));
     }

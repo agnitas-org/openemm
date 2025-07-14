@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,7 @@ import com.agnitas.emm.core.supervisor.beans.Supervisor;
 public class SupervisorUtil {
 	
 	/** Character to separate supervisor names from user names. */
-	public static final transient char SUPERVISOR_SEPARATOR_CHAR = '/';
+	public static final char SUPERVISOR_SEPARATOR_CHAR = '/';
 	
 	/**
 	 * Checks if login is attempt with supervisor name. 

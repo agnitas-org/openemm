@@ -18,7 +18,48 @@
 
 	<!-- emm applicationContext.xml part -->
 
-	<bean id="comObjectFactory" class="com.agnitas.emm.springws.jaxb.ObjectFactory" />
+	<bean id="comObjectFactory" class="com.agnitas.emm.springws.jaxb.extended.ObjectFactory" />
+
+	<bean id="throttlingService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
+		<property name="bucketManager">
+			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.LocalBucketManager">
+				<property name="configService" ref="ConfigService" />
+				<property name="webserviceUserService" ref="WebserviceUserService" />
+			</bean>
+		</property>
+
+		<property name="apiInvocationCosts">
+			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.WebserviceInvocationCostsCache">
+				<constructor-arg><bean class="com.agnitas.emm.springws.throttling.tokenbucket.dao.DatabaseBasedWebserviceInvocationCosts" parent="_BaseDao" /></constructor-arg>
+				<constructor-arg ref="ConfigService" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="WsLoginTrackService" class="org.agnitas.emm.core.logintracking.service.impl.LoginTrackServiceImpl">
+		<property name="loginTrackDao" ref="WsLoginTrackDao" />
+
+		<property name="loginTrackSettingsDao">
+			<bean class="com.agnitas.emm.springws.logintrack.WebserviceLoginTrackSettingsDaoImpl">
+				<property name="configService" ref="ConfigService" />
+			</bean>
+		</property>
+	</bean>
+
+
+
+	<bean id="springSecurityHandler" class="org.springframework.ws.soap.security.wss4j2.callback.SpringSecurityPasswordValidationCallbackHandler">
+		<property name="userDetailsService" ref="userDetailsService"/>
+	</bean>
+
+	<bean id="userDetailsService" class="com.agnitas.emm.springws.WebserviceUserDetailService">
+		<property name="dataSource" ref="dataSource" />
+		<property name="webservicePasswordEncryptor" ref="WebservicePasswordEncryptor" />
+		<property name="javaMailService" ref="JavaMailService"/>
+		<property name="configService" ref="ConfigService" />
+	</bean>
+
+
 
     <!-- emm ws part -->
 

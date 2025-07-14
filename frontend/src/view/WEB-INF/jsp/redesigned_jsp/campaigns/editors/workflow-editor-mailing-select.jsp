@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div class="form-column">
     <div>
@@ -28,7 +28,8 @@
             </select>
             <c:if test="${param.showMailingLinks and not emm:permissionAllowed('mailing.content.readonly', pageContext.request)}">
                 <div id="mailing_create_edit_link">
-                    <a href="#" class="btn btn-icon btn-primary" ${param.disabledSelection == 'true' ? 'data-action=\"mailing-editor-new\"' : ''}>
+                    <a href="#" class="btn btn-icon btn-primary" data-tooltip="<mvc:message code="mailing.MailingEdit" />"
+                        ${param.disabledSelection == 'true' ? 'data-action=\"mailing-editor-new\"' : ''}>
                         <i class="icon icon-plus"></i>
                     </a>
                 </div>

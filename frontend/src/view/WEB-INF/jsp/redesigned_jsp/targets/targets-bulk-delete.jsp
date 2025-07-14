@@ -3,11 +3,11 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="form" type="org.agnitas.web.forms.BulkActionForm"--%>
+<%--@elvariable id="form" type="com.agnitas.web.forms.BulkActionForm"--%>
 <%--@elvariable id="names" type="java.util.List<java.lang.String>"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/target/bulk/delete.action" modelAttribute="form">
             <c:forEach var="targetId" items="${form.bulkIds}">
                 <input type="hidden" name="bulkIds" value="${targetId}" />

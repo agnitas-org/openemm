@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,9 +11,9 @@
 package com.agnitas.emm.core.useractivitylog.dao;
 
 import com.agnitas.beans.Admin;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.util.SqlPreparedStatementManager;
 
 import java.util.Date;
 import java.util.List;
@@ -25,8 +25,8 @@ public interface UserActivityLogDao extends UserActivityLogDaoBase {
 
 	void writeUserActivityLog(Admin admin, String action, String description);
 
-	PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) throws Exception;
+	PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize);
 
-	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description) throws Exception;
+	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description);
 
 }

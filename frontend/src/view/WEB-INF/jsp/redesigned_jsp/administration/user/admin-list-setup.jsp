@@ -7,7 +7,7 @@
 <c:set var="agnNavigationKey" 		value="admins" 				        scope="request" />
 <c:set var="agnTitleKey" 			value="UserActivitylog.Users" 		scope="request" />
 <c:set var="sidemenu_active" 		value="Administration" 		        scope="request" />
-<c:set var="sidemenu_sub_active" 	value="settings.Admin" 		        scope="request" />
+<c:set var="sidemenu_sub_active" 	value="UserActivitylog.Users" 		scope="request" />
 <c:set var="agnHighlightKey" 		value="UserActivitylog.Users" 		scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="UserActivitylog.Users" 		scope="request" />
 <c:set var="agnHelpKey" 			value="User" 				        scope="request" />

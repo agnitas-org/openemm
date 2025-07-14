@@ -46,7 +46,7 @@ This option is even easier. You only need to add `[data-copyable-value]` attribu
 
   const Tooltip = AGN.Lib.Tooltip;
 
-  AGN.Lib.Action.new({click: '[data-copyable]'}, function() {
+  AGN.Lib.Action.new({click: '[data-copyable]'}, function () {
     let value = undefined;
     let $tooltipTarget = this.el;
 
@@ -65,10 +65,17 @@ This option is even easier. You only need to add `[data-copyable-value]` attribu
     if (value !== undefined) {
       AGN.Lib.Clipboard.set(value, (v, success) => {
         if (success) {
-          Tooltip.create($tooltipTarget, {
-            title: t('clipboard.copied.tooltip'),
-            trigger: 'manual'
-          });
+          const existingTooltip = Tooltip.get($tooltipTarget);
+          const copiedMsg = t('clipboard.copied.tooltip');
+
+          if (existingTooltip) {
+            Tooltip.setContent($tooltipTarget, copiedMsg);
+          } else {
+            Tooltip.create($tooltipTarget, {
+              title: copiedMsg,
+              trigger: 'manual'
+            });
+          }
 
           Tooltip.setShown($tooltipTarget);
 
@@ -79,7 +86,13 @@ This option is even easier. You only need to add `[data-copyable-value]` attribu
           }
 
           const timeoutId = setTimeout(() => {
-            Tooltip.remove($tooltipTarget);
+            if (existingTooltip) {
+              Tooltip.restoreContent($tooltipTarget);
+              Tooltip.setShown($tooltipTarget, false);
+            } else {
+              Tooltip.remove($tooltipTarget);
+            }
+
             this.el.removeData('tooltip-timeout-id');
           }, 2500);
 

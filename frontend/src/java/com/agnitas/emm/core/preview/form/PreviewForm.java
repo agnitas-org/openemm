@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.preview.form;
 
-import java.util.List;
-
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.preview.ModeType;
-import org.agnitas.preview.Preview;
+import com.agnitas.preview.ModeType;
+import com.agnitas.preview.Preview;
+
+import java.util.List;
 
 public class PreviewForm {
 
@@ -27,7 +27,7 @@ public class PreviewForm {
     private int workflowId;
     private int format = MailingPreviewHelper.INPUT_TYPE_HTML;
     private String previewContent;
-    private int size = Preview.Size.DESKTOP.getValue();
+    private int size = Preview.Size.getDefaultSize().getValue();
     private ModeType modeType = ModeType.RECIPIENT;
     private String subject;
     private String preHeader;
@@ -47,7 +47,9 @@ public class PreviewForm {
     private String width;
     private boolean anon;
     private boolean onAnonPreserveLinks;
+    private boolean forEmcTextModules;
     private List<String> personalizedTestRunRecipients;
+    private boolean internal;
 
     public int getMailingId() {
         return mailingId;
@@ -304,5 +306,21 @@ public class PreviewForm {
 
     public void setSmsAddress(String smsAddress) {
         this.smsAddress = smsAddress;
+    }
+
+    public boolean isForEmcTextModules() {
+        return forEmcTextModules;
+    }
+
+    public void setForEmcTextModules(boolean forEmcTextModules) {
+        this.forEmcTextModules = forEmcTextModules;
+    }
+
+    public boolean isInternal() {
+        return internal;
+    }
+
+    public void setInternal(boolean internal) {
+        this.internal = internal;
     }
 }

@@ -3,12 +3,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:url var="upsellingImageSrc" value="assets/core/images/facelift/msgs_msg-inbox-preview.svg"/>
-<c:set var="on_error_image" value="/assets/core/images/facelift/msgs_msg-inbox-preview.png"/>
+<c:url var="upsellingImageSrc" value="assets/core/images/facelift/msgs_msg-inbox-preview_old.svg"/>
+<c:set var="on_error_image" value="/assets/core/images/facelift/msgs_msg-inbox-preview_old.png"/>
 
 <div class="msg-tile msg-tile-success">
     <div class="msg-tile-header">
-        <img alt="" src="${upsellingImageSrc}" onerror="this.onerror=null; this.src='assets/core/images/facelift/msgs_msg-inbox-preview.png'">
+        <img alt="" src="${upsellingImageSrc}" onerror="this.onerror=null; this.src='assets/core/images/facelift/msgs_msg-inbox-preview_old.png'">
         <h1><mvc:message code="forbidden.feature.inboxPreview.header"/></h1>
     </div>
     <div class="msg-tile-content">

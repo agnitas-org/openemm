@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,19 +14,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 
 public interface MailingParameterLogService {
     
-    List<UserAction> getMailingParametersChangeLog(int mailingId, Map<Integer, ComMailingParameter> parametersOld, Map<Integer, ComMailingParameter> parametersNew);
+    List<UserAction> getMailingParametersChangeLog(int mailingId, Map<Integer, MailingParameter> parametersOld, Map<Integer, MailingParameter> parametersNew);
     
-    UserAction getMailingParameterChangeLog(int mailingId, int parameterId, ComMailingParameter parameterOld, ComMailingParameter parameterNew);
+    UserAction getMailingParameterChangeLog(int mailingId, int parameterId, MailingParameter parameterOld, MailingParameter parameterNew);
     
-    UserAction getMailingParameterCreateLog(int mailingId, ComMailingParameter parameterNew);
+    UserAction getMailingParameterCreateLog(int mailingId, MailingParameter parameterNew);
     
     UserAction getMailingParameterDeleteLog(Collection<Integer> ids);
     
-    List<String> getParameterChanges(ComMailingParameter oldParameter, ComMailingParameter newParameter);
+    List<String> getParameterChanges(MailingParameter oldParameter, MailingParameter newParameter);
 }

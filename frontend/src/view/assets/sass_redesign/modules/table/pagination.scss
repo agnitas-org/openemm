@@ -1,13 +1,19 @@
+
 .pagination {
+  --pagination-active-bg: #{$blue};
+  --pagination-active-color: #{$white};
+  --pagination-disabled-text-color: #{$light-grey};
+  --pagination-text-color: var(--table-footer-color);
+
   li {
     @include flex-center;
     @include size($pageBtnWidth);
     font-weight: $font-weight-semibold;
-    color: var(--table-head-text-color);
+    color: var(--pagination-text-color);
 
     &.active, &:hover {
-      color: $white;
-      background-color: var(--pagination-active-bg-color);
+      color: var(--pagination-active-color);
+      background-color: var(--pagination-active-bg);
       border-radius: $border-radius;
     }
 
@@ -21,5 +27,30 @@
       width: 100%;
       text-align: center;
     }
+  }
+}
+
+@include color-mode(dark) {
+  .pagination {
+    --pagination-active-bg: #5897fb;
+    --pagination-disabled-text-color: #{$gray-600};
+    --pagination-text-color: #{$white};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .pagination {
+    --pagination-active-bg: #{$con-dark-blue};
+    --pagination-disabled-text-color: #{$dark-grey};
+    --pagination-text-color: var(--pagination-active-bg);
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .pagination {
+    --pagination-active-bg: #{$white};
+    --pagination-active-color: #{$con-dark-blue};
+    --pagination-disabled-text-color: #{$light-grey};
+    --pagination-text-color: #{$white};
   }
 }

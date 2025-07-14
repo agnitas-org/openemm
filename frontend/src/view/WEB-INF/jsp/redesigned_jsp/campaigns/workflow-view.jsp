@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.beans.Recipient" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
@@ -12,7 +12,7 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowForward" %>
-<%@ page import="com.agnitas.emm.core.workflow.service.ComSampleWorkflowFactory.SampleWorkflowType" %>
+<%@ page import="com.agnitas.emm.core.workflow.service.SampleWorkflowFactory.SampleWorkflowType" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -61,10 +61,13 @@
 <script id="workflow-node" type="text/x-mustache-template">
     <%-- Toggle 'active' class to toggle active/inactive node images --%>
     <div class="node" rel="popover">
+        <div class="node-comment-image">
+            <svg><use href="${iconSpriteLocation}#comment"></use></svg>
+        </div>
         ${workflowNodeIconTemplate}
         <div class="icon-overlay-title"></div>
         <div class="node-status-badge" style="display:none;">
-            <span class="badge icon-badge text-bg-primary"><i class="icon icon-cogs"></i></span>
+            <span class="badge badge--standard-blue icon-badge"><i class="icon icon-cogs"></i></span>
         </div>
         <div class="node-connect-button">
             <svg><use href="${iconSpriteLocation}#arrow"></use></svg>
@@ -94,7 +97,7 @@
         {
             "icons": ${workflowForm.workflowSchema},
             "workflowId": ${workflowForm.workflowId},
-            "shortname": "${workflowForm.shortname}",
+            "shortname": ${emm:toJson(workflowForm.shortname)},
             "constants": {
                 "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
                 "startTypeDate": "<%= WorkflowStart.WorkflowStartType.DATE %>",
@@ -186,6 +189,7 @@
     
     <mvc:form id="workflowForm" cssClass="tile flex-none" servletRelativeAction="/workflow/save.action" modelAttribute="workflowForm"
               data-form="resource"
+              data-action="workflow-save"
               data-editable-tile="" cssStyle="height: auto">
         <input type="hidden" name="workflowId" value="${workflowForm.workflowId}"/>
         <input type="hidden" name="schema" id="schema" value=""/>
@@ -213,7 +217,7 @@
                         }
                     </script>
                     <div data-tooltip="<mvc:message code="workflow.pause.timer"/>">
-                        <div id="workflow-pause-timer-text" class="badge text-bg-primary">--:--:--</div>
+                        <div id="workflow-pause-timer-text" class="badge badge--standard-blue">--:--:--</div>
                     </div>
                 </c:if>
                 <span class="badge campaign.status.${workflowForm.status.name}"></span>
@@ -246,7 +250,7 @@
                                 <mvc:message var="dryRunHelpTitle" code="${workflowToggleTestingButtonState ? 'button.workflow.testrun.start' : 'button.workflow.testrun.stop'}"/>
                                 <mvc:message var="dryRunHelpText" code="button.workflow.testrun.help"/>
                                 <c:if test="${workflowToggleTestingButtonEnabled}">
-                                    <a href="#" class="btn btn-icon bg-primary text-white" data-popover="${dryRunHelpText}" data-popover-options='{"title": "${dryRunHelpTitle}", "html": true, "popperConfig": {"placement": "bottom-end"}}'
+                                    <a href="#" class="btn btn-icon btn-primary" data-popover="${dryRunHelpText}" data-popover-options='{"title": "${dryRunHelpTitle}", "html": true, "popperConfig": {"placement": "bottom-end"}}'
                                        data-action="workflow-dry-run">
                                         <i class="icon icon-flask"></i>
                                     </a>
@@ -255,17 +259,17 @@
                             
                             <c:if test="${workflowForm.statusMaybeChangedTo ne STATUS_NONE}">
                                 <c:if test="${workflowForm.status ne STATUS_ACTIVE}">
-                                    <a href="#" class="btn btn-icon bg-success text-white" data-tooltip="<mvc:message code='${isPause ? "button.continue.workflow" : "button.Activate"}'/>" data-action="${isPause ? 'workflow-unpause' : 'workflow-activate'}">
+                                    <a href="#" class="btn btn-icon btn-success" data-tooltip="<mvc:message code='${isPause ? "button.continue.workflow" : "button.Activate"}'/>" data-action="${isPause ? 'workflow-unpause' : 'workflow-activate'}">
                                         <i class="icon icon-play"></i>
                                     </a>
                                 </c:if>
                                 <c:if test="${isActive}">
-                                    <a href="#" class="btn btn-icon bg-warning text-white" data-tooltip="<mvc:message code='button.Pause'/>" data-action="workflow-pause">
+                                    <a href="#" class="btn btn-icon btn-warning" data-tooltip="<mvc:message code='button.Pause'/>" data-action="workflow-pause">
                                         <i class="icon icon-pause"></i>
                                     </a>
                                 </c:if>
                                 <c:if test="${isActive or isTesting or isPause}">
-                                    <a href="#" class="btn btn-icon bg-danger text-white" data-tooltip="<mvc:message code='stop'/>" data-action="workflow-deactivate">
+                                    <a href="#" class="btn btn-icon btn-danger" data-tooltip="<mvc:message code='stop'/>" data-action="workflow-deactivate">
                                         <i class="icon icon-stop"></i>
                                     </a>
                                 </c:if>
@@ -332,6 +336,9 @@
                                         <use href="${iconSpriteLocation}#archive"></use>
                                     </svg>
                                     <%@include file="fragments/workflow-sending-icons-extended.jspf" %>
+                                    <svg class="toolbar__icon js-draggable-button w-35" data-type="split" data-tooltip="<mvc:message code="mailing.listsplit"/>">
+                                        <use href="${iconSpriteLocation}#split"></use>
+                                    </svg>
                                 </div>
                             </div>
         
@@ -362,10 +369,10 @@
                         <div>
                             <div class="form-label text-truncate"><mvc:message code="action.Action"/></div>
                             <div class="d-flex gap-1">
-                                <a id="autoLayout" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code='workflow.doAutoLayout'/>" data-action="align-all">
+                                <a id="autoLayout" class="btn btn-icon btn-secondary" data-tooltip="<mvc:message code='workflow.doAutoLayout'/>" data-action="align-all">
                                     <i class="icon icon-vector-square"></i>
                                 </a>
-                                <a id="autoLayout" class="btn btn-icon btn-inverse" data-tooltip="<mvc:message code='campaign.grid.show'/>" data-action="show-grid">
+                                <a id="autoLayout" class="btn btn-icon btn-secondary" data-tooltip="<mvc:message code='campaign.grid.show'/>" data-action="show-grid">
                                     <i class="icon icon-border-all"></i>
                                 </a>
                                 <a href="#" id="undoButton" class="btn btn-icon btn-primary disabled" data-action="undo" data-tooltip='<mvc:message code="workflow.panel.undo"/>'>
@@ -413,7 +420,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div id="collapsed-navigator" class="btn btn-icon btn-inverse" style="display: none">
+                            <div id="collapsed-navigator" class="btn btn-icon btn-secondary" style="display: none">
                                 <i class="icon icon-search-plus"></i>
                             </div>
                         </div>
@@ -455,6 +462,7 @@
                 <jsp:include page="editors/workflow-sms-mailing-editor.jsp"/>
                 <jsp:include page="editors/workflow-post-mailing-editor.jsp"/>
                 <jsp:include page="editors/workflow-icon-comment-editor.jsp"/>
+                <jsp:include page="editors/workflow-split-editor.jsp"/>
             </div>
         </div>
     </div>
@@ -481,6 +489,7 @@
 <%@include file="fragments/modal/workflow-copy-modal.jspf" %>
 <%@include file="fragments/modal/own-workflow-expanding-modal.jspf" %>
 <%@include file="fragments/modal/workflow-create-auto-opt-modal.jspf" %>
+<%@include file="fragments/modal/workflow-create-split-modal.jspf" %>
 <%@include file="fragments/modal/workflow-save-before-pdf-modal.jspf" %>
 <c:if test="${workflowToggleTestingButtonEnabled}">
     <%@include file="fragments/modal/workflow-testing-modal.jspf" %>

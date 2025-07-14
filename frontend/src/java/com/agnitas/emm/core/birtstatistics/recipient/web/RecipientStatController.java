@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,36 +10,13 @@
 
 package com.agnitas.emm.core.birtstatistics.recipient.web;
 
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import java.io.ByteArrayInputStream;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
-
-import com.agnitas.emm.core.report.services.RecipientReportService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.web.forms.FormDate;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.context.request.RequestContextHolder;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
@@ -47,17 +24,35 @@ import com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticFor
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.report.services.RecipientReportService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.messages.Message;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.FormDate;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 public class RecipientStatController implements XssCheckAware {
     
     private static final Logger logger = LogManager.getLogger(RecipientStatController.class);
 
     protected final BirtStatisticsService birtStatisticsService;
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final RecipientReportService recipientReportService;
     private final MediaTypesService mediaTypesService;
     private final ConversionService conversionService;
@@ -65,8 +60,7 @@ public class RecipientStatController implements XssCheckAware {
     private final UserActivityLogService userActivityLogService;
     private final ConfigService configService;
 
-    
-    public RecipientStatController(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
+    public RecipientStatController(BirtStatisticsService birtStatisticsService, TargetService targetService,
                                    RecipientReportService recipientReportService, @Qualifier("MediaTypesService") MediaTypesService mediaTypesService, ConversionService conversionService,
                                    MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                                    ConfigService configService) {
@@ -81,15 +75,13 @@ public class RecipientStatController implements XssCheckAware {
     }
     
     @RequestMapping("/view.action")
-    public String view(Admin admin, @ModelAttribute(name="form") RecipientStatisticForm form, Model model, Popups popups) throws Exception {
+    public String view(Admin admin, @ModelAttribute(name="form") RecipientStatisticForm form, HttpSession session, Model model, Popups popups) {
         if (!validateDates(admin, form.getStartDate(), form.getEndDate(), popups)) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         SimpleDateFormat datePickerFormat = admin.getDateFormat();
         setDefaultDateValuesIfEmpty(form, datePickerFormat);
-
-        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
 
         // Admins date format is missing in FormDate, so add it
         form.getStartDate().setFormatter(admin.getDateFormatter());
@@ -106,7 +98,7 @@ public class RecipientStatController implements XssCheckAware {
     		form.getEndDate().set(newEndDate, DateTimeFormatter.ofPattern(datePickerFormat.toPattern()));
     	}
 
-        model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, sessionId, statisticDto));
+        model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, session.getId(), statisticDto));
 
         model.addAttribute("localeDatePattern", datePickerFormat.toPattern());
 
@@ -201,14 +193,8 @@ public class RecipientStatController implements XssCheckAware {
             popups.alert("error.export.file_not_ready");
             return MESSAGES_VIEW;
         }
-
         writeUAL(admin, "export recipient remarks csv", getRemarksCsvUALDescription(mailingListId, targetId));
-        String fileName = "recipient_remarks.csv";
-        return ResponseEntity.ok()
-                .contentLength(csv.length)
-                .contentType(MediaType.parseMediaType("application/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(fileName))
-                .body(new InputStreamResource(new ByteArrayInputStream(csv)));
+        return MvcUtils.csvFileResponse(csv, "recipient_remarks.csv");
     }
 
     private String getRemarksCsvUALDescription(int mailinglistId, int targetId) {

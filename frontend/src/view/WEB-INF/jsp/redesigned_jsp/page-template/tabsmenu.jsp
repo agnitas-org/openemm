@@ -47,7 +47,7 @@
                         </c:if>
 
                         <li data-action="expand-navbar-tab" class="nav-item">
-                            <a href="<c:url value="${navigationLink}" />" class="btn btn-outline-primary ${_navigation_isHighlightKey ? 'active' : ''}">
+                            <a href="<c:url value="${navigationLink}" />" class="btn btn-header-tab ${_navigation_isHighlightKey ? 'active' : ''}">
                                 <span class="text-truncate">${agnHeaderTabMsg}</span>
                             </a>
                         </li>
@@ -56,7 +56,7 @@
                         <c:set var="agnShownHeaderTabs" value="${agnShownHeaderTabs + 1}" />
 
                         <li data-action="expand-navbar-tab" class="nav-item" data-tooltip="${fn:escapeXml(_navigation_conditionMsg)}">
-                            <a href="#" class="btn btn-outline-primary disabled">
+                            <a href="#" class="btn btn-header-tab disabled">
                                 <span class="text-truncate">${agnHeaderTabMsg}</span>
                             </a>
                         </li>
@@ -69,7 +69,7 @@
                         </c:url>
 
                         <li data-action="expand-navbar-tab" class="nav-item">
-                            <a href="${upsellingLink}" class="btn btn-outline-primary ${_navigation_isHighlightKey ? 'active' : ''}"
+                            <a href="${upsellingLink}" class="btn btn-header-tab ${_navigation_isHighlightKey ? 'active' : ''}"
                                data-confirm data-tooltip="<mvc:message code="default.forbidden.tab.premium.feature" />">
                                 <span class="text-truncate">${agnHeaderTabMsg}</span>
                             </a>
@@ -84,7 +84,7 @@
 <c:if test="${agnShownHeaderTabs gt 1}">
     <div id="navbar_wrapper" data-controller="navbar">
         <nav class="navbar navbar-expand-lg">
-            <a class="chosen-tab btn btn-primary" href="#">${agnActiveHeaderTab}</a>
+            <a class="btn btn-header-tab active" href="#">${agnActiveHeaderTab}</a>
             <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
                 <i class="icon icon-bars"></i>
             </button>

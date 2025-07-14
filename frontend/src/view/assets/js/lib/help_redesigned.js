@@ -5,7 +5,9 @@
       this.$el = $element;
       this.config = null;
 
-      $.get(AGN.url($element.data('help'))).done(xml => {
+      const url = `help_${window.helpLanguage || 'en'}/${$element.data('help')}`;
+
+      $.get(AGN.url(url)).done(xml => {
         this.config = $(xml);
         this.popover();
         this.show();
@@ -17,12 +19,7 @@
     }
 
     getConfig(key) {
-      const val = this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
-      if (!this.$el.is('[data-help-config]')) {
-        return val;
-      }
-
-      return _.template(val)($(this.$el.data('help-config')).json());
+      return this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
     }
 
     popover() {

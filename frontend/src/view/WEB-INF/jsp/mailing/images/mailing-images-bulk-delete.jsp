@@ -4,7 +4,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
-<%--@elvariable id="bulkActionForm" type="org.agnitas.web.forms.BulkActionForm"--%>
+<%--@elvariable id="bulkActionForm" type="com.agnitas.web.forms.BulkActionForm"--%>
 
 <emm:CheckLogon/>
 <emm:Permission token="mailing.components.change"/>

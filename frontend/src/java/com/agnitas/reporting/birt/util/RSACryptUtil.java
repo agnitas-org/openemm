@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -98,14 +99,8 @@ public class RSACryptUtil {
 	 * @return Encrypted text encoded as BASE64
 	 */
 	public static String encryptUrlSafe(String text, String publicKey) throws Exception {
-		try {
-			byte[] cipherText = encrypt(text.getBytes("UTF8"), publicKey);
-
-			return encodeBASE64Url(cipherText);
-		} catch (Exception e) {
-			LOGGER.error(MessageFormat.format("Error while encrypting: {0}", e.getMessage()));
-			throw e;
-		}
+		byte[] cipherText = encrypt(text.getBytes(StandardCharsets.UTF_8), publicKey);
+		return encodeBASE64Url(cipherText);
 	}
 
 	/**
@@ -206,7 +201,7 @@ public class RSACryptUtil {
 	 * 
 	 * @return Encoded string
 	 */
-	private static String encodeBASE64Url(byte[] bytes) throws UnsupportedEncodingException {
+	private static String encodeBASE64Url(byte[] bytes) {
 		return Base64.encodeBase64URLSafeString(bytes);
 	}
 

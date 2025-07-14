@@ -7,11 +7,11 @@ import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 
 import com.agnitas.dao.AdminDao;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.impl.AdminDaoImpl;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.dao.impl.CompanyDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
@@ -45,9 +45,9 @@ public class BIRTDataSetHelper {
         companyInfoDao.setJavaMailService(javaMailservice);
         newConfigService.setCompanyInfoDao(companyInfoDao);
         
-        ComCompanyDao companyDao = new ComCompanyDaoImpl();
-        ((ComCompanyDaoImpl) companyDao).setDataSource(dataSource);
-        ((ComCompanyDaoImpl) companyDao).setJavaMailService(javaMailservice);
+        CompanyDao companyDao = new CompanyDaoImpl();
+        ((CompanyDaoImpl) companyDao).setDataSource(dataSource);
+        ((CompanyDaoImpl) companyDao).setJavaMailService(javaMailservice);
         newConfigService.setCompanyDao(companyDao);
         
         LicenseDao licenseDao = new LicenseDaoImpl();

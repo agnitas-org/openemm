@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,7 @@ public class JobQueueOverviewFilter {
     private Integer id;
     private Boolean running;
     private String name;
-    private DateRange startDate = new DateRange();
+    private DateRange nextStartDate = new DateRange();
     private Boolean successful;
 
     public Integer getId() {
@@ -46,12 +46,12 @@ public class JobQueueOverviewFilter {
         this.name = name;
     }
 
-    public DateRange getStartDate() {
-        return startDate;
+    public DateRange getNextStartDate() {
+        return nextStartDate;
     }
 
-    public void setStartDate(DateRange startDate) {
-        this.startDate = startDate;
+    public void setNextStartDate(DateRange nextStartDate) {
+        this.nextStartDate = nextStartDate;
     }
 
     public Boolean getSuccessful() {
@@ -63,6 +63,6 @@ public class JobQueueOverviewFilter {
     }
 
     public boolean isUiFiltersSet() {
-        return isNotBlank(name) || startDate.isPresent() || id != null || running != null || successful != null;
+        return isNotBlank(name) || nextStartDate.isPresent() || id != null || running != null || successful != null;
     }
 }

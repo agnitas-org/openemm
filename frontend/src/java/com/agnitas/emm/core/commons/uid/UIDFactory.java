@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.commons.uid;
 
-import org.agnitas.beans.Recipient;
+import com.agnitas.beans.Recipient;
 
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID.NamedUidBit;
 
 public final class UIDFactory {
 	
@@ -27,8 +27,8 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final NamedUidBit...bits) {
- 		return new ComExtensibleUIDImpl(
+ 	public static final ExtensibleUID from(final int licenseID, final int companyID, final int customerID, final NamedUidBit...bits) {
+ 		return new ExtensibleUIDImpl(
  				null, 
  				licenseID, 
  				companyID, 
@@ -50,8 +50,8 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final NamedUidBit...bits) {
- 		return new ComExtensibleUIDImpl(
+ 	public static final ExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final NamedUidBit...bits) {
+ 		return new ExtensibleUIDImpl(
  				null, 
  				licenseID, 
  				companyID, 
@@ -74,8 +74,8 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
- 		return new ComExtensibleUIDImpl(
+ 	public static final ExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
+ 		return new ExtensibleUIDImpl(
  				null, 
  				licenseID, 
  				companyID, 
@@ -95,10 +95,10 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, final Recipient recipient, final NamedUidBit...additionalBits) {
+ 	public static final ExtensibleUID from(final int licenseID, final Recipient recipient, final NamedUidBit...additionalBits) {
  		long bits = NamedUidBit.namedBitsToLong(additionalBits);
  		
- 		return new ComExtensibleUIDImpl(
+ 		return new ExtensibleUIDImpl(
  				null, 
  				licenseID, 
  				recipient.getCompanyID(), 
@@ -119,10 +119,10 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, final Recipient recipient, final int mailingID, final NamedUidBit...additionalBits) {
+ 	public static final ExtensibleUID from(final int licenseID, final Recipient recipient, final int mailingID, final NamedUidBit...additionalBits) {
  		long bits = NamedUidBit.namedBitsToLong(additionalBits);
  		
- 		return new ComExtensibleUIDImpl(
+ 		return new ExtensibleUIDImpl(
  				null, 
  				licenseID, 
  				recipient.getCompanyID(), 
@@ -143,8 +143,8 @@ public final class UIDFactory {
  	 * 
  	 * @return new UID
  	 */
-	public static final ComExtensibleUID copyWithNewMailingID(final ComExtensibleUID uid, final int mailingId) {
-		return new ComExtensibleUIDImpl(
+	public static final ExtensibleUID copyWithNewMailingID(final ExtensibleUID uid, final int mailingId) {
+		return new ExtensibleUIDImpl(
  				uid.getPrefix(), 
  				uid.getLicenseID(), 
  				uid.getCompanyID(), 
@@ -170,8 +170,8 @@ public final class UIDFactory {
  	 * @return UID
  	 */
 	
-	public static final ComExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
-		return new ComExtensibleUIDImpl(
+	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
+		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
  				companyID, 
@@ -196,8 +196,8 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
-	public static final ComExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final long bitfield) {
-		return new ComExtensibleUIDImpl(
+	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final long bitfield) {
+		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
  				companyID, 
@@ -222,8 +222,8 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
-	public static final ComExtensibleUID forHeatmapFrom(final String prefix, final int licenseID, final int companyID, final int mailingID, final int urlID) {
-		return new ComExtensibleUIDImpl(
+	public static final ExtensibleUID forHeatmapFrom(final String prefix, final int licenseID, final int companyID, final int mailingID, final int urlID) {
+		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
  				companyID, 

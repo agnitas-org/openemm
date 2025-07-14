@@ -1,6 +1,7 @@
 
 <%--@elvariable id="firstName" type="java.lang.String"--%>
 <%--@elvariable id="fullName" type="java.lang.String"--%>
+<%--@elvariable id="sidemenuExtraActions" type="java.lang.String"--%>
 
 <div id="logo-block" class="sidebar__block">
     <a href="<c:url value="/dashboard.action" />">
@@ -9,10 +10,14 @@
 </div>
 
 <div id="sidebar__nav-block" class="sidebar__block js-scrollable">
-    <ul id="sidebar__nav-list" data-controller="side-menu" data-initializer="side-menu">
+    <ul id="sidebar__nav-list" data-controller="side-menu">
         <tiles:insertAttribute name="sidemenu"/>
     </ul>
 </div>
+
+<c:if test="${not empty sidemenuExtraActions}">
+    ${sidemenuExtraActions}
+</c:if>
 
 <div id="switch-design-block" class="sidebar__block sidebar__block-item" data-action="display-tooltip">
     <div id="switch-design__toggle-block" class="form-check form-switch">
@@ -27,9 +32,11 @@
 
 <div class="sidebar__block">
     <div data-action="display-tooltip">
-        <a href="#" class="sidebar__block-item" data-action="open-help">
+        <a href="#" class="sidebar__block-item" data-action="open-help" data-help-key="${not empty agnHelpKey ? agnHelpKey : ""}">
             <span class="sidebar__item-icon"><i class="icon icon-question-circle"></i></span>
-            <span class="sidebar__tooltip"><mvc:message code="help" /></span>
+            <div class="sidebar__tooltip">
+                <p><mvc:message code="help" /></p>
+            </div>
         </a>
     </div>
 </div>
@@ -40,7 +47,9 @@
 
         <a href="#" class="sidebar__block-item" data-action="logout">
             <span class="sidebar__item-icon"><i class="icon icon-sign-out-alt"></i></span>
-            <span class="sidebar__tooltip"><mvc:message code='default.Logout'/></span>
+            <div class="sidebar__tooltip">
+                <p><mvc:message code='default.Logout'/></p>
+            </div>
         </a>
     </div>
 </div>
@@ -65,9 +74,7 @@
                 <span class="account-data__label">${companyShortName} (${companyID})</span>
 
                 <c:if test="${versionNumber ne null}">
-                    <div class="version-container">
-                        <span class="account-data__label">${versionNumber}</span>
-                    </div>
+                    <span class="account-data__label">${versionNumber}</span>
                 </c:if>
             </div>
         </a>

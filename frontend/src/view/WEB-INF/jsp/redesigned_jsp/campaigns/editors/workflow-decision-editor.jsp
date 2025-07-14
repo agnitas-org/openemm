@@ -4,7 +4,7 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowDecisionCriteria" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -99,7 +99,7 @@
                     <label class="form-label form-check-label" for="includeVetoed">
                         <mvc:message code="recipient.trackingVeto"/>
                         <a href="#" class="icon icon-question-circle"
-                           data-help="help_${helplanguage}/workflow/decision/TrackingVeto.xml"></a>
+                           data-help="workflow/decision/TrackingVeto.xml"></a>
                     </label>
                 </div>
 
@@ -171,7 +171,7 @@
                 <label class="form-label">
                     <label for="threshold"><mvc:message code="mailing.autooptimization.threshold"/></label>
                     <a href="#" class="icon icon-question-circle"
-                       data-help="help_${helplanguage}/workflow/decision/Threshold.xml"></a>
+                       data-help="workflow/decision/Threshold.xml"></a>
                 </label>
                 <input type="text" id="threshold" name="threshold" class="form-control"/>
             </div>
@@ -180,7 +180,7 @@
                 <label class="form-label">
                     <label for="decisionDate"><mvc:message code="default.date.time"/></label>
                     <a href="#" class="icon icon-question-circle"
-                       data-help="help_${helplanguage}/workflow/decision/Date.xml"></a>
+                       data-help="workflow/decision/Date.xml"></a>
                 </label>
                 <div class="date-time-container">
                     <div class="date-picker-container">

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,16 +12,18 @@ package com.agnitas.beans.impl;
 
 import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.impl.MediatypeImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.ParameterParser;
-import org.agnitas.util.importvalues.MailType;
+import jakarta.mail.internet.AddressException;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.impl.MediatypeImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.ParameterParser;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -417,7 +419,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	}
 
 	@Override
-	public void setParam(String param) throws Exception {
+	public void setParam(String param) {
 		Map<String, String> parameters = new ParameterParser(param).parse();
 
 		String from = parameters.get("from");
@@ -454,8 +456,13 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		String envelope = parameters.get("envelope");
 		envelopeEmail = "";
 		if (StringUtils.isNotBlank(envelope)) {
-			InternetAddress adr = new InternetAddress(envelope);
-			envelopeEmail = adr.getAddress();
+            InternetAddress adr;
+            try {
+                adr = new InternetAddress(envelope);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
+            envelopeEmail = adr.getAddress();
 		}
 
 		charset = parameters.get("charset");
@@ -512,18 +519,29 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	}
 
 	@Override
-	public String getParam() throws Exception {
+	public String getParam() {
 		StringBuffer result = new StringBuffer();
-		InternetAddress tmpFrom = new InternetAddress(fromEmail, fromFullname, charset);
-		if (StringUtils.isEmpty(replyEmail)) {
+        InternetAddress tmpFrom;
+        try {
+            tmpFrom = new InternetAddress(fromEmail, fromFullname, charset);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (StringUtils.isEmpty(replyEmail)) {
 			replyEmail = fromEmail;
 		}
 		if (StringUtils.isEmpty(replyFullname)) {
 			replyFullname = fromFullname;
 		}
-		InternetAddress tmpReply = new InternetAddress(replyEmail, replyFullname, charset);
+        InternetAddress tmpReply;
+        try {
+            tmpReply = new InternetAddress(replyEmail, replyFullname, charset);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
 
-		result.append("from=\"");
+        result.append("from=\"");
 		result.append(ParameterParser.escapeValue(tmpFrom.toString()));
 		result.append("\"");
 
@@ -579,10 +597,15 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		}
 
 		if (StringUtils.isNotEmpty(envelopeEmail)) {
-			InternetAddress tmpEnvelope = new InternetAddress(envelopeEmail);
+            InternetAddress tmpEnvelope;
+            try {
+                tmpEnvelope = new InternetAddress(envelopeEmail);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
 
-			result.append(", envelope=\"");
-			result.append(tmpEnvelope.toString());
+            result.append(", envelope=\"");
+			result.append(tmpEnvelope);
 			result.append("\"");
 		}
 
@@ -733,7 +756,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	}
 	
 	@Override
-	public String getBccRecipients() throws Exception {
+	public String getBccRecipients() {
 		return Stream.of(AgnUtils.getEmailAddressesFromList(bccRecipients))
 					.map(InternetAddress::toString).collect(Collectors.joining(", "));
 	}
@@ -786,12 +809,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
     /**
 	 * Makes a standalone copy of this mediatype without any references to this
 	 * objects data
-	 * 
-	 * @return
-	 * @throws Exception
 	 */
 	@Override
-	public MediatypeEmail copy() throws Exception {
+	public MediatypeEmail copy() {
 		MediatypeEmail mediatypeEmail = new MediatypeEmailImpl();
 		mediatypeEmail.setParam(getParam());
 		mediatypeEmail.setStatus(getStatus());

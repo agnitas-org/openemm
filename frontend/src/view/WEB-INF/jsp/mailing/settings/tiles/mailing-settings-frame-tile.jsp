@@ -1,4 +1,3 @@
-<%@ page import="com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -14,7 +13,7 @@
 <%--@elvariable id="showDynamicTemplateToggle" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
 
-<c:set var="TEXTAREA_WIDTH" value="<%= EmailMediatypeForm.TEXTAREA_WIDTH%>" scope="page"/>
+<c:set var="TEXTAREA_WIDTH" value="75" scope="page"/>
 <c:set var="emailSettingsDisabled" value="${not MAILING_EDITABLE or not emailSettingsEditable}"/>
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}"/>
 

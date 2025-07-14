@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,14 +10,18 @@
 
 package com.agnitas.emm.core.components.form;
 
-import com.agnitas.beans.DeliveryStat;
-import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
-import org.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang3.StringUtils;
-
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import com.agnitas.beans.DeliveryStat;
+import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.PaginationForm;
+import org.apache.commons.lang3.StringUtils;
 
 public class MailingSendForm extends PaginationForm {
 
@@ -430,5 +434,17 @@ public class MailingSendForm extends PaginationForm {
 
     public void setSecuritySettings(SecurityAndNotificationsSettingsForm securitySettings) {
         this.securitySettings = securitySettings;
+    }
+
+    public boolean isAutoReportEnabled() {
+        return isReportSendAfter24h() || isReportSendAfter48h() || isReportSendAfter1Week();
+    }
+
+    public List<String> getReportEmails() {
+        return Optional.ofNullable(AgnUtils.splitAndTrimList(getReportSendEmail()))
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(StringUtils::isNotBlank)
+                .toList();
     }
 }

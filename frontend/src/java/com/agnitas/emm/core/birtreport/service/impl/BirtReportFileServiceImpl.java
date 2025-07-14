@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.birtreport.service.impl;
 
 import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
+import com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -30,11 +30,13 @@ public class BirtReportFileServiceImpl implements BirtReportFileService {
     }
 
     @Override
-    public String buildLocalizedFileName(ComBirtReportSettings settings, int companyId, Locale locale, String formatName) {
+    public String buildLocalizedFileName(BirtReportSettings settings, int companyId, Locale locale, String formatName) {
         List<String> mailings = settings.getMailings();
         if (ReportSettingsType.MAILING.equals(settings.getReportSettingsType()) && mailings.size() == 1) {
             int mailingId = Integer.parseInt(mailings.get(0));
-            return buildFileNameForSingleMailing(mailingId, companyId, locale, formatName);
+            if (mailingService.exists(mailingId, companyId)) {
+                return buildFileNameForSingleMailing(mailingId, companyId, locale, formatName);
+            }
         }
 
         return getLocalizedReportName(

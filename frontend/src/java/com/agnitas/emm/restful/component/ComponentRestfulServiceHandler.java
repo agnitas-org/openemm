@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.restful.component;
 
-import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
+import static com.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,19 +19,17 @@ import java.util.Date;
 import java.util.Map.Entry;
 import java.util.Optional;
 
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.impl.MailingComponentImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.impl.MailingComponentImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
@@ -68,48 +66,41 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailingDao mailingDao;
 	private MailingComponentDao mailingComponentDao;
-	private ComTargetDao targetDao;
-	private ComCompanyDao companyDao;
+	private TargetDao targetDao;
+	private CompanyDao companyDao;
 	private ThumbnailService thumbnailService;
 	private CompanyTokenService companyTokenService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	
-	@Required
 	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
 	}
 	
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
+	public void setTargetDao(TargetDao targetDao) {
 		this.targetDao = targetDao;
 	}
 	
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 
-	@Required
 	public void setThumbnailService(ThumbnailService thumbnailService) {
 		this.thumbnailService = thumbnailService;
 	}
 
-	@Required
 	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
 		this.companyTokenService = companyTokenService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -232,7 +223,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createNewComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
@@ -268,7 +259,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createOrUpdateComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 2);

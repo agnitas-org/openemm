@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -49,7 +49,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
 import com.agnitas.emm.util.quota.api.QuotaService;
@@ -92,9 +92,9 @@ public class RestfulServiceServlet extends HttpServlet {
 	protected ConfigService configService;
 
 	/**
-	 * Do not use directly. Use getComLogonService() instead
+	 * Do not use directly. Use getLogonService() instead
 	 */
-	private ComLogonService logonService;
+	private LogonService logonService;
 
 	/**
 	 * Do not use directly. Use getQuotaService() instead
@@ -111,7 +111,7 @@ public class RestfulServiceServlet extends HttpServlet {
 	/**
 	 * Sets logon service for testing
 	 */
-	public void setLogonService(ComLogonService logonService) {
+	public void setLogonService(LogonService logonService) {
 		this.logonService = logonService;
 	}
 
@@ -299,7 +299,7 @@ public class RestfulServiceServlet extends HttpServlet {
 
 				try {
 					try {
-						admin = getComLogonService().getAdminByUsername(username);
+						admin = getLogonService().getAdminByUsername(username);
 					} catch (Exception e) {
 						throw new RestfulAuthentificationException("Authentification by JWT authorization token failed", e);
 					}
@@ -352,7 +352,7 @@ public class RestfulServiceServlet extends HttpServlet {
 				
 				// Check authentication
 				try {
-					admin = getComLogonService().getAdminByCredentials(username, password, request.getRemoteAddr());
+					admin = getLogonService().getAdminByCredentials(username, password, request.getRemoteAddr());
 				} catch (LogonFailedException e) {
 					throw new RestfulAuthentificationException("Authentication failed", e);
 				}
@@ -698,10 +698,10 @@ public class RestfulServiceServlet extends HttpServlet {
 		return configService;
 	}
 	
-	protected ComLogonService getComLogonService() {
+	protected LogonService getLogonService() {
 		if (logonService == null) {
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-			logonService = applicationContext.getBean("LogonService", ComLogonService.class);
+			logonService = applicationContext.getBean("LogonService", LogonService.class);
 		}
 		return logonService;
 	}

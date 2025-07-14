@@ -5,7 +5,7 @@
 <%--@elvariable id="mailingShortname" type="java.lang.String"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/send/${mailingId}/resume-by-copy.action" data-form="static">
 
             <div class="modal-header">

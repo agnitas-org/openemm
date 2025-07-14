@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,26 +10,21 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.DomainStatRow;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.emm.common.UserStatus;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.agnitas.dao.UserStatus;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.DomainStatRow;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
 public class DomainStatDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(DomainStatDataSet.class);
-	
+
 	private static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";
 	}
@@ -71,7 +66,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 			+ " " + mailingListSql
 			+ " " + targetSql;
 
-		return select(logger, sql, Integer.class);
+		return select(sql, Integer.class);
 	}
 	
 	private void convertCountsToRate(List<DomainStatRow> domainList, int all) {
@@ -107,7 +102,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 			sqlLimited += " cust_bind_data LIMIT " + limit;
 		}
 		
-		List<DomainStatRow> domainList = select(logger, sqlLimited, rowMapper);
+		List<DomainStatRow> domainList = select(sqlLimited, rowMapper);
 		
 		// calculate "others"
 		String othersText = I18nString.getLocaleString("statistic.Other", language);

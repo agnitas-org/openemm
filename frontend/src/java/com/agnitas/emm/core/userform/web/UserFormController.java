@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,13 +17,11 @@ import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.form.UserFormsForm;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.dto.DataResponseDto;
@@ -31,22 +29,22 @@ import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.actions.EmmAction;
+import com.agnitas.emm.core.action.bean.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.FormImportResult;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.UserFormImporter;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
-import org.agnitas.web.forms.WorkflowParameters;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.FormImportResult;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserFormImporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.ActivenessPaginationForm;
+import com.agnitas.web.forms.BulkActionForm;
+import com.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -60,6 +58,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -76,12 +75,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/webform")
@@ -91,7 +90,6 @@ public class UserFormController implements XssCheckAware {
 	private static final Logger logger = LogManager.getLogger(UserFormController.class);
 	private static final String REDIRECT_TO_OVERVIEW = "redirect:/webform/list.action";
 
-	private final WebStorage webStorage;
 	private final UserformService userformService;
 	private final EmmActionService emmActionService;
 	private final ConfigService configService;
@@ -100,11 +98,10 @@ public class UserFormController implements XssCheckAware {
 	private final UserFormImporter userFormImporter;
 	private final CompanyTokenService companyTokenService;
 
-	public UserFormController(WebStorage webStorage, UserformService userformService, EmmActionService emmActionService,
+	public UserFormController(UserformService userformService, EmmActionService emmActionService,
 							  ConfigService configService, UserActivityLogService userActivityLogService,
 							  ExtendedConversionService conversionService, UserFormImporter userFormImporter,
 							  CompanyTokenService companyTokenService) {
-		this.webStorage = webStorage;
 		this.userformService = userformService;
 		this.emmActionService = emmActionService;
 		this.configService = configService;
@@ -115,10 +112,9 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	@RequestMapping("/list.action")
-	public String list(Admin admin, @ModelAttribute("form") UserFormsForm form, Model model, Popups popups) {
+	public String list(Admin admin, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-			FormUtils.syncNumberOfRows(webStorage, WebStorage.USERFORM_OVERVIEW, form);
 
 			model.addAttribute("webformListJson", userformService.getUserFormsJson(admin));
 			model.addAttribute("companyToken", companyTokenForAdmin(admin).orElse(null));
@@ -143,7 +139,7 @@ public class UserFormController implements XssCheckAware {
 
 	@PostMapping("/saveActiveness.action")
 	// TODO: EMMGUI-714: Remove after remove of old design
-	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, @ModelAttribute("form") ActivenessPaginationForm form, Popups popups) {
 		UserAction userAction = userformService.setActiveness(admin.getCompanyID(), form.getActiveness());
 		boolean result = false;
 		if (Objects.nonNull(userAction)) {
@@ -168,7 +164,7 @@ public class UserFormController implements XssCheckAware {
 		Collection<Integer> affectedIds = CollectionUtils.emptyIfNull(result.getResult())
 				.stream()
 				.map(UserForm::getId)
-				.collect(Collectors.toList());
+				.toList();
 
 		if (result.isSuccess()) {
 			writeChangeActivenessToUAL(affectedIds, activate, admin);
@@ -258,7 +254,7 @@ public class UserFormController implements XssCheckAware {
             int formId = result.getResult();
 
             if (result.isSuccess()) {
-                popups.success("default.changes_saved");
+                popups.success(CHANGES_SAVED_MSG);
             }
 
             if (result.hasErrorMessages()) {
@@ -293,12 +289,14 @@ public class UserFormController implements XssCheckAware {
 
 	@PostMapping("/importUserForm.action")
 	@PermissionMapping("import")
-	public String importForm(@RequestParam MultipartFile uploadFile, Admin admin, Popups popups) {
+	public String importForm(@RequestParam MultipartFile uploadFile, Admin admin, Popups popups, @RequestHeader(value = "referer", required = false) String referer) {
         FormImportResult result = userFormImporter.importUserForm(uploadFile, admin.getLocale(), admin.getCompanyID());
         if (!result.isSuccess()) {
             result.getErrors().forEach(popups::alert);
-            return MESSAGES_VIEW;
-        }
+			return StringUtils.isNotBlank(referer)
+					? "redirect:" + AgnUtils.removeJsessionIdFromUrl(referer)
+					: REDIRECT_TO_OVERVIEW;
+		}
         writeUserActivityLog(admin, "import userform", getFormDescr(result.getUserFormName(), result.getUserFormID()));
         result.getWarnings().forEach(popups::warning);
         popups.success("userform.imported");

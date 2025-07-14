@@ -5,7 +5,7 @@
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
         <div class="form-check form-switch">
-            <input type="checkbox" name="modules[].loadAlways" id="module_{{- index}}.loadAlways" class="form-check-input" role="switch" {{ loadAlways ? print('checked="checked"') : ''}}/>
+            <input type="checkbox" name="modules[].loadAlways" id="module_{{- index}}.loadAlways" class="form-check-input" role="switch" {{ loadAlways ? print('checked') : ''}}/>
             <label class="form-label form-check-label" for="module_{{- index}}.loadAlways">
                 <mvc:message code="action.getcustomer.loadalways"/>
             </label>

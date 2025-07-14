@@ -42,7 +42,7 @@
 
     createPopover() {
       this.data.$el = this.$elText;
-      AGN.Lib.Dashboard.CalendarBase.createMailingPopover(this.data);
+      AGN.Lib.Dashboard.CalendarBaseUxUpdateRollback.createMailingPopover(this.data);
     }
 
     canMoveTo($container) {

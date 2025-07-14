@@ -1,5 +1,7 @@
 
 .copy-box {
+  --copy-box-color: #{$gray-600};
+
   display: inline-flex;
   gap: $gap-sm;
   align-items: center;
@@ -8,13 +10,27 @@
   border-radius: var(--bs-border-radius-2xl);
   padding: $gap-x-sm $gap-sm;
 
-  color: var(--text-gray-color);
+  color: var(--copy-box-color);
 
   .icon-btn {
     font-size: $font-size-base;
+  }
+}
 
-    &:hover {
-      color: var(--text-color-default);
-    }
+@include color-mode(dark) {
+  .copy-box {
+    --copy-box-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .copy-box {
+    --copy-box-color: #{$border-color-var};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .copy-box {
+    --copy-box-color: #{$white};
   }
 }

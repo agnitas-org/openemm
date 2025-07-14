@@ -1,4 +1,4 @@
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page contentType="text/html; charset=utf-8" %>
 <%@ page session="false" buffer="none" %>
 
@@ -26,7 +26,7 @@
             <TD ALIGN="center">
                 <B>
                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                    <%= ComBirtResources.getMessage("birt.viewer.progressbar.promt", request.getLocale())%>
+                    <%= EmmBirtResources.getMessage("birt.viewer.progressbar.promt", request.getLocale())%>
                 </B>
             </TD>
         </TR>

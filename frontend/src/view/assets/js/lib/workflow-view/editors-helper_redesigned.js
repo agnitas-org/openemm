@@ -79,10 +79,10 @@
               // Only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
             $editor.parent().find('.recipient-editor-select').prop('disabled', node.isDependent() || node.isInRecipientsChain());
           }
-          if (this.isReadOnlyMode()) {
+          if (this.isReadOnlyMode() || this.curEditor.alwaysReadonly(node)) {
               disableDialogItems($editor);
           }
-          if (this.curEditor.saveOnOpen && !this.isReadOnlyMode()) {
+          if (this.curEditor.saveOnOpen && !this.isReadOnlyMode() && !this.curEditor.alwaysReadonly(node)) {
             this.curEditor.save();
           }
         };
@@ -254,8 +254,28 @@
         };
 
         this.formToObject = function(formName) {
-            var formData = $('form[name="' + formName + '"]').serializeArray();
-            var result = {};
+            const $form = $(`form[name="${formName}"]`);
+            const groupedFormData = _.groupBy($form.serializeArray(), 'name');
+
+            const multiValueNames = new Set(
+              $form.find('select.dynamic-tags')
+                .map((_, el) => el.name)
+                .get()
+            );
+
+            /*
+               Explanation: Only fields associated with <select class="dynamic-tags"> are allowed
+               to have multiple values. This precaution prevents unexpected behavior caused by
+               other repeated input fields (e.g., checkboxes or hidden fields with the same name).
+               It ensures that only intentionally multi-valued fields are grouped into arrays.
+             */
+            const formData = Object.entries(groupedFormData)
+              .map(([name, items]) => ({
+                  name,
+                  value: multiValueNames.has(name) ? items.map(i => i.value) : items[items.length - 1].value
+              }));
+
+            let result = {};
 
             $.each(formData, function() {
                 if (this.name.indexOf('[') != -1) {
@@ -279,8 +299,15 @@
             });
 
             // Handle unselected checkboxes.
-            $('form[name="' + formName + '"] [type="checkbox"]').each(function() {
+            $(`form[name="${formName}"] [type="checkbox"]`).each(function() {
                 result[this.name] = $(this).prop('checked');
+            });
+
+            // Handle multi-selects without selected options
+            $(`form[name="${formName}"] select.dynamic-tags`).each(function() {
+                if (!result[this.name]) {
+                    result[this.name] = [];
+                }
             });
 
             return result;
@@ -303,27 +330,37 @@
         };
 
         this.fillFormFromObjectItem = function(formName, namePrefix, name, val) {
-            if (Object.prototype.toString.call(val) === '[object Array]') {
-                for (var i = 0; i < val.length; i++) {
-                    this.fillFormFromObject(formName, val[i], name + '[' + i + ']' + '.');
+            const $el = $(`form[name="${formName}"] [name="${namePrefix}${name}"]`);
+
+            if (Object.prototype.toString.call(val) === '[object Array]' && !$el.is('select.dynamic-tags')) {
+                for (let i = 0; i < val.length; i++) {
+                    this.fillFormFromObject(formName, val[i], `${name}[${i}].`);
                 }
             } else {
-                var $el = $('form[name="' + formName + '"] [name="' + namePrefix + name + '"]');
-                var type = $el.attr('type');
-                switch (type) {
+                switch ($el.attr('type')) {
                     case 'checkbox':
                         $el.prop('checked', Boolean(val));
                         break;
                     case 'radio':
-                        $el.filter('[value="' + val + '"]').prop('checked', true);
+                        $el.filter(`[value="${val}"]`).prop('checked', true);
                         break;
                     default:
-                        var tagName = $el.prop('tagName');
-                        switch (tagName) {
-                            //since we started using select2 we should perform such initialization
-                            case 'SELECT' :
-                                $el.val(val);
-                                this.initSelectWithValueOrChooseFirst($el, val);
+                        switch ($el.prop('tagName')) {
+                          //since we started using select2 we should perform such initialization
+                            case 'SELECT':
+                                if ($el.hasClass('dynamic-tags')) {
+                                    if (val instanceof Array) {
+                                        const select = Select.get($el);
+
+                                        val.forEach(_val => {
+                                            select.addOptionIfMissing(_val);
+                                            select.selectOption(_val);
+                                        })
+                                    }
+                                } else {
+                                    $el.val(val);
+                                    this.initSelectWithValueOrChooseFirst($el, val);
+                                }
                                 break;
                             default:
                                 $el.val(val);

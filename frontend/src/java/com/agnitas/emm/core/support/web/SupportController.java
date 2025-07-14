@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,12 @@
 */
 
 package com.agnitas.emm.core.support.web;
+
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.JavaMailService;
@@ -31,12 +37,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
 public class SupportController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(SupportController.class);
@@ -58,11 +58,16 @@ public class SupportController implements XssCheckAware {
     @GetMapping("/help-center.action")
     public String helpCenter(@RequestParam(name = "helpKey", required = false) String helpKey, Model model) {
         model.addAttribute("helpKey", helpKey);
+        addHelpCenterAttrs(model);
         return "help_center";
     }
 
+    protected void addHelpCenterAttrs(Model model) {
+        // empty for OpenEMM
+    }
+
     @PostMapping("/sendMessage.action")
-    public ResponseEntity<DataResponseDto<String>> sendSupportMessage(@RequestParam String content, Admin admin, Popups popups) throws InterruptedException {
+    public ResponseEntity<DataResponseDto<String>> sendSupportMessage(@RequestParam String content, Admin admin, Popups popups) {
         String answer = RandomStringUtils.randomAlphabetic(5, 250);
         return ResponseEntity.ok(new DataResponseDto<>(answer, popups, true));
     }

@@ -51,13 +51,14 @@ AGN.Lib.CoreInitializer.new('slider', function($scope = $(document)) {
     getCheckboxesControlledBy($toggleAll).click(() => controlToggleAllCheckbox($toggleAll));
     $toggleAll.on('update-toggle-all', () => controlToggleAllCheckbox($toggleAll));
     addClickListener($toggleAll);
+    $toggleAll.closest('.form-switch').toggle(getCheckboxesControlledBy($toggleAll).length > 0);
   });
 
   function addClickListener($toggleAll) {
     $toggleAll.on('click', function() {
       const $elem = $(this);
       _.each($elem.closest('.tile').find('.tile-body [type=checkbox]:enabled:visible'),
-        checkbox => $(checkbox).prop('checked', $elem.is(":checked")));
+        checkbox => $(checkbox).prop('checked', $elem.is(":checked")).trigger('change'));
     });
   }
 

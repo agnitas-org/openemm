@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,9 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfiguration {
 
     private static final Logger LOGGER = LogManager.getLogger(WebSecurityConfiguration.class);
 
@@ -50,24 +50,22 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         this.configService = Objects.requireNonNull(configService, "config service");
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        if (!isCsrfProtectionEnabled()) {
-            http.csrf().disable();
-            LOGGER.warn("CSRF protection disabled");
-        } else {
-            modifySecurityFilterChain(http);
-            LOGGER.info("***** CSRF protection ENABLED *****");
-        }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(conf -> {
+            if (!isCsrfProtectionEnabled()) {
+                conf.disable();
+                LOGGER.warn("CSRF protection disabled");
+            } else {
+                modifySecurityFilterChain(http);
+                LOGGER.info("***** CSRF protection ENABLED *****");
+            }
+        });
 
         allowSessionUrlRewriting(http);
         disableXFrameOptions(http);
-    }
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        super.configure(web);
-        web.httpFirewall(createHttpFirewall());
+        return http.build();
     }
 
     /**
@@ -78,7 +76,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
      * @return HTTP application firewall.
      */
     @Bean
-    public HttpFirewall createHttpFirewall() {
+    public HttpFirewall customHttpFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
         firewall.setAllowSemicolon(true);
         return firewall;
@@ -94,11 +92,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     private void allowSessionUrlRewriting(HttpSecurity http) throws Exception {
-        http.sessionManagement().enableSessionUrlRewriting(true);
+        http.sessionManagement(conf -> conf.enableSessionUrlRewriting(true));
     }
 
     private void disableXFrameOptions(HttpSecurity http) throws Exception {
-        http.headers().frameOptions().disable();
+        http.headers(conf -> conf.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable));
     }
 
     private void modifySecurityFilterChain(HttpSecurity http) {

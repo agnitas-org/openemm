@@ -64,7 +64,7 @@
                         }
                     </script>
                     <div class="tile-header border-bottom">
-                        <h2 class="tile-title text-dark"><mvc:message code="MailingParameter"/></h2>
+                        <h2 class="tile-title tile-title--grey"><mvc:message code="MailingParameter"/></h2>
                     </div>
                     <div class="tile-body">
                         <div id="mailingParamsTable" data-input-table>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.Recipient;
+import com.agnitas.beans.Recipient;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -22,17 +22,15 @@ import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Company;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.service.RecipientFieldService;
 
@@ -43,7 +41,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 	
 	private static final Logger logger = LogManager.getLogger(ActionOperationIdentifyCustomerImpl.class);
 
-	private ComCompanyDao companyDao;
+	private CompanyDao companyDao;
 	private RecipientService recipientService;
 	private RecipientFieldService recipientFieldService;
 	private ExtensibleUIDService uidService;
@@ -92,7 +90,7 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
                 Company company = companyDao.getCompany(companyID);
                 
                 if( company != null) {
-                    final ComExtensibleUID uid = UIDFactory.from(configService.getLicenseID(), aCust);
+                    final ExtensibleUID uid = UIDFactory.from(configService.getLicenseID(), aCust);
                     
                     String uidString = uidService.buildUIDString(uid);
                     params.put("agnUID", uidString);
@@ -133,27 +131,22 @@ public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
         return ActionOperationType.IDENTIFY_CUSTOMER;
     }
 
-    @Required
-	public final void setCompanyDao(final ComCompanyDao dao) {
+	public final void setCompanyDao(final CompanyDao dao) {
 		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
 	}
 
-	@Required
 	public final void setUidService(final ExtensibleUIDService service) {
 		this.uidService = Objects.requireNonNull(service, "UID service cannot be null");
 	}
 	
-	@Required
 	public final void setBeanLookupFactory(final BeanLookupFactory factory) {
 		this.beanLookupFactory = Objects.requireNonNull(factory, "Bean lookup factory cannot be null");
 	}
 
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
 
-	@Required
     public void setRecipientService(RecipientService recipientService) {
         this.recipientService = recipientService;
     }

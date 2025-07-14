@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,15 +10,16 @@
 
 package com.agnitas.emm.core.salutation.service;
 
-import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
-import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.SalutationEntry;
-import org.agnitas.beans.Title;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-
 import java.util.List;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.beans.SalutationEntry;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 public interface SalutationService {
 
@@ -30,7 +31,7 @@ public interface SalutationService {
 
     Title get(int salutationId, int companyId);
 
-    void save(Title title) throws Exception;
+    void save(Title title);
 
     boolean delete(int salutationId, int companyId);
 
@@ -38,4 +39,6 @@ public interface SalutationService {
 
 
     ServiceResult<UserAction> bulkDelete(Set<Integer> ids, int companyId);
+
+    String resolve(int salutationId, int recipientId, int type, Admin admin);
 }

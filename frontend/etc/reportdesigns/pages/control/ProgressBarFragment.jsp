@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" %>
 <%@ page session="false" buffer="none" %>
 <%@ page import="org.eclipse.birt.report.presentation.aggregation.IFragment"%>
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources"%>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources"%>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -21,7 +21,7 @@
             <TD ALIGN="center">
                 <B>
                     <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                    <%= ComBirtResources.getMessage("statistic.viewer.progressbar.prompt", locale)%>
+                    <%= EmmBirtResources.getMessage("statistic.viewer.progressbar.prompt", locale)%>
                 </B>
             </TD>
         </TR>
@@ -37,8 +37,8 @@
                         <TR>
                             <TD ALIGN="center">
                                 <%--It is important to use the same message keys as BirtResources contains to keep backward compatible.--%>
-                                <INPUT TYPE="BUTTON" VALUE="<%= ComBirtResources.getHtmlMessage("button.Cancel", locale)%>"
-                                       TITLE="<%= ComBirtResources.getHtmlMessage("button.Cancel", locale)%>"
+                                <INPUT TYPE="BUTTON" VALUE="<%= EmmBirtResources.getHtmlMessage("button.Cancel", locale)%>"
+                                       TITLE="<%= EmmBirtResources.getHtmlMessage("button.Cancel", locale)%>"
                                        CLASS="birtviewer_progressbar_button"/>
                             </TD>
                         </TR>

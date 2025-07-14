@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,31 +10,6 @@
 
 package com.agnitas.emm.core.blacklist.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
-import org.agnitas.beans.BlackListEntry;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.BlackListEntryImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.Tuple;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -42,14 +17,31 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
-	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(BlacklistDaoImpl.class);
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
+import com.agnitas.beans.BlackListEntry;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.BlackListEntryImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.Tuple;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.RowMapper;
 
+public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
+	
 	private static final String[] SUPPORTED_COLUMNS = new String[]{"email", "reason", "timestamp"};
 
 	protected static String getCustomerBanTableName(int companyId) {
@@ -58,17 +50,6 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 
 	private static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
 
-	private ConfigService configService;
-	
-	@Required
-	public final void setConfigService(final ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "ConfigService is null");
-	}
-
-	final ConfigService getConfigService() {
-		return this.configService;
-	}
-	
 	/**
 	 * Inserts a new entry in the blacklist table. returns false, if something
 	 * went wrong.
@@ -85,7 +66,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 				return true;
 			} else {
 				String sql = "INSERT INTO " + getCustomerBanTableName(companyID) + " (email, reason) VALUES (?, ?)";
-				return update(logger, sql, email, reason) == 1;
+				return update(sql, email, reason) == 1;
 			}
 		}
 	}
@@ -101,7 +82,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 		} else {
 			email = AgnUtils.normalizeEmail(email);
 			String sql = "UPDATE " + getCustomerBanTableName(companyID) + " SET reason = ? WHERE email = ?";
-			return update(logger, sql, reason, email) == 1;
+			return update(sql, reason, email) == 1;
 		}
 	}
 	
@@ -109,10 +90,10 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	 * Get the complete list of blacklisted addresses, including company and global
 	 */
 	@Override
-	public Set<String> loadBlackList(int companyID) throws Exception {
+	public Set<String> loadBlackList(int companyID) {
 		Set<String> blacklist = new HashSet<>();
 		try {
-			List<String> blacklistCompany = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl", StringRowMapper.INSTANCE);
+			List<String> blacklistCompany = select("SELECT email FROM cust" + companyID + "_ban_tbl", StringRowMapper.INSTANCE);
 			for (String email : blacklistCompany) {
 				blacklist.add(email.toLowerCase());
 			}
@@ -130,14 +111,14 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 			return false;
 		} else {
 			String sql = "DELETE FROM " + getCustomerBanTableName(companyID) + " WHERE email = ?";
-			return update(logger, sql, AgnUtils.normalizeEmail(email)) == 1;
+			return update(sql, AgnUtils.normalizeEmail(email)) == 1;
 		}
 	}
 
 	@Override
 	public boolean delete(Set<String> emails, int companyId) {
 		String sql = "DELETE FROM " + getCustomerBanTableName(companyId) + " WHERE " + makeBulkInClauseForString("email", emails);
-		return update(logger, sql) > 0;
+		return update(sql) > 0;
 	}
 
 	@Override
@@ -145,9 +126,13 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 		String sort = getSortableColumn(filter.getSort());
 
 		// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
-		String sortClause;
-		try {
-			if (DbUtilities.getColumnDataType(getDataSource(), getCustomerBanTableName(companyID), sort).getSimpleDataType() == SimpleDataType.Characters) {
+		String sortClause = "";
+		DbColumnType columnType = DbUtilities.getColumnDataType(getDataSource(), getCustomerBanTableName(companyID), sort);
+
+		if (columnType == null) {
+			logger.error("Invalid sort field: {}", sort);
+		} else {
+			if (columnType.getSimpleDataType() == SimpleDataType.Characters) {
 				sortClause = " ORDER BY LOWER(" + sort + ")" ;
 			} else {
 				sortClause = " ORDER BY " + sort;
@@ -155,9 +140,6 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 			if (StringUtils.isNotBlank(filter.getOrder())) {
 				sortClause = sortClause + " " + filter.getOrder();
 			}
-		} catch (Exception e) {
-			logger.error("Invalid sort field", e);
-			sortClause = "";
 		}
 
 		Tuple<String, List<Object>> queryParts = applyOverviewFilters(filter);
@@ -166,7 +148,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 
 		int totalRows;
 		try {
-			totalRows = selectInt(logger, "SELECT COUNT(email) FROM " + getCustomerBanTableName(companyID) + whereClause, params.toArray());
+			totalRows = selectInt("SELECT COUNT(email) FROM " + getCustomerBanTableName(companyID) + whereClause, params.toArray());
 		} catch (Exception e) {
 			totalRows = 0;
 		}
@@ -200,11 +182,11 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
         if (isOracleDB()) {
 			ArrayList<Object> paramsCopy = new ArrayList<>(params);
 			paramsCopy.addAll(List.of(offset + 1, offset + rownums));
-			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
+			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
 		} else {
 			ArrayList<Object> paramsCopy = new ArrayList<>(params);
 			paramsCopy.addAll(List.of(offset, rownums));
-			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
+			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
         }
 
 		// Workaround: if you are on a page higher than 1 and the result of the
@@ -212,14 +194,14 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 		// then nothing is shown. Therefore if we have no result, we query again
 		// with page 1 as parameter.
 		// if we then find nothing, there is nothing to find.
-		if (blacklistElements.size() == 0) {
+		if (blacklistElements.isEmpty()) {
 			params.addAll(List.of(1, rownums));
-			blacklistElements = select(logger, blackListQuery, new BlackListEntry_RowMapper(), params.toArray());
+			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), params.toArray());
 		}
 
 		PaginatedListImpl<BlackListEntry> paginatedList = new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
 		if (filter.isUiFiltersSet()) {
-			paginatedList.setNotFilteredFullListSize(selectInt(logger, "SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID)));
+			paginatedList.setNotFilteredFullListSize(selectInt("SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID)));
 		}
 
 		return paginatedList;
@@ -248,14 +230,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 			params.add(filter.getReason());
 		}
 
-		if (filter.getCreationDate().getFrom() != null) {
-			whereClause.append(" AND timestamp >= ?");
-			params.add(filter.getCreationDate().getFrom());
-		}
-		if (filter.getCreationDate().getTo() != null) {
-			whereClause.append(" AND timestamp < ?");
-			params.add(DateUtilities.addDaysToDate(filter.getCreationDate().getTo(), 1));
-		}
+		whereClause.append(getDateRangeFilterWithAnd("timestamp", filter.getCreationDate(), params));
 
 		return new Tuple<>(whereClause.toString(), params);
 	}
@@ -268,7 +243,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
     protected boolean exist(String email, String tableName) {
         try {
             String sql = "SELECT COUNT(email) FROM " + tableName + " WHERE email = ?";
-            int resultCount = selectInt(logger, sql, AgnUtils.normalizeEmail(email));
+            int resultCount = selectInt(sql, AgnUtils.normalizeEmail(email));
             return resultCount > 0;
         } catch (DataAccessException e) {
             return false;
@@ -279,7 +254,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 	public List<String> getBlacklist(int companyID) {
 		try {
 			String blackListQuery = "SELECT email FROM " + getCustomerBanTableName(companyID);
-			List<Map<String, Object>> results = select(logger, blackListQuery);
+			List<Map<String, Object>> results = select(blackListQuery);
 			List<String> blacklistElements = new ArrayList<>();
 			if (results != null) {
 				for (Map<String, Object> row : results) {
@@ -295,7 +270,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
     @Override
     public List<BlackListEntry> getBlacklistedRecipients( int companyID) {
         String blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " ORDER BY email";
-        return select(logger, blackListQuery, new BlackListEntry_RowMapper());
+        return select(blackListQuery, new BlackListEntry_RowMapper());
     }
 
 	@Override
@@ -306,7 +281,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 		List<Object> params = new ArrayList<>(emails);
 		params.addAll(List.of(UserStatus.Blacklisted.getStatusCode(), companyId));
 
-        return select(logger, query, MAILINGLIST_ROW_MAPPER, params.toArray());
+        return select(query, MAILINGLIST_ROW_MAPPER, params.toArray());
 	}
 
 	@Override
@@ -331,7 +306,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 				logger.debug( email + ": updating user status for mailinglist " + mailinglistId);
 			}
 			
-			update(logger, update, userStatus.getStatusCode(), email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
+			update(update, userStatus.getStatusCode(), email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
 		}
 	}
 	
@@ -348,7 +323,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 					getCustomerBanTableName(companyID),
 					escapeClause);
 
-			return selectInt(logger, sql, AgnUtils.normalizeEmail(email)) > 0;
+			return selectInt(sql, AgnUtils.normalizeEmail(email)) > 0;
 		} catch (Exception e) {
 			logger.error("Error checking blacklist for email '" + email + "'", e);
 
@@ -395,6 +370,6 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements ComBlacklistDao {
 				getCustomerBanTableName(companyID),
 				escapeClause);
 
-		return select(logger, sql, new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
+		return select(sql, new BlackListEntry_RowMapper(), AgnUtils.normalizeEmail(email));
 	}
 }

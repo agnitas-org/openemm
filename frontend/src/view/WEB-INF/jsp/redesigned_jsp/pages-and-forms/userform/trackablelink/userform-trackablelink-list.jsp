@@ -53,7 +53,7 @@
                             <emm:ShowByPermission token="mailing.extend_trackable_links">
                                 <th class="fit-content"><mvc:message code="default.advanced"/></th>
                             </emm:ShowByPermission>
-                            <th class="fit-content"></th>
+                            <th></th>
                         </thead>
 
                         <tbody>
@@ -95,7 +95,7 @@
                                 <td>
                                     <a href="<c:url value="/webform/${userFormId}/trackablelink/${link.id}/view.action"/>" class="hidden" data-view-row></a>
 
-                                    <a href="${fullLinkURL}" class="icon-btn text-dark" target="_blank">
+                                    <a href="${fullLinkURL}" class="icon-btn icon-btn--secondary" target="_blank">
                                         <i class="icon icon-external-link-alt"></i>
                                     </a>
                                 </td>
@@ -117,7 +117,7 @@
             <c:if test="${isExtensionsPermitted}">
                 <div class="tile">
                     <div class="tile-header p-2 border-bottom">
-                        <span class="text-dark fw-medium"><mvc:message code="mailing.trackablelinks.extensions.add"/></span>
+                        <h3 class="tile-title tile-title--grey"><mvc:message code="mailing.trackablelinks.extensions.add"/></h3>
                     </div>
                     <div class="tile-body p-2">
                         <div id='links-common-extensions' data-trackable-link-extensions>
@@ -129,7 +129,7 @@
                             </script>
                             <div class="d-flex flex-column gap-2 pt-2">
                                 <c:if test="${not empty defaultExtensions}">
-                                    <a href="#" class="btn btn-inverse" data-add-default-extensions style="min-width: 0">
+                                    <a href="#" class="btn btn-secondary" data-add-default-extensions style="min-width: 0">
                                         <i class="icon icon-plus"></i>
                                         <span class="text-truncate"><mvc:message code="AddDefaultProperties"/></span>
                                     </a>

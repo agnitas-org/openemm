@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,8 +18,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.XmlUtilities;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.XmlUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.DOMException;
@@ -89,7 +89,7 @@ public class XmlRequestResponse extends BaseRequestResponse {
 	}
 
 	@Override
-	public String getMimeType() throws Exception {
+	public String getMimeType() {
 		return "application/xml";
 	}
 }

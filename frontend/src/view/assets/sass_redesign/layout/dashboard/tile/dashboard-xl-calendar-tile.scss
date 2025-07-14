@@ -1,12 +1,14 @@
-#xl-calendar-tile {
 
+#xl-calendar-tile {
   $th-width: 30px;
 
-  .tile-controls {
-    .select-container {
-      min-width: 200px;
-    }
-  }
+  --xl-calendar-alien-day-bg: #{$gray-100};
+  --xl-calendar-hovered-day-bg: #e5f0f9;
+  --xl-calendar-day-header-color: #{$dark-grey};
+  --xl-calendar-cell-day-header-color: #{$gray-600};
+  --xl-calendar-hovered-day-color: var(--xl-calendar-cell-day-header-color);
+  --xl-calendar-cell-border-color: #{$light-grey};
+  --xl-calendar-today-border-color: #{$blue};
 
   .tile-body {
     display: grid;
@@ -33,8 +35,8 @@
       padding-top: $th-width;
 
       div {
-        @include font($font-size-md, 500);
-        color: var(--text-dark-gray-color);
+        @include font($font-size-md, $font-weight-medium);
+        color: var(--xl-calendar-day-header-color);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -48,8 +50,8 @@
       height: $th-width;
 
       div {
-        @include font($font-size-md, 500);
-        color: var(--text-dark-gray-color);
+        @include font($font-size-md, $font-weight-medium);
+        color: var(--xl-calendar-day-header-color);
         text-align: center;
       }
     }
@@ -62,7 +64,7 @@
       overflow: hidden;
 
       // background-color + gap = border
-      background-color: $light-grey;
+      background-color: var(--xl-calendar-cell-border-color);
       gap: 1px;
     }
 
@@ -70,7 +72,7 @@
       @extend .unselectable;
       @include flex-column(0);
       position: relative;
-      background-color: var(--main-bg-color);
+      background-color: $body-bg-var;
       padding-bottom: $gap-sm;
 
       &:first-child {
@@ -85,28 +87,29 @@
         display: flex;
         justify-content: space-between;
         font-weight: $form-label-font-weight;
-        color: var(--table-head-text-color);
+        color: var(--xl-calendar-cell-day-header-color);
         padding: $gap-sm;
       }
 
       &__body {
         position: relative;
         @include flex-column($gap-x-sm);
-        @include perfect-scrollbar($border-color, $gap-x-sm, 2px);
+        @include perfect-scrollbar(var(--scrollbar-color), $gap-x-sm, 2px);
         padding-inline: $gap-sm;
         flex-grow: 1;
       }
 
       &--alien {
-        background-color: var(--xl-calendar-alien-day-bg-color);
+        background-color: var(--xl-calendar-alien-day-bg);
       }
 
       &--today {
-        border: 2px solid $primary;
+        border: 2px solid var(--xl-calendar-today-border-color);
       }
 
       &:hover, &--hovered {
-        background-color: var(--xl-calendar-hovered-day-bg-color);
+        background-color: var(--xl-calendar-hovered-day-bg);
+        --xl-calendar-cell-day-header-color: var(--xl-calendar-hovered-day-color);
 
         [data-action="create-xl-calendar-comment"] {
           display: block;
@@ -118,7 +121,7 @@
       display: none;
       text-align: right;
       font-size: $gap-sm;
-      color: $primary;
+      color: $blue;
     }
   }
 
@@ -140,13 +143,6 @@
     outline: none;
   }
 
-  .show-more-mailings {
-    border-color: $primary;
-    background-color: $primary;
-    color: $white;
-    text-align: center;
-  }
-
   &.tile-x-wide, &:not(.tile-x-wide):has(#xl-calendar-mode-switch:checked) {
     #xl-calendar {
       grid-template-columns: max-content;
@@ -154,7 +150,7 @@
   }
 
   &.tile-x-wide {
-    .icon-switch:has(#xl-calendar-mode-switch) {
+    .switch:has(#xl-calendar-mode-switch) {
       display: none;
     }
   }
@@ -163,7 +159,37 @@
     color: $white;
     text-align: center;
     span {
-      border-color: $primary !important;
+      border-color: $blue !important;
     }
+  }
+}
+
+@include color-mode(dark) {
+  #xl-calendar-tile {
+    --xl-calendar-alien-day-bg: #{$dark-grey};
+    --xl-calendar-hovered-day-bg: #{$grey-blue};
+    --xl-calendar-cell-day-header-color: #{$white};
+    --xl-calendar-day-header-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  #xl-calendar-tile {
+    --xl-calendar-hovered-day-bg: #{$con-light-blue};
+    --xl-calendar-cell-day-header-color: #{$con-dark-blue};
+    --xl-calendar-cell-border-color: #{$con-dark-blue};
+    --xl-calendar-today-border-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #xl-calendar-tile {
+    --xl-calendar-alien-day-bg: #{$dark-grey};
+    --xl-calendar-hovered-day-color: #{$white};
+    --xl-calendar-hovered-day-bg: #{$con-light-blue};
+    --xl-calendar-cell-day-header-color: #{$white};
+    --xl-calendar-day-header-color: #{$white};
+    --xl-calendar-cell-border-color: #{$white};
+    --xl-calendar-today-border-color: #{$con-grey};
   }
 }

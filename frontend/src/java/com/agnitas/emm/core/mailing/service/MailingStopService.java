@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,11 +21,11 @@ public interface MailingStopService {
 
 	/**
 	 * Stops generation / delivery of mailings.
-	 * 
+	 * <p>
 	 * If mailing is in generation or delivery stage, generation or delivery is paused and can be resumed.
 	 * If mailing is scheduled, but has not reached generation stage, the mailing is aborted and can be
 	 * resumed by scheduling it again.
-	 * 
+	 * <p>
 	 * Also deactivates all associates follow-up mailings.
 	 * 
 	 * @param companyID company ID of mailing
@@ -41,7 +41,7 @@ public interface MailingStopService {
 	
 	/**
 	 * Copies the stopped mailing for resume.
-	 * 
+	 * <p>
 	 * Requires enabled mailtracking for company.
 	 * 
 	 * @param admin admin
@@ -58,7 +58,7 @@ public interface MailingStopService {
 	
 	/**
 	 * Checks if generation / delivery of mailing can be stopped.
-	 * 
+	 * <p>
 	 * Returns <code>false</code> if mailing cannot be stopped.
 	 *   
 	 * @param companyID company ID
@@ -70,7 +70,7 @@ public interface MailingStopService {
 	
 	/**
 	 * Checks if generation / delivery of mailing can be resumed.
-	 * 
+	 * <p>
 	 * Returns <code>false</code> if mailing cannot be resumed.
 	 *   
 	 * @param companyID company ID

@@ -1,12 +1,11 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag"  %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core"  %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core"  %>
 
-<%--@elvariable id="form" type="org.agnitas.web.forms.PaginationForm"--%>
-<%--@elvariable id="profile" type="org.agnitas.beans.ImportProfile"--%>
+<%--@elvariable id="form" type="com.agnitas.web.forms.PaginationForm"--%>
+<%--@elvariable id="profile" type="com.agnitas.beans.ImportProfile"--%>
 <%--@elvariable id="defaultProfileId" type="java.lang.Integer"--%>
 
 <c:url var="setDefaultUrl" value="/import-profile/setDefault.action"/>
@@ -37,7 +36,7 @@
                                     <mvc:message code="default.list.entry.select" />
                                 </p>
                                 <div class="bulk-actions__controls">
-                                    <a href="#" class="icon-btn text-danger" data-tooltip="${deleteMsg}" data-form-url='${deleteUrl}' data-form-confirm>
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deleteMsg}" data-form-url='${deleteUrl}' data-form-confirm>
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
                                 </div>
@@ -52,27 +51,21 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table-hover table--borderless js-table" id="profile" name="profiles" pagesize="${form.numberOfRows}"
-                                   requestURI="/import-profile/list.action" excludedParams="*">
-
-                        <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
+                    <emm:table var="profile" modelAttribute="profiles" cssClass="table table-hover table--borderless js-table">
 
                         <c:if test="${deleteAllowed}">
                             <c:set var="checkboxSelectAll">
                                 <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
                             </c:set>
 
-                            <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                            <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
                                 <input class="form-check-input" type="checkbox" name="ids" value="${profile.id}" data-bulk-checkbox />
-                            </agnDisplay:column>
+                            </emm:column>
                         </c:if>
 
-                        <agnDisplay:column headerClass="js-table-sort" sortProperty="name" titleKey="Name" sortable="true">
-                            <a href="<c:url value="/import-profile/${profile.id}/view.action"/>" class="hidden" data-view-row="page"></a>
-                            <span>${profile.name}</span>
-                        </agnDisplay:column>
+                        <emm:column property="name" titleKey="Name" sortable="true" />
 
-                        <agnDisplay:column titleKey="recipient.importprofile.defaultprofile" headerClass="fit-content">
+                        <emm:column titleKey="recipient.importprofile.defaultprofile" headerClass="fit-content">
                             <div class="form-check form-switch">
                                 <c:choose>
                                     <c:when test="${defaultProfileId == profile.id}">
@@ -83,16 +76,18 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
-                        </agnDisplay:column>
+
+                            <a href="<c:url value="/import-profile/${profile.id}/view.action"/>" class="hidden" data-view-row="page"></a>
+                        </emm:column>
 
                         <c:if test="${deleteAllowed and profiles.fullListSize gt 0}">
-                            <agnDisplay:column headerClass="fit-content">
-                                <a href="${deleteUrl}?ids=${profile.id}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
+                            <emm:column>
+                                <a href="${deleteUrl}?ids=${profile.id}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deleteMsg}">
                                     <i class="icon icon-trash-alt"></i>
                                 </a>
-                            </agnDisplay:column>
+                            </emm:column>
                         </c:if>
-                    </agnDisplay:table>
+                    </emm:table>
                 </div>
             </div>
         </div>

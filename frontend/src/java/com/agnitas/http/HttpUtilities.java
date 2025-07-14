@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -39,9 +39,9 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.agnitas.util.NetworkUtil;
-import org.agnitas.util.Triple;
-import org.agnitas.util.Tuple;
+import com.agnitas.util.NetworkUtil;
+import com.agnitas.util.Triple;
+import com.agnitas.util.Tuple;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -415,7 +415,7 @@ public class HttpUtilities {
 		return newUrl.toString();
 	}
 
-	public static String getPlainParameterFromHtml(final String htmlText, final String parameterName) throws Exception {
+	public static String getPlainParameterFromHtml(String htmlText, String parameterName) {
 		if (StringUtils.isBlank(htmlText)) {
 			return null;
 		} else {
@@ -429,7 +429,7 @@ public class HttpUtilities {
 		}
 	}
 
-	public static String getQuotedParameterFromHtml(final String htmlText, final String parameterName) throws Exception {
+	public static String getQuotedParameterFromHtml(String htmlText, String parameterName) {
 		if (StringUtils.isBlank(htmlText)) {
 			return null;
 		} else {

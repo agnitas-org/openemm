@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,18 +16,16 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map.Entry;
 
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.impl.DynamicTagContentImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.TargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -66,48 +64,41 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailingDao mailingDao;
 	private DynamicTagDao dynamicTagDao;
-	private ComTargetDao targetDao;
+	private TargetDao targetDao;
 	private ThumbnailService thumbnailService;
 	private MailingContentService mailingContentService;
     private MaildropService maildropService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 	
-	@Required
 	public void setDynamicTagDao(DynamicTagDao dynamicTagDao) {
 		this.dynamicTagDao = dynamicTagDao;
 	}
 	
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
+	public void setTargetDao(TargetDao targetDao) {
 		this.targetDao = targetDao;
 	}
 
-	@Required
 	public void setThumbnailService(ThumbnailService thumbnailService) {
 		this.thumbnailService = thumbnailService;
 	}
 
-	@Required
 	public void setMailingContentService(MailingContentService mailingContentService) {
 		this.mailingContentService = mailingContentService;
 	}
 	
-	@Required
 	public void setMaildropService(MaildropService maildropService) {
 		this.maildropService = maildropService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -237,7 +228,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createNewContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
@@ -275,7 +266,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createOrUpdateContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 2);
@@ -362,7 +353,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	private JsonObject createContentJsonObject(DynamicTag dynamicTag) throws Exception {
+	private JsonObject createContentJsonObject(DynamicTag dynamicTag) {
 		JsonObject dynamicTagJsonObject = new JsonObject();
 		
 		dynamicTagJsonObject.add("id", dynamicTag.getId());

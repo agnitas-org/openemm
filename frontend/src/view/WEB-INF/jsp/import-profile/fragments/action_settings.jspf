@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.beans.Recipient" %>
+<%@ page import="com.agnitas.beans.Recipient" %>
 
 <c:set var="MAILTYPE_TEXT" value="<%= Recipient.MAILTYPE_TEXT %>"/>
 <c:set var="MAILTYPE_HTML" value="<%= Recipient.MAILTYPE_HTML %>"/>
@@ -7,10 +7,10 @@
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileForm"--%>
 <%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
-<%--@elvariable id="importModes" type="org.agnitas.util.importvalues.ImportMode[]"--%>
+<%--@elvariable id="importModes" type="com.agnitas.util.importvalues.ImportMode[]"--%>
 <%--@elvariable id="availableTimeZones" type="java.lang.String[]"--%>
 <%--@elvariable id="availableImportProfileFields" type="java.util.List<com.agnitas.beans.ProfileField>"--%>
-<%--@elvariable id="checkForDuplicatesValues" type="org.agnitas.util.importvalues.CheckForDuplicates[]"--%>
+<%--@elvariable id="checkForDuplicatesValues" type="com.agnitas.util.importvalues.CheckForDuplicates[]"--%>
 <%--@elvariable id="importProcessActions" type="java.util.List<com.agnitas.beans.ImportProcessAction>"--%>
 
 <div class="tile" data-field="toggle-vis">

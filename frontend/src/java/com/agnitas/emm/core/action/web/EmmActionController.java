@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,11 +10,29 @@
 
 package com.agnitas.emm.core.action.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.form.EmmActionForm;
-import com.agnitas.emm.core.action.form.EmmActionsForm;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationParametersParser;
@@ -23,31 +41,30 @@ import com.agnitas.emm.core.action.service.impl.EmmActionValidationServiceImpl;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.UserformService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.actions.impl.EmmActionImpl;
-import org.agnitas.beans.LightProfileField;
-import org.agnitas.beans.factory.ActionOperationFactory;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.bean.EmmActionImpl;
+import com.agnitas.beans.LightProfileField;
+import com.agnitas.beans.factory.ActionOperationFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.ActivenessPaginationForm;
+import com.agnitas.web.forms.BulkActionForm;
+import com.agnitas.web.forms.SimpleActionForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -64,25 +81,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
 public class EmmActionController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(EmmActionController.class);
@@ -91,11 +89,10 @@ public class EmmActionController implements XssCheckAware {
     private static final String SHORTNAME = "shortname";
 	private static final String REDIRECT_TO_OVERVIEW = "redirect:/action/list.action";
 
-    private final WebStorage webStorage;
     private final EmmActionService emmActionService;
     private final MailingService mailingService;
     private final ConfigService configService;
-    private final ComWorkflowService workflowService;
+    private final WorkflowService workflowService;
 	private final UserActivityLogService userActivityLogService;
 	private final ConversionService conversionService;
 	private final ActionOperationParametersParser actionOperationParametersParser;
@@ -105,8 +102,7 @@ public class EmmActionController implements XssCheckAware {
 	private final MailinglistApprovalService mailinglistApprovalService;
 	private final ColumnInfoService columnInfoService;
 
-	public EmmActionController(WebStorage webStorage, EmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, UserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ColumnInfoService columnInfoService) {
-		this.webStorage = webStorage;
+	public EmmActionController(EmmActionService emmActionService, MailingService mailingService, ConfigService configService, WorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, UserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ColumnInfoService columnInfoService) {
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
 		this.configService = configService;
@@ -122,10 +118,9 @@ public class EmmActionController implements XssCheckAware {
     }
 
 	@RequestMapping("/list.action")
-	public String list(Admin admin, EmmActionsForm form, Model model, Popups popups) {
+	public String list(Admin admin, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-			FormUtils.syncNumberOfRows(webStorage, WebStorage.ACTION_OVERVIEW, form);
 
 			model.addAttribute("actionListJson", emmActionService.getEmmActionsJson(admin));
 		} catch (Exception e) {
@@ -147,7 +142,7 @@ public class EmmActionController implements XssCheckAware {
 		Collection<Integer> affectedIds = CollectionUtils.emptyIfNull(result.getResult())
 				.stream()
 				.map(EmmAction::getId)
-				.collect(Collectors.toList());
+				.toList();
 
 		if (result.isSuccess()) {
 			writeChangeActivenessToUAL(affectedIds, activate, admin);
@@ -163,7 +158,7 @@ public class EmmActionController implements XssCheckAware {
 
 	@PostMapping("/saveActiveness.action")
 	// TODO: EMMGUI-714: Remove after remove of old design
-	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, EmmActionsForm form, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, ActivenessPaginationForm form, Popups popups) {
 		List<UserAction> userActions = new ArrayList<>();
 		boolean result = emmActionService.setActiveness(form.getActiveness(), admin.getCompanyID(), userActions);
 		if (result) {
@@ -319,7 +314,6 @@ public class EmmActionController implements XssCheckAware {
 		try {
 			List<AbstractActionOperationParameters> parameters = actionOperationParametersParser.deSerializeActionModulesList(form.getModulesSchema());
 			if (isValidAction(admin, form, parameters, popups)) {
-
 				EmmAction action = new EmmActionImpl();
 				action.setCompanyID(admin.getCompanyID());
 				action.setId(form.getId());
@@ -415,13 +409,11 @@ public class EmmActionController implements XssCheckAware {
 		return "actions_view_forms";
 	}
 
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
 	protected void loadViewData(Admin admin, Model model, int actionId) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
-	    model.addAttribute("isUnsubscribeExtended", true);
+		if (!admin.isRedesignedUiUsed()) {
+			model.addAttribute("isUnsubscribeExtended", true);
+		}
 	    model.addAttribute("allowedMailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
 
 		// Some deserialized Actions need the mailings to show their configuration data
@@ -443,7 +435,7 @@ public class EmmActionController implements XssCheckAware {
 		
 		model.addAttribute("ACTION_READONLY", emmActionService.containsReadonlyOperations(actionId, admin));
 
-		if (isRedesign(admin) && actionId > 0) {
+		if (admin.isRedesignedUiUsed() && actionId > 0) {
 			model.addAttribute("dependencies", emmActionService.getDependencies(actionId, admin.getCompanyID()));
 		}
 	}

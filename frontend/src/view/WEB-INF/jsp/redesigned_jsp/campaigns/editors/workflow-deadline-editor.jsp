@@ -7,8 +7,6 @@
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
-
 <c:set var="TYPE_DELAY" value="<%= WorkflowDeadlineType.TYPE_DELAY %>"/>
 <c:set var="TYPE_FIXED_DEADLINE" value="<%= WorkflowDeadlineType.TYPE_FIXED_DEADLINE %>"/>
 
@@ -118,7 +116,7 @@
                 <div class="form-check form-switch">
                     <input id="use-time" type="checkbox" name="useTime" value="true" class="form-check-input" role="switch"/>
                     <label class="form-label form-check-label" for="use-time"><mvc:message code="Time"/></label>
-                    <a href="#" id="deadlineTimeHelp" class="icon icon-question-circle" data-help="help_${helplanguage}/workflow/DeadlineTime.xml"></a>
+                    <a href="#" id="deadlineTimeHelp" class="icon icon-question-circle" data-help="workflow/DeadlineTime.xml"></a>
                 </div>
             </label>
             <div class="time-picker-container">

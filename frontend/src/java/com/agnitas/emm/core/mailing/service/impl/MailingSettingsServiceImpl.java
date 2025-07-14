@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.emm.core.mailing.dao.MailingParameterDao.ReservedMailingParam.isReservedParam;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -28,17 +28,49 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.UserMessageException;
-import org.agnitas.util.MissingEndTagException;
-import org.agnitas.util.SafeString;
-import org.agnitas.util.UnclosedTagException;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.web.forms.WorkflowParameters;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
+import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
+import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
+import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingParameterService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingSettingsService;
+import com.agnitas.emm.core.mailing.web.MailingSettingsOptions;
+import com.agnitas.emm.core.mailingcontent.form.FrameContentForm;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserMessageException;
+import com.agnitas.util.MissingEndTagException;
+import com.agnitas.util.SafeString;
+import com.agnitas.util.UnclosedTagException;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.mvc.Popups;
+import jakarta.mail.internet.InternetAddress;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -48,63 +80,26 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.impl.MailingImpl;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
-import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
-import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
-import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.MailingSettingsService;
-import com.agnitas.emm.core.mailing.web.MailingSettingsOptions;
-import com.agnitas.emm.core.mailingcontent.form.FrameContentForm;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingAwareImpl;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.mvc.Popups;
-
-import jakarta.mail.internet.InternetAddress;
-
 @Service("mailingSettingsService")
 public class MailingSettingsServiceImpl implements MailingSettingsService {
 
     private static final Logger LOGGER = LogManager.getLogger(MailingSettingsServiceImpl.class);
     
     private final MailingService mailingService;
-    private final ComMailingBaseService mailingBaseService;
+    private final MailingBaseService mailingBaseService;
     private final MaildropService maildropService;
     private final ApplicationContext applicationContext;
     private final DynamicTagDao dynamicTagDao;
-    private final ComMailingParameterService mailingParameterService;
+    private final MailingParameterService mailingParameterService;
     private final UserActivityLogService userActivityLogService;
     private final MailingValidator mailingValidator;
     protected final GridServiceWrapper gridService;
-    protected final ComWorkflowService workflowService;
+    protected final WorkflowService workflowService;
     protected final ExtendedConversionService conversionService;
-    protected final ComTargetService targetService;
+    protected final TargetService targetService;
     private final PreviewImageService previewImageService;
 
-    public MailingSettingsServiceImpl(MailingService mailingService, ComMailingBaseService mailingBaseService, MaildropService maildropService, ApplicationContext applicationContext, DynamicTagDao dynamicTagDao, ComMailingParameterService mailingParameterService, UserActivityLogService userActivityLogService, MailingValidator mailingValidator, GridServiceWrapper gridService, ComWorkflowService workflowService, ExtendedConversionService conversionService, ComTargetService targetService, PreviewImageService previewImageService) {
+    public MailingSettingsServiceImpl(MailingService mailingService, MailingBaseService mailingBaseService, MaildropService maildropService, ApplicationContext applicationContext, DynamicTagDao dynamicTagDao, MailingParameterService mailingParameterService, UserActivityLogService userActivityLogService, MailingValidator mailingValidator, GridServiceWrapper gridService, WorkflowService workflowService, ExtendedConversionService conversionService, TargetService targetService, PreviewImageService previewImageService) {
         this.mailingService = mailingService;
         this.mailingBaseService = mailingBaseService;
         this.maildropService = maildropService;
@@ -146,7 +141,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailing.setUseDynamicTemplate(form.isUseDynamicTemplate());
     }
     
-    private void syncMediatypeTemplates(Mailing mailing) throws Exception {
+    private void syncMediatypeTemplates(Mailing mailing) {
         for (Mediatype mediatype : mailing.getMediatypes().values()) {
             if (mediatype != null && mediatype.getStatus() == MediaTypeStatus.Active.getCode()) {
                 mediatype.syncTemplate(mailing, applicationContext);
@@ -159,7 +154,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         return handleSaveExceptions(mailingId, popups, () -> {
             mailingValidator.validateMailingBeforeSave(mailing, admin.getLocale(), popups);
             mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
-            mailingService.saveMailingWithNewContent(mailing, admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
+            mailingService.saveMailingWithNewContent(mailing, admin);
             if (mailing.isIsTemplate()) {
                 mailingService.updateMailingsWithDynamicTemplate(mailing, applicationContext);
             }
@@ -186,7 +181,6 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
                 saveMailing(mailing, form, admin, options, popups);
                 previewImageService.generateMailingPreview(admin, options.getSessionId(), mailing.getId(), true);
             }
-            updateMailingIconInRelatedWorkflowIfNeeded(mailing, admin, options);
         });
     }
 
@@ -250,7 +244,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     }
 
     private void setMailingParamsToForm(MailingSettingsForm form, int mailingId, int companyId) {
-        List<ComMailingParameter> params = mailingParameterService.getMailingParameters(companyId, mailingId);
+        List<MailingParameter> params = mailingParameterService.getMailingParameters(companyId, mailingId);
         form.setParams(params.stream()
                 .filter(param -> !isReservedParam(param.getName()))
                 .collect(Collectors.toList()));
@@ -258,6 +252,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
 
     protected void setMailingPropertiesFromForm(Mailing mailing, MailingSettingsForm form, Admin admin,
                                                 MailingSettingsOptions options) throws Exception {
+        mailing.setSplitID(options.getNewSplitId());
         mailing.setIsTemplate(options.isTemplate());
         mailing.setCampaignID(form.getArchiveId());
         mailing.setDescription(form.getDescription());
@@ -266,7 +261,9 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailing.setMailingType(form.getMailingType());
         mailing.setPlanDate(getMailingPlanDateFromForm(form, admin));
         mailing.setArchived(form.isArchived() ? 1 : 0);
-        mailing.setTargetExpression(generateMailingTargetExpression(mailing, form, admin, options));
+        if (!workflowDriven(options.getWorkflowId())) {
+            mailing.setTargetExpression(generateMailingTargetExpression(mailing, form, admin, options));
+        }
         mailing.setMailingContentType(form.getMailingContentType());
         mailing.setLocked(1);
         mailing.setNeedsTarget(form.isNeedsTarget());
@@ -311,22 +308,24 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
                         .contains(TargetExpressionUtils.OPERATOR_OR);
     }
 
-    protected boolean isFormTargetsHaveConjunction(MailingSettingsForm form) {
-        return form.getTargetMode() == Mailing.TARGET_MODE_AND; // overridden in extended class
+    private boolean isFormTargetsHaveConjunction(MailingSettingsForm form) {
+        return form.getTargetMode() == Mailing.TARGET_MODE_AND;
     }
 
-    protected boolean isTargetModeCheckboxDisabled(MailingSettingsOptions options) {
+    @Override
+    public boolean isTargetModeCheckboxDisabled(MailingSettingsOptions options) {
         return (workflowDriven(options.getWorkflowId()) || options.isWorldSend())
                 && !(options.isForCopy() || options.isForFollowUp());
     }
 
-    protected boolean isTargetModeCheckboxVisible(Mailing mailing, boolean isTargetExpressionComplex, MailingSettingsOptions options) {
+    @Override
+    public boolean isTargetModeCheckboxVisible(Mailing mailing, boolean isTargetExpressionComplex, MailingSettingsOptions options) {
         return !(isTargetExpressionComplex ||
                 ((workflowDriven(options.getWorkflowId()) || options.isWorldSend())
                         && CollectionUtils.size(mailing.getTargetGroups()) < 2));
     }
 
-    protected boolean workflowDriven(int workflowId) {
+    private boolean workflowDriven(int workflowId) {
         return workflowId > 0;
     }
     
@@ -334,7 +333,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         return mailing.hasComplexTargetExpression(); // overridden in extended class
     }
 
-    protected void setMediatypesToMailing(Mailing mailing, MailingSettingsOptions options, MailingSettingsForm form) throws Exception {
+    protected void setMediatypesToMailing(Mailing mailing, MailingSettingsOptions options, MailingSettingsForm form) {
         boolean requestApproval = mailing.getEmailParam().isRequestApproval();
         String approvedBy = mailing.getEmailParam().getApprovedBy();
         mailing.setMediatypes(form.getMediatypes().entrySet().stream().collect(Collectors.toMap(
@@ -361,14 +360,14 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         // overwritten in extended class
     }
 
-    private List<ComMailingParameter> collectMailingParams(MailingSettingsForm form, Admin admin, MailingSettingsOptions options) {
-        List<ComMailingParameter> params = options.getMailingParams();
+    private List<MailingParameter> collectMailingParams(MailingSettingsForm form, Admin admin, MailingSettingsOptions options) {
+        List<MailingParameter> params = options.getMailingParams();
         // Let's retrieve all the parameters currently stored.
         if (isMailingRequiresOriginParams(form, admin, options)) {
             return params;
         }
         // Overwrite all the parameters with the user-defined ones if user is permitted to change parameters.
-        List<ComMailingParameter> intervalParams = retrieveReservedParams(params);
+        List<MailingParameter> intervalParams = retrieveReservedParams(params);
         params = form.getParams().stream()
                 .filter(param -> isNotEmpty(param.getName()))
                 .collect(Collectors.toList());
@@ -376,7 +375,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         return params;
     }
 
-    private List<ComMailingParameter> retrieveReservedParams(List<ComMailingParameter> params) {
+    private List<MailingParameter> retrieveReservedParams(List<MailingParameter> params) {
         return params.stream()
                 .filter(p -> isReservedParam(p.getName()))
                 .collect(Collectors.toList());
@@ -398,8 +397,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             return true;
         }
 
-        MailingStatus mailingStatus = mailingService.getMailingStatus(mailing.getCompanyID(), mailing.getId());
-        popups.alert(mailingStatus == MailingStatus.SENT ? "error.sent.mailing.change.denied" : "status_changed");
+        popups.alert(mailingService.hasMailingStatus(mailing.getId(), MailingStatus.SENT, mailing.getCompanyID()) ? "error.sent.mailing.change.denied" : "status_changed");
         return false;
     }
 
@@ -414,7 +412,11 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         boolean approved = mailingService.isApproved(mailing.getId(), mailing.getCompanyID());
 
         mailingBaseService.saveUndoData(mailing.getId(), admin.getAdminID());
-        mailingService.saveMailingWithNewContent(mailing, admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
+        if (options.isCopying()) {
+            mailingService.saveMailing(mailing, admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP));
+        } else {
+            mailingService.saveMailingWithNewContent(mailing, admin);
+        }
         if (options.getGridTemplateId() > 0) {
             saveMailingGridInfo(options.getGridTemplateId(), mailing.getId(), admin);
         }
@@ -524,7 +526,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
      * @param regularTemplate whether the regular template is used or a mailing (clone & edit)
      */
     @Override
-    public void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, Integer workflowId, boolean regularTemplate) {
+    public void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, Integer workflowId, boolean regularTemplate, boolean withFollowUpSettings) {
         MailingComponent tmpComp;
         // If we already have a campaign we don't have to override settings inherited from it
         boolean overrideInherited = (workflowId == null || workflowId == 0 || !regularTemplate);
@@ -569,12 +571,15 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         }
 
         // Create a clone copy of all mailing parameters
-        List<ComMailingParameter> templateMailingParameters = mailingParameterService.getMailingParameters(template.getCompanyID(), template.getId());
-        List<ComMailingParameter> newParameters = new ArrayList<>();
+        List<MailingParameter> templateMailingParameters = mailingParameterService.getMailingParameters(template.getCompanyID(), template.getId());
+        List<MailingParameter> newParameters = new ArrayList<>();
 
         if (templateMailingParameters != null) {
-            for (ComMailingParameter parameter : templateMailingParameters) {
-                ComMailingParameter newParameter = new ComMailingParameter();
+            for (MailingParameter parameter : templateMailingParameters) {
+                if (isReservedParam(parameter.getName())) {
+                    continue;
+                }
+                MailingParameter newParameter = new MailingParameter();
 
                 newParameter.setName(parameter.getName());
                 newParameter.setValue(parameter.getValue());
@@ -593,7 +598,11 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             populateDisabledGeneralSettings(form, mailing);
         }
         populateActiveMailingSettings(form, mailing, admin);
-        populateWorkflowDrivenSettings(form, mailing.getId() == 0 && isGrid ? new MailingImpl() : mailing, admin, workflowParams);
+
+        // when creating a new mailing, the last state of the workflow was not saved
+        if (mailing.getId() > 0 && !mailing.isIsTemplate()) {
+            populateWorkflowDrivenSettings(form, mailing, admin, workflowParams);
+        }
     }
 
     // When 'mailing.settings.hide' permission is set
@@ -631,28 +640,32 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         form.setMailingType(mailing.getMailingType());
     }
 
-    @Override
-    public void populateWorkflowDrivenSettings(MailingSettingsForm form, Mailing mailing, Admin admin, WorkflowParameters workflowParams) {
+    private void populateWorkflowDrivenSettings(MailingSettingsForm form, Mailing mailing, Admin admin, WorkflowParameters workflowParams) {
         if (workflowParams == null) {
             return;
         }
         workflowService.assignWorkflowDrivenSettings(admin, mailing, workflowParams.getWorkflowId(), workflowParams.getNodeId());
         if (StringUtils.isNotBlank(workflowParams.getParamsAsMap().get("mailingType"))) {
-            mailing.setMailingType(getMailingTypeFromForwardParams(workflowParams));
+            getMailingTypeFromForwardParams(workflowParams)
+                    .ifPresent(mailing::setMailingType);
         }
 
-        populateWorkflowMediaTypesSettings(form, workflowParams);
         setDisabledSettingsToForm(form, mailing, admin);
         form.setArchiveId(mailing.getCampaignID());
         form.setArchived(mailing.getArchived() == 1);
     }
 
-    private MailingType getMailingTypeFromForwardParams(WorkflowParameters params) {
+    @Override
+    public Optional<MailingType> getMailingTypeFromForwardParams(WorkflowParameters params) {
+        if (params == null || StringUtils.isBlank(params.getParamsAsMap().get("mailingType"))) {
+            return Optional.empty();
+        }
+
         try {
             String mailingTypeStr = params.getParamsAsMap().get("mailingType");
-            return MailingType.fromCode(NumberUtils.toInt(mailingTypeStr, 0));
+            return Optional.of(MailingType.fromCode(NumberUtils.toInt(mailingTypeStr, 0)));
         } catch (Exception e) {
-            return MailingType.NORMAL;
+            return Optional.of(MailingType.NORMAL);
         }
     }
 
@@ -660,7 +673,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     public MailingSettingsForm prepareFormForCopy(Mailing origin, Locale locale, Integer workflowId, boolean forFollowUp) {
         MailingSettingsForm form = getNewSettingsForm();
 
-        copyTemplateSettingsToMailingForm(origin, form, workflowId, false);
+        copyTemplateSettingsToMailingForm(origin, form, workflowId, false, false);
         form.setShortname(forFollowUp
                 ? SafeString.getLocaleString("mailing.Followup_Mailing", locale) + " " + origin.getShortname()
                 : SafeString.getLocaleString("mailing.CopyOf", locale) + " " + origin.getShortname());
@@ -685,50 +698,10 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailing.getTargetGroups().removeAll(toRemove);
     }
 
-    private void updateMailingIconInRelatedWorkflowIfNeeded(Mailing mailing, Admin admin, MailingSettingsOptions options) {
-        int workflowId = options.getWorkflowId();
-        if (!workflowDriven(workflowId)) {
-            return;
-        }
-
-        Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
-        Optional<WorkflowMailingAwareImpl> icon;
-        if (options.isNew()) {
-            WorkflowParameters workflowParams = options.getWorkflowParams();
-            if (workflowParams == null) {
-                workflowParams = new WorkflowParameters();
-            }
-            icon = findMailingIconInRelatedWorkflow(workflow, 0, workflowParams.getNodeId());
-        } else {
-            icon = findMailingIconInRelatedWorkflow(workflow, mailing.getId(), null);
-        }
-
-        icon.ifPresent(i -> {
-            i.setMailingId(mailing.getId());
-            i.setIconTitle(mailing.getShortname());
-            i.setFilled(true);
-        });
-
-        workflowService.saveWorkflow(admin, workflow, workflow.getWorkflowIcons());
-    }
-
     protected boolean isAllowedMailingIconTypeForFill(int type) {
         return type == WorkflowIconType.MAILING.getId();
     }
-    
-    private Optional<WorkflowMailingAwareImpl> findMailingIconInRelatedWorkflow(Workflow workflow, int mailingId, Integer nodeId) {
-        return workflow.getWorkflowIcons().stream()
-                .filter(i -> isAllowedMailingIconTypeForFill(i.getType()) && i instanceof WorkflowMailingAwareImpl)
-                .filter(i -> nodeId == null || i.getId() == nodeId)
-                .map(i -> (WorkflowMailingAwareImpl) i)
-                .filter(i -> i.getMailingId() == mailingId)
-                .findFirst();
-    }
 
-    protected void populateWorkflowMediaTypesSettings(MailingSettingsForm form, WorkflowParameters params) {
-        // nothing to do
-    }
-    
     // Functional interface for handling exceptions
     private interface ExceptionHandler {
         void execute() throws Exception;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,10 +30,10 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.agnitas.util.HttpUtils.RequestMethod;
-import org.agnitas.util.SafeString;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.SafeString;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
@@ -80,7 +80,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -862,7 +862,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 
-    private boolean mayAddNewColumn(int companyID) throws Exception {
+    private boolean mayAddNewColumn(int companyID) {
 		if (companyID <= 0) {
     		return false;
     	} else {

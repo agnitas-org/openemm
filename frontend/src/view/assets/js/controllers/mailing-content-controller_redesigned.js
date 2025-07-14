@@ -13,9 +13,11 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   
   let $dynTagSettings;
   let $dynTagEditor;
+  let seenDynTags;
 
   this.addDomInitializer('mailing-content-initializer', function () {
     config = this.config;
+    seenDynTags = [];
     $dynTagSettings = $('#dyn-tag-settings');
     mailingContent = new MailingContent(config.dynTags, config.targetGroupList, config.interestGroupList);
     selectLastImportedContentSource();
@@ -25,6 +27,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
   this.addDomInitializer('gridTemplate-textContent-initializer', function () {
     config = this.config;
+    seenDynTags = [];
     $dynTagSettings = $('#dyn-tag-settings');
     config.isEditableMailing = true;
     mailingContent = new MailingContent(this.config.dynTags, this.config.targetGroupList, [], []);
@@ -104,8 +107,38 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     switchDynTag(this.el.data('dyn-tag-id'));
   });
 
-  function triggerModify() {
-    $dynTagEditor?.trigger('dynTags:modify');
+  function triggerModify(opts) {
+    $dynTagEditor?.trigger('dynTags:modify', opts);
+  }
+
+  function hasNotAppliedAutomaticWysiwygChanges(conf, dynTag) {
+    return conf.isFullHtmlTags
+      && $('#tab-content-wysiwyg').is(":visible")
+      && !seenDynTags.includes(dynTag.id);
+  }
+
+  /**
+   * GWUA-6254: The wysiwyg editor makes automatic changes (e.g. puts content into an <html> template)
+   * In order to prevent false dirty state, these changes need to applied
+   */
+  function preventDirtyAfterWysiwygInitChanges(conf, dynTag) {
+    if (hasNotAppliedAutomaticWysiwygChanges(conf, dynTag)) {
+      triggerModify({preventEditorHide: true});
+      dynTag.markAsClean();
+    }
+    seenDynTags.push(dynTag.id);
+  }
+
+  function fixWysiwygDirty(conf, dynTag) {
+    if (window.Jodit) {
+      preventDirtyAfterWysiwygInitChanges(conf, dynTag);
+    } else {
+      CKEDITOR.instances['content']?.on('instanceReady', () => {
+        setTimeout(() => {
+          preventDirtyAfterWysiwygInitChanges(conf, dynTag)
+        }, 0);
+      });
+    }
   }
 
   function switchDynTag(dynTagId) {
@@ -117,6 +150,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     AGN.Lib.Controller.init($dynTagSettings);
     AGN.runAll($dynTagSettings);
     displayContentBadges();
+    fixWysiwygDirty(conf, dynTag);
   }
 
   function prepareContentEditorConf(dynTag) {
@@ -156,11 +190,17 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
   function applyAItextAndSave() {
     $dynTagEditor.trigger("apply-ai-text-on-save", [getAiGeneratedText()]);
-    save();
+    save($('[data-action="save"]').data('url'));
   }
   
   function save(url) {
-    const dynTagsToSave = mailingContent.dynTags.filter(dynTag => dynTag.modified);
+    const dynTagsToSave = _.cloneDeep(mailingContent.dynTags.filter(dynTag => dynTag.modified));
+    dynTagsToSave.forEach(dynTag => dynTag.contentBlocks.forEach(cb => {
+      if (!cb.content) {
+        dynTag.remove(cb.uniqueId);
+      }
+    })); // GWUA-6384: filter out empty content blocks
+
     $.post({
       url: url,
       contentType: 'application/json',
@@ -178,6 +218,8 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     }
     const showText = config.isEmailMediaTypeActive || config.isMailingGrid;
 
+
+    // todo check usage and remove after ux redesign finished
     AGN.Lib.Modal.fromTemplate("modal-editor", {
       showText,
       showHtml: showText && config.mailFormat !== 0 && !config.isMailingGrid,
@@ -186,7 +228,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   });
 
   $(window).on('beforeunload', function () {
-    triggerModify();
+    triggerModify({ preventEditorHide: true });
     if (mailingContent.modified) {
       AGN.Lib.Loader.hide();
       return LEAVE_QUESTION;
@@ -213,6 +255,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     }
   }
 
+  // TODO check usage and remove after ux redesign finished
   this.addAction({click: 'save-content'}, function () {
     let $contentForm = $('#content-form');
     if (!Form.get($contentForm).validate()) {
@@ -241,6 +284,10 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
     get modified() {
       return this.dynTags.some(dynTag => dynTag.modified);
+    }
+
+    markAsClean() { // reset dirty state
+      this.dynTags.forEach(dynTag => dynTag.markAsClean());
     }
 
     getDynTagById(id) {
@@ -281,7 +328,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
           return new DynContent(entry[1]);
         });
       }
-      this.initState = _.cloneDeep(this.lightWeight); // for dirty state check
+      this.markAsClean();
     }
     
     get defaultContentBlock() {
@@ -294,6 +341,10 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
         return false; // default 'all targets' group added on the first edit
       }
       return !_.isEqual(this.initState, this.lightWeight);
+    }
+
+    markAsClean() { // reset dirty state
+      this.initState = _.cloneDeep(this.lightWeight);
     }
 
     getContentBlockByTargetId(targetId) {

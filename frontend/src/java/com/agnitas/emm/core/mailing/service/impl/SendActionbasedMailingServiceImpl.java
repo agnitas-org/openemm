@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,13 +14,11 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.function.Supplier;
 
-import org.agnitas.backend.Mailgun;
-import org.agnitas.dao.MaildropStatusDao;
+import com.agnitas.backend.Mailgun;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.backend.MailgunFactory;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -83,12 +81,10 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 	 *
 	 * @param factory factory for {@link Mailgun}
 	 */
-	@Required
 	public void setMailgunFactory(final MailgunFactory factory) {
 		this.mailgunFactory = factory;
 	}
 
-	@Required
 	public void setMaildropStatusDao(final MaildropStatusDao maildropStatusDao) {
 		this.maildropStatusDao = maildropStatusDao;
 	}

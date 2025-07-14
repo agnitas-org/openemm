@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,17 +17,17 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.form.MonthlyStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
+import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.context.request.RequestContextHolder;
 
 @Controller
 @RequestMapping("/statistics/monthly")
@@ -53,9 +53,7 @@ public class MonthlyStatisticController implements XssCheckAware {
 	}
 	
 	@RequestMapping("/view.action")
-	public String view(Admin admin, MonthlyStatisticForm form, Model model) throws Exception {
-		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-
+	public String view(Admin admin, MonthlyStatisticForm form, HttpSession session, Model model) {
 		Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));
 
 		if(form.getStartMonth() == -1) {
@@ -68,7 +66,7 @@ public class MonthlyStatisticController implements XssCheckAware {
 		
 		MonthlyStatisticDto monthlyStatisticDto = conversionService.convert(form, MonthlyStatisticDto.class);
 
-		String urlWithoutFormat = birtStatisticsService.getMonthlyStatisticsUrlWithoutFormat(admin, sessionId, monthlyStatisticDto, false);
+		String urlWithoutFormat = birtStatisticsService.getMonthlyStatisticsUrlWithoutFormat(admin, session.getId(), monthlyStatisticDto, false);
 
 		model.addAttribute(YEAR_LIST, AgnUtils.getYearList(AgnUtils.getStatStartYearForCompany(admin)));
 		model.addAttribute(MONTH_LIST, AgnUtils.getMonthList());

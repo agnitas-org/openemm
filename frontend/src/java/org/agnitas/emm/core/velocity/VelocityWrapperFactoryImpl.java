@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,9 +13,7 @@ package org.agnitas.emm.core.velocity;
 import java.util.Objects;
 
 import org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheck;
-import org.agnitas.util.TimeoutLRUMap;
-import org.springframework.beans.factory.annotation.Required;
-
+import com.agnitas.util.TimeoutLRUMap;
 /**
  * Implementation of {@link VelocityWrapperFactory} that caches existing {@link VelocityWrapper}
  * for companies.
@@ -23,7 +21,7 @@ import org.springframework.beans.factory.annotation.Required;
 public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 
 	@Override
-	public VelocityWrapper getWrapper(int companyId) throws Exception {
+	public VelocityWrapper getWrapper(int companyId) {
 		VelocityWrapper wrapper = cache.get(companyId);
 
 		if (wrapper == null) {
@@ -41,10 +39,8 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 	 * @param companyId company ID
 	 * 
 	 * @return new {@link VelocityWrapper} instance
-	 * 
-	 * @throws Exception on errors creating new instance
 	 */
-	protected VelocityWrapper createVelocityWrapper( int companyId) throws Exception {
+	protected VelocityWrapper createVelocityWrapper( int companyId) {
 		return new VelocityWrapperImpl(companyId, companyAccessCheck);
 	}
 	
@@ -68,7 +64,6 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 		this.cache = cache;
 	}
 
-    @Required
    	public final void setCompanyAccessCheck(final CompanyAccessCheck check) {
    		this.companyAccessCheck = Objects.requireNonNull(check, "CompanyAccessCheck is null");
    	}

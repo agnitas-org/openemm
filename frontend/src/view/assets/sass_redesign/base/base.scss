@@ -6,8 +6,8 @@ html {
 body {
   font-family: 'Poppins', sans-serif;
   font-style: normal;
-  background-color: var(--main-bg-color);
-  color: var(--text-color-default);
+  background-color: $body-bg-var;
+  color: $body-color-var;
 }
 
 ul, ol {
@@ -36,4 +36,8 @@ h1, h2, h3, h4, h5, h6 {
 
 pre {
   font-size: $font-size-sm;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none;
 }

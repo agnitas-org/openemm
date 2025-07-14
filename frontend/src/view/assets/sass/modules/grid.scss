@@ -538,6 +538,16 @@ ag-grid-aurelia {
     position: absolute;
     white-space: nowrap;
     width: 100%;
+
+    &.readonly {
+        cursor:default !important;
+        background-color: #ebebe4 !important;
+    }
+}
+
+body.dark-theme .ag-row.readonly {
+    cursor:default !important;
+    background-color: $c-dt-table-disabled-background !important;
 }
 
 .ag-column-moving {

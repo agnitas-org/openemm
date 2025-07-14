@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.common.service.impl;
 
 import com.agnitas.emm.common.exceptions.ZipArchiveException;
 import com.agnitas.emm.common.service.ZipArchiveService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.ZipUtilities;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Tuple;
+import com.agnitas.util.ZipUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.zip.ZipOutputStream;
 
-import static org.agnitas.util.FileUtils.getUniqueFileName;
+import static com.agnitas.util.FileUtils.getUniqueFileName;
 
 @Service("zipArchiveService")
 public class ZipArchiveServiceImpl<T> implements ZipArchiveService<T> {

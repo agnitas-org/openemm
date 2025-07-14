@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,28 +10,23 @@
 
 package com.agnitas.dao.impl;
 
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.dao.RdirTrafficAmountDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.dao.RdirTrafficAmountDao;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTrafficAmountDao {
-
-	private static final Logger logger = LogManager.getLogger(RdirTrafficAmountDaoImpl.class);
 
 	@Override
     public void save(int companyID, int mailingID, String contentName, int contentSize) {
 		// Insert new entry
-		update(logger, "INSERT INTO rdir_traffic_amount_" + companyID + "_tbl (mailing_id, content_name, content_size, demand_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+		update("INSERT INTO rdir_traffic_amount_" + companyID + "_tbl (mailing_id, content_name, content_size, demand_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
 			mailingID,
 			contentName,
 			contentSize
@@ -44,20 +39,20 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 		Date dateToAggregateEnd = DateUtilities.addDaysToDate(dateToAggregateStart, 1);
 		
 		String aggregatedRdirTrafficTableName = "rdir_traffic_agr_" + companyID + "_tbl";
-		
-		update (logger,
+
+		update(
 			"INSERT INTO " + aggregatedRdirTrafficTableName + " (mailing_id, content_name, content_size, demand_date, amount) ("
 			    + " SELECT mailing_id, content_name, content_size, ?, COUNT(*) FROM rdir_traffic_amount_" + companyID + "_tbl"
 			    + " WHERE demand_date >= ? AND demand_date < ?"
 			    + " GROUP BY mailing_id, content_name, content_size"
 		    + " )", dateToAggregateStart, dateToAggregateStart, dateToAggregateEnd);
 		
-		update(logger, "DELETE FROM rdir_traffic_amount_" + companyID + "_tbl WHERE demand_date >= ? AND demand_date < ?", dateToAggregateStart, dateToAggregateEnd);
+		update("DELETE FROM rdir_traffic_amount_" + companyID + "_tbl WHERE demand_date >= ? AND demand_date < ?", dateToAggregateStart, dateToAggregateEnd);
     }
 	
 	@Override
 	public List<Integer> getCompaniesForAggregation(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
-		return select(logger, "SELECT company_id FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
+		return select("SELECT company_id FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
 			+ (includedCompanyIds != null && !includedCompanyIds.isEmpty() ? " AND company_id IN (" + StringUtils.join(includedCompanyIds, ", ") + ")" : "")
 			+ (excludedCompanyIds != null && !excludedCompanyIds.isEmpty() ? " AND company_id NOT IN (" + StringUtils.join(excludedCompanyIds, ", ") + ")" : "")
 			+ " ORDER BY company_id",
@@ -69,8 +64,8 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	@Override
 	public boolean emtpyTrafficTables(int companyID) {
 		try {
-			update(logger, "TRUNCATE TABLE rdir_traffic_agr_"+ companyID + "_tbl");
-			update(logger, "TRUNCATE TABLE rdir_traffic_amount_"+ companyID + "_tbl");
+			update("TRUNCATE TABLE rdir_traffic_agr_"+ companyID + "_tbl");
+			update("TRUNCATE TABLE rdir_traffic_amount_"+ companyID + "_tbl");
 			return true;
 		} catch(Exception e) {
 			return false;

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
@@ -109,7 +109,7 @@
                                     titleKey="default.Type"
                                     sortable="false">
 						<c:set var="columnDataType" value="${column.simpleDataType}"/>
-						<%--@elvariable id="columnDataType" type="org.agnitas.util.DbColumnType.SimpleDataType"--%>
+						<%--@elvariable id="columnDataType" type="com.agnitas.util.DbColumnType.SimpleDataType"--%>
                     	<mvc:message code="${columnDataType.messageKey}"/> ${columnDataType == SIMPLE_DATE_TYPE ? localeDateHint: columnDataType == DATETIME_TYPE ? localeDateTimeHint : ''}
                     </display:column>
 

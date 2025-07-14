@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,14 +18,14 @@ import java.util.Objects;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
@@ -35,7 +35,7 @@ import com.agnitas.web.perm.annotations.Anonymous;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import com.agnitas.web.perm.exceptions.AuthorizationException;
 
-public class AuthorizationInterceptor extends HandlerInterceptorAdapter {
+public class AuthorizationInterceptor implements HandlerInterceptor {
 	/** The logger. */
     private static final transient Logger logger = LogManager.getLogger(AuthorizationInterceptor.class);
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,24 +10,19 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
-import java.util.List;
-import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+
+import java.util.List;
+import java.util.Map;
 
 public class ActionOperationActivateDoubleOptInDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationActivateDoubleOptInParameters> {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ActionOperationActivateDoubleOptInDaoImpl.class);
 
 	@Override
 	protected void processGetOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		List<Map<String, Object>> result = select(logger, "SELECT for_all_lists, media_type FROM actop_activate_doi_tbl WHERE action_operation_id = ?", operation.getId());
+		List<Map<String, Object>> result = select("SELECT for_all_lists, media_type FROM actop_activate_doi_tbl WHERE action_operation_id = ?", operation.getId());
 		if (result.size() == 0) {
 			operation.setForAllLists(false);
 			processSaveOperation(operation);
@@ -43,7 +38,7 @@ public class ActionOperationActivateDoubleOptInDaoImpl extends AbstractActionOpe
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		update(logger,
+		update(
 				"INSERT INTO actop_activate_doi_tbl (action_operation_id, for_all_lists, media_type) VALUES (?,?,?)",
 				operation.getId(),
 				operation.isForAllLists() ? 1 : 0,
@@ -53,7 +48,7 @@ public class ActionOperationActivateDoubleOptInDaoImpl extends AbstractActionOpe
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		update(logger,
+		update(
 				"UPDATE actop_activate_doi_tbl SET for_all_lists = ?, media_type = ? WHERE action_operation_id = ?",
 				operation.isForAllLists() ? 1 : 0,
 				operation.getMediaType().getMediaCode(),
@@ -63,7 +58,7 @@ public class ActionOperationActivateDoubleOptInDaoImpl extends AbstractActionOpe
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processDeleteOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		update(logger, "DELETE FROM actop_activate_doi_tbl WHERE action_operation_id = ?", operation.getId());
+		update("DELETE FROM actop_activate_doi_tbl WHERE action_operation_id = ?", operation.getId());
 	}
 	
 	/**

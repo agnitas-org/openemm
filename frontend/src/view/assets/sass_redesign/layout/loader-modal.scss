@@ -1,0 +1,12 @@
+#evaluate-loader-modal {
+  @extend .modal-info;
+
+  .modal-header {
+    @include flex-column($gap-md);
+    align-items: center;
+
+    svg {
+      max-height: 110px;
+    }
+  }
+}

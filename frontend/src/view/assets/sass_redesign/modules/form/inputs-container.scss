@@ -1,23 +1,28 @@
 
 .inline-input-range {
-  display: flex;
-  gap: 18px;
-  position: relative;
+  @include flex-row($gap-x-sm);
+  align-items: center;
+
+  > *:first-child {
+    order: -1;
+  }
 
   &:before {
     content: '-';
-    @include center-absolute;
   }
 }
 
 // base styles
 .input-icon-container {
+  --input-container-icon-color: #{$dark-grey};
+  --input-container-active-icon-color: #{$blue};
+
   position: relative;
   border-radius: $border-radius;
   height: min-content;
 
   &::after {
-    color: var(--input-icon-color);
+    color: var(--input-container-icon-color);
 
     position: absolute;
     top: 50%;
@@ -27,6 +32,27 @@
 
   > .form-control {
     padding-right: 30px;
+  }
+}
+
+@include color-mode(dark) {
+  .input-icon-container {
+    --input-container-icon-color: #{$light-grey};
+    --input-container-active-icon-color: #{$light-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .input-icon-container {
+    --input-container-icon-color: #{$con-dark-blue};
+    --input-container-active-icon-color: #{$con-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .input-icon-container {
+    --input-container-icon-color: #{$white};
+    --input-container-active-icon-color: #{$con-grey};
   }
 }
 
@@ -61,7 +87,7 @@
   }
 
   &.is-active::after {
-    color: $primary;
+    color: var(--input-container-active-icon-color);
   }
 
   &:has(input:disabled), &:has(input[readonly]) {

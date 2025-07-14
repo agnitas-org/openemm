@@ -1,6 +1,10 @@
 
 #choose-tile-modal {
 
+  --choose-tile-overlay-hover-bg: rgba(75, 75, 75, 0.4);
+  --choose-tile-overlay-color: #{$white};
+  --choose-tile-overlay-disabled-color: var(--choose-tile-overlay-color);
+
   $thumbnail-size: 175px;
 
   .modal-body {
@@ -18,18 +22,16 @@
       }
 
       &.disabled {
-        &:hover {
-          img {
-            filter: brightness(50%);
-          }
+        &:hover img {
+          filter: brightness(50%);
         }
-        
+
         .overlay {
           @include flex-center;
         }
         
         filter: grayscale(100%);
-        color: white;
+        color: var(--choose-tile-overlay-disabled-color);
         text-align: center;
         font-size: 11px;
         font-weight: bold;
@@ -38,11 +40,9 @@
         }
       }
 
-      &:hover {
-        .overlay {
-          background-color: rgba(75, 75, 75, 0.4);
-          opacity: 1;
-        }
+      &:hover .overlay {
+        background-color: var(--choose-tile-overlay-hover-bg);
+        opacity: 1;
       }
 
       .overlay {
@@ -55,7 +55,7 @@
         transition: .1s ease;
 
         i {
-          color: $white;
+          color: var(--choose-tile-overlay-color);
           font-size: 40px;
           text-align: center;
         }
@@ -68,5 +68,19 @@
       font-size: $font-size-base;
       padding-top: $gap-sm;
     }
+  }
+}
+
+@include color-mode(light-contrast) {
+  #choose-tile-modal {
+    --choose-tile-overlay-hover-bg: rgba(87, 188, 255, 0.6);
+    --choose-tile-overlay-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  #choose-tile-modal {
+    --choose-tile-overlay-hover-bg: rgba(87, 188, 255, 0.6);
+    --choose-tile-overlay-disabled-color: #{$con-dark-blue};
   }
 }

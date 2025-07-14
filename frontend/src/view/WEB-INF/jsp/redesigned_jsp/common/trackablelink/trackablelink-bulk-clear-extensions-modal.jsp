@@ -3,7 +3,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="${param.controllerPath}/bulkClearExtensions.action" modelAttribute="trackableLinksForm">
             <mvc:hidden path="bulkIds"/>
             <div class="modal-header">

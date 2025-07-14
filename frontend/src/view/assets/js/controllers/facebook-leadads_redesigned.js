@@ -26,7 +26,7 @@ AGN.Lib.Controller.new('facebook-leadads', function() {
   var afterInit = function() {
     var loginCallback = function(accessToken) {
       var onError = function() {
-        AGN.Lib.Messages(t('defaults.error'), t('messages.error.reload'), 'alert');
+        AGN.Lib.Messages.alert('messages.error.reload');
       };
       setGuiAccordingLoginState();
 
@@ -111,7 +111,7 @@ AGN.Lib.Controller.new('facebook-leadads', function() {
         error: function (xhr, status, error) {
           console.log("status = " + status + ", error = " + error);
 
-          AGN.Lib.Messages(t('defaults.error'), t('messages.error.reload'), 'alert');
+          AGN.Lib.Messages.alert('messages.error.reload');
         },
         statusCode: {
           500: function() {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,15 +16,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -85,16 +83,13 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 
     private boolean unsubscribe(BindingEntry binding, int exitMailingId, Map<String, Object> params) throws UnknownUserStatusException {
         switch (UserStatus.getUserStatusByID(binding.getUserStatus())) {
-            case Active:
-            case Bounce:
-            case Suspend:
+            case Active, Bounce, Suspend:
                 if (!UserType.TestVIP.getTypeCode().equals(binding.getUserType())
                         && !UserType.WorldVIP.getTypeCode().equals(binding.getUserType())) {
                     markBindingAsOptOut(binding, exitMailingId, params);
                 }
                 return true;
-            case AdminOut:
-            case UserOut:
+            case AdminOut, UserOut:
                 // next Event-Mailing goes to a user with status 4
                 params.put("__agn_USER_STATUS", "4");
                 return true;
@@ -169,12 +164,10 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
         }
     }
 
-    @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    @Required
     public void setRecipientService(RecipientService recipientService) {
         this.recipientService = recipientService;
     }

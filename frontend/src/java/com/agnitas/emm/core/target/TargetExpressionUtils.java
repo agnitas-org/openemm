@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,11 +92,11 @@ public class TargetExpressionUtils {
         return getTargetExpressionWithPrependedAltgs(altgIds, targetExpression);
     }
     
-    public static boolean isTargetExpressionContainsAnyAltg(String mailingTargetExpression, ComTargetService targetService) {
+    public static boolean isTargetExpressionContainsAnyAltg(String mailingTargetExpression, TargetService targetService) {
         return getTargetIds(mailingTargetExpression).stream().anyMatch(targetService::isAltg);
     }
     
-    private static boolean targetExpressionContainsAltgPart(String expression, ComTargetService targetService) {
+    private static boolean targetExpressionContainsAltgPart(String expression, TargetService targetService) {
         if (!StringUtils.startsWith(expression, "(") || !isTargetExpressionContainsAnyAltg(expression, targetService)) {
             return false;
         }
@@ -108,7 +108,7 @@ public class TargetExpressionUtils {
         return exprAltgIds.stream().allMatch(targetService::isAltg);
     }
 
-    public static String extractNotAltgTargetExpressionPart(String targetExpression, ComTargetService targetService) {
+    public static String extractNotAltgTargetExpressionPart(String targetExpression, TargetService targetService) {
         if (!targetExpressionContainsAltgPart(targetExpression, targetService)) {
             return StringUtils.defaultString(targetExpression);
         }        
@@ -117,17 +117,17 @@ public class TargetExpressionUtils {
                 : "";
     }
 
-    public static Set<Integer> getNotAltgTargetIds(String expression, ComTargetService targetService) {
+    public static Set<Integer> getNotAltgTargetIds(String expression, TargetService targetService) {
 	    return getTargetIds(extractNotAltgTargetExpressionPart(expression, targetService));
     }
     
-    public static Set<Integer> getAltgIds(String expression, ComTargetService targetService) {
+    public static Set<Integer> getAltgIds(String expression, TargetService targetService) {
 	    return getTargetIds(expression).stream()
                 .filter(targetService::isAltg)
                 .collect(Collectors.toSet());
     }
     
-   	public static boolean isComplexTargetExpression(String targetExpression, ComTargetService targetService) {
+   	public static boolean isComplexTargetExpression(String targetExpression, TargetService targetService) {
    		if (StringUtils.isBlank(targetExpression)) {
                return false;
            }

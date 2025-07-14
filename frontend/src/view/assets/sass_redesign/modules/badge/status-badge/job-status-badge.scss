@@ -15,8 +15,8 @@ parent: badges_04_status
 */
 
 $job-status-badges-defs: (
-        active:    (background: #57C700,                   icon: $fa-var-play),
-        inactive:  (background: $stat-or-badge-dark-grey,  icon: $fa-var-pause)
+  active:    (background: $badge-green-var,     icon: $fa-var-play),
+  inactive:  (background: $badge-dark-grey-var, icon: $fa-var-pause)
 );
 
 @mixin job-status-badge($state) {

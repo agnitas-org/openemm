@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 
 import jakarta.mail.internet.InternetAddress;
 
-import org.agnitas.backend.Mailgun;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.backend.Mailgun;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.util.AgnUtils;
 
 /**
  * Builder class for options map that is used when invoking Mailgun.
@@ -89,7 +89,7 @@ public final class MailgunOptions {
 	 * 
 	 * @throws Exception on errors splitting list of email addresses
 	 */
-	public final MailgunOptions withBccEmails(final String bccEmails) throws Exception {
+	public MailgunOptions withBccEmails(String bccEmails) {
 		if(bccEmails != null) {
 			final List<String> emails = Stream.of(AgnUtils.getEmailAddressesFromList(bccEmails))
 					.map(InternetAddress::getAddress)

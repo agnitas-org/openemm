@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -54,12 +54,12 @@ public class BindingModel {
 		this.mediatype = mediatype;
 	}
 
-	// TODO Change return type to org.agnitas.dao.UserStatus
+	// TODO Change return type to com.agnitas.emm.common.UserStatus
 	public int getStatus() {
 		return status;
 	}
 
-	// TODO Change parameter to org.agnitas.dao.UserStatus
+	// TODO Change parameter to com.agnitas.emm.common.UserStatus
 	public void setStatus(int status) {
 		this.status = status;
 	}

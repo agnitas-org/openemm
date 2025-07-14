@@ -1,10 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <%--@elvariable id="mailingName" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
-<%--@elvariable id="clicksHistoryJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="clicksHistoryJson" type="org.json.JSONArray"--%>
 
 <div class="modal" tabindex="-1">
     <div class="modal-dialog modal-xl">

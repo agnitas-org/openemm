@@ -8,7 +8,6 @@
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
 <%--@elvariable id="isTotalStatisticAvailable" type="java.lang.Boolean"--%>
-<%--@elvariable id="autoOptData" type="com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight"--%>
 
 <c:set var="STATUS_OPEN" 		value="<%= WorkflowStatus.STATUS_OPEN %>" 		scope="page" />
 <c:set var="STATUS_ACTIVE" 		value="<%= WorkflowStatus.STATUS_ACTIVE %>" 	scope="page" />
@@ -129,7 +128,7 @@
     <emm:ShowByPermission token="workflow.change">
         <emm:instantiate var="itemAction" type="java.util.LinkedHashMap"  scope="request">
             <c:set target="${itemActionsSettings}" property="1" value="${itemAction}"/>
-            <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-action='workflow-save'"/>
+            <c:set target="${itemAction}" property="extraAttributes" value="data-form-target='#workflowForm' data-form-submit-event"/>
             <c:set target="${itemAction}" property="iconBefore" value="icon-save"/>
             <c:set target="${itemAction}" property="name"><mvc:message code="button.Save"/></c:set>
         </emm:instantiate>

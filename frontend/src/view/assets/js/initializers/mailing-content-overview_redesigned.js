@@ -39,12 +39,7 @@ AGN.Lib.DomInitializer.new( 'mailing-content-overview', function($elem, $scope) 
     });
   }
 
-  function lockedByOtherUser() {
-    return !config.isMailingExclusiveLockingAcquired
-      && !AGN.Opt.Components.MailingContentLock.manageLock(config.mailingId, config.isMailingExclusiveLockingAcquired, config.anotherLockingUserName);
-  }
-
-  if (lockedByOtherUser() || !config.isEditableMailing) {
+  if (!config.isEditableMailing || !AGN.Opt.Components.MailingContentLock.manageLock(config.mailingId, config.isMailingExclusiveLockingAcquired, config.anotherLockingUserName)) {
     var $controls = $('[data-controls-group="editing"]');
     $controls.prop('disabled', true);
     $controls.addClass('disabled');

@@ -8,13 +8,17 @@
 
     constructor(controller) {
       super(controller);
-      this._controller.addDomInitializer('dashboard-calendar', this.#domInitializer);
+      this._controller.addDomInitializer('dashboard-calendar-tile', this.#domInitializer);
       this.variants = [TileSize.WIDE, TileSize.TALL];
       this.size = this.variants[0];
     }
 
     #domInitializer() {
-      new AGN.Lib.Dashboard.Calendar(this.el, this.config);
+      if (this.config.isUxUpdateRollback) {
+        new AGN.Lib.Dashboard.Calendar(this.el, this.config);
+      } else {
+        new AGN.Lib.Dashboard.CalendarLight(this.el, this.config);
+      }
     }
 
     remove() {

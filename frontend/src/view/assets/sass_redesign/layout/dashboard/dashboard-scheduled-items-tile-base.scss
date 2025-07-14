@@ -1,6 +1,8 @@
 
 .tile.scheduled-items {
 
+  --scheduled-item-date-color: #{$gray-600};
+
   .list-item {
     @include flex-column($gap-sm);
   }
@@ -18,6 +20,18 @@
   .item__schedule-container {
     @include flex-row($gap-x-sm);
     align-items: center;
-    color: var(--text-gray-color);
+    color: var(--scheduled-item-date-color);
+  }
+}
+
+@include color-mode(dark) {
+  .tile.scheduled-items {
+    --scheduled-item-date-color: #{$light-grey};
+  }
+}
+
+@include contrast-themes {
+  .tile.scheduled-items {
+    --scheduled-item-date-color: #{$body-color-var};
   }
 }

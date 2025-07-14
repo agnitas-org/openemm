@@ -1,5 +1,5 @@
 <%@ page import="com.agnitas.emm.core.components.entity.TestRunOption" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <%--@elvariable id="testForm" type="com.agnitas.emm.core.components.form.MailingTestSendForm"--%>
 <%--@elvariable id="externalEditorLink" type="java.lang.String"--%>

@@ -1,9 +1,12 @@
 .mailing-priority-container {
+
+  --mailing-priority-higlighted-container-bg: rgba(0, 113, 185, 0.3);
+
   @include flex-column($gap-md);
   min-height: 100%;
 
   &.highlighted {
-    background-color: rgba(0, 113, 185, 0.3);
+    background-color: var(--mailing-priority-higlighted-container-bg);
   }
 
   .notification-simple {
@@ -15,8 +18,15 @@
   }
 }
 
+@include contrast-themes {
+  .mailing-priority-container {
+    --mailing-priority-higlighted-container-bg: #{$con-blue};
+  }
+}
+
 .mailing-priority {
-  --horizontal-card-spacer: #{$gap-sm} !important;
+  --horizontal-card-spacer: #{$gap-sm};
+  --horizontal-card-thumbnail-size: 60px;
 
   &__order {
     min-width: 60px;

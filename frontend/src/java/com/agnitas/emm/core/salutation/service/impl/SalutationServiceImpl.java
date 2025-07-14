@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,33 +10,40 @@
 
 package com.agnitas.emm.core.salutation.service.impl;
 
-import com.agnitas.dao.ComTitleDao;
+import static java.util.Collections.emptyMap;
+
+import java.util.List;
+import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.TitleDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import com.agnitas.emm.core.salutation.service.SalutationService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.SalutationEntry;
-import org.agnitas.beans.Title;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.Const;
+import com.agnitas.beans.SalutationEntry;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.Const;
+import com.agnitas.util.CustomTitle;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 public class SalutationServiceImpl implements SalutationService {
 
-    private final ComTitleDao titleDao;
+    private final TitleDao titleDao;
     private final BulkActionValidationService<Integer, Title> bulkActionValidationService;
+    private final RecipientService recipientService;
 
     @Autowired
-    public SalutationServiceImpl(ComTitleDao titleDao, BulkActionValidationService<Integer, Title> bulkActionValidationService) {
+    public SalutationServiceImpl(TitleDao titleDao, BulkActionValidationService<Integer, Title> bulkActionValidationService, RecipientService recipientService) {
         this.titleDao = titleDao;
         this.bulkActionValidationService = bulkActionValidationService;
+        this.recipientService = recipientService;
     }
 
     @Override
@@ -60,7 +67,7 @@ public class SalutationServiceImpl implements SalutationService {
     }
 
     @Override
-    public void save(Title title) throws Exception {
+    public void save(Title title) {
         titleDao.save(title);
     }
 
@@ -81,7 +88,7 @@ public class SalutationServiceImpl implements SalutationService {
                 .filter(ServiceResult::isSuccess)
                 .map(r -> r.getResult().getId())
                 .filter(id -> delete(id, companyId))
-                .collect(Collectors.toList());
+                .toList();
 
         return ServiceResult.success(
                 new UserAction(
@@ -90,6 +97,16 @@ public class SalutationServiceImpl implements SalutationService {
                 ),
                 Message.of(Const.Mvc.SELECTION_DELETED_MSG)
         );
+    }
+
+    @Override
+    public String resolve(int salutationId, int recipientId, int type, Admin admin) {
+        RecipientDto recipient = recipientService.getRecipientDto(admin, recipientId);
+        Title salutation = get(salutationId, admin.getCompanyID());
+        CustomTitle title = new CustomTitle(salutation.getTitleGender().get(recipient.getGender()));
+        return title.makeTitle(type,
+            recipient.getGender(), recipient.getTitle(), recipient.getFirstname(), recipient.getLastname(),
+            emptyMap(), new StringBuffer());
     }
 
     private ServiceResult<Title> getSalutationForDeletion(int id, int companyId) {

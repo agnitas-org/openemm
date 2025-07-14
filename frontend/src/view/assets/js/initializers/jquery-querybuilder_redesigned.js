@@ -1,7 +1,7 @@
 $.fn.queryBuilder.defaults({templates: { group: `
 <dl id="{{= it.group_id }}" class="rules-group-container">
   <dt class="rules-group-header">
-    <div class="group-conditions radio-switch">
+    <div class="group-conditions switch">
       {{~ it.conditions: condition }}
         <input id="qb-codition-btn-{{= condition }}-group-{{= it.group_id }}" type="radio" name="{{= it.group_id }}_cond" value="{{= condition }}">
         <label for="qb-codition-btn-{{= condition }}-group-{{= it.group_id }}">{{= it.translate("conditions", condition) }}</label>
@@ -9,11 +9,11 @@ $.fn.queryBuilder.defaults({templates: { group: `
     </div>
     
     <div class="group-actions">
-      <button type="button" class="btn btn-inverse btn-icon" data-add="rule" data-tooltip="{{= it.translate("add_rule") }}">
+      <button type="button" class="btn btn-secondary btn-icon" data-add="rule" data-tooltip="{{= it.translate("add_rule") }}">
         <i class="{{= it.icons.add_rule }}"></i>
       </button>
       {{? it.settings.allow_groups===-1 || it.settings.allow_groups>=it.level }}
-        <button type="button" class="btn btn-inverse btn-icon" data-add="group" data-tooltip="{{= it.translate("add_group") }}">
+        <button type="button" class="btn btn-secondary btn-icon" data-add="group" data-tooltip="{{= it.translate("add_group") }}">
           <i class="{{= it.icons.add_group }}"></i>
         </button>
       {{?}}

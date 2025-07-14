@@ -16,38 +16,62 @@
 .dropdown-menu {
   padding: $dropdown-spacer;
   min-width: 250px;
-  background-color: var(--main-bg-color);
-  border-color: $gray-400;
   position: relative;
 
-  &:before {
-    position: absolute;
-    content: '';
-    inset: $dropdown-spacer;
-    border: $border-default;
-    border-radius: $border-radius;
-    pointer-events: none;
-  }
+  &--select {
+    &:before {
+      position: absolute;
+      content: '';
+      inset: $dropdown-spacer;
+      border: 1px solid var(--bs-dropdown-border-color);
+      border-radius: $border-radius;
+      pointer-events: none;
+    }
 
-  > li:first-child {
-    @include border-top-radius;
-    overflow: hidden;
-  }
+    > li:first-child {
+      @include border-top-radius;
+      overflow: hidden;
+    }
 
-  > li:last-child {
-    @include border-bottom-radius;
-    overflow: hidden;
+    > li:last-child {
+      @include border-bottom-radius;
+      overflow: hidden;
+    }
+
+    .dropdown-item {
+      @include flex-row($gap-sm);
+      padding-inline: $gap-sm;
+    }
+  }
+}
+
+@include color-mode(light-contrast) {
+  .dropdown-menu {
+    --bs-dropdown-border-color: #{$border-color-var};
+    --bs-dropdown-link-hover-bg: #{$con-dark-blue};
+    --bs-dropdown-link-active-bg: var(--bs-dropdown-link-hover-bg);
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .dropdown-menu {
+    --bs-dropdown-border-color: #{$white};
+    --bs-dropdown-link-hover-color: var(--bs-dropdown-bg);
+    --bs-dropdown-link-hover-bg: #{$white};
+    --bs-dropdown-link-active-color: var(--bs-dropdown-link-hover-color);
+    --bs-dropdown-link-active-bg: var(--bs-dropdown-link-hover-bg);
   }
 }
 
 .dropdown-item {
-  color: var(--text-color-default);
   padding: $dropdown-spacer;
 
-  &:active, &:hover, &.selected {
-    background-color: $primary;
+  &:active, &:hover, &:focus {
     font-weight: $font-weight-semibold;
-    color: $white;
+  }
+
+  &.disabled, &:disabled {
+    background-color: var(--dropdown-disabled-item-bg);
   }
 }
 
@@ -55,6 +79,6 @@
   .dropdown-menu {
     display: block;
     position: absolute;
-    inset: 0px 0px auto auto;
+    inset: 0 0 auto auto;
   }
 }

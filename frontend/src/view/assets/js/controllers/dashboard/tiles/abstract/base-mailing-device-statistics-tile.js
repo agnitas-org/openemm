@@ -26,7 +26,7 @@
     getChartOptions() {
       if (!this._chartData.colors) {
         this._chartData.colors = [
-          this.$el.css('--chart-very-dark-blue-color'),
+          this.$el.css('--chart-darkest-blue-color'),
           this.$el.css('--chart-dark-blue-color'),
           this.$el.css('--chart-blue-color'),
           this.$el.css('--chart-light-blue-color'),

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,22 +22,33 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.calendar.beans.CalendarComment;
+import com.agnitas.emm.core.calendar.beans.CalendarMailingLabel;
 import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
 import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
+import com.agnitas.emm.core.calendar.beans.impl.CalendarCommentImpl;
+import com.agnitas.emm.core.calendar.form.CommentForm;
+import com.agnitas.emm.core.calendar.form.DashboardCalendarForm;
+import com.agnitas.emm.core.calendar.service.CalendarCommentService;
+import com.agnitas.emm.core.calendar.service.CalendarService;
+import com.agnitas.emm.core.mailing.bean.MailingDto;
+import com.agnitas.emm.core.mailing.dao.MailingDaoOptions;
 import com.agnitas.emm.util.html.xssprevention.ForbiddenTagError;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import com.agnitas.mailing.autooptimization.service.OptimizationService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,42 +59,26 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
-import com.agnitas.emm.core.calendar.beans.impl.ComCalendarCommentImpl;
-import com.agnitas.emm.core.calendar.form.CommentForm;
-import com.agnitas.emm.core.calendar.service.CalendarCommentService;
-import com.agnitas.emm.core.calendar.service.CalendarService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
-@Controller
-@PermissionMapping("calendar")
 public class CalendarController implements XssCheckAware {
     public static final int SELECTOR_START_YEAR_NUM = 2009;
     public static final int SECONDS_BEFORE_WAIT_MESSAGE = 2;
 
-    /** The logger. */
     private static final Logger logger = LogManager.getLogger(CalendarController.class);
     
     private static final int UNSENT_MAILS_LIST_SIZE = 10;
     private static final int PLANNED_MAILS_LIST_SIZE = 10;
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String DATE_TIME_FORMAT = "dd-MM-yyyy HH:mm";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
+    protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
 
     private final AdminService adminService;
     private final CalendarService calendarService;
-    private final ComOptimizationService optimizationService;
+    private final OptimizationService optimizationService;
     private final CalendarCommentService calendarCommentService;
     private final UserActivityLogService userActivityLogService;
 
     public CalendarController(AdminService adminService, CalendarService calendarService,
-                              ComOptimizationService optimizationService, CalendarCommentService calendarCommentService, UserActivityLogService userActivityLogService) {
+                              OptimizationService optimizationService, CalendarCommentService calendarCommentService, UserActivityLogService userActivityLogService) {
         this.adminService = adminService;
         this.calendarService = calendarService;
         this.optimizationService = optimizationService;
@@ -104,6 +99,7 @@ public class CalendarController implements XssCheckAware {
         return "messages";
     }
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @RequestMapping("/calendar.action")
     public String view(Admin admin, Model model) {
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
@@ -143,15 +139,15 @@ public class CalendarController implements XssCheckAware {
 
     @GetMapping(value = "/calendar/autoOptimization.action", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody
-    JSONArray getAutoOptimization(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    List<Object> getAutoOptimization(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
-        return optimizationService.getOptimizationsAsJson(admin, startDate, endDate, DATE_FORMATTER);
+        return optimizationService.getOptimizationsAsJson(admin, startDate, endDate, DATE_FORMATTER).toList();
     }
 
     @GetMapping("/calendar/comments.action")
-    public @ResponseBody ResponseEntity<?> getComments(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    public ResponseEntity<List<Object>> getComments(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -159,24 +155,23 @@ public class CalendarController implements XssCheckAware {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(calendarCommentService.getComments(admin, startDate, endDate));
+        return ResponseEntity.ok(calendarCommentService.getComments(admin, startDate, endDate).toList());
     }
 
-    @RequestMapping(value = "/calendar/saveComment.action", method = RequestMethod.POST)
-    public @ResponseBody ResponseEntity<?> saveComment(Admin admin, CommentForm form) {
-        JSONObject result = new JSONObject();
+    @PostMapping(value = "/calendar/saveComment.action")
+    public ResponseEntity<Map<String, Object>> saveComment(Admin admin, CommentForm form) {
         TimeZone timezone = AgnUtils.getTimeZone(admin);
         DateFormat dateFormat = DateUtilities.getFormat(DATE_FORMAT, timezone);
         DateFormat dateTimeFormat = DateUtilities.getFormat(DATE_TIME_FORMAT, timezone);
 
         Date date = DateUtilities.parse(form.getDate(), dateFormat);
-        Date plannedDate = DateUtilities.parse(form.getPlannedSendDate(), dateTimeFormat);
+        Date plannedDate = DateUtilities.parse(form.getPlannedSendDate(), admin.isRedesignedUiUsed() ? admin.getDateTimeFormat() : dateTimeFormat);
 
         if (Objects.isNull(date) || Objects.isNull(plannedDate)) {
             return ResponseEntity.badRequest().build();
         }
 
-        ComCalendarComment comment = new ComCalendarCommentImpl();
+        CalendarComment comment = new CalendarCommentImpl();
 
         comment.setCompanyId(admin.getCompanyID());
         comment.setCommentId(form.getCommentId());
@@ -189,31 +184,21 @@ public class CalendarController implements XssCheckAware {
         comment.setRecipients(calendarCommentService.getRecipients(form.getNotifyAdminId(), form.getRecipients()));
 
         int commentId = calendarCommentService.saveComment(comment);
-
-        result.put("commentId", commentId);
-
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(Map.of("commentId", commentId));
     }
 
-    @RequestMapping(value = "/calendar/removeComment.action", method = RequestMethod.POST)
-    public @ResponseBody ResponseEntity<?> removeComment(Admin admin, @RequestParam("commentId") int commentId) {
-        JSONObject result = new JSONObject();
-        boolean isSuccess;
-
+    @PostMapping(value = "/calendar/removeComment.action")
+    public ResponseEntity<Map<String, Object>> removeComment(Admin admin, @RequestParam("commentId") int commentId) {
         if (commentId <= 0) {
             return ResponseEntity.badRequest().build();
         }
 
-        isSuccess = calendarCommentService.removeComment(commentId, admin.getCompanyID());
-
-        result.put("success", isSuccess);
-
-        return ResponseEntity.ok(result);
+        boolean isSuccess = calendarCommentService.removeComment(commentId, admin.getCompanyID());
+        return ResponseEntity.ok(Map.of("success", isSuccess));
     }
 
     @GetMapping("/calendar/mailingsLight.action")
-    public @ResponseBody
-    ResponseEntity<?> mailingsLight(@RequestParam String start, @RequestParam String end, Admin admin) {
+    public ResponseEntity<List<Object>> mailingsLight(@RequestParam String start, @RequestParam String end, Admin admin) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -224,12 +209,33 @@ public class CalendarController implements XssCheckAware {
             logger.error("Start date is after end date");
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(calendarService.getMailingsLight(admin, startDate, endDate));
+
+        return ResponseEntity.ok(calendarService.getMailingsLight(admin, startDate, endDate).toList());
     }
 
+    @GetMapping("/calendar/light/mailings.action")
+    public ResponseEntity<List<MailingDto>> getMailings(@RequestParam String start, @RequestParam String end, Admin admin) {
+        LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
+        LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
+
+        if (Objects.isNull(startDate) || Objects.isNull(endDate)) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (startDate.isAfter(endDate)) {
+            logger.error("Start date is after end date");
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(calendarService.getMailings(MailingDaoOptions
+            .builder()
+            .setStartIncl(DateUtilities.toDate(startDate.atStartOfDay(), admin.getZoneId()))
+            .setEndExcl(DateUtilities.toDate(endDate.plusDays(1).atStartOfDay(), admin.getZoneId()))
+            .includeMailinglistName(true)
+            .build(), admin));
+    }
+
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     @GetMapping("/calendar/mailings.action")
-    public @ResponseBody
-    ResponseEntity<?> getMailings(@RequestParam(defaultValue = "0") int limit, Admin admin,
+    public ResponseEntity<List<Object>> getMailings(@RequestParam(defaultValue = "0") int limit, Admin admin,
                                   @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
@@ -243,7 +249,21 @@ public class CalendarController implements XssCheckAware {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(calendarService.getMailings(admin, startDate, endDate, limit));
+        return ResponseEntity.ok(calendarService.getMailings(admin, startDate, endDate, limit).toList());
+    }
+
+    @GetMapping("/calendar/mailingsRedesigned.action")
+    @ResponseBody
+    public List<CalendarMailingLabel> getMailings(DashboardCalendarForm form, Admin admin) {
+        return calendarService.getMailingLabels(
+            form.getStartDate(admin.getZoneId(), DATE_FORMATTER),
+            form.getEndDate(admin.getZoneId(), DATE_FORMATTER),
+            form.getDayMailingsLimit(), admin);
+    }
+
+    @GetMapping("/calendar/labels.action")
+    public ResponseEntity<Map<String, List<?>>> getLabels(DashboardCalendarForm form, Admin admin) {
+        return ResponseEntity.ok(calendarService.getLabels(form, admin));
     }
 
     @GetMapping("/calendar/mailingsPopoverInfo.action")
@@ -253,9 +273,7 @@ public class CalendarController implements XssCheckAware {
     }
     
     @RequestMapping(value = "/calendar/moveMailing.action", method = RequestMethod.POST)
-    public @ResponseBody
-    ResponseEntity<?> moveMailing(Admin admin, @RequestParam("mailingId") int mailingId, @RequestParam("date") String newDate) {
-        JSONObject result = new JSONObject();
+    public ResponseEntity<Map<String, Boolean>> moveMailing(Admin admin, @RequestParam("mailingId") int mailingId, @RequestParam("date") String newDate) {
         LocalDate date = DateUtilities.parseDate(newDate, DATE_FORMATTER);
 
         if (mailingId <= 0 || Objects.isNull(date)) {
@@ -263,10 +281,9 @@ public class CalendarController implements XssCheckAware {
         }
 
         boolean isSuccess = calendarService.moveMailing(admin, mailingId, date);
-
-        result.element("success", isSuccess);
         writeUAL(admin, getMoveMailingUalDescr(mailingId, isSuccess, date));
-        return ResponseEntity.ok().body(result);
+
+        return ResponseEntity.ok().body(Map.of("success", isSuccess));
     }
 
     private static String getMoveMailingUalDescr(int mailingId, boolean isSuccess, LocalDate date) {
@@ -276,7 +293,7 @@ public class CalendarController implements XssCheckAware {
     }
 
     @PostMapping(value = "/calendar/mailing/{mailingId:\\d+}/clearPlannedDate.action")
-    public ResponseEntity<?> clearMailingPlannedDate(@PathVariable int mailingId, Admin admin) {
+    public ResponseEntity<Boolean> clearMailingPlannedDate(@PathVariable int mailingId, Admin admin) {
         boolean success = calendarService.clearMailingPlannedDate(mailingId, admin.getCompanyID());
         writeUAL(admin, String.format(success
             ? "mailing id = %d cleared plan date"

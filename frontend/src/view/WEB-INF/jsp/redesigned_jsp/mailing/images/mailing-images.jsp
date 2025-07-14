@@ -1,13 +1,12 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.beans.MailingComponentType" %>
+<%@ page import="com.agnitas.beans.MailingComponentType" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="fmt"        uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="s"          uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="s"   uri="http://www.springframework.org/tags/form" %>
 
 <%--@elvariable id="filter" type="com.agnitas.emm.core.components.form.MailingImagesOverviewFilter"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
@@ -83,18 +82,19 @@
                                 </p>
                                 <div class="bulk-actions__controls">
                                     <c:url var="bulkDownloadUrl" value="/mailing/${mailingId}/images/bulkDownload.action"/>
-                                    <a href="#" class="icon-btn text-primary" data-tooltip="<mvc:message code='bulkAction.download.image.selected'/>" data-form-url="${bulkDownloadUrl}" data-prevent-load data-form-submit-static data-bulk-action="download">
+                                    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code='bulkAction.download.image.selected'/>" data-form-url="${bulkDownloadUrl}" data-prevent-load data-form-submit-static data-bulk-action="download">
                                         <i class="icon icon-file-download"></i>
                                     </a>
 
                                     <c:url var="bulkDeleteUrl" value="/mailing/${mailingId}/images/deleteRedesigned.action"/>
-                                    <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.image" />" data-form-url='${bulkDeleteUrl}' data-form-confirm data-bulk-action="delete">
+                                    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="bulkAction.delete.image" />" data-form-url='${bulkDeleteUrl}' data-form-confirm data-bulk-action="delete">
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
                                 </div>
                             </div>
                             <jsp:include page="../../common/table/preview-switch.jsp">
-                                <jsp:param name="selector" value="#mailing-images-table"/>
+                                <jsp:param name="selector" value="#mailing-images-table" />
+                                <jsp:param name="visualList" value="true" />
                             </jsp:include>
                             <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
                             <jsp:include page="../../common/table/entries-label.jsp">
@@ -105,76 +105,67 @@
                     </div>
 
                     <div class="table-wrapper__body">
-                        <agnDisplay:table htmlId="mailing-images-table" id="image" class="table table-hover table--borderless js-table" name="images"
-                                       requestURI="/mailing/${mailingId}/images/list.action"
-                                       excludedParams="*" pagesize="${filter.numberOfRows}">
-
-                            <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+                        <emm:table id="mailing-images-table" var="image" modelAttribute="images" cssClass="table table-hover table--borderless js-table">
 
                             <c:url var="sourceSrc" value="/sc?compID=${image.id}"/>
                             <c:set var="imageDownloadPossible" value="${image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE}" />
                             <c:set var="imageDeletePossible" value="${image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE || image.present == 0}" />
 
-                            <agnDisplay:column class="thumbnail-cell" headerClass="hidden">
-                                <img data-display-dimensions="scope: tr" src="${sourceSrc}" alt="${image.description}">
-                            </agnDisplay:column>
-
                             <c:set var="checkboxSelectAll">
                                 <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
                             </c:set>
-                            <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                            <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
                                 <input class="form-check-input" type="checkbox" name="bulkIds" value="${image.id}"
                                     ${not imageDownloadPossible and not imageDeletePossible ? 'disabled' : 'data-bulk-checkbox'} />
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="report.data.type" sortable="true" sortProperty="mtype" headerClass="js-table-sort fit-content mobile-hidden">
+                            <emm:column titleKey="mailing.Graphics_Component" cssClass="thumbnail-cell" headerClass="thumbnail-header-cell fit-content">
+                                <img data-display-dimensions="scope: tr" src="${sourceSrc}" alt="${image.description}">
+                            </emm:column>
+
+                            <emm:column titleKey="report.data.type" sortable="true" sortProperty="mtype" headerClass="fit-content mobile-hidden">
                                 <c:if test="${not empty image.mimeType and fn:startsWith(image.mimeType, 'image')}">
                                     <span class="text-uppercase table-badge">${fn:toUpperCase(fn:substring(image.mimeType, 6, -1))}</span>
                                 </c:if>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="settings.FileName" headerClass="js-table-sort" sortable="true" sortProperty="compname" class="fluid-cell">
-                                <span>${image.name}</span>
-                            </agnDisplay:column>
+                            <emm:column titleKey="settings.FileName" sortable="true" sortProperty="compname" property="name" cssClass="fluid-cell" />
+                            <emm:column titleKey="Description" sortable="true" property="description" class="table-preview-hidden" />
 
-                            <agnDisplay:column titleKey="Description" headerClass="js-table-sort" sortable="true" sortProperty="description" class="table-preview-hidden">
-                                <span>${image.description}</span>
-                            </agnDisplay:column>
-
-                            <agnDisplay:column titleKey="htmled.link" sortable="false" class="table-preview-hidden" headerClass="fit-content">
+                            <emm:column titleKey="htmled.link" cssClass="table-preview-hidden" headerClass="fit-content">
                                 <c:if test="${not empty image.link}">
-                                    <a type="button" class="btn btn-inverse btn-icon" target="_blank" href="${image.link.fullUrl}" data-tooltip="${image.link.fullUrl}">
+                                    <a type="button" class="btn btn-secondary btn-icon" target="_blank" href="${image.link.fullUrl}" data-tooltip="${image.link.fullUrl}">
                                         <i class="icon icon-external-link-alt"></i>
                                     </a>
                                 </c:if>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="CreationDate" headerClass="js-table-sort fit-content" sortable="true" sortProperty="timestamp" class="secondary-cell">
+                            <emm:column titleKey="CreationDate" headerClass="fit-content" sortable="true" sortProperty="timestamp" cssClass="secondary-cell">
                                 <i class="icon icon-calendar-alt"></i>
                                 <span><emm:formatDate value="${image.creationDate}" format="${adminDateTimeFormat}" /></span>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="default.Type" sortable="false" class="table-preview-hidden mobile-hidden" headerClass="fit-content">
+                            <emm:column titleKey="default.Type" sortable="false" cssClass="table-preview-hidden mobile-hidden" headerClass="fit-content">
                                 <span><mvc:message code="${image.mobile ? 'Mobile' : 'predelivery.desktop'}"/></span>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="mailing.Graphics_Component.Dimensions" sortable="false" headerClass="fit-content" class="secondary-cell">
+                            <emm:column titleKey="mailing.Graphics_Component.Dimensions" headerClass="fit-content" cssClass="secondary-cell">
                                 <i class="icon icon-ruler-combined"></i>
                                 <span data-dimensions>
                                     <%-- Loads by JS --%>
                                 </span>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column titleKey="default.Size" sortable="true" class="secondary-cell" sortProperty="comp_size" headerClass="js-table-sort fit-content mobile-hidden">
+                            <emm:column titleKey="default.Size" sortable="true" cssClass="secondary-cell" sortProperty="comp_size" headerClass="fit-content mobile-hidden">
                                 <c:if test="${not empty image.size}">
                                     <i class="icon icon-weight-hanging"></i>
                                     <span><fmt:formatNumber type="number" value="${image.size / 1024}" maxFractionDigits="1"/>&nbsp;kB</span>
                                 </c:if>
-                            </agnDisplay:column>
+                            </emm:column>
 
-                            <agnDisplay:column headerClass="table-preview-hidden fit-content mobile-hidden" class="table-actions mobile-hidden">
+                            <emm:column headerClass="table-preview-hidden mobile-hidden" cssClass="table-actions mobile-hidden">
                                 <script type="text/x-mustache-template" class="js-row-popover">
-                                    <img src="${sourceSrc}" style="max-width: 200px" alt="" border="0">
+                                    <img src="${sourceSrc}" alt="" class="popover__thumbnail">
                                 </script>
 
                                 <c:if test="${isChangeAllowed and image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE}">
@@ -195,7 +186,7 @@
                                     </c:set>
 
                                     <c:if test="${imageDeletePossible}">
-                                        <a class="icon-btn text-danger js-row-delete" ${deleteBtnAttrs}>
+                                        <a class="icon-btn icon-btn--danger js-row-delete" ${deleteBtnAttrs}>
                                             <i class="icon icon-trash-alt"></i>
                                         </a>
                                     </c:if>
@@ -212,19 +203,19 @@
                                         </c:choose>
                                     </c:set>
                                     <c:if test="${image.type == MAILING_COMPONENT_IMAGE_TYPE}">
-                                        <a class="icon-btn text-primary" ${updateBtnAttrs}>
+                                        <a class="icon-btn icon-btn--primary" ${updateBtnAttrs}>
                                             <i class="icon icon-sync-alt"></i>
                                         </a>
                                     </c:if>
                                     <c:if test="${imageDownloadPossible}">
                                         <a href="<c:url value='/dc?compID=${image.id}'/>"
-                                           data-tooltip="<mvc:message code='button.Download'/>" data-prevent-load class="icon-btn text-primary" data-bulk-action="download">
+                                           data-tooltip="<mvc:message code='button.Download'/>" data-prevent-load class="icon-btn icon-btn--primary" data-bulk-action="download">
                                             <i class="icon icon-file-download"></i>
                                         </a>
                                     </c:if>
                                 </div>
-                            </agnDisplay:column>
-                        </agnDisplay:table>
+                            </emm:column>
+                        </emm:table>
                     </div>
                 </div>
             </div>
@@ -232,61 +223,49 @@
     </div>
 
     <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/mailing/${mailingId}/images/search.action" modelAttribute="filter"
-              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
-
+              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <mvc:message var="fileNameMsg" code="settings.FileName"/>
-                    <mvc:message var="nameMsg" code="Name" />
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <mvc:message var="fileNameMsg" code="settings.FileName"/>
+                <mvc:message var="nameMsg" code="Name" />
 
-                    <label class="form-label" for="filter-file-name">${fileNameMsg}</label>
-                    <mvc:text id="filter-file-name" path="fileName" cssClass="form-control" placeholder="${nameMsg}.png"/>
-                </div>
+                <label class="form-label" for="filter-file-name">${fileNameMsg}</label>
+                <mvc:text id="filter-file-name" path="fileName" cssClass="form-control" placeholder="${nameMsg}.png"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-upload-date-from"><mvc:message code="CreationDate"/></label>
-                    <div class="inline-input-range" data-date-range>
-                        <div class="date-picker-container">
-                            <mvc:message var="fromMsg" code="From" />
-                            <mvc:text id="filter-upload-date-from" path="uploadDate.from" placeholder="${fromMsg}" cssClass="form-control js-datepicker"/>
-                        </div>
-                        <div class="date-picker-container">
-                            <mvc:message var="toMsg" code="To" />
-                            <mvc:text id="filter-upload-date-to" path="uploadDate.to" placeholder="${toMsg}" cssClass="form-control js-datepicker"/>
-                        </div>
-                    </div>
-                </div>
+            <div>
+                <label class="form-label" for="filter-upload-date-from"><mvc:message code="CreationDate"/></label>
+                <mvc:dateRange id="filter-upload-date" path="uploadDate" inline="true" options="maxDate: 0" />
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-file-type"><mvc:message code="report.data.type"/></label>
+            <div>
+                <label class="form-label" for="filter-file-type"><mvc:message code="report.data.type"/></label>
 
-                    <mvc:select id="filter-file-type" path="mimetypes" cssClass="form-control">
-                        <c:forEach var="mimetype" items="${imagesMimetypes}">
-                            <c:set var="fileType" value="${fn:substring(mimetype, fn:length('image/'), -1)}"/>
-                            <mvc:option value="${mimetype}">${fn:toUpperCase(fileType)}</mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
+                <mvc:select id="filter-file-type" path="mimetypes" cssClass="form-control">
+                    <c:forEach var="mimetype" items="${imagesMimetypes}">
+                        <c:set var="fileType" value="${fn:substring(mimetype, fn:length('image/'), -1)}"/>
+                        <mvc:option value="${mimetype}">${fn:toUpperCase(fileType)}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-type"><mvc:message code="default.Type"/></label>
-                    <mvc:select id="filter-type" path="mobile" cssClass="form-control js-select">
-                        <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
-                        <mvc:option value="true"><mvc:message code="Mobile"/></mvc:option>
-                        <mvc:option value="false"><mvc:message code="predelivery.desktop"/></mvc:option>
-                    </mvc:select>
-                </div>
+            <div>
+                <label class="form-label" for="filter-type"><mvc:message code="default.Type"/></label>
+                <mvc:select id="filter-type" path="mobile" cssClass="form-control js-select">
+                    <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                    <mvc:option value="true"><mvc:message code="Mobile"/></mvc:option>
+                    <mvc:option value="false"><mvc:message code="predelivery.desktop"/></mvc:option>
+                </mvc:select>
             </div>
         </div>
     </mvc:form>

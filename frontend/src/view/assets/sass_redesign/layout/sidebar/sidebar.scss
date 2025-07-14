@@ -1,27 +1,54 @@
 
 @mixin sidebar-tooltip() {
-  left: $sidebar-width;
+  left: $sidebar-width - 1;
   z-index: 1000;
   @include sidebar-colors;
+
+  border: 1px solid var(--sidebar-border-color);
+  border-left: 1px solid var(--sidebar-bg);
   border-radius: 0 $border-radius $border-radius 0;
 }
 
 @mixin sidebar-colors() {
-  background-color: var(--sidebar-bg-color);
+  background-color: var(--sidebar-bg);
   color: $white;
 }
 
 @mixin sidebar-colors-inverse() {
   background-color: $white;
-  color: var(--sidebar-bg-color);
+  color: var(--sidebar-bg);
 }
 
 .sidebar {
+  --sidebar-bg: #{$dark-blue};
+  --sidebar-border-color: var(--sidebar-bg);
+
   grid-area: sidebar;
 
   @include flex-column;
   @include sidebar-colors;
   position: relative;
+
+  border-right: 1px solid var(--sidebar-border-color);
+}
+
+@include color-mode(dark) {
+  .sidebar {
+    --sidebar-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .sidebar {
+    --sidebar-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .sidebar {
+    --sidebar-bg: #{$body-bg-var};
+    --sidebar-border-color: #{$white};
+  }
 }
 
 .sidebar__tooltip {
@@ -32,6 +59,12 @@
     position: absolute;
     @include sidebar-tooltip;
     padding: 6px $sidebar-spacer * 2 6px $sidebar-spacer;
+  }
+
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
   }
 }
 
@@ -62,5 +95,19 @@ a.sidebar__block-item:hover {
 
   i {
     font-size: $font-size-base;
+  }
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+}
+
+#sidebar-news-btn {
+  span:nth-child(2) {
+    font-size: $font-size-x-sm;
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    z-index: 1001;
   }
 }

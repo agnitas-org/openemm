@@ -1,7 +1,8 @@
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="agnNavigationKey" 		value="userlogs" 			    scope="request" />
 <c:set var="agnTitleKey" 			value="Userlogs"		 		scope="request" />
@@ -33,5 +34,4 @@
             <mvc:message code="export.message.csv" />
         </c:set>
     </emm:instantiate>
-
 </emm:instantiate>

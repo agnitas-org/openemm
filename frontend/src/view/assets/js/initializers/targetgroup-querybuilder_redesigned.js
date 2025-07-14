@@ -20,7 +20,6 @@
 
     const mailTrackingAvailable = config.mailTrackingAvailable;
     const isTargetGroupLocked = config.isTargetGroupLocked;
-    const helpLanguage = config.helpLanguage;
 
     _.each(queryBuilders, el => {
       const $el = $(el);
@@ -33,7 +32,6 @@
         filters: qbFilters,
         allow_empty: true,
         operators: operator_groups,
-        helpLanguage: helpLanguage,
         readonly: isTargetGroupLocked,
         plugins: {
           'sortable': {

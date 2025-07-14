@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,24 +11,16 @@
 package com.agnitas.emm.data;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PushbackInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
-import org.agnitas.service.ImportException;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.ZipUtilities;
+import com.agnitas.service.ImportException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -42,14 +34,15 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelDataProvider extends DataProvider {
-	// Default optional parameters
-	private String nullValueText = null;
-	private boolean allowUnderfilledLines;
-	private boolean ignoreDataWithoutHeader = true;
-	private boolean noHeaders = false;
-	private boolean trimData = false;
 
-	private String dataPath = null;
+	// Default optional parameters
+	private final String nullValueText;
+	private final boolean allowUnderfilledLines;
+	private boolean ignoreDataWithoutHeader = true;
+	private final boolean noHeaders;
+	private final boolean trimData;
+
+	private final String dataPath;
 	private HSSFWorkbook hssfWorkbook;
 	private HSSFSheet hssfSheet;
 	private XSSFWorkbook xssfWorkbook;
@@ -58,10 +51,10 @@ public class ExcelDataProvider extends DataProvider {
 	private int maxRowNumber;
 
 	private List<String> columnNames = null;
-	private Map<String, DbColumnType> dataTypes = null;
 	private Integer itemsAmount = null;
 
-	public ExcelDataProvider(final File importFile, final char[] zipPassword, final boolean allowUnderfilledLines, final boolean noHeaders, final String nullValueText, final boolean trimData, final String dataPath) throws Exception {
+	public ExcelDataProvider(File importFile, char[] zipPassword, boolean allowUnderfilledLines, boolean noHeaders, String nullValueText,
+							 boolean trimData, String dataPath) throws Exception {
 		super(importFile, zipPassword);
 		this.allowUnderfilledLines = allowUnderfilledLines;
 		this.noHeaders = noHeaders;
@@ -87,73 +80,30 @@ public class ExcelDataProvider extends DataProvider {
 	}
 
 	@Override
-	public Map<String, DbColumnType> scanDataPropertyTypes(final Map<String, Tuple<String, String>> mapping) throws Exception {
-		if (dataTypes == null) {
-			try {
-				dataTypes = new HashMap<>();
-
-				// Scan all data for maximum
-				while (currentRowNumber <= maxRowNumber) {
-					final List<String> values = new ArrayList<>();
-					if (hssfSheet != null) {
-						for (int i = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getFirstCellNum(); i < hssfSheet.getRow(hssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
-							final HSSFCell cell = hssfSheet.getRow(currentRowNumber).getCell(i);
-							final String cellValue = cell == null ? null : cell.getStringCellValue();
-							values.add(trimData ? StringUtils.trim(cellValue) : cellValue);
-						}
-					} else {
-						for (int i = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getFirstCellNum(); i < xssfSheet.getRow(xssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
-							final XSSFCell cell = xssfSheet.getRow(currentRowNumber).getCell(i);
-							final String cellValue = cell == null ? null : cell.getStringCellValue();
-							values.add(trimData ? StringUtils.trim(cellValue) : cellValue);
-						}
-					}
-
-					for (int i = 0; i < values.size(); i++) {
-						final String columnName = (columnNames == null || columnNames.size() <= i ? "column_" + Integer.toString(i + 1) : columnNames.get(i));
-						final String currentValue = values.get(i);
-						detectNextDataType(mapping, dataTypes, columnName, currentValue);
-					}
-
-					currentRowNumber++;
-				}
-			} catch (final Exception e) {
-				throw e;
-			} finally {
-				close();
-			}
-		}
-
-		return dataTypes;
+	public List<String> getAvailableDataPropertyNames() {
+		return columnNames.stream()
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 	}
 
 	@Override
-	public List<String> getAvailableDataPropertyNames() throws Exception {
-		return columnNames.stream().filter(x -> x != null).collect(Collectors.toList());
-	}
-
-	@Override
-	public long getItemsAmountToImport() throws Exception {
+	public long getItemsAmountToImport() {
 		if (itemsAmount == null) {
-			try {
-				if (hssfSheet != null) {
-					itemsAmount = maxRowNumber - hssfSheet.getFirstRowNum() + 1;
-				} else {
-					itemsAmount = maxRowNumber - xssfSheet.getFirstRowNum() + 1;
-				}
-				if (!noHeaders) {
-					// Skip header row
-					itemsAmount--;
-				}
-			} catch (final Exception e) {
-				throw e;
+			if (hssfSheet != null) {
+				itemsAmount = maxRowNumber - hssfSheet.getFirstRowNum() + 1;
+			} else {
+				itemsAmount = maxRowNumber - xssfSheet.getFirstRowNum() + 1;
+			}
+			if (!noHeaders) {
+				// Skip header row
+				itemsAmount--;
 			}
 		}
 		return itemsAmount;
 	}
 
 	@Override
-	public Map<String, Object> getNextItemData() throws Exception {
+	public Map<String, Object> getNextItemData() {
 		if (currentRowNumber > maxRowNumber) {
 			return null;
 		}
@@ -219,101 +169,6 @@ public class ExcelDataProvider extends DataProvider {
 		currentRowNumber++;
 
 		return returnMap;
-	}
-
-	@Override
-	public File filterDataItems(final List<Integer> indexList, final String fileSuffix) throws Exception {
-		OutputStream outputStream = null;
-		try {
-			File filteredDataFile;
-			if (StringUtils.endsWithIgnoreCase(getImportFilePath(), ".zip")) {
-				if (hssfSheet != null) {
-					filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".xls.zip");
-					outputStream = ZipUtilities.openNewZipOutputStream(filteredDataFile, null);
-					((ZipOutputStream) outputStream).putNextEntry(new ZipEntry(new File(getImportFilePath() + "." + fileSuffix + ".xls").getName()));
-				} else {
-					filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".xlsx.zip");
-					outputStream = ZipUtilities.openNewZipOutputStream(filteredDataFile, null);
-					((ZipOutputStream) outputStream).putNextEntry(new ZipEntry(new File(getImportFilePath() + "." + fileSuffix + ".xlsx").getName()));
-				}
-			} else {
-				if (hssfSheet != null) {
-					filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".xls");
-				} else {
-					filteredDataFile = new File(getImportFilePath() + "." + fileSuffix + ".xlsx");
-				}
-				outputStream = new FileOutputStream(filteredDataFile);
-			}
-
-			if (hssfSheet != null) {
-				try (HSSFWorkbook workbook = new HSSFWorkbook()) {
-					final HSSFSheet sheet = workbook.createSheet();
-					int rowIndex = 0;
-					HSSFRow currentRow;
-
-					if (!noHeaders) {
-						currentRow = sheet.createRow(rowIndex++);
-						int columnIndex = 0;
-						for (final String propertyName : columnNames) {
-							final HSSFCell cell = currentRow.createCell(columnIndex++);
-							cell.setCellValue(propertyName);
-						}
-					}
-
-					Map<String, Object> item;
-					int itemIndex = 0;
-					while ((item = getNextItemData()) != null) {
-						itemIndex++;
-						if (indexList.contains(itemIndex)) {
-							currentRow = sheet.createRow(rowIndex++);
-							int columnIndex = 0;
-							for (final String propertyName : columnNames) {
-								final HSSFCell cell = currentRow.createCell(columnIndex++);
-								cell.setCellValue(item.get(propertyName).toString());
-							}
-						}
-					}
-
-					workbook.write(outputStream);
-				}
-			} else {
-				try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-					final XSSFSheet sheet = workbook.createSheet();
-					int rowIndex = 0;
-					XSSFRow currentRow;
-
-					if (!noHeaders) {
-						currentRow = sheet.createRow(rowIndex++);
-						int columnIndex = 0;
-						for (final String propertyName : columnNames) {
-							final XSSFCell cell = currentRow.createCell(columnIndex++);
-							cell.setCellValue(propertyName);
-						}
-					}
-
-					Map<String, Object> item;
-					int itemIndex = 0;
-					while ((item = getNextItemData()) != null) {
-						itemIndex++;
-						if (indexList.contains(itemIndex)) {
-							currentRow = sheet.createRow(rowIndex++);
-							int columnIndex = 0;
-							for (final String propertyName : columnNames) {
-								final XSSFCell cell = currentRow.createCell(columnIndex++);
-								cell.setCellValue(item.get(propertyName).toString());
-							}
-						}
-					}
-
-					workbook.write(outputStream);
-				}
-			}
-
-			return filteredDataFile;
-		} finally {
-			close();
-			IOUtils.closeQuietly(outputStream);
-		}
 	}
 
 	@Override
@@ -408,94 +263,92 @@ public class ExcelDataProvider extends DataProvider {
 				}
 			}
 			
-			try {
-				columnNames = new ArrayList<>();
-				if (noHeaders) {
-					final List<String> returnList = new ArrayList<>();
-					if (allowUnderfilledLines) {
-						// Scan all data for maximum
-						int maxColumns = 0;
-						if (hssfSheet != null) {
-							for (int i = hssfSheet.getFirstRowNum(); i <= maxRowNumber; i++) {
-								maxColumns = Math.max(maxColumns, hssfSheet.getRow(i).getLastCellNum() - hssfSheet.getRow(i).getFirstCellNum());
-							}
-						} else {
-							for (int i = xssfSheet.getFirstRowNum(); i <= maxRowNumber; i++) {
-								maxColumns = Math.max(maxColumns, xssfSheet.getRow(i).getLastCellNum() - xssfSheet.getRow(i).getFirstCellNum());
-							}
-						}
-						for (int i = 0; i < maxColumns; i++) {
-							returnList.add(Integer.toString(i + 1));
-						}
-						columnNames = returnList;
-					} else {
-						// Only take first data as example for all other data
-						int maxColumns = 0;
-						if (hssfSheet != null) {
-							maxColumns = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getLastCellNum() - hssfSheet.getRow(hssfSheet.getFirstRowNum()).getFirstCellNum();
-						} else {
-							maxColumns = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getLastCellNum() - xssfSheet.getRow(xssfSheet.getFirstRowNum()).getFirstCellNum();
-						}
-						for (int i = 0; i < maxColumns; i++) {
-							returnList.add("column_" + Integer.toString(i + 1));
-						}
-						columnNames = returnList;
-					}
-				} else {
-					// Read headers from file
+			columnNames = new ArrayList<>();
+			if (noHeaders) {
+				final List<String> returnList = new ArrayList<>();
+				if (allowUnderfilledLines) {
+					// Scan all data for maximum
+					int maxColumns = 0;
 					if (hssfSheet != null) {
-						for (int i = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getFirstCellNum(); i < hssfSheet.getRow(hssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
-							final HSSFCell cell = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getCell(i);
-							final String cellValue = cell == null ? null : cell.getStringCellValue();
-							String nextColumnName = trimData ? StringUtils.trim(cellValue) : cellValue;
-							if (StringUtils.isNotBlank(nextColumnName)) {
-								columnNames.add(nextColumnName);
-							} else {
-								columnNames.add(null);
-							}
+						for (int i = hssfSheet.getFirstRowNum(); i <= maxRowNumber; i++) {
+							maxColumns = Math.max(maxColumns, hssfSheet.getRow(i).getLastCellNum() - hssfSheet.getRow(i).getFirstCellNum());
 						}
-						
-						// Check for data in columns without Header
-						if (!ignoreDataWithoutHeader) {
-							for (int columnIndex = 0; columnIndex < columnNames.size(); columnIndex++) {
-								if (StringUtils.isBlank(columnNames.get(columnIndex))) {
-									for (int rowIndex = hssfSheet.getFirstRowNum(); rowIndex <= maxRowNumber; rowIndex++) {
-										int maxRowColumn = hssfSheet.getRow(rowIndex).getLastCellNum() - hssfSheet.getRow(rowIndex).getFirstCellNum();
-										if (columnIndex < maxRowColumn) {
-											final HSSFCell cell = hssfSheet.getRow(rowIndex).getCell(columnIndex);
-											final String cellValue = cell == null ? null : cell.getStringCellValue();
-											if (StringUtils.isNotBlank(cellValue)) {
-												throw new ImportException(false, "error.import.data.header", columnIndexToLetters(columnIndex), (rowIndex + 1));
-											}
+					} else {
+						for (int i = xssfSheet.getFirstRowNum(); i <= maxRowNumber; i++) {
+							maxColumns = Math.max(maxColumns, xssfSheet.getRow(i).getLastCellNum() - xssfSheet.getRow(i).getFirstCellNum());
+						}
+					}
+					for (int i = 0; i < maxColumns; i++) {
+						returnList.add(Integer.toString(i + 1));
+					}
+					columnNames = returnList;
+				} else {
+					// Only take first data as example for all other data
+					int maxColumns = 0;
+					if (hssfSheet != null) {
+						maxColumns = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getLastCellNum() - hssfSheet.getRow(hssfSheet.getFirstRowNum()).getFirstCellNum();
+					} else {
+						maxColumns = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getLastCellNum() - xssfSheet.getRow(xssfSheet.getFirstRowNum()).getFirstCellNum();
+					}
+					for (int i = 0; i < maxColumns; i++) {
+						returnList.add("column_" + (i + 1));
+					}
+					columnNames = returnList;
+				}
+			} else {
+				// Read headers from file
+				if (hssfSheet != null) {
+					for (int i = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getFirstCellNum(); i < hssfSheet.getRow(hssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
+						final HSSFCell cell = hssfSheet.getRow(hssfSheet.getFirstRowNum()).getCell(i);
+						final String cellValue = cell == null ? null : cell.getStringCellValue();
+						String nextColumnName = trimData ? StringUtils.trim(cellValue) : cellValue;
+						if (StringUtils.isNotBlank(nextColumnName)) {
+							columnNames.add(nextColumnName);
+						} else {
+							columnNames.add(null);
+						}
+					}
+
+					// Check for data in columns without Header
+					if (!ignoreDataWithoutHeader) {
+						for (int columnIndex = 0; columnIndex < columnNames.size(); columnIndex++) {
+							if (StringUtils.isBlank(columnNames.get(columnIndex))) {
+								for (int rowIndex = hssfSheet.getFirstRowNum(); rowIndex <= maxRowNumber; rowIndex++) {
+									int maxRowColumn = hssfSheet.getRow(rowIndex).getLastCellNum() - hssfSheet.getRow(rowIndex).getFirstCellNum();
+									if (columnIndex < maxRowColumn) {
+										final HSSFCell cell = hssfSheet.getRow(rowIndex).getCell(columnIndex);
+										final String cellValue = cell == null ? null : cell.getStringCellValue();
+										if (StringUtils.isNotBlank(cellValue)) {
+											throw new ImportException(false, "error.import.data.header", columnIndexToLetters(columnIndex), (rowIndex + 1));
 										}
 									}
 								}
 							}
 						}
-					} else {
-						for (int i = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getFirstCellNum(); i < xssfSheet.getRow(xssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
-							final XSSFCell cell = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getCell(i);
-							final String cellValue = cell == null ? null : cell.getStringCellValue();
-							String nextColumnName = trimData ? StringUtils.trim(cellValue) : cellValue;
-							if (StringUtils.isNotBlank(nextColumnName)) {
-								columnNames.add(nextColumnName);
-							} else {
-								columnNames.add(null);
-							}
+					}
+				} else {
+					for (int i = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getFirstCellNum(); i < xssfSheet.getRow(xssfSheet.getFirstRowNum()).getLastCellNum(); i++) {
+						final XSSFCell cell = xssfSheet.getRow(xssfSheet.getFirstRowNum()).getCell(i);
+						final String cellValue = cell == null ? null : cell.getStringCellValue();
+						String nextColumnName = trimData ? StringUtils.trim(cellValue) : cellValue;
+						if (StringUtils.isNotBlank(nextColumnName)) {
+							columnNames.add(nextColumnName);
+						} else {
+							columnNames.add(null);
 						}
+					}
 
-						// Check for data in columns without Header
-						if (!ignoreDataWithoutHeader) {
-							for (int columnIndex = 0; columnIndex < columnNames.size(); columnIndex++) {
-								if (StringUtils.isBlank(columnNames.get(columnIndex))) {
-									for (int rowIndex = xssfSheet.getFirstRowNum(); rowIndex <= maxRowNumber; rowIndex++) {
-										int maxRowColumn = xssfSheet.getRow(rowIndex).getLastCellNum() - xssfSheet.getRow(rowIndex).getFirstCellNum();
-										if (columnIndex < maxRowColumn) {
-											final XSSFCell cell = xssfSheet.getRow(rowIndex).getCell(columnIndex);
-											final String cellValue = cell == null ? null : cell.getStringCellValue();
-											if (StringUtils.isNotBlank(cellValue)) {
-												throw new ImportException(false, "error.import.data.header", columnIndexToLetters(columnIndex), (rowIndex + 1));
-											}
+					// Check for data in columns without Header
+					if (!ignoreDataWithoutHeader) {
+						for (int columnIndex = 0; columnIndex < columnNames.size(); columnIndex++) {
+							if (StringUtils.isBlank(columnNames.get(columnIndex))) {
+								for (int rowIndex = xssfSheet.getFirstRowNum(); rowIndex <= maxRowNumber; rowIndex++) {
+									int maxRowColumn = xssfSheet.getRow(rowIndex).getLastCellNum() - xssfSheet.getRow(rowIndex).getFirstCellNum();
+									if (columnIndex < maxRowColumn) {
+										final XSSFCell cell = xssfSheet.getRow(rowIndex).getCell(columnIndex);
+										final String cellValue = cell == null ? null : cell.getStringCellValue();
+										if (StringUtils.isNotBlank(cellValue)) {
+											throw new ImportException(false, "error.import.data.header", columnIndexToLetters(columnIndex), (rowIndex + 1));
 										}
 									}
 								}
@@ -503,8 +356,6 @@ public class ExcelDataProvider extends DataProvider {
 						}
 					}
 				}
-			} catch (final Exception e) {
-				throw e;
 			}
 		} catch (final Exception e) {
 			close();
@@ -515,20 +366,7 @@ public class ExcelDataProvider extends DataProvider {
 	/**
 	 * XLS = Excel 2003 format
 	 */
-	public static boolean isXlsFile(final File potentialXlsFile) throws FileNotFoundException, IOException {
-		try (FileInputStream inputStream = new FileInputStream(potentialXlsFile)) {
-			final byte[] magicBytes = new byte[8];
-			final int readBytes = inputStream.read(magicBytes);
-			return readBytes == 8 && Byte.toUnsignedInt(magicBytes[0]) == 0xD0 && Byte.toUnsignedInt(magicBytes[1]) == 0xCF && Byte.toUnsignedInt(magicBytes[2]) == 0x11
-					&& Byte.toUnsignedInt(magicBytes[3]) == 0xE0 && Byte.toUnsignedInt(magicBytes[4]) == 0xA1 && Byte.toUnsignedInt(magicBytes[5]) == 0xB1
-					&& Byte.toUnsignedInt(magicBytes[6]) == 0x1A && Byte.toUnsignedInt(magicBytes[7]) == 0xE1;
-		}
-	}
-
-	/**
-	 * XLS = Excel 2003 format
-	 */
-	public static boolean isXlsFile(PushbackInputStream inputStream) throws FileNotFoundException, IOException {
+	public static boolean isXlsFile(PushbackInputStream inputStream) throws IOException {
 		final byte[] magicBytes = new byte[8];
 		final int readBytes = inputStream.read(magicBytes);
 		inputStream.unread(magicBytes, 0, readBytes);
@@ -540,10 +378,10 @@ public class ExcelDataProvider extends DataProvider {
 	public static String columnIndexToLetters(int columnIndex) {
 		char[] letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
 		String columnLetters = "";
-		columnLetters = Character.toString(letters[columnIndex % letters.length]) + columnLetters;
+		columnLetters = letters[columnIndex % letters.length] + columnLetters;
 		int columnIndexTemp = columnIndex / letters.length;
 		while (columnIndexTemp > 0) {
-			columnLetters = Character.toString(letters[(columnIndexTemp % letters.length) - 1]) + columnLetters;
+			columnLetters = letters[(columnIndexTemp % letters.length) - 1] + columnLetters;
 			columnIndexTemp = columnIndexTemp / letters.length;
 		}
 		return columnLetters;

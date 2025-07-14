@@ -1,16 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
-<%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="linkId" type="java.lang.Integer"--%>
 <%--@elvariable id="isUrlEditingAllowed" type="java.lang.Boolean"--%>
 <%--@elvariable id="SHOW_CREATE_SUBSTITUTE_LINK" type="java.lang.Boolean"--%>
 <%--@elvariable id="altText" type="java.lang.String"--%>
 <%--@elvariable id="originalUrl" type="java.lang.String"--%>
-<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+<%--@elvariable id="notFormActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
 <%--@elvariable id="trackableLinkForm" type="com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm"--%>
 
 <c:set var="isSettingsReadonly" value="${param.settingsReadonly}"/>
@@ -34,10 +33,10 @@
                     <label class="form-label" for="linkUrl"><mvc:message code="URL" /></label>
                     <c:choose>
                         <c:when test="${isUrlEditingAllowed}">
-                            <mvc:text path="url" id="linkUrl" cssClass="form-control" disabled="${isSettingsReadonly}"/>
+                            <mvc:textarea path="url" id="linkUrl" cssClass="form-control" disabled="${isSettingsReadonly}" rows="1"/>
                         </c:when>
                         <c:otherwise>
-                            <mvc:text path="" value="${trackableLinkForm.url}" id="linkUrl" cssClass="form-control" readonly="true"/>
+                            <textarea id="linkUrl" class="form-control" readonly rows="1">${trackableLinkForm.url}</textarea>
                             <mvc:hidden path="url"/>
                         </c:otherwise>
                     </c:choose>
@@ -94,7 +93,7 @@
     
                 <div class="form-check form-switch">
                     <mvc:checkbox path="admin" id="administrativeCheckbox" cssClass="form-check-input" role="switch" disabled="${isSettingsReadonly}"/>
-                    <label class="form-label form-check-label" for="administrativeCheckbox"><mvc:message code="report.adminLinks"/> <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/trackable_links/AdministrativeLinks.xml"></a></label>
+                    <label class="form-label form-check-label" for="administrativeCheckbox"><mvc:message code="report.adminLinks"/> <a href="#" class="icon icon-question-circle" data-help="mailing/trackable_links/AdministrativeLinks.xml"></a></label>
                 </div>
                     
                 <c:if test="${SHOW_CREATE_SUBSTITUTE_LINK}">
@@ -106,7 +105,7 @@
                 
                 <emm:ShowByPermission token="mailing.extend_trackable_links">
                     <div class="d-flex flex-column">
-                        <label class="form-label" for="createSubstituteLink"><mvc:message code="LinkExtensions" /> <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/trackable_links/LinkExtensions.xml"></a></label>
+                        <label class="form-label" for="createSubstituteLink"><mvc:message code="LinkExtensions" /> <a href="#" class="icon icon-question-circle" data-help="mailing/trackable_links/LinkExtensions.xml"></a></label>
                         <div class="tile tile--sm">
                             <div class="tile-body" id='individual-extensions' data-trackable-link-extensions>
                                 <script data-config type="application/json">
@@ -118,7 +117,7 @@
                                 </script>
                                 <div class="d-flex gap-2 pt-2">
                                     <c:if test="${not empty defaultExtensions}">
-                                        <a href="#" class="btn btn-inverse text-truncate ${isSettingsReadonly ? 'disabled' : ''}" ${isSettingsReadonly ? '' : 'data-add-default-extensions'} style="flex: 1">
+                                        <a href="#" class="btn btn-secondary text-truncate ${isSettingsReadonly ? 'disabled' : ''}" ${isSettingsReadonly ? '' : 'data-add-default-extensions'} style="flex: 1">
                                             <i class="icon icon-plus"></i>
                                             <mvc:message code="AddDefaultProperties"/>
                                         </a>

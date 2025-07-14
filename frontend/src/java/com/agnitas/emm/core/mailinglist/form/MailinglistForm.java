@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailinglist.form;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;

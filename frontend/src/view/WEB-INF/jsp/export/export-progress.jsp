@@ -13,8 +13,8 @@
 
     <div class="msg-tile msg-tile-primary">
         <div class="msg-tile-header">
-            <c:url var="uploadingImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading.svg"/>
-            <c:url var="uploadingImagePng" value="assets/core/images/facelift/msgs_msg-uploading.png"/>
+            <c:url var="uploadingImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading_old.svg"/>
+            <c:url var="uploadingImagePng" value="assets/core/images/facelift/msgs_msg-uploading_old.png"/>
             <img alt="" src="${uploadingImageSvg}" onerror="this.onerror=null; this.src='${uploadingImagePng}'">
         </div>
         <div class="msg-tile-content">

@@ -4,7 +4,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
-<%--@elvariable id="simpleActionForm" type="org.agnitas.web.forms.SimpleActionForm"--%>
+<%--@elvariable id="simpleActionForm" type="com.agnitas.web.forms.SimpleActionForm"--%>
 
 <emm:CheckLogon/>
 <emm:Permission token="mailing.components.change"/>

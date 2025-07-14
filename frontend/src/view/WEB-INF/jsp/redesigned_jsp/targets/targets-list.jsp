@@ -2,11 +2,10 @@
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag"  %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="isSearchEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
@@ -48,13 +47,13 @@
                                 <div class="bulk-actions__controls">
                                     <c:choose>
                                         <c:when test="${targetForm.showDeleted}">
-                                            <a href="#" class="icon-btn text-primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}" data-form-submit>
+                                            <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}" data-form-submit>
                                                 <i class="icon icon-redo"></i>
                                             </a>
                                         </c:when>
                                         <c:otherwise>
                                             <c:url var="bulkDeleteUrl" value="/target/confirm/bulk/delete.action"/>
-                                            <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.target" />" data-form-url='${bulkDeleteUrl}' data-form-confirm>
+                                            <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="bulkAction.delete.target" />" data-form-url='${bulkDeleteUrl}' data-form-confirm>
                                                 <i class="icon icon-trash-alt"></i>
                                             </a>
                                         </c:otherwise>
@@ -71,45 +70,42 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table--borderless js-table ${targetForm.showDeleted ? '' : 'table-hover'}" id="target" name="targetEntries"
-                                      sort="external" requestURI="/target/list.action" partialList="true" size="${targetForm.numberOfRows}" excludedParams="*">
-
-                        <%@ include file="../common/displaytag/displaytag-properties.jspf" %>
+                    <emm:table var="target" modelAttribute="targetEntries" cssClass="table table--borderless js-table ${targetForm.showDeleted ? '' : 'table-hover'}">
 
                         <c:if test="${deletionAllowed}">
                             <c:set var="checkboxSelectAll">
                                 <input type="checkbox" class="form-check-input" data-bulk-checkboxes />
                             </c:set>
 
-                            <agnDisplay:column title="${checkboxSelectAll}">
+                            <emm:column title="${checkboxSelectAll}">
                                 <input type="checkbox" class="form-check-input" name="bulkIds" value="${target.id}" data-bulk-checkbox />
-                            </agnDisplay:column>
+                            </emm:column>
                         </c:if>
 
-                        <agnDisplay:column headerClass="js-table-sort fit-content" property="id" titleKey="MailinglistID"/>
+                        <emm:column headerClass="fit-content" property="id" titleKey="MailinglistID" />
 
                         <c:choose>
                             <c:when test="${targetForm.showDeleted}">
-                                <agnDisplay:column titleKey="autoImport.status" sortable="false" headerClass="fit-content">
+                                <emm:column titleKey="autoImport.status" headerClass="fit-content">
                                     <span class="status-badge mailing.status.deleted mx-auto" data-tooltip="<mvc:message code="target.Deleted" />"></span>
-                                </agnDisplay:column>
+                                </emm:column>
                             </c:when>
                             <c:otherwise>
-                                <agnDisplay:column headerClass="js-table-sort fit-content" sortable="true" titleKey="default.favourite" sortProperty="favorite">
-                                    <label class="icon-checkbox text-primary">
+                                <emm:column headerClass="fit-content" sortable="true" titleKey="default.favourite" sortProperty="${isUserBasedFavorites ? 'admin_favorite' : 'favorite'}">
+                                    <label class="icon-checkbox">
                                         <input type="checkbox" ${target.favorite ? 'checked' : ''} autocomplete="off"
                                                data-action="${isUserBasedFavorites ? 'check-admin-favorites' : 'check-favorites'}" data-target-id="${target.id}">
                                         <i class="icon icon-star far" data-icon-off></i>
                                         <i class="icon icon-star" data-icon-on></i>
                                     </label>
-                                </agnDisplay:column>
+                                </emm:column>
                             </c:otherwise>
                         </c:choose>
 
-                        <agnDisplay:column headerClass="js-table-sort" titleKey="Name" sortable="true" sortProperty="target_shortname">
-                            <div class="d-flex align-items-center gap-1 overflow-wrap-anywhere">
+                        <emm:column titleKey="Name" sortable="true" sortProperty="target_shortname">
+                            <div class="hstack gap-1 overflow-wrap-anywhere">
                                 <c:if test="${target.accessLimitation}">
-                                  <span class="icon-badge text-bg-danger-dark" data-tooltip="<mvc:message code="target.limit.access" />">
+                                  <span class="icon-badge badge--dark-red" data-tooltip="<mvc:message code="target.limit.access" />">
                                     <i class="icon icon-user-lock"></i>
                                   </span>
                                 </c:if>
@@ -123,16 +119,15 @@
                                 </c:if>
                                 <span class="text-truncate-table">${target.targetName}</span>
                             </div>
-                        </agnDisplay:column>
 
-                        <agnDisplay:column headerClass="js-table-sort" titleKey="Description" sortable="true" sortProperty="target_description">
-                            <span>${target.targetDescription}</span>
                             <c:if test="${not targetForm.showDeleted}">
                                 <a href='<c:url value="/target/${target.id}/view.action"/>' class="hidden" data-view-row="page"></a>
                             </c:if>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column class="align-center bold" titleKey="target.group.complexity" sortable="false" headerClass="fit-content">
+                        <emm:column titleKey="Description" sortable="true" sortProperty="target_description" property="targetDescription" />
+
+                        <emm:column titleKey="target.group.complexity" headerClass="fit-content">
                             <div class="flex-center">
                                 <c:set var="complexityGrade" value="${targetComplexities[target.id]}"/>
                                 <c:choose>
@@ -154,130 +149,106 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column headerClass="js-table-sort fit-content" titleKey="default.creationDate" sortable="true"
-                                        format="{0, date, ${adminDateFormat}}" property="creationDate" sortProperty="creation_date"/>
+                        <emm:column headerClass="fit-content" titleKey="default.creationDate" sortable="true" property="creationDate" sortProperty="creation_date"/>
 
-                        <agnDisplay:column headerClass="js-table-sort fit-content" titleKey="default.changeDate" sortable="true"
-                                        format="{0, date, ${adminDateFormat}}" property="changeDate" sortProperty="change_date"/>
+                        <emm:column headerClass="fit-content" titleKey="default.changeDate" sortable="true" property="changeDate" sortProperty="change_date"/>
 
                         <c:if test="${deletionAllowed}">
-                            <agnDisplay:column headerClass="fit-content">
+                            <emm:column>
                                 <c:choose>
                                     <c:when test="${targetForm.showDeleted}">
-                                        <a href="#" class="icon-btn text-primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}"
+                                        <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${restoreMsg}" data-form-url="${restoreUrl}"
                                            data-form-set="bulkIds: ${target.id}" data-form-submit>
                                             <i class="icon icon-redo"></i>
                                         </a>
                                     </c:when>
                                     <c:otherwise>
                                         <c:url var="deletionLink" value="/target/${target.id}/confirm/delete.action" />
-                                        <a href="${deletionLink}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
+                                        <a href="${deletionLink}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deleteMsg}">
                                             <i class="icon icon-trash-alt"></i>
                                         </a>
                                     </c:otherwise>
                                 </c:choose>
-                            </agnDisplay:column>
+                            </emm:column>
                         </c:if>
-                    </agnDisplay:table>
+                    </emm:table>
                 </div>
             </div>
         </div>
     </mvc:form>
 
     <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/target/search.action" modelAttribute="targetForm"
-              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
+              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <c:if test="${isSearchEnabled}">
-                    <div class="col-12">
-                        <mvc:message var="nameMsg" code="Name"/>
-                        <label class="form-label" for="name-filter">${nameMsg}</label>
-                        <mvc:text id="name-filter" path="searchName" cssClass="form-control" placeholder="${nameMsg}"/>
-                    </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <c:if test="${isSearchEnabled}">
+                <div>
+                    <mvc:message var="nameMsg" code="Name"/>
+                    <label class="form-label" for="name-filter">${nameMsg}</label>
+                    <mvc:text id="name-filter" path="searchName" cssClass="form-control" placeholder="${nameMsg}"/>
+                </div>
 
-                    <div class="col-12">
-                        <mvc:message var="descriptionMsg" code="Description"/>
-                        <label class="form-label" for="description-filter">${descriptionMsg}</label>
-                        <mvc:text id="description-filter" path="searchDescription" cssClass="form-control" placeholder="${descriptionMsg}"/>
-                    </div>
+                <div>
+                    <mvc:message var="descriptionMsg" code="Description"/>
+                    <label class="form-label" for="description-filter">${descriptionMsg}</label>
+                    <mvc:text id="description-filter" path="searchDescription" cssClass="form-control" placeholder="${descriptionMsg}"/>
+                </div>
 
-                    <div class="col-12">
-                        <label for="filter-complexity" class="form-label"><mvc:message code="target.group.complexity" /></label>
+                <div>
+                    <label for="filter-complexity" class="form-label"><mvc:message code="target.group.complexity" /></label>
 
-                        <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control js-select" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
-                            <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                    <mvc:select id="filter-complexity" path="searchComplexity" cssClass="form-control js-select" data-result-template="select2-badge-option" data-selection-template="select2-badge-option">
+                        <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
 
-                            <c:forEach var="complexity" items="${TargetComplexityGrade.values()}">
-                                <mvc:option value="${complexity}" data-badge-class="complexity.status.${fn:toLowerCase(complexity)}">
-                                    ${complexity}
-                                </mvc:option>
-                            </c:forEach>
-                        </mvc:select>
-                    </div>
+                        <c:forEach var="complexity" items="${TargetComplexityGrade.values()}">
+                            <mvc:option value="${complexity}" data-badge-class="complexity.status.${fn:toLowerCase(complexity)}">
+                                ${complexity}
+                            </mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
 
-                    <div class="col-12">
-                        <label for="filter-delivery" class="form-label"><mvc:message code="Delivery" /></label>
+                <div>
+                    <label for="filter-delivery" class="form-label"><mvc:message code="Delivery" /></label>
 
-                        <mvc:select id="filter-delivery" path="searchDeliveryOption" cssClass="form-control js-select">
-                            <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                    <mvc:select id="filter-delivery" path="searchDeliveryOption" cssClass="form-control js-select">
+                        <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
 
-                            <c:forEach var="delivery" items="${TargetGroupDeliveryOption.values()}">
-                                <mvc:option value="${delivery}"><mvc:message code="${delivery.messageKey}" /></mvc:option>
-                            </c:forEach>
-                        </mvc:select>
-                    </div>
+                        <c:forEach var="delivery" items="${TargetGroupDeliveryOption.values()}">
+                            <mvc:option value="${delivery}"><mvc:message code="${delivery.messageKey}" /></mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
 
-                    <div class="col-12">
-                        <label class="form-label" for="filter-changeDate-from"><mvc:message code="default.creationDate" /></label>
+                <div>
+                    <label class="form-label" for="filter-creationDate-from"><mvc:message code="default.creationDate" /></label>
+                    <mvc:dateRange id="filter-creationDate" path="searchCreationDate" inline="true" options="maxDate: 0" />
+                </div>
 
-                        <div class="inline-input-range" data-date-range>
-                            <div class="date-picker-container">
-                                <mvc:message var="fromMsg" code="From" />
-                                <mvc:text id="filter-creationDate-from" path="searchCreationDate.from" placeholder="${fromMsg}" cssClass="form-control js-datepicker" />
-                            </div>
-                            <div class="date-picker-container">
-                                <mvc:message var="toMsg" code="To" />
-                                <mvc:text id="filter-creationDate-to" path="searchCreationDate.to" placeholder="${toMsg}" cssClass="form-control js-datepicker" />
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <label class="form-label" for="filter-changeDate-from"><mvc:message code="default.changeDate" /></label>
+                    <mvc:dateRange id="filter-changeDate" path="searchChangeDate" inline="true" options="maxDate: 0" />
+                </div>
 
-                    <div class="col-12">
-                        <label class="form-label" for="filter-changeDate-from"><mvc:message code="default.changeDate" /></label>
-
-                        <div class="inline-input-range" data-date-range>
-                            <div class="date-picker-container">
-                                <mvc:text id="filter-changeDate-from" path="searchChangeDate.from" placeholder="${fromMsg}" cssClass="form-control js-datepicker" />
-                            </div>
-                            <div class="date-picker-container">
-                                <mvc:text id="filter-changeDate-to" path="searchChangeDate.to" placeholder="${toMsg}" cssClass="form-control js-datepicker" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="form-check form-switch">
-                            <mvc:checkbox id="filter-show-deleted" path="showDeleted" cssClass="form-check-input" role="switch"/>
-                            <label class="form-label form-check-label" for="filter-show-deleted">
-                                <mvc:message code="default.list.deleted.show"/>
-                            </label>
-                        </div>
-                    </div>
-                </c:if>
-            </div>
+                <div class="form-check form-switch">
+                    <mvc:checkbox id="filter-show-deleted" path="showDeleted" cssClass="form-check-input" role="switch"/>
+                    <label class="form-label form-check-label" for="filter-show-deleted">
+                        <mvc:message code="default.list.deleted.show"/>
+                    </label>
+                </div>
+            </c:if>
         </div>
     </mvc:form>
 </div>

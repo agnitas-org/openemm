@@ -1,6 +1,11 @@
 
 #session-time-label {
-  min-width: $sidebar-width;
+  @include font($font-size-sm, $font-weight-semibold, 1);
+  min-width: $sidebar-width - 1;
   display: inline-block;
   text-align: center;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
 }

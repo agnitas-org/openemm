@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,7 +23,7 @@ import org.msgpack.core.MessageFormat;
 import org.msgpack.value.ValueType;
 
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 
@@ -66,7 +66,7 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 	}
 
 	@Override
-	protected ComExtensibleUID parse(String uidString, String[] parts) throws UIDParseException {
+	protected ExtensibleUID parse(String uidString, String[] parts) throws UIDParseException {
 		final String[] correctedParts = correctUIDParts(parts);
 
 		final int version = (int) base64Encoder.decodeLong(correctedParts[VERSION_GROUP]);
@@ -149,7 +149,7 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 			}
 		}
 		
-		ComExtensibleUID	uid = UIDFactory.from(correctedParts[PREFIX_GROUP], licenceID, companyID, customerID, mailingID, urlID, bitfield);
+		ExtensibleUID uid = UIDFactory.from(correctedParts[PREFIX_GROUP], licenceID, companyID, customerID, mailingID, urlID, bitfield);
 		if (senddate > 0) {
 			uid.setSendDate (senddate);
 		}
@@ -163,7 +163,7 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 	}
 
 	@Override
-	protected String getExpectedSignature(ComExtensibleUID uid) throws UIDStringBuilderException, RequiredInformationMissingException {
+	protected String getExpectedSignature(ExtensibleUID uid) throws UIDStringBuilderException, RequiredInformationMissingException {
 		final String uidString = stringBuilder.buildUIDString(uid);
 		final String[] uidParts = correctUIDParts(splitUIDString(uidString));
 		return uidParts[uidParts.length - 1];

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,17 +16,17 @@ import java.util.Set;
 
 import com.agnitas.emm.core.autoexport.form.AutoExportOverviewFilter;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.ExportPredef;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
-import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
+import com.agnitas.emm.core.referencetable.beans.ReferenceTable;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.service.CsvImportExportDescription;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 public interface AutoExportService {
 
@@ -45,9 +45,9 @@ public interface AutoExportService {
 
     int getWorkflowId(int autoExportId, int companyId);
 
-    void setAutoActivationDateAndActivate(int companyId, int autoExportId, Date date, boolean isWmDriven) throws Exception;
+    void setAutoActivationDateAndActivate(int companyId, int autoExportId, Date date, boolean isWmDriven);
 
-    void saveAutoExport(AutoExport autoExport) throws Exception;
+    boolean saveAutoExport(AutoExport autoExport);
 
     void changeAutoExportActiveStatus(int autoExportId, int companyId, boolean active);
 
@@ -57,17 +57,18 @@ public interface AutoExportService {
 
     List<ExportPredef> getExportProfiles(Admin admin);
 
+    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
     boolean deleteAutoExport(int autoExportId, int companyId);
 
     List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName);
 
-    List<ComReferenceTable> getReferencetable(int companyId);
+    List<ReferenceTable> getReferencetable(int companyId);
 
     AutoExportStatus doExportReferenceTableData(AutoExport autoExport) throws Exception;
 
     boolean announceStart(int autoExportId, Date currentStart, Date nextStart);
 
-    void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
+    void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize);
 
     void finishMailingAutoExport(AutoExport autoExport);
 
@@ -75,7 +76,7 @@ public interface AutoExportService {
 
 	AutoExportStatus doExportReactionsAndStatusData(AutoExport autoExport) throws Exception;
 
-    ServiceResult<AutoExport> copyAutoExport(Admin admin, int autoExportId) throws Exception;
+    ServiceResult<AutoExport> copyAutoExport(Admin admin, int autoExportId);
 
     AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
 

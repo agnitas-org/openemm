@@ -19,7 +19,7 @@
       return selectObj;
     }
 
-    $get() {
+    get $el() {
       return this.$select;
     }
 
@@ -33,6 +33,7 @@
 
     clear() {
       this.selectValue('');
+      return this;
     }
 
     toggleDisabled(disabled) {
@@ -55,10 +56,18 @@
       // NOTE: own hack since select2 not updates dropdown selection properly after input change (v. 4.1.0).
       // issue: https://github.com/select2/select2/issues/6255
       if (this.isMultiple()) {
-        AGN.Lib.CoreInitializer.run('select', this.$select);
+        this.#initSelect();
       }
     }
-    
+
+    #initSelect() {
+      this.#runSelectInitializer(this.$select);
+    }
+
+    #runSelectInitializer($el) {
+      AGN.Lib.CoreInitializer.run('select', $el);
+    }
+
     isMultiple() {
      return this.$select.is('[multiple]');
     }
@@ -123,6 +132,14 @@
       }));
     }
 
+    addOptionIfMissing(value, text = value) {
+      if (this.hasOption(value)) {
+        return;
+      }
+
+      this.addOption(value, text);
+    }
+
     selectOptions(values) {
       values.forEach(value => this.selectOption(value));
     }
@@ -169,6 +186,25 @@
       } else {
         this.$select.removeAttr("readonly");
       }
+    }
+
+    remove() {
+      this.$select.next('.select2').remove();
+      this.$select.remove();
+      return this;
+    }
+
+    replaceWith($el) {
+      this.$select.before($el);
+      this.remove();
+      if ($el.is('select')) {
+        this.#runSelectInitializer($el);
+      }
+      return this;
+    }
+
+    get $selectedOption() {
+      return this.$findOption(this.$select.val())
     }
   }
 

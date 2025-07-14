@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,32 +10,13 @@
 
 package com.agnitas.emm.core.calendar.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
-import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
-import com.agnitas.emm.core.calendar.service.CalendarService;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.messages.I18nString;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Required;
+import static java.util.Collections.emptyList;
 
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -46,20 +27,59 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.calendar.beans.CalendarAutoOptLabel;
+import com.agnitas.emm.core.calendar.beans.CalendarComment;
+import com.agnitas.emm.core.calendar.beans.CalendarCommentLabel;
+import com.agnitas.emm.core.calendar.beans.CalendarMailingLabel;
+import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
+import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
+import com.agnitas.emm.core.calendar.form.DashboardCalendarForm;
+import com.agnitas.emm.core.calendar.service.CalendarCommentService;
+import com.agnitas.emm.core.calendar.service.CalendarService;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.bean.MailingDto;
+import com.agnitas.emm.core.mailing.dao.MailingDaoOptions;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.mailing.autooptimization.beans.Optimization;
+import com.agnitas.mailing.autooptimization.service.OptimizationService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+@Service("calendarService")
 public class CalendarServiceImpl implements CalendarService {
-    private MailingDao mailingDao;
 
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String TIME_FORMAT = "HH:mm";
     private static final String LINE_SEPARATOR = "\u2028";
+    protected static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
 
-    @Required
-    public void setMailingDao(MailingDao mailingDao) {
+    protected final ExtendedConversionService conversionService;
+    private final MailingDao mailingDao;
+    private final OptimizationService optimizationService;
+    private final CalendarCommentService calendarCommentService;
+
+    public CalendarServiceImpl(ExtendedConversionService conversionService, MailingDao mailingDao,
+                               OptimizationService optimizationService,
+                               CalendarCommentService calendarCommentService) {
+        this.conversionService = conversionService;
         this.mailingDao = mailingDao;
-    }
-
-    protected MailingDao getMailingDao() {
-        return mailingDao;
+        this.optimizationService = optimizationService;
+        this.calendarCommentService = calendarCommentService;
     }
 
     @Override
@@ -70,6 +90,16 @@ public class CalendarServiceImpl implements CalendarService {
     @Override
     public List<CalendarUnsentMailing> getPlannedUnsentMailings(Admin admin) {
         return mailingDao.getNotSentMailings(admin, true);
+    }
+
+    @Override
+    public List<MailingDto> getUnsentUnplannedMailings(Admin admin) {
+        return mailingDao.getUnsentMailings(admin, false);
+    }
+
+    @Override
+    public List<MailingDto> getUnsentPlannedMailings(Admin admin) {
+        return mailingDao.getUnsentMailings(admin, true);
     }
 
     @Override
@@ -91,7 +121,7 @@ public class CalendarServiceImpl implements CalendarService {
     public JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate, int limit) {
         List<Map<String, Object>> mailings = new ArrayList<>();
         int companyId = admin.getCompanyID();
-        ZoneId zoneId = AgnUtils.getZoneId(admin);
+        ZoneId zoneId = admin.getZoneId();
 
         Date start = DateUtilities.toDate(startDate.atStartOfDay(), zoneId);
         Date end = DateUtilities.toDate(endDate.plusDays(1).atStartOfDay(), zoneId);
@@ -115,9 +145,8 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     public JSONArray getMailingsLight(Admin admin, LocalDate startDate, LocalDate endDate) {
-        ZoneId zoneId = AgnUtils.getZoneId(admin);
-        Date start = DateUtilities.toDate(startDate.atStartOfDay(), zoneId);
-        Date end = DateUtilities.toDate(endDate.plusDays(1), zoneId);
+        Date start = DateUtilities.toDate(startDate.atStartOfDay(), admin.getZoneId());
+        Date end = DateUtilities.toDate(endDate.plusDays(1), admin.getZoneId());
 
         List<Map<String, Object>> mailings = ListUtils.union(
                 mailingDao.getSentAndScheduledLight(admin, start, end),
@@ -125,30 +154,37 @@ public class CalendarServiceImpl implements CalendarService {
         return mailingsAsJsonRedesigned(mailings, admin);
     }
 
+    @Override
+    public List<MailingDto> getMailings(MailingDaoOptions opts, Admin admin) {
+        return ListUtils.union(
+            mailingDao.getSentAndScheduled(opts, admin),
+            mailingDao.getPlannedMailings(opts, admin));
+    }
+
     private JSONArray mailingsAsJsonRedesigned(List<Map<String, Object>> mailings, Admin admin) {
         JSONArray json = new JSONArray();
         TimeZone timeZone = AgnUtils.getTimeZone(admin);
         DateFormat dateFormat = DateUtilities.getFormat(DATE_FORMAT, timeZone);
         DateFormat timeFormat = DateUtilities.getFormat(TIME_FORMAT, timeZone);
-        mailings.forEach(mailing -> json.add(mailingToJson(mailing, dateFormat, timeFormat)));
+        mailings.forEach(mailing -> json.put(mailingToJson(mailing, dateFormat, timeFormat)));
         return json;
     }
 
     private JSONObject mailingToJson(Map<String, Object> mailing, DateFormat dateFormat, DateFormat timeFormat) {
         JSONObject object = new JSONObject();
         Date sendDate = (Date) mailing.get("senddate");
-        object.element("shortname", getShortname(mailing));
-        object.element("mailingId", mailing.get("mailingid"));
-        object.element("workstatus", mailing.get("workstatus"));
-        object.element("sendDate", dateFormat.format(sendDate));
-        object.element("sendTime", timeFormat.format(sendDate));
-        object.element("mailinglistName", mailing.get("mailinglist_name"));
+        object.put("shortname", getShortname(mailing));
+        object.put("mailingId", mailing.get("mailingid"));
+        object.put("workstatus", mailing.get("workstatus"));
+        object.put("sendDate", dateFormat.format(sendDate));
+        object.put("sendTime", timeFormat.format(sendDate));
+        object.put("mailinglistName", mailing.get("mailinglist_name"));
         return object;
     }
 
     protected List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate, int limit) {
         List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate, limit);
-        return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
+        return addSomeFieldsToPlannedMailings(plannedMailings, admin.getZoneId());
     }
 
     protected List<Map<String, Object>> addSomeFieldsToPlannedMailings(final List<Map<String, Object>> mailings, final ZoneId zoneId) {
@@ -223,6 +259,39 @@ public class CalendarServiceImpl implements CalendarService {
         return canClearPlannedDate(mailingId, companyId) && mailingDao.clearPlanDate(mailingId, companyId);
     }
 
+    @Override
+    public Map<String, List<?>> getLabels(DashboardCalendarForm form, Admin admin) {
+        Date start = form.getStartDate(admin.getZoneId(), DATE_FORMATTER);
+        Date end = form.getEndDate(admin.getZoneId(), DATE_FORMATTER);
+        return Map.of(
+            "mailings", getMailingLabels(start, end, form.getDayMailingsLimit(), admin),
+            "comments", form.isLoadComments() ? getCommentLabels(admin, start, end) : emptyList(),
+            "optimizations", getAutoOptimizationLabels(admin, start, end));
+    }
+
+    @Override
+    public List<CalendarMailingLabel> getMailingLabels(Date start, Date end, int limit, Admin admin) {
+        MailingDaoOptions opts = MailingDaoOptions
+            .builder()
+            .setStartIncl(start)
+            .setEndExcl(end)
+            .limit(limit).build();
+        return conversionService.convert(getMailings(opts, admin), MailingDto.class, CalendarMailingLabel.class);
+    }
+
+    private List<CalendarCommentLabel> getCommentLabels(Admin admin, Date start, Date end) {
+        return conversionService.convert(
+            calendarCommentService.getComments(start, end, admin),
+            CalendarComment.class, CalendarCommentLabel.class);
+    }
+
+
+    private List<CalendarAutoOptLabel> getAutoOptimizationLabels(Admin admin, Date start, Date end) {
+        return conversionService.convert(
+            optimizationService.getAutoOptimizations(admin, start, end),
+            Optimization.class, CalendarAutoOptLabel.class);
+    }
+
     private boolean canClearPlannedDate(int mailingId, int companyId) {
         if (mailingId <= 0) {
             return false;
@@ -243,7 +312,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     private boolean setMailingDate(Admin admin, Mailing mailing, MaildropEntry drop, LocalDate date) {
-        ZoneId zoneId = AgnUtils.getZoneId(admin);
+        ZoneId zoneId = admin.getZoneId();
         boolean success = false;
 
         if (Objects.nonNull(drop)) {
@@ -322,29 +391,29 @@ public class CalendarServiceImpl implements CalendarService {
             boolean isOnlyPostType = getIntValue(mailing, "isOnlyPostType") > 0;
 
             //hardcode because dao returns keys in different case (depends on db)
-            object.element("shortname", getShortname(mailing));
-            object.element("mailingId", mailing.get("mailingid"));
-            object.element("workstatus", mailing.get("workstatus"));
-            object.element("workstatusIn", I18nString.getLocaleString((String) mailing.get("workstatus"), locale));
-            object.element("preview_component", mailing.get("preview_component"));
-            object.element("mailsSent", mailing.get("mailssent"));
+            object.put("shortname", getShortname(mailing));
+            object.put("mailingId", mailing.get("mailingid"));
+            object.put("workstatus", mailing.get("workstatus"));
+            object.put("workstatusIn", I18nString.getLocaleString((String) mailing.get("workstatus"), locale));
+            object.put("preview_component", mailing.get("preview_component"));
+            object.put("mailsSent", mailing.get("mailssent"));
             if (admin.isRedesignedUiUsed()) {
                 Object mediatype = mailing.get("mediatype");
                 if (mediatype != null) {
-                    object.element("mediatype", MediaTypes.getMediaTypeForCode(((Number)mediatype).intValue()));
+                    object.put("mediatype", MediaTypes.getMediaTypeForCode(((Number)mediatype).intValue()));
                 }
             }
-            object.element("subject", mailing.get("subject"));
-            object.element("planned", mailing.get("planned"));
-            object.element("plannedInPast", mailing.get("plannedInPast"));
-            object.element("sendDate", DateUtilities.format(sendDate, dateFormat));
-            object.element("sendTime", DateUtilities.format(sendDate, timeFormat));
-            object.element("sent", isSent);
-            object.element("isOnlyPostType", isOnlyPostType);
-            object.element("openers", openers.getOrDefault(mailingId, 0));
-            object.element("clickers", clickers.getOrDefault(mailingId, 0));
+            object.put("subject", mailing.get("subject"));
+            object.put("planned", mailing.get("planned"));
+            object.put("plannedInPast", mailing.get("plannedInPast"));
+            object.put("sendDate", DateUtilities.format(sendDate, dateFormat));
+            object.put("sendTime", DateUtilities.format(sendDate, timeFormat));
+            object.put("sent", isSent);
+            object.put("isOnlyPostType", isOnlyPostType);
+            object.put("openers", openers.getOrDefault(mailingId, 0));
+            object.put("clickers", clickers.getOrDefault(mailingId, 0));
 
-            result.add(object);
+            result.put(object);
         }
 
         return result;

@@ -5,7 +5,7 @@
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileColumnsForm"--%>
 <%--@elvariable id="profileFields" type="java.util.Map<java.lang.String, com.agnitas.beans.ProfileField>"--%>
-<%--@elvariable id="columnMappings" type="java.util.List<org.agnitas.beans.ColumnMapping>"--%>
+<%--@elvariable id="columnMappings" type="java.util.List<com.agnitas.beans.ColumnMapping>"--%>
 <%--@elvariable id="isReadonly" type="java.lang.Boolean"--%>
 
 <c:set var="profileFieldsAsJson" value="${emm:toJson(profileFields)}"/>

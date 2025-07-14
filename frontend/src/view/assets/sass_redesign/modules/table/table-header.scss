@@ -1,9 +1,9 @@
 
-$table-control-font-weight: 500;
+$table-control-font-weight: $font-weight-medium;
 
 .table-wrapper__header {
   position: relative;
-  background-color: var(--table-head-bg-color);
+  background-color: var(--table-head-bg);
   padding: $table-spacing;
 
   border: $table-border;
@@ -13,10 +13,11 @@ $table-control-font-weight: 500;
   @include flex-row($gap-sm);
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
 
-  // rounded backing under thead
+  // rounded backing under <thead>
   &::after {
-    background-color: var(--table-head-bg-color);
+    background-color: var(--table-head-bg);
 
     content: "";
     position: absolute;
@@ -40,6 +41,7 @@ $table-control-font-weight: 500;
 }
 
 .table-wrapper__title {
-  font-weight: 500;
-  color: var(--tile-title-color);
+  font-weight: $font-weight-medium;
+  color: var(--table-wrapper-title-color);
+  @extend .text-truncate;
 }

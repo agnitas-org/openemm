@@ -4,7 +4,13 @@
 
     // gets called once before the renderer is used
     init(params) {
-      this.eGui = AGN.Lib.TableCellWrapper(params.api.gridOptionsService.gridOptions, params.data);
+      const api = params.api;
+      this.eGui = AGN.Lib.TableCellWrapper(
+        api.getGridOption('viewLinkTemplate'),
+        api.getGridOption('viewInModal'),
+        api.getGridOption('isRestoreMode')(),
+        params.data
+      );
       this.eGui.innerHTML = AGN.Lib.Template.text(
         params.templateName,
         {value: params.value, entry: params.data}

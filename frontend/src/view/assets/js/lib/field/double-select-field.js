@@ -64,11 +64,13 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
       this.$source = this.el.find('select.js-double-select-trigger');
       this.$target = this.el.find('select.js-double-select-target');
 
-      this.$source.off('change');
-      this.$source.on('change', () => {
+      const sourceChangeHandler = () => {
         this.$target.val([])
         this.update();
-      });
+      };
+
+      this.$source.off('change', sourceChangeHandler);
+      this.$source.on('change', sourceChangeHandler);
 
       AGN.Lib.DataProvider.get($field).done(options => {
         this.options = options;

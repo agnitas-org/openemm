@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.push.bean.PushNotificationStatus" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -35,15 +35,15 @@
         <div class="tile-header gap-1">
             <h1 class="tile-title d-flex gap-2">
                 <span class="text-truncate"><mvc:message code="calendar.Calendar"/></span>
-                <label class="icon-switch me-1">
+                <label class="switch me-1">
                     <input id="xl-calendar-mode-switch" data-action="toggle-xl-calendar-mode" type="checkbox" {{- isWeekMode ? 'checked' : ''}}>
                     <i class="icon icon-calendar-alt" data-tooltip="<mvc:message code='calendar.month.view'/>"></i>
                     <i class="icon icon-calendar-week" data-tooltip="<mvc:message code='calendar.week.view'/>"></i>
                 </label>
             </h1>
 
-            <div class="tile-controls table-wrapper__controls">
-                <label class="icon-switch" data-tooltip="<mvc:message code='calendar.ShowHideComments'/>">
+            <div class="tile-controls">
+                <label class="switch" data-tooltip="<mvc:message code='calendar.ShowHideComments'/>">
                     <input id="xl-calendar-comments-switch" data-action="toggle-xl-calendar-comments" type="checkbox" {{- isCommentsShown ? '' : 'checked'}}>
                     <i class="icon icon-comment"></i>
                     <i class="icon icon-comment-slash"></i>
@@ -97,10 +97,10 @@
                 <div class="tile-header p-1">
                     <div class="btn-group w-100" role="group">
                         <input type="radio" class="btn-check" name="not-sent-mailings-list-type" value="unplanned" id="unplanned-mailings-btn" autocomplete="off" {{- isUnsentMailingsPlannedType ? '' : 'checked'}}>
-                        <label class="btn btn-outline-primary text-truncate text-truncate-alt d-inline-block" for="unplanned-mailings-btn"><mvc:message code="calendar.unscheduledMailings"/></label>
+                        <label class="btn btn-header-tab text-truncate text-truncate-alt d-inline-block" for="unplanned-mailings-btn"><mvc:message code="calendar.unscheduledMailings"/></label>
 
                         <input type="radio" class="btn-check" name="not-sent-mailings-list-type" value="planned" id="planned-mailings-btn" autocomplete="off" {{- isUnsentMailingsPlannedType ? 'checked' : ''}}>
-                        <label class="btn btn-outline-primary text-truncate text-truncate-alt d-inline-block" for="planned-mailings-btn"><mvc:message code="calendar.planned.mailings"/></label>
+                        <label class="btn btn-header-tab text-truncate text-truncate-alt d-inline-block" for="planned-mailings-btn"><mvc:message code="calendar.planned.mailings"/></label>
                     </div>
                 </div>
                 <div class="tile-body d-flex flex-column js-scrollable"><%--js--%></div>
@@ -178,7 +178,8 @@
                         <div id="reminder-send-time" data-show-by-checkbox="#isDeadline">
                             <label class="form-label"><mvc:message code="mailing.SendingTime"/></label>
                             <div id="remind-date" data-field="datetime" data-property="plannedSendDate"
-                                 data-field-options="value: '{{- plannedSendDate }}', submitDateFormat:'dd-MM-yyyy', timeMask:'h:00'">
+                                 data-field-options="value: '{{- plannedSendDate }}', timeMask:'h:00'"
+                                 data-datepicker-options="minDate: 0">
                             </div>
                         </div>
                     </div>
@@ -205,20 +206,20 @@
     display: flex;
     gap: 5px;
 </c:set>
-<c:set var="calendarLabelTextClasses" value="xl-calendar-label__text text-truncate bg-disabled border rounded-1 px-1 fs-4 flex-grow-1" />
+<c:set var="calendarLabelTextClasses" value="xl-calendar-label__text text-truncate border rounded-1 px-1 fs-4 flex-grow-1" />
 
 <script id="xl-calendar-mailing-label" type="text/x-mustache-template">
     <a href="{{- link }}" id="{{- labelId }}" class="xl-calendar-label ui-draggable" style="${calendarLabelStyle}">
         <span class="status-badge {{- mediatype }}" data-tooltip="{{- t(mediatype) }}"></span>
         <span class="status-badge {{- status }}" data-tooltip="{{- t(status) }}"></span>
-        <span class="${calendarLabelTextClasses}">{{- shortname }}</span>
+        <span class="${calendarLabelTextClasses} bg-disabled">{{- shortname }}</span>
     </a>
 </script>
 
 <script id="xl-calendar-comment-label" type="text/x-mustache-template">
     <a href="#" id="{{- labelId }}" class="xl-calendar-label xl-calendar-label--comment" data-action="show-xl-calendar-comment" style="${calendarLabelStyle}">
         <span class="status-badge status.comment" data-tooltip="<mvc:message code='calendar.Comment'/>"></span>
-        <span class="${calendarLabelTextClasses}">{{- comment }}</span>
+        <span class="${calendarLabelTextClasses} bg-disabled">{{- comment }}</span>
     </a>
 </script>
 

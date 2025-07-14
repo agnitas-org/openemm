@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.24" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.13.0.v202303021806</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.17.0.v202409011308</property>
     <list-property name="userProperties">
         <structure>
             <property name="name">Data Cube1.RecipientsForPieChart.x</property>
@@ -86,6 +86,8 @@ importPackage(Packages.com.agnitas.emm.core.mobile.bean);
 importPackage(Packages.org.eclipse.birt.chart.model.attribute.impl);
 importPackage(Packages.org.eclipse.birt.chart.model.attribute);
 
+ReportProperties = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties;
+BirtReportSettingsUtils = Packages.com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils
 
 reportContext.getAppContext().put("CHART_RESOLUTION", 300);
 
@@ -129,6 +131,7 @@ if (params["hiddenTargetId"] != null) {
 
 mailingStatisticDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingStatisticDataSet();
 devicesStatDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.DevicesStatDataSet();
+topDomainsDataSet = new Packages.com.agnitas.reporting.birt.external.dataset.TopDomainsDataSet();
 
 dateFormats = mailingStatisticDataSet.getDateFormatsInstance(new Packages.java.lang.String(), new Packages.java.lang.String(), false);
 if (params["startDate"] != null) {
@@ -136,7 +139,7 @@ if (params["startDate"] != null) {
 }
 mailingSummaryData = mailingStatisticDataSet.getSummaryData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, params["figures"], dateFormats);
 mailingClicksData = mailingStatisticDataSet.getLinkClicksData(params["companyID"], params["selectedMailings"], targetGroups, hiddenTargetGroup, dateFormats);
-
+mailingTopDomains = topDomainsDataSet.getStat(params["selectedMailings"], params["companyID"], params["targetGroups"], 15, params["language"], false);
 deviceStatistic = devicesStatDataSet.getMailingReportDevicesStat(params["companyID"], targetGroups, hiddenTargetGroup, params["selectedMailings"], params["figures"], 10, params["language"]);
 
 function getColorDefinition(styleName) {
@@ -1458,6 +1461,170 @@ return false;]]></method>
 return false;
 ]]></method>
         </script-data-set>
+        <script-data-set name="TopDomainsDataSet" id="587">
+            <list-property name="resultSetHints">
+                <structure>
+                    <property name="position">1</property>
+                    <property name="name">category_name</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">2</property>
+                    <property name="name">category_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">3</property>
+                    <property name="name">domainname</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">4</property>
+                    <property name="name">domainname_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">5</property>
+                    <property name="name">targetgroup</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">6</property>
+                    <property name="name">targetgroup_index</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">7</property>
+                    <property name="name">value</property>
+                    <property name="dataType">integer</property>
+                </structure>
+                <structure>
+                    <property name="position">8</property>
+                    <property name="name">rate</property>
+                    <property name="dataType">float</property>
+                </structure>
+                <structure>
+                    <property name="position">9</property>
+                    <property name="name">mailingId</property>
+                    <property name="dataType">integer</property>
+                </structure>
+            </list-property>
+            <list-property name="columnHints">
+                <structure>
+                    <property name="columnName">category_name</property>
+                    <text-property name="displayName">Category Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">category_index</property>
+                    <text-property name="displayName">Category Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">domainname</property>
+                    <text-property name="displayName">Domain Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">domainname_index</property>
+                    <text-property name="displayName">Domain Name Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetgroup</property>
+                    <text-property name="displayName">Target Group Name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">targetgroup_index</property>
+                    <text-property name="displayName">Target Group Index</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">value</property>
+                    <text-property name="displayName">Value</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">rate</property>
+                    <text-property name="displayName">Rate</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">mailingId</property>
+                </structure>
+            </list-property>
+            <structure name="cachedMetaData">
+                <list-property name="resultSet">
+                    <structure>
+                        <property name="position">1</property>
+                        <property name="name">category_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">2</property>
+                        <property name="name">category_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">3</property>
+                        <property name="name">domainname</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">4</property>
+                        <property name="name">domainname_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">5</property>
+                        <property name="name">targetgroup</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">6</property>
+                        <property name="name">targetgroup_index</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">7</property>
+                        <property name="name">value</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">8</property>
+                        <property name="name">rate</property>
+                        <property name="dataType">float</property>
+                    </structure>
+                    <structure>
+                        <property name="position">9</property>
+                        <property name="name">mailingId</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                </list-property>
+            </structure>
+            <property name="dataSource">DummyDataSource</property>
+            <method name="open"><![CDATA[domainCurrentRow = 0;
+]]></method>
+            <method name="fetch"><![CDATA[if (domainCurrentRow >= mailingTopDomains.size()) {
+	return false;
+}
+
+var domainRowData = mailingTopDomains.get(domainCurrentRow);
+
+row['category_name'] = tr(domainRowData.getCategory());
+row['category_index'] = domainRowData.getCategoryindex();
+
+row['domainname'] = domainRowData.getDomainName();
+row['domainname_index'] = domainRowData.getDomainNameIndex();
+
+if (domainRowData.getTargetgroupindex() == CommonKeys.ALL_SUBSCRIBERS_INDEX) {
+	row['targetgroup'] = tr(CommonKeys.ALL_SUBSCRIBERS);
+} else {
+	row['targetgroup'] = domainRowData.getTargetgroup();
+}
+row['targetgroup_index'] = domainRowData.getTargetgroupindex();
+
+row['value'] = domainRowData.getCount();
+row['rate'] = domainRowData.getRate();
+row['mailingId'] = domainRowData.getMailingId();
+
+domainCurrentRow++;
+return true;
+]]></method>
+        </script-data-set>
     </data-sets>
     <cubes>
         <tabular-cube name="MailingSummaryDataCube" id="2976">
@@ -2037,8 +2204,10 @@ return false;
                 </structure>
                 <structure>
                     <property name="name">targets</property>
-                    <expression name="expression" type="javascript">dataSetRow["targets"]</expression>
+                    <expression name="expression" type="javascript">(dataSetRow["targets"] || "").replaceAll("\"\"\"", "\"").replaceAll("\"\"", "\"");
+//check same csv value in case of modification (should be csv with "" like "abc", "123", "xyz")</expression>
                     <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
                 </structure>
                 <structure>
                     <property name="name">thumbnail</property>
@@ -2150,10 +2319,9 @@ return false;
                             <column id="2737">
                                 <property name="width">50%</property>
                             </column>
-                            <column id="2738"/>
                             <row id="2810">
                                 <cell id="2811">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -2175,10 +2343,16 @@ return false;
                                                     </column>
                                                     <column id="2673"/>
                                                     <row id="2674">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_NAME, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2675">
                                                             <property name="textAlign">left</property>
-                                                            <text-data id="2695">
-                                                                <expression name="valueExpr">tr("Mailing")</expression>
+                                                            <text-data id="4615">
+                                                                <expression name="valueExpr">tr(ReportProperties.MAILING_NAME.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2676">
@@ -2188,11 +2362,38 @@ return false;
                                                             </data>
                                                         </cell>
                                                     </row>
+                                                    <row id="4250">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_ID, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
+                                                        <cell id="4251">
+                                                            <property name="textAlign">left</property>
+                                                            <text-data id="4616">
+                                                                <expression name="valueExpr">tr(ReportProperties.MAILING_ID.labelCode);</expression>
+                                                            </text-data>
+                                                        </cell>
+                                                        <cell id="4252">
+                                                            <property name="textAlign">left</property>
+                                                            <data id="4612">
+                                                                <structure name="toc"/>
+                                                                <property name="resultSetColumn">mailingId</property>
+                                                            </data>
+                                                        </cell>
+                                                    </row>
                                                     <row id="2677">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.DESCRIPTION, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2678">
                                                             <property name="textAlign">left</property>
-                                                            <text-data id="2697">
-                                                                <expression name="valueExpr">tr("Description")</expression>
+                                                            <text-data id="4617">
+                                                                <expression name="valueExpr">tr(ReportProperties.DESCRIPTION.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2679">
@@ -2203,10 +2404,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="3047">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.ARCHIVE, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="3048">
                                                             <property name="textAlign">left</property>
-                                                            <text-data id="3026">
-                                                                <expression name="valueExpr">tr("mailing.archive")</expression>
+                                                            <text-data id="4618">
+                                                                <expression name="valueExpr">tr(ReportProperties.ARCHIVE.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3049">
@@ -2217,10 +2424,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="3050">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAIL_FORMAT, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="3051">
                                                             <property name="textAlign">left</property>
-                                                            <text-data id="3034">
-                                                                <expression name="valueExpr">tr("report.mailformat")</expression>
+                                                            <text-data id="4619">
+                                                                <expression name="valueExpr">tr(ReportProperties.MAIL_FORMAT.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3052">
@@ -2231,10 +2444,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="3053">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.AVERAGE_SIZE, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="3054">
                                                             <property name="textAlign">left</property>
-                                                            <text-data id="3035">
-                                                                <expression name="valueExpr">tr("report.mailsize")</expression>
+                                                            <text-data id="4620">
+                                                                <expression name="valueExpr">tr(ReportProperties.AVERAGE_SIZE.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3055">
@@ -2250,10 +2469,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="2680">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SUBJECT, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2681">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2719">
-                                                                <expression name="valueExpr">tr("mailing.Subject")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.SUBJECT.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2682">
@@ -2264,10 +2489,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="2683">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.MAILING_LIST, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2684">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2720">
-                                                                <expression name="valueExpr">tr("Mailinglist")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.MAILING_LIST.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2685">
@@ -2279,10 +2510,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="2686">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TARGET_GROUPS, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2687">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2705">
-                                                                <expression name="valueExpr">tr("Target-Groups")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.TARGET_GROUPS.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2688">
@@ -2293,10 +2530,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="2689">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.NR_OF_RECIPIENTS_WITH_TRACK_VETO, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="2690">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2721">
-                                                                <expression name="valueExpr">tr("report.numberRecipients.notracking")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.NR_OF_RECIPIENTS_WITH_TRACK_VETO.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2691">
@@ -2311,14 +2554,14 @@ return false;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!"".equals(params["startDate"])</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_STARTED, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2693">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2725">
                                                                 <structure name="toc"/>
-                                                                <expression name="valueExpr">tr("report.sendingStarted")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.SENDING_STARTED.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2694">
@@ -2332,13 +2575,13 @@ return false;
                                                         <list-property name="visibility">
                                                             <structure>
                                                                 <property name="format">all</property>
-                                                                <expression name="valueExpr" type="javascript">!"".equals(params["stopDate"])</expression>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDING_FINISHED, params["figures"]);</expression>
                                                             </structure>
                                                         </list-property>
                                                         <cell id="2723">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="2726">
-                                                                <expression name="valueExpr">tr("report.sendingFinished")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.SENDING_FINISHED.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="2724">
@@ -2390,11 +2633,17 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="3304">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.SENDER_INFO, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="3305">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="3310">
                                                                 <structure name="toc"/>
-                                                                <expression name="valueExpr">tr("mailing.SenderEmail")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.SENDER_INFO.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3306">
@@ -2405,10 +2654,16 @@ return false;
                                                         </cell>
                                                     </row>
                                                     <row id="3307">
+                                                        <list-property name="visibility">
+                                                            <structure>
+                                                                <property name="format">all</property>
+                                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.REPLY_TO_INFO, params["figures"]);</expression>
+                                                            </structure>
+                                                        </list-property>
                                                         <cell id="3308">
                                                             <property name="textAlign">left</property>
                                                             <text-data id="3313">
-                                                                <expression name="valueExpr">tr("mailing.ReplyEmail")</expression>
+                                                                <expression name="valueExpr">tr(ReportProperties.REPLY_TO_INFO.labelCode);</expression>
                                                             </text-data>
                                                         </cell>
                                                         <cell id="3309">
@@ -2444,14 +2699,11 @@ return false;
                             <row id="3121">
                                 <property name="height">5mm</property>
                                 <cell id="3122"/>
-                                <cell id="3123">
-                                    <property name="textAlign">right</property>
-                                </cell>
                             </row>
                             <row id="3327">
                                 <property name="height">5mm</property>
                                 <cell id="3328">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <extended-item extensionName="Chart" name="NewChart111" id="3089">
                                         <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:data="http://www.birt.eclipse.org/ChartModelData" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
@@ -3885,9 +4137,6 @@ function beforeGeneration(chart, icsc) {
                             <row id="3329">
                                 <property name="height">5mm</property>
                                 <cell id="3330"/>
-                                <cell id="3325">
-                                    <property name="textAlign">right</property>
-                                </cell>
                             </row>
                             <row id="3206">
                                 <property name="height">5mm</property>
@@ -3907,9 +4156,6 @@ function beforeGeneration(chart, icsc) {
                                         <expression name="valueExpr">tr("report.recipient.statistics.bymailingtype")</expression>
                                     </text-data>
                                 </cell>
-                                <cell id="3208">
-                                    <property name="textAlign">right</property>
-                                </cell>
                             </row>
                             <row id="3124">
                                 <property name="height">5mm</property>
@@ -3920,7 +4166,7 @@ function beforeGeneration(chart, icsc) {
                                     </structure>
                                 </list-property>
                                 <cell id="3125">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -4149,13 +4395,31 @@ function beforeGeneration(chart, icsc) {
                                     </structure>
                                 </list-property>
                                 <cell id="2814"/>
-                                <cell id="2815">
-                                    <property name="textAlign">right</property>
-                                </cell>
                             </row>
                             <row id="2739">
+                                <list-property name="visibility">
+                                    <structure>
+                                        <property name="format">all</property>
+                                        <expression name="valueExpr" type="javascript">!BirtReporUtils.isAnyOptionAllowed([
+	
+BirtReporUtils.BirtReportFigure.SENT_MAILS.value,
+BirtReporUtils.BirtReportFigure.EMAILS_ACCEPTED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_MEASURED.value,
+BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE.value,
+BirtReporUtils.BirtReportFigure.OPENERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL.value,
+BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS.value,
+BirtReporUtils.BirtReportFigure.SIGNED_OFF.value,
+BirtReporUtils.BirtReportFigure.SOFTBOUNCES.value,
+BirtReporUtils.BirtReportFigure.HARDBOUNCES.value,
+BirtReporUtils.BirtReportFigure.REVENUE.value
+
+], params["figures"].value);</expression>
+                                    </structure>
+                                </list-property>
                                 <cell id="2740">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -4379,7 +4643,7 @@ function beforeGeneration(chart, icsc) {
                                                     <text-data id="3011">
                                                         <property name="fontWeight">bold</property>
                                                         <property name="color">#FFFFFF</property>
-                                                        <expression name="valueExpr">tr("KeydataGeneral")</expression>
+                                                        <expression name="valueExpr">tr(BirtReportSettingsUtils.SUMMARY_GROUP);</expression>
                                                     </text-data>
                                                 </property>
                                                 <property name="backgroundColor">#0071B9</property>
@@ -4448,6 +4712,7 @@ function beforeGeneration(chart, icsc) {
                                         <property name="borderRightStyle">solid</property>
                                         <property name="borderRightWidth">thin</property>
                                         <property name="borderRightColor">#7E7E7E</property>
+                                        <structure name="toc"/>
                                         <list-property name="boundDataColumns">
                                             <structure>
                                                 <property name="name">targetgroup</property>
@@ -4529,7 +4794,6 @@ function beforeGeneration(chart, icsc) {
                             <row id="3093">
                                 <property name="height">5mm</property>
                                 <cell id="3094"/>
-                                <cell id="3095"/>
                             </row>
                             <row id="3090">
                                 <property name="height">5mm</property>
@@ -4540,7 +4804,7 @@ function beforeGeneration(chart, icsc) {
                                     </structure>
                                 </list-property>
                                 <cell id="3091">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -4957,7 +5221,6 @@ function beforeGeneration(chart, icsc) {
                                     </structure>
                                 </list-property>
                                 <cell id="3202"/>
-                                <cell id="3203"/>
                             </row>
                             <row id="3215">
                                 <property name="height">5mm</property>
@@ -4968,7 +5231,7 @@ function beforeGeneration(chart, icsc) {
                                     </structure>
                                 </list-property>
                                 <cell id="3216">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -7295,12 +7558,6 @@ function beforeGeneration( chart, icsc )
                                     <property name="paddingBottom">0pt</property>
                                     <property name="paddingRight">0pt</property>
                                 </cell>
-                                <cell id="3347">
-                                    <property name="paddingTop">0pt</property>
-                                    <property name="paddingLeft">0pt</property>
-                                    <property name="paddingBottom">0pt</property>
-                                    <property name="paddingRight">0pt</property>
-                                </cell>
                             </row>
                             <row id="3367">
                                 <property name="height">5mm</property>
@@ -7310,7 +7567,7 @@ function beforeGeneration( chart, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="3368">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -8087,11 +8344,10 @@ function getColorDefinition( styleName ) {
  *            IChartScriptContext
  */
 
-function beforeDrawDataPointLabel( dph, label, icsc )
-{
-	//if (dph.getOrthogonalValue() &lt; 5){
-	//	label.setVisible(false);
-	//}
+function beforeDrawDataPointLabel( dph, label, icsc ) {
+	if (dph.getOrthogonalValue() &lt; 5){
+		label.setVisible(false);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -8749,14 +9005,6 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                                             </simple-property-list>
                                                             <property name="updateAggregation">true</property>
                                                         </structure>
-                                                        <structure>
-                                                            <property name="operator">gt</property>
-                                                            <expression name="expr" type="javascript">row["COUNT"]</expression>
-                                                            <simple-property-list name="value1">
-                                                                <value>0</value>
-                                                            </simple-property-list>
-                                                            <property name="updateAggregation">true</property>
-                                                        </structure>
                                                     </list-property>
                                                     <property name="inheritColumns">true</property>
                                                     <property name="fontFamily">"Arial"</property>
@@ -8859,7 +9107,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="3390">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -9485,11 +9733,10 @@ function getColorDefinition( styleName ) {
  * @param label - Label
  * @param icsc - IChartScriptContext
  */
-function beforeDrawDataPointLabel( dph, label, icsc )
-{
-	//if (dph.getOrthogonalValue() &lt; 5){
-	//	label.setVisible(false);
-	//}
+function beforeDrawDataPointLabel( dph, label, icsc ) {
+	if (dph.getOrthogonalValue() &lt; 5){
+		label.setVisible(false);
+	}
 }
 </Script>
   <Units>Points</Units>
@@ -10140,14 +10387,6 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                                             </simple-property-list>
                                                             <property name="updateAggregation">true</property>
                                                         </structure>
-                                                        <structure>
-                                                            <property name="operator">gt</property>
-                                                            <expression name="expr" type="javascript">row["COUNTPERCENT"]</expression>
-                                                            <simple-property-list name="value1">
-                                                                <value>0</value>
-                                                            </simple-property-list>
-                                                            <property name="updateAggregation">true</property>
-                                                        </structure>
                                                     </list-property>
                                                     <property name="inheritColumns">true</property>
                                                     <property name="fontFamily">"Arial"</property>
@@ -10248,7 +10487,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="3371">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -10265,7 +10504,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="3428">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -11566,12 +11805,6 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     <property name="paddingBottom">0pt</property>
                                     <property name="paddingRight">0pt</property>
                                 </cell>
-                                <cell id="3477">
-                                    <property name="paddingTop">0pt</property>
-                                    <property name="paddingLeft">0pt</property>
-                                    <property name="paddingBottom">0pt</property>
-                                    <property name="paddingRight">0pt</property>
-                                </cell>
                             </row>
                             <row id="4201">
                                 <property name="pageBreakAfter">auto</property>
@@ -11582,7 +11815,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="4202">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -12883,12 +13116,6 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     <property name="paddingBottom">0pt</property>
                                     <property name="paddingRight">0pt</property>
                                 </cell>
-                                <cell id="4206">
-                                    <property name="paddingTop">0pt</property>
-                                    <property name="paddingLeft">0pt</property>
-                                    <property name="paddingBottom">0pt</property>
-                                    <property name="paddingRight">0pt</property>
-                                </cell>
                             </row>
                             <row id="2742">
                                 <list-property name="visibility">
@@ -12898,7 +13125,7 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                                     </structure>
                                 </list-property>
                                 <cell id="2743">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -13310,7 +13537,7 @@ itemLinkNumber = this.getRowData().getColumnValue('linkItemNumber');]]></method>
                                     </structure>
                                 </list-property>
                                 <cell id="2746">
-                                    <property name="colSpan">2</property>
+                                    <property name="colSpan">1</property>
                                     <property name="rowSpan">1</property>
                                     <property name="paddingTop">0pt</property>
                                     <property name="paddingLeft">0pt</property>
@@ -14594,6 +14821,200 @@ function beforeDrawAxisTitle( axis, label, icsc )
                                                         <property name="style">birt-report-chart</property>
                                                     </extended-item>
                                                 </cell>
+                                            </row>
+                                        </footer>
+                                    </table>
+                                </cell>
+                            </row>
+                            <row id="9934">
+                                <cell id="9935">
+                                    <property name="paddingTop">0pt</property>
+                                    <property name="paddingLeft">0pt</property>
+                                    <property name="paddingBottom">0pt</property>
+                                    <property name="paddingRight">0pt</property>
+                                    <table name="Top domains" id="9836">
+                                        <property name="style">table table-striped</property>
+                                        <property name="borderBottomColor">#7E7E7E</property>
+                                        <property name="borderBottomStyle">solid</property>
+                                        <property name="borderBottomWidth">thin</property>
+                                        <property name="borderLeftColor">#7E7E7E</property>
+                                        <property name="borderLeftStyle">solid</property>
+                                        <property name="borderLeftWidth">thin</property>
+                                        <property name="borderRightColor">#7E7E7E</property>
+                                        <property name="borderRightStyle">solid</property>
+                                        <property name="borderRightWidth">thin</property>
+                                        <property name="borderTopColor">#7E7E7E</property>
+                                        <property name="borderTopStyle">solid</property>
+                                        <property name="borderTopWidth">thin</property>
+                                        <property name="dataSet">TopDomainsDataSet</property>
+                                        <list-property name="visibility">
+                                            <structure>
+                                                <property name="format">all</property>
+                                                <expression name="valueExpr" type="javascript">!BirtReporUtils.isOptionAllowed(BirtReporUtils.BirtReportFigure.TOP_DOMAINS.value, params["figures"].value);</expression>
+                                            </structure>
+                                        </list-property>
+                                        <list-property name="boundDataColumns">
+                                            <structure>
+                                                <property name="name">category_name</property>
+                                                <text-property name="displayName">Category Name</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["category_name"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">category_index</property>
+                                                <text-property name="displayName">Category Index</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["category_index"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">domainname</property>
+                                                <text-property name="displayName">Domain Name</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["domainname"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">domainname_index</property>
+                                                <text-property name="displayName">Domain Name Index</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["domainname_index"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">targetgroup</property>
+                                                <text-property name="displayName">Target Group Name</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["targetgroup"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">targetgroup_index</property>
+                                                <text-property name="displayName">Target Group Index</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["targetgroup_index"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">value</property>
+                                                <text-property name="displayName">Value</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["value"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">rate</property>
+                                                <text-property name="displayName">Rate</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["rate"]</expression>
+                                                <property name="dataType">float</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">mailingId</property>
+                                                <text-property name="displayName">mailingId</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["mailingId"]</expression>
+                                                <property name="dataType">integer</property>
+                                            </structure>
+                                        </list-property>
+                                        <list-property name="filter">
+                                            <structure>
+                                                <property name="operator">eq</property>
+                                                <expression name="expr" type="javascript">row["mailingId"]</expression>
+                                                <simple-property-list name="value1">
+                                                    <value>row._outer["mailingId"]</value>
+                                                </simple-property-list>
+                                                <property name="updateAggregation">true</property>
+                                            </structure>
+                                        </list-property>
+                                        <column id="9885"/>
+                                        <column id="9887"/>
+                                        <column id="9889"/>
+                                        <column id="9891"/>
+                                        <column id="9892"/>
+                                        <header>
+                                            <row id="9837">
+                                                <property name="style">birt-report-table-headline</property>
+                                                <property name="backgroundColor">#0071B9</property>
+                                                <cell id="9838">
+                                                    <property name="style">table-head</property>
+                                                    <text-data id="9894">
+                                                        <expression name="valueExpr">tr("grid.mediapool.category")</expression>
+                                                    </text-data>
+                                                </cell>
+                                                <cell id="9842">
+                                                    <text-data id="9895">
+                                                        <expression name="valueExpr">tr("statistic.domain")</expression>
+                                                    </text-data>
+                                                </cell>
+                                                <cell id="9846">
+                                                    <text-data id="9896">
+                                                        <expression name="valueExpr">tr("birt.Target")</expression>
+                                                    </text-data>
+                                                </cell>
+                                                <cell id="9850">
+                                                    <text-data id="9900">
+                                                        <expression name="valueExpr">tr("value")</expression>
+                                                    </text-data>
+                                                </cell>
+                                                <cell id="9852">
+                                                    <text-data id="9902">
+                                                        <expression name="valueExpr">tr("rate")</expression>
+                                                    </text-data>
+                                                </cell>
+                                            </row>
+                                        </header>
+                                        <detail>
+                                            <row id="9856">
+                                                <list-property name="highlightRules">
+                                                    <structure>
+                                                        <property name="operator">eq</property>
+                                                        <expression name="testExpr" type="javascript">row.__rownum%2</expression>
+                                                        <simple-property-list name="value1">
+                                                            <value type="javascript">0</value>
+                                                        </simple-property-list>
+                                                        <property name="style">even</property>
+                                                    </structure>
+                                                    <structure>
+                                                        <property name="operator">eq</property>
+                                                        <expression name="testExpr" type="javascript">row.__rownum%2</expression>
+                                                        <simple-property-list name="value1">
+                                                            <value type="javascript">1</value>
+                                                        </simple-property-list>
+                                                        <property name="style">odd</property>
+                                                    </structure>
+                                                </list-property>
+                                                <cell id="9857">
+                                                    <property name="style">table-head</property>
+                                                    <data id="9858">
+                                                        <property name="resultSetColumn">category_name</property>
+                                                    </data>
+                                                </cell>
+                                                <cell id="9861">
+                                                    <property name="style">table-head</property>
+                                                    <data id="9862">
+                                                        <property name="resultSetColumn">domainname</property>
+                                                    </data>
+                                                </cell>
+                                                <cell id="9865">
+                                                    <property name="style">table-head</property>
+                                                    <data id="9866">
+                                                        <property name="resultSetColumn">targetgroup</property>
+                                                    </data>
+                                                </cell>
+                                                <cell id="9869">
+                                                    <property name="style">table-head</property>
+                                                    <data id="9870">
+                                                        <property name="resultSetColumn">value</property>
+                                                    </data>
+                                                </cell>
+                                                <cell id="9871">
+                                                    <property name="style">table-head</property>
+                                                    <data id="9872">
+                                                        <property name="resultSetColumn">rate</property>
+                                                    </data>
+                                                </cell>
+                                            </row>
+                                        </detail>
+                                        <footer>
+                                            <row id="9875">
+                                                <cell id="9876"/>
+                                                <cell id="9878"/>
+                                                <cell id="9880"/>
+                                                <cell id="9882"/>
+                                                <cell id="9883"/>
                                             </row>
                                         </footer>
                                     </table>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,34 +18,39 @@ public class AgnitasEmailValidatorWithWhitespace implements EmailValidator{
 	private static final String VALID_CHARS_REGEXP = "[^\\s" + SPECIAL_CHARS_REGEXP + "]";
 	private static final String QUOTED_USER_REGEXP = "(\"[^\"]*\")";
 	private static final String WORD_REGEXP = "((" + VALID_CHARS_REGEXP + "|')+( (" + VALID_CHARS_REGEXP + "|')+)*|" + QUOTED_USER_REGEXP + ")";
-	
+
 	private static final String DOMAIN_PART_REGEX = "\\p{Alnum}(?>[\\p{Alnum}-]*\\p{Alnum})*";
 	private static final String TOP_DOMAIN_PART_REGEX = "\\p{Alpha}{2,}";
 	private static final String DOMAIN_NAME_REGEX = "^(?:" + DOMAIN_PART_REGEX + "\\.)+" + "(" + TOP_DOMAIN_PART_REGEX + ")$";
-	
-	/** 
+
+	/**
 	 * Regular expression for parsing email addresses.
 	 */
-    private static final String EMAIL_REGEX = "^\\s*?([^@ ][^@]*)@(.+?)\\s*$";
-    
-    private static final String USER_REGEX = "^\\s*" + WORD_REGEXP + "(\\." + WORD_REGEXP + ")*$";
-    
-    /** Regular expression pattern for parsing email addresses. */
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
+	private static final String EMAIL_REGEX = "^\\s*?([^@ ][^@]*)@(.+?)\\s*$";
 
-    private static final Pattern USER_PATTERN = Pattern.compile(USER_REGEX);
-    
-    private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
-    
-    /** Singleton instance. */
-    private static final AgnitasEmailValidatorWithWhitespace INSTANCE = new AgnitasEmailValidatorWithWhitespace();
-    
-    public static AgnitasEmailValidatorWithWhitespace getInstance() {
-    	return INSTANCE;
-    }
-    
-    @Override
-    public boolean isValid(String emailAddress) {
+	private static final String USER_REGEX = "^\\s*" + WORD_REGEXP + "(\\." + WORD_REGEXP + ")*$";
+
+	/** Regular expression pattern for parsing email addresses. */
+	private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
+
+	private static final Pattern USER_PATTERN = Pattern.compile(USER_REGEX);
+
+	private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
+
+	/** Singleton instance. */
+	private static final AgnitasEmailValidatorWithWhitespace INSTANCE = new AgnitasEmailValidatorWithWhitespace();
+
+	public static AgnitasEmailValidatorWithWhitespace getInstance() {
+		return INSTANCE;
+	}
+
+	@Override
+	public boolean isValidUtf8Email(String emailAddress) {
+		return isValid(emailAddress);
+	}
+
+	@Override
+	public boolean isValid(String emailAddress) {
 		Matcher m = EMAIL_PATTERN.matcher(emailAddress);
 				
 		// Check, if email address matches outline structure
@@ -57,13 +62,8 @@ public class AgnitasEmailValidatorWithWhitespace implements EmailValidator{
 		if(!isValidUser(m.group(1))) {
 			return false;
 		}
-		
-		// Check if domain-part is valid
-		if(!isValidDomain(m.group(2))) {
-			return false;
-		}
-		
-		return true;
+
+		return isValidDomain(m.group(2));
 	}
     
     public boolean isValidUser(String user) {

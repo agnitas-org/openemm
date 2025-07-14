@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 
-import org.agnitas.util.Tuple;
+import com.agnitas.util.Tuple;
 
 import com.agnitas.userform.bean.UserForm;
 
@@ -28,12 +28,10 @@ public interface UserFormDao {
     /**
      * Saves or updates userForm.
      *
-     * @param form
-     *          The userForm that should be saved.
+     * @param form The userForm that should be saved.
      * @return Saved userForm id.
-     * @throws Exception
      */
-    int storeUserForm(UserForm form) throws Exception;
+    int storeUserForm(UserForm form);
     
 	int createUserForm(int companyId, UserForm userForm);
 	
@@ -91,7 +89,7 @@ public interface UserFormDao {
 
 	UserForm getUserForm(int formID, int companyID);
 
-	UserForm getUserFormByName(String name, int companyID) throws Exception;
+	UserForm getUserFormByName(String name, int companyID);
 
 	String getUserFormName(int formId, int companyId);
 

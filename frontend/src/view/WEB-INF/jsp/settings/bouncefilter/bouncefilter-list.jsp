@@ -5,7 +5,7 @@
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="bounceFilterListForm" type="com.agnitas.emm.core.bounce.form.BounceFilterListForm"--%>
-<%--@elvariable id="bounceFilterList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="bounceFilterList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 
 <mvc:form servletRelativeAction="/administration/bounce/list.action" data-form="resource" modelAttribute="bounceFilterListForm">
     <input type="hidden" name="page" value="${bounceFilterList.pageNumber}"/>

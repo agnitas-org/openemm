@@ -36,7 +36,7 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
     const numberOfWordsErrors = AGN.Lib.Validator.get('number').errors($numberOfWords, {min: 1, required: true});
     if (numberOfWordsErrors.length > 0) {
       isValid = false;
-      numberOfWordsErrors.forEach((error, index) => Form.showFieldError$($numberOfWords, error.msg));
+      numberOfWordsErrors.forEach(error => Form.showFieldError$($numberOfWords, error.msg));
     } else {
       Form.cleanFieldFeedback$($numberOfWords);
     }
@@ -81,17 +81,21 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
     const $textArea = $scope.find('.js-wysiwyg');
 
     if ($('#tab-content-wysiwyg').is(":visible") || $(`[id^='tab-grid-wysiwyg${tabId}']`).is(":visible")) {
-      var editor = CKEDITOR.instances[$textArea.attr('id')];
-      if (editor.status === 'ready') {
-        editor.setData(content)
+      if (window.Jodit) {
+        Jodit.instances[$textArea.attr('id')].value = content;
       } else {
-        editor.on("instanceReady", event => event.editor.setData(content));
+        const editor = CKEDITOR.instances[$textArea.attr('id')];
+        if (editor.status === 'ready') {
+          editor.setData(content)
+        } else {
+          editor.on("instanceReady", event => event.editor.setData(content));
+        }
       }
     }
     if ($('#contentEditor').is(":visible") || $(`[id^='tab-grid-html${tabId}']`).is(":visible")) {
       ace.edit(`${$textArea.attr('name')}Editor`).setValue(content);
     }
-  };
+  }
 
   function getSettingsFromUi($scope) {
     return {

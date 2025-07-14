@@ -1,11 +1,19 @@
-AGN.Lib.CoreInitializer.new('truncated-text-popover', ['table'],  function ($scope = $(document)) {
+AGN.Lib.CoreInitializer.new('truncated-text-popover', function ($scope = $(document)) {
 
   const Popover = AGN.Lib.Popover;
   const Helpers = AGN.Lib.Helpers
   
   document.fonts.ready.then(() => {
     $scope
-      .find('.text-truncate, table:not(.input-table) td')
+      .find(`
+      .text-truncate,
+      table:not(.input-table) td,
+      table:not(.input-table) th,
+      .ag-header-cell,
+      .select2-selection__rendered,
+      [data-truncated-text],
+      .dashboard-calendar__label--comment .text-truncate-lines
+      `)
       .each((i, el) => showPopoverIfTruncated(el))
   });
 
@@ -37,6 +45,11 @@ AGN.Lib.CoreInitializer.new('truncated-text-popover', ['table'],  function ($sco
     if ($el.is('.text-truncate-alt')) {
       return $el.is(':truncatedAlt') // see jquery-dom.js
     }
+
+    if ($el.is('.ag-header-cell')) {
+      $el = $el.find('.ag-header-cell-text');
+    }
+
     return $el.is(':truncated')
       || ($el.is('td') && Helpers.containsTruncatedElements(el)); // table mode
   }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,13 @@
 */
 
 package com.agnitas.emm.core.recipientsreport.web;
+
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -21,22 +28,23 @@ import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.WebStorage;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.beans.FileResponseBody;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -50,15 +58,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Set;
-
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 
 @Controller
 @RequestMapping("/recipientsreport")
@@ -95,7 +95,7 @@ public class RecipientsReportController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public String list(@RequestParam(required = false) boolean restoreSort, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams,
+    public String list(@RequestParam(required = false) Boolean restoreSort, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams,
                        Admin admin, Model model) {
         FormUtils.syncPaginationData(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm, restoreSort);
         FormUtils.syncSearchParams(searchParams, reportForm, true);
@@ -103,7 +103,7 @@ public class RecipientsReportController implements XssCheckAware {
         Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
         Date finishDate = reportForm.getFilterDateFinish().get(admin.getDateFormat());
 
-        PaginatedListImpl<RecipientsReport> reports = isUiRedesign(admin)
+        PaginatedListImpl<RecipientsReport> reports = admin.isRedesignedUiUsed()
                 ? recipientsReportService.deleteOldReportsAndGetReports(reportForm, admin)
                 : recipientsReportService.deleteOldReportsAndGetReports(admin,
                         reportForm.getPage(), reportForm.getNumberOfRows(),
@@ -113,7 +113,7 @@ public class RecipientsReportController implements XssCheckAware {
 
         model.addAttribute("reportsList", reports);
 
-        if (isUiRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("users", adminService.listAdminsByCompanyID(admin.getCompanyID()));
         }
 
@@ -122,10 +122,6 @@ public class RecipientsReportController implements XssCheckAware {
         writeUserActivityLog(admin, "Import/Export logs", "active tab - overview");
 
         return "recipient_reports";
-    }
-
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/search.action")
@@ -162,7 +158,7 @@ public class RecipientsReportController implements XssCheckAware {
     }
 
     @GetMapping("/{reportId:\\d+}/download.action")
-    public Object download(@PathVariable int reportId, Admin admin, Popups popups) throws Exception {
+    public Object download(@PathVariable int reportId, Admin admin, Popups popups) {
         DownloadRecipientReport file = recipientsReportService.getRecipientReportForDownload(reportId, admin);
         if (file == null) {
             popups.alert(ERROR_MSG);
@@ -176,7 +172,7 @@ public class RecipientsReportController implements XssCheckAware {
     }
 
     @GetMapping(value = "/bulk/download.action")
-    public ResponseEntity<StreamingResponseBody> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin) {
+    public ResponseEntity<FileSystemResource> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin) {
         File zip = recipientsReportService.getZipToDownload(bulkIds, admin);
         writeUserActivityLog(admin, "Import/Export logs download", String.format("downloaded %d log(s) as ZIP archive", bulkIds.size()));
 
@@ -185,7 +181,7 @@ public class RecipientsReportController implements XssCheckAware {
                 .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", downloadFileName))
                 .contentLength(zip.length())
                 .contentType(MediaType.parseMediaType(MediaType.APPLICATION_OCTET_STREAM_VALUE))
-                .body(new FileResponseBody(zip, true));
+                .body(new DeleteFileAfterSuccessReadResource(zip));
     }
 
     private void writeUserActivityLog(Admin admin, String action, String description) {

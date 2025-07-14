@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -52,17 +52,13 @@ public interface CodeGeneratorCallback {
 	// --------------------------------------------------------------------------------------------------------------------- Callback signaling end of code generation
 	/**
 	 * Called, when code generation is completed.
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void finished() throws CodeGeneratorException;
+	void finished();
 	
 	/**
 	 * Called, when code generation is completed and no target rule was defines.
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void finishedWithEmptyTargetRule() throws CodeGeneratorException;
+	void finishedWithEmptyTargetRule();
 
 	/**
 	 * Called, when code generation failed.
@@ -76,10 +72,8 @@ public interface CodeGeneratorCallback {
 	 * Called, after code generation for an arbitrary boolean node.
 	 * 
 	 * @param node arbitrary boolean node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void postOrderAbstractBooleanEqlNode(AbstractBooleanEqlNode node) throws CodeGeneratorException;
+	void postOrderAbstractBooleanEqlNode(AbstractBooleanEqlNode node);
 	
 	/**
 	 * Called, after code generation for a boolean NOT node
@@ -105,10 +99,8 @@ public interface CodeGeneratorCallback {
 	 * Called, after code generation for a node bridging between boolean and relational nodes
 	 * 
 	 * @param node node bridging between boolean and relational nodes
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void postOrderRelationalBooleanEqlNode(RelationalBooleanEqlNode node) throws CodeGeneratorException;
+	void postOrderRelationalBooleanEqlNode(RelationalBooleanEqlNode node);
 	
 	// --------------------------------------------------------------------------------------------------------------------- Callback for relational nodes
 
@@ -116,10 +108,8 @@ public interface CodeGeneratorCallback {
 	 * Called, after code generation for an arbitrary relational node.
 	 * 
 	 * @param node arbitrary relational node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void postOrderAbstractRelationalEqlNode(AbstractRelationalEqlNode node) throws CodeGeneratorException;
+	void postOrderAbstractRelationalEqlNode(AbstractRelationalEqlNode node);
 
 	/**
 	 * Called, after code generation for an binary operator relational node.
@@ -213,10 +203,8 @@ public interface CodeGeneratorCallback {
 	 * Called, after code generation for an arbitrary expressional node.
 	 * 
 	 * @param node arbitrary expressional node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void postOrderAbstractExpressionalEqlNode(AbstractExpressionalEqlNode node) throws CodeGeneratorException;
+	void postOrderAbstractExpressionalEqlNode(AbstractExpressionalEqlNode node);
 
 	/**
 	 * Called, after code generation for binary operator expressional node.
@@ -250,20 +238,16 @@ public interface CodeGeneratorCallback {
 	 * Called after code generation for arbitrary atom nodes.
 	 * 
 	 * @param node atom node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void postOrderAtomExpressionalEqlNode(AtomExpressionalEqlNode node) throws CodeGeneratorException;
+	void postOrderAtomExpressionalEqlNode(AtomExpressionalEqlNode node);
 
 	// --------------------------------------------------------------------------------------------------------------------- Callback for terminal atom nodes
 	/**
 	 * Called after code generation for a numeric constant atom nodes.
 	 * 
 	 * @param node numeric constant atom node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void terminalNumericConstantAtomEqlNode(NumericConstantAtomEqlNode node) throws CodeGeneratorException;
+	void terminalNumericConstantAtomEqlNode(NumericConstantAtomEqlNode node);
 
 	/**
 	 * Called after code generation for a profile field name atom nodes.
@@ -279,18 +263,14 @@ public interface CodeGeneratorCallback {
 	 * The value still contains the escape sequences.
 	 * 
 	 * @param node string constant atom node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException;
+	void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node);
 	
 	/**
 	 * Called after code generation for TODAY date atom nodes.
 	 * 
 	 * @param node string constant atom node
-	 * 
-	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void terminalTodayAtomEqlNode(AbstractAtomEqlNode node) throws CodeGeneratorException;
+	void terminalTodayAtomEqlNode(AbstractAtomEqlNode node);
 
 }

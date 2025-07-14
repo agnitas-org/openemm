@@ -374,7 +374,7 @@
             return;
         }
 
-        Confirm.createFromTemplate({}, 'warning-html-generation-modal').done(function () {
+        Confirm.from('warning-html-generation-modal').done(function () {
             processHtmlGeneration(self, editor);
         });
     }

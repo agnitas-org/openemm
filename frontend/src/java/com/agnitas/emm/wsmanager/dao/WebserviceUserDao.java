@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,7 +11,7 @@
 package com.agnitas.emm.wsmanager.dao;
 
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
 import com.agnitas.emm.wsmanager.common.WebserviceUserCredential;
@@ -41,9 +41,8 @@ public interface WebserviceUserDao {
 	 * @return {@link WebserviceUser} for given username
 	 * 
 	 * @throws WebserviceUserException on errors concerning the webservice user itself (like unknown name)
-	 * @throws WebserviceUserDaoException on any errors accessing user data
 	 */
-	WebserviceUser getWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserDaoException;
+	WebserviceUser getWebserviceUser(final String username) throws WebserviceUserException;
 
 	/**
 	 * Updates the given webservice user. This method does neither update the password hash nor the username!
@@ -51,9 +50,8 @@ public interface WebserviceUserDao {
 	 * @param user new webservice user data
 	 * 
 	 * @throws WebserviceUserDaoException on any errors accessing user data
-	 * @throws WebserviceUserException on errors concerning the webservice user itself (like unknown name)
 	 */
-	void updateUser(final WebserviceUser user) throws WebserviceUserDaoException, WebserviceUserException;
+	void updateUser(final WebserviceUser user) throws WebserviceUserDaoException;
 
 	/**
 	 * Updates the password hash of the given webservice user.
@@ -62,9 +60,8 @@ public interface WebserviceUserDao {
 	 * @param passwordHash new password hash
 	 * 
 	 * @throws WebserviceUserDaoException on any errors accessing user data
-	 * @throws WebserviceUserException on errors concerning the webservice user itself (like unknown name)
 	 */
-	void updatePasswordHash(final String username, final String passwordHash) throws WebserviceUserException, WebserviceUserDaoException;
+	void updatePasswordHash(String username, String passwordHash) throws WebserviceUserDaoException;
 
 	/**
 	 * Creates a new webservice user with given data.

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,31 @@
 */
 
 package com.agnitas.emm.core.components.service.impl;
+
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+import javax.imageio.ImageIO;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
@@ -20,15 +45,17 @@ import com.agnitas.emm.core.components.dto.FormComponentDto;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
 import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+import com.agnitas.emm.core.userform.util.WebFormUtils;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ImageDimensionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.factory.MailingComponentFactory;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.factory.MailingComponentFactory;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.MailingStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
@@ -36,40 +63,18 @@ import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.validation.ComponentModelValidator;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.FileUtils;
-import org.agnitas.util.ZipUtilities;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.FileUtils;
+import com.agnitas.util.ZipUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 public class ComponentServiceImpl implements ComponentService {
 	
@@ -85,6 +90,7 @@ public class ComponentServiceImpl implements ComponentService {
 	private MailingComponentFactory mailingComponentFactory;
 	private FormComponentDao formComponentDao;
 	private MailingDao mailingDao;
+	private ImageDimensionService imageDimensionService;
 
 	@Override
 	@Transactional
@@ -107,7 +113,7 @@ public class ComponentServiceImpl implements ComponentService {
 		return component;
 	}
 
-	protected int addComponentImpl(ComponentModel model) throws Exception {
+	private int addComponentImpl(ComponentModel model) {
 		MailingComponent component = mailingComponentFactory.newMailingComponent();
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
@@ -128,7 +134,7 @@ public class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	public void updateComponent(ComponentModel model) throws Exception {
+	public void updateComponent(ComponentModel model) {
 		modelValidator.assertIsValidToUpdateGroup(model);
 		MailingComponent component = mailingComponentDao.getMailingComponent(model.getComponentId(), model.getCompanyId());
 		if (component == null || component.getType() != model.getComponentType()) {
@@ -166,7 +172,7 @@ public class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	public int addComponent(ComponentModel model) throws Exception {
+	public int addComponent(ComponentModel model) {
 		modelValidator.assertIsValidToAdd(model);
 		int res = addComponentImpl(model);
         mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
@@ -183,7 +189,7 @@ public class ComponentServiceImpl implements ComponentService {
 
 	@Override
 	@Transactional
-	public void updateMailingContent(ComponentModel model) throws Exception {
+	public void updateMailingContent(ComponentModel model) {
 		modelValidator.assertIsValidToUpdateMailingContentGroup(model);
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
@@ -197,13 +203,13 @@ public class ComponentServiceImpl implements ComponentService {
 		// Change mime type if and only if mime type is set in model. Otherwise, take mime type of component.
 		final String mimeType = model.getMimeType() != null ? model.getMimeType() : component.getMimeType();
 		
-		component.setEmmBlock(new String(model.getData(), "UTF-8"), mimeType);
+		component.setEmmBlock(new String(model.getData(), StandardCharsets.UTF_8), mimeType);
 
 		mailingComponentDao.saveMailingComponent(component);
 	}
 
 	@Override
-	public int addMailingComponent(MailingComponent mailingComponent) throws Exception {
+	public int addMailingComponent(MailingComponent mailingComponent) {
 		if (!mailingDao.exist(mailingComponent.getMailingID(), mailingComponent.getCompanyID())) {
 			throw new MailingNotExistException(mailingComponent.getCompanyID(), mailingComponent.getMailingID());
 		}
@@ -273,15 +279,17 @@ public class ComponentServiceImpl implements ComponentService {
 	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions) {
 		if (formId == 0) {
 			logger.error("Cannot save or change globally used images (formID = 0)");
-			return new SimpleServiceResult(false, Message.of("Error"));
+			return new SimpleServiceResult(false, Message.of(ERROR_MSG));
 		}
 
 		int companyId = admin.getCompanyID();
+		int licenseID = configService.getLicenseID();
 
 		try {
 			List<String> erroneousFiles = new ArrayList<>();
 			List<String> duplicateNames = new ArrayList<>();
 			List<String> actionDescriptions = new ArrayList<>();
+
 			for (FormComponent imageComponent : components) {
 				String name = imageComponent.getName();
 				if (imageComponent.isOverwriteExisting()) {
@@ -295,7 +303,22 @@ public class ComponentServiceImpl implements ComponentService {
 				boolean success = formComponentDao.saveFormComponent(companyId, formId, imageComponent, thumbnail);
 
 				if (success) {
-					actionDescriptions.add(String.format("Form Component ID: %d, Compnent Name: %s", imageComponent.getId(), name));
+					actionDescriptions.add(String.format("Form Component ID: %d, Component Name: %s", imageComponent.getId(), name));
+
+					if (imageComponent.getHeight() <= 0 || imageComponent.getWidth() <= 0) {
+						CompletableFuture.runAsync(() -> {
+							final String imageUrl = WebFormUtils.getImageSrcNoCached(
+									admin.getCompany().getRdirDomain(),
+									licenseID,
+									admin.getCompanyID(),
+									formId,
+									imageComponent.getName()
+							);
+
+							imageDimensionService.detectDimension(imageUrl)
+									.ifPresent(d -> formComponentDao.updateDimension((int) d.getWidth(), (int) d.getHeight(), imageComponent.getId()));
+						});
+					}
 				} else {
 					erroneousFiles.add(name);
 				}
@@ -366,7 +389,6 @@ public class ComponentServiceImpl implements ComponentService {
 	}
 
 	@Override
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
 	public SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting) {
 		try {
 			ServiceResult<List<FormUploadComponentDto>> readResult = readComponentsFromZipFile(zipFile);
@@ -474,37 +496,34 @@ public class ComponentServiceImpl implements ComponentService {
 		return thumbnail;
 	}
 
-	@Required
 	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
 
-	@Required
 	public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
 		this.mailingComponentDao = mailingComponentDao;
 	}
 
-	@Required
 	public void setModelValidator(final ComponentModelValidator modelValidator) {
 		this.modelValidator = modelValidator;
 	}
 
-	@Required
 	public void setMailingComponentFactory(MailingComponentFactory mailingComponentFactory) {
 		this.mailingComponentFactory = mailingComponentFactory;
 	}
 
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
-	@Required
+	public void setImageDimensionService(ImageDimensionService imageDimensionService) {
+		this.imageDimensionService = imageDimensionService;
+	}
+
 	public void setFormComponentDao(FormComponentDao formComponentDao) {
 		this.formComponentDao = formComponentDao;
 	}

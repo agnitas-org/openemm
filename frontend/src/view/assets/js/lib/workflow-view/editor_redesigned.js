@@ -664,6 +664,14 @@
                 self.newSnippetFromOwnWorkflow(params.workflowId, params.copyContent, position);
               });
               break;
+            case Def.NODE_TYPE_SPLIT:
+              Dialogs.createSplit().done(splitType => {
+                Snippets.createSplitSample(
+                  splitType,
+                  this.gridBackgroundShown,
+                  (nodes, connections) => this.newSnippet(nodes, connections, position))
+              });
+              break;
           }
         } else {
           var node = Node.create(type);
@@ -727,6 +735,7 @@
           nodes.forEach(function (node, nodeIndex) {
             node.setId(allocatedIds[nodeIndex]);
             self.add(node, animation);
+            self.updateNodeTitle(node, true);
           });
 
           connections.forEach(function (connection) {
@@ -1723,7 +1732,8 @@
 
     connect(source, target, isUserDriven) {
       if (this.isConnectionPossible(source, target)) {
-        if (!this.isConnectionAllowed(source, target)) {
+        if (this.#isNotAllowedSplitConnection(source, target, isUserDriven)
+            || !this.isConnectionAllowed(source, target)) {
           return false;
         }
 
@@ -1745,6 +1755,20 @@
       } else {
         return null;
       }
+    }
+
+    #isNotAllowedSplitConnection(source, target, isUserDriven) {
+      return this.#isUserSplitConnection(source, target, isUserDriven)
+          || this.#isParameterToSplitParameterConnection(source, target);
+    }
+
+    #isParameterToSplitParameterConnection(source, target) {
+      return (source.isParameterNode && this.isSplitParameterNode(target))
+          || (target.isParameterNode && this.isSplitParameterNode(source));
+    }
+
+    #isUserSplitConnection(source, target, isUserDriven) {
+      return isUserDriven && source.isSplitNode && target.isParameterNode;
     }
 
     deselectAll() {
@@ -1800,33 +1824,36 @@
       this.deleteNodes(this.getSelectedNodes());
     }
 
-    deleteNode(nodeToDelete) {
-      if (nodeToDelete instanceof Node) {
-        //nothing do
-      } else {
+    deleteNode(nodeToDelete, force) {
+      if (!(nodeToDelete instanceof Node)) {
         nodeToDelete = Node.get(nodeToDelete);
       }
 
-      // Make sure we not remove what's already removed.
-      if (nodeToDelete.isAppended()) {
-        // Some connected nodes must be deleted together.
-        var nodesToDelete = [nodeToDelete];
+      if (nodeToDelete.isAppended()) { // Make sure we not remove what's already removed.
+        const nodesToDelete = [nodeToDelete]; // Some connected nodes must be deleted together.
 
-        // Pair import -> deadline cannot be divorced.
         switch (nodeToDelete.getType()) {
-          case Def.NODE_TYPE_IMPORT:
+          case Def.NODE_TYPE_PARAMETER:
+            if (!force && this.isSplitParameterNode(nodeToDelete)) {
+              Messages.warn('split.deleteWorkflowParameterIconWarn');
+              return;
+            }
+            break;
+          case Def.NODE_TYPE_SPLIT: // Pair split -> parameter cannot be divorced.
+            nodesToDelete.push(...(this.getSplitParameterNodes(nodeToDelete)));
+            break;
+          case Def.NODE_TYPE_IMPORT: // Pair import -> deadline cannot be divorced.
             this.getNodeOutgoingConnections(nodeToDelete)
               .forEach(function (connection) {
-                if (Def.NODE_TYPE_DEADLINE == connection.target.getType()) {
+                if (Def.NODE_TYPE_DEADLINE === connection.target.getType()) {
                   nodesToDelete.push(connection.target);
                 }
               });
             break;
-
           case Def.NODE_TYPE_DEADLINE:
             this.getNodeIncomingConnections(nodeToDelete)
               .forEach(function (connection) {
-                if (Def.NODE_TYPE_IMPORT == connection.source.getType()) {
+                if (Def.NODE_TYPE_IMPORT === connection.source.getType()) {
                   nodesToDelete.push(connection.source);
                 }
               });
@@ -1846,6 +1873,17 @@
         this.updateFootnotes();
         this.updateMinimap();
       }
+    }
+
+    getSplitParameterNodes(splitNode) {
+      return this.getNodeOutgoingConnections(splitNode)
+        .filter(connection => connection.target.isParameterNode)
+        .map(connection => connection.target);
+    }
+
+    isSplitParameterNode(node) {
+      return this.getNodeIncomingConnections(node)
+        .some(connection => connection.source.isSplitNode);
     }
 
     deleteAllNodes() {
@@ -1893,7 +1931,16 @@
         target = Node.get(connection.target);
       }
 
-      return !(Def.NODE_TYPE_IMPORT == source.getType() && Def.NODE_TYPE_DEADLINE == target.getType());
+      return !this.#isMandatoryImportConnection(source, target)
+          && !this.#isMandatorySplitConnection(source, target);
+    }
+
+    #isMandatorySplitConnection(source, target) {
+      return source.isSplitNode && target.isParameterNode;
+    }
+
+    #isMandatoryImportConnection(source, target) {
+      return Def.NODE_TYPE_IMPORT === source.getType() && Def.NODE_TYPE_DEADLINE === target.getType();
     }
 
     deleteConnection(connection) {

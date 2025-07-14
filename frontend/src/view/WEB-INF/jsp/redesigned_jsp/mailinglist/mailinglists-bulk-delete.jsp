@@ -7,7 +7,7 @@
 <%--@elvariable id="items" type="java.lang.Object"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form servletRelativeAction="/mailinglist/bulkDelete.action" cssClass="modal-content" modelAttribute="bulkActionForm">
             <c:forEach var="mailingListId" items="${bulkDeleteForm.bulkIds}">
                 <input type="hidden" name="bulkIds" value="${mailingListId}"/>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,15 +13,15 @@ package com.agnitas.emm.core.components.service.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.company.service.ComCompanyService;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
 import com.agnitas.emm.core.components.service.MailingRecipientsService;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.dao.MailingRecipientsDao;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.web.MailingRecipientsAdditionalColumn;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.util.SqlPreparedStatementManager;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,10 +41,10 @@ public class MailingRecipientsServiceImpl implements MailingRecipientsService {
 
     private final MailingDao mailingDao;
     private final MailingRecipientsDao mailingRecipientsDao;
-    private final ComCompanyService companyService;
+    private final CompanyService companyService;
 
     @Autowired
-    public MailingRecipientsServiceImpl(MailingDao mailingDao, MailingRecipientsDao mailingRecipientsDao, ComCompanyService companyService) {
+    public MailingRecipientsServiceImpl(MailingDao mailingDao, MailingRecipientsDao mailingRecipientsDao, CompanyService companyService) {
         this.mailingDao = mailingDao;
         this.mailingRecipientsDao = mailingRecipientsDao;
         this.companyService = companyService;
@@ -84,7 +84,7 @@ public class MailingRecipientsServiceImpl implements MailingRecipientsService {
     }
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, Map<String, ProfileField> profileFields, Admin admin) throws Exception {
+    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, Map<String, ProfileField> profileFields, Admin admin) {
         Set<String> selectedRecipientsFields = filterSelectedRecipientsFields(filter);
         int maxRecipients = companyService.getCompany(admin.getCompanyID()).getMaxRecipients();
 

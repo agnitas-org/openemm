@@ -33,28 +33,29 @@ It is also possible to sync several elements at once - simply chain the selector
 (() => {
 
   const FormBuilder = AGN.Lib.FormBuilder.FormBuilder;
+  const Editor = AGN.Lib.Editor;
 
-  AGN.Lib.Action.new({'click change': '[data-sync-from]'}, function() {
-    var sources = this.el.data('sync-from').split(/,\s?/),
-        targets = this.el.data('sync-to').split(/,\s?/);
+  AGN.Lib.Action.new({'click change': '[data-sync-from]'}, function () {
+    const sources = this.el.data('sync-from').split(/,\s?/);
+    const targets = this.el.data('sync-to').split(/,\s?/);
 
-    _.each(sources, function(source, index) {
-      var $source = $(source),
-          $target = $(targets[index]),
-          val = $source.val(),
-          id = $target.attr('id'),
-          editor = $target.data('_editor'),
-        select = $target.data('select2');
+    _.each(sources, (source, index) => {
+      const $source = $(source);
+      const $target = $(targets[index]);
+      const val = $source.val();
+      const id = $target.attr('id');
 
-      if (window.CKEDITOR && CKEDITOR.instances[id]) {
+      if (window.Jodit?.instances[id]) {
+        Jodit.instances[id].value = val;
+      } else if (window.CKEDITOR && CKEDITOR.instances[id]) {
         CKEDITOR.instances[id].setData(val);
-      } else if (editor) {
-        editor.val(val);
-      } else if(select) {
+      } else if (Editor.exists($target)) {
+        Editor.get($target).val(val);
+      } else if ($target.data('select2')) {
         $target.select2('val', val);
-      } else if(FormBuilder.isCreated('#' + id)) {
-        FormBuilder.get('#' + id).setJson(FormBuilder.get(source).getJson());
-      } else if($source?.prop('type')?.trim() === 'checkbox') {
+      } else if (FormBuilder.isCreated(`#${id}`)) {
+        FormBuilder.get(`#${id}`).setJson(FormBuilder.get(source).getJson());
+      } else if ($source?.prop('type')?.trim() === 'checkbox') {
         $target.val($source.prop('checked'));
       } else {
         $target.val(val);

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,16 +10,37 @@
 
 package com.agnitas.emm.core.admin.service.impl;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.AdminGroup;
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.impl.AdminEntryImpl;
 import com.agnitas.beans.impl.AdminImpl;
 import com.agnitas.beans.impl.AdminPreferencesImpl;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.dao.AdminPreferencesDao;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.Permission;
@@ -36,59 +57,31 @@ import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.permission.service.PermissionService;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
-import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
-import com.agnitas.emm.core.supervisor.dao.GrantedSupervisorLoginDao;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.impl.AdminEntryImpl;
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.Tuple;
+import com.agnitas.util.preferences.PreferenceItem;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.Tuple;
-import org.agnitas.util.preferences.PreferenceItem;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class AdminServiceImpl implements AdminService {
 	
 	private static final Logger logger = LogManager.getLogger(AdminServiceImpl.class);
 
-	// Use ComSupervisorService instead
-	@Deprecated
-	protected ComSupervisorDao supervisorDao;
 	protected AdminDao adminDao;
-	protected ComCompanyDao companyDao;
+	protected CompanyDao companyDao;
 	protected AdminPreferencesDao adminPreferencesDao;
 	protected AdminGroupDao adminGroupDao;
-	protected GrantedSupervisorLoginDao grantedSupervisorLoginDao;
 	protected ConfigService configService;
 	private PermissionFilter permissionFilter;
 	protected EmmLayoutBaseDao emmLayoutBaseDao;
@@ -96,62 +89,38 @@ public class AdminServiceImpl implements AdminService {
 	private AdminNotifier adminNotifier;
 	private BulkActionValidationService<Integer, Admin> bulkActionValidationService;
 
-	@Required
 	public void setAdminDao(AdminDao adminDao) {
 		this.adminDao = adminDao;
 	}
-
-	@Required
-	public void setSupervisorDao(ComSupervisorDao dao) {
-		this.supervisorDao = dao;
-	}
 	
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
+	public void setCompanyDao(CompanyDao companyDao) {
 		this.companyDao = companyDao;
 	}
 
-	@Required
 	public void setAdminPreferencesDao(AdminPreferencesDao adminPreferencesDao) {
 		this.adminPreferencesDao = adminPreferencesDao;
 	}
 
-	@Required
 	public void setBulkActionValidationService(BulkActionValidationService<Integer, Admin> bulkActionValidationService) {
 		this.bulkActionValidationService = bulkActionValidationService;
 	}
 
-	@Required
 	public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
 		this.adminGroupDao = adminGroupDao;
 	}
 	
-	@Required
 	public void setAdminNotifier(AdminNotifier notifier) {
 		this.adminNotifier = Objects.requireNonNull(notifier, "AdminNotifier is null");
 	}
 	
-	/**
-	 * Sets DAO for handling granted supervisor logins.
-	 * 
-	 * @param dao DAO for handling granted supervisor logins
-	 */
-	@Required
-	public final void setGrantedSupervisorLoginDao(final GrantedSupervisorLoginDao dao) {
-		this.grantedSupervisorLoginDao = Objects.requireNonNull(dao, "DAO for granted supervisor logins cannot be null");
-	}
-	
-	@Required
 	public void setPermissionFilter(PermissionFilter permissionFilter) {
 		this.permissionFilter = Objects.requireNonNull(permissionFilter, "Permission filter is null");
 	}
 
-	@Required
 	public void setEmmLayoutBaseDao(EmmLayoutBaseDao emmLayoutBaseDao) {
 		this.emmLayoutBaseDao = emmLayoutBaseDao;
 	}
 	
-	@Required
 	public void setPermissionService(PermissionService permissionService) {
 		this.permissionService = permissionService;
 	}
@@ -191,16 +160,6 @@ public class AdminServiceImpl implements AdminService {
 			adminsMap.put(String.valueOf(admin.getId()), admin.getUsername());
 		}
 		return adminsMap;
-	}
-
-	@Override
-	public Supervisor getSupervisor(String supervisorName) {
-		return supervisorDao.getSupervisor(supervisorName);
-	}
-
-	@Override
-	public List<Tuple<Integer, String>> getAdminsUsernames(int companyID) {
-		return adminDao.getAdminsUsernames(companyID);
 	}
 
 	@Override
@@ -261,11 +220,6 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public AdminEntry findByEmail(String email, int companyId) {
-		return adminDao.findByEmail(email, companyId);
-	}
-
-	@Override
 	public AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, Admin editorAdmin) {
 		int savingAdminID = form.getAdminID();
 		int savingCompanyID = form.getCompanyID();
@@ -274,7 +228,7 @@ public class AdminServiceImpl implements AdminService {
 		if (savingCompanyID != editorCompanyID) {
 			List<Company> allowedCompanies = companyDao.getCreatedCompanies(editorCompanyID);
 
-			boolean validCompany = allowedCompanies.stream().anyMatch(comCompany -> comCompany.getId() == savingCompanyID);
+			boolean validCompany = allowedCompanies.stream().anyMatch(company -> company.getId() == savingCompanyID);
 
 			if (!validCompany) {
 				return AdminSavingResult.error(new Message("error.permissionDenied"));
@@ -457,11 +411,6 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public String getAdminName(int adminID, int companyID){
-		return adminDao.getAdminName(adminID, companyID);
-	}
-
-	@Override
 	public boolean adminExists(String username){
 		return adminDao.adminExists(username) || adminDao.checkBlacklistedAdminNames(username);
 	}
@@ -546,6 +495,11 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
+	public AdminEntry findByEmail(String email, int companyId) {
+		return adminDao.findByEmail(email, companyId);
+	}
+
+	@Override
 	public ServiceResult<List<Admin>> getAllowedForDeletion(Set<Integer> ids, int companyID) {
 		return bulkActionValidationService.checkAllowedForDeletion(ids, id -> isPossibleToDeleteAdmin(id, companyID));
 	}
@@ -555,7 +509,7 @@ public class AdminServiceImpl implements AdminService {
 		return getAllowedForDeletion(ids, companyId).getResult()
 				.stream()
 				.filter(a -> deleteAdmin(a.getAdminID(), a.getCompanyID()))
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override
@@ -593,7 +547,6 @@ public class AdminServiceImpl implements AdminService {
 		return !(StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0));
 	}
 	
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
 	}
@@ -656,13 +609,8 @@ public class AdminServiceImpl implements AdminService {
 		admin.setPasswordForStorage(password);
 		admin.setLastPasswordChange(DateUtils.round(new Date(), Calendar.SECOND));
 
-		try {
-			adminDao.save(admin);
-			
-			this.adminNotifier.notifyAdminAboutChangedPassword(admin);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		adminDao.save(admin);
+		this.adminNotifier.notifyAdminAboutChangedPassword(admin);
 
 		return true;
 	}
@@ -700,14 +648,16 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<EmmLayoutBase> getEmmLayoutsBase(final int companyID) {
-		return emmLayoutBaseDao.getEmmLayoutsBase(companyID);
+	public List<EmmLayoutBase> getEmmLayoutsBase(Admin admin) {
+		return emmLayoutBaseDao.getEmmLayoutsBase(admin.getCompanyID()).stream()
+				.sorted(Comparator.comparingInt(emmLayoutBase -> emmLayoutBase.getThemeType().getCode()))
+				.toList();
 	}
 
 	@Override
 	public boolean isDarkmodeEnabled(final Admin admin) {
 		final EmmLayoutBase layout = emmLayoutBaseDao.getEmmLayoutBase(admin.getCompanyID(), admin.getLayoutBaseID());
-		return layout.getThemeType() == EmmLayoutBase.ThemeType.DARK_MODE;
+		return layout.getThemeType() == EmmLayoutBase.ThemeType.DARK || layout.getThemeType() == EmmLayoutBase.ThemeType.DARK_CONTRAST;
 	}
 
 	@Override
@@ -726,7 +676,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public void save(Admin admin) throws Exception {
+	public void save(Admin admin) {
 		final boolean passwordChanged = admin.getAdminID() != 0 && admin.getPasswordForStorage() != null;
 		
 		adminDao.save(admin);
@@ -767,6 +717,9 @@ public class AdminServiceImpl implements AdminService {
 		target.setCompanyName(sourceForm.getCompanyName());
 		target.setEmail(sourceForm.getEmail());
 		target.setLayoutBaseID(sourceForm.getLayoutBaseId());
+		if (editorAdmin.isRedesignedUiUsed()) {
+			target.setLayoutType(sourceForm.getUiLayoutType());
+		}
 		target.setGender(sourceForm.getGender());
 		target.setTitle(sourceForm.getTitle());
 		target.setAdminPhone(sourceForm.getAdminPhone());

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,20 +10,20 @@
 
 package com.agnitas.emm.core.usergroup.service;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.impl.PaginatedListImpl;
-
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.impl.PaginatedListImpl;
 
 public interface UserGroupService {
 
@@ -33,7 +33,7 @@ public interface UserGroupService {
     
     UserGroupDto getUserGroup(Admin admin, int userGroupId);
     
-    int saveUserGroup(Admin admin, UserGroupDto userGroupDto) throws Exception;
+    int saveUserGroup(Admin admin, UserGroupDto userGroupDto);
     
     boolean isShortnameUnique(String shortname, int userGroupId, int companyId);
     
@@ -53,9 +53,7 @@ public interface UserGroupService {
 
 	AdminGroup getAdminGroup(int userGroupId, int companyID);
 
-    int copyUserGroup(int id, Admin admin) throws Exception;
-
-    List<String> groupsToNames(List<UserGroupDto> groups);
+    int copyUserGroup(int id, Admin admin);
 
     ServiceResult<List<UserGroupDto>> getAllowedGroupsForDeletion(Set<Integer> ids, Admin admin);
 

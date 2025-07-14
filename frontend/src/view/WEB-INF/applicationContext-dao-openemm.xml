@@ -60,10 +60,6 @@
 		<property name="mailingParameterDao" ref="MailingParameterDao" />
     </bean>
 
-    <bean id="SupervisorDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultSupervisorDaoImpl"/>
-
-	<bean id="GrantedSupervisorLoginDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultGrantedSupervisorLoginDaoImpl"/>
-		
 <!-- ============================================================================================================================== Admin -->
 	<bean id="AdminDao" class="com.agnitas.dao.impl.AdminDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -77,7 +73,7 @@
 	</bean>
 	
 	<!-- ============================================================================================================================== Companies -->
-	<bean id="CompanyDao" class="com.agnitas.dao.impl.ComCompanyDaoImpl">
+	<bean id="CompanyDao" class="com.agnitas.dao.impl.CompanyDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -91,19 +87,19 @@
 	</bean>
 	
 <!-- ============================================================================================================================== Mailinglists -->
-	<bean id="MailinglistDao" class="org.agnitas.dao.impl.MailinglistDaoImpl">
+	<bean id="MailinglistDao" class="com.agnitas.emm.core.mailinglist.dao.impl.MailinglistDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="targetDao" ref="TargetDao" />
 	</bean>
 	
-	<bean id="MailinglistApprovalDao" class="org.agnitas.dao.impl.MailinglistApprovalDaoImpl">
+	<bean id="MailinglistApprovalDao" class="com.agnitas.emm.core.mailinglist.dao.impl.MailinglistApprovalDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 	
 <!-- ============================================================================================================================== Mediatypes -->
-	<bean id="MediatypesDao" class="org.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl">
+	<bean id="MediatypesDao" class="com.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="mediatypeFactory" ref="MediatypeFactory" />
@@ -111,7 +107,7 @@
 	</bean>
 	
 <!-- ============================================================================================================================== Recipients -->
-	<bean id="RecipientDao" class="com.agnitas.dao.impl.ComRecipientDaoImpl">
+	<bean id="RecipientDao" class="com.agnitas.dao.impl.RecipientDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -123,8 +119,15 @@
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
 
-	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.ComBindingEntryDaoImpl">
+	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.BindingEntryDaoImpl">
 		<constructor-arg ref="RecipientDao" />
+		<property name="onBindingChangedHandlers">
+			<list>
+				<bean class="com.agnitas.emm.core.binding.service.event.BindingChangedWebhookHandler">
+					<property name="webhookMessageEnqueueService" ref="WebhookMessageEnqueueService" />
+				</bean>
+			</list>
+		</property>
 
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />

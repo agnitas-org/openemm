@@ -2,25 +2,30 @@ $gray-100: #F5F5F5;
 $gray-400: #C0C0C0;
 $gray-600: #6F6F6F;
 $gray-700: #4B4B4B;
-$dark: $gray-700; // keep this used in other bootstrap components
+$dark:     $gray-700; // keep this used in other bootstrap components
 
-$red: #A91B1B;
+$red:    #A91B1B;
 $yellow: #FFC700;
-$green: #69A129;
-$blue: #0071B9;
-$light-blue: #009BFF; // not bootstrap color
+$green:  #69A129;
+$blue:   #0071B9;
 
-$primary: $blue;
-$danger: $red;
-$warning: $yellow;
-$success: $green;
-$secondary: $gray-400;
-$info: $light-blue;
+$primary:   $blue;
+$danger:    $red;
+$warning:   $yellow;
+$success:   $green;
+$secondary: $gray-700;
+$info:      #009BFF;
+
+$body-color:      black;
+$body-color-dark: white;
+$body-bg:         white;
+$body-bg-dark:    #282D32;
 
 $enable-cssgrid: true;
 $border-radius: 10px;
 $border-radius-sm: 5px;
 $border-color: $gray-400;
+$border-color-dark: $border-color;
 $grid-gutter-width: 20px;
 
 $spacer: 15px;
@@ -36,9 +41,10 @@ $spacers: (
 
 $line-height-base: 1.312;
 
-$font-size-sm: 0.857rem; // 12px
-$font-size-base: 1rem; // 14px
-$font-size-lg: 1.286rem; // 18px
+$font-size-x-sm: 0.714rem; // 10px
+$font-size-sm:   0.857rem; // 12px
+$font-size-base: 1rem;     // 14px
+$font-size-lg:   1.286rem; // 18px
 
 $h1-font-size: $font-size-lg;
 $h2-font-size: 1.143rem; // 16px
@@ -47,78 +53,97 @@ $h4-font-size: $font-size-sm;
 
 $font-family-monospace: monospace, monospace;
 
-$input-color: $dark;
-$input-placeholder-color: $gray-400;
-$input-font-size: $font-size-base;
-$input-padding-y: 5px;
-$input-padding-x: 9px;
+$input-color:                var(--bs-body-color);
+$input-font-size:            $font-size-base;
+$input-padding-y:            5px;
+$input-padding-x:            9px;
 $input-btn-focus-box-shadow: none;
-$form-label-margin-bottom: 5px;
-$form-label-font-weight: 600;
-$form-label-color: $dark;
+$input-focus-border-color:   var(--input-focus-border-color);
+$input-placeholder-color:    var(--input-placeholder-color);
+$form-label-margin-bottom:   5px;
+$form-label-font-weight:     600;
+$form-label-color:           var(--label-color);
 
-$form-check-input-width:          1.0714em;
-$form-check-input-border:         1px solid $dark;
-$form-check-input-border-radius:  $border-radius-sm;
-$form-check-input-focus-border:   $form-check-input-border;
-$form-check-input-disabled-opacity: 1;
+$form-check-input-bg:                     var(--slider-bg);
+$form-check-input-checked-bg-color:       var(--checkbox-checked-bg);
+$form-check-input-indeterminate-bg-color: $form-check-input-checked-bg-color;
+$form-check-input-width:                  1.0714em;
+$form-check-input-border:                 1px solid $dark;
+$form-check-input-border-radius:          $border-radius-sm;
+$form-check-input-focus-border:           $form-check-input-border;
+$form-check-input-focus-box-shadow:       none;
+$form-check-input-disabled-opacity:       1;
+$form-check-margin-bottom:                0;
+
+$form-switch-checked-color: var(--slider-checked-bg);
 $form-switch-padding-start: 0;
-$form-check-margin-bottom: 0;
 
-$navbar-light-color: $gray-600;
-$navbar-padding-x:                  0;
-$navbar-padding-y:                  0;
-$navbar-toggler-padding-y:          4px;
-$navbar-toggler-padding-x:          4px;
-$navbar-toggler-font-size:          $font-size-base;
-$navbar-toggler-border-radius:      5px;
-$navbar-toggler-focus-width:        1px;
-$navbar-light-toggler-icon-bg:      url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='#{$navbar-light-color}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='4' d='M4 7h22M4 15h22M4 23h22'/></svg>");
+$navbar-light-color:           $gray-600;
+$navbar-padding-x:             0;
+$navbar-padding-y:             0;
+$navbar-toggler-padding-y:     4px;
+$navbar-toggler-padding-x:     4px;
+$navbar-toggler-font-size:     $font-size-base;
+$navbar-toggler-border-radius: 5px;
+$navbar-toggler-focus-width:   1px;
+$navbar-light-toggler-icon-bg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke='#{$navbar-light-color}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='4' d='M4 7h22M4 15h22M4 23h22'/></svg>");
 
 $progress-height: 30px;
-$progress-bg: var(--main-bg-color);
+$progress-bg: var(--bs-body-bg);
 $progress-font-size: $font-size-base;
 
-$btn-padding-y-lg: 5px;
-$btn-padding-x-lg: 19px;
-$btn-font-size-lg: $font-size-base;
-$btn-close-bg: none;
-$btn-padding-y: 5px;
-$btn-padding-x: 19px;
-$btn-padding-y-sm: 4px;
-$btn-padding-x-sm: 4px;
+$dropdown-link-hover-bg:       $blue;
+$dropdown-link-hover-color:    white;
+$dropdown-link-disabled-color: var(--dropdown-disabled-item-color);
+$dropdown-border-color:        $gray-400;
+
+$btn-padding-y-lg:     5px;
+$btn-padding-x-lg:     19px;
+$btn-font-size-lg:     $font-size-base;
+$btn-padding-y:        5px;
+$btn-padding-x:        19px;
+$btn-padding-y-sm:     4px;
+$btn-padding-x-sm:     4px;
 $btn-border-radius-sm: $border-radius;
-$btn-line-height: unset;
-$btn-font-weight: 600;
-$btn-close-width: $font-size-lg;
-$btn-close-opacity: 1;
+$btn-line-height:      unset;
+$btn-font-weight:      600;
 
-$form-file-button-color: #fff;
-$form-file-button-bg: $primary;
+$btn-close-color:        var(--btn-close-color);
+$btn-close-bg:           none;
+$btn-close-width:        $font-size-lg;
+$btn-close-opacity:      1;
+$btn-close-focus-shadow: none;
 
-$table-hover-bg: rgba(75, 75, 75, 0.3);
+$form-file-button-color:    #fff;
+$form-file-button-bg:       $blue;
+$form-file-button-hover-bg: #006bb0;
 
-$modal-header-padding-y: $spacer;
-$modal-header-padding-x: map-get($spacers, 4);
+$table-color:       var(--bs-body-color);
+$table-hover-color: var(--bs-table-color);
+$table-hover-bg:    var(--table-hovered-bg);
+
+$modal-header-padding-y:      $spacer;
+$modal-header-padding-x:      map-get($spacers, 4);
 $modal-footer-margin-between: $spacer;
-$modal-xl: 1300px;
+$modal-xl:                    1300px;
 
-$popover-header-bg: unset;
+$popover-header-bg:        unset;
 $popover-header-padding-y: 10px;
 $popover-header-padding-x: 10px;
 $popover-body-padding-y:   10px;
 $popover-body-padding-x:   10px;
-$popover-arrow-width: 0;
-$popover-arrow-height: 0;
-$popover-border-color: $gray-400;
+$popover-arrow-width:      0;
+$popover-arrow-height:     0;
+$popover-border-color:     var(--bs-border-color);
 
-$card-bg: var(--main-bg-color);
-$card-border-color: $border-color;
+$card-bg:           var(--bs-body-bg);
+$card-border-color: var(--bs-border-color);
 
 $form-text-margin-top: $form-label-margin-bottom;
 
-$badge-padding-y: 3.5px;
-$badge-padding-x: 5px;
+$badge-padding-y:     3.5px;
+$badge-padding-x:     5px;
 $badge-border-radius: $border-radius-sm;
 
-$text-muted: $gray-400;
+$tooltip-color: var(--tooltip-color);
+$tooltip-bg:    var(--tooltip-bg);

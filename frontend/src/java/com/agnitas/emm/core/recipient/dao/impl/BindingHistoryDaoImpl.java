@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,15 +10,10 @@
 
 package com.agnitas.emm.core.recipient.dao.impl;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
 
 public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistoryDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(BindingHistoryDaoImpl.class);
 
 	@Override
 	public void recreateBindingHistoryTrigger(int companyID) {
@@ -52,10 +47,10 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 					+ "\tv_error_msg := SQLERRM;\n"
 					+ "\temm_log_db_errors(v_error_msg, " + companyID + ", 'hst_customer_" + companyID + "_bind_trg');\n"
 				+ "END;";
-			execute(logger, sql);
+			execute(sql);
 		} else {
-			execute(logger, "DROP TRIGGER IF EXISTS hst_customer_" + companyID + "_bind_delete_trigger");
-			execute(logger, "CREATE TRIGGER hst_customer_" + companyID + "_bind_delete_trigger\n" +
+			execute("DROP TRIGGER IF EXISTS hst_customer_" + companyID + "_bind_delete_trigger");
+			execute("CREATE TRIGGER hst_customer_" + companyID + "_bind_delete_trigger\n" +
 				"BEFORE DELETE ON customer_" + companyID + "_binding_tbl FOR EACH ROW\n" +
 				"  BEGIN\n" +
 				"    DECLARE v_error_msg VARCHAR(255);\n" +
@@ -107,8 +102,8 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 				"      v_hist);\n" +
 				"  END");
 			
-			execute(logger, "DROP TRIGGER IF EXISTS hst_customer_" + companyID + "_bind_update_trigger");
-			execute(logger, "CREATE TRIGGER hst_customer_" + companyID + "_bind_update_trigger\n" +
+			execute("DROP TRIGGER IF EXISTS hst_customer_" + companyID + "_bind_update_trigger");
+			execute("CREATE TRIGGER hst_customer_" + companyID + "_bind_update_trigger\n" +
 				"BEFORE UPDATE ON customer_" + companyID + "_binding_tbl FOR EACH ROW\n" +
 				"  BEGIN\n" +
 				"    DECLARE v_error_msg VARCHAR(255);\n" +

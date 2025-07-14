@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -31,7 +31,7 @@ public class ServerConfigFormValidator {
 	private boolean validateName(final ServerConfigForm form, final Popups popups) {
 		final String name = form.getName();
 		if(StringUtils.isEmpty(name)) {
-			popups.field(NAME_INPUT_NAME, "error.name.is.empty");
+			popups.fieldError(NAME_INPUT_NAME, "error.name.is.empty");
 			return false;
 		}
 		return true;
@@ -40,7 +40,7 @@ public class ServerConfigFormValidator {
 	private boolean validateValue(final ServerConfigForm form, final Popups popups) {
 		final String value = form.getValue();
 		if(StringUtils.isEmpty(value)) {
-			popups.field(VALUE_INPUT_NAME, "error.mailing.parameter.value");
+			popups.fieldError(VALUE_INPUT_NAME, "error.mailing.parameter.value");
 			return false;
 		}
 		return true;

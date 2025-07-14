@@ -1,0 +1,5 @@
+@mixin left-hand() {
+  .left-hand & {
+    @content;
+  }
+}

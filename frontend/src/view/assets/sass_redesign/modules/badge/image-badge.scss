@@ -10,10 +10,10 @@ The square badge can contain any image inside. To do that you should use class `
 
 ```htmlexample
 <span class="image-badge">
-  <img src="/assets/core/images/facelift/errors_error-500.svg" />
+  <img src="/assets/core/images/facelift/svg/errors_error-500.svg" />
 </span>
 
-<span class="image-badge text-bg-danger">
+<span class="image-badge badge--dark-red">
   <img src="/assets/core/images/facelift/agnitas-emm-logo.svg" />
 </span>
 ```
@@ -24,7 +24,7 @@ The square badge can contain any image inside. To do that you should use class `
   @extend .square-badge;
   @include size($status-badge-size-lg);
   border-radius: $border-radius;
-  background-color: $primary;
+  background-color: $badge-standard-blue-var;
 
   img {
     @include size($font-size-md);

@@ -1,4 +1,4 @@
-// TODO remove unused commented code from old version
+// TODO EMMGUI-714 remove unused commented code from old version
 
 // LEGACY CODE
 
@@ -155,11 +155,6 @@ $c-blue-03: #e5f1f8;
   }
 }
 
-//body.dark-theme .modal-fixed-content {
-//  border-color: $c-dt-modal-border;
-//  background-color: $c-dt-modal-background;
-//}
-
 .mailing-content {
   $selector-prefix : 'mailing-content';
 
@@ -230,42 +225,6 @@ $c-blue-03: #e5f1f8;
     }
   }
 }
-
-//body.dark-theme .mailing-content {
-//  $selector-prefix : 'mailing-content';
-//
-//  color: $c-dt-modal-text;
-//
-//  .#{$selector-prefix}-body {
-//    background-color: $c-dt-modal-background;
-//
-//    .droppable-area .plus-button-holder .plus-button {
-//      color: $c-dt-btn-primary;
-//
-//      &:hover,
-//      &:focus {
-//        color: darken($c-dt-btn-primary, 10%);
-//      }
-//
-//      &:active {
-//        color: darken($c-dt-btn-primary, 15%);
-//      }
-//    }
-//  }
-//}
-
-//body.dark-theme .l-mailing-content-entry {
-//
-//  color: $c-dt-modal-text;
-//  background-color: $c-dt-modal-background;
-//
-//  &:hover,
-//  &:focus,
-//  &.selected {
-//    background-color: $c-dt-btn-primary;
-//    transition: background-color 1000ms linear;
-//  }
-//}
 
 .btn.btn-circle {
   width: 27px;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,33 +10,11 @@
 
 package com.agnitas.emm.core.usergroup.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.AdminGroupDao;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.PermissionInfo;
-import com.agnitas.emm.core.PermissionType;
-import com.agnitas.emm.core.admin.service.PermissionFilter;
-import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
-import com.agnitas.emm.core.company.service.ComCompanyService;
-import com.agnitas.emm.core.permission.service.PermissionService;
-import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
-import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
-import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
+import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
+import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GROUP_ID;
+import static com.agnitas.emm.core.usergroup.web.UserGroupController.ROOT_COMPANY_ID;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,11 +26,33 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_ADMIN_ID;
-import static com.agnitas.emm.core.admin.web.PermissionsOverviewData.ROOT_GROUP_ID;
-import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GROUP_ID;
-import static com.agnitas.emm.core.usergroup.web.UserGroupController.ROOT_COMPANY_ID;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.AdminGroupDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionInfo;
+import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.admin.service.PermissionFilter;
+import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.company.service.CompanyService;
+import com.agnitas.emm.core.permission.service.PermissionService;
+import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
+import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
+import com.agnitas.emm.core.usergroup.service.UserGroupService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class UserGroupServiceImpl implements UserGroupService {
 	private static final Logger logger = LogManager.getLogger(UserGroupServiceImpl.class);
@@ -61,7 +61,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
 	private ConfigService configService;
 	private AdminGroupDao userGroupDao;
-	private ComCompanyService companyService;
+	private CompanyService companyService;
 	private ExtendedConversionService conversionService;
 	private PermissionFilter permissionFilter;
 	protected PermissionService permissionService;
@@ -70,7 +70,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 	public UserGroupServiceImpl(
             ConfigService configService,
             AdminGroupDao userGroupDao,
-            ComCompanyService companyService,
+            CompanyService companyService,
             ExtendedConversionService conversionService,
             PermissionFilter permissionFilter,
             PermissionService permissionService, BulkActionValidationService<Integer, UserGroupDto> bulkActionValidationService) {
@@ -96,7 +96,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 	
 	@Override
 	public UserGroupDto getUserGroup(Admin admin, int userGroupId) {
-		AdminGroup adminGroup = admin.permissionAllowed()
+		AdminGroup adminGroup = admin.isRedesignedUiUsed()
 				? userGroupDao.getUserGroup(userGroupId, admin.getCompanyID())
 				: userGroupDao.getAdminGroup(userGroupId, admin.getCompanyID());
 		if (adminGroup == null) {
@@ -105,6 +105,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
 		LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
 		UserGroupDto userGroupDto = conversionService.convert(adminGroup, UserGroupDto.class);
+		if (admin.isRedesignedUiUsed()) {
+			userGroupDto.setUsersCount(userGroupDao.getUsersCount(userGroupId, admin.getCompanyID()));
+		}
 		List<String> allowedPermissionsCategories = getUserGroupPermissionCategories(userGroupDto.getUserGroupId(), userGroupDto.getCompanyId(), admin);
 		if (!allowedPermissionsCategories.isEmpty()) {
 			Set<Permission> groupPermissions = adminGroup.getGroupPermissions();
@@ -118,13 +121,12 @@ public class UserGroupServiceImpl implements UserGroupService {
 			
 			userGroupDto.setGrantedPermissions(permissionGranted);
 		}
-		
-		
+
 		return userGroupDto;
 	}
 	
 	@Override
-	public int saveUserGroup(Admin admin, UserGroupDto userGroupDto) throws Exception {
+	public int saveUserGroup(Admin admin, UserGroupDto userGroupDto) {
 		int userGroupId = userGroupDto.getUserGroupId();
 	
 		Set<String> groupPermissions = userGroupDao.getGroupPermissionsTokens(userGroupId);
@@ -153,7 +155,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 					// Just leave it unchanged
 					selectedPermissions.add(permissionToken);
 				} else {
-					logger.error("Invalid right removal attempt for adminGroupID " + userGroupId + " by adminID " + admin.getAdminID() + ": " + permissionToken);
+					logger.error("Invalid right removal attempt for adminGroupID {} by adminID {}: {}", userGroupId, admin.getAdminID(), permissionToken);
 					return -1;
 				}
 			}
@@ -166,7 +168,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					selectedPermissions.remove(permissionToken);
 				} else {
-					logger.error("Invalid right granting attempt for adminGroupID " + userGroupId + " by adminID " + admin.getAdminID() + ": " + permissionToken);
+					logger.error("Invalid right granting attempt for adminGroupID {} by adminID {}: {}", userGroupId, admin.getAdminID(), permissionToken);
 					return -1;
 				}
 			}
@@ -285,7 +287,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 	}
 
 	@Override
-	public int copyUserGroup(final int id, final Admin admin) throws Exception {
+	public int copyUserGroup(int id, Admin admin) {
 		UserGroupDto group = getUserGroup(admin, id);
 		if (group == null) {
 			throw new IllegalArgumentException("userGroup == null (invalid id)");
@@ -295,13 +297,6 @@ public class UserGroupServiceImpl implements UserGroupService {
 		group.setShortname(generateUserGroupCopyName(group.getShortname(), admin.getCompanyID(), admin.getLocale()));
 		group.setCompanyId(admin.getCompanyID());
 		return saveUserGroup(admin, group);
-	}
-
-	@Override
-	public List<String> groupsToNames(List<UserGroupDto> groups) {
-		return groups.stream()
-				.map(UserGroupDto::getShortname)
-				.collect(Collectors.toList());
 	}
 
 	@Override

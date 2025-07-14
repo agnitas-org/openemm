@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -59,6 +59,8 @@ final class HyperlinkHelper {
                 return targetGroupHyperlink(usage, locale);
             case WORKFLOW:
                 return workflowHyperlink(usage, locale);
+            case TRIGGER:
+                return triggerHyperlink(usage, locale);
 			case MAILING:
 				return mailingHyperLink(usage, locale);
             case MAILINGLIST:
@@ -81,6 +83,14 @@ final class HyperlinkHelper {
     private static String workflowHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/workflow/")
+                .path(Integer.toString(usage.getObjectUserID()))
+                .path("/view.action")
+                .toUriString(), usage, locale);
+    }
+
+    private static String triggerHyperlink(ObjectUsage usage, Locale locale) {
+        return hyperLink(UriComponentsBuilder.newInstance()
+                .path("/action/")
                 .path(Integer.toString(usage.getObjectUserID()))
                 .path("/view.action")
                 .toUriString(), usage, locale);

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.import_profile.component;
 
-import static org.agnitas.util.DateUtilities.DD_MM_YYYY;
-import static org.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
+import static com.agnitas.util.DateUtilities.DD_MM_YYYY;
+import static com.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.importvalues.ImportMode;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.dao.ImportRecipientsDao;
+import com.agnitas.service.ImportProfileService;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ public class ImportProfileColumnMappingsValidator {
         this.importProfileService = importProfileService;
     }
 
-    public boolean validate(List<ColumnMapping> mappings, ImportProfile profile, Admin admin, Popups popups) throws Exception {
+    public boolean validate(List<ColumnMapping> mappings, ImportProfile profile, Admin admin, Popups popups) {
         if (existsDuplicatedMappings(mappings, popups)) {
             return false;
         }
@@ -98,7 +98,7 @@ public class ImportProfileColumnMappingsValidator {
         return false;
     }
 
-    private boolean existsNotAllowedDefaultValue(List<ColumnMapping> mappings, Admin admin, Popups popups) throws Exception {
+    private boolean existsNotAllowedDefaultValue(List<ColumnMapping> mappings, Admin admin, Popups popups) {
         for (ColumnMapping mapping : mappings) {
             String dbColumnName = mapping.getDatabaseColumn();
             if (isStringEscaped(mapping.getDefaultValue()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(dbColumnName)) {
@@ -153,7 +153,7 @@ public class ImportProfileColumnMappingsValidator {
         return true;
     }
 
-    private boolean existsRequiredMappings(List<ColumnMapping> mappings, ImportProfile profile, Popups popups) throws Exception {
+    private boolean existsRequiredMappings(List<ColumnMapping> mappings, ImportProfile profile, Popups popups) {
         if (!isImportModeHasAdding(profile.getImportMode())) {
             return true;
         }
@@ -182,7 +182,7 @@ public class ImportProfileColumnMappingsValidator {
         return true;
     }
 
-    private String findNotNullableColumnWithMissingMapping(ImportProfile profile, List<ColumnMapping> mappings) throws Exception {
+    private String findNotNullableColumnWithMissingMapping(ImportProfile profile, List<ColumnMapping> mappings) {
         List<String> notNullableCustomerColumns = getNotNullableCustomerColumns(profile.getCompanyId());
 
         for (String column : notNullableCustomerColumns) {
@@ -196,7 +196,7 @@ public class ImportProfileColumnMappingsValidator {
         return null;
     }
 
-    private List<String> getNotNullableCustomerColumns(int companyId) throws Exception {
+    private List<String> getNotNullableCustomerColumns(int companyId) {
         List<String> columns = new ArrayList<>();
         CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(companyId);
 
@@ -209,7 +209,7 @@ public class ImportProfileColumnMappingsValidator {
         return columns;
     }
 
-    private boolean isNotNullableColumn(Map.Entry<String, DbColumnType> columnEntry, int companyId) throws Exception {
+    private boolean isNotNullableColumn(Map.Entry<String, DbColumnType> columnEntry, int companyId) {
         return !columnEntry.getValue().isNullable()
                 && DbUtilities.getColumnDefaultValue(importRecipientsDao.getDataSource(), "customer_" + companyId + "_tbl", columnEntry.getKey()) == null
                 && !RecipientStandardField.CustomerID.getColumnName().equalsIgnoreCase(columnEntry.getKey())

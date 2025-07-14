@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,15 +19,15 @@ import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.Mailloop;
-import org.agnitas.beans.MailloopEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailloopDao;
+import com.agnitas.beans.Mailloop;
+import com.agnitas.beans.MailloopEntry;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.dao.MailloopDao;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Const;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Const;
+import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -131,7 +131,6 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
 
     @Override
-    // TODO: EMMGUI-714 remove after remove of old design
     public boolean deleteBounceFilter(int filterId, int companyId) {
         ServiceResult<List<BounceFilterDto>> result = getAllowedForDeletion(Set.of(filterId), companyId);
         if (result.isSuccess()) {
@@ -148,7 +147,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
                 .getResult()
                 .stream()
                 .map(BounceFilterDto::getId)
-                .collect(Collectors.toList());
+                .toList();
 
         allowedIds.forEach(id -> deleteMailloop(id, companyId));
 

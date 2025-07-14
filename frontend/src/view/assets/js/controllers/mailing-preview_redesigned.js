@@ -1,48 +1,49 @@
 AGN.Lib.Controller.new('mailing-preview', function () {
   const Form = AGN.Lib.Form;
-  const Storage = AGN.Lib.Storage;
   const Messages = AGN.Lib.Messages;
   const Helpers = AGN.Lib.Helpers;
   const Select = AGN.Lib.Select;
 
-  const TRIGGERED_FIELDS =  ['customerATID', 'customerEmail', 'modeType', 'targetGroupId'];
-
   let MAILING_ID;
-  let needReload = false;
 
-  this.addDomInitializer('mailing-preview', function ($frame) {
+  this.addDomInitializer('mailing-preview', function () {
     MAILING_ID = this.config.MAILING_ID;
-
-    restoreFields();
-    var form = Form.get(this.el);
-    if (form.getValue('reload') == 'false') {
-      form.setValue('reload', true);
-
-      form.submit().done(() => {
-        $('[data-stored-field]').on('change', function () {
-          const $field = $(this);
-          Storage.saveChosenFields($field);
-          //necessary to prevent endless reloading after change fields with data-action='change-stored-header-data'
-          needReload = needReload || isTriggeredField($field);
-        });
-
-        form.initFields();
-        form.initValidator();
-        controlTestRunVisibility();
-      });
+    const form = Form.get(this.el);
+    form.initFields();
+    form.initValidator();
+    controlTestRunVisibility();
+    if (isMobileSizeChosen(this.config, form)) {
+      loadIframeMediapoolImagesForMobile();
     }
   });
 
+  function loadIframeMediapoolImagesForMobile() {
+    $('[name="previewFrame"]')
+      .hide()
+      .on('load', addMobileParameterForMediapoolImagesSrc)
+      .show();
+  }
+
+  function addMobileParameterForMediapoolImagesSrc() {
+    $(this.contentDocument || this.contentWindow.document)
+      .find('img')
+      .filter((i, img) => $(img).attr('src')?.includes('mediapool_element'))
+      .each(function () {
+        const originalSrc = $(this).attr('src');
+        $(this).attr('src', `${originalSrc}${originalSrc.includes('?') ? '&' : '?'}forMobile=true`);
+      });
+  }
+
+  function isMobileSizeChosen(config, form) {
+    return config.MOBILE_SIZES.includes(parseInt(form.getValue('size')));
+  }
+
   this.addAction({change: 'refresh-preview', click: 'update-preview'}, function () {
-    needReload = false;
     updatePreview();
   });
 
   this.addAction({'change': 'change-stored-header-data'}, function () {
-    if (needReload) {
-      needReload = false;
-      updatePreview();
-    }
+    updatePreview();
   });
 
   this.addAction({'change': 'change-header-data'}, function () {
@@ -51,19 +52,7 @@ AGN.Lib.Controller.new('mailing-preview', function () {
 
   function updatePreview() {
     const form = Form.get($('#preview-form'));
-    form.setValue('reload', false);
     form.submit();
-  }
-
-  function restoreFields() {
-    $("[data-stored-field]").each(function () {
-      Storage.restoreChosenFields($(this))
-    });
-  }
-
-  function isTriggeredField($field) {
-    const fieldName = $field.prop('name');
-    return fieldName && TRIGGERED_FIELDS.includes(fieldName);
   }
 
   function controlTestRunVisibility() {
@@ -169,5 +158,12 @@ AGN.Lib.Controller.new('mailing-preview', function () {
         }
         AGN.Lib.JsonMessages(resp.popups, true);
       })
+  });
+
+  this.addAction({'click': 'download-attachment'}, function () {
+    const $tempAnchor = $('<a>').attr('href', $('#attachments').val());
+    $('body').append($tempAnchor);
+    $tempAnchor[0].click();
+    $tempAnchor.remove();
   });
 });

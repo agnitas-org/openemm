@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,32 +16,6 @@ import java.net.URLConnection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import com.agnitas.messages.I18nString;
-
-import org.agnitas.dao.LicenseType;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorageBundle;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.UserActivityLogActions;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
@@ -56,12 +30,14 @@ import com.agnitas.emm.core.logon.forms.LogonResetPasswordForm;
 import com.agnitas.emm.core.logon.forms.LogonTotpForm;
 import com.agnitas.emm.core.logon.forms.validation.LogonFormValidator;
 import com.agnitas.emm.core.logon.service.ClientHostIdService;
-import com.agnitas.emm.core.logon.service.ComHostAuthenticationService;
-import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.HostAuthenticationService;
 import com.agnitas.emm.core.logon.service.HostAuthenticationServiceException;
+import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
 import com.agnitas.emm.core.sessionhijacking.web.SessionHijackingPreventionConstants;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.emm.security.sessionbinding.web.service.SessionBindingService;
+import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
@@ -69,11 +45,34 @@ import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.Anonymous;
-
 import jakarta.servlet.SessionTrackingMode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import com.agnitas.emm.common.LicenseType;
+import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
+import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorageBundle;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.UserActivityLogActions;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class LogonController implements XssCheckAware {
 
@@ -82,9 +81,9 @@ public class LogonController implements XssCheckAware {
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
     public static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
 
-    protected final ComLogonService logonService;
+    protected final LogonService logonService;
     protected final LoginTrackService loginTrackService;
-    protected final ComHostAuthenticationService hostAuthenticationService;
+    protected final HostAuthenticationService hostAuthenticationService;
     protected final WebStorage webStorage;
     protected final ConfigService configService;
     protected final UserActivityLogService userActivityLogService;
@@ -92,8 +91,9 @@ public class LogonController implements XssCheckAware {
     protected AdminService adminService;
 
     private final LogonFormValidator logonFormValidator = new LogonFormValidator();
+    private final SessionBindingService sessionBindingService;
 
-    public LogonController(ComLogonService logonService, LoginTrackService loginTrackService, ComHostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService, final AdminService adminService) {
+    public LogonController(LogonService logonService, LoginTrackService loginTrackService, HostAuthenticationService hostAuthenticationService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, final ClientHostIdService clientHostIdService, final AdminService adminService, final SessionBindingService sessionBindingService) {
         this.logonService = logonService;
         this.loginTrackService = loginTrackService;
         this.hostAuthenticationService = hostAuthenticationService;
@@ -102,6 +102,7 @@ public class LogonController implements XssCheckAware {
         this.userActivityLogService = userActivityLogService;
         this.clientHostIdService = Objects.requireNonNull(clientHostIdService, "ClientHostIdService is null");
         this.adminService = Objects.requireNonNull(adminService, "AdminService is null");
+        this.sessionBindingService = Objects.requireNonNull(sessionBindingService, "session binding service");
     }
 
     // This exception should normally never occur unless user manually navigates to some endpoints.
@@ -123,31 +124,36 @@ public class LogonController implements XssCheckAware {
     @Anonymous
     @GetMapping("/logonOld.action")
     // TODO: EMMGUI-714: remove when old design will be removed
-    public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups, final HttpSession session) {
-        return viewLogon(logonStateBundle, model, request, popups, session, false);
+    public String logonView(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, final HttpServletResponse response, Popups popups, final HttpSession session) {
+        return viewLogon(logonStateBundle, form, model, request, response, popups, session, false);
     }
 
     @Anonymous
     @GetMapping("/logon.action")
     public String logonViewRedesigned(LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form,
                                       @RequestParam(value = "afterLogout", required = false) boolean isAfterLogout, Model model,
-                                      HttpServletRequest request, Popups popups, HttpSession session) {
+                                      HttpServletRequest request, HttpServletResponse response, Popups popups, HttpSession session) {
         model.addAttribute("afterLogout", isAfterLogout);
-        return viewLogon(logonStateBundle, model, request, popups, session, true);
+        return viewLogon(logonStateBundle, form, model, request, response, popups, session, true);
     }
 
-    private String viewLogon(LogonStateBundle logonStateBundle, Model model, HttpServletRequest request, Popups popups, HttpSession session, boolean redesigned) {
+    private String viewLogon(LogonStateBundle logonStateBundle, LogonForm form, Model model, HttpServletRequest req, HttpServletResponse resp, Popups popups, HttpSession session, boolean redesigned) {
         if(session.getAttribute(SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME) != null) {
             popups.alert(new Message("logon.security.sessionCheck"));
             session.removeAttribute(SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME);
         }
 
+        this.sessionBindingService.bindSession(req, resp);
+
         final SimpleServiceResult result = logonService.checkDatabase();
 
         if (result.isSuccess()) {
-            logonStateBundle.toPendingState();
+            if (logonStateBundle.shouldPrefillUsername()) {
+                form.setUsername(logonService.getLoginUsername(logonStateBundle.getAdmin()));
+            }
 
-            return getLogonPage(model, request.getServerName(), request, redesigned);
+            logonStateBundle.toPendingState();
+            return getLogonPage(model, req.getServerName(), req, redesigned);
         }
 
         popups.addPopups(result);
@@ -164,7 +170,7 @@ public class LogonController implements XssCheckAware {
 
     @Anonymous
     @PostMapping("/logon.action")
-    public String logonRedesigend(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
+    public String logonRedesigned(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonForm form, Model model, HttpServletRequest request, Popups popups) {
         return doLogon(logonStateBundle, form, model, request, popups, true);
     }
 
@@ -184,6 +190,24 @@ public class LogonController implements XssCheckAware {
                 form.setPassword(null);
                 popups.addPopups(new ServiceResult<>(admin, false, Message.of("error.admin.gui.locked", admin.getUsername())));
                 return getLogonPage(model, request.getServerName(), request, redesigned);
+            } else {
+                /*
+                        Check, if login by username / password is enabled for UI users
+
+                        Allow login to UI for supervisors.
+                        For regular users, check settings.
+                 */
+                if(!admin.isSupervisor()) {
+                    if(!this.configService.getBooleanValue(ConfigValue.LogonAllowUILoginByUsernameAndPassword, admin.getCompanyID())) {
+                        if(logger.isInfoEnabled()) {
+                            logger.info(String.format("Login to UI by username and password is disabled for company %d", admin.getCompanyID()));
+                        }
+
+                        form.setPassword(null);
+                        popups.addPopups(new ServiceResult<>(admin, false, Message.of("error.login", admin.getUsername())));
+                        return getLogonPage(model, request.getServerName(), request, redesigned);
+                    }
+                }
             }
 
             logonStateBundle.toTotpState(admin);
@@ -390,13 +414,13 @@ public class LogonController implements XssCheckAware {
 
     @Anonymous
     @PostMapping("/logon/change-password.action")
-    public String changePassword(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
+    public String changePassword(LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
     	return doChangePassword(logonStateBundle, form, model, popups, false);
     }
 
     @Anonymous
     @PostMapping("/logon/change-passwordRedesigned.action")
-    public String changePasswordRedesigned(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
+    public String changePasswordRedesigned(LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonPasswordChangeForm form, RedirectAttributes model, Popups popups) {
         return doChangePassword(logonStateBundle, form, model, popups, true);
     }
 
@@ -410,14 +434,14 @@ public class LogonController implements XssCheckAware {
 
             // In some cases a password change cannot be skipped.
             if (state == PasswordState.VALID || state == PasswordState.EXPIRING) {
-                logonStateBundle.toCompleteState();
+                logonStateBundle.toCompleteState(redesigned);
                 return redesigned ? "forward:/startRedesigned.action" : "forward:/start.action";
             }
         } else {
             SimpleServiceResult result = logonService.setPassword(admin, form.getPassword());
 
             if (result.isSuccess()) {
-                logonStateBundle.toCompleteState();
+                logonStateBundle.toCompleteState(redesigned);
                 // Show success page which indicates that password has been changed.
                 model.addFlashAttribute(PASSWORD_CHANGED_KEY, true);
             } else {
@@ -473,8 +497,16 @@ public class LogonController implements XssCheckAware {
             model.addAttribute("isExpiring", state == PasswordState.EXPIRING);
             model.addAttribute("isExpired", state == PasswordState.EXPIRED || state == PasswordState.ONE_TIME);
 
+            if (redesigned) {
+                model.addAttribute("passwordPolicy", getPasswordPolicy(admin).getPolicyName());
+            }
+
             return redesigned ? "login_password_change" : "logon_password_change";
         }
+    }
+
+    protected PasswordPolicies getPasswordPolicy(Admin admin) {
+        return PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService);
     }
 
     private String showPasswordExpiredPage(Admin admin, Model model, Popups popups, boolean redesigned) {
@@ -503,17 +535,17 @@ public class LogonController implements XssCheckAware {
     @Anonymous
     @PostMapping("/start.action")
     // TODO: EMMGUI-714: remove when old design will be removed
-    public String start(final LogonStateBundle logonStateBundle, Admin admin, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request) {
-        return doStart(logonStateBundle, admin, webStorageJson, model, popups, request, false);
+    public String start(final LogonStateBundle logonStateBundle, Admin admin, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request, final HttpServletResponse response) {
+        return doStart(logonStateBundle, admin, webStorageJson, model, popups, request, response, false);
     }
 
     @Anonymous
     @PostMapping("/startRedesigned.action")
-    public String startRedesigned(final LogonStateBundle logonStateBundle, Admin admin, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request) {
-        return doStart(logonStateBundle, admin, webStorageJson, model, popups, request, true);
+    public String startRedesigned(final LogonStateBundle logonStateBundle, Admin admin, @RequestParam(required = false) String webStorageJson, Model model, Popups popups, final HttpServletRequest request, final HttpServletResponse response) {
+        return doStart(logonStateBundle, admin, webStorageJson, model, popups, request, response, true);
     }
 
-    private String doStart(LogonStateBundle logonStateBundle, Admin admin, String webStorageJson, Model model, Popups popups, HttpServletRequest request, boolean redesigned) {
+    private String doStart(LogonStateBundle logonStateBundle, Admin admin, String webStorageJson, Model model, Popups popups, HttpServletRequest request, final HttpServletResponse response, boolean redesigned) {
         if (admin == null) {
             logonStateBundle.requireLogonState(LogonState.COMPLETE);
 
@@ -522,7 +554,7 @@ public class LogonController implements XssCheckAware {
             }
 
             // Finalize logon procedure, drop temporary data, setup session attributes.
-            return complete(logonStateBundle.toCompleteState(request), webStorageJson, popups);
+            return complete(logonStateBundle.toCompleteState(request), webStorageJson, popups, request, response);
         }
 
         // Redirect to EMM start page.
@@ -627,7 +659,7 @@ public class LogonController implements XssCheckAware {
             }
 
             if (!logonService.isValidPasswordResetTokenHash(form.getUsername(), form.getToken())) {
-                ServiceResult<Admin> result = new ServiceResult<>(null, false, Message.of("error.passwordReset.expired", ComLogonService.TOKEN_EXPIRATION_MINUTES, configService.getValue(ConfigValue.SystemUrl) + "/logon/reset-password.action"));
+                ServiceResult<Admin> result = new ServiceResult<>(null, false, Message.of("error.passwordReset.expired", LogonService.TOKEN_EXPIRATION_MINUTES, configService.getValue(ConfigValue.SystemUrl) + "/logon/reset-password.action"));
                 popups.addPopups(result);
                 return redesigned ? "redirect:/logon/reset-passwordRedesigned.action" : "redirect:/logon/reset-password.action";
             }
@@ -739,12 +771,14 @@ public class LogonController implements XssCheckAware {
         }
     }
 
-    private String complete(final Admin admin, final String webStorageJson, final Popups popups) {
+    private String complete(final Admin admin, final String webStorageJson, final Popups popups, final HttpServletRequest request, final HttpServletResponse response) {
         final AdminPreferences preferences = logonService.getPreferences(admin);
         final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
 
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, admin, RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES, preferences, RequestAttributes.SCOPE_SESSION);
+        this.sessionBindingService.bindSession(request, response);
+
         logonService.updateSessionsLanguagesAttributes(admin);
         attributes.setAttribute("emmLayoutBase", logonService.getEmmLayoutBase(admin), RequestAttributes.SCOPE_SESSION);
 
@@ -784,7 +818,7 @@ public class LogonController implements XssCheckAware {
         return "redirect:/dashboard.action";
     }
 
-    private String getLogonPage(Model model, String serverName, final HttpServletRequest request, boolean redesigned) {
+    private String getLogonPage(Model model, String serverName, HttpServletRequest request, boolean redesigned) {
         model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
         model.addAttribute("iframeUrl", getLogonIframeUrl());
         model.addAttribute("layoutdir", logonService.getLayoutDirectory(serverName));
@@ -794,7 +828,7 @@ public class LogonController implements XssCheckAware {
         return redesigned ? "login" : "logon";
     }
     
-    protected boolean showTabHint(final HttpServletRequest request) {
+    protected boolean showTabHint(HttpServletRequest request) {
     	return !request.getServletContext().getEffectiveSessionTrackingModes().contains(SessionTrackingMode.COOKIE);
     }
     
@@ -835,7 +869,7 @@ public class LogonController implements XssCheckAware {
     private List<String> getWebStorageBundleNames() {
         return WebStorageBundle.definitions().stream()
                 .map(WebStorageBundle::getName)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     protected void writeUserActivityLog(Admin admin, UserAction userAction) {

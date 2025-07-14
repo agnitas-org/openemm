@@ -54,7 +54,7 @@ AGN.Lib.CoreInitializer.new('char-counter', ['growing-textarea'], function ($sco
   function prependCharCounterForTileFooter($tile, $charCounterVal) {
     let $footer = $tile.find('.tile-footer');
     if (!$footer.exists()) {
-      $footer = $('<div class="tile-footer text-dark fs-3 bg-transparent border-top">');
+      $footer = $('<div class="tile-footer text-secondary fs-3 border-top">');
       $tile.append($footer);
     }
     $footer.prepend($charCounterVal);

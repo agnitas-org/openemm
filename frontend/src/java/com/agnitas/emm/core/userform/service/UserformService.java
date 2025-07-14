@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,12 +16,12 @@ import com.agnitas.emm.core.userform.form.UserFormForm;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
-import net.sf.json.JSONArray;
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.json.JSONArray;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
-import org.agnitas.exceptions.FormNotFoundException;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.Tuple;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.Tuple;
 
 import java.io.File;
 import java.util.Collection;
@@ -53,7 +53,7 @@ public interface UserformService {
 	 * @return user form
 	 * @throws FormNotFoundException if given form name is unknown
 	 */
-	UserForm getUserForm(final int companyID, final String formName) throws FormNotFoundException;
+	UserForm getUserForm(int companyID, String formName) throws FormNotFoundException;
 
 	List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID);
 
@@ -67,6 +67,7 @@ public interface UserformService {
 
     List<UserForm> getUserForms(int companyId);
 
+	// TODO: EMMGUI-714: Check usages and remove when removing old design
     UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness);
     ServiceResult<List<UserForm>> setActiveness(Set<Integer> ids, int companyId, boolean activate);
 
@@ -74,7 +75,7 @@ public interface UserformService {
 
 	UserFormDto getUserForm(int companyId, int formId);
 
-	ServiceResult<Integer> saveUserForm(Admin admin, UserFormDto userFormDto) throws Exception;
+	ServiceResult<Integer> saveUserForm(Admin admin, UserFormDto userFormDto);
 
 	List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, int companyId);
 
@@ -101,4 +102,6 @@ public interface UserformService {
 	Map<String, String> getProfileFields(Admin admin, DbColumnType.SimpleDataType... allowedTypes);
 
 	boolean isActive(int formId);
+
+	boolean isValidFormName(String formName);
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -158,7 +158,6 @@ CREATE TABLE workflow_reaction_tbl (
 	profile_column             VARCHAR(100) COMMENT 'recipient profile field to be watched; ignored unless reaction_type = 8',
 	rules_sql                  VARCHAR(2000) COMMENT 'an SQL representation of user-defined condition that causes a reaction to be triggered; ignored unless reaction_type = 8',
 	trigger_link_id            INTEGER DEFAULT 0 COMMENT 'link in mailing - ID (rdir_url_tbl)',
-	bk_is_legacy_mode          INT(1) DEFAULT 0 NOT NULL COMMENT 'whether to use legacy action-based campaign processing (compatible mode for campaigns activated before GWUA-3603), 1 = legacy, 0 = new',
 	admin_timezone             VARCHAR(50) DEFAULT 'Europe/Berlin' NOT NULL COMMENT 'timezone to be used for deadline calculation (deadline_hours and deadline_minutes columns of workflow_reaction_decl_tbl)',
 	mailinglist_id             INT(11) NOT NULL DEFAULT 0 COMMENT 'mailinglist that the reaction watching should be limited to - ID (mailinglist_tbl)',
 	PRIMARY KEY (reaction_id)
@@ -184,14 +183,6 @@ CREATE TABLE workflow_reminder_recp_tbl (
 	notified                   INT DEFAULT 0 NOT NULL COMMENT 'whether or not reminder is delivered to this recipient, 0 = no, 1 = yes',
 	CONSTRAINT workflow$rem$recp$remid$fk FOREIGN KEY (reminder_id) REFERENCES workflow_reminder_tbl (reminder_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores recipients for scheduled workflow reminders';
-
-CREATE TABLE bk_workflow_report_schedule_tbl (
-	company_id                 INT(10) COMMENT 'tenant - ID (company_tbl)',
-	report_id                  INT(10) COMMENT 'report to be generated and sent - ID (birtreport_tbl)',
-	send_date                  TIMESTAMP NULL COMMENT 'calculated date when report should be generated and sent',
-	sent                       INT(1) DEFAULT 0 COMMENT 'whether or not scheduled report is sent, 1 = yes, 0 = no',
-	workflow_id                INT(10) DEFAULT 0 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores scheduled reports managed by workflow';
 
 CREATE TABLE workflow_tbl (
 	workflow_id                INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
@@ -238,6 +229,8 @@ CREATE TABLE admin_group_tbl (
 	company_id                 INT(11) DEFAULT 0 COMMENT 'tenant - use company_ID 1 for generic groups',
 	shortname                  VARCHAR(100) DEFAULT '' COMMENT 'name of the admin groups',
 	description                VARCHAR(1000) DEFAULT '' COMMENT 'description of the admin groups',
+	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT 'deleted? 0 = no, 1 = yes',
+	change_date                TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'group last change date',
 	PRIMARY KEY (admin_group_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores groups for users to handle permissions easier';
 
@@ -279,6 +272,7 @@ CREATE TABLE admin_tbl (
 	employee_id                VARCHAR(100) COMMENT 'Tennant specific employee id',
 	totp_secret                VARCHAR(100) NULL COMMENT 'Shared secret for TOTP',
 	dashboard_layout           VARCHAR(1000) COMMENT 'Stores dashboard layout settings in JSON that contains info about grid size, selected tiles and their position inside the grid',
+	password_reminder          INTEGER DEFAULT NULL COMMENT '0 - not required, 1 - required, 2 - sent',
 	PRIMARY KEY (admin_id),
 	UNIQUE KEY username (username),
 	UNIQUE KEY admin_tbl$username$uq (username),
@@ -571,10 +565,8 @@ CREATE TABLE customer_field_tbl (
 	col_name                   VARCHAR(50) COMMENT 'Name of related DataBaseColumn, unique per tenant',
 	shortname                  VARCHAR(200) COMMENT 'field name shown in EMM',
 	description                VARCHAR(500) COMMENT 'description for this field',
-	bk_default_value           VARCHAR(200) COMMENT 'default value (might be set for views / subaccounts, too',
 	mode_edit                  INT(11) COMMENT '1 = readonly, 2 = hidden, 0 = no restriction',
 	company_id                 INT(11) COMMENT 'tenant - ID (company_tbl)',
-	bk_field_group             INT(11) COMMENT 'for grouping fields in EMM layout (references customer_field_group_tbl)',
 	field_sort                 INT(11) NOT NULL DEFAULT 0 COMMENT 'sorting order in EMM (if applicable: in group)',
 	line                       INT(11) COMMENT '1=horizontal ruler after this field in EMM - Layout',
 	isinterest                 INT(11) DEFAULT 0 COMMENT 'defines interest to order blocks in mailing - dyn_name_tbl.INTEREST_GROUP',
@@ -885,6 +877,7 @@ CREATE TABLE login_track_tbl (
 	PRIMARY KEY (login_track_id),
 	KEY logtrck$ip_cdate_stat$idx (ip_address, creation_date, login_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[secret_data] any login-request, successful or not, is stored here (for a certain time)';
+CREATE INDEX logtrck$user$idx ON login_track_tbl (username);
 
 CREATE TABLE login_whitelist_tbl (
 	ip_address                 VARCHAR(50) NOT NULL COMMENT '[secret_data] IP to whitelist',
@@ -1011,8 +1004,8 @@ CREATE TABLE mailing_tbl (
 	plan_date                  TIMESTAMP NULL COMMENT 'send date (for later sendings)',
 	priority                   INTEGER COMMENT 'priority for a template, 0/NULL no priority set, otherwise the higher the number, the higher is the priority',
 	content_type               VARCHAR(20) COMMENT 'Content type description for this mailing. Allowed values transaction or advertising',
-	is_text_version_required   TINYINT(1) DEFAULT 1 NOT NULL COMMENT 'If set to 1, mailing must have a text version (otherwise it cannot be sent, see GWUA-3991)',
-	is_prioritization_allowed  TINYINT(1) DEFAULT 1 NOT NULL COMMENT 'If set to 1, then prioritization for this mailing will be applied see mailing priority for more details',
+	is_text_version_required   INTEGER DEFAULT 1 NOT NULL COMMENT 'If set to 1, mailing must have a text version (otherwise it cannot be sent, see GWUA-3991)',
+	is_prioritization_allowed  INTEGER DEFAULT 1 NOT NULL COMMENT 'If set to 1, then prioritization for this mailing will be applied see mailing priority for more details',
 	statmail_onerroronly       INTEGER COMMENT 'If true(1), the report email on delivery statistics is only sent in erroneous cases',
 	locking_admin_id           INT(11) DEFAULT NULL COMMENT 'if set: references EMM-User (admin_tbl) that was the last one who acquired the locking',
 	locking_expire_timestamp   TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'if set: the timestamp when a locking is not valid anymore',
@@ -1089,6 +1082,29 @@ CREATE TABLE mailloop_tbl (
 	security_token             VARCHAR(100) COMMENT '[secret_data]',
 	PRIMARY KEY (rid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[private_data] stores Mailloop-data';
+
+CREATE TABLE mailloop_replies_tbl (
+    id                  INT(11)          NOT NULL AUTO_INCREMENT COMMENT 'Unique entry id',
+    mailloop_id         INT(11) UNSIGNED NOT NULL COMMENT 'Referenced bounce filter',
+    status              INT(1)    DEFAULT 0 COMMENT 'Reply status: 0 - unread, 1 - read',
+    sender_full_name    VARCHAR(200) COMMENT 'Full name of the sender',
+    subject             VARCHAR(200) COMMENT 'Subject of the reply',
+    sender_email        VARCHAR(200) COMMENT 'Email of the sender',
+    response_email      VARCHAR(200) COMMENT 'Email that was responded to',
+    timestamp           TIMESTAMP COMMENT 'Timestamp of reply',
+    creation_date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp of creation',
+    change_date         TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp of last change',
+    content             LONGTEXT COMMENT 'Content of the reply',
+    content_type        INT(1)    DEFAULT 0 COMMENT 'Type of the content: 0 - text/plain, 1 - text/html',
+    raw_message         LONGBLOB COMMENT 'Message including original headers',
+    customer_id         INTEGER UNSIGNED COMMENT 'ID of original recipient',
+    company_id          INT(11) UNSIGNED NOT NULL COMMENT 'tenant - ID (company_tbl)',
+    customer_company_id INT(11) UNSIGNED COMMENT 'ID of company of original recipient',
+    PRIMARY KEY (id),
+    CONSTRAINT mlooprepl$mlid$fk FOREIGN KEY (mailloop_id) REFERENCES mailloop_tbl (rid)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_unicode_ci COMMENT 'Replies to mailings without forward address set in bounce filter';
+
+
 
 CREATE TABLE mailtrack_1_tbl (
 	maildrop_status_id         INT(10) COMMENT 'references maildrop_status_tbl.status_id',
@@ -1394,14 +1410,9 @@ CREATE TABLE undo_dyn_content_tbl (
 	KEY undodync$uid$idx (undo_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'copies entries in dyn_content_tbl (plus undo - ID) to provide undo function, for column description see dyn_content_tbl';
 
-CREATE TABLE bk_undo_id_seq (
-	value                      INT(11)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'is related to undo_dyn_content_tbl and undo_component_tbl';
-INSERT INTO bk_undo_id_seq (value) VALUES (1);
-
 CREATE TABLE undo_mailing_tbl (
 	mailing_id                 INT(11) COMMENT 'mailing - ID (mailing_tbl)',
-	undo_id                    INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
+	undo_id                    INT(11) PRIMARY KEY NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
 	undo_creation_date         TIMESTAMP NOT NULL COMMENT 'entry creation date',
 	undo_admin_id              INT(11) NOT NULL COMMENT 'admin who made changes to EMC mailing and caused undo entry creation - ID (admin_tbl)',
 	KEY undomailing$mid$idx (mailing_id),
@@ -1428,6 +1439,7 @@ CREATE TABLE userform_tbl (
 	active                     INT(1) NOT NULL DEFAULT 1 COMMENT 'If set to 0, then the form should not be available for using',
 	success_builder_json       LONGTEXT COMMENT 'JSON to store success form builder state',
 	error_builder_json         LONGTEXT COMMENT 'JSON to store error form builder state',
+	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT 'deleted? 0 = no, 1 = yes',
 	PRIMARY KEY (form_id),
 	KEY formname (formname)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores data for form (e.g. opt-out / opt-in forms';
@@ -1560,15 +1572,15 @@ CREATE TABLE actop_update_customer_tbl (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'allows updates on customer_xxx_tbl by action - step';
 
 CREATE TABLE actop_get_customer_tbl (
-	load_always                TINYINT(1) NOT NULL COMMENT '1= inactive recipients are loaded, too, 0 = loading active recipients only',
+	load_always                INTEGER NOT NULL COMMENT '1= inactive recipients are loaded, too, 0 = loading active recipients only',
 	action_operation_id        INTEGER NOT NULL COMMENT 'references actop_tbl.action_operation_id',
 	PRIMARY KEY (action_operation_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'action-step for loading recipient';
 
 CREATE TABLE actop_subscribe_customer_tbl (
-	double_check               TINYINT(1) NOT NULL COMMENT '1=checks, if recipient already exists, 0=no check',
+	double_check               INTEGER NOT NULL COMMENT '1=checks, if recipient already exists, 0=no check',
 	key_column                 VARCHAR(255) NOT NULL COMMENT 'column double_check, e.g. email',
-	double_opt_in              TINYINT(1) NOT NULL COMMENT '1 = state is set to DOI - waiting for confirm (5)',
+	double_opt_in              INTEGER NOT NULL COMMENT '1 = state is set to DOI - waiting for confirm (5)',
 	action_operation_id        INTEGER NOT NULL COMMENT 'references actop_tbl.action_operation_id',
 	PRIMARY KEY (action_operation_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'details for subscribe action steps';
@@ -1900,6 +1912,7 @@ CREATE TABLE recipients_report_tbl (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Report on executed recipient imports and exports';
 CREATE INDEX recrep$cidrepdate$idx ON recipients_report_tbl(report_date, company_id);
 CREATE INDEX recrep$cidaidty$idx ON recipients_report_tbl (admin_id, company_id, type);
+CREATE INDEX recrep$cid$idx ON recipients_report_tbl(company_id);
 
 CREATE TABLE birtreport_tbl (
 	report_id                  INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Reference key',
@@ -1924,6 +1937,7 @@ CREATE TABLE birtreport_tbl (
 	nextstart                  TIMESTAMP NULL,
 	running                    INTEGER DEFAULT 0,
 	lastresult                 VARCHAR(512),
+	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT 'deleted? 0 = no, 1 = yes',
 	PRIMARY KEY  (report_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Definition of preconfigured reports to be created by birt and sent via email';
 
@@ -2115,7 +2129,7 @@ CREATE TABLE webservice_permissions_tbl (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Available webservice permissions and categories';
 
 CREATE TABLE ws_login_track_tbl (
-	login_track_id             INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
+	login_track_id             BIGINT NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
 	ip_address                 VARCHAR(50) DEFAULT NULL COMMENT '[secret_data] address where login-request came from',
 	creation_date              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'login-request timestamp',
 	login_status               INT(11) DEFAULT NULL COMMENT '10 = successful, 20 = failed, 30 = unlock blocked IP, 40 = successful but while IP is locked',
@@ -2123,6 +2137,7 @@ CREATE TABLE ws_login_track_tbl (
 	PRIMARY KEY (login_track_id),
 	KEY wslogtrck$ip_cdate_stat$idx (ip_address, creation_date, login_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[secret_data] any WS-login-request, successful or not, is stored here (for a certain time)';
+CREATE INDEX wslogtrck$user$idx ON ws_login_track_tbl (username);
 
 CREATE TABLE birtreport_recipient_tbl (
 	birtreport_id              INT(10) UNSIGNED COMMENT 'Multiple entries for referenced report_id from birtreport_tbl',
@@ -2274,19 +2289,6 @@ CREATE TABLE target_ref_profilefield_tbl (
 	name                       VARCHAR(200) NOT NULL COMMENT 'Name of referenced profile field'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Profile fields referenced by target groups';
 
-CREATE TABLE target_ref_reftab_tbl (
-	target_ref                 INT(10) UNSIGNED NOT NULL COMMENT 'Target group ID',
-	company_ref                INT(11) UNSIGNED NOT NULL COMMENT 'Company ID',
-	reftab_ref                 INT(10) UNSIGNED NOT NULL COMMENT 'ID of referenced reference table'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Reference tables referenced by target groups';
-
-CREATE TABLE target_ref_reftab_col_tbl (
-	target_ref                 INT(10) UNSIGNED NOT NULL COMMENT 'Target group ID',
-	company_ref                INT(11) UNSIGNED NOT NULL COMMENT 'Company ID',
-	reftab_ref                 INT(10) UNSIGNED NOT NULL COMMENT 'ID of referenced reference table',
-	column_name                VARCHAR(50) NOT NULL COMMENT 'Name of referenced profile field'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Reference table columns referenced by target groups';
-
 CREATE TABLE webservice_endpoint_cost_tbl (
 	company_ref                INT(11) UNSIGNED NOT NULL COMMENT 'Company ID',
 	endpoint                   VARCHAR(200) NOT NULL COMMENT 'Name of endpoint',
@@ -2337,7 +2339,7 @@ CREATE TABLE bounce_ar_lastsent_tbl (
 
 CREATE TABLE actop_unsubscribe_customer_tbl(
 	action_operation_id        INT(11) NOT NULL COMMENT 'references actop_tbl.action_operation_id',
-	all_mailinglists_selected  TINYINT(1) NOT NULL COMMENT '1 = unsubscribe from all mailinglists, 0 = user can select mailinglists to unsubscribe',
+	all_mailinglists_selected  INTEGER NOT NULL COMMENT '1 = unsubscribe from all mailinglists, 0 = user can select mailinglists to unsubscribe',
 	PRIMARY KEY (action_operation_id),
 	CONSTRAINT actop_unsubscribe_customer_actopid_fk FOREIGN KEY (action_operation_id) REFERENCES actop_tbl(action_operation_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -2375,7 +2377,6 @@ CREATE TABLE http_response_headers_tbl (
 	remote_hostname_pattern    VARCHAR(1000) COMMENT 'Regular expression for requesting host. Set to null to match all hosts.',
 	used_for                   VARCHAR(100) COMMENT 'Whewn to apply this settings (currently allowed: filter, resource). See class com.agnitas.emm.responseheaders.common.UsedFor',
 	query_pattern              VARCHAR(1000) COMMENT 'Regular expression for query (if null: not checked)',
-	bk_resp_mimetype_pattern   VARCHAR(1000) COMMENT 'not used - remove in future',
 	description                VARCHAR(1000) COMMENT 'Comment on this configuration'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'settings saving a mapping on database-columns to file-columns in an export-profile';
 INSERT INTO http_response_headers_tbl (header_name, header_value, overwrite, app_types) VALUE ('Content-Security-Policy', 'frame-ancestors ''self''', 1, 'emm');
@@ -2402,7 +2403,8 @@ CREATE TABLE restful_usage_log_tbl (
 	request_method             VARCHAR(7) NOT NULL COMMENT 'Method of request',
 	company_id                 INT(11) UNSIGNED NOT NULL COMMENT 'Company ID of restful user',
 	username                   VARCHAR(200) NOT NULL COMMENT 'Name of restful user',
-	host_name                  VARCHAR(64) COMMENT 'stores name of host'
+	host_name                  VARCHAR(64) COMMENT 'stores name of host',
+	supervisor_name            VARCHAR(100) COMMENT 'if this was a supervisor access it is stored here'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Stores activity information of restful users';
 CREATE INDEX restus$cidtsusr$idx ON restful_usage_log_tbl(company_id, timestamp, username);
 
@@ -2755,6 +2757,11 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('template.change', 'Mailing', 'Template', 2, NULL, CURRENT_TIMESTAMP);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('template.delete', 'Mailing', 'Template', 3, NULL, CURRENT_TIMESTAMP);
 
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('report.birt.show', 'Statistics', 'Reports', 1, NULL, CURRENT_TIMESTAMP);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('report.birt.change', 'Statistics', 'Reports', 2, NULL, CURRENT_TIMESTAMP);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('report.birt.delete', 'Statistics', 'Reports', 3, NULL, CURRENT_TIMESTAMP);
+INSERT INTO permission_tbl (permission_name, category, sort_order, feature_package, creation_date) VALUES ('admin.management.show', 'Administration', 10, NULL, CURRENT_TIMESTAMP);
+
 -- Permissions of category "attachment"
 INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetAttachment', 'attachment');
 INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('ListAttachments', 'attachment');
@@ -2913,11 +2920,15 @@ INSERT INTO actop_get_archive_mailing_tbl (action_operation_id, expire_day, expi
 INSERT INTO userform_tbl (company_id, formname, description, startaction_id, endaction_id, success_template, error_template,  creation_date, success_url, error_url, error_use_url, success_use_url)
 	VALUES (1, 'fullview', 'Shows email in browser', (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1), 0, '$archiveHtml', 'An error occured - we cannot show you the email in the browser.', NULL, NULL, NULL, (SELECT action_id FROM rdir_action_tbl WHERE company_id = 1 AND shortname = 'GetArchiveMailing'), 0);
 
-INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname) VALUES (1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'default');
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname) VALUES (1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'Light');
 UPDATE emm_layout_base_tbl SET layout_base_id = 0 WHERE layout_base_id = 1;
 -- Autoincrement of layout_base_id does not allow to insert 0 directly
 INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
-	SELECT layout_base_id + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'Dark mode', 1, 1 FROM emm_layout_base_tbl WHERE layout_base_id = (SELECT MAX(tmpt.layout_base_id) FROM emm_layout_base_tbl tmpt);
+	SELECT layout_base_id + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'Dark', 1, 1 FROM emm_layout_base_tbl WHERE layout_base_id = (SELECT MAX(tmpt.layout_base_id) FROM emm_layout_base_tbl tmpt);
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
+    SELECT layout_base_id + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'High-Contrast Light', 1, 2 FROM emm_layout_base_tbl WHERE layout_base_id = (SELECT MAX(tmpt.layout_base_id) FROM emm_layout_base_tbl tmpt);
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
+    SELECT layout_base_id + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'High-Contrast Dark', 1, 3 FROM emm_layout_base_tbl WHERE layout_base_id = (SELECT MAX(tmpt.layout_base_id) FROM emm_layout_base_tbl tmpt);
 
 INSERT INTO click_stat_colors_tbl (id, company_id, range_start, range_end, color) VALUES
 	(1, 0, 0, 5, 'F4F9FF'),
@@ -2962,6 +2973,7 @@ INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES
 INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/x-xslfo', 'XSL-FO (EMM-7703)', CURRENT_TIMESTAMP);
 INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/vcard', 'Outlook Kontakt Linux (EMM-7861)', CURRENT_TIMESTAMP);
 INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/x-vcard', 'Outlook Kontakt Windows (EMM-7861)', CURRENT_TIMESTAMP);
+INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/json', NULL, CURRENT_TIMESTAMP);
 
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('importStep2', 'assigning_the_csv_columns_to_t.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('userRights', 'assigning_user_rights.htm');
@@ -3198,6 +3210,7 @@ INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('facebookLeadAds', 'face
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('newTrigger', 'create_or_change_trigger.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('Domains', 'domains.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('TextGenerator', 'create-ai-content.htm');
+INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('agnTags', 'appendix_a_agnitas_tags.htm');
 
 INSERT INTO dyn_target_tbl (target_id, company_id, mailinglist_id, target_shortname, target_sql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked) VALUES
 	(1, 0, 0, '__listsplit_050505050575_1', 'mod(cust.CUSTOMER_ID, 20) = 0', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 1),
@@ -3269,17 +3282,17 @@ INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, targe
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 	VALUES (1, 'EMM Target Group: Openers and Clickers', '((cust.LASTCLICK_DATE IS NOT NULL) AND ((cust.LASTOPEN_DATE IS NOT NULL) AND (cust.LASTSEND_DATE IS NOT NULL)))', '`lastclick_date` IS NOT EMPTY OR `lastopen_date` IS NOT EMPTY', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Lead', '(((to_char(cust.creation_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) AND ((cust.lastopen_date IS NULL) AND (cust.lastclick_date IS NULL))) OR (((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1)) OR (to_char(cust.lastsend_date, ''YYYYMMDD'') = to_char((SYSDATE) - (90), ''YYYYMMDD''))))', '(`creation_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND `lastopen_date` IS EMPTY AND `lastclick_date` IS EMPTY) OR (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1) OR `lastsend_date` = TODAY-90 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Lead', '(((date_format(cust.creation_date, ''%Y%m%d'') > date_format((current_timestamp) - INTERVAL (91) * 86400 SECOND, ''%Y%m%d'')) AND ((cust.lastopen_date IS NULL) AND ((cust.lastclick_date IS NULL) AND ((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1))))) AND (date_format(cust.lastsend_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (90) * 86400 SECOND, ''%Y%m%d'')))', '(`creation_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND `lastopen_date` IS EMPTY AND `lastclick_date` IS EMPTY) OR (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1) OR `lastsend_date` = TODAY-90 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Newcomer', '(to_char(cust.creation_date, ''YYYYMMDD'') > to_char((SYSDATE) - (31), ''YYYYMMDD''))', '`creation_date` > TODAY-31 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Newcomer', '(date_format(cust.creation_date, ''%Y%m%d'') > date_format((current_timestamp) - INTERVAL (31) * 86400 SECOND, ''%Y%m%d''))', '`creation_date` > TODAY-31 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Opportunity', '((to_char(cust.lastopen_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) OR ((to_char(cust.lastclick_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) OR (cust.sys_tracking_veto = 1)))', '`lastopen_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `lastclick_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `sys_tracking_veto` = 1', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Opportunity', '((date_format(cust.lastopen_date, ''%Y%m%d'') > date_format((current_timestamp) - INTERVAL (91) * 86400 SECOND, ''%Y%m%d'')) OR ((date_format(cust.lastclick_date, ''%Y%m%d'') > date_format((current_timestamp) - INTERVAL (91) * 86400 SECOND, ''%Y%m%d'')) OR (cust.sys_tracking_veto = 1)))', '`lastopen_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `lastclick_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' OR `sys_tracking_veto` = 1', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Sleeper', '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') > to_char((SYSDATE) - (91), ''YYYYMMDD'')) AND (((cust.lastopen_date IS NULL) OR (to_char(cust.lastopen_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD''))) AND (((cust.lastclick_date IS NULL) OR (to_char(cust.lastclick_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD''))) AND ((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1))))))', '`creation_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' AND `lastsend_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND (`lastopen_date` IS EMPTY OR `lastopen_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`lastclick_date` IS EMPTY OR `lastclick_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Sleeper', '((date_format(cust.creation_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (90) * 86400 SECOND, ''%Y%m%d'')) AND ((date_format(cust.lastsend_date, ''%Y%m%d'') > date_format((current_timestamp) - INTERVAL (91) * 86400 SECOND, ''%Y%m%d'')) AND (((cust.lastopen_date IS NULL) OR (date_format(cust.lastopen_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (90) * 86400 SECOND, ''%Y%m%d''))) AND (((cust.lastclick_date IS NULL) OR (date_format(cust.lastclick_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (90) * 86400 SECOND, ''%Y%m%d''))) AND ((cust.sys_tracking_veto IS NULL) OR (cust.sys_tracking_veto <> 1))))))', '`creation_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' AND `lastsend_date` > TODAY-91 DATEFORMAT ''YYYYMMDD'' AND (`lastopen_date` IS EMPTY OR `lastopen_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`lastclick_date` IS EMPTY OR `lastclick_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'') AND (`sys_tracking_veto` IS EMPTY OR `sys_tracking_veto` <> 1)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Unattended 3 Months', '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (30), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((SYSDATE) - (90), ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))', '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Unattended 3 Months', '(((date_format(cust.lastsend_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (90) * 86400 SECOND, ''%Y%m%d'')) OR (cust.lastsend_date IS NULL)) AND (date_format(cust.creation_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (30) * 86400 SECOND, ''%Y%m%d'')))', '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-90 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
-	VALUES (1, 'EMM Target Group: Unattended 6 Months', '((to_char(cust.creation_date, ''YYYYMMDD'') < to_char((SYSDATE) - (30), ''YYYYMMDD'')) AND ((to_char(cust.lastsend_date, ''YYYYMMDD'') < to_char((SYSDATE) - (180), ''YYYYMMDD'')) OR (cust.lastsend_date IS NULL)))', '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-180 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
+	VALUES (1, 'EMM Target Group: Unattended 6 Months', '(((date_format(cust.lastsend_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (180) * 86400 SECOND, ''%Y%m%d'')) AND (cust.lastsend_date IS NULL)) AND (date_format(cust.creation_date, ''%Y%m%d'') < date_format((current_timestamp) - INTERVAL (30) * 86400 SECOND, ''%Y%m%d'')))', '`creation_date` < TODAY-30 DATEFORMAT ''YYYYMMDD'' AND (`lastsend_date` < TODAY-180 DATEFORMAT ''YYYYMMDD'' OR `lastsend_date` IS EMPTY)', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 INSERT INTO dyn_target_tbl (company_id, target_shortname, target_sql, eql, target_description, deleted, change_date, creation_date, admin_test_delivery, locked, component_hide, invalid, hidden)
 	VALUES (1, 'EMM Target Group: Untouched', '(to_char(cust.timestamp, ''YYYYMMDD'') < to_char((SYSDATE) - (180), ''YYYYMMDD''))', '`timestamp` < TODAY-180 DATEFORMAT ''YYYYMMDD''', NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, NULL, 0, 0, 0);
 
@@ -3287,7 +3300,7 @@ INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult,
 	VALUES ('BirtReports', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.birtreport.service.ComBirtReportJobWorker', 0, 3);
 
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '0400', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.LoginTrackTableCleanerJobWorker', 0, 3);
+	VALUES ('LoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.LoginTrackTableCleanerJobWorker', 0, 3);
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'retentionTime', '14');
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'deleteBlockSize', '1000');
 
@@ -3296,27 +3309,32 @@ INSERT INTO job_queue_tbl ( description, created, laststart, running, lastresult
 INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) (SELECT id, 'maxNumberOfCompanyCleaningWorkers', '3' FROM job_queue_tbl WHERE description = 'DBCleaner');
 
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.calendar.service.ComCalendarCommentMailingServiceJobWorker', 0, 3);
+	VALUES ('CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.calendar.service.ComCalendarCommentMailingServiceJobWorker', 0, 3);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('DeletedContentblockCleaner', CURRENT_TIMESTAMP, NULL, '0', 'OK', 0, 0, '0135', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.DeletedContentblockCleanerJobWorker', 0, 2);
+	VALUES ('DeletedContentblockCleaner', CURRENT_TIMESTAMP, NULL, '0', 'OK', 1, 0, '0135', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.DeletedContentblockCleanerJobWorker', 0, 2);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '0130', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.UndoRelictCleanerJobWorker', 0, 2);
+	VALUES ('UndoRelictCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '0130', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.UndoRelictCleanerJobWorker', 0, 2);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.mailing.autooptimization.service.ComOptimizationJobWorker', 0, 5);
+	VALUES ('AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.mailing.autooptimization.service.ComOptimizationJobWorker', 0, 5);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.DBErrorCheckJobWorker', 0, 3);
+	VALUES ('DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.DBErrorCheckJobWorker', 0, 3);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '0345;1545', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.WebserviceLoginTrackTableCleanerJobWorker', 0, 2);
+	VALUES ('WebserviceLoginTrackTableCleaner', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.WebserviceLoginTrackTableCleanerJobWorker', 0, 2);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
-	VALUES ('RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.RefreshUserLastLoginJobWorker', 0);
+	VALUES ('RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.RefreshUserLastLoginJobWorker', 0);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, criticality, deleted)
-	VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '0000', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 1, 0);
+	VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 1, 0, '0000', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 1, 0);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('WorkflowReminderService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.ComWorkflowReminderServiceJobWorker', 0, 5);
+	VALUES ('WorkflowReminderService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.ComWorkflowReminderServiceJobWorker', 0, 5);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-	VALUES ('WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.jobs.ComWorkflowReactionJobWorker', 0, 5);
+	VALUES ('WorkflowReactionHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.jobs.ComWorkflowReactionJobWorker', 0, 5);
 INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
 	VALUES ('WorkflowStateHandler', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.jobs.WorkflowStateTransitionJobWorker', 0, 5);
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
+    VALUES ('DiskSpaceCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.serverstatus.service.job.DiskSpaceCheckJobWorker', 0, 3);
+INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
+	(SELECT MAX(id) + 1, 'MigrationJobWorker', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, 'MoTuWeThFr:1500', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.MigrationJobWorker', 0  FROM job_queue_tbl);
+
 
 INSERT INTO mailinglist_tbl (company_id, description, shortname, auto_url, remove_data, rdir_domain, creation_date, change_date)
 	VALUES (1, 'Default, please do not delete!', 'Default-Mailinglist', NULL, '0', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -3339,7 +3357,9 @@ INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES
 	('agnTITLEFULL', '', 'COMPLEX', 0, 'shows title - print out title, firstname, lastname - by tw'),
 	('agnUID', '''''', 'SIMPLE', 0, 'agnUID'),
 	('agnUNSUBSCRIBE', '''[rdir-domain]/form.action?agnCI=[company-id]&agnFN=unsubscribe&agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-unsubscribe-form'),
-	('agnITEM', '', 'COMPLEX', 0, NULL);
+	('agnITEM', '', 'COMPLEX', 0, NULL),
+	('agnFULLVIEW', '', 'COMPLEX', 0, 'Generates URL for fullview'),
+	('agnWEBVIEW', '', 'COMPLEX', 0, 'Generates URL for fullview');
 
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES
 	('agnALTER', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns years from column value until now', 1),
@@ -3444,6 +3464,9 @@ INSERT INTO title_gender_tbl (title_id, gender, title) VALUES ((SELECT MAX(title
 
 INSERT INTO http_response_headers_tbl (header_name, header_value, overwrite, app_types) VALUES ('Cache-control', 'no-store', 1, 'emm,rdir,ws,birt');
 INSERT INTO http_response_headers_tbl (header_name, header_value, overwrite, app_types) VALUES ('Pragma', 'no-cache', 0, 'emm,rdir,ws,birt');
+
+
+
 
 DELIMITER ;;
 CREATE PROCEDURE createIndices()
@@ -3755,5 +3778,65 @@ INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timesta
 	VALUES ('23.10.604', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('23.10.605', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('23.10.641', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('23.10.719', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('23.10.753', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.085', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.163', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.225', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.01.398', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.488', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.514', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.569', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.633', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.675', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.01.696', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.01.698', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.04.063', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.04.138', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.04.222', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.04.522', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('24.04.624', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.154', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.198', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.210', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.216', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.238', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.456', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.460', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.492', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('24.07.537', CURRENT_USER, CURRENT_TIMESTAMP);
+
 
 COMMIT;

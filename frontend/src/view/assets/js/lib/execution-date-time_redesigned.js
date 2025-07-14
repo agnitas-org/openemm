@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   class TimeSchedule {
 
@@ -176,13 +176,13 @@
 
     showTimeScheduleErrors(errorMsg) {
       const timeWrappers = this.$rowWrapper.find('[data-schedule-time-wrapper]');
-      const $errorBlock = $(`<div class="form-control-feedback-message js-form-error-msg">${errorMsg}</div>`);
+      const $errorBlock = $(`<div class="form-control-feedback-message">${errorMsg}</div>`);
 
       _.each(timeWrappers, time => {
         const $time = $(time);
-        if (!$time.find('.js-form-error-msg').exists()) {
+        if (!$time.find('.form-control-feedback-message').exists()) {
           $time.find('[data-schedule-time]').parent().append($errorBlock.clone());
-          $time.addClass('has-alert has-feedback js-form-error');
+          $time.addClass('has-alert has-feedback');
         }
       });
     }
@@ -190,8 +190,8 @@
     hideTimeScheduleErrors() {
       const timeWrapper = this.$rowWrapper.find('[data-schedule-time-wrapper]');
 
-      timeWrapper.find('.js-form-error-msg').remove();
-      timeWrapper.removeClass("has-alert has-feedback js-form-error");
+      timeWrapper.find('.form-control-feedback-message').remove();
+      timeWrapper.removeClass('has-alert has-feedback');
     }
   }
 

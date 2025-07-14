@@ -5,7 +5,7 @@
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="recipient" type="com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow"--%>
 <%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
-<%--@elvariable id="recipients" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
+<%--@elvariable id="recipients" type="com.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
 
 <c:set var="recipientsLimitExceeded" value="${recipients.fullListSize > countOfRecipients}" />
 

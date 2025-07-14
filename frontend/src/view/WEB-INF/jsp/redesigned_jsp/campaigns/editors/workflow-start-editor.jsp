@@ -4,14 +4,12 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
-<%@ page import="org.agnitas.target.ConditionalOperator" %>
-<%@ page import="org.agnitas.target.ChainOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ConditionalOperator" %>
+<%@ page import="com.agnitas.emm.core.target.beans.ChainOperator" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <c:set var="TYPE_DATE" value="<%= WorkflowStartType.DATE %>"/>
 <c:set var="TYPE_EVENT" value="<%= WorkflowStartType.EVENT %>"/>
@@ -115,7 +113,13 @@
 
                 <div id="reactionStartMailing">
                     <label class="form-label"><mvc:message code="Mailing"/></label>
-                    <select name="mailingId" data-action="start-editor-mailing-select" class="form-control js-select"></select>
+                    <div class="d-flex gap-1">
+                        <select name="mailingId" data-action="start-editor-mailing-select" class="form-control js-select"></select>
+                        <a id="edit-start-editor-mailing-btn" href="#" class="btn btn-icon btn-primary hidden"
+                           data-action="mailing-editor-edit" data-tooltip="<mvc:message code="mailing.MailingEdit" />">
+                            <i class="icon icon-pen"></i>
+                        </a>
+                    </div>
                 </div>
 
                 <div id="reactionStartMailingLink">
@@ -147,7 +151,7 @@
                 <div>
                     <label class="form-label">
                         <mvc:message code="workflow.start.execution"/>
-                        <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/workflow/start/Execution.xml" tabindex="-1" type="button"></a>
+                        <a href="#" class="icon icon-question-circle" data-help="workflow/start/Execution.xml" tabindex="-1" type="button"></a>
                     </label>
                     <select name="executeOnce" class="form-control js-select" data-action="start-editor-execution-changed">
                         <option value="true" id="startExecuteOnce"><mvc:message code="workflow.start.execution.once"/></option>

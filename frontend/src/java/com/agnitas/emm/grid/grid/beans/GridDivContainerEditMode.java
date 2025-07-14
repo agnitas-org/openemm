@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,7 @@
 package com.agnitas.emm.grid.grid.beans;
 
 public enum GridDivContainerEditMode {
+
     EDITABLE_CONTAINER(0, "grid.div.container.mode.editable"),
     FIXED_CONTAINER(1, "grid.div.container.mode.fixed"),
     ANCHORED_CONTAINER(2, "grid.div.container.mode.anchored"),
@@ -32,21 +33,13 @@ public enum GridDivContainerEditMode {
         return messageKey;
     }
 
-    public static GridDivContainerEditMode getDivContainerEditModeForStorageCode(int storageCode) throws Exception {
+    public static GridDivContainerEditMode findModeByCode(int storageCode) {
         for (GridDivContainerEditMode divContainerEditMode : GridDivContainerEditMode.values()) {
             if (divContainerEditMode.storageCode == storageCode) {
                 return divContainerEditMode;
             }
         }
-        throw new Exception("Unknown storage code for DivContainerEditMode: " + storageCode);
-    }
 
-    public static GridDivContainerEditMode getDivContainerEditModeForName(String name) throws Exception {
-        for (GridDivContainerEditMode divContainerEditMode : GridDivContainerEditMode.values()) {
-            if (divContainerEditMode.name().equalsIgnoreCase(name)) {
-                return divContainerEditMode;
-            }
-        }
-        throw new Exception("Unknown name for DivContainerEditMode: " + name);
+        return null;
     }
 }

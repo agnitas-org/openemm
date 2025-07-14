@@ -2,7 +2,7 @@
 <%@ page session="false" buffer="none" %>
 <%@ page import="org.eclipse.birt.report.presentation.aggregation.IFragment,
 				 org.eclipse.birt.report.context.BaseAttributeBean" %>
-<%@ page import="com.agnitas.reporting.birt.external.utils.ComBirtResources" %>
+<%@ page import="com.agnitas.reporting.birt.external.utils.EmmBirtResources" %>
 <%@ page import="java.util.Locale" %>
 
 <%-----------------------------------------------------------------------------
@@ -49,19 +49,19 @@
                                 {
                             %>
                             <%=
-                            ComBirtResources.getMessage( "birt.viewer.navbar.prompt.one", locale )
+                            EmmBirtResources.getMessage( "birt.viewer.navbar.prompt.one", locale )
                             %>&nbsp;
                             <SPAN ID='pageNumber'></SPAN>&nbsp;
-                            <%= ComBirtResources.getMessage( "birt.viewer.navbar.prompt.two", locale )%>&nbsp;
+                            <%= EmmBirtResources.getMessage( "birt.viewer.navbar.prompt.two", locale )%>&nbsp;
                             <SPAN ID='totalPage'></SPAN>
                             <%
                             }
                             else
                             {
                             %>
-                            <%= ComBirtResources.getMessage( "birt.viewer.navbar.prompt.one", locale )%>&nbsp;
+                            <%= EmmBirtResources.getMessage( "birt.viewer.navbar.prompt.one", locale )%>&nbsp;
                             <SPAN ID='pageNumber'><%= ""+attributeBean.getReportPage( ) %></SPAN>&nbsp;
-                            <%= ComBirtResources.getMessage( "birt.viewer.navbar.prompt.two", locale )%>&nbsp;
+                            <%= EmmBirtResources.getMessage( "birt.viewer.navbar.prompt.two", locale )%>&nbsp;
                             <SPAN ID='totalPage'></SPAN>
                             <%
                                 }
@@ -70,31 +70,31 @@
                     </TD>
                     <TD WIDTH="15px">
                         <INPUT TYPE="image" SRC="<%= imagesPath + (attributeBean.isRtl()?"LastPage":"FirstPage") + "_disabled.gif" %>" NAME='first'
-                               ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.first", locale )%>"
-                               TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.first", locale )%>" CLASS="birtviewer_clickable">
+                               ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.first", locale )%>"
+                               TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.first", locale )%>" CLASS="birtviewer_clickable">
                     </TD>
                     <TD WIDTH="2px">&nbsp;</TD>
                     <TD WIDTH="15px">
                         <INPUT TYPE="image" SRC="<%= imagesPath + (attributeBean.isRtl()?"NextPage":"PreviousPage") + "_disabled.gif" %>" NAME='previous'
-                               ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.previous", locale )%>"
-                               TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.previous", locale )%>" CLASS="birtviewer_clickable">
+                               ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.previous", locale )%>"
+                               TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.previous", locale )%>" CLASS="birtviewer_clickable">
                     </TD>
                     <TD WIDTH="2px">&nbsp;</TD>
                     <TD WIDTH="15px">
                         <INPUT TYPE="image" SRC="<%= imagesPath + (attributeBean.isRtl()?"PreviousPage":"NextPage") + "_disabled.gif" %>" NAME='next'
-                               ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.next", locale )%>"
-                               TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.next", locale )%>" CLASS="birtviewer_clickable">
+                               ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.next", locale )%>"
+                               TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.next", locale )%>" CLASS="birtviewer_clickable">
                     </TD>
                     <TD WIDTH="2px">&nbsp;</TD>
                     <TD WIDTH="15px">
                         <INPUT TYPE="image" SRC="<%= imagesPath + (attributeBean.isRtl()?"FirstPage":"LastPage") + "_disabled.gif" %>" NAME='last'
-                               ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.last", locale )%>"
-                               TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.last", locale )%>" CLASS="birtviewer_clickable">
+                               ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.last", locale )%>"
+                               TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.last", locale )%>" CLASS="birtviewer_clickable">
                     </TD>
 
                     <TD WIDTH="8px">&nbsp;&nbsp;</TD>
 
-                    <TD ALIGN="right" NOWRAP><LABEL for="gotoPage"><b><%= ComBirtResources.getMessage( "birt.viewer.navbar.lable.goto", locale )%></b></LABEL></TD>
+                    <TD ALIGN="right" NOWRAP><LABEL for="gotoPage"><b><%= EmmBirtResources.getMessage( "birt.viewer.navbar.lable.goto", locale )%></b></LABEL></TD>
                     <TD WIDTH="2px">&nbsp;</TD>
                     <TD ALIGN="right" WIDTH="50px">
                         <INPUT ID='gotoPage' TYPE='text' VALUE='' MAXLENGTH="8" SIZE='5' CLASS="birtviewer_navbar_input">
@@ -102,8 +102,8 @@
                     <TD WIDTH="4px">&nbsp;</TD>
                     <TD ALIGN="right" WIDTH="10px">
                         <INPUT TYPE="image" SRC="<%= imagesPath + (attributeBean.isRtl()?"Go_rtl.gif":"Go.gif") %>" NAME='goto'
-                               ALT="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.goto", locale )%>"
-                               TITLE="<%= ComBirtResources.getHtmlMessage( "birt.viewer.navbar.goto", locale )%>" CLASS="birtviewer_clickable">
+                               ALT="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.goto", locale )%>"
+                               TITLE="<%= EmmBirtResources.getHtmlMessage( "birt.viewer.navbar.goto", locale )%>" CLASS="birtviewer_clickable">
                     </TD>
                     <TD WIDTH="6px">&nbsp;</TD>
                 </TR>

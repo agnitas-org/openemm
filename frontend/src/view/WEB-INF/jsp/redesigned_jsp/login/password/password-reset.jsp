@@ -1,8 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" errorPage="/errorRedesigned.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
-
 <mvc:form cssClass="row g-3" servletRelativeAction="/logon/reset-passwordRedesigned.action" method="POST" modelAttribute="form"
           data-form="static" data-form-focus="password" data-validator="logon-new-password/form">
 
@@ -13,7 +11,7 @@
         <label for="password" class="form-label">
             <i class="icon icon-key"></i>
             <mvc:message code="password.new"/>
-            <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/settings/AdminPasswordRules.xml"></a>
+            <a href="#" class="icon icon-question-circle" data-help="settings/AdminPasswordRules.xml"></a>
         </label>
 
         <mvc:password path="password" id="password" cssClass="form-control" />

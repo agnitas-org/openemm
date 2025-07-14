@@ -7,7 +7,7 @@
 <%--@elvariable id="mailingShortname" type="java.lang.String"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down">
+    <div class="modal-dialog">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/content/${mailingId}/text-from-html/generate.action">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="Mailing"/>:&nbsp;${mailingShortname}</h1>

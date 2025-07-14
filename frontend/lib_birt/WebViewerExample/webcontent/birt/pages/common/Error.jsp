@@ -44,8 +44,7 @@
 						}
 						else
 						{
-							PrintWriter writer = new PrintWriter( out );									
-							error.printStackTrace( writer );				
+							out.println( ParameterAccessor.htmlEncode("An error has occurred. Please contact our support team.") );
 						}					
 					}
 				%>

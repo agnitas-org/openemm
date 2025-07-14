@@ -16,14 +16,38 @@ There is a special type of badge that is used in tables. For this you should use
 
 .table-badge {
   @extend .badge;
+
+  --table-badge-color: #{$dark-grey};
+  --table-badge-bg: var(--table-head-bg);
+  --badge-border-color: #{$border-color-var};
+
   padding: 3px $gap-sm;
 
   font-size: $font-size-base;
   font-weight: $font-weight-base;
 
-  border: $border-default;
   border-radius: $border-radius-sm;
 
-  background-color: var(--table-head-bg-color);
+  background-color: var(--table-badge-bg);
   color: var(--table-badge-color);
+}
+
+@include color-mode(dark) {
+  .table-badge {
+    --table-badge-color: #{$gray-100};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .table-badge {
+    --table-badge-color: #{$white};
+    --table-badge-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .table-badge {
+    --table-badge-color: #{$con-dark-blue};
+    --table-badge-bg: #{$white};
+  }
 }

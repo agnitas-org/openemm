@@ -12,9 +12,11 @@ image/tiff                      tif tiff TIF TIFF Tif Tiff
 image/bmp                       bmp BMP Bmp
 image/svg+xml                   svg SVG Svg
 image/x-icon                    ico ICO Ico
+image/webp                      webp WEBP Webp
 
 application/zip                 zip ZIP Zip
 application/pdf                 pdf PDF Pdf
+application/json                json JSON Json
 
 text/comma-separated-values     csv CSV Csv
 text/plain                      txt TXT Txt

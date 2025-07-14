@@ -24,30 +24,28 @@
 		super.onSetUp();================================================================== Admin -->
 	<bean id="Admin" class="com.agnitas.beans.impl.AdminImpl" scope="prototype" />
 
-	<bean id="AdminGroup" class="org.agnitas.beans.impl.AdminGroupImpl" scope="prototype" />
+	<bean id="AdminGroup" class="com.agnitas.beans.impl.AdminGroupImpl" scope="prototype" />
 
 	<bean id="AdminPreferences" class="com.agnitas.beans.impl.AdminPreferencesImpl" scope="prototype" />
 
-	<bean id="MailoutClientFactory" class="org.agnitas.util.MailoutClientFactoryImpl"/>
-
-	<bean id="AdminPreferencesFactory" class="com.agnitas.beans.factory.impl.AdminPreferencesFactoryImpl" />
+	<bean id="MailoutClientFactory" class="com.agnitas.util.MailoutClientFactoryImpl"/>
 
 <!-- ============================================================================================================================== Auto Optimization -->
-	<bean id="Optimization" class="com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl" scope="prototype" />
+	<bean id="Optimization" class="com.agnitas.mailing.autooptimization.beans.impl.OptimizationImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== BeanShell -->
-	<bean id="BeanShellInterpreterFactory" class="org.agnitas.util.beanshell.BeanShellInterpreterFactory">
+	<bean id="BeanShellInterpreterFactory" class="com.agnitas.util.beanshell.BeanShellInterpreterFactory">
 		<property name="dataSource" ref="dataSource" />
 	</bean>
 
 	<bean id="BeanShellCodeGeneratorCallbackFactory" class="com.agnitas.emm.core.target.eql.codegen.beanshell.DefaultBeanShellCodeGeneratorCallbackFactory" />
 
 <!-- ============================================================================================================================== Binding Entry -->
-	<bean id="BindingEntry" class="org.agnitas.beans.impl.BindingEntryImpl" scope="prototype">
+	<bean id="BindingEntry" class="com.agnitas.beans.impl.BindingEntryImpl" scope="prototype">
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 	</bean>
 
-	<bean id="BindingEntryFactory" class="org.agnitas.beans.factory.impl.BindingEntryFactoryImpl">
+	<bean id="BindingEntryFactory" class="com.agnitas.beans.factory.impl.BindingEntryFactoryImpl">
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 	</bean>
 
@@ -58,7 +56,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Calendar -->
-	<bean id="CalendarComment" class="com.agnitas.emm.core.calendar.beans.impl.ComCalendarCommentImpl" scope="prototype" />
+	<bean id="CalendarComment" class="com.agnitas.emm.core.calendar.beans.impl.CalendarCommentImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Campaign -->
 	<bean id="Campaign" class="com.agnitas.beans.impl.CampaignImpl" scope="prototype" />
@@ -69,7 +67,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 	</bean>
 
-	<bean id="CompanyFactory" class="com.agnitas.beans.factory.impl.ComCompanyFactoryImpl" />
+	<bean id="CompanyFactory" class="com.agnitas.beans.factory.impl.CompanyFactoryImpl" />
 	
 	<bean id="CompanyHierarchyCache" class="com.agnitas.emm.core.commons.hierarchy.CompanyHierarchyCacheImpl">
 		<constructor-arg index="0" type="int" value="300000" />				<!-- timeout in milliseconds -->
@@ -80,9 +78,9 @@
 	<bean id="Company" class="com.agnitas.beans.impl.CompanyImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Datasource description -->
-	<bean id="DatasourceDescriptionFactory" class="org.agnitas.beans.factory.impl.DatasourceDescriptionFactoryImpl" />
+	<bean id="DatasourceDescriptionFactory" class="com.agnitas.beans.factory.impl.DatasourceDescriptionFactoryImpl" />
 
-	<bean id="DatasourceDescription" class="org.agnitas.beans.impl.DatasourceDescriptionImpl" scope="prototype" />
+	<bean id="DatasourceDescription" class="com.agnitas.beans.impl.DatasourceDescriptionImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Dynamic tags -->
 	<bean id="DynamicTag" class="com.agnitas.beans.impl.DynamicTagImpl" scope="prototype">
@@ -94,9 +92,9 @@
 	<bean id="DynamicTagFactory" class="com.agnitas.beans.factory.impl.DynamicTagFactoryImpl" />
 
 <!-- ============================================================================================================================== Dynamic tag content -->
-	<bean id="DynamicTagContent" class="org.agnitas.beans.impl.DynamicTagContentImpl" scope="prototype" />
+	<bean id="DynamicTagContent" class="com.agnitas.beans.impl.DynamicTagContentImpl" scope="prototype" />
 
-	<bean id="DynamicTagContentFactory" class="org.agnitas.beans.factory.impl.DynamicTagContentFactoryImpl" />
+	<bean id="DynamicTagContentFactory" class="com.agnitas.beans.factory.impl.DynamicTagContentFactoryImpl" />
 	
 <!-- ============================================================================================================================== ECS (Heatmap) -->
 	<bean id="EcsService" class="com.agnitas.ecs.service.impl.EcsServiceImpl">
@@ -106,20 +104,20 @@
 	</bean>
 
 <!-- ============================================================================================================================== EMM actions -->
-	<bean id="EmmAction" class="org.agnitas.actions.impl.EmmActionImpl" scope="prototype" />
+	<bean id="EmmAction" class="com.agnitas.emm.core.action.bean.EmmActionImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== EMM action operations -->
-	<bean id="ActionOperationFactory" class="com.agnitas.beans.factory.impl.ComActionOperationFactoryImpl" />
+	<bean id="ActionOperationFactory" class="com.agnitas.beans.factory.impl.ActionOperationFactoryImpl" />
 
 <!-- ============================================================================================================================== Import -->
-	<bean id="ImportStatus" class="org.agnitas.beans.impl.ImportStatusImpl" scope="prototype" />
+	<bean id="ImportStatus" class="com.agnitas.beans.impl.ImportStatusImpl" scope="prototype" />
 
-	<bean id="ImportProfile" class="org.agnitas.beans.impl.ImportProfileImpl" scope="prototype" />
+	<bean id="ImportProfile" class="com.agnitas.beans.impl.ImportProfileImpl" scope="prototype" />
 
-	<bean id="ColumnMapping" class="org.agnitas.beans.impl.ColumnMappingImpl" scope="prototype" />
+	<bean id="ColumnMapping" class="com.agnitas.beans.impl.ColumnMappingImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Mailgun -->
-	<bean id="Mailgun" class="org.agnitas.backend.MailgunImpl" scope="prototype" /> <!-- If modifying this, don't forget to update implementation of MailgunFactory if necessary!!! -->
+	<bean id="Mailgun" class="com.agnitas.backend.MailgunImpl" scope="prototype" /> <!-- If modifying this, don't forget to update implementation of MailgunFactory if necessary!!! -->
 	
 	<bean id="MailgunFactory" class="com.agnitas.backend.MailgunFactoryImpl" />
 
@@ -142,34 +140,34 @@
 		</property>
 	</bean>
 	
-	<bean id="RdirMailingDataDaoCache" class="com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache">
+	<bean id="RdirMailingDataDaoCache" class="com.agnitas.emm.core.commons.uid.daocache.impl.RdirMailingDataDaoCache">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="configService" ref="ConfigService" />
 	</bean>
 
-	<bean id="MailingFactory" class="com.agnitas.beans.factory.impl.ComMailingFactoryImpl" />
+	<bean id="MailingFactory" class="com.agnitas.beans.factory.impl.MailingFactoryImpl" />
 
 	<bean id="IntelliAdMailingSettingsCache" class="com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettingsCacheImpl">
 		<property name="mediatypesDao" ref="MediatypesDao" />
 		<property name="configService" ref="ConfigService" />
 	</bean>
 
-	<bean id="SnowflakeMailingCache" class="com.agnitas.emm.core.mailing.cache.ComSnowflakeMailingCacheImpl">
+	<bean id="SnowflakeMailingCache" class="com.agnitas.emm.core.mailing.cache.SnowflakeMailingCacheImpl">
 		<property name="configService" ref="ConfigService" />
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
 <!-- ============================================================================================================================== Mailing component -->
-	<bean id="MailingComponent" class="org.agnitas.beans.impl.MailingComponentImpl" scope="prototype" />
+	<bean id="MailingComponent" class="com.agnitas.beans.impl.MailingComponentImpl" scope="prototype" />
 
-	<bean id="MailingComponentFactory" class="org.agnitas.beans.factory.impl.MailingComponentFactoryImpl" />
+	<bean id="MailingComponentFactory" class="com.agnitas.beans.factory.impl.MailingComponentFactoryImpl" />
 
 <!-- ============================================================================================================================== Maillists -->
-	<bean id="Mailinglist" class="org.agnitas.beans.impl.MailinglistImpl" scope="prototype" />
+	<bean id="Mailinglist" class="com.agnitas.beans.impl.MailinglistImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Mailloop -->
 
-	<bean id="Mailloop" class="org.agnitas.beans.impl.MailloopImpl" scope="prototype" />
+	<bean id="Mailloop" class="com.agnitas.beans.impl.MailloopImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Mediatypes -->
 	<bean id="MediatypeEmail" class="com.agnitas.beans.impl.MediatypeEmailImpl" scope="prototype" />
@@ -204,7 +202,7 @@
 <!-- ============================================================================================================================== Recipients -->
 	<bean id="Recipient" factory-bean="RecipientFactory" factory-method="newRecipient" scope="prototype" />
 
-	<bean id="RecipientFactory" class="org.agnitas.beans.factory.impl.RecipientFactoryImpl">
+	<bean id="RecipientFactory" class="com.agnitas.beans.factory.impl.RecipientFactoryImpl">
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="recipientFieldService" ref="RecipientFieldService" />
 		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
@@ -212,51 +210,45 @@
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 	</bean>
 
-
-<!-- ============================================================================================================================== Statistics -->
-	<bean id="CampaignStatEntry" class="org.agnitas.stat.impl.CampaignStatEntryImpl" scope="prototype" />
-
-	<bean id="CampaignStatEntryFactory" class="org.agnitas.beans.factory.impl.CampaignStatEntryFactoryImpl" />
-
 <!-- ============================================================================================================================== Tags -->
 	<bean id="TAGCheckFactory" class="com.agnitas.preview.TAGCheckFactoryImpl" />
 
 <!-- ============================================================================================================================== Tag details -->
-	<bean id="TagDetails" class="org.agnitas.beans.impl.TagDetailsImpl" scope="prototype" />
+	<bean id="TagDetails" class="com.agnitas.beans.impl.TagDetailsImpl" scope="prototype" />
 
 	<bean id="TagDetailsFactory" class="com.agnitas.beans.factory.impl.TagDetailsFactoryImpl"/>
 
 <!-- ============================================================================================================================== Target groups -->
 <!-- TODO: Remove this bean? Create Target instances by "TargetFactory" -->
-	<bean id="Target" class="com.agnitas.beans.impl.ComTargetImpl" scope="prototype">
+	<bean id="Target" class="com.agnitas.beans.impl.TargetImpl" scope="prototype">
 	</bean>
 	
-	<bean id="TargetFactory" class="com.agnitas.beans.factory.impl.ComTargetFactoryImpl" />
+	<bean id="TargetFactory" class="com.agnitas.beans.factory.impl.TargetFactoryImpl" />
 <!-- ============================================================================================================================== Title -->
-	<bean id="Title" class="org.agnitas.beans.impl.TitleImpl" scope="prototype" />
+	<bean id="Title" class="com.agnitas.beans.impl.TitleImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== UID -->
-	<bean id="UID_2_SHA512_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V2Sha512ComExtensibleUIDStringBuilderImpl">
+	<bean id="UID_2_SHA512_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V2Sha512ExtensibleUIDStringBuilderImpl">
 		<property name="configService" ref="ConfigService" />
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
-	<bean id="UID_2_SHA512_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V2Sha512ComExtensibleUIDParserImpl">
+	<bean id="UID_2_SHA512_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V2Sha512ExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_2_SHA512_StringBuilder" />
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 	</bean>
 
-	<bean id="UID_3_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V3ComExtensibleUIDStringBuilderImpl">
+	<bean id="UID_3_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V3ExtensibleUIDStringBuilderImpl">
 		<property name="configService" ref="ConfigService" />
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
-	<bean id="UID_3_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V3ComExtensibleUIDParserImpl">
+	<bean id="UID_3_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V3ExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_3_StringBuilder" />
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
@@ -280,7 +272,7 @@
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 	</bean>
 
-	<bean id="ExtensibleUIDStringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.ComExtensibleUIDStringBuilderChain">
+	<bean id="ExtensibleUIDStringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.ExtensibleUIDStringBuilderChain">
 		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="stringBuilderList">
 			<list>
@@ -301,12 +293,12 @@
 		<ref bean="UID_2_SHA512_Parser" />
 	</util:list>
 
-	<bean id="ExtensibleUIDParser" class="com.agnitas.emm.core.commons.uid.parser.impl.ComExtensibleUIDParserChain">
+	<bean id="ExtensibleUIDParser" class="com.agnitas.emm.core.commons.uid.parser.impl.ExtensibleUIDParserChain">
 		<property name="parserList" ref="extensibleUIDParsers"/>
 	</bean>
 
 <!-- ============================================================================================================================== Velocity -->
-	<bean id="VelocityWrapperCache" class="org.agnitas.util.TimeoutLRUMap">
+	<bean id="VelocityWrapperCache" class="com.agnitas.util.TimeoutLRUMap">
 		<constructor-arg index="0">
 			<value>200</value>				<!--  cache size -->
 		</constructor-arg>
@@ -315,7 +307,7 @@
 		</constructor-arg>
 	</bean>
 
-	<bean id="VelocityWrapperFactory" class="com.agnitas.emm.core.velocity.ComVelocityWrapperFactoryImpl">
+	<bean id="VelocityWrapperFactory" class="org.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl">
 		<property name="velocityWrapperCache" ref="VelocityWrapperCache" />
         <property name="companyAccessCheck" ref="CompanyAccessCheck" />
 	</bean>
@@ -324,11 +316,11 @@
 
 <!-- ============================================================================================================================== Misc. -->
 
-	<bean id="CharacterEncodingValidator" class="org.agnitas.util.CharacterEncodingValidatorImpl" />
+	<bean id="CharacterEncodingValidator" class="com.agnitas.util.CharacterEncodingValidatorImpl" />
 	
-	<bean id="Unsubscribe" class="com.agnitas.emm.core.unsubscribe.ComUnsubscribe" />
+	<bean id="Unsubscribe" class="com.agnitas.emm.core.unsubscribe.UnsubscribeServlet" />
 	
-	<bean id="databaseKeywordList" class="org.agnitas.util.KeywordList">
+	<bean id="databaseKeywordList" class="com.agnitas.util.KeywordList">
 		<property name="keywords">
 			<set>
 				<value>ACCESS</value>
@@ -566,7 +558,7 @@ Euer freundlicher EMM
 		<property name="keyProvider" ref="SaltFileDESKeyProvider" />
 	</bean>
 	
-	<bean id="ProfileFieldHashTag" class="com.agnitas.emm.core.hashtag.tags.ComProfileFieldHashTag">
+	<bean id="ProfileFieldHashTag" class="com.agnitas.emm.core.hashtag.tags.ProfileFieldHashTag">
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 	

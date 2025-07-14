@@ -1,10 +1,16 @@
 
 .horizontal-card {
   --horizontal-card-spacer: #{$gap-md};
+  --horizontal-card-color: #{$gray-600};
+  --horizontal-card-header-color: #{$dark-grey};
+  --horizontal-card-footer-color: var(--horizontal-card-header-color);
+  --horizontal-card-thumbnail-size: 100px;
 
   @include flex-row(var(--horizontal-card-spacer));
   align-items: center;
   width: 100%;
+
+  overflow: hidden;
 
   padding: var(--horizontal-card-spacer);
   border: $border-default;
@@ -12,7 +18,7 @@
 
   &__header {
     @include flex-row(var(--horizontal-card-spacer));
-    color: var(--text-dark-gray-color);
+    color: var(--horizontal-card-header-color);
   }
 
   &__icon {
@@ -22,35 +28,62 @@
   }
 
   &__thumbnail {
-    max-width: 60px;
+    max-width: var(--horizontal-card-thumbnail-size);
   }
 
   &__body {
     @include flex-column(var(--horizontal-card-spacer));
     flex-grow: 1;
+    overflow: hidden;
   }
 
   &__title {
     font-size: $font-size-md;
-    color: var(--text-dark-gray-color);
-    font-weight: 500;
+    color: var(--horizontal-card-header-color);
+    font-weight: $font-weight-medium;
 
-    @include flex-row(var(--horizontal-card-spacer));
+    @include flex-row($gap-x-sm);
     align-items: center;
   }
 
   &__subtitle {
-    color: var(--text-gray-color);
-    @include flex-row(var(--horizontal-card-spacer));
+    color: var(--horizontal-card-color);
+    @include flex-row($gap-x-sm);
     align-items: center;
   }
 
   &__footer {
-    color: var(--text-dark-gray-color);
+    color: var(--horizontal-card-footer-color);
   }
 
   &.disabled {
-    background: var(--input-disabled-bg-color);
+    background: var(--base-disabled-bg);
     pointer-events: none;
+  }
+
+  &:is(a):hover {
+    border-color: $blue-var;
+    --horizontal-card-header-color: #{$blue-var};
+  }
+}
+
+@include color-mode(dark) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$light-grey};
+    --horizontal-card-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$con-dark-blue};
+    --horizontal-card-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$white};
+    --horizontal-card-color: #{$white};
   }
 }

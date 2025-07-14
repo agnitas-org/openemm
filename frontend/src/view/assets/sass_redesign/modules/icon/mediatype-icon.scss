@@ -10,10 +10,14 @@ $mediatypes-icons-defs:(
   $icon: nth($conf, 2);
 
   .icon-mediatype-#{$typeId} {
-    color: $gray-400;
+    color: $light-grey;
 
     &:before {
       content: fa-content($icon);
     }
   }
+}
+
+.icon-mediatype--active {
+  color: $blue-var;
 }

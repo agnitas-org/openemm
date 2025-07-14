@@ -8,7 +8,7 @@
 }
 
 .sp-replacer {
-  background: var(--main-bg-color);
+  background: $body-bg-var;
   border-radius: $border-radius !important;
 
   padding: 0;
@@ -21,7 +21,7 @@
   }
 
   &:hover, &.sp-active  {
-    border-color: $border-color;
+    border-color: $border-color-var;
   }
 
   &.sp-disabled {
@@ -41,7 +41,7 @@
     }
 
     .sp-preview-inner {
-      background: var(--main-bg-color);
+      background: $body-bg-var;
     }
   }
 
@@ -78,5 +78,5 @@
 .sp-container {
   border-radius: $border-radius-sm;
   border: $border-default;
-  background-color: var(--main-bg-color);
+  background-color: $body-bg-var;
 }

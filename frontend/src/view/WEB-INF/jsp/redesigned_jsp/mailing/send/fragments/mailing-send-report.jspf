@@ -32,7 +32,9 @@
         <div class="col-6 d-flex align-items-center">
             <div class="d-flex flex-column gap-1">
                 <p><mvc:message code="report.send.to" /></p>
-                <mvc:text path="reportSendEmail" id="report_email" cssClass="form-control" maxlength="199" placeholder="${emailPlaceholder}" disabled="${not canSendOrActivateMailing}" />
+                <div>
+                    <mvc:text path="reportSendEmail" id="report_email" cssClass="form-control" maxlength="199" placeholder="${emailPlaceholder}" disabled="${not canSendOrActivateMailing}" />
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,10 @@
+
+<script id="dyntag-option-template" type="text/x-mustache-template">
+    <button type="button" class="dyn-tag dyn-tag--new-ux list-group-item list-group-item-action p-0" value="{{- element.dataset.id }}" data-action="switch-dyn-tag" style="background-color: unset">
+        <small>{{- element.dataset.key }}</small>
+        <span><i class="icon icon-file-alt"></i><p class="dyn-tag__preview" style="--text-truncate-lines: 2">{{- element.dataset.previewText }}</p></span>
+        {{ if (element.dataset.targets) {}}
+        <span><i class="icon icon-users"></i><p>{{- element.dataset.targets }}</p></span>
+        {{ } }}
+    </button>
+</script>

@@ -71,6 +71,18 @@
       if (messages.alert) {
         displayMessages(t("defaults.error"), messages.alert, 'alert');
       }
+
+      if (messages.fields) {
+        messages.fields.forEach(function (f) {
+          const $forms = $('form').filter(function () {
+            return !!$(this)[0][f.name]
+          });
+
+          if ($forms.exists()) {
+            AGN.Lib.Form.get($($forms[0])).showFieldError(f.name, f.message);
+          }
+        });
+      }
     }
   };
 

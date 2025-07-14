@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,17 +14,16 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.dao.JobQueueDao;
+import com.agnitas.dao.ImportRecipientsDao;
+import com.agnitas.dao.JobQueueDao;
 import org.agnitas.emm.core.autoexport.dao.AutoExportDao;
 import org.agnitas.emm.core.autoimport.dao.AutoImportDao;
-import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
+import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 
 public class ResetJobQueueContextListener implements ServletContextListener {
 	private static final transient Logger logger = LogManager.getLogger(ResetJobQueueContextListener.class);
@@ -58,7 +57,7 @@ public class ResetJobQueueContextListener implements ServletContextListener {
             }
 
             if (springContext.containsBean("BirtReportDao")) {
-            	ComBirtReportDao birtReportDao = (ComBirtReportDao) springContext.getBean("BirtReportDao");
+            	BirtReportDao birtReportDao = (BirtReportDao) springContext.getBean("BirtReportDao");
 	            int resettedReports = birtReportDao.resetBirtReportsForCurrentHost();
 	            if (resettedReports > 0) {
 	    			logger.error("Resetting " + resettedReports + " hanging BirtReports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");

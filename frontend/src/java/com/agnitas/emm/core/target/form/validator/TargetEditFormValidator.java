@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,15 +24,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.target.form.TargetEditForm;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.web.mvc.Popups;
 
 @Component
 public class TargetEditFormValidator {
 
-    private final ComTargetService targetService;
+    private final TargetService targetService;
 
-    public TargetEditFormValidator(ComTargetService targetService) {
+    public TargetEditFormValidator(TargetService targetService) {
         this.targetService = targetService;
     }
 
@@ -41,12 +41,12 @@ public class TargetEditFormValidator {
 
         if(StringUtils.isBlank(form.getShortname())) {
             isValid = false;
-            popups.alert("error.name.is.empty");
+            popups.fieldError("shortname", "error.name.is.empty");
         } else if (!targetService.checkIfTargetNameIsValid(form.getShortname())) {
             isValid = false;
-            popups.alert("error.target.namenotallowed");
+            popups.fieldError("shortname", "error.target.namenotallowed");
         } else if (targetService.checkIfTargetNameAlreadyExists(companyId, form.getShortname(), form.getTargetId())) {
-            popups.alert("error.target.namealreadyexists");
+            popups.fieldError("shortname", "error.target.namealreadyexists");
             isValid = false;
         }
 

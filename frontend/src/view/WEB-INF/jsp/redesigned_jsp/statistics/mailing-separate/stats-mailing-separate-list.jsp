@@ -1,16 +1,16 @@
-<%@ page import="org.agnitas.web.MailingAdditionalColumn" %>
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn" %>
 <%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingStatatisticListForm" type="com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm"--%>
-<%--@elvariable id="mailingStatisticList" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
+<%--@elvariable id="mailingStatisticList" type="com.agnitas.beans.impl.PaginatedListImpl"--%>
 <%--@elvariable id="availableAdditionalFields" type="java.util.List"--%>
 <%--@elvariable id="availableMailingLists" type="java.util.List"--%>
+<%--@elvariable id="availableArchives" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="mailingStat" type="java.util.Map"--%>
 <%--@elvariable id="dateTimeFormat" type="java.text.SimpleDateFormat"--%>
 
@@ -69,37 +69,21 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table-hover table--borderless js-table"
-                                   id="mailingStat" name="mailingStatisticList" partialList="true"
-                                   pagesize="${mailingStatatisticListForm.numberOfRows}"
-                                   size="${mailingStatisticList.fullListSize}" excludedParams="*"
-                                   requestURI="/statistics/mailing/list.action">
+                    <emm:table var="mailingStat" modelAttribute="mailingStatisticList" cssClass="table table-hover table--borderless js-table">
 
-                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+                        <emm:column titleKey="mailing.searchName" sortable="true" property="shortname"   data-table-column="" />
+                        <emm:column titleKey="Description"        sortable="true" property="description" data-table-column="" />
+                        <emm:column titleKey="Mailinglist"        sortable="true" property="mailinglist" data-table-column="" />
+                        <emm:column titleKey="mailing.archive"    sortable="true" property="archive"     data-table-column="" sortProperty="campaign_id" />
+                        <emm:column titleKey="mailing.senddate"   sortable="true" property="senddate"    data-table-column="" />
 
-                        <agnDisplay:column titleKey="mailing.searchName" sortable="true" sortProperty="shortname" headerClass="js-table-sort" data-table-column="">
-                            <span>${mailingStat.shortname}</span>
-                        </agnDisplay:column>
-                        <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort" data-table-column="">
-                            <span>${mailingStat.description}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="${CREATION_DATE_FIELD.messageKey}" sortable="true" sortProperty="creation_date"
+                                           property="creationdate"
+                                           headerClass="${creationDateFieldSelected ? '' : 'hidden'}" cssClass="${creationDateFieldSelected ? '' : 'hidden'}"
+                                           data-table-column="${CREATION_DATE_FIELD.sortColumn}" />
 
-                        <agnDisplay:column titleKey="Mailinglist" sortable="true" sortProperty="mailinglist" headerClass="js-table-sort" data-table-column="">
-                            <span>${mailingStat.mailinglist}</span>
-                        </agnDisplay:column>
-
-                        <agnDisplay:column titleKey="mailing.senddate" sortable="true" sortProperty="senddate" headerClass="js-table-sort" data-table-column="">
-                            <span><emm:formatDate value="${mailingStat.senddate}" format="${dateTimeFormat}"/></span>
-                        </agnDisplay:column>
-
-                        <agnDisplay:column titleKey="${CREATION_DATE_FIELD.messageKey}" sortable="true" sortProperty="creation_date"
-                                           headerClass="js-table-sort ${creationDateFieldSelected ? '' : 'hidden'}" class="${creationDateFieldSelected ? '' : 'hidden'}"
-                                           data-table-column="${CREATION_DATE_FIELD.sortColumn}">
-                            <span><emm:formatDate value="${mailingStat.creationdate}" format="${dateTimeFormat}" /></span>
-                        </agnDisplay:column>
-
-                        <agnDisplay:column titleKey="Target-Groups" sortable="true" sortProperty="target_expression"
-                                           headerClass="js-table-sort ${targetGroupsFieldSelected ? '' : 'hidden'}" class="${targetGroupsFieldSelected ? '' : 'hidden'}"
+                        <emm:column titleKey="Target-Groups" sortable="true" sortProperty="target_expression"
+                                           headerClass="${targetGroupsFieldSelected ? '' : 'hidden'}" cssClass="${targetGroupsFieldSelected ? '' : 'hidden'}"
                                            data-table-column="${TARGET_GROUPS_FIELD.sortColumn}">
                             <span>
                                <c:forEach var="targetgroup" items="${mailingStat.targetgroups}" varStatus="loop_status">
@@ -112,7 +96,7 @@
                                    </c:if>
                                </c:forEach>
                             </span>
-                        </agnDisplay:column>
+                        </emm:column>
 
                         <%-- Additional Fiels --%>
                         <c:forEach var="selectedAdditionalField" items="${mailingStatatisticListForm.additionalFields}">
@@ -121,98 +105,98 @@
                                 <c:if test="${availableAdditionalField.sortColumn == selectedAdditionalField}">
                                     <c:choose>
                                         <c:when test="${availableAdditionalField == 'TEMPLATE'}">
-                                            <agnDisplay:column titleKey="${availableAdditionalField.messageKey}" sortable="true" sortProperty="template_name" headerClass="js-table-sort"
-                                                               data-table-column="${availableAdditionalField.sortColumn}">
-                                                <span>${mailingStat.templateName}</span>
-                                            </agnDisplay:column>
+                                            <emm:column titleKey="${availableAdditionalField.messageKey}" sortable="true" sortProperty="template_name" property="templateName"
+                                                               data-table-column="${availableAdditionalField.sortColumn}" />
                                         </c:when>
 
                                         <c:when test="${availableAdditionalField == 'SUBJECT'}">
-                                            <agnDisplay:column titleKey="${availableAdditionalField.messageKey}" sortable="true" sortProperty="subject" headerClass="js-table-sort"
-                                                               data-table-column="${availableAdditionalField.sortColumn}">
-                                                <span>${mailingStat.subject}</span>
-                                            </agnDisplay:column>
+                                            <emm:column titleKey="${availableAdditionalField.messageKey}" sortable="true" property="subject"
+                                                               data-table-column="${availableAdditionalField.sortColumn}" />
                                         </c:when>
                                     </c:choose>
                                 </c:if>
                             </c:forEach>
                         </c:forEach>
 
-                        <agnDisplay:column titleKey="${MAILING_ID_FIELD.messageKey}" sortable="true" sortProperty="mailing_id" property="mailingid"
-                                           headerClass="js-table-sort ${mailingIdFieldSelected ? '' : 'hidden'}" class="${mailingIdFieldSelected ? '' : 'hidden'}"
+                        <emm:column titleKey="${MAILING_ID_FIELD.messageKey}" sortable="true" sortProperty="mailing_id" property="mailingid"
+                                           headerClass="${mailingIdFieldSelected ? '' : 'hidden'}" cssClass="${mailingIdFieldSelected ? '' : 'hidden'}"
                                            data-table-column="${MAILING_ID_FIELD.sortColumn}" />
 
-                        <agnDisplay:column titleKey="${RECIPIENTS_COUNT_FIELD.messageKey}" property="recipientsCount" sortable="true" sortProperty="${RECIPIENTS_COUNT_FIELD.sortColumn}"
-                                           headerClass="js-table-sort ${recipientsCountFieldSelected ? '' : 'hidden'}" class="${recipientsCountFieldSelected ? '' : 'hidden'}"
+                        <emm:column titleKey="${RECIPIENTS_COUNT_FIELD.messageKey}" property="recipientsCount" sortable="true" sortProperty="${RECIPIENTS_COUNT_FIELD.sortColumn}"
+                                           headerClass="${recipientsCountFieldSelected ? '' : 'hidden'}" cssClass="${recipientsCountFieldSelected ? '' : 'hidden'}"
                                            data-table-column="${RECIPIENTS_COUNT_FIELD.sortColumn}"/>
 
-                        <agnDisplay:column title="${addAdditionalColumns}" headerClass="fit-content columns-picker">
+                        <emm:column headerClass="columns-picker">
                             <a href="<c:url value="/statistics/mailing/${mailingStat.mailingid}/view.action"/>" class="hidden" data-view-row="page"></a>
-                        </agnDisplay:column>
-                    </agnDisplay:table>
+                        </emm:column>
+                    </emm:table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="filter-tile" class="tile" data-toggle-tile="mobile" data-editable-tile>
+    <div id="filter-tile" class="tile" data-toggle-tile data-editable-tile>
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/overview/SearchFor.xml"></a>
+                <a href="#" class="icon icon-question-circle" data-help="mailing/overview/SearchFor.xml"></a>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse"  data-form-clear="#filter-tile" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary"  data-form-clear="#filter-tile" data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <mvc:message var="nameMsg" code="mailing.searchName"/>
-                    <label class="form-label" for="name-filter">${nameMsg}</label>
-                    <mvc:text id="name-filter" path="filterName" cssClass="form-control" placeholder="${nameMsg}"/>
-                </div>
+        <div class="tile-body form-column js-scrollable">
+            <div>
+                <mvc:message var="nameMsg" code="mailing.searchName"/>
+                <label class="form-label" for="name-filter">${nameMsg}</label>
+                <mvc:text id="name-filter" path="filterName" cssClass="form-control" placeholder="${nameMsg}"/>
+            </div>
 
-                <div class="col-12">
-                    <mvc:message var="descriptionMsg" code="Description"/>
-                    <label class="form-label" for="description-filter">${descriptionMsg}</label>
-                    <mvc:text id="description-filter" path="filterDescription" cssClass="form-control" placeholder="${descriptionMsg}"/>
-                </div>
+            <div>
+                <mvc:message var="descriptionMsg" code="Description"/>
+                <label class="form-label" for="description-filter">${descriptionMsg}</label>
+                <mvc:text id="description-filter" path="filterDescription" cssClass="form-control" placeholder="${descriptionMsg}"/>
+            </div>
 
-                <div class="col-12">
-                    <label for="filter-mailinglists" class="form-label"><mvc:message code="Mailinglist" /></label>
-
-                    <select id="filter-mailinglists" class="form-control" name="filteredMailingLists" multiple="multiple">
-                        <c:forEach var="availableMailingList" items="${availableMailingLists}">
-                            <c:set var="filteredMailingListSelected" value=""/>
-                            <c:forEach var="filteredMailingListId"
-                                       items="${mailingStatatisticListForm.filteredMailingLists}">
-                                <c:if test="${availableMailingList.id eq filteredMailingListId}">
-                                    <c:set var="filteredMailingListSelected" value="selected"/>
-                                </c:if>
-                            </c:forEach>
-
-                            <option value="${availableMailingList.id}" ${filteredMailingListSelected}>
-                                <c:out value="${availableMailingList.shortname}"/>
-                            </option>
+            <div>
+                <label for="filter-mailinglists" class="form-label"><mvc:message code="Mailinglist" /></label>
+                <select id="filter-mailinglists" class="form-control" name="filteredMailingLists" multiple="multiple">
+                    <c:forEach var="availableMailingList" items="${availableMailingLists}">
+                        <c:set var="filteredMailingListSelected" value=""/>
+                        <c:forEach var="filteredMailingListId"
+                                   items="${mailingStatatisticListForm.filteredMailingLists}">
+                            <c:if test="${availableMailingList.id eq filteredMailingListId}">
+                                <c:set var="filteredMailingListSelected" value="selected"/>
+                            </c:if>
                         </c:forEach>
-                    </select>
-                </div>
 
-                <div class="col-12" data-date-range>
-                    <label class="form-label" for="filterSendDateBegin"><mvc:message code="mailing.senddate"/></label>
-                    <div class="date-picker-container mb-1">
-                        <mvc:message var="fromMsg" code="From" />
-                        <mvc:text id="filterSendDateBegin" path="filterSendDateBegin" placeholder="${fromMsg}" cssClass="form-control js-datepicker" />
-                    </div>
-                    <div class="date-picker-container">
-                        <mvc:message var="toMsg" code="To" />
-                        <mvc:text id="filterSendDateEnd" path="filterSendDateEnd" placeholder="${toMsg}" cssClass="form-control js-datepicker" />
-                    </div>
+                        <option value="${availableMailingList.id}" ${filteredMailingListSelected}>
+                            <c:out value="${availableMailingList.shortname}"/>
+                        </option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <div data-date-range>
+                <label class="form-label" for="filterSendDateBegin"><mvc:message code="mailing.senddate"/></label>
+                <div class="date-picker-container mb-1">
+                    <mvc:message var="fromMsg" code="From" />
+                    <mvc:text id="filterSendDateBegin" path="filterSendDateBegin" placeholder="${fromMsg}" cssClass="form-control js-datepicker" />
                 </div>
+                <div class="date-picker-container">
+                    <mvc:message var="toMsg" code="To" />
+                    <mvc:text id="filterSendDateEnd" path="filterSendDateEnd" placeholder="${toMsg}" cssClass="form-control js-datepicker" />
+                </div>
+            </div>
+
+            <div>
+                <label for="archives-filter" class="form-label"><mvc:message code="mailing.archive" /></label>
+                <mvc:select id="archives-filter" cssClass="form-control js-select" path="filterArchives" multiple="multiple">
+                    <mvc:options items="${availableArchives}" itemValue="id" itemLabel="shortname"/>
+                </mvc:select>
             </div>
         </div>
     </div>

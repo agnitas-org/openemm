@@ -17,7 +17,7 @@ AGN.Lib.Controller.new('userform-view', function () {
         const $el = this.el;
         const url = $el.attr('href');
 
-        Confirm.createFromTemplate({}, 'userform-activate-and-test').done(() => {
+        Confirm.from('userform-activate-and-test').done(() => {
             $.post(AGN.url(`/webform/${formId}/activate.action`)).done(resp => {
                 AGN.Lib.JsonMessages(resp.popups, true);
                 if (resp.success) {
@@ -56,12 +56,12 @@ AGN.Lib.Controller.new('userform-view', function () {
         var isErrorTabsDiffContent = errorFBChanged && isTemplateCodeChanged('errorTemplate');
 
         if (isSuccessTabsDiffContent || isErrorTabsDiffContent) {
-            Confirm.createFromTemplate(
-                {
+            Confirm.from(
+              'warning-save-different-tabs',
+              {
                         needSuccessCodeChoose: isSuccessTabsDiffContent,
                         needErrorCodeChoose: isErrorTabsDiffContent
-                },
-                'warning-save-different-tabs'
+                }
             );
         } else {
             var successMode = successFBChanged ? 'FORM_BUILDER' : 'HTML';
@@ -86,12 +86,11 @@ AGN.Lib.Controller.new('userform-view', function () {
     });
 
     function isTemplateCodeChanged(editorId) {
-        var ckeditor = CKEDITOR.instances[editorId];
-        if(ckeditor) {
-            ckeditor.updateElement();
+        if (!window.Jodit) {
+            CKEDITOR.instances[editorId]?.updateElement();
         }
 
-        return $('#userFormForm').dirty('isFieldDirty', $('#' + editorId));
+        return $('#userFormForm').dirty('isFieldDirty', $(`#${editorId}`));
     }
 
     function isFormbuilderChanged(id) {
@@ -141,7 +140,7 @@ AGN.Lib.Controller.new('userform-view', function () {
         const options = AGN.Lib.Helpers.objFromString($el.data("action-options"));
         const text = AGN.Lib.Editor.get($("#" + options.type + "Template")).val();
         if (text.match(/#(?:set|include|macro|parse|if|foreach)/gi)) {
-            AGN.Lib.Messages(t("defaults.error"), t("userform.error.velocity_not_allowed"), "alert");
+            AGN.Lib.Messages.alert('userform.error.velocity_not_allowed');
             //switch to previous tab
             $el.val('html').trigger('change');
         }

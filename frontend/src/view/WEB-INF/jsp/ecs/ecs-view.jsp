@@ -10,8 +10,8 @@
 <%--@elvariable id="mailing" type="com.agnitas.beans.Mailing"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.ecs.form.EcsHeatmapForm"--%>
 <%--@elvariable id="heatmapRecipients" type="java.util.Map<java.lang.Integer, java.lang.String>"--%>
-<%--@elvariable id="rangeColors" type="java.util.List<org.agnitas.ecs.backend.beans.ClickStatColor>"--%>
-<%--@elvariable id="previewWidth" type="org.agnitas.ecs.EcsPreviewSize"--%>
+<%--@elvariable id="rangeColors" type="java.util.List<com.agnitas.ecs.backend.beans.ClickStatColor>"--%>
+<%--@elvariable id="previewWidth" type="com.agnitas.ecs.EcsPreviewSize"--%>
 
 <c:set var="DESKTOP_DEVICE" value="<%= DeviceClass.DESKTOP.getId() %>"/>
 <c:set var="MOBILE_DEVICE" value="<%= DeviceClass.MOBILE.getId() %>"/>

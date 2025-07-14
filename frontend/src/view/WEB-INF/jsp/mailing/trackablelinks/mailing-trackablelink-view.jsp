@@ -15,7 +15,7 @@
 <%--@elvariable id="altText" type="java.lang.String"--%>
 <%--@elvariable id="originalUrl" type="java.lang.String"--%>
 <%--@elvariable id="workflowForwardParams" type="java.lang.String"--%>
-<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+<%--@elvariable id="notFormActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
 <%--@elvariable id="trackableLinkForm" type="com.agnitas.emm.core.trackablelinks.form.TrackableLinkForm"--%>
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>

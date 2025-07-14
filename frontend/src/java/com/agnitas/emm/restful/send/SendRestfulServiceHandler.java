@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,40 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
-
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.beans.impl.RecipientImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.dao.SourceGroupType;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.DateUtil;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils.RequestMethod;
-import org.agnitas.util.MailoutClient;
-import org.agnitas.util.importvalues.Gender;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.components.service.MailingSendService;
@@ -63,6 +39,7 @@ import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.service.RecipientFieldService;
@@ -79,10 +56,33 @@ import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
 import com.agnitas.util.ClassicTemplateGenerator;
-
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.BindingEntryImpl;
+import com.agnitas.beans.impl.RecipientImpl;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.emm.common.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.commons.util.DateUtil;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.MailoutClient;
+import com.agnitas.util.importvalues.Gender;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This restful service is available at:
@@ -105,13 +105,14 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	protected ConfigService configService;
 	protected MailingPreviewService mailingPreviewService;
 	protected DatasourceDescriptionDao datasourceDescriptionDao;
-	protected ComBindingEntryDao bindingEntryDao;
+	protected BindingEntryDao bindingEntryDao;
 	protected MailingSendService mailingSendService;
+	protected MailingStopService mailingStopService;
 
 	public SendRestfulServiceHandler(final ConfigService configService, final MailingPreviewService mailingPreviewService, final RestfulUserActivityLogDao userActivityLogDao, final MailingService mailingService,
 			final MailingDao mailingDao, final RecipientService recipientService, final MailinglistDao mailinglistDao, final MaildropService maildropService, final ClassicTemplateGenerator classicTemplateGenerator,
-			final SendActionbasedMailingService sendActionbasedMailingService, final DatasourceDescriptionDao datasourceDescriptionDao, final ComBindingEntryDao bindingEntryDao,
-			final RecipientFieldService recipientFieldService, final MailingSendService mailingSendService) {
+			final SendActionbasedMailingService sendActionbasedMailingService, final DatasourceDescriptionDao datasourceDescriptionDao, final BindingEntryDao bindingEntryDao,
+			final RecipientFieldService recipientFieldService, final MailingSendService mailingSendService, final MailingStopService mailingStopService) {
 		this.configService = Objects.requireNonNull(configService, "configService is null");
 		this.mailingPreviewService = Objects.requireNonNull(mailingPreviewService, "mailingPreviewService is null");
 		this.userActivityLogDao = Objects.requireNonNull(userActivityLogDao, "userActivityLogDao is null");
@@ -126,10 +127,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		this.bindingEntryDao = Objects.requireNonNull(bindingEntryDao, "bindingEntryDao is null");
 		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "recipientFieldService cannot be null");
 		this.mailingSendService = Objects.requireNonNull(mailingSendService, "mailingSendService is null");
+		this.mailingStopService = Objects.requireNonNull(mailingStopService, "mailingStopService");
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -139,13 +141,39 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		if (requestMethod == RequestMethod.GET) {
 			throw new RestfulClientException("Invalid http request method 'GET'. Only 'PUT' or 'POST' are supported for 'send'.");
 		} else if (requestMethod == RequestMethod.DELETE) {
-			throw new RestfulClientException("Invalid http request method 'DELETE'. Only 'PUT' or 'POST' are supported for 'send'.");
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deactivateMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else if (requestMethod == RequestMethod.POST) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else if (requestMethod == RequestMethod.PUT) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(sendMailing(request, requestData, requestDataFile, admin, extendedLogging)));
 		} else {
 			throw new RestfulClientException("Invalid http request method");
+		}
+	}
+
+	protected Object deactivateMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin, @SuppressWarnings("unused") boolean extendedLogging) throws Exception {
+		if (!admin.permissionAllowed(Permission.MAILING_SEND_WORLD)) {
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SEND_WORLD.toString() + "'");
+		}
+
+		final String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
+		final int companyID = admin.getCompanyID();
+		final int mailingID = Integer.parseInt(restfulContext[0]);
+
+		try {
+			final Mailing mailing = this.mailingService.getMailing(companyID, mailingID);
+
+			switch (mailing.getMailingType()) {
+				case NORMAL:
+					mailingStopService.stopMailing(mailing.getCompanyID(), mailing.getId(), false);
+					return "Mailing stopped";
+
+				default:
+					mailingSendService.deactivateMailing(mailing, mailing.getCompanyID(), false);
+					return "Mailing deactivated";
+			}
+		} catch(final Exception e) {
+			throw new RestfulClientException(String.format("Unknown mailing id %d", mailingID));
 		}
 	}
 
@@ -439,7 +467,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 
 		Mailinglist aList = mailinglistDao.getMailinglist(mailing.getMailinglistID(), admin.getCompanyID());
 
-		if (mailinglistDao.getNumberOfActiveSubscribers(adminSend, testSend, worldSend, mailing.getTargetID(), aList.getCompanyID(), aList.getId()) == 0) {
+		final int recipientCount = userStatus != null
+				? mailinglistDao.countSubscribers(aList.getId(), aList.getCompanyID(), mailing.getTargetID(), worldSend, adminSend, testSend, Set.of(userStatus.getStatusCode()))
+				: mailinglistDao.countSubscribers(aList.getId(), aList.getCompanyID(), mailing.getTargetID(), worldSend, adminSend, testSend, Set.of());
+
+		if (recipientCount == 0) {
 			throw new RestfulClientException("This mailing has no subscribers");
 		}
 
@@ -597,22 +629,18 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		// Check if this customer is already blocked
-		List<Recipient> existingRecipientList;
-		try {
-			existingRecipientList = recipientService.findRecipientByData(companyID, dataMap);
-		} catch (Exception e) {
-			throw new RestfulClientException("Recipient search failed: " +  e.getMessage(), e);
-		}
+		List<Recipient> existingRecipientList = recipientService.findRecipientByData(companyID, dataMap);
 		for (Recipient recipient : existingRecipientList) {
 			if (!alwaysCreateRecipient) {
 				return recipient.getCustomerID();
 			}
-			BindingEntry bindingEntry;
-			try {
-				bindingEntry = recipientService.getMailinglistBinding(companyID, recipient.getCustomerID(), mailinglistID, MediaTypes.EMAIL.getMediaCode());
-			} catch (Exception e) {
-				throw new RestfulClientException("Cannot read recipient subscription status: " + e.getMessage(), e);
-			}
+			BindingEntry bindingEntry = recipientService.getMailinglistBinding(
+					companyID,
+					recipient.getCustomerID(),
+					mailinglistID,
+					MediaTypes.EMAIL.getMediaCode()
+			);
+
 			if (bindingEntry != null && bindingEntry.getUserStatus() != UserStatus.Active.getStatusCode()) {
 				throw new RestfulClientException("Recipient is already unsubscribed");
 			}

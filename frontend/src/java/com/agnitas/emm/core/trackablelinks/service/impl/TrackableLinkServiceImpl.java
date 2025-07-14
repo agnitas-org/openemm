@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,28 +20,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.BaseTrackableLink;
-import com.agnitas.dao.MailingDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.beans.impl.MailingImpl;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -50,9 +37,19 @@ import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkUnknownLinkIdException;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
-
 import jakarta.annotation.Resource;
-import net.sf.json.JSONObject;
+import com.agnitas.beans.BaseTrackableLink;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 /**
  * Service class dealing with trackable links.
@@ -104,36 +101,6 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     }
 
     @Override
-    public void setMailingLinkExtension(Mailing aMailing, String linkExtension) {
-        for (TrackableLink link : aMailing.getTrackableLinks().values()) {
-            link.setExtendByMailingExtensions(link.getProperties() != null && link.getProperties().size() > 0);
-            link.setProperties(null);
-        }
-    }
-
-    @Override
-    public void setLegacyLinkExtensionMarker(Mailing aMailing, Map<Integer, Boolean> linksToExtends) {
-        for (TrackableLink link : aMailing.getTrackableLinks().values()) {
-            Boolean extendLinkByMailingLinkExtension = linksToExtends.get(link.getId());
-            if (extendLinkByMailingLinkExtension != null) {
-                link.setExtendByMailingExtensions(extendLinkByMailingLinkExtension);
-            }
-        }
-    }
-
-    @Override
-    public void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames) {
-        try {
-            for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
-                int id = trackableLink.getId();
-                trackableLink.setShortname(StringUtils.defaultIfEmpty(linkItemNames.get(id), ""));
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    @Override
     public Map<Integer, String> getMailingLinks(int mailingId, int companyId) {
         List<TrackableLink> trackableLinks = trackableLinkDao.getTrackableLinks(companyId, mailingId);
 
@@ -163,10 +130,10 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
         for (Map.Entry<Integer, String> entry : links.entrySet()) {
             JSONObject data = new JSONObject();
 
-            data.element("id", entry.getKey());
-            data.element("url", entry.getValue());
+            data.put("id", entry.getKey());
+            data.put("url", entry.getValue());
 
-            orderedLinks.element(Integer.toString(index++), data);
+            orderedLinks.put(Integer.toString(index++), data);
         }
         return orderedLinks;
     }
@@ -261,11 +228,11 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
 		}
     }
 
-    private void userActionLogMailingLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, TrackableLink comLink) {
-        userActionLogLinksCreated(aMailing.getId(), "edit mailing links", userActions, passedLinkProperties, commonLinkProperties, comLink);
+    private void userActionLogMailingLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, TrackableLink link) {
+        userActionLogLinksCreated(aMailing.getId(), "edit mailing links", userActions, passedLinkProperties, commonLinkProperties, link);
     }
 
-    private void userActionLogLinksCreated(int creatorId, String actionMessage, List<UserAction> userActions, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, TrackableLink comLink) {
+    private void userActionLogLinksCreated(int creatorId, String actionMessage, List<UserAction> userActions, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, TrackableLink link) {
         StringBuilder description = new StringBuilder();
 
         for (LinkProperty passedLinkProperty : passedLinkProperties) {
@@ -274,7 +241,7 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
                         .append(creatorId)
                         .append(". ")
                         .append("Trackable link ")
-                        .append(comLink.getFullUrl())
+                        .append(link.getFullUrl())
                         .append(". Link extension ")
                         .append(passedLinkProperty.getPropertyName())
                         .append("=")
@@ -311,22 +278,6 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     public List<LinkProperty> getCommonExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds) {
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
         return getCommonExtensions(mailing.getTrackableLinks().values(), bulkIds);
-    }
-
-    @Override
-    public List<LinkProperty> getCommonLinkExtensions(Collection<TrackableLink> trackableLinks) {
-        List<LinkProperty> commonLinkProperties = null;
-        for (TrackableLink link : trackableLinks) {
-            if (link.getShortname() == null || !link.getShortname().startsWith(LINK_SWYN_PREFIX)) {
-                if (commonLinkProperties == null) {
-                    commonLinkProperties = new ArrayList<>(link.getProperties());
-                } else {
-                    commonLinkProperties.retainAll(link.getProperties());
-                }
-            }
-        }
-
-        return commonLinkProperties != null ? commonLinkProperties : new ArrayList<>();
     }
 
     @Override
@@ -436,17 +387,14 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
         return oldOriginalUrl;
     }
 
-    @Required
 	public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 
-	@Required
 	public void setMailingService(MailingService mailingService) {
 		this.mailingService = mailingService;
 	}
 
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,8 +17,6 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.core.commons.CharsetConstants;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.ByteArrayToStringEncoder;
@@ -87,7 +85,7 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 		return string;
 	}
 	
-	private final String encodeProfileField(final HashTagContext context, final String tagName, final String profileFieldName, final String[] encodingNames) throws EncodingException, HashTagException {
+	private String encodeProfileField(HashTagContext context, String tagName, String profileFieldName, String[] encodingNames) throws EncodingException, HashTagException {
 		final String profileFieldValue = this.support.evaluateExpression(context, profileFieldName);
 		
 		byte[] data = profileFieldValue.getBytes(CharsetConstants.UTF_8);
@@ -121,7 +119,6 @@ public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonH
 
 	// ------------------------------------------------------------------------------------- Dependency Injection
 	
-	@Required
 	public final void setProfileFieldHashTagSupport(final ProfileFieldHashTagSupport support) {
 		this.support = Objects.requireNonNull(support, "Profile field Hashtag support is null");
 	}

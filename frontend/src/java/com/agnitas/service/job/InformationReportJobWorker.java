@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,25 +14,23 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-
 import javax.sql.DataSource;
 
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.service.JobWorker;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DataEncryptor;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.FtpHelper;
-import org.agnitas.util.RemoteFileHelper;
-import org.agnitas.util.SFtpHelper;
+import com.agnitas.emm.core.report.generator.TableGenerator;
+import com.agnitas.emm.core.report.services.RecipientReportService;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.service.JobWorker;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DataEncryptor;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.FtpHelper;
+import com.agnitas.util.RemoteFileHelper;
+import com.agnitas.util.SFtpHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.emm.core.report.services.RecipientReportService;
 
 
 /**
@@ -126,45 +124,27 @@ public class InformationReportJobWorker extends JobWorker {
 
 	private RemoteFileHelper openRemoteFileHelper(String sftpServerCredentials, String ftpServerCredentials) throws Exception {
 		if (StringUtils.isNotBlank(sftpServerCredentials)) {
-			SFtpHelper sftpHelper = null;
-			try{
-				DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
-				String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
-				
-				sftpHelper = new SFtpHelper(sftpCredentialsString);
-				String privateSshKeyData = job.getParameters().get("privateSshKeyData");
-				if (StringUtils.isNotBlank(privateSshKeyData)) {
-					sftpHelper.setPrivateSshKeyData(privateSshKeyData);
-				}
-				
-				sftpHelper.setAllowUnknownHostKeys(true);
-				sftpHelper.connect();
-				return sftpHelper;
-			} catch (Exception e) {
-	        	if (sftpHelper != null) {
-	        		sftpHelper.close();
-	        		sftpHelper = null;
-	        	}
-	            throw e;
-	        }
-		} else if (StringUtils.isNotBlank(ftpServerCredentials)) {
-			FtpHelper ftpHelper = null;
-			try{
-				DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
-				String ftpCredentialsString = dataEncryptor.decrypt(ftpServerCredentials);
-				
-				ftpHelper = new FtpHelper(ftpCredentialsString);
-				ftpHelper.connect();
-				return ftpHelper;
-			} catch (Exception e) {
-	        	if (ftpHelper != null) {
-	        		ftpHelper.close();
-	        		ftpHelper = null;
-	        	}
-	            throw e;
+			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
+			String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
+
+			SFtpHelper sftpHelper = new SFtpHelper(sftpCredentialsString);
+			String privateSshKeyData = job.getParameters().get("privateSshKeyData");
+			if (StringUtils.isNotBlank(privateSshKeyData)) {
+				sftpHelper.setPrivateSshKeyData(privateSshKeyData);
 			}
-		} else {
-			throw new Exception("Missing definition of SFTP or FTP destination host");
+
+			sftpHelper.setAllowUnknownHostKeys(true);
+			sftpHelper.connect();
+			return sftpHelper;
+		} else if (StringUtils.isNotBlank(ftpServerCredentials)) {
+			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
+			String ftpCredentialsString = dataEncryptor.decrypt(ftpServerCredentials);
+
+			FtpHelper ftpHelper = new FtpHelper(ftpCredentialsString);
+			ftpHelper.connect();
+			return ftpHelper;
 		}
+
+		throw new Exception("Missing definition of SFTP or FTP destination host");
 	}
 }

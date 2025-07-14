@@ -7,7 +7,7 @@
 
 .ace_editor:has(.ace_text-input[readonly]) {
   .ace_content, .ace_active-line {
-    background-color: var(--input-disabled-bg-color) !important;
+    background-color: var(--base-disabled-bg) !important;
   }
 }
 

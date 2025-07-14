@@ -1,11 +1,7 @@
 .text-link {
-  color: $primary;
+  color: var(--text-link-color);
 
   &:hover {
-    color: $primary;
+    color: var(--text-link-color);
   }
-}
-
-.link-dark-md {
-  color: var(--text-gray-color) !important;
 }

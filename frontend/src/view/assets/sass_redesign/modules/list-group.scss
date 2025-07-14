@@ -17,8 +17,24 @@
 }
 
 .list-group-item {
-  background-color: var(--main-bg-color);
+  background-color: $body-bg-var;
   .form-label {
-    color: var(--text-color-default);
+    color: $body-color-var;
+  }
+}
+
+@include color-mode(light-contrast) {
+  .list-group {
+    --bs-list-group-active-color: #{$white};
+    --bs-list-group-active-bg: #{$con-dark-blue};
+    --bs-list-group-active-border-color: #{$white};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .list-group {
+    --bs-list-group-active-color: #{$con-dark-blue};
+    --bs-list-group-active-bg: #{$white};
+    --bs-list-group-active-border-color: #{$con-dark-blue};
   }
 }

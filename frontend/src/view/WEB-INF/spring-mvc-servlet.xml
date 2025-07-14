@@ -62,11 +62,11 @@
     <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" lazy-init="false"/>
 
     <bean id="viewResolver" class="com.agnitas.spring.web.view.AgnUrlBasedViewResolver" lazy-init="false">
-        <property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
+        <property name="viewClass" value="com.agnitas.spring.web.view.tiles3.ApacheTilesView"/>
         <property name="order" value="#{T(org.springframework.core.Ordered).HIGHEST_PRECEDENCE}"/>
     </bean>
 
-    <bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer" lazy-init="false">
+    <bean id="tilesConfigurer" class="com.agnitas.spring.web.view.tiles3.TilesConfigurer" lazy-init="false">
         <property name="definitions">
             <list>
             	<!-- for localhost testing only

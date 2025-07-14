@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Namespaces;
-import org.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.emm.springws.endpoint.BaseEndpoint;
+import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -22,21 +22,21 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.impl.ComTargetImpl;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.TargetImpl;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
-import com.agnitas.emm.springws.jaxb.AddTargetGroupRequest;
-import com.agnitas.emm.springws.jaxb.AddTargetGroupResponse;
+import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupRequest;
+import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupResponse;
 
 @Endpoint
 public class AddTargetGroupEndpoint extends BaseEndpoint {
 
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-    public AddTargetGroupEndpoint(ComTargetService targetService, final SecurityContextAccess securityContextAccess) {
+    public AddTargetGroupEndpoint(TargetService targetService, final SecurityContextAccess securityContextAccess) {
         this.targetService = Objects.requireNonNull(targetService, "targetService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
@@ -44,15 +44,15 @@ public class AddTargetGroupEndpoint extends BaseEndpoint {
     @PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "AddTargetGroupRequest")
     public @ResponsePayload AddTargetGroupResponse addTargetGroup(@RequestPayload AddTargetGroupRequest request) throws Exception {
         validateRequest(request);
-        ComTarget target = createTargetFromRequest(request);
+        Target target = createTargetFromRequest(request);
         int savedTargetId = targetService.saveTarget(target);
         AddTargetGroupResponse response = new AddTargetGroupResponse();
         response.setTargetId(savedTargetId);
         return response;
     }
 
-    private ComTarget createTargetFromRequest(AddTargetGroupRequest request) {
-        ComTarget target = new ComTargetImpl();
+    private Target createTargetFromRequest(AddTargetGroupRequest request) {
+        Target target = new TargetImpl();
         target.setTargetName(request.getName());
         target.setTargetDescription(request.getDescription());
         target.setEQL(request.getEql());

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.target.eql.emm.querybuilder.converter;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
 import org.apache.commons.lang3.StringUtils;
@@ -27,11 +28,15 @@ public class QueryBuilderUtil {
     public static Object[] getRuleNodeValueAsArray(QueryBuilderRuleNode ruleNode) {
         Object value = ruleNode.getValue();
         if (value != null) {
-            if (value instanceof Object[]) {
-                return (Object[]) value;
-            } else {
-                return new Object[]{value};
+            if (value instanceof Collection<?> values) {
+                return values.toArray();
             }
+
+            if (value instanceof Object[] values) {
+                return values;
+            }
+
+            return new Object[]{value};
         }
         return new Object[0];
     }

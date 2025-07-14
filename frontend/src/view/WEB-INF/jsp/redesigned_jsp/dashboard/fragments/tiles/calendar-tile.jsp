@@ -1,12 +1,11 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
-<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 
 <emm:ShowByPermission token="calendar.show">
@@ -15,15 +14,16 @@
 
     <c:set var="firstDayOfWeek" value="${1}"/> <%-- MONDAY --%>
 
-    <script id="config:dashboard-calendar" type="application/json">
+    <script id="config:dashboard-calendar-tile" type="application/json">
         {
+            "isUxUpdateRollback": ${emm:permissionAllowed('ux.updates.rollback', pageContext.request)},
             "firstDayOfWeek": ${firstDayOfWeek},
             "statisticsViewAllowed": ${emm:permissionAllowed('stats.mailing', pageContext.request)}
         }
     </script>
 
     <script id="dashboard-tile-calendar" type="text/x-mustache-template">
-        <div id="calendar-tile" class="tile draggable-tile tile-{{- tileSize }}" data-initializer="dashboard-calendar">
+        <div id="calendar-tile" class="tile draggable-tile tile-{{- tileSize }}" data-initializer="dashboard-calendar-tile">
             <div class="tile-header">
                 <h1 class="tile-title text-truncate"><mvc:message code="calendar.Calendar"/></h1>
             </div>

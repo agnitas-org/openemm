@@ -1,0 +1,13 @@
+.emm-widget {
+  height: 100%;
+  @include flex-column;
+  align-items: center;
+
+  > iframe {
+    height: 100%;
+  }
+}
+
+.emm-widget > iframe {
+  height: 100%;
+}

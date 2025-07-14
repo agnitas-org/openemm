@@ -1,4 +1,4 @@
-(function ($) {
+($ => {
 
   const Defaults = $.fn.select2.amd.require('select2/defaults');
 
@@ -22,7 +22,6 @@
     this.$search.attr('placeholder', this.options.get('searchInputPlaceholder'));
 
     if (this.options.get('showSearchIcon')) {
-      this.$searchContainer.addClass('has-search-icon');
       this.$searchContainer.append(`<i class="icon icon-search select2-search-icon"></i>`);
     }
 

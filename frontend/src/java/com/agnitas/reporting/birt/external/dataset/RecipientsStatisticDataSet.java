@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,14 +13,12 @@ package com.agnitas.reporting.birt.external.dataset;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import org.agnitas.dao.UserStatus;
+import com.agnitas.emm.common.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.importvalues.MailType;
+import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
 import java.text.ParseException;
@@ -61,8 +59,6 @@ import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.WAITING_FOR_CONFIRM_INDEX;
 
 public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
-
-    private static final Logger logger = LogManager.getLogger(RecipientsStatisticDataSet.class);
 
     public static final String OPENERS = "report.opens";
     public static final int OPENERS_INDEX = 3;
@@ -177,7 +173,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                     + " FROM " + getTempReportTableName(tempTableId)
                     + " ORDER BY mailinglist_id, targetgroup_id";
 
-            statList = selectEmbedded(logger, selectMailinglistSql, new RecipientsStatisticRowMapper());
+            statList = selectEmbedded(selectMailinglistSql, new RecipientsStatisticRowMapper());
 
             List<RecipientsStatisticCommonRow> statisticRows = new ArrayList<>(statList);
             statisticRows.sort(new RecipientsStatisticRowComparator());
@@ -436,7 +432,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                     + " FROM " + getTempReportTableName(tempTableId)
                     + " ORDER BY mailinglist_id, category_index, targetgroup_index";
 
-            collectedStatisticList = selectEmbedded(logger, query, new RecipientCollectedStatisticRowMapper());
+            collectedStatisticList = selectEmbedded(query, new RecipientCollectedStatisticRowMapper());
 
             int previousMailingListId = -1;
             int currentMailingListGroupId = 0;
@@ -471,7 +467,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 + " value INTEGER,"
                 + " rate DOUBLE)";
 
-        executeEmbedded(logger, createTableSQL);
+        executeEmbedded(createTableSQL);
 
         return tempTableId;
     }
@@ -521,7 +517,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 + " count_waiting_for_confirm_as_of INTEGER,"
                 + " count_recipient_as_of INTEGER)";
 
-        executeEmbedded(logger, createTableSQL);
+        executeEmbedded(createTableSQL);
 
         return tempTableId;
     }
@@ -564,15 +560,15 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 int multipleDeviceClassClickers = overallClickers - uniqueDeviceClassClickers.values().stream().mapToInt(Integer::intValue).sum();
 
                 if (calculateDeviceClasses) {
-                    updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC, CLICKER_PC_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.DESKTOP));
-                    updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_MOBILE, CLICKER_MOBILE_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.MOBILE));
-                    updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_TABLET, CLICKER_TABLET_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.TABLET));
-                    updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_SMARTTV, CLICKER_SMARTTV_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.SMARTTV));
-                    updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC_AND_MOBILE, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassClickers);
+                    updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC, CLICKER_PC_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.DESKTOP));
+                    updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_MOBILE, CLICKER_MOBILE_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.MOBILE));
+                    updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_TABLET, CLICKER_TABLET_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.TABLET));
+                    updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_SMARTTV, CLICKER_SMARTTV_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, uniqueDeviceClassClickers.get(DeviceClass.SMARTTV));
+                    updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CommonKeys.CLICKER_PC_AND_MOBILE, CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, multipleDeviceClassClickers);
                 }
 
-                updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CLICKER, CLICKER_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
-                updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, CLICKER_TRACKED, CLICKER_TRACKED_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
+                updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CLICKER, CLICKER_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
+                updateEmbedded(insertEmbedded, mailingListId, mailinglistName, CLICKER_TRACKED, CLICKER_TRACKED_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallClickers);
 
                 targetgroupIndex++;
             }
@@ -618,7 +614,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
         queryClickersPerUniqueDevices.append(" GROUP BY r.device_class_id");
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryClickersPerUniqueDevices.toString(), paramsClickersPerUniqueDevices.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryClickersPerUniqueDevices.toString(), paramsClickersPerUniqueDevices.toArray(new Object[0]));
 
         Map<DeviceClass, Integer> uniqueDeviceClassClickers = new HashMap<>();
         // Initialize default values 0 for no clickers at all
@@ -664,9 +660,9 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             queryOverallClickers.append(" AND (").append(filterTargetSql).append(")");
         }
 
-        List<Map<String, Object>> result = selectLongRunning(logger, queryOverallClickers.toString(), paramsOverallClickers.toArray(new Object[0]));
+        List<Map<String, Object>> result = selectLongRunning(queryOverallClickers.toString(), paramsOverallClickers.toArray(new Object[0]));
 
-        return ((Number) result.get(0).get("counter")).intValue();
+        return toInt(result.get(0).get("counter"));
     }
 
     private void insertOpenersIntoTempTable(int tempTableId, int companyId, List<LightTarget> targetGroups,
@@ -720,10 +716,10 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                     queryOverallOpeners.append(" AND (").append(hiddenTargetSql).append(")");
                 }
 
-                List<Map<String, Object>> resultOverallOpeners = selectLongRunning(logger, queryOverallOpeners.toString(), queryOverallOpenersParameters.toArray(new Object[0]));
-                int overallOpeners = ((Number) resultOverallOpeners.get(0).get("counter")).intValue();
+                List<Map<String, Object>> resultOverallOpeners = selectLongRunning(queryOverallOpeners.toString(), queryOverallOpenersParameters.toArray(new Object[0]));
+                int overallOpeners = toInt(resultOverallOpeners.get(0).get("counter"));
 
-                updateEmbedded(logger, insertEmbedded, mailingListId, mailinglistName, OPENERS, OPENERS_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallOpeners);
+                updateEmbedded(insertEmbedded, mailingListId, mailinglistName, OPENERS, OPENERS_END_DATE_INDEX, target.getName(), target.getId(), targetgroupIndex, overallOpeners);
 
                 targetgroupIndex++;
             }
@@ -733,9 +729,9 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     private void mapDeviceClass(List<Map<String, Object>> result, Map<DeviceClass, Integer> uniqueDeviceClassOpeners) {
         for (Map<String, Object> row : result) {
             DeviceClass deviceClass;
-            int deviceClassId = ((Number) row.get("deviceClassId")).intValue();
+            int deviceClassId = toInt(row.get("deviceClassId"));
             deviceClass = DeviceClass.fromIdWithDefault(deviceClassId, DeviceClass.DESKTOP);
-            uniqueDeviceClassOpeners.put(deviceClass, ((Number) row.get("counter")).intValue() + uniqueDeviceClassOpeners.get(deviceClass));
+            uniqueDeviceClassOpeners.put(deviceClass, toInt(row.get("counter")) + uniqueDeviceClassOpeners.get(deviceClass));
         }
     }
 
@@ -775,23 +771,23 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
     private void updateRates(int tempTableId, int companyId, List<LightTarget> targetGroups, Object[] mainIndexes, Integer[] indexes) throws Exception {
         String queryTotal = "SELECT mailinglist_id, value FROM " + getTempReportTableName(tempTableId) + " WHERE targetgroup_index = ? AND category_index = ?";
-        List<Map<String, Object>> results = selectEmbedded(logger, queryTotal, mainIndexes);
+        List<Map<String, Object>> results = selectEmbedded(queryTotal, mainIndexes);
         for (Map<String, Object> row : results) {
-            Integer mailingListId = row.get("mailinglist_id") != null ? ((Number) row.get("mailinglist_id")).intValue() : 0;
-            Integer total = row.get("value") != null ? ((Number) row.get("value")).intValue() : 0;
+            Integer mailingListId = row.get("mailinglist_id") != null ? toInt(row.get("mailinglist_id")) : 0;
+            Integer total = row.get("value") != null ? toInt(row.get("value")) : 0;
             if (total > 0) {
                 String queryUpdateRate = "UPDATE " + getTempReportTableName(tempTableId) +
                         " SET rate = (value * 1.0) / ?  WHERE targetgroup_index = ? AND mailinglist_id = ? AND category_index IN (" +
                         StringUtils.join(indexes, ", ") +
                         ")";
-                updateEmbedded(logger, queryUpdateRate, total, CommonKeys.ALL_SUBSCRIBERS_INDEX, mailingListId);
+                updateEmbedded(queryUpdateRate, total, CommonKeys.ALL_SUBSCRIBERS_INDEX, mailingListId);
 
                 if (!CollectionUtils.isEmpty(targetGroups) && isMailingTrackingActivated(companyId)) {
                     int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
                     for (int index = 0; index < targetGroups.size(); index++) {
                         try {
                             ++targetGroupIndex;
-                            updateEmbedded(logger, queryUpdateRate, total, targetGroupIndex, mailingListId);
+                            updateEmbedded(queryUpdateRate, total, targetGroupIndex, mailingListId);
                         } catch (DataAccessException e) {
                             logger.error("No target group data");
                         }
@@ -815,7 +811,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             String updateQuery = "UPDATE " + getTempReportTableName(tempTableId) +
                     " SET count_doi_not_confirmed = ?, count_doi_not_confirmed_deleted = ?, count_doi_confirmed = ?, count_doi_confirmed_not_active = ?, count_doi_total = ?" +
                     " WHERE mailinglist_id = ?";
-            updateEmbedded(logger, updateQuery, notConfirmedCount, notConfirmedAndDeletedCount, confirmedCount, confirmedAndNotActiveCount, totalCount, mailinglistId);
+            updateEmbedded(updateQuery, notConfirmedCount, notConfirmedAndDeletedCount, confirmedCount, confirmedAndNotActiveCount, totalCount, mailinglistId);
         }
     }
 
@@ -858,13 +854,13 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
         recipientStatMailtypeTempate.append(" GROUP BY cust.mailtype");
 
-        List<Map<String, Object>> result = select(logger, recipientStatMailtypeTempate.toString());
+        List<Map<String, Object>> result = select(recipientStatMailtypeTempate.toString());
         int countTypeText = 0;
         int countTypeHtml = 0;
         int countTypeOfflineHtml = 0;
         for (Map<String, Object> row : result) {
-            int count = ((Number) row.get("mailtype_count")).intValue();
-            switch (MailType.getFromInt(((Number) row.get("mailtype")).intValue())) {
+            int count = toInt(row.get("mailtype_count"));
+            switch (MailType.getFromInt(toInt(row.get("mailtype")))) {
                 case TEXT:
                     countTypeText = count;
                     break;
@@ -882,7 +878,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         String updateQuery = "UPDATE " + getTempReportTableName(tempTableId) +
                 " SET count_type_text = ?, count_type_html = ?, count_type_offline_html = ?" +
                 " WHERE mailinglist_id = ? AND targetgroup_id = ?";
-        updateEmbedded(logger, updateQuery, countTypeText, countTypeHtml, countTypeOfflineHtml, mailinglistId, target.getId());
+        updateEmbedded(updateQuery, countTypeText, countTypeHtml, countTypeOfflineHtml, mailinglistId, target.getId());
     }
 
     private void addRecipientStatUserStatus(int companyId, int tempTableId, List<Integer> mailingListIds,
@@ -937,10 +933,10 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         int bouncedCount = 0;
         int recipientCount = 0;
 
-        List<Map<String, Object>> result = select(logger, recipientStatUserStatusTemplate.toString());
+        List<Map<String, Object>> result = select(recipientStatUserStatusTemplate.toString());
         for (Map<String, Object> row : result) {
-            int amount = ((Number) row.get("status_count")).intValue();
-            UserStatus status = getUserStatus(((Number) row.get("user_status")).intValue());
+            int amount = toInt(row.get("status_count"));
+            UserStatus status = getUserStatus(toInt(row.get("user_status")));
 
             if (status != null) {
                 switch (status) {
@@ -974,10 +970,10 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         }
 
         if (!isAsOf && getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
-            List<Map<String, Object>> hstResult = select(logger, recipientStatUserStatusTemplate.toString().replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId)));
+            List<Map<String, Object>> hstResult = select(recipientStatUserStatusTemplate.toString().replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId)));
             for (Map<String, Object> row : hstResult) {
-                int amount = ((Number) row.get("status_count")).intValue();
-                UserStatus status = getUserStatus(((Number) row.get("user_status")).intValue());
+                int amount = toInt(row.get("status_count"));
+                UserStatus status = getUserStatus(toInt(row.get("user_status")));
 
                 if (status != null) {
                     switch (status) {
@@ -1017,7 +1013,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         }
         update.append(" WHERE mailinglist_id = ? AND targetgroup_id = ?");
 
-        updateEmbedded(logger, update.toString(), activeCountForPeriod, waitingForConfirmCount, blacklistedCount, optoutCount, bouncedCount, recipientCount, mailinglistId, target.getId());
+        updateEmbedded(update.toString(), activeCountForPeriod, waitingForConfirmCount, blacklistedCount, optoutCount, bouncedCount, recipientCount, mailinglistId, target.getId());
     }
 
     private String getDateConstraint(String fieldName, String startDate, String stopDate, int constraintType) throws Exception {
@@ -1083,7 +1079,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         for (int mailinglistId : mailingListIds) {
             // All subscribers
             String mailinglistName = getMailinglistName(companyId, mailinglistId);
-            updateEmbedded(logger, tempRecipientsStatRowInsert,
+            updateEmbedded(tempRecipientsStatRowInsert,
                     mailinglistId,
                     CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
                     mailinglistName,
@@ -1094,7 +1090,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             List<LightTarget> targets = getTargets(selectedTargets, companyId);
             for (LightTarget target : targets) {
                 target = getDefaultTarget(target);
-                updateEmbedded(logger, tempRecipientsStatRowInsert, mailinglistId, target.getId(),
+                updateEmbedded(tempRecipientsStatRowInsert, mailinglistId, target.getId(),
                         mailinglistName, target.getName());
             }
         }
@@ -1122,13 +1118,13 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
             String mailinglistName = row.getMailingListName();
 
             // active recipients for period
-            updateEmbedded(logger, insertEmbedded,
+            updateEmbedded(insertEmbedded,
                     mailinglistId, mailinglistName, CommonKeys.ACTIVE, ACTIVE_INDEX,
                     targetGroupName, targetGroupId,
                     targetGroupIndex, row.getCountActiveForPeriod());
 
             // active recipients in the end of period
-            updateEmbedded(logger, insertEmbedded,
+            updateEmbedded(insertEmbedded,
                     mailinglistId, mailinglistName, endDateString, ACTIVE_END_DATE_INDEX,
                     targetGroupName, targetGroupId, targetGroupIndex, row.getCountActiveAsOf());
 
@@ -1176,7 +1172,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
         // add date constraint
         recipientActiveSql.append(getDateConstraint("bind.timestamp", startDateString, endDateString, DATE_CONSTRAINT_LESS_THAN_START));
 
-        int recipientCount = selectInt(logger, recipientActiveSql.toString());
+        int recipientCount = selectInt(recipientActiveSql.toString());
 
 		if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
 			String hstRecipientActiveSql = "SELECT COUNT(DISTINCT(bind.customer_id)) AS active_count " +
@@ -1197,11 +1193,11 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 			hstRecipientActiveSql += getDateConstraint("bind.timestamp_change", startDateString, endDateString, DATE_CONSTRAINT_GREATER_THAN_START);
 
 			// Select additional data from history tables
-			int hstResult = selectInt(logger, hstRecipientActiveSql, mailinglistId);
+			int hstResult = selectInt(hstRecipientActiveSql, mailinglistId);
 			recipientCount += hstResult;
         }
 
-        updateEmbedded(logger, getTempInsertQuery(tempTableId),
+        updateEmbedded(getTempInsertQuery(tempTableId),
                 mailinglistId,
                 mailinglistName,
                 startDateString,
@@ -1220,6 +1216,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     }
 
     private void updateNumberOfTargetGroups(int tempTableId, int numberOfTargetGroups) throws Exception {
-        updateEmbedded(logger, "UPDATE " + getTempReportTableName(tempTableId) + " SET count_target_group = ?", numberOfTargetGroups);
+        updateEmbedded("UPDATE " + getTempReportTableName(tempTableId) + " SET count_target_group = ?", numberOfTargetGroups);
     }
 }

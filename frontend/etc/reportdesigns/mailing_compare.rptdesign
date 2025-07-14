@@ -3568,6 +3568,7 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             <structure name="numberFormat">
                                 <property name="category">Percent</property>
                                 <property name="pattern">###0.0%</property>
+                                <property name="locale">en</property>
                             </structure>
                             <property name="resultSetColumn">openers_rate</property>
                         </data>
@@ -3582,6 +3583,7 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             <structure name="numberFormat">
                                 <property name="category">Percent</property>
                                 <property name="pattern">###0.0%</property>
+                                <property name="locale">en</property>
                             </structure>
                             <property name="resultSetColumn">clicking_rate</property>
                         </data>
@@ -3596,6 +3598,7 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             <structure name="numberFormat">
                                 <property name="category">Percent</property>
                                 <property name="pattern">###0.0%</property>
+                                <property name="locale">en</property>
                             </structure>
                             <property name="resultSetColumn">signedoff_rate</property>
                         </data>
@@ -3610,6 +3613,7 @@ data["CGroup/category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                             <structure name="numberFormat">
                                 <property name="category">Percent</property>
                                 <property name="pattern">###0.0%</property>
+                                <property name="locale">en</property>
                             </structure>
                             <property name="resultSetColumn">bounces_rate</property>
                         </data>

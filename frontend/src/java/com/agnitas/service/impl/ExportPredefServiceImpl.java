@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,29 +16,27 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.ExportPredef;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.export.dao.ExportPredefDao;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.FileCompressionType;
-import org.agnitas.service.RecipientExportWorker;
-import org.agnitas.service.RecipientExportWorkerFactory;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.Const;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.FileCompressionType;
+import com.agnitas.service.RecipientExportWorker;
+import com.agnitas.service.RecipientExportWorkerFactory;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Const;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import javax.sql.DataSource;
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -73,7 +71,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public int save(ExportPredef src, Admin admin) throws Exception {
+    public int save(ExportPredef src, Admin admin) {
         if (!isManageAllowed(src, admin)) {
             throw new UnsupportedOperationException();
         }
@@ -95,7 +93,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
                 .sorted(getComparator(form))
                 .skip((long) (page - 1) * form.getNumberOfRows())
                 .limit(form.getNumberOfRows())
-                .collect(Collectors.toList());
+                .toList();
 
         return new PaginatedListImpl<>(sortedExports, exports.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
     }
@@ -131,7 +129,6 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    // TODO: EMMGUI-714: remove after remove of old design
     public ServiceResult<ExportPredef> delete(int exportId, int companyId) {
         ServiceResult<ExportPredef> exportForDeletion = getExportForDeletion(exportId, companyId);
         if (!exportForDeletion.isSuccess()) {
@@ -179,9 +176,9 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) throws Exception {
+    public Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) {
         Set<Charset> options = getAvailableCharsetOptions(admin);
-        if (export != null && !options.contains(Charset.getCharsetByName(export.getCharset()))) {
+        if (export != null) {
             options.add(Charset.getCharsetByName(export.getCharset()));
         }
 
@@ -191,7 +188,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     @Override
     public Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException {
         Set<UserStatus> options = getAvailableUserStatusOptions(admin);
-        if (export != null && export.getUserStatus() != 0 && !options.contains(UserStatus.getUserStatusByID(export.getUserStatus()))) {
+        if (export != null && export.getUserStatus() != 0) {
             options.add(UserStatus.getUserStatusByID(export.getUserStatus()));
         }
 
@@ -199,7 +196,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public EnumSet<BindingEntry.UserType> getAvailableUserTypeOptionsForDisplay(Admin admin, ExportPredef export) throws Exception {
+    public EnumSet<BindingEntry.UserType> getAvailableUserTypeOptionsForDisplay(Admin admin, ExportPredef export) {
         EnumSet<BindingEntry.UserType> options = getAvailableUserTypeOptions(admin);
         if (export != null && !options.contains(BindingEntry.UserType.getUserTypeByString(export.getUserType()))) {
             options.add(BindingEntry.UserType.getUserTypeByString(export.getUserType()));
@@ -219,13 +216,13 @@ public class ExportPredefServiceImpl implements ExportPredefService {
                 .map(id -> getExportForDeletion(id, admin.getCompanyID()))
                 .filter(ServiceResult::isSuccess)
                 .map(ServiceResult::getResult)
-                .collect(Collectors.toList());
+                .toList();
 
         for (ExportPredef export : exports) {
             exportPredefDao.delete(export);
         }
 
-        List<Integer> removedIds = exports.stream().map(ExportPredef::getId).collect(Collectors.toList());
+        List<Integer> removedIds = exports.stream().map(ExportPredef::getId).toList();
 
         return ServiceResult.success(
                 new UserAction(
@@ -237,7 +234,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public boolean isManageAllowed(ExportPredef export, Admin admin) throws Exception {
+    public boolean isManageAllowed(ExportPredef export, Admin admin) {
         if (export == null) {
             return true;
         }
@@ -248,7 +245,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         }
 
         final Set<UserStatus> availableUserStatusOptions = getAvailableUserStatusOptions(admin);
-        if (export.getUserStatus() != 0 && !availableUserStatusOptions.contains(UserStatus.getUserStatusByID(export.getUserStatus()))) {
+        if (export.getUserStatus() != 0 && !availableUserStatusOptions.contains(UserStatus.findByCode(export.getUserStatus()))) {
             return false;
         }
 
@@ -308,27 +305,22 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         return "RecipientExport_" + companyId + "_";
     }
 
-    @Required
     public void setExportPredefDao(ExportPredefDao exportPredefDao) {
         this.exportPredefDao = exportPredefDao;
     }
     
-    @Required
     public void setRecipientExportWorkerFactory(RecipientExportWorkerFactory recipientExportWorkerFactory) {
         this.recipientExportWorkerFactory = recipientExportWorkerFactory;
     }
     
-    @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }
     
-    @Required
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
-    @Required
     public void setBulkActionValidationService(BulkActionValidationService<Integer, ExportPredef> bulkActionValidationService) {
         this.bulkActionValidationService = bulkActionValidationService;
     }

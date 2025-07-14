@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,10 +24,10 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.mailing.service.ComMailingGridService;
-import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
-import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
-import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
+import com.agnitas.emm.core.mailing.service.MailingGridService;
+import com.agnitas.emm.grid.grid.beans.GridTemplate;
+import com.agnitas.emm.grid.grid.beans.GridTemplateSettings;
+import com.agnitas.emm.grid.grid.service.GridTemplateService;
 import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
 import com.agnitas.service.GridServiceWrapper;
 
@@ -37,10 +37,10 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     private static final Logger logger = LogManager.getLogger(GridServiceWrapperImpl.class);
 
     @Autowired(required = false)
-    private ComMailingGridService mailingGridService;
+    private MailingGridService mailingGridService;
 
     @Autowired(required = false)
-    private ComGridTemplateService gridTemplateService;
+    private GridTemplateService gridTemplateService;
 
     @Override
     public int getGridTemplateIdByMailingId(int mailingId) {
@@ -53,7 +53,7 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public ComGridTemplate getGridTemplate(int companyId, int templateId) {
+    public GridTemplate getGridTemplate(int companyId, int templateId) {
         return checkAndReturn(gridTemplateService, () -> gridTemplateService.getGridTemplate(templateId, companyId));
     }
 
@@ -68,7 +68,7 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public ComTemplateSettings getGridTemplateSettings(int templateId, Admin admin) {
+    public GridTemplateSettings getGridTemplateSettings(int templateId, Admin admin) {
         return checkAndReturn(gridTemplateService, () -> gridTemplateService.getGridTemplateSettings(templateId, admin));
     }
 
@@ -84,18 +84,12 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
 
     @Override
     public void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId) {
-        checkAndRun(mailingGridService, (dummy) -> mailingGridService.saveUndoGridMailing(mailingId, gridTemplateId, adminId));
+        checkAndRun(mailingGridService, dummy -> mailingGridService.saveUndoGridMailing(mailingId, gridTemplateId, adminId));
     }
 
     @Override
     public void restoreGridMailingUndo(int undoId, Mailing mailing) {
-        checkAndRun(mailingGridService, (dummy) -> {
-			try {
-				mailingGridService.restoreGridMailingUndo(undoId, mailing);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		});
+        checkAndRun(mailingGridService, dummy -> mailingGridService.restoreGridMailingUndo(undoId, mailing));
     }
 
     private <T> T checkAndReturn(Object service, Supplier<T> supplier) {

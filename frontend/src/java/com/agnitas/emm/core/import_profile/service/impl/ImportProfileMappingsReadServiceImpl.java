@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,23 +21,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.impl.ColumnMappingImpl;
-import org.agnitas.util.CaseInsensitiveSet;
-import org.agnitas.util.CsvColInfo;
-import org.agnitas.util.CsvDataInvalidItemCountException;
-import org.agnitas.util.ImportUtils;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.Separator;
-import org.agnitas.util.importvalues.TextRecognitionChar;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.impl.ColumnMappingImpl;
+import com.agnitas.util.CaseInsensitiveSet;
+import com.agnitas.util.CsvColInfo;
+import com.agnitas.util.CsvDataInvalidItemCountException;
+import com.agnitas.util.ImportUtils;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.Separator;
+import com.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.import_profile.service.ImportProfileMappingsReadService;
 import com.agnitas.emm.data.CsvDataProvider;
@@ -53,9 +53,9 @@ public class ImportProfileMappingsReadServiceImpl implements ImportProfileMappin
 
     private static final Logger LOGGER = LogManager.getLogger(ImportProfileMappingsReadServiceImpl.class);
 
-    private final ComRecipientDao recipientDao;
+    private final RecipientDao recipientDao;
 
-    public ImportProfileMappingsReadServiceImpl(ComRecipientDao recipientDao) {
+    public ImportProfileMappingsReadServiceImpl(RecipientDao recipientDao) {
         this.recipientDao = recipientDao;
     }
 

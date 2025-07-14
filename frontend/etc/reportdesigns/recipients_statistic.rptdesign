@@ -221,7 +221,7 @@ reportContext.setPersistentGlobalVariable("message_recipientsStatistic.active", 
 reportContext.setPersistentGlobalVariable("message_statistic.clicker", I18nString.getLocaleString("statistic.clicker", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_birt.report.opens", I18nString.getLocaleString("birt.report.opens", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_statistic.pc", I18nString.getLocaleString("statistic.pc", reportContext.getLocale()));
-reportContext.setPersistentGlobalVariable("message_report.openers.total", I18nString.getLocaleString("report.openers.total", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_report.openers.total", I18nString.getLocaleString("statistic.opener.total", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.tablet.shortname", I18nString.getLocaleString("report.openers.tablet.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.mobile.shortname", I18nString.getLocaleString("report.openers.mobile.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.smarttv.shortname", I18nString.getLocaleString("report.openers.smarttv.shortname", reportContext.getLocale()));

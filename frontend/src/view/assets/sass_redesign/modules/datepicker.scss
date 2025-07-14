@@ -2,7 +2,7 @@
 $datepicker-item-size: 35px;
 
 #ui-datepicker-div {
-  background-color: var(--main-bg-color);
+  background-color: $body-bg-var;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 
   border: $border-default;
@@ -31,7 +31,7 @@ $datepicker-item-size: 35px;
       display: inline-block;
       border: $border-transparent;
       border-radius: 50%;
-      color: var(--text-color-default);
+      color: $body-color-var;
     }
 
     &:not(.ui-datepicker-current-day) {
@@ -60,14 +60,14 @@ $datepicker-item-size: 35px;
     
     &.ui-datepicker-today {
       a {
-        color: $white;
-        background-color: $primary;
+        color: var(--calendar-today-color);
+        background-color: var(--calendar-today-bg);
       }
     }
   }
 
   th {
-    color: var(--text-color-default);
+    color: $body-color-var;
     &:not(.ui-datepicker-week-col) {
       font-weight: $font-weight-normal;
     }
@@ -75,19 +75,15 @@ $datepicker-item-size: 35px;
 
   .ui-datepicker-week-col {
     font-weight: $font-weight-semibold;
-    color: var(--text-color-default);
+    color: $body-color-var;
   }
 }
 
 .ui-datepicker-title, .ui-datepicker-buttonpane {
   @include flex-row($gap-sm);
 
-  button, {
+  > * {
     flex-grow: 1;
-  }
-
-  .select-container {
-    width: 50%;
   }
 }
 

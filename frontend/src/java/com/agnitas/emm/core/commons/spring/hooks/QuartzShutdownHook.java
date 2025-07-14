@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,6 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.SmartLifecycle;
 
 public final class QuartzShutdownHook implements SmartLifecycle {
@@ -93,7 +92,6 @@ public final class QuartzShutdownHook implements SmartLifecycle {
 	        scheduler.interrupt(jobDetail.getKey());
 	    }
 	}
-	@Required
 	public final void setScheduler(final Scheduler scheduler) {
 		this.scheduler = Objects.requireNonNull(scheduler, "Scheduler is null");
 	}

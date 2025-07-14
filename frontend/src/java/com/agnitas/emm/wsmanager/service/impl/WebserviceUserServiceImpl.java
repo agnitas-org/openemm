@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,11 +16,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.SourceGroupType;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -200,15 +200,9 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public WebserviceUserDto getWebserviceUserByUserName(String username) throws WebserviceUserServiceException, WebserviceUserException {
-		try {
-			WebserviceUserDto webserviceUser = conversionService.convert(webserviceUserDao.getWebserviceUser(username), WebserviceUserDto.class);
-			return Optional.ofNullable(webserviceUser).orElse(new WebserviceUserDto());
-		} catch(WebserviceUserDaoException e) {
-			logger.error("Error accessing webservice user " + username, e);
-
-			throw new WebserviceUserServiceException("Error accessing webservice user " + username, e);
-		}
+	public WebserviceUserDto getWebserviceUserByUserName(String username) throws WebserviceUserException {
+		WebserviceUserDto webserviceUser = conversionService.convert(webserviceUserDao.getWebserviceUser(username), WebserviceUserDto.class);
+		return Optional.ofNullable(webserviceUser).orElse(new WebserviceUserDto());
 	}
 
 	@Override
@@ -233,7 +227,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public final WebserviceUserSettings findSettingsForWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserServiceException {
+	public final WebserviceUserSettings findSettingsForWebserviceUser(final String username) throws WebserviceUserServiceException {
 		final Optional<WebserviceUserSettings> optional = this.webserviceUserSettingsDao.findSettingsForWebserviceUser(username);
 		
 		if(!optional.isPresent()) {

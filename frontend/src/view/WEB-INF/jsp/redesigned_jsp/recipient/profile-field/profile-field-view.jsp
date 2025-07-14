@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ page import="com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType" %>
 <%@ page import="com.agnitas.beans.ProfileFieldMode" %>
 
@@ -10,7 +10,6 @@
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 <%--@elvariable id="HISTORY_FEATURE_ENABLED" type="java.lang.Boolean"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="isNewField" type="java.lang.Boolean"--%>
 
 <c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>"/>
@@ -23,6 +22,7 @@
 <c:set var="DEPENDENT_TYPE_TARGET_GROUP" value="<%= ProfileFieldDependentType.TARGET_GROUP %>"/>
 <c:set var="DEPENDENT_TYPE_IMPORT_PROFILE" value="<%= ProfileFieldDependentType.IMPORT_PROFILE %>"/>
 <c:set var="DEPENDENT_TYPE_EXPORT_PROFILE" value="<%= ProfileFieldDependentType.EXPORT_PROFILE %>"/>
+<c:set var="DEPENDENT_TYPE_TRIGGER" value="<%= ProfileFieldDependentType.TRIGGER %>"/>
 
 <div class="tiles-container" data-editable-view="${agnEditViewKey}">
     <mvc:form id="settings-tile" servletRelativeAction="/profiledb/save.action" method="POST" modelAttribute="profileForm" cssClass="tile"
@@ -159,7 +159,7 @@
                             <mvc:checkbox path="includeInHistory" id="includeInHistory" cssClass="form-check-input" role="switch"/>
                             <label class="form-label form-check-label" for="includeInHistory">
                                 <mvc:message code="profileHistory.includeField"/>
-                                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/recipient/profileField/HistorisationAdd.xml"></a>
+                                <a href="#" class="icon icon-question-circle" data-help="recipient/profileField/HistorisationAdd.xml"></a>
                             </label>
                         </div>
                     </div>
@@ -204,7 +204,7 @@
                                               data-field-vis="" data-field-vis-show="#allowed-values-block" />
                                 <label class="form-label form-check-label" for="useAllowedValues">
                                     <mvc:message code="settings.FieldFixedValue"/>
-                                    <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/recipient/profileField/FixedValue.xml"></a>
+                                    <a href="#" class="icon icon-question-circle" data-help="recipient/profileField/FixedValue.xml"></a>
                                 </label>
                             </div>
                         </div>
@@ -297,18 +297,22 @@
             <mvc:message code="import.ImportProfile"/>
         {{ } else if ('${DEPENDENT_TYPE_EXPORT_PROFILE.name()}' === value) { }}
             <mvc:message code="export"/>
+        {{ } else if ('${DEPENDENT_TYPE_TRIGGER.name()}' === value) { }}
+            <mvc:message code="userform.usesActions"/>
         {{ } }}
     </span>
 </script>
 
 <script id="profile-field-dependency-view-link" type="text/x-mustache-template">
     {{ if ('${DEPENDENT_TYPE_WORKFLOW.name()}' === type) { }}
-        /workflow/{{- id }}/view.action
+    /workflow/{{- id }}/view.action
     {{ } else if ('${DEPENDENT_TYPE_TARGET_GROUP.name()}' === type) { }}
-        /target/{{- id }}/view.action
+    /target/{{- id }}/view.action
     {{ } else if ('${DEPENDENT_TYPE_IMPORT_PROFILE.name()}' === type) { }}
-        /import-profile/{{- id }}/view.action
+    /import-profile/{{- id }}/view.action
     {{ } else if ('${DEPENDENT_TYPE_EXPORT_PROFILE.name()}' === type) { }}
-        /export/{{- id }}/view.action
+    /export/{{- id }}/view.action
+    {{ } else if ('${DEPENDENT_TYPE_TRIGGER.name()}' === type) { }}
+    /action/{{- id }}/view.action
     {{ } }}
 </script>

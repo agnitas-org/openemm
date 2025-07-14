@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.util.importvalues.ImportMode"%>
-<%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page import="org.agnitas.beans.ImportStatus" %>
+<%@ page import="com.agnitas.util.importvalues.ImportMode"%>
+<%@ page import="com.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.beans.ImportStatus" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>

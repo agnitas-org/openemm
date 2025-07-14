@@ -35,7 +35,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="11" />
+				<property name="javaVersion" value="17" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
@@ -258,8 +258,8 @@
 		</replace>
 		
 		<xmltask
-				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/spring-ws-common.xml"
-				dest="${deploydir}${appname}/WEB-INF/spring-ws-common.xml"
+				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/applicationContext-ws-service.xml"
+				dest="${deploydir}${appname}/WEB-INF/applicationContext-ws-service.xml"
 				preserveType="true">
 			<insert path="/*[local-name()='beans']/*[local-name()='bean'][last()]" position="after">
 				<![CDATA[
@@ -273,9 +273,22 @@
 			<replacetoken> xmlns=""</replacetoken>
 		</replace>
 
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/applicationContext-ws-service.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-permissions-basic.xml" />
 
 		<echo message="...applicationContext.xml done" />
+
+		<!-- Delete unwanted classes -->
+		<echo message="Deleting unwanted classes: ${deploydir}${appname}/WEB-INF/classes/com/agnitas" />
+		<delete>
+			<fileset dir="${deploydir}/${appname}/WEB-INF/classes/com/agnitas">
+				<include name="**/PuppeteerServiceManager.class" />
+			</fileset>
+		</delete>
 	</target>
 
 	<target name="war" depends="all" description="Build Webapp-WS-WAR">
@@ -316,6 +329,8 @@
 			<exclude name="**/web/*ControllerBasic.java" />
 			<exclude name="**/web/*ControllerOpenemm.java" />
 			<exclude name="**/web/*Action.java" />
+			<exclude name="**/PuppeteerServiceManager.java" />
+			<exclude name="**/DbSchemaSnapshotLoader.java" />
 			
 			<!-- To add something to the classpath: -->
 			<classpath refid="build.classpath" />

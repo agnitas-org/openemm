@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,24 +11,31 @@
 
 package com.agnitas.emm.core.mailing.web;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import com.agnitas.emm.core.mailing.forms.SaveMailStatusSettingsForm;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.XssCheckAware;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserActivityLogService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,22 +48,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Objects;
-
 public class MailingAjaxController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(MailingAjaxController.class);
 
     private final MailingService mailingService;
     private final UserActivityLogService userActivityLogService;
-    private final ComMailingBaseService mailingBaseService;
-    private final ComTargetService targetService;
+    private final MailingBaseService mailingBaseService;
+    private final TargetService targetService;
     private final TrackableLinkService trackableLinkService;
     
-    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService, ComMailingBaseService mailingBaseService, ComTargetService targetService, TrackableLinkService trackableLinkService) {
+    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService, MailingBaseService mailingBaseService, TargetService targetService, TrackableLinkService trackableLinkService) {
         this.mailingService = Objects.requireNonNull(mailingService, "Mailing service is null");
         this.userActivityLogService = userActivityLogService;
         this.mailingBaseService = mailingBaseService;
@@ -67,7 +69,7 @@ public class MailingAjaxController implements XssCheckAware {
     @RequestMapping(value = "/listActionBasedForMailinglist.action", produces = "application/json")
     public final ResponseEntity<String> listAllActionBasedMailingsForMailinglist(final Admin admin, @RequestParam(value = "mailinglist") final int mailinglistID) {
         try {
-            final List<LightweightMailing> list = mailingService.listAllActionBasedMailingsForMailinglist(admin.getCompanyID(), mailinglistID);
+            final List<LightweightMailingWithMailingList> list = mailingService.listAllActionBasedMailingsForMailinglist(admin.getCompanyID(), mailinglistID);
 
             final JSONObject root = new JSONObject();
             final JSONArray mailings = new JSONArray();
@@ -78,7 +80,7 @@ public class MailingAjaxController implements XssCheckAware {
                 mailingJson.put("id", mailing.getMailingID());
                 mailingJson.put("shortname", mailing.getShortname());
 
-                mailings.add(mailingJson);
+                mailings.put(mailingJson);
             }
 
             root.put("mailings", mailings);
@@ -148,9 +150,9 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     @PostMapping("{mailingId:\\d+}/calculateRecipients.action")
-    public ResponseEntity<JSONObject> calculateRecipients(@PathVariable int mailingId, Admin admin,
-                                                          @ModelAttribute("settingsForm") MailingSettingsForm form,
-                                                          @RequestParam boolean changeMailing, @RequestParam boolean isWmSplit) {
+    public ResponseEntity<Map<String, Object>> calculateRecipients(@PathVariable int mailingId, Admin admin,
+                                                                   @ModelAttribute("settingsForm") MailingSettingsForm form,
+                                                                   @RequestParam boolean changeMailing, @RequestParam boolean isWmSplit) {
         final JSONObject data = new JSONObject();
 
         CalculationRecipientsConfig config = getCalculationRecipientsConfig(mailingId, form, admin, changeMailing, isWmSplit);
@@ -158,14 +160,10 @@ public class MailingAjaxController implements XssCheckAware {
         DecimalFormat decimalFormatCount = (DecimalFormat) numberFormatCount;
         decimalFormatCount.applyPattern(",###");
 
-        try {
-            data.element("count", decimalFormatCount.format(mailingBaseService.calculateRecipients(config)));
-            data.element("success", true);
-        } catch (Exception e) {
-            LOGGER.error(String.format("Error occurred: %s", e.getMessage()), e);
-            data.element("success", false);
-        }
-        return ResponseEntity.ok(data);
+        data.put("count", decimalFormatCount.format(mailingBaseService.calculateRecipients(config)));
+        data.put("success", true);
+
+        return ResponseEntity.ok(data.toMap());
     }
 
     @ModelAttribute("settingsForm")
@@ -192,7 +190,7 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{mailingId:\\d+}/links.action", produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody JSONObject getMailingLinks(@PathVariable int mailingId, Admin admin) {
-        return trackableLinkService.getMailingLinksJson(mailingId, admin.getCompanyID());
+    public @ResponseBody Map<String, Object> getMailingLinks(@PathVariable int mailingId, Admin admin) {
+        return trackableLinkService.getMailingLinksJson(mailingId, admin.getCompanyID()).toMap();
     }
 }

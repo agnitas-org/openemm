@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,21 +28,19 @@ import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.SafeString;
+import org.json.JSONObject;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.SafeString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 public class DashboardServiceImpl implements DashboardService {
 	
     private static final Logger logger = LogManager.getLogger(DashboardServiceImpl.class);
@@ -51,7 +49,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
     private MailingDao mailingDao;
-    private ComWorkflowService workflowService;
+    private WorkflowService workflowService;
     private RecipientsReportService recipientsReportService;
 
     private static final List<Integer> OPENERS_STATISTIC_INDEXES = new ArrayList<>(Arrays.asList(
@@ -62,28 +60,20 @@ public class DashboardServiceImpl implements DashboardService {
                 CommonKeys.CLICKER_PC_INDEX, CommonKeys.CLICKER_MOBILE_INDEX, CommonKeys.CLICKER_TABLET_INDEX,
                 CommonKeys.CLICKER_SMARTTV_INDEX, CommonKeys.CLICKER_PC_AND_MOBILE_INDEX));
 
-    @Required
     public void setMailingDao(MailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
-    @Required
     public void setMailingSummaryDataSetFactory(MailingSummaryDataSetFactory mailingSummaryDataSetFactory) {
         this.mailingSummaryDataSetFactory = mailingSummaryDataSetFactory;
     }
 
-    @Required
-    public void setWorkflowService(ComWorkflowService workflowService) {
+    public void setWorkflowService(WorkflowService workflowService) {
         this.workflowService = workflowService;
     }
 
-    @Required
     public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
         this.recipientsReportService = recipientsReportService;
-    }
-
-    public MailingDao getMailingDao() {
-        return mailingDao;
     }
 
     @Override

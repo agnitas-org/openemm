@@ -16,9 +16,16 @@ AGN.Opt.Templates['input-feedback'] = `
 </div>
 `;
 
+AGN.Opt.Templates['datepicker-btn'] = `
+<button id="{{- id }}" class="btn btn-secondary">
+    <i class="icon {{- iconClass }}"></i>
+    <span class="text">{{- text }}</span>
+</button>
+`;
+
 AGN.Opt.Templates['error'] = `
    <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -48,7 +55,7 @@ AGN.Opt.Templates['error'] = `
 
 AGN.Opt.Templates['permission-denied'] = `
    <div class="modal modal-alert" tabindex="-1">
-        <div class="modal-dialog modal-fullscreen-lg-down">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
@@ -74,7 +81,7 @@ AGN.Opt.Templates['permission-denied'] = `
 
 AGN.Opt.Templates['autosave-restore'] = `
   <div class="modal" tabIndex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
           <h1 class="modal-title">{{= title }}</h1>
@@ -112,7 +119,7 @@ AGN.Opt.Templates['table-footer'] = `
  {{ if (showRecordsCount === 'simple') { }}
     <div class="table-wrapper__footer"></div>
  {{ } else { }}
-    <div class="table-wrapper__footer table-wrapper__footer--pages-{{- totalPages }}">
+    <div class="table-wrapper__footer">
       {{ if (showRecordsCount) { }}
         <div class="table-wrapper__rows-selection">
           <select data-number-of-rows class="form-control compact js-select" data-select-options="width: 'auto', dropdownAutoWidth: true">
@@ -126,21 +133,21 @@ AGN.Opt.Templates['table-footer'] = `
     
       {{ if (pagination && totalPages > 1) { }}
         <ul class="pagination">
-          <li class="js-data-table-first-page {{= currentPage == 1 ? 'disabled' : '' }}">
+          <li class="{{= currentPage == 1 ? 'disabled' : '' }}" data-js-table-page="first" role="button">
             <span><i class="icon icon-angle-double-left"></i></span>
           </li>
-          <li class="js-data-table-prev-page {{= currentPage == 1 ? 'disabled' : '' }}">
+          <li class="{{= currentPage == 1 ? 'disabled' : '' }}" data-js-table-page="prev" role="button">
             <span><i class="icon icon-angle-left"></i></span>
           </li>
           {{ _.each(pageSelects, page => { }} 
-            <li class="{{= page == currentPage ? 'active' : 'js-data-table-page' }}" data-page="{{= page - 1 }}">
+            <li class="{{= page == currentPage ? 'active' : '' }}" data-js-table-page="{{= page - 1 }}" role="button">
               <span>{{= page }}</span>
             </li>
           {{ }) }}
-          <li class="js-data-table-next-page {{= currentPage == totalPages ? 'disabled' : '' }}">
+          <li class="{{= currentPage == totalPages ? 'disabled' : '' }}" data-js-table-page="next" role="button">
             <span><i class="icon icon-angle-right"></i></span>
           </li>
-          <li class="js-data-table-last-page {{= currentPage == totalPages ? 'disabled' : '' }}">
+          <li class="{{= currentPage == totalPages ? 'disabled' : '' }}" data-js-table-page="last" role="button">
             <span><i class="icon icon-angle-double-right"></i></span>
           </li>
         </ul>
@@ -153,7 +160,7 @@ AGN.Opt.Templates['js-table-wrapper'] = `
   <div class="table-wrapper">
     <div class="table-wrapper__header justify-content-end">
         <div class="table-wrapper__controls">
-          <button type="button" class="btn btn-inverse" data-toggle-table-truncation>
+          <button type="button" class="btn" data-toggle-table-truncation>
             <i class="icon icon-ellipsis-h"></i>
             <span>${t('defaults.toggleTruncation')}</span>
           </button>
@@ -169,7 +176,7 @@ AGN.Opt.Templates['js-table-wrapper'] = `
 
 AGN.Opt.Templates['session-expired'] = `
 <div class="modal modal-warning" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">
@@ -226,14 +233,12 @@ AGN.Opt.Templates['progress'] = `
       <div class="progress loop" style="width: 100%"></div>
   {{ } else { }}
       <div class="progress">
-          <div class="progress-bar-white-bg"></div>
           <div class="progress-bar"
                      role="progressbar"
                      aria-valuenow="{{= currentProgress }}"
                      aria-valuemin="0"
                      aria-valuemax="100"
                      style="width: {{= currentProgress }}%"></div>
-          <div class="progress-bar-primary-bg"></div>
           <div class="percentage">{{= currentProgress }}%</div>
       </div>
   {{ } }}
@@ -242,17 +247,17 @@ AGN.Opt.Templates['progress'] = `
 AGN.Opt.Templates['tile-overlay'] = `
   <div class="tile-overlay tile-overlay--{{= state }}">
       {{ if (state === 'visible') { }}
-        <button type="button" class="btn btn-danger btn-lg btn-sm-horizontal" data-edit-tile-visibility>
+        <button type="button" class="btn btn-lg btn-sm-horizontal" data-edit-tile-visibility>
             <i class="icon icon-eye-slash"></i>
             ${t('editableView.tile.state.visible')}
         </button>
       {{ } else if (state === 'hidden') { }}
-        <button type="button" class="btn btn-primary btn-lg btn-sm-horizontal" data-edit-tile-visibility>
+        <button type="button" class="btn btn-lg btn-sm-horizontal" data-edit-tile-visibility>
             <i class="icon icon-eye"></i>
             ${t('editableView.tile.state.hidden')}
         </button>
       {{ } else { }}
-        <button type="button" class="btn btn-dark btn-lg btn-sm-horizontal pe-none">
+        <button type="button" class="btn btn-lg btn-sm-horizontal pe-none">
             <i class="icon icon-minus-circle"></i>
             ${t('editableView.tile.state.main')}
         </button>
@@ -263,8 +268,8 @@ AGN.Opt.Templates['tile-overlay'] = `
 AGN.Opt.Templates['deletable-table-column'] = `
   <div class="d-flex gap-1 align-items-center hidden">
     {{ if (!permanent) { }}
-      <button type="button" class="icon-btn" data-remove-table-column>
-        <i class="icon icon-times-circle text-danger"></i>
+      <button type="button" class="icon-btn icon-btn--danger" data-remove-table-column>
+        <i class="icon icon-times-circle"></i>
       </button>
     {{ } }}
     <span class="text-truncate">{{= text }}</span>
@@ -273,8 +278,8 @@ AGN.Opt.Templates['deletable-table-column'] = `
 
 AGN.Opt.Templates['table-column-picker'] = `
   <div class="dropdown dropstart hidden">
-      <button type="button" class="icon-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-        <i class="icon icon-plus-circle text-primary"></i>
+      <button type="button" class="icon-btn icon-btn--primary" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+        <i class="icon icon-plus-circle"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu--table-column mt-4">
           <select class="form-control" multiple data-select-options="preventPlaceholderClear: true, placeholder: '${t('tables.searchOoo')}'">

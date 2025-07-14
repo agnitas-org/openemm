@@ -1,5 +1,11 @@
 
 .query-builder {
+  --qb-group-bg: rgba(26, 50, 88, 0.2);
+  --qb-group-nested-bg: var(--qb-group-bg);
+  --qb-rule-bg: #{$gray-100};
+  --qb-rule-error-bg: #F9DCDD;
+  --qb-error-icon-color: #{$danger-var};
+
   dd {
     margin-left: 0;
   }
@@ -8,7 +14,7 @@
     margin: 0;
   }
 
-  .radio-switch {
+  .switch {
     height: 30px;
   }
 
@@ -34,8 +40,12 @@
     background: inherit;
 
     .rules-group-container {
-      background: var(--qb-group-bg-color);
+      background: var(--qb-group-bg);
       border-color: transparent;
+
+      &--nested {
+        background: var(--qb-group-nested-bg);
+      }
     }
   }
 
@@ -75,11 +85,11 @@
   .error-container {
     flex-grow: 0;
     margin: 0;
-    color: $danger;
+    color: var(--qb-error-icon-color);
   }
 
   .rule-container {
-    background: var(--qb-rule-bg-color);
+    background: var(--qb-rule-bg);
     display: flex;
     gap: $gap-sm;
     flex: 1 0 auto;
@@ -92,7 +102,7 @@
     padding: $gap-sm;
 
     &.has-error {
-      background-color: #f9dcdd;
+      background-color: var(--qb-rule-error-bg);
     }
 
     .rule-operator-container, .rule-filter-container {
@@ -112,12 +122,18 @@
       padding-left: 0;
       border: none;
 
+      overflow: hidden;
+
       .form-label {
         font-weight: $font-weight-semibold;
       }
 
       .form-control {
         @extend .form-control;
+      }
+
+      input:not([type="checkbox"]) {
+        max-width: 100%;
       }
     }
 
@@ -159,6 +175,12 @@
     flex-grow: 1;
   }
 
+  .rule-value-container {
+    > input[type="number"].form-control {
+      -moz-appearance: textfield;
+    }
+  }
+
   .qb-select-container {
     min-width: 0;
     flex: 1;
@@ -194,6 +216,113 @@
     .qb-select-container {
       width: 100%;
       flex-basis: auto;
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .query-builder {
+    --qb-group-bg: rgba(255, 255, 255, 0.2);
+    --qb-rule-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .query-builder {
+    --qb-group-bg: #{$white};
+    --qb-group-nested-bg: #{$con-dark-blue};
+    --qb-rule-bg: transparent;
+    --qb-rule-error-bg: #FD9481;
+    --qb-error-icon-color: #{$con-dark-blue};
+
+    .rules-group-container--nested {
+      & > .rules-group-header {
+        --bs-border-color: var(--qb-group-bg);
+
+        > .switch {
+          --switch-active-bg: #{$white};
+          --switch-inactive-bg: #{$con-dark-blue};
+          --switch-color: #{$white};
+          --switch-selected-color: #{$con-dark-blue};
+        }
+
+        .btn-secondary {
+          --bs-btn-border-color: #{$white};
+        }
+      }
+
+      & > .rules-group-body > .rules-list > .rule-container {
+        --bs-border-color: #{$white};
+        --bs-body-bg: #{$con-dark-blue};
+        --bs-body-color: #{$white};
+        --input-focus-border-color: #{$border-color-var};
+        --label-color: #{$white};
+
+        .select2-container {
+          --select2-icon-color: #{$white};
+          --select2-selected-item-bg: #{$white};
+          --select2-selected-item-color: #{$con-dark-blue};
+        }
+
+        .form-switch {
+          --slider-bg: #{$con-dark-blue};
+          --slider-circle-bg: #{switch-toggle-variant($white)};
+          --slider-checked-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+          --slider-checked-bg: #{$white};
+          --slider-disabled-checked-circle-bg: #{switch-toggle-variant($dark-grey)};
+          --slider-disabled-checked-bg: #{$con-grey};
+          --slider-disabled-bg: #{$dark-grey};
+          --slider-disabled-circle-bg: #{switch-toggle-variant($con-grey)};
+        }
+
+        .btn-secondary {
+          --bs-btn-border-color: #{$white};
+        }
+      }
+    }
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .query-builder {
+    --qb-group-bg: #{$con-dark-blue};
+    --qb-group-nested-bg: #{$white};
+    --qb-rule-bg: transparent;
+    --qb-rule-error-bg: #FD9481;
+    --qb-error-icon-color: #{$con-dark-blue};
+
+    .rules-group-container--nested {
+      & > .rules-group-header > .switch {
+        --bs-border-color: var(--qb-group-bg);
+        --switch-active-bg: #{$con-dark-blue};
+        --switch-inactive-bg: #{$white};
+        --switch-color: #{$con-dark-blue};
+        --switch-selected-color: #{$white};
+      }
+
+      & > .rules-group-body > .rules-list > .rule-container {
+        --bs-border-color: #{$con-dark-blue};
+        --bs-body-bg: #{$white};
+        --bs-body-color: #{$con-dark-blue};
+        --input-focus-border-color: #{$border-color-var};
+        --label-color: #{$con-dark-blue};
+
+        .select2-container {
+          --select2-icon-color: #{$con-dark-blue};
+          --select2-selected-item-bg: #{$con-dark-blue};
+        }
+
+        .form-switch {
+          --slider-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+          --slider-checked-bg: #{$con-dark-blue};
+          --slider-disabled-checked-circle-bg: #{switch-toggle-variant($con-grey)};
+          --slider-disabled-bg: #{$con-grey};
+          --slider-disabled-checked-bg: #{$dark-grey};
+          --slider-bg: #{$white};
+          --slider-checked-circle-bg: #{switch-toggle-variant($white)};
+          --slider-disabled-circle-bg: #{switch-toggle-variant($dark-grey)};
+        }
+      }
     }
   }
 }

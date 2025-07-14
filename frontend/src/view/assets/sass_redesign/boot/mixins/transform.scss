@@ -4,3 +4,7 @@
   -o-transform: translate($x, $y);
   transform: translate($x, $y);
 }
+
+@mixin flipHorizontally() {
+  transform: scaleX(-1);
+}

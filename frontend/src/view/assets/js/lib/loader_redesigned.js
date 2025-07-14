@@ -1,34 +1,36 @@
 (() => {
 
-  let Loader = {},
-      hiding,
-      requestCount = 0,
-      prevent = false;
+  const SELECTOR = '#main-loader';
 
-  Loader.show = function() {
-    window.clearTimeout(hiding);
+  let hiding,
+    requestCount = 0,
+    prevent = false;
 
-    if (!prevent) {
-      requestCount += 1;
-      $('.loader--main').removeClass('hidden');
-    } else {
-      prevent = false;
+  class Loader {
+
+    static show() {
+      window.clearTimeout(hiding);
+
+      if (!prevent) {
+        requestCount += 1;
+        $(SELECTOR).removeClass('hidden');
+      } else {
+        prevent = false;
+      }
     }
-  }
 
-  Loader.hide = function() {
-    requestCount -= 1;
+    static hide() {
+      requestCount -= 1;
 
-    if (requestCount <= 0) {
-      hiding = window.setTimeout(() => {
-        $('.loader--main').addClass('hidden');
-      }, 5);
-      requestCount = 0;
+      if (requestCount <= 0) {
+        hiding = window.setTimeout(() => $(SELECTOR).addClass('hidden'), 5);
+        requestCount = 0;
+      }
     }
-  }
 
-  Loader.prevent = function() {
-    prevent = true;
+    static prevent() {
+      prevent = true;
+    }
   }
 
   AGN.Lib.Loader = Loader;

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,31 +10,30 @@
 
 package com.agnitas.spring.web.view;
 
-import com.agnitas.emm.core.Permission;
-import jakarta.servlet.http.HttpServletRequest;
-import org.agnitas.util.AgnUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.servlet.View;
-import org.springframework.web.servlet.view.UrlBasedViewResolver;
-import org.springframework.web.servlet.view.tiles3.TilesView;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.spring.web.view.tiles3.ApacheTilesView;
+import jakarta.servlet.http.HttpServletRequest;
+import com.agnitas.util.AgnUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.view.UrlBasedViewResolver;
+
+// TODO: EMMGUI-714: Remove when removing old design
 public class AgnUrlBasedViewResolver extends UrlBasedViewResolver {
 
-    private static final String NAME_SUFFIX_OF_REDESIGNED_TILES = "_redesigned";
-    private static final Map<String, Permission> viewsPermissions = new HashMap<>();
     private static final Map<String, String> customRedesignedViewMappings = new HashMap<>();
     private static final List<String> classicMediapoolViewNames = List.of("grid_mediapool_content_image_list", "grid_mediapool_pdf_list",
             "grid_mediapool_font_list", "grid_mediapool_video_list", "grid_mediapool_audio_list");
 
     static {
-        // ----- CUSTOM REDISGNED VIEW MAPPINGS -----
+        // ----- CUSTOM REDESIGNED VIEW MAPPINGS -----
         classicMediapoolViewNames.forEach(v -> customRedesignedViewMappings.put(v, "mediapool-view_redesigned"));
         customRedesignedViewMappings.put("settings_admin_view", "user_view");
         customRedesignedViewMappings.put("settings_restfuluser_view", "user_view");
@@ -46,34 +45,35 @@ public class AgnUrlBasedViewResolver extends UrlBasedViewResolver {
 
     @Override
     public View resolveViewName(String viewName, Locale locale) throws Exception {
+        View redesignedUxView = resolveRedesignedUxView(viewName, locale);
+        if (redesignedUxView != null && isRedesignedUxViewUsageAllowed()) {
+            return redesignedUxView;
+        }
+
         View redesignedView = resolveRedesignedView(viewName, locale);
-        if (redesignedView != null && isRedesignedViewUsageAllowed(viewName)) {
+        if (redesignedView != null && isRedesignedViewUsageAllowed()) {
             return redesignedView;
         }
 
-        if (redesignedView != null && canSwitchDesign(viewName)) {
+        if (redesignedView != null) {
             getRequest().ifPresent(r -> r.setAttribute("canSwitchDesign", true));
         }
 
         return super.resolveViewName(viewName, locale);
     }
 
-    private boolean isRedesignedViewUsageAllowed(String viewName) {
-        Optional<HttpServletRequest> request = getRequest();
-        if (request.isEmpty() || !AgnUtils.isRedesignedUiUsed(request.get())) {
-            return false;
-        }
-
-        return hasPermissionForRedesignedView(viewName, request.get());
+    private boolean isRedesignedUxViewUsageAllowed() {
+        return getAdmin().map(a -> a.isUpdatedUxUsed(getRequest().orElse(null)))
+                .orElse(false);
     }
 
-    private boolean canSwitchDesign(String viewName) {
-        Optional<HttpServletRequest> request = getRequest();
-        return request.filter(req -> hasPermissionForRedesignedView(viewName, req)).isPresent();
+    private boolean isRedesignedViewUsageAllowed() {
+        return getAdmin().map(Admin::isRedesignedUiUsed)
+                .orElse(false);
     }
 
-    private boolean hasPermissionForRedesignedView(String viewName, HttpServletRequest req) {
-        return !viewsPermissions.containsKey(viewName) || AgnUtils.allowed(req, viewsPermissions.get(viewName));
+    private Optional<Admin> getAdmin() {
+        return getRequest().map(AgnUtils::getAdmin);
     }
 
     private Optional<HttpServletRequest> getRequest() {
@@ -86,14 +86,25 @@ public class AgnUrlBasedViewResolver extends UrlBasedViewResolver {
     }
 
     private View resolveRedesignedView(String viewName, Locale locale) throws Exception {
-        String redesignedViewName = customRedesignedViewMappings.getOrDefault(
+        return findView(buildRedesignedViewName(viewName), locale);
+    }
+
+    private View resolveRedesignedUxView(String viewName, Locale locale) throws Exception {
+        viewName = buildRedesignedViewName(viewName) + "_ux";
+        return findView(viewName, locale);
+    }
+
+    private String buildRedesignedViewName(String viewName) {
+        return customRedesignedViewMappings.getOrDefault(
                 viewName,
-                viewName + NAME_SUFFIX_OF_REDESIGNED_TILES
+                viewName + "_redesigned"
         );
+    }
 
-        View view = super.resolveViewName(redesignedViewName, locale);
+    private View findView(String viewName, Locale locale) throws Exception {
+        View view = super.resolveViewName(viewName, locale);
 
-        if (view instanceof TilesView) {
+        if (view instanceof ApacheTilesView) {
             return view;
         }
 

@@ -1,24 +1,41 @@
 
 .draggable-tile {
+  --draggable-tile-accept-border-color: #{$blue};
+  --draggable-tile-accept-color: rgba(174, 199, 209, 0.5);
+  --draggable-tile-accept-hover-color: rgba(174, 199, 209, 0.3);
+
   .tile-overlay {
     cursor: move;
   }
 
   &.draggable-accept {
     .tile-overlay {
-      border: 1px dashed $primary;
-      background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(174, 199, 209, 0.5) 5px, rgba(174, 199, 209, 0.5) 10px);
+      border: 1px dashed var(--draggable-tile-accept-border-color);
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, var(--draggable-tile-accept-color) 5px, var(--draggable-tile-accept-color) 10px);
 
       * {
-        display: none;
         display: none;
       }
     }
     
-    &--hovered {
-      .tile-overlay {
-        background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(174, 199, 209, 0.3) 5px, rgba(174, 199, 209, 0.3) 10px);
-      }
+    &--hovered .tile-overlay {
+      background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, var(--draggable-tile-accept-hover-color) 5px, var(--draggable-tile-accept-hover-color) 10px);
     }
+  }
+}
+
+@include color-mode(light-contrast) {
+  .draggable-tile {
+    --draggable-tile-accept-border-color: #{$con-dark-blue};
+    --draggable-tile-accept-color: #{$con-dark-blue};
+    --draggable-tile-accept-hover-color: #{$con-light-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .draggable-tile {
+    --draggable-tile-accept-border-color: #{$white};
+    --draggable-tile-accept-color: #{$white};
+    --draggable-tile-accept-hover-color: #{$con-light-blue};
   }
 }

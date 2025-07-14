@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,14 +13,13 @@ package com.agnitas.service.job;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.dao.AnonymizeStatisticsDao;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.agnitas.dao.AnonymizeStatisticsDao;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.company.bean.CompanyEntry;
 
 /**
  * Example Insert in DB:
@@ -29,8 +28,7 @@ import com.agnitas.emm.core.company.bean.CompanyEntry;
  */
 public class AnonymizeStatisticsJobWorker extends JobWorker {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AnonymizeStatisticsJobWorker.class);
+	private static final Logger LOGGER = LogManager.getLogger(AnonymizeStatisticsJobWorker.class);
 
 	@Override
 	public String runJob() throws Exception {
@@ -53,7 +51,7 @@ public class AnonymizeStatisticsJobWorker extends JobWorker {
 						));
 			}
 					
-			final ComCompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
+			final CompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
 			final AnonymizeStatisticsDao anonymizeStatisticsDao = daoLookupFactory.getBeanAnonymizeStatisticsDao();
 			
 			for (final CompanyEntry company : companyDao.getActiveCompaniesLight(true)) {

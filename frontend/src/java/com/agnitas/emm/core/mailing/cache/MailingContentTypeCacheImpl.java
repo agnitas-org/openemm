@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,9 +15,7 @@ import java.util.Objects;
 import org.agnitas.emm.core.commons.daocache.AbstractCompanyBasedDaoCache;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.TimeoutLRUMap;
-import org.springframework.beans.factory.annotation.Required;
-
+import com.agnitas.util.TimeoutLRUMap;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.MailingDao;
 
@@ -25,12 +23,10 @@ public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCa
 	private MailingDao mailingDao;
 	private ConfigService configService;
 
-	@Required
 	public final void setMailingDao(final MailingDao dao) {
 		this.mailingDao = Objects.requireNonNull(dao, "Mailing DAO cannot be null");
 	}
 
-	@Required
 	public final void setConfigService(final ConfigService configService) {
 		this.configService = Objects.requireNonNull(configService, "ConfigService cannot be null");
 	}

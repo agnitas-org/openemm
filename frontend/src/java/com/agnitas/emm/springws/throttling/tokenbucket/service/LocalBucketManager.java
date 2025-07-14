@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,11 +17,8 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.emm.util.quota.tokenbucket.AbstractLocalBucketManager;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
-import com.agnitas.emm.wsmanager.common.WebserviceUserException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
 
@@ -31,8 +28,7 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
  */
 public final class LocalBucketManager extends AbstractLocalBucketManager {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(LocalBucketManager.class);
+	private static final Logger LOGGER = LogManager.getLogger(LocalBucketManager.class);
 	
 	/** Service for handling webservice users. */
 	private WebserviceUserService userService;
@@ -45,7 +41,6 @@ public final class LocalBucketManager extends AbstractLocalBucketManager {
 	 * 
 	 * @param service service handling webservice users
 	 */
-	@Required
 	public final void setWebserviceUserService(final WebserviceUserService service) {
 		this.userService = Objects.requireNonNull(service, "Webservice user service is null");
 	}
@@ -55,7 +50,6 @@ public final class LocalBucketManager extends AbstractLocalBucketManager {
 	 * 
 	 * @param service configuration service
 	 */
-	@Required
 	public final void setConfigService(final ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
@@ -66,7 +60,7 @@ public final class LocalBucketManager extends AbstractLocalBucketManager {
 			final WebserviceUserSettings settings = this.userService.findSettingsForWebserviceUser(username);
 			
 			return settings.getApiCallLimitsSpec();
-		} catch(final WebserviceUserException | WebserviceUserServiceException e) {
+		} catch(WebserviceUserServiceException e) {
 			if(LOGGER.isInfoEnabled()) {
 				LOGGER.info(String.format("Could not read API call limits for webservice user '%s'", username), e);
 			}

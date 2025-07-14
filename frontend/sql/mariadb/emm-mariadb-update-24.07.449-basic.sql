@@ -1,5 +1,5 @@
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('ui.design.migration', 'System', 'Migration', 0, NULL, CURRENT_TIMESTAMP);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('use.redesigned.ui', 'System', 'Migration', 0, NULL, CURRENT_TIMESTAMP);
+INSERT IGNORE INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('ui.design.migration', 'System', 'Migration', 0, NULL, CURRENT_TIMESTAMP);
+INSERT IGNORE INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('use.redesigned.ui', 'System', 'Migration', 0, NULL, CURRENT_TIMESTAMP);
 
 INSERT INTO admin_permission_tbl (admin_id, permission_name)
 SELECT a.admin_id, 'ui.design.migration'
@@ -19,6 +19,6 @@ WHERE NOT EXISTS(SELECT 1
 
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-VALUES ('24.07.449', CURRENT_USER, CURRENT_TIMESTAMP);
+	VALUES ('24.07.449', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

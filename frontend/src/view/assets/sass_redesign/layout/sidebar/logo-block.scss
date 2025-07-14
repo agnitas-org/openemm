@@ -1,6 +1,9 @@
 
 #logo-block {
   height: $header-height;
+  @include left-hand {
+    @include flipHorizontally;
+  }
 }
 
 .logo-block__img {

@@ -15,9 +15,9 @@ Uses <a href="components_-_icons.html">`.icon` component</a> inside.
     <i class="icon icon-trash-alt"></i>
 </a>
 
-<a href="#" class="btn btn-icon btn-icon--wide btn-inverse">
+<a href="#" class="btn btn-icon btn-icon--wide btn-secondary">
     <i class="icon icon-table"></i>
-    <i class="icon icon-magic text-secondary"></i>
+    <i class="icon icon-magic"></i>
 </a>
 
 <button type="button" class="btn btn-icon btn-icon--lg btn-primary">
@@ -38,6 +38,8 @@ Uses <a href="components_-_icons.html">`.icon` component</a> inside.
 }
 
 .btn-icon {
+  --btn-icon-wide-icon-color: #{$light-grey};
+
   @include btn-icon($btn-icon-size, $btn-icon-size, 0, 0, $font-size-md);
 
   &--lg {
@@ -47,5 +49,32 @@ Uses <a href="components_-_icons.html">`.icon` component</a> inside.
   &--wide {
     padding-inline: $gap-x-sm;
     width: auto;
+
+    .icon:last-child {
+      color: var(--btn-icon-wide-icon-color);
+    }
+  }
+
+  &--toggle {
+    .icon {
+      transform: rotate(0deg);
+    }
+
+    input[type="checkbox"]:checked + & {
+      .icon {
+        transform: rotate(180deg);
+      }
+    }
+    .btn-check:checked + & {
+      background-color: var(--bs-btn-bg);
+      color: initial;
+      border-color: $border-color;
+    }
+  }
+}
+
+@include contrast-themes {
+  .btn-icon {
+    --btn-icon-wide-icon-color: #{$con-grey};
   }
 }

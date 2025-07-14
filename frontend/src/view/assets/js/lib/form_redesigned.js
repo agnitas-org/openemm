@@ -79,19 +79,30 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       const points = this.#findMinScrollPoints($fields);
       const minPointData = this.#findMinScrollPoint(points);
 
-      // scroll containers
-      points.forEach((pos, container) => {
-        if (container) {
-          const $container = $(container);
-          $container.animate({scrollTop: pos - $container.offset().top + $container.scrollTop()});
-        }
-      });
+      if (this.inHiddenTab($(_.last($fields)))) {
+        this.showTab($(_.last($fields)));
+      }
+      points.forEach((pos, container) => this.scrollToPos($(container), pos)); // scroll containers
 
       // scroll page
       if (AGN.Lib.Helpers.isMobileView() && !minPointData?.container?.closest('.modal').exists()) {
         const $tilesContainer = $('.tiles-container, .filter-overview');
         $tilesContainer.animate({scrollTop: minPointData.pos - $tilesContainer.offset().top + $tilesContainer.scrollTop()});
       }
+    }
+
+    static scrollToPos($el, pos) {
+      $el.animate({scrollTop: pos - $el.offset().top + $el.scrollTop()});
+    }
+
+    static inHiddenTab($el) {
+      const $container = this.#findScrollableContainer$($el);
+      return $container.hasClass('hidden') && this.#getTileHeader$($el).is('.navbar');
+    }
+
+    static showTab($el) {
+      const $container = this.#findScrollableContainer$($el);
+      AGN.Lib.Tab.show(this.#getTileHeader$($el).find(`[data-toggle-tab="#${$container.attr('id')}"]`));
     }
 
     static #findMinScrollPoints($fields) {
@@ -116,8 +127,16 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
     }
 
     static #findScrollableContainer$($field) {
-      const $tile = $field.closest('.tiles-container > .tile, .filter-overview > .tile, .tiles-block > .tile');
-      return $tile.exists() ? $tile.find('.tile-body').first() : $field.closest('.modal-body').first();
+      const $tile = this.#getTile$($field);
+      return $tile.exists() ? $field.closest('.tile-body') : $field.closest('.modal-body').first();
+    }
+
+    static #getTile$($el) {
+      return $el.closest('.tiles-container > .tile, .filter-overview > .tile, .tiles-block > .tile');
+    }
+
+    static #getTileHeader$($el) {
+      return this.#getTile$($el).find('> .tile-header');
     }
 
     static #getFieldContainer($field) {
@@ -215,7 +234,7 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       this.initFields();
       this.initValidator();
 
-      this.handleMessages($('body'), true);
+      this.handleFieldsMessages($('body'));
 
       if (this.dirtyChecking) {
         this.#enableDirtyChecking($form);
@@ -451,10 +470,9 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
 
     // handle for the ajax request
     jqxhr() {
-      var self = this,
-          xhr = $.ajaxSettings.xhr(),
-          jqxhr,
-          deferred = $.Deferred();
+      const self = this;
+      const xhr = $.ajaxSettings.xhr();
+      const deferred = $.Deferred();
 
       this.$form.trigger('form:submit');
 
@@ -477,8 +495,8 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       }
 
       if (this.isCustomLoader) {
-        var onProgress = function (e) {
-          var progress = true;
+        const onProgress = function (e) {
+          let progress = true;
 
           if (e.lengthComputable) {
             progress = (e.loaded / e.total * 100).toFixed(1);
@@ -509,7 +527,7 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
         };
       }
 
-      jqxhr = $.ajax(parameters);
+      const jqxhr = $.ajax(parameters);
 
       this._dataNextRequest = {};
 
@@ -519,28 +537,19 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       });
 
       jqxhr.done(function (resp) {
-        var $resp = $(resp),
-            $pollingForm,
-            pollingFormObj,
-            pollingFormJqxhr;
+        const $pollingForm = $(resp).all('[data-form="polling"]');
 
-        $pollingForm = $resp.filter('[data-form="polling"]').add($resp.find('[data-form="polling"]'));
-
-        // response includes a polling form
-        if ($pollingForm.length == 1) {
-          pollingFormObj = Form.get($pollingForm);
-
+        if ($pollingForm.exists()) {
           // submit the polling form and wait for the response
-          pollingFormJqxhr = pollingFormObj.jqhxr();
+          const pollingFormJqxhr = Form.get($pollingForm).jqhxr();
 
           pollingFormJqxhr.done(function () {
             deferred.resolve.apply(this, arguments);
-            var $body = $('body');
-            var $resp = $('<div></div>');
+            const $resp = $('<div></div>');
             $resp.html(resp);
 
             $resp.find('script[data-message][type="text/html"]')
-                .appendTo($body);
+                .appendTo($('body'));
 
             $resp.find('script[data-message][type="text/javascript"]').each(function () {
               try {
@@ -555,12 +564,10 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
           pollingFormJqxhr.fail(function () {
             deferred.reject.apply(this, arguments);
           });
-
           // response is the response
         } else {
           deferred.resolve(resp);
         }
-
       });
 
       jqxhr.fail(function () {
@@ -570,19 +577,23 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       return deferred.promise();
     }
 
-    _submit() {
-      const self = this;
-
+    #submit() {
       this.setLoaderShown(true);
       const jqxhr = this.jqxhr();
 
-      jqxhr.done(function (resp) {
-        self.setLoaderShown(false);
-        self.updateHtml(resp);
-        self.$form.trigger('submitted', resp);
+      jqxhr.done(resp => {
+        this.setLoaderShown(false);
+        this.updateHtml(resp);
+        this.$form.trigger('submitted', resp);
 
-        if (self.dirtyChecking) {
-          self.#changeDirtyState(self.$form);
+        if (this.dirtyChecking) {
+          this.#changeDirtyState(this.$form);
+        }
+      });
+
+      jqxhr.fail(jqxhr => {
+        if (jqxhr.responseText) {
+          this.handleFieldsMessages(jqxhr.responseText);
         }
       });
 
@@ -598,7 +609,7 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       }
     }
 
-    _submitStatic() {
+    #submitStatic() {
       const data = this.data();
 
       if (CSRF.isProtectionEnabled()) {
@@ -629,8 +640,8 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       this._dataNextRequest = {};
     }
 
-    _submitEvent() {
-      var submissionEvent = $.Event('submission');
+    #submitEvent() {
+      const submissionEvent = $.Event('submission');
       this.$form.trigger(submissionEvent);
 
       if (!submissionEvent.isDefaultPrevented()) {
@@ -639,9 +650,14 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       }
     }
 
-    _submitConfirm() {
+    #submitConfirm() {
       const jqxhr = this.jqxhr();
       jqxhr.done(resp => this.$form.trigger('submitted', resp));
+      jqxhr.fail(jqxhr => {
+        if (jqxhr.responseText) {
+          this.handleFieldsMessages(jqxhr.responseText);
+        }
+      });
       return jqxhr;
     }
 
@@ -657,13 +673,13 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
 
       switch (type) {
         case "static":
-          return this._submitStatic();
+          return this.#submitStatic();
         case "confirm":
-          return this._submitConfirm();
+          return this.#submitConfirm();
         case "event":
-          return this._submitEvent();
+          return this.#submitEvent();
         default:
-          return this._submit();
+          return this.#submit();
       }
     }
 
@@ -689,7 +705,18 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       _.forEach(this.data(), (value, field) => this.setValue(field, ''));
     }
 
-    handleMessages($resp, formFieldsOnly) {
+    handleMessages($resp) {
+      if (!($resp instanceof $)) {
+        $resp = $($resp);
+      }
+
+      this.handleFieldsMessages($resp);
+
+      const $messages = $resp.all('script[data-message]');
+      _.each($messages, msg => $('body').append(msg));
+    }
+
+    handleFieldsMessages($resp) {
       const self = this;
 
       if (!($resp instanceof $)) {
@@ -697,21 +724,9 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
       }
 
       $resp.all('script[data-message][type="text/html"]').each(function () {
-        const $this = $(this);
-        const message = $this.text();
-        const fieldName = $this.data('message');
-
-        if (message && fieldName) {
-          self.showFieldError(fieldName, message)
-        }
+        const $msg = $(this);
+        self.showFieldError($msg.data('message'), $msg.text())
       });
-
-      if (formFieldsOnly === true) {
-        return;
-      }
-
-      const $messages = $resp.all('script[data-message]');
-      _.each($messages, msg => $('body').append(msg))
     }
 
     initFields($scope = $(document)) {
@@ -728,7 +743,7 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
     initValidator() {
       this.validatorName = this.$form.data('validator');
 
-      var options = this.$form.data('validator-options');
+      const options = this.$form.data('validator-options');
       this.validatorOptions = options ? AGN.Lib.Helpers.objFromString(options) : null;
     }
 
@@ -805,6 +820,16 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
 
         $group.removeClass('has-feedback has-alert has-success has-warning js-form-field-feedback');
         $group.find('.form-control-feedback-message').remove();
+
+        Form.#removeFieldMessagesScripts$($group);
+      });
+    }
+
+    static #removeFieldMessagesScripts$($container) {
+      $container.find(':input[name]').filter(function () {
+        return $.trim($(this).attr('name'));
+      }).each(function () {
+        $(`script[data-message="${$(this).attr('name')}"][type="text/html"]`).remove();
       });
     }
 
@@ -843,8 +868,15 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
     }
 
     showFieldError(field, message, disableScrolling) {
+      if (!field || !message) {
+        return;
+      }
+
       if (this.form[field]) {
         this.showFieldError$($(this.form[field]), message, disableScrolling);
+      } else {
+        console.warn(`Field '${field}' not found inside the form!`);
+        AGN.Lib.Messages.alertText(message);
       }
     }
 
@@ -860,6 +892,15 @@ Use `[data-disable-controls="*"]` to refer all the elements having `[data-contro
 
       if (disableScrolling !== true) {
         Form.scrollToField($field);
+      }
+    }
+
+    static showFieldError(fieldName, message) {
+      const formWithField = Array.from(document.forms)
+        .find(form => form[fieldName]);
+
+      if (formWithField) {
+        this.get($(formWithField)).showFieldError(fieldName, message);
       }
     }
 

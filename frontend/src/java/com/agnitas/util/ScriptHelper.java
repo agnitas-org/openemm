@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -37,14 +37,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import org.agnitas.beans.BindingEntry;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.impl.BindingEntryImpl;
-import org.agnitas.dao.SourceGroupType;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.exception.UnknownUserStatusException;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.impl.BindingEntryImpl;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
@@ -53,16 +53,10 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
-import org.agnitas.preview.Preview;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.TimeoutLRUMap;
-import org.agnitas.util.XmlUtilities;
+import com.agnitas.preview.Preview;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -74,14 +68,14 @@ import org.xml.sax.InputSource;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.ComBindingEntryDao;
+import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
@@ -114,10 +108,10 @@ public class ScriptHelper {
 	private ScripthelperEmailLogDao scripthelperEmailLogDao;
 
 	/** DAO accessing subscriber data. */
-	protected ComRecipientDao recipientDao;
+	protected RecipientDao recipientDao;
 	
 	/** DAO accessing recipient binding data. */
-	protected ComBindingEntryDao bindingEntryDao;
+	protected BindingEntryDao bindingEntryDao;
 
 	private ScriptHelperService helperService;
 
@@ -877,7 +871,7 @@ public class ScriptHelper {
     	 */
 
 		try {
-			final ComExtensibleUID uid = extensibleUIDService.parse(uidString);
+			final ExtensibleUID uid = extensibleUIDService.parse(uidString);
 
 			final Map<String, Object> map = new HashMap<>();
 
@@ -894,7 +888,7 @@ public class ScriptHelper {
 		}
 	}
 
-    private Map<String, String> buildRecipient(final NodeList allMessageChilds) throws Exception {
+    private Map<String, String> buildRecipient(final NodeList allMessageChilds) {
 
     	/*
     	 * **************************************************
@@ -995,7 +989,7 @@ public class ScriptHelper {
 
     public final int confirmEmailAddressChange(final String uidString, final String confirmationCode) {
     	try {
-    		final ComExtensibleUID uid = extensibleUIDService.parse(uidString);
+    		final ExtensibleUID uid = extensibleUIDService.parse(uidString);
 
     		try {
 	    		this.recipientService.confirmEmailAddressChange(uid, confirmationCode);
@@ -1141,9 +1135,8 @@ public class ScriptHelper {
 	 *            the company to look in.
 	 * @return The mailingID of the last newsletter that would have been sent to
 	 *         this recipient.
-	 * @throws Exception
 	 */
-	public int findLastNewsletter(final int customerID, final int companyIdToCheck, final int mailinglist) throws Exception {
+	public int findLastNewsletter(final int customerID, final int companyIdToCheck, final int mailinglist) {
 
     	/*
     	 * **************************************************
@@ -1235,7 +1228,7 @@ public class ScriptHelper {
 
 			// Create UID
 			if (customerID > 0) {
-				final ComExtensibleUID extensibleUID = UIDFactory.from(this.configService.getLicenseID(), companyId, customerID);
+				final ExtensibleUID extensibleUID = UIDFactory.from(this.configService.getLicenseID(), companyId, customerID);
 
 				return extensibleUIDService.buildUIDString(extensibleUID);
 			} else {
@@ -1512,7 +1505,7 @@ public class ScriptHelper {
 		this.mailinglistService = mailinglistService;
 	}
 
-	public void setRecipientDao(final ComRecipientDao recipientDao) {
+	public void setRecipientDao(final RecipientDao recipientDao) {
 
     	/*
     	 * **************************************************
@@ -1525,7 +1518,7 @@ public class ScriptHelper {
 		this.recipientDao = recipientDao;
 	}
 
-	public void setBindingEntryDao(final ComBindingEntryDao bindingEntryDao) {
+	public void setBindingEntryDao(final BindingEntryDao bindingEntryDao) {
 
     	/*
     	 * **************************************************
@@ -1573,7 +1566,7 @@ public class ScriptHelper {
 		return mailingDao.getMailingSendDate(companyIdToCheck, mailingIdToCheck);
 	}
 	
-	public String getMailingSubject(final int mailingIdParameter) throws Exception {
+	public String getMailingSubject(final int mailingIdParameter) {
 		return mailingDao.getEmailSubject(companyID, mailingIdParameter);
 	}
 	
@@ -1581,32 +1574,26 @@ public class ScriptHelper {
 		return mailingDao.getLightweightMailing(companyID, mailingIdParameter).getShortname();
 	}
 
-	@Required
 	public void setScripthelperEmailLogDao(final ScripthelperEmailLogDao scripthelperEmailLogDao) {
 		this.scripthelperEmailLogDao = scripthelperEmailLogDao;
 	}
 
-	@Required
 	public void setJavaMailService(final JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
 	}
 
-	@Required
 	public void setSendActionbasedMailingService(final SendActionbasedMailingService sendActionbasedMailingService) {
 		this.sendActionbasedMailingService = sendActionbasedMailingService;
 	}
 
-	@Required
 	public final void setRecipientService(final RecipientService service) {
 		this.recipientService = Objects.requireNonNull(service, "Recipient service is null");
 	}
 
-	@Required
 	public final void setExtensibleUIDService(final ExtensibleUIDService extensibleUIDService) {
 		this.extensibleUIDService = extensibleUIDService;
 	}
 	
-	@Required
 	public final void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
 	}

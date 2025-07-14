@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,15 +15,15 @@ import java.util.Locale;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.JobWorker;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.JobWorker;
+import com.agnitas.service.UserActivityLogService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +33,7 @@ public class WorkflowStateTransitionJobWorker extends JobWorker {
 
     @Override
    	public String runJob() throws Exception {
-   		ComWorkflowService workflowService = serviceLookupFactory.getBeanWorkflowService();
+   		WorkflowService workflowService = serviceLookupFactory.getBeanWorkflowService();
 
         List<Workflow> workflowsToDeactivate = workflowService.getWorkflowsToDeactivate(getCompaniesConstraints());
 
@@ -58,8 +58,8 @@ public class WorkflowStateTransitionJobWorker extends JobWorker {
         return null;
    	}
 
-    private void processPausedWorkflows(ComWorkflowService workflowService) throws Exception {
-        ComWorkflowActivationService activationService = serviceLookupFactory.getBeanWorkflowActivationService();
+    private void processPausedWorkflows(WorkflowService workflowService) throws Exception {
+        WorkflowActivationService activationService = serviceLookupFactory.getBeanWorkflowActivationService();
         UserActivityLogService userActivityLogService = serviceLookupFactory.getBeanUserActivityLogService();
         List<Workflow> workflowsToUnpause = workflowService.getWorkflowsToUnpause(getCompaniesConstraints());
 

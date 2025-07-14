@@ -41,7 +41,7 @@
 - removed statement that applies extra CSS styles to <input type="file">
 - exposed Dropzone as window.Dropzone
 
-12) jquery-ui-1.13.1.js
+12) jquery-ui-1.14.1.js
 - fixed "items are not correctly calculated using css transformations on container element" (https://bugs.jqueryui.com/ticket/15263);
 - added support of function value for "cursorAt" option of droppable widget;
 

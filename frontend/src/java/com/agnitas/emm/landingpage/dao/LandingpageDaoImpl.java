@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,18 +10,13 @@
 
 package com.agnitas.emm.landingpage.dao;
 
+import com.agnitas.emm.landingpage.beans.RedirectSettings;
+import com.agnitas.dao.impl.BaseDaoImpl;
+
 import java.util.List;
 import java.util.Optional;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.landingpage.beans.RedirectSettings;
-
 public final class LandingpageDaoImpl extends BaseDaoImpl implements LandingpageDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LandingpageDaoImpl.class);
 
 	@Override
 	public final Optional<RedirectSettings> getLandingPageRedirectionForDomain(final String domain) {
@@ -32,7 +27,7 @@ public final class LandingpageDaoImpl extends BaseDaoImpl implements Landingpage
 					? "SELECT * FROM landingpage_tbl WHERE LOWER(domain) = ? OR ? LIKE '%.' || LOWER(domain) ORDER BY LENGTH(domain) DESC"
 					: "SELECT * FROM landingpage_tbl WHERE LOWER(domain) = ? OR ? LIKE CONCAT('%.', LOWER(domain)) ORDER BY LENGTH(domain) DESC";
 			
-			final List<RedirectSettings> result = select(logger, sql, new RedirectSettingsRowMapper(), domain, domain);
+			final List<RedirectSettings> result = select(sql, new RedirectSettingsRowMapper(), domain, domain);
 
 			return !result.isEmpty()
 					? Optional.of(result.get(0))

@@ -99,7 +99,7 @@
 
 <script id="column-mappings-modal" type="text/x-mustache-template">
     <mvc:form id="column-mappings-edit-modal" cssClass="modal" tabindex="-1" data-validator="import-profile-mappings/form">
-        <div class="modal-dialog modal-fullscreen-xl-down modal-xl">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title"><mvc:message code="import.ManageColumns"/></h1>
@@ -108,7 +108,7 @@
                     </button>
                 </div>
 
-                <div class="modal-body">
+                <div class="modal-body vstack">
                     <div class="table-wrapper">
                         <div class="table-wrapper__header justify-content-end">
                             <div class="table-wrapper__controls">
@@ -118,7 +118,7 @@
                                         <mvc:message code="default.list.entry.select" />
                                     </p>
                                     <div class="bulk-actions__controls">
-                                        <a href="#" class="icon-btn text-danger" data-tooltip="<mvc:message code="bulkAction.delete.csvColumn" />" data-action="bulk-mappings-delete">
+                                        <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="bulkAction.delete.csvColumn" />" data-action="bulk-mappings-delete">
                                             <i class="icon icon-trash-alt"></i>
                                         </a>
                                     </div>
@@ -139,7 +139,7 @@
                                         <th class="fit-content"><mvc:message code="import.profile.column.encrypted"/></th>
                                     </c:if>
                                     <th><mvc:message code="settings.Default_Value"/></th>
-                                    <th class="fit-content"></th>
+                                    <th></th>
                                 </tr>
                                 </thead>
                                 <tbody id="extended-column-mappings-block">
@@ -217,11 +217,11 @@
 
     <td class="table-actions">
         {{ if (isNewMapping) { }}
-            <a type="button" class="icon-btn text-primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
+            <a type="button" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
                 <i class="icon icon-plus"></i>
             </a>
         {{ } else { }}
-            <a type="button" class="icon-btn text-danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
+            <a type="button" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
                 <i class="icon icon-trash-alt"></i>
             </a>
         {{ } }}
@@ -237,10 +237,10 @@
 </script>
 
 <script id="date-def-val-input" type="text/x-mustache-template">
-    <div class="d-flex align-items-center gap-1">
+    <div class="hstack gap-1">
         <div class="form-check form-switch">
             <input id="today-checkbox" type="checkbox" role="switch" class="form-check-input" data-action="set-today-date">
-            <label class="form-label form-check-label" for="today-checkbox">
+            <label class="form-label form-check-label text-nowrap" for="today-checkbox">
                 {{ if (withTime) { }}
                     <mvc:message code="now"/>
                 {{ } else { }}

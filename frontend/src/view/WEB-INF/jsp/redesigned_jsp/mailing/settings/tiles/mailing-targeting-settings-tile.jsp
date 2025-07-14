@@ -1,7 +1,8 @@
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.beans.TargetLight" %>
 <%@ page import="com.agnitas.emm.common.MailingType" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -15,7 +16,6 @@
 <%--@elvariable id="TARGET_MODE_TOGGLE_DISABLED" type="java.lang.Boolean"--%>
 <%--@elvariable id="splitBaseMessage" type="java.lang.String"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="splitPartMessage" type="java.lang.String"--%>
 <%--@elvariable id="splitTargets" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
@@ -29,8 +29,8 @@
 <%--@elvariable id="isExtendedAltgEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailinglistEditable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isCopying" type="java.lang.Boolean"--%>
-<%--@elvariable id="selectedRemovedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="emailSettingsEditable" type="java.lang.Boolean"--%>
 
 <c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
@@ -51,7 +51,7 @@
         <div data-field="validator">
             <label class="form-label">
                 <label for="settingsGeneralMailingList"><mvc:message code="Mailinglist"/> *</label>
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/mailing/view_base/MailingListMsg.xml"></a>
+                <a href="#" class="icon icon-question-circle" data-help="mailing/view_base/MailingListMsg.xml"></a>
                 <c:if test="${not mailinglistEditable}">
                     <div class="icon icon-exclamation-triangle" data-tooltip="<mvc:message code="warning.mailinglist.disabled"/>"></div>
                 </c:if>
@@ -81,7 +81,7 @@
             <c:if test="${SHOW_TARGET_MODE_TOGGLE}">
                 <div id="target-mode-box">
                     <c:set var="targetModeDisabled" value="${TARGET_MODE_TOGGLE_DISABLED or isSettingsReadonly}"/>
-                    <div class="radio-switch ${targetModeDisabled ? 'disabled' : ''}" data-action="change-target-mode">
+                    <div class="switch" data-action="change-target-mode">
                         <mvc:radiobutton path="targetMode" value="${TARGET_MODE_AND}" id="target-mode-and-btn" disabled="${targetModeDisabled}"/>
                         <label for="target-mode-and-btn">AND</label>
                         <mvc:radiobutton path="targetMode" value="${TARGET_MODE_OR}" id="target-mode-or-btn" disabled="${targetModeDisabled}"/>

@@ -5,48 +5,65 @@
     </div>
 
     <div class="tile-body js-scrollable">
-        <div class="grid" style="--bs-columns: 2; grid-template-columns: min-content 1fr; --bs-gap: 15px;">
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.license" /></p>
-            <p>${serverStatus.licenseName}</p>
+        <p class="general-info__title text-truncate" data-modal="emm-license-content-modal"><mvc:message code="serverStatus.general.license" /></p>
+        <p data-modal="emm-license-content-modal">${serverStatus.licenseName}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.hostname" /></p>
-            <p>${serverStatus.hostName}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.hostname" /></p>
+        <p>${serverStatus.hostName}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.javaVersion" /></p>
-            <p>${serverStatus.javaVersion}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.javaVersion" /></p>
+        <p>${serverStatus.javaVersion}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.version" /></p>
-            <p>${serverStatus.version}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.version" /></p>
+        <p>${serverStatus.version}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.tempDirectory" /></p>
-            <p>${serverStatus.tempDir}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.tempDirectory" /></p>
+        <p>${serverStatus.tempDir}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.installPath" /></p>
-            <p>${serverStatus.installPath}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.installPath" /></p>
+        <p>${serverStatus.installPath}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.systemTime" /></p>
-            <p>${serverStatus.sysTime}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.systemTime" /></p>
+        <p>${serverStatus.sysTime}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.buildTime" /></p>
-            <p>${serverStatus.buildTime}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.buildTime" /></p>
+        <p>${serverStatus.buildTime}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.startupTime" /></p>
-            <p>${serverStatus.startupTime}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.startupTime" /></p>
+        <p>${serverStatus.startupTime}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.upTime" /></p>
-            <p>${serverStatus.uptime}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.upTime" /></p>
+        <p>${serverStatus.uptime}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.configExpireTime" /></p>
-            <p>${serverStatus.configExpirationTime}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.configExpireTime" /></p>
+        <p>${serverStatus.configExpirationTime}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbType" /></p>
-            <p>${serverStatus.dbType}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbType" /></p>
+        <p>${serverStatus.dbType}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbUrl" /></p>
-            <p>${serverStatus.dbUrl}</p>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbUrl" /></p>
+        <p>${serverStatus.dbUrl}</p>
 
-            <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbVersion" /></p>
-            <p>${serverStatus.dbVersion}</p>
-        </div>
+        <p class="general-info__title text-truncate"><mvc:message code="serverStatus.general.dbVersion" /></p>
+        <p>${serverStatus.dbVersion}</p>
     </div>
 </div>
+
+<script id="emm-license-content-modal" type="text/x-mustache-template">
+    <div class="modal modal-adaptive" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="serverStatus.general.license" /></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body js-scrollable">
+                    <pre>${fn:escapeXml(serverStatus.licenceData)}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

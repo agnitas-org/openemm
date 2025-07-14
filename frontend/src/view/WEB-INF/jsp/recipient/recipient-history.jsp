@@ -2,7 +2,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="statusChangesHistoryJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="statusChangesHistoryJson" type="org.json.JSONArray"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 
 <div class="tile js-data-table" data-sizing="container" data-table="recipient-status-history">

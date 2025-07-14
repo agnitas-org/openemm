@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,16 +9,6 @@
 */
 
 package com.agnitas.emm.core.delivery.dao.impl;
-
-import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
-import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
-import com.agnitas.emm.core.delivery.dao.DeliveryDao;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DbUtilities;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,10 +21,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
+import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
+import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
+import com.agnitas.emm.core.delivery.dao.DeliveryDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbUtilities;
+import org.springframework.jdbc.core.RowMapper;
 
-    /** The logger. */
-    private static final transient Logger LOGGER = LogManager.getLogger(DeliveryDaoImpl.class);
+public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
 
     public static String getDeliveryTableName(int companyId) {
         return "deliver_" + companyId + "_tbl";
@@ -58,33 +53,6 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
     }
 
     @Override
-    public void createDeliveryTbl(int companyID) {
-        if (!DbUtilities.checkIfTableExists(getDataSource(), getDeliveryTableName(companyID))) {
-            if (isOracleDB()) {
-                execute(LOGGER, "CREATE TABLE " + getDeliveryTableName(companyID) + " ("
-                        + "id NUMBER PRIMARY KEY,"
-                        + "mailing_id NUMBER,"
-                        + "customer_id NUMBER,"
-                        + "timestamp TIMESTAMP,"
-                        + "line VARCHAR2(4000)"
-                        + ")");
-                execute(LOGGER, "CREATE INDEX del" + companyID + "$tscid$idx ON " + getDeliveryTableName(companyID) + " (customer_id, timestamp)");
-                execute(LOGGER, "CREATE SEQUENCE " + getDeliveryTableName(companyID) + "_seq START WITH 1 INCREMENT BY 1 NOCACHE");
-            } else {
-                execute(LOGGER, "CREATE TABLE " + getDeliveryTableName(companyID) + " ("
-                        + "id INT(11) NOT NULL AUTO_INCREMENT,"
-                        + "mailing_id INT(11),"
-                        + "customer_id INT(11),"
-                        + "timestamp TIMESTAMP NULL,"
-                        + "line VARCHAR(4000),"
-                        + "PRIMARY KEY (id)"
-                        + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
-                execute(LOGGER, "CREATE INDEX del" + companyID + "$tscid$idx ON " + getDeliveryTableName(companyID) + " (customer_id, timestamp)");
-            }
-        }
-    }
-
-    @Override
     public boolean dropDeliveryTbl(int companyID) {
         if (DbUtilities.checkIfTableExists(getDataSource(), getDeliveryTableName(companyID))) {
             try {
@@ -101,7 +69,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
 
     @Override
     public List<DeliveryInfo> getDeliveriesInfo(final int companyId, final int mailingId, final int customerId) {
-    	List<Map<String, Object>> result = select(LOGGER, "SELECT timestamp, line FROM " + getDeliveryTableName(companyId) +  " WHERE mailing_id = ? AND customer_id = ? AND (line LIKE '%dsn%' OR line LIKE '%relay%' OR line LIKE '%status%' OR line LIKE '%from%')", mailingId, customerId);
+    	List<Map<String, Object>> result = select("SELECT timestamp, line FROM " + getDeliveryTableName(companyId) +  " WHERE mailing_id = ? AND customer_id = ? AND (line LIKE '%dsn%' OR line LIKE '%relay%' OR line LIKE '%status%' OR line LIKE '%from%')", mailingId, customerId);
     	Map<String, DeliveryInfo> deliveryInfoByMessageID = new HashMap<>();
 
 		final Pattern dsnPattern = Pattern.compile("dsn=(.*?)(:?, \\w+=|$)");
@@ -166,7 +134,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
     public List<SuccessfulDeliveryInfo> getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId) {
         String query = "SELECT mailing_id, timestamp FROM " + getSuccessfulDeliveryTableName(companyId) + " WHERE mailing_id = ? and customer_id = ?";
 
-		return select(LOGGER, query, new SuccessfulDeliveryRowMapper(), mailingId, recipientId);
+		return select(query, new SuccessfulDeliveryRowMapper(), mailingId, recipientId);
     }
 
     @Override
@@ -178,7 +146,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
 	public boolean cleanDeliveryTbl(int companyID) {
 		if (DbUtilities.checkIfTableExists(getDataSource(), getDeliveryTableName(companyID))) {
 			try {
-				execute(LOGGER, "TRUNCATE TABLE " + getDeliveryTableName(companyID));
+				execute("TRUNCATE TABLE " + getDeliveryTableName(companyID));
 				return true;
 			} catch (Exception e) {
 				return false;

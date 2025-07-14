@@ -1,162 +1,225 @@
 
 :root {
-  --sidebar-bg-color: #{$dark-blue};
-  --main-bg-color: #{$white};
-  --breadcrumbs-color: #{$dark-blue};
-
-  --tile-title-color: #{$dark-blue};
-  --tile-footer-bg-color: #{$x-light-grey};
-  --tile-highlighted-header-bg-color: #{$gray-100};
-  --xl-calendar-alien-day-bg-color: #{$gray-100};
-  --xl-calendar-hovered-day-bg-color: #{#e5f0f9};
-
-  --table-head-bg-color: #{$x-light-grey};
-  --table-head-control-bg-color: #{$white};
   --table-head-text-color: #{$gray-600};
-  --table-footer-text-color: var(--table-head-text-color);
-  --table-body-color: #{$gray-700};
-  --table-border-color: #{$light-grey};
-  --table-sortable-color: #{$primary};
-  --table-checkbox-bg-color: #{$white};
-  --table-badge-color: #{$dark-grey};
+  --table-head-bg: #{$x-light-grey};
   --table-max-pages-count: #{$pagesCount};
+  --table-head-sorted-color: #{$blue};
+  --table-body-color: #{$dark-grey};
+  --table-border-color: #{$light-grey};
+  --table-checkbox-bg: #{$white};
+  --table-head-font-weight: #{$font-weight-semibold};
+  --table-head-sorted-font-weight: var(--table-head-font-weight);
+  --table-secondary-cell-text-color: #{$gray-600};
+  --table-hovered-bg: rgba(75, 75, 75, 0.3);
 
-  --pagination-active-bg-color: #{$primary};
-  --pagination-disabled-text-color: #{$light-grey};
-
-  --validation-feedback-bg-color: #{$x-light-grey};
-  --validation-feedback-color: #{$dark-grey};
-
-  --switch-inactive-bg-color: #{$light-grey};
-  --switch-color: #{$white};
-  --switch-selected-color: var(--switch-color);
-
-  --scrollbar-color: rgba(75, 75, 75, 0.30);
-  --loader-color: #{$dark-blue};
-  --label-color: #{$dark-grey};
-  --navbar-color: #{$dark-grey};
-  --manual-title-color: #{$black};
-
-  --caption-bg-color: #{$x-light-grey};
-  --popup-content-bg-color: #{$white};
-
-  --checkbox-border-color: #{$dark-grey};
-
-  --input-icon-color: #{$dark-grey};
-  --input-disabled-bg-color: #{$x-light-grey};
-  --input-disabled-color: #{$dark-grey};
-
-  --text-color-default: #{$black};
-  --text-gray-color: #{$gray-600};
-  --text-dark-gray-color: #{$dark-grey};
-
-  --selection-choise-remove-color: #{$dark-grey};
-  --selection-choise-bg-color: #{$x-light-grey};
-  --disabled-selection-bg-color: #{$gray-200};
-  --disabled-selection-color: #{$black};
-  --select-dropdown-bg-color: var(--main-bg-color);
-  --select2-selection-color: var(--text-color-default);
-
-  --calendar-other-month-color: #{$gray-400};
+  --calendar-other-month-color: #{$light-grey};
   --calendar-selected-border-color: #{$dark-blue};
-  --calendar-selectable-cell-bg-color: #D9D9D9;
-  --calendar-other-month-selectable-bg-color: var(--calendar-selectable-cell-bg-color);
+  --calendar-selectable-cell-bg: #D9D9D9;
+  --calendar-selectable-cell-color: currentColor;
+  --calendar-other-month-selectable-bg: var(--calendar-selectable-cell-bg);
   --calendar-other-month-selectable-border-color: transparent;
   --calendar-other-month-selectable-color: #{$dark-grey};
+  --calendar-today-bg: #{$blue};
+  --calendar-today-color: #{$white};
 
-  --slider-disabled-active-bg-color: #{$dark-grey};
-  --slider-disabled-inactive-bg-color: #{$gray-100};
+  --dropdown-disabled-item-bg: #{$gray-200};
+  --dropdown-disabled-item-color: #{$black};
 
-  --qb-group-bg-color: rgba(26, 50, 88, 0.2);
-  --qb-rule-bg-color: #{$gray-100};
+  --scrollbar-color: rgba(75, 75, 75, 0.30);
+  --label-color: #{$dark-grey};
+  --text-link-color: #{$blue};
 
-  --chart-blue-color: #{$stat-or-badge-blue};
+  --input-focus-border-color: #80b8dc;
+  --input-placeholder-color: #{$light-grey};
+
+  --base-disabled-bg: #{$x-light-grey};
+  --base-disabled-color: #{$dark-grey};
+
+  --resize-handle-bg: #{$blue};
+
+  --badge-standard-blue: #{$blue};
+  --badge-blue: #{$stat-blue};
+  --badge-dark-blue: #{$stat-dark-blue};
+  --badge-darkest-blue: #{$stat-darkest-blue};
+  --badge-green: #{$stat-green};
+  --badge-dark-green: #{$stat-dark-green};
+  --badge-lime: #{$stat-lime};
+  --badge-grey: #{$stat-grey};
+  --badge-dark-grey: #{$stat-dark-grey};
+  --badge-dark-violet: #{$stat-dark-violet};
+  --badge-darkest-violet: #{$stat-darkest-violet};
+  --badge-cyan: #{$stat-cyan};
+  --badge-dark-cyan: #{$stat-dark-cyan};
+  --badge-darkest-cyan: #{$stat-darkest-cyan};
+  --badge-dark-red: #{$stat-dark-red};
+  --badge-dark-yellow: #{$stat-dark-yellow};
+
   --chart-light-blue-color: #{$stat-light-blue};
-  --chart-dark-blue-color: #{$stat-or-badge-dark-blue};
-  --chart-very-dark-blue-color: #{$stat-or-badge-very-dark-blue};
-  --chart-cyan-color: #{$stat-or-badge-cyan};
-  --chart-light-cyan-color: #{$stat-or-badge-light-cyan};
-  --chart-light-lime-color: #{$stat-or-badge-light-lime};
-  --chart-label-color: var(--label-color);
+  --chart-blue-color: #{$stat-blue};
+  --chart-dark-blue-color: #{$stat-dark-blue};
+  --chart-darkest-blue-color: #{$stat-darkest-blue};
+  --chart-light-cyan-color: #{$stat-light-cyan};
+  --chart-cyan-color: #{$stat-cyan};
+  --chart-dark-cyan-color: #{$stat-dark-cyan};
+  --chart-darkest-cyan-color: #{$stat-darkest-cyan};
+  --chart-light-lime-color: #{$stat-light-lime};
+  --chart-lime-color: #{$stat-lime};
+  --chart-green: #{$stat-green};
+  --chart-dark-green: #{$stat-dark-green};
+  --chart-light-violet: #{$stat-light-violet};
+  --chart-violet-color: #{$stat-light-violet};
+  --chart-dark-violet-color: #{$stat-dark-violet};
+  --chart-darkest-violet-color: #{$stat-darkest-violet};
+  --chart-yellow-color: #{$stat-yellow};
+  --chart-dark-yellow-color: #{$stat-dark-yellow};
+  --chart-orange-color: #{$stat-orange};
+  --chart-light-red-color: #{$stat-light-red};
+  --chart-dark-red-color: #{$stat-dark-red};
+  --chart-light-grey-color: #{$stat-light-grey};
+  --chart-grey-color: #{$stat-grey};
+  --chart-dark-grey-color: #{$stat-dark-grey};
+  --chart-black-color: #{$stat-black};
+
+  --chart-label-color: #{$dark-grey};
   --chart-font-family: 'Poppins', sans-serif;
   --chart-font-size: 14px; // note: rem not works!
   --chart-half-doughnut-label-color: #{$dark-blue};
-  --chart-light-grey-color: #{$stat-or-badge-light-grey};
-  --chart-black-color: #{$stat-or-badge-black};
-  --chart-violet-color: #{$stat-or-badge-violet};
-  --chart-lime-color: #{$stat-or-badge-lime};
+
+  --stat-colors: #{$stat-colors};
 }
 
-.dark-theme {
-  --sidebar-bg-color: #{$grey-blue};
-  --main-bg-color: #{$main-bg-color-dark};
-  --breadcrumbs-color: #{$light-blue};
-
-  --tile-title-color: #{$light-blue};
-  --tile-footer-bg-color: #{$grey-blue};
-  --tile-highlighted-header-bg-color: #{$grey-blue};
-  --xl-calendar-hovered-day-bg-color: #{$grey-blue};
-  --xl-calendar-alien-day-bg-color: #{$dark};
-
-  --table-head-bg-color: #{$grey-blue};
-  --table-footer-text-color: #{$gray-400};
-  --table-head-text-color: #{$white};
-  --table-head-control-bg-color: #{$grey-blue};
-  --table-checkbox-bg-color: #{$grey-blue};
-  --table-border-color: #{$gray-400};
-  --table-sortable-color: #{$light-blue};
+@include color-mode(dark) {
+  --table-head-sorted-color: #{$light-blue};
   --table-body-color: #{$gray-100};
-  --table-badge-color: #{$gray-100};
-
-  --pagination-disabled-text-color: #{$gray-600};
-  --pagination-active-bg-color: #5897fb;
-
-  --validation-feedback-bg-color: #{$main-bg-color-dark};
-  --validation-feedback-color: #{$gray-400};
-
-  --switch-inactive-bg-color: #{$grey-blue};
-
-  --scrollbar-color: #{$gray-600};
-  --loader-color: #{$light-blue};
-  --label-color: #{$gray-400};
-  --navbar-color: #{$gray-400};
-  --manual-title-color: #{$light-blue};
-
-  --caption-bg-color: #{$main-bg-color-dark};
-  --popup-content-bg-color: #{$grey-blue};
-
-  --checkbox-border-color: #{$gray-400};
-
-  --input-icon-color: #{$gray-400};
-  --input-disabled-bg-color: #{$gray-600};
-  --input-disabled-color: #{$gray-100};
-
-  --text-color-default: #{$white};
-  --text-gray-color: #{$gray-400};
-  --text-dark-gray-color: #{$gray-400};
-
-  --bs-dark-rgb: var(--text-dark-gray-color);
-
-  --selection-choise-bg-color: #{$gray-600};
-  --selection-choise-remove-color: #{$white};
-  --select-dropdown-bg-color: var(--main-bg-color);
-  --select2-selection-color: var(--text-color-default);
-  --disabled-selection-bg-color: #{$gray-600};
-  --disabled-selection-color: #{$gray-400};
+  --table-border-color: #{$light-grey};
+  --table-checkbox-bg: #{$grey-blue};
+  --table-head-bg: #{$grey-blue};
+  --table-head-text-color: #{$white};
+  --table-secondary-cell-text-color: #{$light-grey};
 
   --calendar-other-month-color: #{$gray-600};
   --calendar-selected-border-color: #{$light-blue};
-  --calendar-selectable-cell-bg-color: #{$light-blue};
-  --calendar-other-month-selectable-bg-color: transparent;
+  --calendar-selectable-cell-bg: #{$light-blue};
+  --calendar-other-month-selectable-bg: transparent;
   --calendar-other-month-selectable-border-color: #{$light-blue};
   --calendar-other-month-selectable-color: #{$gray-600};
 
-  --slider-disabled-active-bg-color: #{$dark-grey};
-  --slider-disabled-inactive-bg-color: #{$gray-400};
+  --dropdown-disabled-item-bg: #{$gray-600};
+  --dropdown-disabled-item-color: #{$light-grey};
 
-  --qb-group-bg-color: rgba(255, 255, 255, 0.2);
-  --qb-rule-bg-color: #{$grey-blue};
+  --scrollbar-color: #{$gray-600};
+  --label-color: #{$light-grey};
 
-  --chart-label-color: var(--label-color);
+  --base-disabled-bg: #{$gray-600};
+  --base-disabled-color: #{$gray-100};
+
+  --chart-label-color: #{$light-grey};
   --chart-half-doughnut-label-color: #{$light-blue};
+
+  --bs-secondary-rgb: #{rgb-from-hex($light-grey)};
+}
+
+@include color-mode(light-contrast) {
+  --bs-border-color: #{$con-dark-blue};
+
+  --table-border-color: #{$border-color-var};
+  --table-head-bg: #{$white};
+  --table-head-text-color: #{$con-dark-blue};
+  --table-head-sorted-color: var(--table-head-text-color);
+  --table-body-color: #{$con-dark-blue};
+  --table-head-font-weight: #{$font-weight-normal};
+  --table-head-sorted-font-weight: #{$font-weight-semibold};
+  --table-secondary-cell-text-color: #{$body-color-var};
+  --table-hovered-bg: #{$con-grey};
+
+  --calendar-other-month-color: #{$dark-grey};
+  --calendar-selected-border-color: #{$con-dark-blue};
+  --calendar-selectable-cell-bg: #{$con-grey};
+  --calendar-other-month-selectable-bg: var(--calendar-selectable-cell-bg);
+  --calendar-other-month-selectable-border-color: transparent;
+  --calendar-other-month-selectable-color: #{$dark-grey};
+  --calendar-today-bg: #{$con-dark-blue};
+
+  --base-disabled-bg: #{$con-grey};
+  --base-disabled-color: #{$con-dark-blue};
+  --label-color: #{$con-dark-blue};
+  --text-link-color: #{$con-blue};
+  --resize-handle-bg: #{$con-dark-blue};
+
+  --input-focus-border-color: #{$border-color-var};
+  --input-placeholder-color: #{$dark-grey};
+
+  --dropdown-disabled-item-bg: #{$con-grey};
+  --scrollbar-color: #{$dark-grey};
+
+  --chart-label-color: #{$con-dark-blue};
+}
+
+@include contrast-themes {
+  --badge-standard-blue: #{$stat-light-blue};
+  --badge-blue: #{$stat-light-blue};
+  --badge-dark-blue: #{$stat-light-blue};
+  --badge-darkest-blue: #{$stat-light-blue};
+  --badge-green: #{$stat-light-lime};
+  --badge-dark-green: #{$stat-lime};
+  --badge-lime: #{$stat-light-lime};
+  --badge-grey: #{$stat-light-grey};
+  --badge-dark-grey: #{$black};
+  --badge-dark-violet: #{$stat-light-violet};
+  --badge-darkest-violet: #{$stat-light-violet};
+  --badge-cyan: #{$stat-light-cyan};
+  --badge-dark-cyan: #{$stat-light-cyan};
+  --badge-darkest-cyan: #{$stat-light-cyan};
+  --badge-dark-red: #{$stat-light-red};
+  --badge-dark-yellow: #{$stat-yellow};
+
+  --bs-blue:          #{$con-light-blue};
+  --bs-danger-rgb:    #{rgb-from-hex($con-red)};
+  --bs-success-rgb:   #{rgb-from-hex($con-green)};
+  --bs-warning-rgb:   #{rgb-from-hex($con-yellow)};
+  --bs-info-rgb:      #{rgb-from-hex($con-light-blue)};
+  --bs-secondary-rgb: #{$body-color-var};
+}
+
+@include color-mode(dark-contrast) {
+  --bs-body-bg: #{$con-dark-blue};
+  --bs-body-color: #{$white};
+
+  --bs-border-color: #{$white};
+
+  --table-border-color: #{$border-color-var};
+  --table-head-bg: #{$con-dark-blue};
+  --table-head-text-color: #{$white};
+  --table-head-sorted-color: var(--table-head-text-color);
+  --table-body-color: #{$white};
+  --table-head-font-weight: #{$font-weight-normal};
+  --table-head-sorted-font-weight: #{$font-weight-semibold};
+  --table-secondary-cell-text-color: #{$white};
+  --table-checkbox-bg: #{$con-dark-blue};
+  --table-hovered-bg: #{$con-blue};
+
+  --calendar-other-month-color: #{$light-grey};
+  --calendar-selected-border-color: #{$white};
+  --calendar-selectable-cell-bg: #{$con-grey};
+  --calendar-other-month-selectable-bg: var(--calendar-selectable-cell-bg);
+  --calendar-other-month-selectable-border-color: transparent;
+  --calendar-other-month-selectable-color: #{$con-dark-blue};
+  --calendar-selectable-cell-color: #{$con-dark-blue};
+  --calendar-today-bg: #{$white};
+  --calendar-today-color: #{$con-dark-blue};
+
+  --base-disabled-bg: #{$dark-grey};
+  --base-disabled-color: #{$white};
+  --label-color: #{$white};
+  --text-link-color: #{$con-light-blue};
+
+  --input-focus-border-color: #{$border-color-var};
+  --input-placeholder-color: #{$light-grey};
+
+  --resize-handle-bg: #{$white};
+
+  --dropdown-disabled-item-bg: #{$light-grey};
+  --scrollbar-color: #{$white};
+
+  --chart-label-color: #{$white};
 }

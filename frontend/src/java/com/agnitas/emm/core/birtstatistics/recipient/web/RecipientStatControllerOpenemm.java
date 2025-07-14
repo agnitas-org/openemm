@@ -1,7 +1,7 @@
 package com.agnitas.emm.core.birtstatistics.recipient.web;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.service.UserActivityLogService;
+import com.agnitas.service.UserActivityLogService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,7 +10,7 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.report.services.RecipientReportService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -18,7 +18,7 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @PermissionMapping("recipient.stats")
 public class RecipientStatControllerOpenemm extends RecipientStatController {
 
-    public RecipientStatControllerOpenemm(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
+    public RecipientStatControllerOpenemm(BirtStatisticsService birtStatisticsService, TargetService targetService,
                                            RecipientReportService recipientReportService,
                                            MediaTypesService mediaTypesService, ConversionService conversionService,
                                            MailinglistApprovalService mailinglistApprovalService,

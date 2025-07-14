@@ -1,5 +1,5 @@
 
-<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+<%--@elvariable id="notFormActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
 
 <div class="form-group">
     <div class="col-sm-4">

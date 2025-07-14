@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@ page import="com.agnitas.emm.common.MailingStatus" %>
 
 <div class="form-group">
     <div class="well block">

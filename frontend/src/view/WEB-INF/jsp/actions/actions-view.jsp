@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp --%>
-<%@ page import="org.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jsp --%>
+<%@ page import="com.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jsp --%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp--%>
 
 <%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.ACTIVATE_DOUBLE_OPT_IN" %>
@@ -24,7 +24,7 @@
 
 <%--@elvariable id="operationList" type="java.util.List"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionForm"--%>
-<%--@elvariable id="eventBasedMailings" type="java.util.List<org.agnitas.beans.Campaign>"--%>
+<%--@elvariable id="eventBasedMailings" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>

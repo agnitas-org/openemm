@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,28 +12,28 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Namespaces;
-import org.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.emm.springws.endpoint.BaseEndpoint;
+import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.beans.Target;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
-import com.agnitas.emm.springws.jaxb.UpdateTargetGroupRequest;
-import com.agnitas.emm.springws.jaxb.UpdateTargetGroupResponse;
+import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupRequest;
+import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupResponse;
 
 @Endpoint
 public class UpdateTargetGroupEndpoint extends BaseEndpoint {
 
-    private final ComTargetService targetService;
+    private final TargetService targetService;
     private final SecurityContextAccess securityContextAccess;
 
-    public UpdateTargetGroupEndpoint(final ComTargetService targetService, final SecurityContextAccess securityContextAccess) {
+    public UpdateTargetGroupEndpoint(final TargetService targetService, final SecurityContextAccess securityContextAccess) {
         this.targetService = Objects.requireNonNull(targetService, "targetService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
@@ -43,14 +43,14 @@ public class UpdateTargetGroupEndpoint extends BaseEndpoint {
         final int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
         
         final int targetId = request.getTargetID();
-        final ComTarget target = targetService.getTargetGroup(targetId, companyId);
+        final Target target = targetService.getTargetGroup(targetId, companyId);
         fillUpdatedFields(request, target);
         targetService.saveTarget(target);
         
         return new UpdateTargetGroupResponse();
     }
 
-    private void fillUpdatedFields(UpdateTargetGroupRequest request, ComTarget existingTarget) {
+    private void fillUpdatedFields(UpdateTargetGroupRequest request, Target existingTarget) {
         final String description = request.getDescription();
         final String eql = request.getEql();
         final String targetName = request.getTargetName();

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,12 +13,12 @@ package com.agnitas.emm.core.report.converter.impl;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComRecipientHistory;
+import com.agnitas.beans.RecipientHistory;
 import com.agnitas.emm.core.report.converter.GenericLocalizableConverter;
 import com.agnitas.emm.core.report.dto.RecipientStatusHistoryDto;
 import com.agnitas.emm.core.report.dto.impl.RecipientStatusHistoryDtoImpl;
@@ -26,12 +26,12 @@ import com.agnitas.emm.core.report.enums.fields.RecipientMutableFields;
 import com.agnitas.messages.I18nString;
 
 @Component
-public class RecipientStatusHistoryDtoConverter implements GenericLocalizableConverter<ComRecipientHistory, RecipientStatusHistoryDto> {
+public class RecipientStatusHistoryDtoConverter implements GenericLocalizableConverter<RecipientHistory, RecipientStatusHistoryDto> {
 
     private static final String NOT_SET = "not set";
 
     @Override
-    public RecipientStatusHistoryDto convert(ComRecipientHistory recipientHistory, Locale locale) {
+    public RecipientStatusHistoryDto convert(RecipientHistory recipientHistory, Locale locale) {
         RecipientStatusHistoryDto statusHistoryDto = new RecipientStatusHistoryDtoImpl();
 
         statusHistoryDto.setChangeDate(recipientHistory.getChangeDate());
@@ -52,7 +52,7 @@ public class RecipientStatusHistoryDtoConverter implements GenericLocalizableCon
      * @param locale           locale for current user.
      * @return translated description.
      */
-    private String getTranslatedDescription(ComRecipientHistory recipientHistory, Locale locale) {
+    private String getTranslatedDescription(RecipientHistory recipientHistory, Locale locale) {
         // we translate only BindingHistory entries so in case of ProfileHistory change we return value without changes
         RecipientMutableFields field = RecipientMutableFields.getByCode(recipientHistory.getFieldName());
         if (Objects.isNull(field) || field.isProfileHistoryField()) {

@@ -132,7 +132,7 @@
     <div class="col-12">
         <div class="tile tile--sm h-auto">
             <div class="tile-header">
-                <h3 class="tile-title text-dark"><mvc:message code="report.figures"/></h3>
+                <h3 class="tile-title tile-title--grey"><mvc:message code="report.figures"/></h3>
                 <div class="tile-controls">
                     <div class="form-check form-switch">
                         <input id="toggle-comparison-figures" class="form-check-input" type="checkbox" role="switch" data-toggle-checkboxes="on">
@@ -145,7 +145,7 @@
                     <c:if test="${settings.key.key == COMPARISON_KEY}">
                         <c:forEach items="${settings.value}" var="group">
                             <div class="tile tile--sm">
-                                <div class="tile-header"><h3 class="tile-title text-dark"><mvc:message code="${group.key}"/></h3></div>
+                                <div class="tile-header"><h3 class="tile-title tile-title--grey"><mvc:message code="${group.key}"/></h3></div>
                                 <div class="tile-body d-flex flex-column gap-2">
                                     <c:if test="${group.key == 'General'}">
                                         <div class="form-check form-switch">

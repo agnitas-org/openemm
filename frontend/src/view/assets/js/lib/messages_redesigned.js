@@ -142,13 +142,9 @@ The structure of the JSON object you can find in example below.
         displayMessages(t("defaults.error"), messages.alert, 'alert');
       }
 
-      if (messages.fields) {
-        $.each(messages.fields, function(name, errors) {
-          if (errors) {
-            displayMessages(t("defaults.error"), errors, 'alert');
-          }
-        });
-      }
+      messages.fields?.forEach(fieldData => {
+        AGN.Lib.Form.showFieldError(fieldData.name, fieldData.message);
+      });
     }
   };
 
@@ -178,7 +174,7 @@ The structure of the JSON object you can find in example below.
   };
 
   Messages.alertText = function (text) {
-    Messages(t('Error'), text, 'alert');
+    Messages(t('defaults.error'), text, 'alert');
   }
 
   Messages.warn = function(msgCode, ...args) {

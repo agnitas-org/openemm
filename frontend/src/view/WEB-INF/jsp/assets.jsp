@@ -1,5 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.util.AgnUtils" %>
 
 <c:url var="translationLink" value="/translations.js.action">
     <c:param name="ts" value="<%= AgnUtils.getBrowserCacheMarker() %>"/>

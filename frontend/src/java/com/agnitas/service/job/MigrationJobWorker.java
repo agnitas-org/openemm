@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
-import org.agnitas.service.JobWorker;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.SqlScriptReader;
+import com.agnitas.service.JobWorker;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.SqlScriptReader;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,6 +42,17 @@ import com.agnitas.util.Version;
 public class MigrationJobWorker extends JobWorker {
 	private static final transient Logger logger = LogManager.getLogger(MigrationJobWorker.class);
 
+	/**
+	 Migration scripts are executed at least once.
+
+	 After that initial execution, each subsequent run checks whether the current minimum application version
+	 (from the release_log_tbl) is **less than or equal to** the "until-..." version specified in the script filename.
+
+	 If the current version is greater than the script's "until" version, the script is skipped.
+
+	 The current minimum application version is stored in the job parameters as "latest_min_app_version"
+	 for comparison in the next JobWorker run.
+	 */
 	@Override
 	public String runJob() throws Exception {
 		Version latestMinAppVersion = null;
@@ -92,12 +103,6 @@ public class MigrationJobWorker extends JobWorker {
 		
 		List<String> executedMigrationScriptFiles = new ArrayList<>();
 		if (migrationScriptFiles != null && migrationScriptFiles.size() > 0) {
-			/**
-			 *  Migration scripts are executed at least once.
-			 *  After that one execution there is a check for the minimum current application version of the last JobWorker run.
-			 *  If that minimum version does not meet the scripts criteria "until-..." then that was the last execution for that script.
-			 *  Therefore the current minimum application version is stored in the job parameters for the next JobWorker run. 
-			 */
 			List<Map<String, Object>> appVersions = jdbcTemplate.queryForList("SELECT MAX(version_number) AS version, application_name, host_name FROM release_log_tbl GROUP BY application_name, host_name");
 			try {
 				Version minAppVersion = null;
@@ -119,7 +124,7 @@ public class MigrationJobWorker extends JobWorker {
 				matcher.find();
 				Version untilVersion = new Version(matcher.group(0));
 				
-				if (latestMinAppVersion == null || latestMinAppVersion.compareTo(untilVersion) < 0) {
+				if (latestMinAppVersion == null || latestMinAppVersion.compareTo(untilVersion) <= 0) {
 					try (SqlScriptReader sqlScriptReader = new SqlScriptReader(new ByteArrayInputStream(FileUtils.readFileToByteArray(migrationScriptFile)))) {
 						String nextStatementToExecute;
 						while ((nextStatementToExecute = sqlScriptReader.readNextStatement()) != null) {

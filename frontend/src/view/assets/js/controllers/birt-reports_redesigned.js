@@ -36,7 +36,7 @@ AGN.Lib.Controller.new('birt-reports', function () {
   });
 
   this.addAction({click: 'confirm-deactivate-deliveries'}, function () {
-    AGN.Lib.Confirm.createFromTemplate({}, 'report-deactivate-deliveries');
+    AGN.Lib.Confirm.from('report-deactivate-deliveries');
   });
 
   this.addAction({click: 'activate-delivery'}, function () {

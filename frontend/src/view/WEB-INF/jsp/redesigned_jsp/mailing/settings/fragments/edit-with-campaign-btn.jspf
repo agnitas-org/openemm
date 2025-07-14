@@ -1,0 +1,16 @@
+
+<c:choose>
+    <c:when test="${workflowId > 0}">
+        <c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, workflowId)}" scope="request"/>
+        <c:url var="editWithCampaignLink" value="/workflow/${workflowId}/view.action">
+            <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${mailingId}"/>
+        </c:url>
+        <a href="${editWithCampaignLink}" class="status-badge mailing.status.cm"
+           data-tooltip="<mvc:message code='mailing.EditWithCampaignManager'/>"
+           role="button"></a>
+    </c:when>
+    <c:when test="${not empty workflowForwardParams}">
+        <span class="status-badge mailing.status.cm"></span>
+    </c:when>
+</c:choose>
+

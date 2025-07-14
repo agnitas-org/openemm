@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,14 +10,33 @@
 
 package com.agnitas.emm.core.serverstatus.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComServerMessageDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.LicenseDao;
+import com.agnitas.dao.ServerMessageDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
-import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.db_schema.bean.DbSchemaCheckResult;
+import com.agnitas.emm.core.db_schema.bean.DbSchemaSnapshot;
+import com.agnitas.emm.core.db_schema.service.DbSchemaSnapshotService;
+import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
@@ -28,36 +47,36 @@ import com.agnitas.emm.core.serverstatus.forms.ServerStatusForm;
 import com.agnitas.emm.core.serverstatus.forms.validation.ServerConfigFormValidator;
 import com.agnitas.emm.core.serverstatus.forms.validation.ServerStatusFormValidator;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
 import com.agnitas.messages.Message;
+import com.agnitas.service.JobDto;
+import com.agnitas.service.JobQueueService;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.ServerCommand;
+import com.agnitas.util.ServerCommand.Command;
+import com.agnitas.util.ServerCommand.Server;
+import com.agnitas.util.TarGzUtilities;
+import com.agnitas.util.TextTableBuilder;
 import com.agnitas.util.Version;
+import com.agnitas.util.ZipUtilities;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.Anonymous;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import net.sf.json.JSONArray;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.JobDto;
-import org.agnitas.service.JobQueueService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.ServerCommand;
-import org.agnitas.util.ServerCommand.Command;
-import org.agnitas.util.ServerCommand.Server;
-import org.agnitas.util.TarGzUtilities;
-import org.agnitas.util.TextTable;
-import org.agnitas.util.ZipUtilities;
-import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -82,16 +101,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 public class ServerStatusController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(ServerStatusController.class);
@@ -100,28 +109,24 @@ public class ServerStatusController implements XssCheckAware {
 
 	private static final String FILE_NAME_DATE_FORMAT = DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES;
 
-	protected ServerStatusService serverStatusService;
-
-	protected UserActivityLogService userActivityLogService;
-
-	protected JobQueueService jobQueueService;
-
-	protected JavaMailService javaMailService;
-
-	protected ComLogonService logonService;
-	
-	protected LicenseDao licenseDao;
-	
-	protected ComServerMessageDao serverMessageDao;
-	
-	protected ConfigService configService;
-	
-	protected ComCompanyDao companyDao;
+	protected final LogonService logonService;
+	protected final CompanyDao companyDao;
+	private final DbSchemaSnapshotService dbSchemaSnapshotService;
+	private final ServerStatusService serverStatusService;
+	private final UserActivityLogService userActivityLogService;
+	private final JobQueueService jobQueueService;
+	private final JavaMailService javaMailService;
+	private final LicenseDao licenseDao;
+	private final ServerMessageDao serverMessageDao;
+	private final ConfigService configService;
 
 	private final ServerConfigFormValidator configFormValidator = new ServerConfigFormValidator();
 	private final ServerStatusFormValidator statusFormValidator = new ServerStatusFormValidator();
 
-	public ServerStatusController(ServerStatusService serverStatusService, UserActivityLogService userActivityLogService, JobQueueService jobQueueService, JavaMailService javaMailService, ComLogonService logonService, LicenseDao licenseDao, ComServerMessageDao serverMessageDao, ConfigService configService, ComCompanyDao companyDao) {
+	public ServerStatusController(ServerStatusService serverStatusService, UserActivityLogService userActivityLogService,
+								  JobQueueService jobQueueService, JavaMailService javaMailService, LogonService logonService,
+								  LicenseDao licenseDao, ServerMessageDao serverMessageDao, ConfigService configService, CompanyDao companyDao,
+								  DbSchemaSnapshotService dbSchemaSnapshotService) {
 		this.serverStatusService = serverStatusService;
 		this.userActivityLogService = userActivityLogService;
 		this.jobQueueService = jobQueueService;
@@ -131,7 +136,8 @@ public class ServerStatusController implements XssCheckAware {
 		this.serverMessageDao = serverMessageDao;
 		this.configService = configService;
 		this.companyDao = companyDao;
-	}
+        this.dbSchemaSnapshotService = dbSchemaSnapshotService;
+    }
 
 	@InitBinder
 	public void initBinder(WebDataBinder binder, Admin admin) {
@@ -148,14 +154,17 @@ public class ServerStatusController implements XssCheckAware {
 	@RequestMapping(value = "/view.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public String view(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form) {
 		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
+		if (admin.isRedesignedUiUsed()) {
+			model.addAttribute("checkDbSchemaAllowed", dbSchemaSnapshotService.exists());
+		}
 
 		return "server_status_view";
 	}
 
 	@PostMapping("/config/save.action")
 	public String saveConfig(Admin admin, ServerStatusForm form, Popups popups) {
-		if(!configFormValidator.validate(form.getConfigForm(), popups)) {
-			return "messages";
+		if (!configFormValidator.validate(form.getConfigForm(), popups)) {
+			return MESSAGES_VIEW;
 		}
 
 		ServerConfigForm configForm = form.getConfigForm();
@@ -164,7 +173,7 @@ public class ServerStatusController implements XssCheckAware {
 		if (saved) {
 			userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "change server configuration: "));
 		} else {
-			popups.alert("Error");
+			popups.alert(ERROR_MSG);
 		}
 
 		return String.format("redirect:/serverstatus/config/view.action?configForm.companyId=%d&configForm.name=%s", configForm.getCompanyId(),
@@ -219,7 +228,7 @@ public class ServerStatusController implements XssCheckAware {
 	@RequestMapping(value = "/job/start.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public String startJob(Admin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		if (!statusFormValidator.validateJobDescription(form, popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		Message message;
@@ -232,7 +241,7 @@ public class ServerStatusController implements XssCheckAware {
 			userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "started job '" + description + "'"), logger);
 		} catch (Exception e) {
 			logger.error("Error while starting job queue by description " + description, e);
-			popups.alert("Error");
+			popups.alert(ERROR_MSG);
 		}
 
 		model.addFlashAttribute(form);
@@ -243,7 +252,7 @@ public class ServerStatusController implements XssCheckAware {
 	@RequestMapping(value = "/testemail/send.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public String sendTestEmail(Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if(!statusFormValidator.validateTestEmail(form, popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		String testEmail = form.getSendTestEmail();
@@ -261,7 +270,7 @@ public class ServerStatusController implements XssCheckAware {
 	@RequestMapping(value = "/diagnosis/show.action", method = { RequestMethod.GET, RequestMethod.POST })
 	public String diagnosisView(HttpServletRequest request, Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if (!statusFormValidator.validateDiagnosticEmail(form, popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		SimpleServiceResult diagnosisSendResult = serverStatusService.sendDiagnosisInfo(request.getServletContext(), admin, form.getSendDiagnosis());
@@ -339,7 +348,7 @@ public class ServerStatusController implements XssCheckAware {
 		List<Map<String, Object>> data = configService.getReleaseData(hostName, application);
 		SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS);
 		
-		TextTable textTable = new TextTable("startup_timestamp", "hostname", "application", "version_number", "build_time", "build_host", "build_user");
+		TextTableBuilder textTable = new TextTableBuilder("startup_timestamp", "hostname", "application", "version_number", "build_time", "build_host", "build_user");
 		
 		for (Map<String, Object> item : data) {
 			textTable.startNewLine();
@@ -654,14 +663,26 @@ public class ServerStatusController implements XssCheckAware {
 	        		
 	        		File licenseDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml");
 	        		File licenseSignatureDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml.sig");
-	        		if (licenseDataFile.exists() && licenseSignatureDataFile.exists()) {
+					String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
+					Version currentVersion = new Version(currentVersionString);
+					String majorMinorVersion = String.format("%d.%02d", currentVersion.getMajorVersion(), currentVersion.getMinorVersion());
+					Matcher licenseVersionMatcher = Pattern.compile(".*?([0-9]+[.][0-9]+).*").matcher(file.getOriginalFilename());
+
+					if (licenseDataFile.exists() && licenseSignatureDataFile.exists()) {
 	        			byte [] licenseDataArray = FileUtils.readFileToByteArray(licenseDataFile);
 	    	        	byte [] licenseSignatureDataArray = FileUtils.readFileToByteArray(licenseSignatureDataFile);
+						Boolean hasUnlimited = new String(licenseDataArray).contains("<maximumVersion>Unlimited</maximumVersion>");
+
 	    	        	if (licenseDataArray == null || licenseDataArray.length == 0) {
 	    	        		throw new Exception("Missing license data content");
 	    	        	} else if (licenseSignatureDataArray == null || licenseSignatureDataArray.length == 0) {
 	    	        		throw new Exception("Missing license data signature content");
-	    	        	} else if (!new String(licenseDataArray).contains("<licenseID>" + configService.getLicenseID() + "</licenseID>")) {
+	    	        	}else if (!hasUnlimited && (!licenseVersionMatcher.find() || !new String(majorMinorVersion).equals(licenseVersionMatcher.group(1))  || !new String(licenseDataArray).contains("<maximumVersion>" + licenseVersionMatcher.group(1) + "</maximumVersion>")) ) {
+							logger.error(new String(majorMinorVersion).equals(licenseVersionMatcher.group(1)));
+							throw new Exception("License version does not match maximum version or application version");
+						}else if (hasUnlimited && !(new String(licenseDataArray).contains("<licenseID>" + 1 + "</licenseID>") || new String(licenseDataArray).contains("<licenseID>" + 1000 + "</licenseID>"))) {
+							throw new Exception("For this license, maxium version 'Unlimited' is not allowed");
+						}else if (!new String(licenseDataArray).contains("<licenseID>" + configService.getLicenseID() + "</licenseID>")) {
 	    	        		throw new Exception("Wrong license id in license data content. Expected license id: " + configService.getLicenseID());
 	    	        	} else {
 							licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, new Date());
@@ -692,6 +713,29 @@ public class ServerStatusController implements XssCheckAware {
 	        }
 		}
     }
+
+	@PostMapping(value = "/db-schema/upload.action")
+	public String uploadDbSchemaSnapshot(@RequestParam MultipartFile file, @RequestParam(required = false) Boolean overwrite,
+										 Popups popups, Model model) {
+		ServiceResult<DbSchemaSnapshot> result = dbSchemaSnapshotService.read(file);
+		popups.addPopups(result);
+
+		if (!result.isSuccess()) {
+			return MESSAGES_VIEW;
+		}
+
+		DbSchemaSnapshot snapshot = result.getResult();
+
+		if (!Boolean.TRUE.equals(overwrite) && dbSchemaSnapshotService.exists(snapshot.getVersionNumber())) {
+			model.addAttribute("snapshotVersion", snapshot.getVersionNumber());
+			return "server_status_db_schema_overwrite";
+		}
+
+		dbSchemaSnapshotService.save(snapshot);
+		popups.success(CHANGES_SAVED_MSG);
+
+		return "redirect:/serverstatus/view.action";
+	}
     
     @GetMapping("/serverstatus/view.action")
     public String uploadStatus() {
@@ -699,25 +743,49 @@ public class ServerStatusController implements XssCheckAware {
     }
 
 	@RequestMapping(value = "/updatecheck.action", method = { RequestMethod.GET, RequestMethod.POST })
-    public String updateCheck(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form, Popups popups) {
-    	try {
-			String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
-			Version currentVersion = new Version(currentVersionString);
-			
-			Version availableVersion = serverStatusService.getAvailableUpdateVersion();
-			
+    public String updateCheck(Popups popups) throws Exception {
+		String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
+		Version currentVersion = new Version(currentVersionString);
+		if(currentVersion.getHotfixVersion() != 0){
+			Version availableVersion = serverStatusService.getAvailableUpdateVersion(currentVersion);
+
 			if (availableVersion.compareTo(currentVersion) >= 1) {
 				popups.warning("server.current_version.higher_version_available", availableVersion.toString(), currentVersionString, configService.getValue(ConfigValue.UpdateInformationLink));
 			} else {
 				popups.success("server.current_version.uptodate", currentVersionString);
 			}
-		} catch (Exception e) {
-			popups.alert("error.exception", e.getMessage());
+		}else {
+				popups.success("server.current_version.uptodate", currentVersionString);
 		}
-		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
-		
-        return "server_status_view";
+
+        return MESSAGES_VIEW;
     }
+
+	@GetMapping("/schema/check.action")
+	public String checkDbSchema(Model model, Popups popups) {
+		if (!dbSchemaSnapshotService.exists()) {
+			throw new IllegalStateException("DB schema can't be checked due to missing snapshot file!");
+		}
+
+		DbSchemaCheckResult result = dbSchemaSnapshotService.check();
+		if (result.isSuccessful()) {
+			popups.success("GWUA.checkDbSchema.success");
+			return MESSAGES_VIEW;
+		}
+
+		model.addAttribute("checkResult", result);
+		return "server_status_db_schema_diff";
+	}
+
+	@GetMapping("/schema/diff/download.action")
+	public ResponseEntity<DeleteFileAfterSuccessReadResource> downloadDbSchemaDifferences() {
+		File file = dbSchemaSnapshotService.getFileWithDifferences();
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"db-schema-diff.json\"")
+				.contentLength(file.length())
+				.contentType(MediaType.parseMediaType(MediaType.APPLICATION_OCTET_STREAM_VALUE))
+				.body(new DeleteFileAfterSuccessReadResource(file));
+	}
 	
 	@Anonymous
 	@RequestMapping(value = "/killRunningImports.action", method = { RequestMethod.GET, RequestMethod.POST })
@@ -727,8 +795,8 @@ public class ServerStatusController implements XssCheckAware {
 	
 	@Anonymous
 	@RequestMapping(value = "/getSystemStatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = {MediaType.APPLICATION_JSON_VALUE})
-	public @ResponseBody JSONArray getSystemStatus (HttpServletRequest request, HttpServletResponse response) {
-		return serverStatusService.getSystemStatus();
+	public @ResponseBody List<Object> getSystemStatus() {
+		return serverStatusService.getSystemStatus().toList();
 	}
 
 	private Admin loginAdminByRequestParameters(HttpServletRequest request, Admin admin) throws LogonServiceException {
@@ -758,5 +826,17 @@ public class ServerStatusController implements XssCheckAware {
 		model.addAttribute("serverStatus", serverStatusService.getAnonymousServerStatus(request.getServletContext()));
 		model.addAttribute("appVersion", configService.getValue(ConfigValue.ApplicationVersion));
 		return "server_status_external_view_redesigned";
+	}
+
+	@GetMapping(value = "/db-schema/download.action")
+	public ResponseEntity<DeleteFileAfterSuccessReadResource> downloadDbSchemaSnapshot() {
+		File file = dbSchemaSnapshotService.create();
+		String filename = dbSchemaSnapshotService.generateFileName();
+
+		return ResponseEntity.ok()
+				.contentLength(file.length())
+				.contentType(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(filename))
+				.body(new DeleteFileAfterSuccessReadResource(file));
 	}
 }

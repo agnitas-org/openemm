@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,20 +24,18 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.MailinglistDao;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.service.ImportResult;
-import org.agnitas.service.MailingExporter;
-import org.agnitas.service.MailingImporter;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.service.ImportResult;
+import com.agnitas.service.MailingExporter;
+import com.agnitas.service.MailingImporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -50,8 +48,8 @@ import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -89,61 +87,51 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	private MailingExporter mailingExporter;
 	private CopyMailingService copyMailingService;
 	private ThumbnailService thumbnailService;
-	private ComMailingBaseService mailingBaseService;
+	private MailingBaseService mailingBaseService;
 	private CompanyTokenService companyTokenService;
     private MaildropService maildropService;
 
-	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
-	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
 	}
 	
-	@Required
 	public void setMailingDao(MailingDao mailingDao) {
 		this.mailingDao = mailingDao;
 	}
 
-	@Required
 	public void setMailingImporter(MailingImporter mailingImporter) {
 		this.mailingImporter = mailingImporter;
 	}
 
-	@Required
 	public void setMailingExporter(MailingExporter mailingExporter) {
 		this.mailingExporter = mailingExporter;
 	}
 
-	@Required
 	public void setCopyMailingService(CopyMailingService copyMailingService) {
 		this.copyMailingService = copyMailingService;
 	}
 
-	@Required
 	public void setThumbnailService(ThumbnailService thumbnailService) {
 		this.thumbnailService = thumbnailService;
 	}
 
-	@Required
-	public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
+	public void setMailingBaseService(MailingBaseService mailingBaseService) {
 		this.mailingBaseService = mailingBaseService;
 	}
 	
-	@Required
 	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
 		this.companyTokenService = companyTokenService;
 	}
 	
-	@Required
 	public void setMaildropService(MaildropService maildropService) {
 		this.maildropService = maildropService;
 	}
 
 	@Override
-	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
+	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) {
 		// No redirect needed
 		return this;
 	}
@@ -327,7 +315,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			int mailingID = Integer.parseInt(requestedMailingKeyValue);
 			
 			if (mailingDao.exist(mailingID, admin.getCompanyID())) {
-				mailingExporter.exportMailingToJson(admin.getCompanyID(), mailingID, response.getOutputStream(), false);
+				mailingExporter.exportMailingToJson(admin.getCompanyID(), mailingID, response.getOutputStream(), false, false);
 				return EXPORTED_TO_STREAM;
 			} else {
 				throw new RestfulNoDataFoundException("No data found");
@@ -607,10 +595,10 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 							} else if ("parameters".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof JsonArray) {
 									try {
-										List<ComMailingParameter> parameters = new ArrayList<>();
+										List<MailingParameter> parameters = new ArrayList<>();
 										for (Object parameterObject : (JsonArray) jsonObject.get("parameters")) {
 											JsonObject parameterJsonObject = (JsonObject) parameterObject;
-											ComMailingParameter mailingParameter = new ComMailingParameter();
+											MailingParameter mailingParameter = new MailingParameter();
 											mailingParameter.setName((String) parameterJsonObject.get("name"));
 											// Check for unallowed html tags
 											try {

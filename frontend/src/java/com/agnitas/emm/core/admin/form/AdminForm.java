@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import com.agnitas.emm.core.admin.enums.UiLayoutType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,7 @@ public class AdminForm {
     private String adminTimezone = "Europe/Berlin";
     private List<Integer> groupIDs = new ArrayList<>();
     private int layoutBaseId;
+    private UiLayoutType uiLayoutType = UiLayoutType.STANDARD;
     private String initialCompanyName;
     private String adminPhone;
     private int gender = 2;
@@ -166,6 +168,14 @@ public class AdminForm {
 
     public void setLayoutBaseId(int layoutBaseId) {
         this.layoutBaseId = layoutBaseId;
+    }
+
+    public UiLayoutType getUiLayoutType() {
+        return uiLayoutType;
+    }
+
+    public void setUiLayoutType(UiLayoutType uiLayoutType) {
+        this.uiLayoutType = uiLayoutType;
     }
 
     public String getInitialCompanyName() {

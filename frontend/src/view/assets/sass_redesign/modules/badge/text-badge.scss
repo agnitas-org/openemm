@@ -1,10 +1,20 @@
-@mixin default-text-status-badge($state) {
-  background: map-get(map-get($default-status-badges-defs, $state), background);
+
+.badge {
+  --badge-border-color: transparent;
+  border: 1px solid var(--badge-border-color);
 }
 
-@each $state, $values in $default-status-badges-defs {
-  .badge--#{$state} {
-    @include default-text-status-badge($state);
+@include color-mode(light-contrast) {
+  .badge {
+    --badge-border-color: #{$black};
+    --bs-badge-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .badge {
+    --badge-border-color: #{$white};
+    --bs-badge-color: #{$con-dark-blue};
   }
 }
 
@@ -13,10 +23,4 @@
   font-size: $font-size-base;
   border-radius: $border-radius;
   font-weight: $font-weight-base;
-}
-
-.badge--beta {
-  background-color: $danger;
-  font-size: $font-size-base;
-  padding-block: 3px;
 }

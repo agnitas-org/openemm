@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,27 @@
 */
 
 package com.agnitas.reporting.birt.external.dataset;
+
+import com.agnitas.beans.Campaign;
+import com.agnitas.dao.impl.CampaignDaoImpl;
+import com.agnitas.dao.impl.MailingComponentDaoImpl;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightMailing;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
+import jakarta.mail.internet.InternetAddress;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
+import com.agnitas.dao.impl.mapper.DateRowMapper;
+import com.agnitas.util.SafeString;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -23,36 +44,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.agnitas.emm.common.MailingType;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
-import org.agnitas.dao.impl.mapper.DateRowMapper;
-import org.agnitas.util.SafeString;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.beans.Campaign;
-import com.agnitas.dao.impl.CampaignDaoImpl;
-import com.agnitas.dao.impl.MailingComponentDaoImpl;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
-
-import jakarta.mail.internet.InternetAddress;
+import java.util.stream.Collectors;
 
 public class MailingDataSet extends BIRTDataSet {
 
-	private static final Logger logger = LogManager.getLogger(MailingDataSet.class);
-	
 	public static class MailingData {
         int mailingId;
 		String mailingName;
@@ -65,6 +60,7 @@ public class MailingDataSet extends BIRTDataSet {
 		int numberOfAnonymousUsers;
 		String startSending;
 		String stopSending;
+		Date stopSendingDate;
 		String scheduledDate;
 		String mailFormat;
 		Long averageMailsize;
@@ -101,6 +97,9 @@ public class MailingDataSet extends BIRTDataSet {
 		}
 		public String getStopSending() {
 			return stopSending;
+		}
+		public Date getStopSendingDate() {
+			return stopSendingDate;
 		}
 		public String getScheduledDate() {
 			return scheduledDate;
@@ -214,11 +213,8 @@ public class MailingDataSet extends BIRTDataSet {
 			data.startSending = "-";
 		}
 		try {
-            if (dateFormats.isDateSlice()) {
-                data.stopSending = dateTimeFormat.format(dateFormats.getStopDateAsDate());
-            } else {
-                data.stopSending = dateTimeFormat.format(mailStats.get("MAXTIME"));
-            }
+			data.stopSendingDate = dateFormats.isDateSlice() ? dateFormats.getStopDateAsDate() : (Date) mailStats.get("MAXTIME");
+			data.stopSending = dateTimeFormat.format(data.stopSendingDate);
 		} catch (Exception ex) {
 			data.stopSending = "-";
 		}
@@ -241,13 +237,13 @@ public class MailingDataSet extends BIRTDataSet {
 				numberOfBytes += dataAmountSentByBackend;
 			}
 			
-			Map<String,Object> trafficAgrStats = selectSingleRow(logger, "SELECT SUM(content_size * amount) AS bytes FROM rdir_traffic_agr_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
+			Map<String,Object> trafficAgrStats = selectSingleRow("SELECT SUM(content_size * amount) AS bytes FROM rdir_traffic_agr_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
 			if (trafficAgrStats.get("BYTES") != null) {
 				long dataAmountRequestedFromRdirHistoric = ((Number) trafficAgrStats.get("BYTES")).longValue();
 				numberOfBytes += dataAmountRequestedFromRdirHistoric;
 			}
 			
-			Map<String,Object> trafficStats = selectSingleRow(logger, "SELECT SUM(content_size) AS bytes FROM rdir_traffic_amount_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
+			Map<String,Object> trafficStats = selectSingleRow("SELECT SUM(content_size) AS bytes FROM rdir_traffic_amount_" + companyId + "_tbl WHERE mailing_id = ?", mailingId);
 			if (trafficStats.get("BYTES") != null) {
 				long dataAmountRequestedFromRdirCurrentDay = ((Number) trafficStats.get("BYTES")).longValue();
 				numberOfBytes += dataAmountRequestedFromRdirCurrentDay;
@@ -275,14 +271,8 @@ public class MailingDataSet extends BIRTDataSet {
 			targets.clear();
         }
 
-        String targetsStr = "";
-        for (int i = 0; i < targets.size(); i++) {
-            targetsStr += targets.get(i);
-            if (i < targets.size() - 1) {
-                targetsStr += "\n";
-            }
-        }
-        data.setTargets(targetsStr);
+		String targetsQuotesCsv = targets.stream().map(t -> StringUtils.wrap(t, "\"\"")).collect(Collectors.joining(", "));
+		data.setTargets(StringUtils.isBlank(targetsQuotesCsv) ? "" : "\"" + targetsQuotesCsv + "\"");
 
         return Collections.singletonList(data);
 	}
@@ -311,7 +301,7 @@ public class MailingDataSet extends BIRTDataSet {
 
 	private Date getFirstDispatchDate(int mailingId, int companyId) {
 		String query = "SELECT MIN(timestamp) FROM mailing_account_tbl WHERE company_id = ? AND mailing_id = ?";
-		return selectObjectDefaultNull(logger, query, DateRowMapper.INSTANCE, companyId, mailingId);
+		return selectObjectDefaultNull(query, DateRowMapper.INSTANCE, companyId, mailingId);
 	}
 
     public List<MailingDataSet.MailingData> getMailingsInfo(int companyID, String mailings, String language, DateFormats dateFormats) throws Exception {
@@ -348,7 +338,7 @@ public class MailingDataSet extends BIRTDataSet {
 	}
 
     public String getMailingMtParam(Integer mailingId) {
-    	List<Map<String,Object>> result = select(logger, "SELECT param FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = 0 AND status = 2", mailingId);
+    	List<Map<String,Object>> result = select("SELECT param FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = 0 AND status = 2", mailingId);
     	if (result.size() == 1) {
     		return (String) result.get(0).get("param");
     	} else {
@@ -419,7 +409,7 @@ public class MailingDataSet extends BIRTDataSet {
 			}
 		}
 
-		return selectSingleRow(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
+		return selectSingleRow(queryBuilder.toString(), parameters.toArray(new Object[0]));
 	}
 
 	private int getNumberOfAnonymousUsersInMailing(int mailingId, int companyId) {
@@ -432,18 +422,18 @@ public class MailingDataSet extends BIRTDataSet {
 		queryBuilder.append(String.format(" JOIN %s cust ON cust.customer_id = mtrack.customer_id", customerTableName));
 		queryBuilder.append(" WHERE mtrack.mailing_id = ? AND cust.sys_tracking_veto > 0");
 
-		return selectInt(logger, queryBuilder.toString(), mailingId);
+		return selectInt(queryBuilder.toString(), mailingId);
 	}
 
 	private boolean isTrackingAvailableForMailing(int mailingId, int companyId) {
 		String mailTrackTableName = String.format("mailtrack_%d_tbl", companyId);
 		String query = String.format("SELECT COUNT(mailing_id) FROM %s WHERE mailing_id = ?", mailTrackTableName);
-		return BooleanUtils.toBoolean(selectInt(logger, query, mailingId));
+		return BooleanUtils.toBoolean(selectInt(query, mailingId));
 	}
 
 	public Date getScheduledSendTime(int mailingID){
 		String sql = "SELECT MAX(senddate) FROM maildrop_status_tbl WHERE mailing_id = ?";
-		return select(logger, sql, Date.class, mailingID);
+		return select(sql, Date.class, mailingID);
 	}
 
 	/**

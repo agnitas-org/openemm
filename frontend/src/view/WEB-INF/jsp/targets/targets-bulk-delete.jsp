@@ -3,7 +3,7 @@
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c"%>
 
-<%--@elvariable id="form" type="org.agnitas.web.forms.BulkActionForm"--%>
+<%--@elvariable id="form" type="com.agnitas.web.forms.BulkActionForm"--%>
 
 <div class="modal">
     <div class="modal-dialog">

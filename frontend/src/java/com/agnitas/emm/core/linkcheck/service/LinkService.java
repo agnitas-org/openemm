@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,7 @@ package com.agnitas.emm.core.linkcheck.service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
@@ -23,6 +24,7 @@ import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 import com.agnitas.util.Caret;
 
 public interface LinkService {
+
 	String personalizeLink(TrackableLink link, String orgUID, int customerID, final String referenceTableRecordSelector, final boolean applyLinkExtensions, final String encodedStaticValueMap);
 
 	void findAllLinks(String text, BiConsumer<Integer, Integer> consumer);
@@ -51,24 +53,23 @@ public interface LinkService {
 	 */
 	LinkScanResult scanForLinks(String text, int companyID) throws Exception;
 
-	String encodeTagStringLinkTracking(int companyID, int mailingID, int linkID, int customerID);
-
 	String createDeepTrackingUID(int companyID, int mailingID, int linkID, int customerID);
 
 	Integer getLineNumberOfFirstRdirLink(final String rdirDomain, String text);
 	
 	/**
 	 * Return number of line with invalid link
-	 * @param text
 	 * @return if invalid line exists - return number of line, otherwise return -1
 	 */
 	int getLineNumberOfFirstInvalidLink(String text);
 
-	Integer getLineNumberOfFirstInvalidSrcLink(String text);
-
 	String validateLink(int companyId, String link, GridCustomPlaceholderType type);
 
 	List<LinkProperty> getDefaultExtensions(int companyId);
+
+	String replaceLinks(String content, Map<String, String> replacementsMap);
+
+	String addNumbersToLinks(Map<String, Integer> linksCounters, List<String> newLinks, String originContent);
 
     void assertChangedOrDeletedLinksNotDepended(
             Collection<TrackableLink> oldLinks,
@@ -79,16 +80,6 @@ public interface LinkService {
 		
 		private final String errorLink;
 		private String errorMessage;
-
-		public ParseLinkException(Throwable cause) {
-			super(cause);
-			if(cause instanceof ErrorLinkStorage){
-				errorLink = ((ErrorLinkStorage) cause).getErrorLink();
-				errorMessage = ((ErrorLinkStorage) cause).getErrorMessage();
-			} else {
-				errorLink = null;
-			}
-		}
 
 		public ParseLinkException(String message, Throwable cause) {
 			super(message, cause);

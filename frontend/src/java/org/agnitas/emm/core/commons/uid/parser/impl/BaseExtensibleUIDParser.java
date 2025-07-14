@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,9 +22,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.SignatureNotMatchParseE
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
 import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
@@ -67,7 +65,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     }
 
     @Override
-    public ComExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
+    public ExtensibleUID parse(final String uidString) throws UIDParseException, InvalidUIDException, DeprecatedUIDVersionException {
         if (StringUtils.isEmpty(uidString)) {
             return null;
         }
@@ -79,7 +77,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
 
         // Split the UID into parts
         final String[] parts = splitUIDString(uidString);
-        final ComExtensibleUID uid = parse(uidString, parts);
+        final ExtensibleUID uid = parse(uidString, parts);
 
         checkSignature(uidString, uid, parts);
         checkUIDVersion(uidString, uid);
@@ -97,7 +95,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      * 
      * @throws UIDParseException on errors parsing UID
      */
-    protected abstract ComExtensibleUID parse(final String uidString, final String[] parts) throws UIDParseException;
+    protected abstract ExtensibleUID parse(final String uidString, final String[] parts) throws UIDParseException;
 
     /**
      * Splits the UID string.
@@ -138,7 +136,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      * 
      * @throws DeprecatedUIDVersionException if UID version is not supported
      */
-    private void checkUIDVersion(String uidString, ComExtensibleUID uid) throws DeprecatedUIDVersionException {
+    private void checkUIDVersion(String uidString, ExtensibleUID uid) throws DeprecatedUIDVersionException {
         final CompanyUidData companyUidData = this.companyUidDataDaoCache.getItem(uid.getCompanyID());
         Number minimumSupportedVersion = companyUidData.getMinimumSupportedUIDVersion();
         if (getHandledUidVersion().isOlderThan(minimumSupportedVersion)) {
@@ -159,7 +157,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      * @throws InvalidUIDException on mismatching UID signature
      * @throws UIDParseException on errors parsing UID
      */
-    private void checkSignature(String uidString, ComExtensibleUID uid, String[] parts) throws InvalidUIDException, UIDParseException { // TODO Replace InvalidUIDException by SignatureNotMatchParseExcepitn
+    private void checkSignature(String uidString, ExtensibleUID uid, String[] parts) throws InvalidUIDException, UIDParseException { // TODO Replace InvalidUIDException by SignatureNotMatchParseExcepitn
         try {
             String expectedSignature = getExpectedSignature(uid);
             String actualSignature = getActualSignature(parts);
@@ -197,7 +195,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      * @throws UIDStringBuilderException           on errors computing the expected signature
      * @throws RequiredInformationMissingException in required information is not set in UID
      */
-    protected abstract String getExpectedSignature(final ComExtensibleUID uid) throws UIDStringBuilderException, RequiredInformationMissingException;
+    protected abstract String getExpectedSignature(final ExtensibleUID uid) throws UIDStringBuilderException, RequiredInformationMissingException;
 
     @Override
     public boolean isSupportedUidFormat(String uidString) {
@@ -220,7 +218,6 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      *
      * @param companyDaoCache CompanyUidDataDaoCache
      */
-    @Required
     public void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache companyUidDataDaoCache) {
         this.companyUidDataDaoCache = Objects.requireNonNull(companyUidDataDaoCache, "Company cache cannot be null");
     }
@@ -235,7 +232,6 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      *
      * @param stringBuilder - string builder for uid object. converts the uid object to corresponding string.
      */
-    @Required
     public final void setStringBuilder(final ExtensibleUIDStringBuilder stringBuilder) {
         this.stringBuilder = Objects.requireNonNull(stringBuilder, "String builder cannot be null");
     }

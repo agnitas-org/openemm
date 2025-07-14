@@ -192,7 +192,7 @@
     }
 
     static getByEntityId(id, type) {
-      return $(`#xl-calendar xl-calendar-${type}-${id}`).data('label');
+      return $(`#xl-calendar #xl-calendar-${type}-${id}`).data('label');
     }
   }
 

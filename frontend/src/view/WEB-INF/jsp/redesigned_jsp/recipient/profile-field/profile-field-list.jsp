@@ -1,15 +1,15 @@
 <%@page import="com.agnitas.beans.ProfileFieldMode"%>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 
-<%@ taglib prefix="agnDisplay" uri="https://emm.agnitas.de/jsp/jsp/displayTag" %>
-<%@ taglib prefix="mvc"        uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="emm"        uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn"         uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="c"          uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 <%--@elvariable id="fields" type="com.agnitas.beans.impl.ProfileFieldImpl"--%>
+<%--@elvariable id="field" type="com.agnitas.emm.core.service.RecipientFieldDescription"--%>
 
 <c:set var="TYPE_NUMBERIC" value="<%= DbColumnType.SimpleDataType.Numeric %>"/>
 <c:set var="TYPE_FLOAT" value="<%= DbColumnType.SimpleDataType.Float %>"/>
@@ -18,6 +18,7 @@
 <c:set var="TYPE_DATE_TIME" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
 
 <mvc:message var="deleteMsg" code="settings.profile.ProfileDelete" />
+<mvc:message var="profileHistoryMsg" code="profile.history.include" />
 <c:url var="deleteUrl" value="/profiledb/delete.action" />
 
 <div class="filter-overview" data-editable-view="${agnEditViewKey}">
@@ -42,7 +43,7 @@
                                 <mvc:message code="default.list.entry.select" />
                             </p>
                             <div class="bulk-actions__controls">
-                                <a href="#" class="icon-btn text-danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-confirm>
+                                <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deleteMsg}" data-form-url="${deleteUrl}" data-form-confirm>
                                     <i class="icon icon-trash-alt"></i>
                                 </a>
                             </div>
@@ -57,113 +58,118 @@
                 </div>
 
                 <div class="table-wrapper__body">
-                    <agnDisplay:table class="table table-hover table--borderless js-table" id="field" name="profileFields"
-                                   sort="external" requestURI="/profiledb/profiledb.action" partialList="true"
-                                   size="${profileForm.numberOfRows}" excludedParams="*">
-
-                        <%@ include file="../../common/displaytag/displaytag-properties.jspf" %>
+                    <emm:table var="field" modelAttribute="profileFields" cssClass="table table-hover table--borderless js-table">
 
                         <c:set var="checkboxSelectAll">
                             <input class="form-check-input" type="checkbox" data-bulk-checkboxes />
                         </c:set>
 
-                        <agnDisplay:column title="${checkboxSelectAll}" class="mobile-hidden" headerClass="mobile-hidden">
+                        <emm:column title="${checkboxSelectAll}" cssClass="mobile-hidden" headerClass="mobile-hidden">
                             <input class="form-check-input" type="checkbox" name="columns" value="${field.columnName}" ${field.standardField ? 'disabled' : 'data-bulk-checkbox'} />
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column titleKey="settings.FieldName" sortable="true" sortProperty="shortname" headerClass="js-table-sort">
-                            <span>${field.shortName}</span>
-                        </agnDisplay:column>
-                        <agnDisplay:column titleKey="settings.FieldNameDB" sortable="true" sortProperty="column" headerClass="js-table-sort">
-                            <span>${field.columnName}</span>
-                        </agnDisplay:column>
-                        <agnDisplay:column titleKey="Description" sortable="true" sortProperty="description" headerClass="js-table-sort">
-                            <span>${field.description}</span>
-                        </agnDisplay:column>
+                        <emm:column titleKey="settings.FieldName" sortable="true" sortProperty="shortname">
+                            <div class="hstack gap-2 overflow-wrap-anywhere">
+                                <c:if test="${field.historized}">
+                                    <span class="status-badge status.clipboard" data-tooltip="${profileHistoryMsg}"></span>
+                                </c:if>
+                                <span class="text-truncate-table">${field.shortName}</span>
+                            </div>
+                        </emm:column>
 
-                        <agnDisplay:column titleKey="default.Type" sortable="true" sortProperty="dataType" headerClass="js-table-sort">
+                        <emm:column titleKey="settings.FieldNameDB" sortable="true" sortProperty="column" property="columnName" />
+                        <emm:column titleKey="Description" sortable="true" property="description" />
+
+                        <emm:column titleKey="default.Type" sortable="true" sortProperty="dataType">
                             <span><mvc:message code="${field.simpleDataType.messageKey}"/></span>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column titleKey="settings.Length" headerClass="fit-content js-table-sort" sortable="true" sortProperty="dataTypeLength">
+                        <emm:column titleKey="settings.Length" headerClass="fit-content" sortable="true" sortProperty="dataTypeLength">
                             <c:if test="${field.characterLength > 0}">
                                 <span>${field.characterLength}</span>
                             </c:if>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column titleKey="settings.Default_Value" sortable="true" sortProperty="defaultValue" headerClass="js-table-sort">
+                        <emm:column titleKey="settings.Default_Value" sortable="true" sortProperty="defaultValue">
                             <span>${fn:escapeXml(field.defaultValue)}</span>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column titleKey="visibility" headerClass="fit-content js-table-sort" sortable="true" sortProperty="modeEdit">
+                        <emm:column titleKey="visibility" headerClass="fit-content" sortable="true" sortProperty="modeEdit">
                             <span><mvc:message code="${field.defaultPermission.messageKey}"/></span>
-                        </agnDisplay:column>
+                        </emm:column>
 
-                        <agnDisplay:column headerClass="fit-content">
+                        <emm:column>
                             <c:if test="${not field.standardField}">
                                 <a href="<c:url value="/profiledb/${field.columnName}/view.action" />" class="hidden" data-view-row="page"></a>
 
-                                <a href="${deleteUrl}?columns=${field.columnName}" class="icon-btn text-danger js-row-delete" data-tooltip="${deleteMsg}">
+                                <a href="${deleteUrl}?columns=${field.columnName}" class="icon-btn icon-btn--danger js-row-delete" data-tooltip="${deleteMsg}">
                                     <i class="icon icon-trash-alt"></i>
                                 </a>
                             </c:if>
-                        </agnDisplay:column>
-                    </agnDisplay:table>
+                        </emm:column>
+                    </emm:table>
                 </div>
             </div>
         </div>
     </mvc:form>
 
     <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/profiledb/search.action" modelAttribute="profileForm"
-              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="mobile" data-editable-tile="">
+              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
         <div class="tile-header">
             <h1 class="tile-title">
                 <i class="icon icon-caret-up mobile-visible"></i>
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
 
-        <div class="tile-body js-scrollable">
-            <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label" for="filter-fieldName"><mvc:message code="settings.FieldName" /></label>
-                    <mvc:text id="filter-fieldName" path="filterFieldName" cssClass="form-control"/>
-                </div>
+        <div class="tile-body form-column js-scrollable">
+            <div>
+                <label class="form-label" for="filter-fieldName"><mvc:message code="settings.FieldName"/></label>
+                <mvc:text id="filter-fieldName" path="filterFieldName" cssClass="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-dbFieldName"><mvc:message code="settings.FieldNameDB" /></label>
-                    <mvc:text id="filter-dbFieldName" path="filterDbFieldName" cssClass="form-control"/>
-                </div>
+            <div>
+                <label class="form-label" for="filter-dbFieldName"><mvc:message code="settings.FieldNameDB"/></label>
+                <mvc:text id="filter-dbFieldName" path="filterDbFieldName" cssClass="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-description"><mvc:message code="Description" /></label>
-                    <mvc:text id="filter-description" path="filterDescription" cssClass="form-control"/>
-                </div>
+            <div>
+                <label class="form-label" for="filter-description"><mvc:message code="Description"/></label>
+                <mvc:text id="filter-description" path="filterDescription" cssClass="form-control"/>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-type"><mvc:message code="default.Type" /></label>
-                    <mvc:select id="filter-type" path="filterType" cssClass="form-control">
-                        <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
+            <div>
+                <label class="form-label" for="filter-type"><mvc:message code="default.Type"/></label>
+                <mvc:select id="filter-type" path="filterType" cssClass="form-control js-select">
+                    <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
 
-                        <c:forEach var="type" items="${[TYPE_NUMBERIC, TYPE_FLOAT, TYPE_CHARS, TYPE_DATE, TYPE_DATE_TIME]}">
-                            <mvc:option value="${type}"><mvc:message code="${type.messageKey}"/></mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
+                    <c:forEach var="type" items="${[TYPE_NUMBERIC, TYPE_FLOAT, TYPE_CHARS, TYPE_DATE, TYPE_DATE_TIME]}">
+                        <mvc:option value="${type}"><mvc:message code="${type.messageKey}"/></mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
 
-                <div class="col-12">
-                    <label class="form-label" for="filter-visibility"><mvc:message code="visibility" /></label>
-                    <mvc:select id="filter-visibility" path="filterMode" cssClass="form-control">
-                        <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
-                        <c:forEach var="mode" items="${ProfileFieldMode.values()}">
-                            <mvc:option value="${mode}"><mvc:message code="${mode.messageKey}"/></mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
+            <div>
+                <label class="form-label" for="filter-visibility"><mvc:message code="visibility"/></label>
+                <mvc:select id="filter-visibility" path="filterMode" cssClass="form-control js-select">
+                    <mvc:option value=""><mvc:message code="default.All" /></mvc:option>
+                    <c:forEach var="mode" items="${ProfileFieldMode.values()}">
+                        <mvc:option value="${mode}"><mvc:message code="${mode.messageKey}"/></mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+
+            <div>
+                <label class="form-label" for="filter-visibility"><mvc:message code="profile.history.include"/></label>
+                <mvc:select id="historization-filter" path="historized" cssClass="form-control js-select">
+                    <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
+                    <mvc:option value="true"><mvc:message code="default.Yes"/></mvc:option>
+                    <mvc:option value="false"><mvc:message code="default.No"/></mvc:option>
+                </mvc:select>
             </div>
         </div>
     </mvc:form>

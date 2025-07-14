@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,20 @@
 */
 
 package com.agnitas.dao.impl;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.bean.EmmActionImpl;
+import com.agnitas.dao.EmmActionDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,27 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.agnitas.actions.EmmAction;
-import org.agnitas.actions.impl.EmmActionImpl;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationType;
-
 public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmActionDao {
-	
-	private static final Logger logger = LogManager.getLogger(EmmActionDaoImpl.class);
 	
 	private final static List<String> VARCHAR_COLUMNS = Arrays.asList("description", "shortname");
 
@@ -55,12 +49,12 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 			try {
 				if (action.getId() == 0) {
 					if (isOracleDB()) {
-						action.setId(selectInt(logger, "SELECT rdir_action_tbl_seq.NEXTVAL FROM DUAL"));
+						action.setId(selectInt("SELECT rdir_action_tbl_seq.NEXTVAL FROM DUAL"));
 						
 						String sql = "INSERT INTO rdir_action_tbl (action_id, company_id, description, shortname, creation_date, change_date, action_type, active, advertising)"
 							+ " VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)";
-								
-						update(logger,
+
+						update(
 							sql,
 							action.getId(),
 							action.getCompanyID(),
@@ -72,7 +66,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 					} else {
 						String sql = "INSERT INTO rdir_action_tbl (company_id, description, shortname, creation_date, change_date, action_type, active, advertising)"
 							+ " VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)";
-						int newID = insertIntoAutoincrementMysqlTable(logger, "action_id", sql,
+						int newID = insertIntoAutoincrementMysqlTable("action_id", sql,
 							action.getCompanyID(),
 							action.getDescription(),
 							action.getShortname(),
@@ -85,7 +79,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 					}
 				} else {
 					String updateSql = "UPDATE rdir_action_tbl SET description = ?, shortname = ?, change_date = CURRENT_TIMESTAMP, action_type = ?, active = ?, advertising = ? WHERE action_id = ? AND company_id = ?";
-					update(logger, updateSql, action.getDescription(), action.getShortname(), action.getType(), action.getIsActive() ? 1 : 0, action.isAdvertising() ? 1 : 0, action.getId(), action.getCompanyID());
+					update(updateSql, action.getDescription(), action.getShortname(), action.getType(), action.getIsActive() ? 1 : 0, action.isAdvertising() ? 1 : 0, action.getId(), action.getCompanyID());
 				}
 
 				return action.getId();
@@ -98,7 +92,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	
 	@Override
 	public boolean actionExists(final int actionID, final int companyID) {
-		int count = selectInt(logger, "SELECT COUNT(action_id) FROM rdir_action_tbl WHERE action_id=? AND company_id=?", actionID, companyID);
+		int count = selectInt("SELECT COUNT(action_id) FROM rdir_action_tbl WHERE action_id=? AND company_id=?", actionID, companyID);
 		
 		return count > 0;
 	}
@@ -110,7 +104,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 		} else {
 			try {
 				String sql = "SELECT action_id, company_id, description, shortname, action_type, active, creation_date, change_date, advertising FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?";
-				List<EmmAction> actions = select(logger, sql, new EmmAction_RowMapper(), actionID, companyID);
+				List<EmmAction> actions = select(sql, new EmmAction_RowMapper(), actionID, companyID);
 				if (actions != null && actions.size() != 0) {
 					return actions.get(0);
 				} else {
@@ -126,7 +120,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	@DaoUpdateReturnValueCheck
 	public boolean markAsDeleted(int actionID, int companyID) {
 		try {
-			int touchedLines = update(logger, "UPDATE rdir_action_tbl SET active = 0, deleted = 1, change_date = CURRENT_TIMESTAMP WHERE action_id = ? AND company_id = ?", actionID, companyID);
+			int touchedLines = update("UPDATE rdir_action_tbl SET active = 0, deleted = 1, change_date = CURRENT_TIMESTAMP WHERE action_id = ? AND company_id = ?", actionID, companyID);
 			return touchedLines > 0;
 		} catch (Exception e) {
 			return false;
@@ -137,7 +131,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	@DaoUpdateReturnValueCheck
 	public boolean deleteEmmActionReally(int actionID, int companyID) {
 		try {
-			int touchedLines = update(logger, "DELETE FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?", actionID, companyID);
+			int touchedLines = update("DELETE FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?", actionID, companyID);
 			return touchedLines > 0;
 		} catch (Exception e) {
 			return false;
@@ -145,15 +139,30 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	}
 
 	@Override
+	public List<Integer> findActionsUsingProfileField(String fieldName, int companyId) {
+		String query = """
+				SELECT DISTINCT(a.action_id)
+				FROM rdir_action_tbl a
+				         JOIN actop_tbl s on a.action_id = s.action_id
+				         LEFT JOIN actop_update_customer_tbl auct ON auct.action_operation_id = s.action_operation_id
+				         LEFT JOIN actop_identify_customer_tbl aict ON aict.action_operation_id = s.action_operation_id
+				         LEFT JOIN actop_subscribe_customer_tbl asct ON asct.action_operation_id = s.action_operation_id
+				WHERE a.deleted = 0 AND a.company_id = ?
+				  AND (auct.column_name = ? OR aict.key_column = ? OR aict.pass_column = ? OR asct.key_column = ?)
+				""".stripIndent();
+		return select(query, IntegerRowMapper.INSTANCE, companyId, fieldName, fieldName, fieldName, fieldName);
+	}
+
+	@Override
 	public void restore(Set<Integer> ids, int companyId) {
-		update(logger,
+		update(
 			"UPDATE rdir_action_tbl SET deleted = 0, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND "
 				+ makeBulkInClauseForInteger("action_id", ids), companyId);
 	}
 
 	@Override
 	public List<Integer> getMarkedAsDeletedBefore(Date date, int companyId) {
-		return select(logger,
+		return select(
 			"SELECT action_id FROM rdir_action_tbl WHERE company_id = ? AND deleted = 1 AND change_date < ?",
 			IntegerRowMapper.INSTANCE, companyId, date);
 	}
@@ -171,7 +180,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 			try {
 				String sql = "SELECT action_id, company_id, description, shortname, action_type, active, creation_date, change_date, advertising, deleted FROM rdir_action_tbl WHERE company_id = ?" +
 						(includeDeleted ? "" : " AND deleted = 0") + " ORDER BY shortname";
-				return select(logger,  sql, new EmmAction_RowMapper(), companyID);
+				return select( sql, new EmmAction_RowMapper(), companyID);
 			} catch (Exception e) {
 				return null;
 			}
@@ -202,7 +211,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 					}
 				}
 				sql += " ORDER BY shortname";
-				return select(logger, sql, new EmmAction_RowMapper(), sqlParameters);
+				return select(sql, new EmmAction_RowMapper(), sqlParameters);
 			} catch (Exception e) {
 				return null;
 			}
@@ -215,7 +224,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 			return null;
 		} else {
 			try {
-				return select(logger, "SELECT action_id, company_id, description, shortname, action_type, active, creation_date, change_date, advertising FROM rdir_action_tbl WHERE company_id = ? AND deleted = 0 AND shortname = ?", new EmmAction_RowMapper(), companyID, shortName);
+				return select("SELECT action_id, company_id, description, shortname, action_type, active, creation_date, change_date, advertising FROM rdir_action_tbl WHERE company_id = ? AND deleted = 0 AND shortname = ?", new EmmAction_RowMapper(), companyID, shortName);
 			} catch (Exception e) {
 				return null;
 			}
@@ -226,7 +235,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 	public String getEmmActionName(int actionId, int companyId) {
 		if (actionId > 0 && companyId > 0) {
 			String sql = "SELECT shortname FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?";
-			return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("shortname"), actionId, companyId);
+			return selectObjectDefaultNull(sql, (rs, index) -> rs.getString("shortname"), actionId, companyId);
 		} else {
 			return null;
 		}
@@ -239,7 +248,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 			String sql = "SELECT action_id, shortname FROM rdir_action_tbl WHERE company_id = ? AND action_id IN (" +
 					StringUtils.join(actionIds, ",")
 					+ ")";
-			query(logger, sql, rs -> actionNames.put(rs.getInt("action_id"), rs.getString("shortname")),  companyID);
+			query(sql, rs -> actionNames.put(rs.getInt("action_id"), rs.getString("shortname")),  companyID);
 		}
 		return actionNames;
 	}
@@ -255,7 +264,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 				"WHERE company_id = ? AND action_type <> ? AND deleted = 0 " + (includeInactive ? "" : "AND active = 1 ") +
 				"ORDER BY shortname";
 
-		return select(logger, sqlGetActions, new EmmAction_RowMapper(), companyID, EmmAction.TYPE_FORM);
+		return select(sqlGetActions, new EmmAction_RowMapper(), companyID, EmmAction.TYPE_FORM);
 	}
 
 	@Override
@@ -269,13 +278,13 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 				"WHERE company_id = ? AND action_type <> ? AND deleted = 0 " + (includeInactive ? "" : "AND active = 1 ") +
 				"ORDER BY shortname";
 
-		return select(logger, sqlGetActions, new EmmAction_RowMapper(), companyID, EmmAction.TYPE_LINK);
+		return select(sqlGetActions, new EmmAction_RowMapper(), companyID, EmmAction.TYPE_LINK);
 	}
 
 	@Override
 	public Map<Integer, Integer> loadUsed(int companyID) {
 		try {
-			List<Map<String, Object>> result = select(logger,
+			List<Map<String, Object>> result = select(
 				"SELECT r.action_id, COUNT(u.form_id) used"
 				+ " FROM rdir_action_tbl r"
 					+ " LEFT JOIN userform_tbl u ON ((u.startaction_id = r.action_id OR u.endaction_id = r.action_id) AND r.company_id = u.company_id)"
@@ -296,7 +305,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 
 	@Override
 	public List<String> getActionUserFormNames(int actionId, int companyId) {
-		return select(logger, "SELECT formname FROM userform_tbl WHERE company_id = ? AND deleted = 0 AND (startaction_id = ? OR endaction_id = ?) ORDER BY formname", StringRowMapper.INSTANCE,
+		return select("SELECT formname FROM userform_tbl WHERE company_id = ? AND deleted = 0 AND (startaction_id = ? OR endaction_id = ?) ORDER BY formname", StringRowMapper.INSTANCE,
 				 companyId, actionId, actionId);
 	}
 
@@ -325,7 +334,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 				+ " GROUP BY r.company_id, r.action_id, r.shortname, r.description, r.creation_date, r.change_date, r.active"
 				+ " ORDER BY " + sortColumn + " " + (order ? "ASC" : "DESC") + ", r.action_id ASC";
 
-		return select(logger, sqlStatement, (resultSet, i) -> {
+		return select(sqlStatement, (resultSet, i) -> {
 			EmmAction newBean = new EmmActionImpl();
 			newBean.setId(resultSet.getInt("action_id"));
 			newBean.setCompanyID(resultSet.getInt("company_id"));
@@ -343,7 +352,6 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 
 	@Override
 	@Deprecated
-	// TODO: EMMGUI-714 remove after remove of old design
 	public Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, int companyId) {
 		if (CollectionUtils.isEmpty(actionIds) || companyId <= 0) {
 			return Collections.emptyMap();
@@ -353,7 +361,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 				"WHERE company_id = ? AND action_id IN (" + StringUtils.join(actionIds, ',') + ")";
 
 		Map<Integer, Boolean> activenessMap = new HashMap<>();
-		query(logger, sqlGetActiveness, new ActivenessMapCallback(activenessMap), companyId);
+		query(sqlGetActiveness, new ActivenessMapCallback(activenessMap), companyId);
 		return activenessMap;
 	}
 
@@ -366,7 +374,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 		String sqlSetActiveness = "UPDATE rdir_action_tbl SET active = ?, change_date = CURRENT_TIMESTAMP " +
 				"WHERE company_id = ? AND action_id IN (" + StringUtils.join(actionIds, ',') + ")";
 
-		update(logger, sqlSetActiveness, BooleanUtils.toInteger(active), companyId);
+		update(sqlSetActiveness, BooleanUtils.toInteger(active), companyId);
 	}
 
 	@Override
@@ -377,18 +385,18 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 				+ "JOIN actop_send_mailing_tbl atsm ON atsm.action_operation_id = at.action_operation_id "
 				+ "WHERE atsm.mailing_id = ? AND ra.company_id = ?";
 
-		return select(logger, sqlGetActionsBySendMailingId, new EmmAction_RowMapper(), mailingId, companyId);
+		return select(sqlGetActionsBySendMailingId, new EmmAction_RowMapper(), mailingId, companyId);
 	}
 
 	@Override
 	public boolean isAdvertising(int id, int companyId) {
 		String query = "SELECT advertising FROM rdir_action_tbl WHERE action_id = ? AND company_id = ?";
-		return selectIntWithDefaultValue(logger, query, 0, id, companyId) > 0;
+		return selectIntWithDefaultValue(query, 0, id, companyId) > 0;
 	}
 
 	@Override
 	public boolean isActive(int id) {
-		return selectIntWithDefaultValue(logger, "SELECT active FROM rdir_action_tbl WHERE action_id = ?", 0, id) > 0;
+		return selectIntWithDefaultValue("SELECT active FROM rdir_action_tbl WHERE action_id = ?", 0, id) > 0;
 	}
 
 	protected static class EmmAction_RowMapper implements RowMapper<EmmAction> {

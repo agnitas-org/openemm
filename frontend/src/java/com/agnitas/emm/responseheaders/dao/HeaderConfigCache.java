@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,8 +24,7 @@ import com.agnitas.emm.responseheaders.common.HttpHeaderConfig;
  */
 public final class HeaderConfigCache {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(HeaderConfigCache.class);
+	private static final Logger LOGGER = LogManager.getLogger(HeaderConfigCache.class);
 
 	/** Source to load header configuration from. */
 	private final HeaderConfigSource headerConfigSource;
@@ -59,17 +58,11 @@ public final class HeaderConfigCache {
 	 *  
 	 * @return cached configuration
 	 */
-	public final List<HttpHeaderConfig> listHeaderConfigs() {
+	public List<HttpHeaderConfig> listHeaderConfigs() {
 		if(loadFromSource()) {
-			try {
-				if(LOGGER.isInfoEnabled()) {
-					LOGGER.info("Refreshing HTTP header config cache");
-				}
-				
-				this.currentConfig = Collections.unmodifiableList(headerConfigSource.loadHeaderConfiguration());
-			} catch(final Exception e) {
-				LOGGER.error("Error updating header configuration cache", e);
-			}
+			LOGGER.info("Refreshing HTTP header config cache");
+
+			this.currentConfig = Collections.unmodifiableList(headerConfigSource.loadHeaderConfiguration());
 			this.lastCacheUpdateMillis = System.currentTimeMillis();
 		}
 		
@@ -81,7 +74,7 @@ public final class HeaderConfigCache {
 	 * 
 	 * @return <code>true</code> if configuration must be loaded from source
 	 */
-	private synchronized final boolean loadFromSource() {
+	private synchronized boolean loadFromSource() {
 		/*
 		 * Load from source if
 		 * - cache is empty (currentConfig == null)

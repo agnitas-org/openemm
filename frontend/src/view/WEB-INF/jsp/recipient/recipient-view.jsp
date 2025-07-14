@@ -1,13 +1,13 @@
 <%@page import="com.agnitas.emm.core.service.RecipientStandardField"%>
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="org.agnitas.util.importvalues.MailType" %>
+<%@ page import="com.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>
-<%@ page import="org.agnitas.util.DbColumnType" %>
+<%@ page import="com.agnitas.util.DbColumnType" %>
 <%@ page import="org.agnitas.emm.core.recipient.RecipientUtils" %>
-<%@page import="org.agnitas.dao.UserStatus"%>
+<%@page import="com.agnitas.emm.common.UserStatus"%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
-<%@ page import="org.agnitas.beans.BindingEntry" %>
-<%@ page import="org.agnitas.util.importvalues.Gender" %>
+<%@ page import="com.agnitas.beans.BindingEntry" %>
+<%@ page import="com.agnitas.util.importvalues.Gender" %>
 
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>

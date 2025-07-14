@@ -4,8 +4,8 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="reportEntries" type="java.util.List<org.agnitas.util.ImportReportEntry>"--%>
-<%--@elvariable id="assignedMailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="reportEntries" type="java.util.List<com.agnitas.util.ImportReportEntry>"--%>
+<%--@elvariable id="assignedMailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 <%--@elvariable id="mailinglistAssignStats" type="java.util.Map<com.agnitas.emm.core.mediatypes.common.MediaTypes, java.util.Map<java.lang.Integer, java.lang.Integer>>"--%>
 <%--@elvariable id="mailinglistMessage" type="java.lang.String"--%>
 <%--@elvariable id="fixedRecipientsFile" type="java.lang.String"--%>

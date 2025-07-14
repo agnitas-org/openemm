@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,8 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -119,11 +119,8 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * @param dao       DAO accessing profile field data
 	 * 
 	 * @return map of profile field short names to essential data
-	 * 
-	 * @throws Exception on errors reading or extracting profile field data
 	 */
-	private static Map<String, ColumnNameAndType> readProfileFields(int companyId, ProfileFieldDao dao)
-			throws Exception {
+	private static Map<String, ColumnNameAndType> readProfileFields(int companyId, ProfileFieldDao dao) {
 		Map<String, ColumnNameAndType> map = new HashMap<>();
 
 		CaseInsensitiveMap<String, ProfileField> rawMap = dao.getComProfileFieldsMap(companyId, false);
@@ -141,23 +138,16 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 
 	@Override
 	public DataType resolveProfileFieldType(String profileFieldName) throws ProfileFieldResolveException {
-		if (logger.isInfoEnabled()) {
-			logger.info("Resolving type of profile field '" + profileFieldName + "'");
-		}
+		logger.info("Resolving type of profile field '{}'", profileFieldName);
 
 		try {
 			ColumnNameAndType column = getProfileFieldData(profileFieldName);
 
 			if (column != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Profile field '" + profileFieldName + "' is of type " + column.type);
-				}
-
+				logger.debug("Profile field '{}' is of type {}", profileFieldName, column.type);
 				return column.type;
 			} else {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Unknown profile field: " + profileFieldName);
-				}
+				logger.debug("Unknown profile field: {}", profileFieldName);
 
 				throw new UnknownProfileFieldException(profileFieldName);
 			}
@@ -221,10 +211,8 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * @param name shortname of the profile field
 	 * 
 	 * @return name and type
-	 *
-	 * @throws Exception on errors reading profile field data
 	 */
-	private ColumnNameAndType getProfileFieldData(String name) throws Exception {
+	private ColumnNameAndType getProfileFieldData(String name) {
 		return shortNameToInfoMap.get(name.toLowerCase());
 	}
 	
@@ -234,8 +222,6 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * @param dbName name of the profile field
 	 *
 	 * @return shortname
-	 *
-	 * @throws Exception on errors reading profile field data
 	 */
 	private String getProfileFieldName(String dbName) {
 		Optional<Map.Entry<String, ColumnNameAndType>> optional = shortNameToInfoMap.entrySet().stream()

@@ -34,7 +34,7 @@
 		}
 		catch( Exception e )
 		{
-			e.printStackTrace( );
+			<%= e.getMessage() %>
 		}
 	%>
 	<BODY>

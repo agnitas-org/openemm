@@ -1,4 +1,5 @@
-(function ($) {
+($ => {
+  const DONUT_LABEL_WIDTH = 40; // approximate width in px when label has 5 chars like 12.3% (big segments like 100.0% always have free room for the label)
 
   const $root = $('html');
   let labelColor;
@@ -110,7 +111,7 @@
     }
 
     return $tooltipEl;
-  };
+  }
 
   // Works like a standard doughnut chart. makes visible pieces on the graph for small percentage values that fall between 0% - 1%.
   class AgnDoughnutController extends Chart.DoughnutController {
@@ -156,7 +157,11 @@
           const exactPercentages = getChartController(context.chart)._exactPercentages;
           const percent = exactPercentages[context.dataIndex];
 
-          return percent >= 10 && context.chart.width > 200 ? `${percent.toFixed(1)}%` : '';
+          const { innerRadius, outerRadius } = context.chart.getDatasetMeta(0).data[0];
+          const labelRadius = (innerRadius + outerRadius) / 2;
+          const angle = (percent / 100) * 2 * Math.PI;
+          const availableSegmentWidth = labelRadius * angle;
+          return availableSegmentWidth < DONUT_LABEL_WIDTH ? '' : `${percent.toFixed(1)}%`;
         }
       },
       tooltip: {

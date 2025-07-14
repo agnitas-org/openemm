@@ -1,68 +1,141 @@
 
 #dashboard-mailings {
-  
+
+  --dashboard-mailings-secondary-color: #{$gray-600};
+
   .tile-body {
-    padding-top: 0;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 
-    .mailing-card {
-      border: 0;
-      --bs-card-inner-border-radius: 0;
-
-      .mailing-preview-card-image {
-        border: $border-transparent;
-        &:hover {
-          border: 1px solid $primary;
-        }
-      }
-
+    .mailing-card__thumbnail {
+      border: $border-transparent;
       &:hover {
-        .card-body {
-          .card-title {
-            color: $primary;
-            
-            &--buttons {
-              @include flex-row($gap-x-sm);
-            }            
-          }
-        }
-      }
-  
-      .card-body {
-        gap: 0;
-        text-align: left;
-        padding: $gap-sm 0 0;
-  
-        .card-title {
-          @include flex-row($gap-sm);
-          justify-content: space-between;
-          align-items: center;
-          
-          &--name {
-            @include flex-row($gap-sm);
-            align-items: center;
-            line-height: 18px;
-            color: var(--text-color-default);
-            min-width: 0;
-          }
-          &--buttons {
-            display: none;
-          }
-        }
-        
-        .card-text {
-          display: flex;
-          align-items: center;
-          font-size: $font-size-sm;
-          padding-left: 2px;
-          color: var(--text-gray-color);
-          gap: 12px;
-          line-height: 16px;
-          margin-top: 5px;
-          i {
-            font-size: $font-size-sm;
-          }
-        }
+        border: 1px solid $blue-var;
       }
     }
-  }   
+
+    .mailing-card__title {
+      @include flex-row($gap-x-sm);
+      justify-content: space-between;
+      align-items: center;
+      color: $body-color-var;
+      line-height: 18px;
+      width: 100%;
+
+      .icon-btn {
+        display: none;
+      }
+    }
+
+    .mailing-card__buttons {
+      display: none;
+    }
+
+    .mailing-card {
+      --bs-card-inner-border-radius: 0;
+      border: 0;
+
+      &:hover .mailing-card__title {
+        color: $blue-var;
+
+        .icon-btn {
+          display: initial;
+        }
+      }
+
+      .card-body {
+        @include flex-row($gap-sm);
+        text-align: left;
+        padding: $gap-sm 0 0;
+      }
+    }
+
+    .mailing-card__name {
+      margin-left: $gap-x-sm;
+      flex-grow: 1;
+    }
+
+    .mailing-card__subinfo {
+      display: flex;
+      align-items: center;
+      font-size: $font-size-sm;
+      padding-left: 2px;
+      color: var(--dashboard-mailings-secondary-color);
+      gap: $gap-sm + 2px;
+      line-height: 16px;
+      i {
+        font-size: $font-size-sm;
+      }
+    }
+
+    .mailing-card__info {
+      flex-grow: 1;
+      @include flex-row($gap-sm);
+      row-gap: $gap-x-sm;
+      flex-wrap: wrap;
+      overflow: hidden;
+    }
+  }
+
+  &:has(#mailings-preview-switch:not(:checked)) {
+    .tile-body {
+      padding-top: 0;
+
+      .mailing-card__name {
+        @extend .text-truncate;
+      }
+    }
+  }
+
+  &:has(#mailings-preview-switch:checked) {
+    .tile-body {
+      grid-template-columns: 1fr;
+      gap: $gap-sm;
+
+      .mailing-card {
+        padding: $gap-sm;
+        border: $border-default;
+
+        .icon-btn {
+          display: none;
+        }
+
+        .card-body {
+          padding: 0;
+        }
+
+        &:hover .mailing-card__buttons {
+          @include flex-row($gap-sm);
+          align-items: center;
+        }
+      }
+
+      .mailing-card__thumbnail {
+        display: none;
+      }
+
+
+      .mailing-card__title {
+        gap: 0;
+        align-items: flex-start;
+      }
+
+      .mailing-card__subinfo {
+        display: inline-flex;
+        gap: $gap-x-sm;
+        max-width: 100%;
+      }
+    }
+  }
+}
+
+@include color-mode(dark) {
+  #dashboard-mailings {
+    --dashboard-mailings-secondary-color: #{$light-grey};
+  }
+}
+
+@include contrast-themes {
+  #dashboard-mailings {
+    --dashboard-mailings-secondary-color: #{$body-color-var};
+  }
 }

@@ -14,7 +14,7 @@ All you need to do is to add `js-btn-dropdown` class to a dropdown button.
     <li class="dropdown">
         <button class="btn btn-primary btn-sm js-btn-dropdown" data-action="Save">Save</button>
 
-        <ul class="dropdown-menu">
+        <ul class="dropdown-menu dropdown-menu--select">
             <li>
                 <a href="#" class="dropdown-item" data-action="saveAndBack">Save and back</a>
             </li>

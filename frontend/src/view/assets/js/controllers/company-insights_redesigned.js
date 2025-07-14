@@ -48,7 +48,7 @@ AGN.Lib.Controller.new('company-insights', function () {
     }
 
     const colors = [
-      $typeOfReactorChart.css('--chart-very-dark-blue-color'),
+      $typeOfReactorChart.css('--chart-darkest-blue-color'),
       $typeOfReactorChart.css('--chart-blue-color'),
       $typeOfReactorChart.css('--chart-light-cyan-color')
     ];
@@ -140,7 +140,7 @@ AGN.Lib.Controller.new('company-insights', function () {
     }
 
     const colors = [
-      $revenueChart.css('--chart-very-dark-blue-color'),
+      $revenueChart.css('--chart-darkest-blue-color'),
       $revenueChart.css('--chart-dark-blue-color'),
       $revenueChart.css('--chart-blue-color'),
       $revenueChart.css('--chart-light-blue-color')
@@ -350,7 +350,7 @@ AGN.Lib.Controller.new('company-insights', function () {
     toggleNotDataAvailableMsg($reactionDevicesChart, false);
 
     const colors = [
-      $reactionDevicesChart.css('--chart-very-dark-blue-color'),
+      $reactionDevicesChart.css('--chart-darkest-blue-color'),
       $reactionDevicesChart.css('--chart-dark-blue-color'),
       $reactionDevicesChart.css('--chart-blue-color'),
       $reactionDevicesChart.css('--chart-light-blue-color'),
@@ -452,7 +452,7 @@ AGN.Lib.Controller.new('company-insights', function () {
           },
           {
             label: data['windowsTitle'],
-            backgroundColor: $devicesProgressChart.css('--chart-very-dark-blue-color'),
+            backgroundColor: $devicesProgressChart.css('--chart-darkest-blue-color'),
             data: windowsValues
           }
         ]

@@ -1,18 +1,28 @@
 
 #pageCampaignEditorContainer {
-  .node.icon-commented {
-    &::before {
-      content: "";
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='10' fill='none' viewBox='0 0 12 10'%3E%3Cpath fill='%230071B9FF' d='M0 1.143v8.46c0 .305.347.496.624.343l.625-.343 3.273-1.8c.183-.1.39-.152.6-.152H10.8c.663 0 1.2-.512 1.2-1.143V1.143C12 .512 11.463 0 10.8 0H1.2C.539 0 0 .512 0 1.143Z'/%3E%3C/svg%3E") no-repeat center/15px;
-      display: block;
-      @include size(15px);
-      right: 0;
-      bottom: 10px;
-      position: absolute;
+  .node {
+    &:not(.icon-commented), &[comment-footnote] {
+      .node-comment-image {
+        display: none;
+      }
     }
-    
+
+    &.icon-commented {
+      .node-comment-image {
+        @include size(15px);
+
+        svg {
+          @include size(12px, 10px);
+        }
+
+        right: 0;
+        bottom: 10px;
+        position: absolute;
+      }
+    }
+
     &[comment-footnote]::before { // used in .pdf; search 'isFootnotesEnabled'
-      background-color: $primary;
+      background-color: $blue;
       content: attr(comment-footnote);
       position: absolute;
       bottom: 0;
@@ -32,13 +42,13 @@
 
 #icon-comment-editor {
   padding: $gap-x-sm;
-  background: var(--main-bg-color);
+  background: $body-bg-var;
 }
 
 .ui-dialog[aria-describedby="icon-comment-editor"] {
   @include border;
   position: absolute;
   overflow: hidden;
-  background: var(--main-bg-color);
+  background: $body-bg-var;
   z-index: 101;
 }

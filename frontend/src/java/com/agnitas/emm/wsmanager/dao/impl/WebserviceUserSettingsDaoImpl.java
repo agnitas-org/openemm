@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,26 +10,20 @@
 
 package com.agnitas.emm.wsmanager.dao.impl;
 
+import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
+import com.agnitas.emm.wsmanager.dao.WebserviceUserSettingsDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+
 import java.util.List;
 import java.util.Optional;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
-import com.agnitas.emm.wsmanager.dao.WebserviceUserSettingsDao;
-
 public final class WebserviceUserSettingsDaoImpl extends BaseDaoImpl implements WebserviceUserSettingsDao {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(WebserviceUserSettingsDaoImpl.class);
-
 	@Override
 	public final Optional<WebserviceUserSettings> findSettingsForWebserviceUser(final String username) {
 		final String sql = "SELECT * FROM webservice_user_tbl WHERE username=?";
 		
-		final List<WebserviceUserSettings> list = select(LOGGER, sql, new WebserviceUserSettingsRowMapper(), username);
+		final List<WebserviceUserSettings> list = select(sql, new WebserviceUserSettingsRowMapper(), username);
 
 		return list.isEmpty()
 				? Optional.empty()

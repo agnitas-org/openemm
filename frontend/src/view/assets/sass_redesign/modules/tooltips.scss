@@ -1,10 +1,30 @@
+
 .tooltip {
+  --tooltip-color: #{$white};
+  --tooltip-bg: #{$black};
+
   font-size: $font-size-sm;
   line-height: 1.4;
 }
 
+@include color-mode(light-contrast) {
+  .tooltip {
+    --tooltip-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .tooltip {
+    --tooltip-bg: #{$white};
+    --tooltip-color: #{$con-dark-blue};
+  }
+}
+
 .chart-tooltip {
-  background: var(--main-bg-color);
+  --chart-tooltip-header-color: #{$dark-grey};
+  --chart-tooltip-header-bg: #{$gray-100};
+
+  background: $body-bg-var;
   opacity: 1;
   pointer-events: none;
   position: absolute;
@@ -15,10 +35,10 @@
 
   .tooltip-header {
     padding: $gap-x-sm $gap-sm;
-    color: var(--text-dark-gray-color);
-    background-color: var(--tile-highlighted-header-bg-color);
+    color: var(--chart-tooltip-header-color);
+    background-color: var(--chart-tooltip-header-bg);
     border-bottom: $border-default;
-    font-weight: 500;
+    font-weight: $font-weight-medium;
   }
 
   .tooltip-body {
@@ -33,5 +53,19 @@
         font-size: $font-size-lg;
       }
     }
+  }
+}
+
+@include color-mode(dark) {
+  .chart-tooltip {
+    --chart-tooltip-header-color: #{$light-grey};
+    --chart-tooltip-header-bg: #{$grey-blue};
+  }
+}
+
+@include contrast-themes {
+  .chart-tooltip {
+    --chart-tooltip-header-color: #{$con-dark-blue};
+    --chart-tooltip-header-bg: #{$con-light-blue};
   }
 }

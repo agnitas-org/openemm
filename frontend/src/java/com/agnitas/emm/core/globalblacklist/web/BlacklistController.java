@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,10 +29,10 @@ import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.NotAllowedActionException;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -65,11 +65,11 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/recipients/blacklist")
@@ -136,30 +136,24 @@ public class BlacklistController implements XssCheckAware {
             return new BooleanResponseDto(popups, false);
         }
 
-        try {
-            int companyId = admin.getCompanyID();
-            int adminId = admin.getAdminID();
-            String email = saveForm.getEmail();
+        int companyId = admin.getCompanyID();
+        int adminId = admin.getAdminID();
+        String email = saveForm.getEmail();
 
-            if (blacklistService.isAlreadyExist(companyId, email)) {
-                popups.alert("error.blacklist.recipient.isalreadyblacklisted", email);
-            } else {
-                blacklistService.add(companyId, adminId, email, saveForm.getReason());
-                popups.success(CHANGES_SAVED_MSG);
-
-                // UAL
-                String activityLogAction = "create blacklist entry";
-                String activityLogDescription = "Created new blacklist entry: " + email;
-                userActivityLogService.writeUserActivityLog(admin, activityLogAction, activityLogDescription);
-
-                return new BooleanResponseDto(popups, true);
-            }
-        } catch (Exception e) {
-            popups.alert(ERROR_MSG);
-            logger.error("Error adding mail address to blacklist", e);
+        if (blacklistService.isAlreadyExist(companyId, email)) {
+            popups.alert("error.blacklist.recipient.isalreadyblacklisted", email);
+            return new BooleanResponseDto(popups, false);
         }
 
-        return new BooleanResponseDto(popups, false);
+        blacklistService.add(companyId, adminId, email, saveForm.getReason());
+        popups.success(CHANGES_SAVED_MSG);
+
+        // UAL
+        String activityLogAction = "create blacklist entry";
+        String activityLogDescription = "Created new blacklist entry: " + email;
+        userActivityLogService.writeUserActivityLog(admin, activityLogAction, activityLogDescription);
+
+        return new BooleanResponseDto(popups, true);
     }
 
     @PostMapping("/update.action")
@@ -234,17 +228,16 @@ public class BlacklistController implements XssCheckAware {
 
     @GetMapping("/deleteRedesigned.action")
     @PermissionMapping("confirm.delete")
-    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<String> emails, @ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm form,
+    public String confirmDeleteRedesigned(@ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm form,
                                           Admin admin, Model model) {
-        validateSelectedEntries(emails);
+        validateSelectedEntries(form.getEmails());
 
         int companyId = admin.getCompanyID();
 
-        List<Mailinglist> mailingLists = blacklistService.getBindedMailingLists(emails, companyId);
+        List<Mailinglist> mailingLists = blacklistService.getBindedMailingLists(form.getEmails(), companyId);
         model.addAttribute(MAILING_LISTS_KEY, mailingLists);
 
-        form.setMailingListIds(mailingLists.stream().map(Mailinglist::getId).collect(Collectors.toList()));
-        form.setEmails(emails);
+        form.setMailingListIds(mailingLists.stream().map(Mailinglist::getId).toList());
 
         return "settings_blacklist_delete_ajax";
     }
@@ -279,8 +272,7 @@ public class BlacklistController implements XssCheckAware {
     }
 
     @GetMapping("/download.action")
-    public ResponseEntity<Resource> download(Admin admin) throws Exception {
-
+    public ResponseEntity<Resource> download(Admin admin) {
         int companyId = admin.getCompanyID();
         Locale locale = admin.getLocale();
 

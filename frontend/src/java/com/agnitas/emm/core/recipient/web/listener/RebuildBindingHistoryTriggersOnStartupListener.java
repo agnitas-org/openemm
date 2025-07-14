@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,17 +19,17 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
-import org.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 
 /**
@@ -45,7 +45,7 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 	
 	private WebApplicationContext webApplicationContext;
 	private DataSource dataSource;
-	private ComCompanyDao companyDao;
+	private CompanyDao companyDao;
 	private BindingHistoryDao bindingHistoryDao;
 	private ConfigService configService;
 
@@ -113,9 +113,9 @@ public final class RebuildBindingHistoryTriggersOnStartupListener implements Ser
 		return bindingHistoryDao;
 	}
 	
-	private ComCompanyDao getCompanyDao() {
+	private CompanyDao getCompanyDao() {
 		if (companyDao == null) {
-			companyDao = webApplicationContext.getBean("CompanyDao", ComCompanyDao.class);
+			companyDao = webApplicationContext.getBean("CompanyDao", CompanyDao.class);
 		}
 		
 		return companyDao;

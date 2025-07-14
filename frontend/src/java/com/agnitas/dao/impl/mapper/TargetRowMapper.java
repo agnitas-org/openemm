@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,16 +13,16 @@ package com.agnitas.dao.impl.mapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.agnitas.target.TargetFactory;
-import org.agnitas.util.DbUtilities;
+import com.agnitas.beans.factory.TargetFactory;
+import com.agnitas.util.DbUtilities;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Target;
 
 /**
  * Implementation of {@link RowMapper} reading complete target groups.
  */
-public class TargetRowMapper implements RowMapper<ComTarget> {
+public class TargetRowMapper implements RowMapper<Target> {
 
     final TargetFactory targetFactory;
 
@@ -31,9 +31,9 @@ public class TargetRowMapper implements RowMapper<ComTarget> {
     }
 
     @Override
-    public ComTarget mapRow(final ResultSet resultSet, final int row) throws SQLException {
+    public Target mapRow(final ResultSet resultSet, final int row) throws SQLException {
         try {
-            final ComTarget readTarget = targetFactory.newTarget();
+            final Target readTarget = targetFactory.newTarget();
             readTarget.setId(resultSet.getInt("target_id"));
             readTarget.setCompanyID(resultSet.getInt("company_id"));
             readTarget.setTargetDescription(resultSet.getString("target_description"));

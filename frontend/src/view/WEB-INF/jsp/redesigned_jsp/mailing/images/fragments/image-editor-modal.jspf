@@ -9,7 +9,6 @@
         <s:form cssClass="modal-content" action="{{- action}}" enctype="multipart/form-data"
                 data-form="static" data-controller="img-editor" data-initializer="img-editor" data-disable-controls="save">
 
-            <input type="hidden" name="encodedFile"/>
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal">
@@ -51,7 +50,7 @@
                         <div class="col-2">
                             <label class="form-label">&nbsp;</label>
                             <input type="checkbox" class="btn-check" id="btn-lock-proportions" autocomplete="off" data-action="lock-proportions">
-                            <label class="btn btn-icon btn-inverse" for="btn-lock-proportions" data-tooltip='<mvc:message code="image.editor.keep.proportions"/>'>
+                            <label class="btn btn-icon btn-secondary" for="btn-lock-proportions" data-tooltip='<mvc:message code="image.editor.keep.proportions"/>'>
                                 <i class="icon icon-lock"></i>
                             </label>
                         </div>
@@ -78,27 +77,27 @@
                 </div>
 
                 <div class="mb-3 d-flex flex-column gap-3">
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="resize">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="resize">
                         <i class="icon icon-expand"></i>
                         <mvc:message code="grid.resize"/>
                     </button>
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="crop">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="crop">
                         <i class="icon icon-crop-alt"></i>
                         <mvc:message code="image.editor.crop"/>
                     </button>
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="rotate-clockwise">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="rotate-clockwise">
                         <i class="icon icon-redo-alt"></i>
                         <mvc:message code="mediapool.image.rotate.clockwise"/>
                     </button>
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="rotate-counterclockwise">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="rotate-counterclockwise">
                         <i class="icon icon-undo-alt"></i>
                         <mvc:message code="mediapool.image.rotate.counterclockwise"/>
                     </button>
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="flip-horizontally">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="flip-horizontally">
                         <i class="icon icon-grip-vertical"></i>
                         <mvc:message code="mediapool.image.flip.horizontal"/>
                     </button>
-                    <button type="button" class="btn btn-inverse justify-content-start" data-action="flip-vertically">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="flip-vertically">
                         <i class="icon icon-grip-horizontal"></i>
                         <mvc:message code="mediapool.image.flip.vertical"/>
                     </button>
@@ -106,7 +105,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-inverse" data-form-reset data-action="reset">
+                <button type="button" class="btn btn-secondary" data-form-reset data-action="reset">
                     <i class="icon icon-sync-alt"></i>
                     <mvc:message code="button.Reset"/>
                 </button>

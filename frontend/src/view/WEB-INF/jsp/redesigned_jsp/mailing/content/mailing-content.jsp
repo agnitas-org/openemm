@@ -16,7 +16,7 @@
 <%--@elvariable id="gsm7BitChars" type="java.util.Set<java.lang.Character>"--%>
 
 <c:set var="PREVIEW_FORMAT_HTML" value="<%= MailingPreviewHelper.INPUT_TYPE_HTML %>"/>
-<c:set var="PREVIEW_FORMAT_TEXT" value="<%= MailingPreviewHelper.INPUT_TYPE_HTML %>"/>
+<c:set var="PREVIEW_FORMAT_TEXT" value="<%= MailingPreviewHelper.INPUT_TYPE_TEXT %>"/>
 
 <c:set var="isMailingGrid" value="${form.gridTemplateId > 0}" scope="request"/>
 <c:set var="mailingId" value="${form.mailingID}"/>
@@ -25,22 +25,12 @@
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
 <emm:HideByPermission token="mailing.editor.hide">
-    <c:choose>
-        <c:when test="${emm:fullPackAllowed(pageContext.request)}">
-            <c:set var="toolbarType" value="Full"/>
-        </c:when>
-        <c:when test="${emm:isCKEditorTrimmed(pageContext.request)}">
-            <c:set var="toolbarType" value="Trimmed"/>
-        </c:when>
-        <c:otherwise>
-            <c:set var="toolbarType" value="EMM"/>
-        </c:otherwise>
-    </c:choose>
-
-    <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
-        <jsp:param name="toolbarType" value="${toolbarType}"/>
-        <jsp:param name="showAiTextGenerationBtn" value="${isContentGenerationAllowed}"/>
-    </jsp:include>
+    <c:if test="${not emm:isJoditEditorUsageAllowed(pageContext.request)}">
+        <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
+            <jsp:param name="toolbarType" value="${emm:getWysiwygToolbarType(pageContext.request, 'EMM')}"/>
+            <jsp:param name="showAiTextGenerationBtn" value="${isContentGenerationAllowed}"/>
+        </jsp:include>
+    </c:if>
 </emm:HideByPermission>
 
 <c:choose>
@@ -105,6 +95,7 @@
                     <c:url var="previewLink" value="/mailing/preview/${mailingId}/view.action">
                         <c:param name="pure" value="true"/>
                         <c:param name="format" value="${form.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
+                        <c:param name="forEmcTextModules" value="${isMailingGrid}"/>
                     </c:url>
                     <div data-load="${previewLink}" data-load-replace data-load-target="#preview-form"></div>
                 </emm:ShowByPermission>

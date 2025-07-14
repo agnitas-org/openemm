@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,14 +14,14 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.web.mvc.Popups;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
+import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -34,12 +34,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.ENABLED_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGLISTS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGETS_KEY;
-import static com.agnitas.emm.core.birtreport.service.impl.ComBirtReportServiceImpl.KEY_END_DATE;
-import static com.agnitas.emm.core.birtreport.service.impl.ComBirtReportServiceImpl.KEY_START_DATE;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.ENABLED_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGLISTS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGS_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.TARGETS_KEY;
+import static com.agnitas.emm.core.birtreport.service.impl.BirtReportServiceImpl.KEY_END_DATE;
+import static com.agnitas.emm.core.birtreport.service.impl.BirtReportServiceImpl.KEY_START_DATE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.ACTION_AND_DATEBASED_MAILING_MAX_COUNT;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.END_DATE;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.START_DATE;
@@ -48,10 +48,10 @@ import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.getSe
 public class BirtReportFormValidator {
 
 	private final ConfigService configService;
-	private final ComBirtReportService birtReportService;
+	private final BirtReportService birtReportService;
 	private final ExtendedConversionService conversionService;
 
-	public BirtReportFormValidator(ConfigService configService, ComBirtReportService birtReportService,
+	public BirtReportFormValidator(ConfigService configService, BirtReportService birtReportService,
 			ExtendedConversionService conversionService) {
 		this.configService = configService;
 		this.birtReportService = birtReportService;
@@ -78,9 +78,8 @@ public class BirtReportFormValidator {
 				return false;
 			}
 
-			return birtReportService.getBirtReportSettingsTypesForEvaluation(form.getSettings(), form.getActiveTab(), admin)
-					.stream()
-					.allMatch(type -> validateBirtReport(type, form, popups, admin));
+			ReportSettingsType type = birtReportService.getBirtReportSettingsTypeForEvaluation(form.getActiveTab(), admin);
+			return validateBirtReport(type, form, popups, admin);
 		} else {
 			ReportSettingsType activeType = ReportSettingsType.getTypeByCode(form.getActiveTab());
 			return isValidCommonSettings(form, popups)
@@ -119,7 +118,7 @@ public class BirtReportFormValidator {
 	private void validateShortname(String shortname, Popups popups) {
         String error = getShortnameError(shortname);
         if (StringUtils.isNotBlank(error)) {
-            popups.field("shortname", error);
+            popups.fieldError("shortname", error);
         }
     }
 
@@ -138,39 +137,39 @@ public class BirtReportFormValidator {
 
 	private void validateDescription(String description, Popups popups) {
 		if (StringUtils.length(description) > 1000) {
-			popups.field("description", "error.description.too.long");
+			popups.fieldError("description", "error.description.too.long");
 		}
 	}
 
     private void validateEmailAddresses(String emailAddresses, Popups popups) {
         if (StringUtils.isEmpty(emailAddresses) || !AgnUtils.isValidEmailAddresses(emailAddresses)) {
-            popups.field("emailAddresses", "error.invalid.email");
+            popups.fieldError("emailAddresses", "error.invalid.email");
         }
     }
 
     private void validateEmailSubject(String emailSubject, Popups popups) {
         if (StringUtils.length(emailSubject) < 3) {
-            popups.field("emailSubject", "error.subjectToShort");
+            popups.fieldError("emailSubject", "error.subjectToShort");
         }
     }
 
     private void validateEmailDescription(String emailDescription, Popups popups) {
         if (StringUtils.length(emailDescription) > 1000) {
-            popups.field("emailDescription", "error.description.too.long");
+            popups.fieldError("emailDescription", "error.description.too.long");
         }
     }
 
 	private void validateType(BirtReportForm form, Popups popups) {
 		final BirtReportType type = BirtReportType.getTypeByCode(form.getType());
 		if ((type == BirtReportType.TYPE_WEEKLY || type == BirtReportType.TYPE_BIWEEKLY) && !form.daysIsChecked()) {
-			popups.field("type", "error.day.of.week");
+			popups.alert("error.day.of.week");
 		}
 	}
 
 	private void validateSendDate(BirtReportForm form, Popups popups) {
 		if (BirtReportType.getTypeByCode(form.getType()) != BirtReportType.TYPE_AFTER_MAILING_24HOURS
                 && form.getSendDate().get() == null) {
-			popups.field("sendDate", "error.starttime.empty");
+			popups.fieldError("sendDate.time", "error.starttime.empty");
 		}
 	}
 

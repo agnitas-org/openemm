@@ -12,8 +12,8 @@
 <%--@elvariable id="dateFormat" type="java.text.SimpleDateFormat"--%>
 <%--@elvariable id="datePickerFormatPattern" type="java.lang.String"--%>
 <%--@elvariable id="reportDateFormatPattern" type="java.lang.String"--%>
-<%--@elvariable id="settingsFilters" type="net.sf.json.JSONObject"--%>
-<%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
+<%--@elvariable id="settingsFilters" type="org.json.JSONObject"--%>
+<%--@elvariable id="workflowParameters" type="com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters"--%>
 <%--@elvariable id="isMailTrackingEnabled" type="java.lang.Boolean"--%>
 
 <c:set var="MAILING_KEY" value="<%= ReportSettingsType.MAILING.getKey()%>"/>
@@ -46,7 +46,7 @@
           "TOP_DOMAIN_SETTINGS" : ${TOP_DOMAIN_KEY},
           "NORMAL_MAILING_TYPE" : ${NORMAL_MAILING_TYPE}
         },
-        "filtered" : ${emm:toJson(settingsFilters)},
+        "filtered" : ${emm:toJson(settingsFilters.toMap())},
         "urls" : {
           "FILTERED_MAILING_URL": "<c:url value="/statistics/report/getFilteredMailing.action"/>"
         }

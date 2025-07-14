@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.forms;
 
-import org.agnitas.web.forms.PaginationForm;
+import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
@@ -36,6 +36,7 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     private String filterName;
     private String filterDescription;
+    private List<Integer> filterArchives;
 
     private String[] additionalFields = ArrayUtils.EMPTY_STRING_ARRAY;
 
@@ -181,5 +182,13 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     public void setFilterSendDateEnd(String filterSendDateEnd) {
         this.filterSendDateEnd = filterSendDateEnd;
+    }
+
+    public List<Integer> getFilterArchives() {
+        return filterArchives;
+    }
+
+    public void setFilterArchives(List<Integer> filterArchives) {
+        this.filterArchives = filterArchives;
     }
 }

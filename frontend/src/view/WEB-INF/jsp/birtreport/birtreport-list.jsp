@@ -5,8 +5,8 @@
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="birtReportsForm" type="org.agnitas.web.forms.PaginationForm"--%>
-<%--@elvariable id="reports" type="org.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.birtreport.bean.ReportEntry>"--%>
+<%--@elvariable id="birtReportsForm" type="com.agnitas.web.forms.PaginationForm"--%>
+<%--@elvariable id="reports" type="com.agnitas.beans.impl.PaginatedListImpl<com.agnitas.emm.core.birtreport.bean.ReportEntry>"--%>
 <%--@elvariable id="dateFormat" type="java.text.SimpleDateFormat"--%>
 
 <mvc:form servletRelativeAction="/statistics/reports.action" modelAttribute="birtReportsForm" method="post">

@@ -1,23 +1,21 @@
-(function () {
+(() => {
   const Def = AGN.Lib.WM.Definitions;
   const Helpers = AGN.Lib.Helpers;
   const DateFormat = AGN.Lib.DateFormat;
 
   AGN.Lib.WM.Utils = {
-    checkActivation: function (withAlert) {
-      var currentWorkflowStatus = $('#workflow-status').val();
+    checkActivation: function (withWarn) {
+      const currentWorkflowStatus = $('#workflow-status').val();
 
       if (Def.constants.initialWorkflowStatus === Def.constants.statusActive &&
         (currentWorkflowStatus === Def.constants.statusActive || currentWorkflowStatus === Def.constants.statusTesting)) {
 
-        if (withAlert) {
-          AGN.Lib.Messages(t('workflow.defaults.error'), t('error.workflow.saveActivatedWorkflow'), 'alert');
+        if (withWarn) {
+          AGN.Lib.Messages.warn('error.workflow.saveActivatedWorkflow');
         }
-
         return true;
-      } else {
-        return false;
       }
+      return false;
     },
 
     isPausedWorkflow: function () {
@@ -109,5 +107,4 @@
       return $.ajax({url: AGN.url('/workflow/getCurrentAdminTime.action'), async: false}).responseJSON;
     },
   }
-
 })();

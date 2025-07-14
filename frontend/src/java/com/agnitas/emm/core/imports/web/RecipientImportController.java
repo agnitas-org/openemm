@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,32 +10,48 @@
 
 package com.agnitas.emm.core.imports.web;
 
+import static com.agnitas.web.mvc.Pollable.SHORT_TIMEOUT;
+import static java.text.MessageFormat.format;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
-import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.common.exceptions.TooManyFilesInZipToImportException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.dto.FileDto;
-import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.imports.beans.ImportErrorCorrection;
 import com.agnitas.emm.core.imports.beans.ImportProgressSteps;
 import com.agnitas.emm.core.imports.beans.ImportResultFileType;
 import com.agnitas.emm.core.imports.form.ImportErrorsCorrectionsForm;
 import com.agnitas.emm.core.imports.form.RecipientImportForm;
+import com.agnitas.emm.core.imports.service.RecipientImportService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
-import com.agnitas.emm.data.CsvDataProvider;
 import com.agnitas.emm.data.DataProvider;
-import com.agnitas.emm.data.ExcelDataProvider;
-import com.agnitas.emm.data.JsonDataProvider;
-import com.agnitas.emm.data.OdsDataProvider;
 import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
@@ -46,47 +62,41 @@ import com.agnitas.web.mvc.impl.PopupsImpl;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.DatasourceDescription;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.DatasourceDescriptionImpl;
-import org.agnitas.beans.impl.ImportStatusImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.ImportRecipientsDao;
-import org.agnitas.dao.SourceGroupType;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
+import com.agnitas.beans.impl.ImportStatusImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.dao.ImportRecipientsDao;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.service.ImportException;
-import org.agnitas.service.ImportProfileService;
-import org.agnitas.service.ProfileImportWorker;
-import org.agnitas.service.ProfileImportWorkerFactory;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.impl.CSVColumnState;
-import org.agnitas.util.CaseInsensitiveSet;
-import org.agnitas.util.CsvColInfo;
-import org.agnitas.util.CsvDataBreakInsideCellException;
-import org.agnitas.util.CsvDataException;
-import org.agnitas.util.DbColumnType;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.ImportUtils;
-import org.agnitas.util.UserActivityUtil;
-import org.agnitas.util.importvalues.Charset;
-import org.agnitas.util.importvalues.DateFormat;
-import org.agnitas.util.importvalues.ImportMode;
-import org.agnitas.util.importvalues.Separator;
-import org.agnitas.util.importvalues.TextRecognitionChar;
-import org.agnitas.web.ProfileImportReporter;
-import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import com.agnitas.service.ImportException;
+import com.agnitas.service.ImportProfileService;
+import com.agnitas.service.ProfileImportWorker;
+import com.agnitas.service.ProfileImportWorkerFactory;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.impl.CSVColumnState;
+import com.agnitas.util.CaseInsensitiveSet;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.ImportUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.Separator;
+import com.agnitas.util.importvalues.TextRecognitionChar;
+import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
+import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.Model;
@@ -97,30 +107,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.agnitas.web.mvc.Pollable.SHORT_TIMEOUT;
-import static java.text.MessageFormat.format;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
 
 public class RecipientImportController {
 
@@ -142,12 +128,12 @@ public class RecipientImportController {
     private final ImportRecipientsDao importRecipientsDao;
     private final ProfileImportReporter importReporter;
     private final UserActivityLogService userActivityLogService;
-    private final ComRecipientDao recipientDao;
+    private final RecipientImportService recipientImportService;
 
     public RecipientImportController(ImportProfileService importProfileService, MailinglistService mailinglistService, EmmActionService emmActionService,
                                      MailinglistApprovalService mailinglistApprovalService, RecipientService recipientService, DatasourceDescriptionDao datasourceDescriptionDao,
                                      ProfileImportWorkerFactory profileImportWorkerFactory, ConfigService configService, WebStorage webStorage, ImportRecipientsDao importRecipientsDao,
-                                     ProfileImportReporter importReporter, UserActivityLogService userActivityLogService, ComRecipientDao recipientDao) {
+                                     ProfileImportReporter importReporter, UserActivityLogService userActivityLogService, RecipientImportService recipientImportService) {
 
         this.importProfileService = importProfileService;
         this.mailinglistService = mailinglistService;
@@ -161,7 +147,7 @@ public class RecipientImportController {
         this.importRecipientsDao = importRecipientsDao;
         this.importReporter = importReporter;
         this.userActivityLogService = userActivityLogService;
-        this.recipientDao = recipientDao;
+        this.recipientImportService = recipientImportService;
     }
 
     @GetMapping("/chooseMethod.action")
@@ -242,7 +228,7 @@ public class RecipientImportController {
             return MESSAGES_VIEW;
         }
 
-        ServiceResult<List<List<String>>> parsingResult = parseImportFileContent(fileDto.toFile(), profile);
+        ServiceResult<List<List<String>>> parsingResult = recipientImportService.parseFileContent(fileDto.toFile(), profile);
         if (!parsingResult.isSuccess()) {
             popups.addPopups(parsingResult);
             return MESSAGES_VIEW;
@@ -250,7 +236,8 @@ public class RecipientImportController {
 
         checkIfProfileKeyColumnIndexed(profile, popups);
 
-        if (profile.getActionForNewRecipients() > 0) {
+        if (profile.getActionForNewRecipients() > 0
+            && !configService.getBooleanValue(ConfigValue.ForceSending, admin.getCompanyID())) {
             loadEnforcedMailinglist(profile, admin, popups, model);
         }
 
@@ -271,7 +258,6 @@ public class RecipientImportController {
             model.addAttribute("parsedContent", parsingResult.getResult());
         }
 
-
         return "recipient_import_preview";
     }
 
@@ -282,10 +268,10 @@ public class RecipientImportController {
             final JSONObject entry = new JSONObject();
 
             for (int i = 0; i < rowData.size(); i++) {
-                entry.element(columns.get(i), StringEscapeUtils.escapeHtml4(rowData.get(i)));
+                entry.put(columns.get(i), StringEscapeUtils.escapeHtml4(rowData.get(i)));
             }
 
-            jsonArray.add(entry);
+            jsonArray.put(entry);
         }
 
         return jsonArray;
@@ -411,28 +397,20 @@ public class RecipientImportController {
     }
 
     @RequestMapping("/errors/edit.action")
-    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session, Popups popups, Admin admin) {
+    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session, Admin admin) {
         Callable<Object> worker = () -> {
             ProfileImportWorker importWorker = extractImportWorker(session);
             Map<String, Object> attributesMap = new HashMap<>();
 
-            try {
-                CSVColumnState[] columns = new CSVColumnState[importWorker.getCsvFileHeaders().size()];
-                for (int i = 0; i < importWorker.getImportedDataFileColumns().size(); i++) {
-                    columns[i] = new CSVColumnState(importWorker.getImportedDataFileColumns().get(i), true, -1);
-                }
-
-                attributesMap.put("recipientList", findInvalidRecipients(importWorker, form));
-                attributesMap.put("columns", columns);
-
-                return new ModelAndView("recipient_import_edit_error", attributesMap);
-            } catch (Exception e) {
-                LOGGER.error("Error occurred during retrieving of invalid recipients!", e);
-                popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
-
-                PopupsImpl.put(attributesMap, ((PopupsImpl) popups));
-                return new ModelAndView(viewProgress(importWorker, attributesMap, true), attributesMap);
+            CSVColumnState[] columns = new CSVColumnState[importWorker.getCsvFileHeaders().size()];
+            for (int i = 0; i < importWorker.getImportedDataFileColumns().size(); i++) {
+                columns[i] = new CSVColumnState(importWorker.getImportedDataFileColumns().get(i), true, -1);
             }
+
+            attributesMap.put("recipientList", findInvalidRecipients(importWorker, form));
+            attributesMap.put("columns", columns);
+
+            return new ModelAndView("recipient_import_edit_error", attributesMap);
         };
 
         FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_WIZARD_ERRORS_OVERVIEW, form);
@@ -537,7 +515,11 @@ public class RecipientImportController {
         clearWorkerInSession(session);
         int datasourceId = importWorker.getDatasourceId();
 
-        return String.format("redirect:/recipient/list.action?latestDataSourceId=%d", datasourceId);
+        ImportMode importMode = ImportMode.getFromInt(importWorker.getImportProfile().getImportMode());
+
+        return ImportMode.TO_BLACKLIST == importMode || ImportMode.BLACKLIST_EXCLUSIVE == importMode
+                ? "redirect:/recipients/blacklist/list.action"
+                : String.format("redirect:/recipient/list.action?latestDataSourceId=%d", datasourceId);
     }
 
     @PostMapping("/file/delete.action")
@@ -578,7 +560,7 @@ public class RecipientImportController {
         return "recipient_import_progress";
     }
 
-    private PaginatedListImpl<Map<String, Object>> findInvalidRecipients(ProfileImportWorker worker, RecipientImportForm form) throws Exception {
+    private PaginatedListImpl<Map<String, Object>> findInvalidRecipients(ProfileImportWorker worker, RecipientImportForm form) {
         return importRecipientsDao.getInvalidRecipientList(
                 worker.getTemporaryErrorTableName(),
                 worker.getImportedDataFileColumns(),
@@ -640,12 +622,11 @@ public class RecipientImportController {
         return "import.result.subscribersAdded";
     }
 
-    private void addImportErrorsToPopups(Exception importException, Popups popups) {
-        if (importException instanceof ImportException) {
-            popups.alert(((ImportException) importException).getErrorMessageKey(), ((ImportException) importException).getAdditionalErrorData());
-        } else if (importException.getCause() instanceof ImportException) {
-            ImportException exception = (ImportException) importException.getCause();
-            popups.alert(exception.getErrorMessageKey(), exception.getAdditionalErrorData());
+    private void addImportErrorsToPopups(Exception exception, Popups popups) {
+        if (exception instanceof ImportException importException) {
+            popups.alert(importException.getErrorMessageKey(), importException.getAdditionalErrorData());
+        } else if (exception.getCause() instanceof ImportException importException) {
+            popups.alert(importException.getErrorMessageKey(), importException.getAdditionalErrorData());
         } else {
             popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
         }
@@ -757,165 +738,6 @@ public class RecipientImportController {
                 .collect(Collectors.toList());
     }
 
-    private ServiceResult<List<List<String>>> parseImportFileContent(File importFile, ImportProfile profile) throws Exception {
-		DataProvider dataProvider = getDataProvider(profile, importFile);
-		List<String> dataPropertyNames = dataProvider.getAvailableDataPropertyNames();
-        List<List<String>> previewParsedContent = new LinkedList<>();
-
-        CSVColumnState[] columns = null;
-        if (!profile.isNoHeaders()) {
-            columns = new CSVColumnState[dataPropertyNames.size()];
-            if (profile.isAutoMapping()) {
-                CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(profile.getCompanyId());
-                for (int i = 0; i < dataPropertyNames.size(); i++) {
-                    String headerName = dataPropertyNames.get(i);
-                    if (StringUtils.isBlank(headerName)) {
-                        return ServiceResult.error(Message.of("Invalid empty import data file header for import automapping"));
-                    } else if (customerDbFields.containsKey(headerName)) {
-                        columns[i] = new CSVColumnState();
-                        columns[i].setColName(headerName.toLowerCase());
-                        columns[i].setImportedColumn(true);
-                    } else {
-                        columns[i] = new CSVColumnState();
-                        columns[i].setColName(headerName);
-                        columns[i].setImportedColumn(false);
-                    }
-                }
-            } else {
-                for (int i = 0; i < dataPropertyNames.size(); i++) {
-                    String propertyName = dataPropertyNames.get(i);
-                    final String columnNameByCvsFileName = getDBColumnNameByImportFilePropertyName(propertyName, profile);
-                    if (columnNameByCvsFileName != null) {
-                        columns[i] = new CSVColumnState();
-                        columns[i].setColName(columnNameByCvsFileName);
-                        columns[i].setImportedColumn(true);
-                    } else {
-                        columns[i] = new CSVColumnState();
-                        columns[i].setColName(propertyName);
-                        columns[i].setImportedColumn(false);
-                    }
-                }
-            }
-        } else {
-            int propertyNamesExpected = 0;
-            for (ColumnMapping columnMapping : profile.getColumnMapping()) {
-                if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
-                    if (!columnMapping.getFileColumn().startsWith("column_")) {
-                        return ServiceResult.error(Message.of("error.import.mapping.column.invalid", columnMapping.getFileColumn()));
-                    } else {
-                        int columnId;
-                        try {
-                            columnId = Integer.parseInt(columnMapping.getFileColumn().substring(7));
-                        } catch (@SuppressWarnings("unused") Exception e) {
-                            return ServiceResult.error(Message.of("error.import.mapping.column.invalid", columnMapping.getFileColumn()));
-                        }
-                        propertyNamesExpected = Math.max(propertyNamesExpected, columnId);
-                    }
-                }
-            }
-
-            if (dataPropertyNames.size() != propertyNamesExpected) {
-                throw new CsvDataException("Number of import file columns does not fit mapped columns", propertyNamesExpected);
-            }
-            columns = new CSVColumnState[Math.min(dataPropertyNames.size(), profile.getColumnMapping().size())];
-
-            for (int i = 0; i < columns.length; i++) {
-                ColumnMapping columnMapping = profile.getColumnMapping().get(i);
-                columns[i] = new CSVColumnState();
-                columns[i].setColName(columnMapping.getFileColumn());
-                if (columnMapping.getDatabaseColumn() != null && !columnMapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
-                    columns[i].setImportedColumn(true);
-                } else {
-                    columns[i].setImportedColumn(false);
-                }
-            }
-
-            // Add dummy column names to preview data
-            final LinkedList<String> columnsList = new LinkedList<>();
-            for (int idx = 0; (idx < columns.length) && (idx < dataPropertyNames.size()); idx++) {
-                if (!columns[idx].getImportedColumn()) {
-                    continue;
-                }
-                columnsList.add(columns[idx].getColName());
-            }
-            previewParsedContent.add(columnsList);
-        }
-        initColumnsNullableCheck(columns, profile);
-
-		for (int dataItemIndex = 0; dataItemIndex < 20; dataItemIndex++) {
-			Map<String, Object> dataItem = null;
-            try {
-                dataItem = dataProvider.getNextItemData();
-            } catch (CsvDataBreakInsideCellException e) {
-                return ServiceResult.error(Message.of("error.import.file.linebreak", e.getCellIndex(), e.getErrorLineNumber()));
-            }
-			if (dataItem == null) {
-				break;
-			} else {
-	    		final List<String> dataItemValuesForImport = new ArrayList<>();
-	            for (int idx = 0; (idx < columns.length) && (idx < dataPropertyNames.size()); idx++) {
-	                if (columns[idx].getImportedColumn()) {
-		                String propertyName = null;
-		                for (ColumnMapping columnMapping : profile.getColumnMapping()) {
-		                	if (columns[idx].getColName().equals(columnMapping.getDatabaseColumn())) {
-		                		propertyName = columnMapping.getFileColumn();
-		                		break;
-		                	}
-		                }
-		                Object dataValueObject = dataItem.get(propertyName);
-		                String value;
-		                if (dataValueObject == null) {
-		                	value = "";
-		                } else if (dataValueObject instanceof Date) {
-		                	SimpleDateFormat format = new SimpleDateFormat(DateFormat.getDateFormatById(profile.getDateFormat()).getValue());
-		                	value = format.format((Date) dataValueObject);
-		                } else {
-		                	value = dataValueObject.toString();
-		                }
-
-		                dataItemValuesForImport.add(value);
-	                }
-	            }
-	            previewParsedContent.add(dataItemValuesForImport);
-			}
-        }
-
-		// Add headers
-        final LinkedList<String> headersList = new LinkedList<>();
-        for (CSVColumnState column : columns) {
-        	if (column.getImportedColumn()) {
-        		headersList.add(column.getColName());
-        	}
-        }
-        previewParsedContent.add(0, headersList);
-
-        return ServiceResult.success(previewParsedContent);
-    }
-
-    protected String getDBColumnNameByImportFilePropertyName(String headerName, ImportProfile profile) {
-        if (headerName == null) {
-            return null;
-        }
-
-        for (ColumnMapping mapping : profile.getColumnMapping()) {
-            if (headerName.equals(mapping.getFileColumn()) && !mapping.getDatabaseColumn().equals(ColumnMapping.DO_NOT_IMPORT)) {
-                return mapping.getDatabaseColumn();
-            }
-        }
-
-        return null;
-    }
-
-    private void initColumnsNullableCheck(CSVColumnState[] cols, ImportProfile profile) {
-        Map<String, CsvColInfo> columnsInfo = recipientDao.readDBColumns(profile.getCompanyId(), profile.getAdminId(), profile.getKeyColumns());
-        for (CSVColumnState columnState : cols) {
-            CsvColInfo columnInfo = columnsInfo.get(columnState.getColName());
-            if (columnInfo != null) {
-                columnState.setNullable(columnInfo.isNullable());
-            }
-        }
-    }
-
     private void loadEnforcedMailinglist(ImportProfile profile, Admin admin, Popups popups, Model model) {
         List<Integer> mailinglistIDs = emmActionService.getReferencedMailinglistsFromAction(profile.getCompanyId(), profile.getActionForNewRecipients());
         if (mailinglistIDs.size() == 1) {
@@ -931,7 +753,7 @@ public class RecipientImportController {
     }
 
     private boolean isFileValid(File importFile, ImportProfile profile, Popups popups) throws Exception {
-		DataProvider dataProvider = getDataProvider(profile, importFile);
+		DataProvider dataProvider = recipientImportService.getDataProvider(profile, importFile);
 		List<String> dataPropertyNames;
         try {
             dataPropertyNames = dataProvider.getAvailableDataPropertyNames();
@@ -995,50 +817,6 @@ public class RecipientImportController {
                 .noneMatch(s -> columnLine.contains(String.valueOf(s.getValueChar())));
     }
 
-	private DataProvider getDataProvider(ImportProfile importProfile, File importFile) throws Exception {
-		switch (ImportDataType.getImportDataTypeForName(importProfile.getDatatype())) {
-			case CSV:
-				Character valueCharacter = TextRecognitionChar.getTextRecognitionCharById(importProfile.getTextRecognitionChar()).getValueCharacter();
-				return new CsvDataProvider(
-					importFile,
-					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
-					Charset.getCharsetById(importProfile.getCharset()).getCharsetName(),
-					Separator.getSeparatorById(importProfile.getSeparator()).getValueChar(),
-					valueCharacter,
-					valueCharacter == null ? '"' : valueCharacter,
-					false,
-					true,
-					importProfile.isNoHeaders(),
-					null);
-			case Excel:
-				return new ExcelDataProvider(
-					importFile,
-					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
-					true,
-					importProfile.isNoHeaders(),
-					null,
-					true,
-					null);
-			case JSON:
-				return new JsonDataProvider(
-					importFile,
-					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
-					null,
-					null);
-			case ODS:
-				return new OdsDataProvider(
-					importFile,
-					importProfile.getZipPassword() == null ? null : importProfile.getZipPassword().toCharArray(),
-					true,
-					importProfile.isNoHeaders(),
-					null,
-					true,
-					null);
-			default:
-				throw new RuntimeException("Invalid import datatype: " + importProfile.getDatatype());
-		}
-	}
-
     private boolean isPossibleToSelectMailinglist(ImportProfile profile) {
         return profile.getImportMode() != ImportMode.TO_BLACKLIST.getIntValue()
                 && profile.getImportMode() != ImportMode.BLACKLIST_EXCLUSIVE.getIntValue()
@@ -1084,7 +862,7 @@ public class RecipientImportController {
                 .map(ColumnMapping::getDatabaseColumn)
                 .filter(Objects::nonNull)
                 .map(String::toLowerCase)
-                .collect(Collectors.toList());
+                .toList();
 
         return profile.getKeyColumns().stream()
                 .allMatch(kc -> mappedDbColumns.contains(kc.toLowerCase()));
@@ -1140,7 +918,7 @@ public class RecipientImportController {
     }
 
     private List<ImportProfile> findImportProfiles(Admin admin) {
-        return importProfileService.getAvailableImportProfiles(admin.getCompanyID());
+        return importProfileService.getAvailableImportProfiles(admin);
     }
 
     private void writeUserActivityLog(String action, String description, Admin admin) {

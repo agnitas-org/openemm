@@ -5,7 +5,6 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <html>
-
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,13 +14,9 @@
     <jsp:include page="/WEB-INF/jsp/redesigned_jsp/page-template/assets.jsp"/>
 </head>
 <body id="error-page" class="systempage">
-
-    <c:url var="errorSvgSrc" value="/assets/core/images/facelift/errors_error-500.svg"/>
-    <c:url var="errorPngSrc" value="/assets/core/images/facelift/errors_error-500.png"/>
-
     <div class="tile tile--msg tile--alert">
         <div class="tile-header">
-            <img alt="" src="${errorSvgSrc}" onerror="this.onerror=null; this.src='${errorPngSrc}'">
+            <svg><use href="<c:url value="/assets/core/images/facelift/sprite.svg"/>#errors_error-500"></use></svg>
             <h1>500 - <mvc:message code="error.global.title"/></h1>
         </div>
         <div class="tile-body">

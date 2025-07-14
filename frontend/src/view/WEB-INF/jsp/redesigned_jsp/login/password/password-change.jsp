@@ -3,7 +3,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.logon.forms.LogonPasswordChangeForm"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="passwordPolicy" type="java.lang.String"--%>
 <%--@elvariable id="supportMailAddress" type="java.lang.String"--%>
 <%--@elvariable id="expirationDate" type="java.lang.String"--%>
 <%--@elvariable id="isSupervisor" type="java.lang.Boolean"--%>
@@ -41,7 +41,7 @@
 
     <%-- If a password is already expired ask user to change it now --%>
     <mvc:form id="submission-view" servletRelativeAction="/logon/change-passwordRedesigned.action" method="POST" modelAttribute="form"
-              cssClass="row g-3 ${isExpired or isAnotherAttempt ? '' : 'hidden'}" data-form="static" data-validator="logon-new-password/form">
+              cssClass="row g-3 ${isExpired or isAnotherAttempt ? '' : 'hidden'}" data-form="static">
         <div class="col-12">
             <c:if test="${isExpired and not empty expirationDate}">
                 <c:choose>
@@ -56,13 +56,13 @@
             <mvc:message code="password.change.text"/>
         </div>
 
-        <div class="col-12">
+        <div class="col-12" data-field="password">
             <label for="password" class="form-label">
                 <i class="icon icon-key"></i>
                 <mvc:message code="password.new"/>
-                <a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/settings/AdminPasswordRules.xml"></a>
+                <a href="#" class="icon icon-question-circle" data-help="settings/AdminPasswordRules.xml"></a>
             </label>
-            <mvc:password path="password" id="password" cssClass="form-control" />
+            <mvc:password path="password" id="password" cssClass="form-control js-password-strength" data-rule="${passwordPolicy}" />
         </div>
 
         <div class="col-12">
@@ -70,12 +70,12 @@
                 <i class="icon icon-key"></i>
                 <mvc:message code="password.repeat"/>
             </label>
-            <input type="password" id="password-repeat" class="form-control" />
+            <input type="password" id="password-repeat" class="form-control js-password-match" />
         </div>
 
         <div class="col-12">
             <button type="button" class="btn btn-lg btn-light w-100" data-form-submit="">
-                <span class="text"><mvc:message code="password.change.now"/></span>
+                <span><mvc:message code="password.change.now"/></span>
                 <i class="icon icon-caret-right"></i>
             </button>
         </div>

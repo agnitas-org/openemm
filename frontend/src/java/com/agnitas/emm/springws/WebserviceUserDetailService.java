@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,21 @@
 
 package com.agnitas.emm.springws;
 
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import com.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
+import com.agnitas.emm.springws.security.authorities.CompanyAuthority;
+import com.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,37 +32,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
-import org.agnitas.emm.springws.security.authorities.CompanyAuthority;
-import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
 public class WebserviceUserDetailService extends BaseDaoImpl implements UserDetailsService {
-
-    private static final Logger logger = LogManager.getLogger(WebserviceUserDetailService.class);
 
     private WebservicePasswordEncryptor webservicePasswordEncryptor;
     private ConfigService configService;
 
-    @Required
     public final void setWebservicePasswordEncryptor(final WebservicePasswordEncryptor webservicePasswordEncryptor) {
         this.webservicePasswordEncryptor = Objects.requireNonNull(webservicePasswordEncryptor, "Webservice password encryptor is null");
     }
     
-    @Required
     public final void setConfigService(final ConfigService service) {
     	this.configService = Objects.requireNonNull(service, "Config service is null");
     }
@@ -56,7 +49,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
         final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id = c.company_id and c.status = '" + CompanyStatus.ACTIVE.getDbValue() + "'";
         
-        final List<Map<String, Object>> result = select(logger, usersByUsernameQuery, username);
+        final List<Map<String, Object>> result = select(usersByUsernameQuery, username);
         if (result.isEmpty()) {
             throw new UsernameNotFoundException("Username " + username + " not found");
         }
@@ -76,7 +69,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     public final Optional<Integer> findCompanyIDForUsername(final String username) {
         final String sql = "SELECT company_id FROM webservice_user_tbl WHERE username=?";
 
-        final List<Integer> result = select(logger, sql,  IntegerRowMapper.INSTANCE, username);
+        final List<Integer> result = select(sql,  IntegerRowMapper.INSTANCE, username);
         
         return result.isEmpty()
         		? Optional.empty()
@@ -114,7 +107,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
         			"WHERE groups.username=? AND perms.group_ref=groups.group_ref  " +
         			") endpoints";
         	
-        	final List<String> permissions = select(logger, sql, StringRowMapper.INSTANCE, username, username);
+        	final List<String> permissions = select(sql, StringRowMapper.INSTANCE, username, username);
         	permissions.forEach(permission -> grantedAuthorities.add(new EndpointAuthority(permission)));
         } else {
         	grantedAuthorities.add(AllEndpointsAuthority.INSTANCE);

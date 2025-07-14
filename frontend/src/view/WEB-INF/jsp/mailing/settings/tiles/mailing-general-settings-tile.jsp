@@ -4,8 +4,8 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="mailingSettingsForm" type="com.agnitas.emm.core.mailing.forms.MailingSettingsForm"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
-<%--@elvariable id="selectedRemovedMailinglist" type="org.agnitas.beans.Mailinglist"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="selectedRemovedMailinglist" type="com.agnitas.beans.Mailinglist"--%>
 <%--@elvariable id="archives" type="java.util.List<com.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="emailSettingsEditable" type="java.lang.Boolean"--%>
 <%--@elvariable id="mailinglistEditable" type="java.lang.Boolean"--%>

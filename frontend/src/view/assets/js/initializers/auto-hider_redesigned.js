@@ -19,7 +19,7 @@ By setting `[data-hide-by-checkbox]` the object will be hidden if <a href="compo
 
 Checkbox JQuery selector should be set in `[data-show|hide-by-checkbox]`.
 
-<small class="text-muted">
+<small class="text-secondary">
     Please note. The values of elements that are hidden with this method are <b>still sent</b> in the form on submit.
     To disable inputs on hidden state see <a href="javascripts_-_fields.html#fields-02-toggle-vis"><i>Toggle Visibility Field</i></a>
 </small>
@@ -52,7 +52,7 @@ Use `[data-show-by-select]` or `[data-hide-by-select]` to show or hide element b
 These options can be set using `[data-show-by-select-values]` or `[data-show-by-select-values]` respectively
 specifying csv option values.
 
-<small class="text-muted">
+<small class="text-secondary">
     Please note. The values of elements that are hidden with this method are <b>still sent</b> in the form on submit.
     To disable inputs on hidden state see <a href="javascripts_-_fields.html#fields-02-toggle-vis"><i>Toggle Visibility Field</i></a>
 </small>
@@ -108,9 +108,14 @@ If you need to display some option even in case if nothing if selected in the dr
 ;(() => {
 
   AGN.Lib.CoreInitializer.new('checkbox-hider', function($scope = $(document)) {
+    const Storage = AGN.Lib.Storage;
+
     _.each($scope.find('[data-show-by-checkbox]'), el => {
       const $el = $(el);
       const $checkbox = $($el.data('show-by-checkbox'));
+      if ($checkbox.is('[data-stored-field]')) {
+        Storage.restoreChosenFields($checkbox);
+      }
       updateVisibleByCheckbox($el, $checkbox, true);
       addCheckboxListener($el, $checkbox, true);
     });
@@ -150,18 +155,18 @@ If you need to display some option even in case if nothing if selected in the dr
   });
 
   function addCheckboxListener($el, $checkbox, showIfChecked){
-    $checkbox.change(function() {
+    $checkbox.change(() => {
       updateVisibleByCheckbox($el, $checkbox, showIfChecked);
+      if ($checkbox.is('[data-stored-field]')) {
+        AGN.Lib.Storage.saveChosenFields($checkbox);
+      }
     });
   }
 
   function updateVisibleByCheckbox($el, $checkbox, showIfChecked) {
-    if (showIfChecked){
-      $el.toggleClass("hidden", !$checkbox.is(":checked"));
-    } else {
-      $el.toggleClass("hidden", $checkbox.is(":checked"));
-    }
-
+    const hide= showIfChecked ? !$checkbox.is(":checked") : $checkbox.is(":checked");
+    $el.toggleClass("hidden", hide);
+    $el.trigger(hide ? "tile:hide" : "tile:show");
     AGN.Lib.CoreInitializer.run("truncated-text-popover", $el);
   }
 

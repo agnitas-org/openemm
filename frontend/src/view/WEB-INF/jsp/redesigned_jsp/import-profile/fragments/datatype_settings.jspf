@@ -1,10 +1,8 @@
 
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
-
 <div class="col">
 	<label for="recipient-import-datatype" class="form-label text-truncate">
 		<mvc:message code="import.datatype" />
-		<a href="#" class="icon icon-question-circle" data-help="help_${helplanguage}/importwizard/step_1/Datatype.xml"></a>
+		<a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/Datatype.xml"></a>
 	</label>
 
 	<mvc:select id="recipient-import-datatype" path="datatype" cssClass="form-control js-select" data-field-vis="">

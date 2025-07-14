@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,22 +15,16 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.impl.ProfileFieldImpl;
 import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.post.MandatoryField;
 import com.agnitas.service.ColumnInfoService;
-import org.agnitas.beans.LightProfileField;
+import com.agnitas.beans.LightProfileField;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static java.text.MessageFormat.format;
 /**
  * @deprecated Use RecipientFieldService instead
  */
@@ -42,51 +36,30 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     private ProfileFieldDao profileFieldDao;
     private ColumnInfoService columnInfoService;
 
-    @Required
     public void setColumnInfoService(ColumnInfoService columnInfoService) {
         this.columnInfoService = columnInfoService;
     }
 
-    @Required
-    public final void setProfileFieldDao(final ProfileFieldDao dao) {
+    public void setProfileFieldDao(ProfileFieldDao dao) {
         this.profileFieldDao = Objects.requireNonNull(dao, "Profile field DAO cannot be null");
     }
 
     @Override
-    public final String translateDatabaseNameToVisibleName(final int companyID, final String databaseName) throws ProfileFieldException {
-        try {
-            return this.profileFieldDao.getProfileField(companyID, databaseName).getShortname();
-        } catch (final Exception e) {
-            final String msg = String.format("Unable to translate profile field database name '%s' to visible name (company ID %d)", databaseName, companyID);
-
-            logger.error(msg, e);
-
-            throw new ProfileFieldException(msg, e);
-        }
+    public String translateDatabaseNameToVisibleName(int companyID, String databaseName) {
+        return this.profileFieldDao.getProfileField(companyID, databaseName).getShortname();
     }
 
 	@Override
     public List<ProfileField> getProfileFieldsWithInterest(Admin admin) {
-        try {
-            return profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
-        } catch (Exception e) {
-            logger.error(String.format("Error occurred: %s", e.getMessage()), e);
-        }
-
-        return new ArrayList<>();
+        return profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
     }
 
     @Override
     public List<ProfileField> getSortedColumnInfo(int companyId) {
-        try {
-            List<ProfileField> columnInfoList = columnInfoService.getComColumnInfos(companyId);
+        List<ProfileField> columnInfoList = columnInfoService.getComColumnInfos(companyId);
+        columnInfoList.sort(this::compareColumn);
 
-            columnInfoList.sort(this::compareColumn);
-
-            return columnInfoList;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return columnInfoList;
     }
 
     @Override
@@ -104,21 +77,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
     @Override
     public List<LightProfileField> getLightProfileFields(int companyId) {
-        try {
-            return profileFieldDao.getLightProfileFields(companyId);
-        } catch (Exception e) {
-            logger.error(format("Error occurred: {0}", e.getMessage()), e);
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
-    public int getCurrentSpecificFieldCount(int companyId) {
-        try {
-            return profileFieldDao.getCurrentCompanySpecificFieldCount(companyId);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return profileFieldDao.getLightProfileFields(companyId);
     }
 
     @Override
@@ -170,25 +129,19 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ProfileField> getProfileFields(int companyId) throws Exception {
+    public List<ProfileField> getProfileFields(int companyId) {
         return profileFieldDao.getComProfileFields(companyId);
     }
 
     @Override
-    public List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception {
+    public List<ProfileField> getProfileFields(int companyId, int adminId) {
         return profileFieldDao.getComProfileFields(companyId, adminId);
     }
 
     @Override
     public List<ProfileField> getVisibleProfileFields(int adminId, int companyId) {
-        try {
-            List<ProfileField> profileFields = getProfileFields(companyId, adminId);
-            return filterVisibleFields(profileFields);
-        } catch (Exception e) {
-            logger.error("Can't retrieve visible profile fields!", e);
-        }
-
-        return Collections.emptyList();
+        List<ProfileField> profileFields = getProfileFields(companyId, adminId);
+        return filterVisibleFields(profileFields);
     }
 
     private List<ProfileField> filterVisibleFields(List<ProfileField> fields) {
@@ -200,10 +153,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
     @Override
     public ProfileField getProfileFieldByShortname(int companyID, String shortname, int adminId) {
-        try {
-            return profileFieldDao.getProfileFieldByShortname(companyID, shortname, adminId);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return profileFieldDao.getProfileFieldByShortname(companyID, shortname, adminId);
     }
 }

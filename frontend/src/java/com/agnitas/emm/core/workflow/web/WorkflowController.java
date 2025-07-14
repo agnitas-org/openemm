@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,19 +10,55 @@
 
 package com.agnitas.emm.core.workflow.web;
 
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_OPEN;
+import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_TESTED;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.birtstatistics.DateMode;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
@@ -30,28 +66,35 @@ import com.agnitas.emm.core.workflow.beans.WorkflowForward;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
 import com.agnitas.emm.core.workflow.service.ChangingWorkflowStatusResult;
-import com.agnitas.emm.core.workflow.service.ComSampleWorkflowFactory;
-import com.agnitas.emm.core.workflow.service.ComSampleWorkflowFactory.SampleWorkflowType;
-import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowStatisticsService;
-import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
+import com.agnitas.emm.core.workflow.service.SampleWorkflowFactory;
+import com.agnitas.emm.core.workflow.service.SampleWorkflowFactory.SampleWorkflowType;
+import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
+import com.agnitas.emm.core.workflow.service.WorkflowDataParser;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
+import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
+import com.agnitas.emm.core.workflow.service.WorkflowValidationService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.web.forms.WorkflowDependencyValidationForm;
 import com.agnitas.emm.core.workflow.web.forms.WorkflowForm;
 import com.agnitas.exception.RequestErrorException;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.service.WebStorage;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.GuiConstants;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.MvcUtils;
 import com.agnitas.util.StringUtil;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.forms.BulkActionForm;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.mvc.editors.IntEnumEditor;
@@ -63,9 +106,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 import jakarta.servlet.http.HttpSession;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
@@ -73,24 +113,15 @@ import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.GuiConstants;
-import org.agnitas.util.HttpUtils;
-import org.agnitas.util.MvcUtils;
-import org.agnitas.web.forms.BulkActionForm;
-import org.agnitas.web.forms.FormUtils;
-import org.agnitas.web.forms.PaginationForm;
-import org.agnitas.web.forms.WorkflowParameters;
-import org.agnitas.web.forms.WorkflowParametersHelper;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
@@ -108,38 +139,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-
-import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_ACTIVE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_OPEN;
-import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_TESTED;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static org.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class WorkflowController implements XssCheckAware {
 
@@ -168,36 +167,52 @@ public class WorkflowController implements XssCheckAware {
     public static final String WORKFLOW_CUSTOM_CSS_STYLE = ".body{background-color: #fff;} #viewPort { display: inline-block !important; width: 100% !important;}";
 
     private static final String REDIRECT_TO_LIST = "redirect:/workflow/list.action";
+    private static final Set<String> SPLIT_TYPES = Set.of(
+        "050505050575",
+        "0505050580",
+        "05050585",
+        "050590",
+        "101010101050",
+        "1010101060",
+        "10101070",
+        "101080",
+        "1090",
+        "151570",
+        "2080",
+        "25252525",
+        "252550",
+        "3070",
+        "333333",
+        "4060",
+        "5050");
 
     protected final AdminService adminService;
     protected final ConfigService configService;
-    protected final ComTargetService targetService;
-    private final ComWorkflowService workflowService;
-    private final ComWorkflowValidationService validationService;
-    private final ComWorkflowActivationService workflowActivationService;
-    private final ComWorkflowStatisticsService workflowStatisticsService;
+    protected final TargetService targetService;
+    private final WorkflowService workflowService;
+    private final WorkflowValidationService validationService;
+    private final WorkflowActivationService workflowActivationService;
+    private final WorkflowStatisticsService workflowStatisticsService;
     private final AutoImportService autoImportService;
     private final AutoExportService autoExportService;
-    private final ComWorkflowDataParser workflowDataParser;
+    private final WorkflowDataParser workflowDataParser;
     private final CampaignDao campaignDao;
-    private final ComMailingDeliveryStatService deliveryStatService;
+    private final MailingDeliveryStatService deliveryStatService;
     private final MailingComponentDao componentDao;
     private final PdfService pdfService;
-    private final ComCompanyDao companyDao;
-    private final WebStorage webStorage;
+    private final CompanyDao companyDao;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final UserActivityLogService userActivityLogService;
     private final ConversionService conversionService;
     private final MailingService mailingService;
-    private final ComOptimizationService optimizationService;
 
-    public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
-                              ComWorkflowActivationService workflowActivationService, ComWorkflowStatisticsService workflowStatisticsService,
+    public WorkflowController(WorkflowService workflowService, WorkflowValidationService validationService,
+                              WorkflowActivationService workflowActivationService, WorkflowStatisticsService workflowStatisticsService,
                               @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService,
-                              ComWorkflowDataParser workflowDataParser, CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, MailingComponentDao componentDao,
-                              PdfService pdfService, ComCompanyDao companyDao, ConfigService configService, WebStorage webStorage,
-                              MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService, ConversionService conversionService,
-                              MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService, ComTargetService targetService) {
+                              WorkflowDataParser workflowDataParser, CampaignDao campaignDao, MailingDeliveryStatService deliveryStatService, MailingComponentDao componentDao,
+                              PdfService pdfService, CompanyDao companyDao, ConfigService configService, MailinglistApprovalService mailinglistApprovalService,
+                              UserActivityLogService userActivityLogService, ConversionService conversionService, MailingService mailingService, AdminService adminService,
+                              TargetService targetService) {
         this.workflowService = workflowService;
         this.validationService = validationService;
         this.workflowActivationService = workflowActivationService;
@@ -211,12 +226,10 @@ public class WorkflowController implements XssCheckAware {
         this.pdfService = pdfService;
         this.companyDao = companyDao;
         this.configService = configService;
-        this.webStorage = webStorage;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.userActivityLogService = userActivityLogService;
         this.conversionService = conversionService;
         this.mailingService = mailingService;
-        this.optimizationService = optimizationService;
         this.adminService = adminService;
         this.targetService = targetService;
     }
@@ -227,7 +240,7 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/create.action")
-    public String create(Admin admin, Model model) throws Exception {
+    public String create(Admin admin, Model model) {
         WorkflowForm workflowForm = new WorkflowForm();
         workflowForm.setStatus(STATUS_OPEN);
         workflowForm.setStatusMaybeChangedTo(STATUS_ACTIVE);
@@ -241,7 +254,7 @@ public class WorkflowController implements XssCheckAware {
 
     @RequestMapping("/{id:\\d+}/view.action")
     public String view(Admin admin, @PathVariable int id, Model model,
-                       @RequestParam(name = "forwardParams", required = false) String forwardParams, Popups popups) throws Exception {
+                       @RequestParam(name = "forwardParams", required = false) String forwardParams, Popups popups) {
         if (id == 0) {
             return "redirect:/workflow/create.action";
         }
@@ -260,7 +273,6 @@ public class WorkflowController implements XssCheckAware {
 
             model.addAttribute("workflowForm", form);
             collectWarnings(model, form, admin, popups);
-            setAutoOptData(admin, form, model);
             if (form.getStatus() == WorkflowForm.WorkflowStatus.STATUS_PAUSED) {
                 model.addAttribute("pauseTime", workflowService.getPauseDate(id, admin.getCompanyID()).getTime());
                 model.addAttribute("pauseExpirationHours", configService.getIntegerValue(ConfigValue.WorkflowPauseExpirationHours, admin.getCompanyID()));
@@ -269,8 +281,9 @@ public class WorkflowController implements XssCheckAware {
 
         prepareViewPage(admin, model, id);
         model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
-        model.addAttribute("statisticUrl", workflowStatisticsService.getReportUrl(id, admin));
-
+        if (!admin.isRedesignedUiUsed()) {
+            model.addAttribute("statisticUrls", workflowStatisticsService.getStatUrlsMap(id, admin));
+        }
         return "workflow_view";
     }
 
@@ -287,7 +300,7 @@ public class WorkflowController implements XssCheckAware {
         if (CollectionUtils.isNotEmpty(sentMailings)) {
             popups.exactWarning(getSentMailingsWarnText(sentMailings, admin.getCompanyID(), admin.getLocale()));
         }
-        if (isRedesign(admin)) {
+        if (admin.isRedesignedUiUsed()) {
             model.addAttribute("sentMailings", sentMailings);
         }
     }
@@ -300,11 +313,8 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/list.action")
-    public String list(Admin admin, @ModelAttribute("workflowForm") PaginationForm form, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, WebStorage.WORKFLOW_OVERVIEW, form);
-
-        JSONArray workflows = workflowService.getWorkflowListJson(admin);
-        model.addAttribute("workflowsJson", workflows);
+    public String list(Admin admin, Model model) {
+        model.addAttribute("workflowsJson", workflowService.getWorkflowListJson(admin));
 
         model.addAttribute("adminTimeZone", admin.getAdminTimezone());
         SimpleDateFormat dateTimeFormat = admin.getDateTimeFormat();
@@ -370,21 +380,20 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/bulkDelete.action")
-    public String deleteRedesigned(BulkActionForm form, Admin admin, Popups popups, Model model) {
+    public String confirmDeleteRedesigned(BulkActionForm form, Admin admin, Popups popups, Model model) {
         if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.workflow");
             return MESSAGES_VIEW;
         }
 
-        ServiceResult<List<Workflow>> result = workflowService.getAllowedForDeletion(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
+        ServiceResult<List<Workflow>> result = workflowService.getAllowedForDeletion(Set.copyOf(form.getBulkIds()), admin.getCompanyID());
         popups.addPopups(result);
 
         if (!result.isSuccess()) {
             return MESSAGES_VIEW;
         }
 
-        List<String> names = result.getResult().stream().map(Workflow::getShortname).collect(Collectors.toList());
-        MvcUtils.addDeleteAttrs(model, names,
+        MvcUtils.addDeleteAttrs(model, result.getResult().stream().map(Workflow::getShortname).toList(),
                 "workflow.delete", "workflow.delete.question.new",
                 "bulkAction.delete.workflow", "bulkAction.delete.workflow.question");
         return DELETE_VIEW;
@@ -398,7 +407,7 @@ public class WorkflowController implements XssCheckAware {
             writeUserActivityLog(admin, "delete workflows", String.format("Workflows IDs %s", StringUtils.join(removedIds, ", ")));
             popups.success(SELECTION_DELETED_MSG);
 
-            return isRedesign(admin) && form.getBulkIds().size() > 1
+            return admin.isRedesignedUiUsed() && form.getBulkIds().size() > 1
                     ? ResponseEntity.ok(new DataResponseDto<>(removedIds, popups))
                     : REDIRECT_TO_LIST;
         } catch (Exception e) {
@@ -406,7 +415,7 @@ public class WorkflowController implements XssCheckAware {
             popups.alert(ERROR_MSG);
         }
 
-        return isRedesign(admin) && form.getBulkIds().size() > 1
+        return admin.isRedesignedUiUsed() && form.getBulkIds().size() > 1
                 ? ResponseEntity.ok(new DataResponseDto<>(popups, false))
                 : MESSAGES_VIEW;
     }
@@ -423,7 +432,7 @@ public class WorkflowController implements XssCheckAware {
 
     @PostMapping("/bulkDeactivate.action")
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String bulkDeactivate(Admin admin, BulkActionForm form, Popups popups) throws Exception {
+    public String bulkDeactivate(Admin admin, BulkActionForm form, Popups popups) {
         Set<Integer> workflowIdsToDeactivate = new HashSet<>();
         List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
 
@@ -470,7 +479,7 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @PostMapping("/changeActiveness.action")
-    public ResponseEntity<DataResponseDto<JSONArray>> changeActiveness(@RequestParam(required = false) Set<Integer> ids, @RequestParam boolean activate, Admin admin, Popups popups) {
+    public ResponseEntity<DataResponseDto<List<Object>>> changeActiveness(@RequestParam(required = false) Set<Integer> ids, @RequestParam boolean activate, Admin admin, Popups popups) {
         validateSelectedIds(ids);
 
         Map<Integer, ServiceResult<ChangingWorkflowStatusResult>> result = workflowService.setActiveness(ids, admin, activate);
@@ -482,10 +491,10 @@ public class WorkflowController implements XssCheckAware {
 
             if (changingResult.isChanged()) {
                 JSONObject statusJson = new JSONObject();
-                statusJson.element("id", id);
-                statusJson.element("status", changingResult.getNewStatus().getName());
+                statusJson.put("id", id);
+                statusJson.put("status", changingResult.getNewStatus().getName());
 
-                jsonArray.add(statusJson);
+                jsonArray.put(statusJson);
             }
 
             if (res.isSuccess() && changingResult.isChanged()) {
@@ -523,7 +532,7 @@ public class WorkflowController implements XssCheckAware {
         }
 
 
-        return ResponseEntity.ok(new DataResponseDto<>(jsonArray, popups));
+        return ResponseEntity.ok(new DataResponseDto<>(jsonArray.toList(), popups));
     }
 
     private void validateSelectedIds(Set<Integer> ids) {
@@ -552,8 +561,9 @@ public class WorkflowController implements XssCheckAware {
         Workflow.WorkflowStatus newStatus = newWorkflow.getStatus() != Workflow.WorkflowStatus.STATUS_NONE ? newWorkflow.getStatus() : Workflow.WorkflowStatus.STATUS_OPEN;
         boolean isActivePausedOrTesting = newStatus == Workflow.WorkflowStatus.STATUS_ACTIVE || newStatus == STATUS_PAUSED || newStatus == Workflow.WorkflowStatus.STATUS_TESTING;
         boolean isDuringPause = isDuringPause(existingStatus, newStatus);
+        boolean isUnpausing = WorkflowUtils.isUnpausing(existingStatus, newStatus);
 
-        if (StringUtils.isNotEmpty(forwardName) && StringUtils.length(newWorkflow.getShortname()) < 3) {
+        if (((admin.isRedesignedUiUsed() && StringUtils.isNotBlank(forwardParams)) || StringUtils.isNotEmpty(forwardName)) && StringUtils.length(newWorkflow.getShortname()) < 3) {
             newWorkflow.setShortname(INCOMPLETE_WORKFLOW_NAME);
         }
 
@@ -568,7 +578,11 @@ public class WorkflowController implements XssCheckAware {
                 newIcons = updateMailingAndStopIcons(existingWorkflow.getWorkflowIcons(), newIcons);
             }
 
-            workflowService.saveWorkflow(admin, newWorkflow, newIcons, isDuringPause);
+            if (admin.isRedesignedUiUsed()) {
+                workflowService.restoreCreatedMailings(newIcons, existingWorkflow, admin);
+            }
+
+            workflowService.saveWorkflow(admin, newWorkflow, newIcons, isDuringPause, isUnpausing);
             newWorkflow.setStatus(newStatus);
 
             if (existingWorkflow == null) {
@@ -579,7 +593,7 @@ public class WorkflowController implements XssCheckAware {
 
             List<WorkflowIcon> icons = newWorkflow.getWorkflowIcons();
             if (StringUtils.isNotEmpty(forwardName) && !isDuringPause) { // if pausing then skip to forward after status is set 
-                if (isRedesign(admin)) {
+                if (admin.isRedesignedUiUsed()) {
                     return getForwardRedesigned(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
                 }
                 return getForward(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
@@ -588,13 +602,13 @@ public class WorkflowController implements XssCheckAware {
             errors.addAll(validateWorkflow(admin, icons, newWorkflow.getWorkflowId(), existingStatus, newStatus));
 
             boolean isValid = errors.isEmpty();
-            if (!isRedesign(admin)) {
+            if (!admin.isRedesignedUiUsed()) {
                 isValid = isValid && !checkAndSetDuplicateMailing(admin, redirectModel, icons, isActivePausedOrTesting);
             }
             setStatus(admin, newWorkflow, existingWorkflow, errors, warnings, isValid);
             
             if (StringUtils.isNotEmpty(forwardName) && isValid && isDuringPause) {
-                if (isRedesign(admin)) {
+                if (admin.isRedesignedUiUsed()) {
                     return getForwardRedesigned(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
                 }
                 return getForward(forwardName, forwardParams, forwardTargetItemId, newWorkflow.getWorkflowId(), icons, redirectModel);
@@ -607,11 +621,11 @@ public class WorkflowController implements XssCheckAware {
             workflowForm.setWorkflowId(newWorkflow.getWorkflowId());
         } else {
             if (existingWorkflow == null) {
-            	throw new Exception("Unexpected empty existingWorkflow");
+            	throw new IllegalStateException("Unexpected empty existingWorkflow");
             }
 
             if (StringUtils.isNotEmpty(forwardName)) {
-                if (isRedesign(admin)) {
+                if (admin.isRedesignedUiUsed()) {
                     return getForwardRedesigned(forwardName, forwardParams, forwardTargetItemId, existingWorkflow.getWorkflowId(),
                             existingWorkflow.getWorkflowIcons(), redirectModel);
                 }
@@ -643,10 +657,13 @@ public class WorkflowController implements XssCheckAware {
 
         warnings.forEach(popups::warning);
         updateForwardParameters(session, forwardTargetItemId, workflowForm.getWorkflowId(), forwardParams);
+        if (admin.isRedesignedUiUsed() && StringUtils.isNotBlank(forwardParams) && StringUtils.isNotBlank(forwardTargetItemId)) {
+            WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectModel, session, Integer.parseInt(forwardTargetItemId));
+        }
 
         if (showStatistic) {
             if (workflowService.existsAtLeastOneFilledMailingIcon(getIcons(workflowForm))) {
-                if (isRedesign(admin)) {
+                if (admin.isRedesignedUiUsed()) {
                     return String.format("redirect:/workflow/%d/statistic.action", workflowForm.getWorkflowId()); 
                 } else {
                     redirectModel.addFlashAttribute("showStatisticsImmediately", true);
@@ -712,7 +729,7 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/validateDependency.action")
-    public ResponseEntity<?> validateDependency(Admin admin, WorkflowDependencyValidationForm form) {
+    public ResponseEntity<Map<String, Object>> validateDependency(Admin admin, WorkflowDependencyValidationForm form) {
         WorkflowDependencyType type = form.getType();
         int workflowId = form.getWorkflowId();
 
@@ -733,18 +750,18 @@ public class WorkflowController implements XssCheckAware {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         JSONObject data = new JSONObject();
-        data.element("valid", workflowService.validateDependency(admin.getCompanyID(), workflowId, dependency));
-        return new ResponseEntity<>(data, HttpStatus.OK);
+        data.put("valid", workflowService.validateDependency(admin.getCompanyID(), workflowId, dependency));
+        return new ResponseEntity<>(data.toMap(), HttpStatus.OK);
     }
 
     @GetMapping("/getCurrentAdminTime.action")
-    public ResponseEntity<JSONObject> getCurrentAdminTime(Admin admin) {
+    public ResponseEntity<Map<String, Object>> getCurrentAdminTime(Admin admin) {
         GregorianCalendar calendar = new GregorianCalendar(AgnUtils.getTimeZone(admin));
 
         final JSONObject resultJson = new JSONObject();
-        resultJson.element("hour", calendar.get(Calendar.HOUR_OF_DAY));
-        resultJson.element("minute",  calendar.get(Calendar.MINUTE));
-        return ResponseEntity.ok(resultJson);
+        resultJson.put("hour", calendar.get(Calendar.HOUR_OF_DAY));
+        resultJson.put("minute",  calendar.get(Calendar.MINUTE));
+        return ResponseEntity.ok(resultJson.toMap());
     }
 
     @GetMapping(value = "/getMailingsByWorkStatus.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
@@ -807,7 +824,7 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/copy.action")
-    public String copy(Admin admin, Model model, @RequestParam int workflowId, @RequestParam boolean isWithContent) throws Exception {
+    public String copy(Admin admin, Model model, @RequestParam int workflowId, @RequestParam boolean isWithContent) {
         Workflow existedWorkflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
         Workflow workflow = workflowService.copyWorkflow(admin, workflowId, isWithContent);
 
@@ -842,7 +859,7 @@ public class WorkflowController implements XssCheckAware {
     @GetMapping("/getSampleWorkflowContent.action")
     public ResponseEntity<List<WorkflowIcon>> getSampleWorkflowContent(@RequestParam String type, @RequestParam boolean gridEnabled) {
         try {
-            return ResponseEntity.ok(ComSampleWorkflowFactory.createSampleWorkflow(SampleWorkflowType.from(type), gridEnabled));
+            return ResponseEntity.ok(SampleWorkflowFactory.createSampleWorkflow(SampleWorkflowType.from(type), gridEnabled));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -852,7 +869,7 @@ public class WorkflowController implements XssCheckAware {
     public ResponseEntity<List<WorkflowIcon>> autoOptWorkflowSample(@RequestParam(defaultValue = "2") int mailingsCount,
                                                                     @RequestParam boolean gridEnabled, Admin admin) {
         Locale locale = admin.getLocale();
-        List<WorkflowIcon> icons = ComSampleWorkflowFactory.autoOptWorkflowSample(mailingsCount, gridEnabled, locale);
+        List<WorkflowIcon> icons = SampleWorkflowFactory.autoOptWorkflowSample(mailingsCount, gridEnabled, locale);
         return CollectionUtils.isEmpty(icons)
                 ? ResponseEntity.badRequest().build()
                 : ResponseEntity.ok(icons);
@@ -918,23 +935,17 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/viewOnlyElements.action")
-    public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, Admin admin, Model model,
-                                   @RequestParam(value = "isWkhtmltopdfUsage", required = false) boolean isWkhtmltopdfUsage, Popups popups) throws Exception {
-
+    public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, Admin admin, Model model, Popups popups) {
         prepareViewPage(admin, model, form.getWorkflowId());
-        model.addAttribute("isWkhtmltopdfUsage", isWkhtmltopdfUsage);
-
         loadWorkflow(form, admin, popups);
         writeUserActivityLog(admin, "view campaign", getWorkflowDescription(form));
-
         return "workflow_view_only_elements";
     }
-
 
     @GetMapping("/{workflowId:\\d+}/generatePDF.action")
     public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId, HttpSession session) throws IOException {
         String hostUrl = configService.getPreviewBaseUrl();
-        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + session.getId() + "?workflowId=" + workflowId + "&isWkhtmltopdfUsage=true";
+        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + session.getId() + "?workflowId=" + workflowId;
 
         String workflowName = workflowService.getWorkflow(workflowId, admin.getCompanyID()).getShortname();
         File pdfFile = pdfService.generatePDF(admin, url, true, HttpUtils.escapeFileName(workflowName), "workflow.single", WORKFLOW_CUSTOM_CSS_STYLE, "wmLoadFinished");
@@ -965,17 +976,6 @@ public class WorkflowController implements XssCheckAware {
         int companyId = admin.getCompanyID();
         int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
         return ResponseEntity.ok(componentId);
-    }
-    
-    @GetMapping("/{workflowId:\\d+}/getTotalStatistics.action")
-    public String getTotalStatistics(Admin admin, @PathVariable int workflowId, Popups popups) {
-        int finalMailingId = workflowStatisticsService.getFinalMailingID(workflowId, admin.getCompanyID());
-        if (finalMailingId == 0) {
-            popups.alert("error.workflow.noStatistics.title");
-            return MESSAGES_VIEW;
-        }
-        
-        return "redirect:/statistics/mailing/" + finalMailingId + "/view.action";
     }
 
     // TODO: remove after EMMGUI-714 will be finished and old design will be removed
@@ -1049,19 +1049,14 @@ public class WorkflowController implements XssCheckAware {
                 workflowForm.setStatusMaybeChangedTo(STATUS_INACTIVE);
                 break;
 
-            case STATUS_OPEN:
-            case STATUS_INACTIVE:
-            case STATUS_TESTED:
+            case STATUS_OPEN, STATUS_INACTIVE, STATUS_TESTED:
                 workflowForm.setStatusMaybeChangedTo(STATUS_ACTIVE);
                 break;
 
-            case STATUS_NONE:
-            case STATUS_TESTING:
-            case STATUS_COMPLETE:
+            case STATUS_NONE, STATUS_TESTING, STATUS_COMPLETE:
                 workflowForm.setStatusMaybeChangedTo(STATUS_NONE);
                 break;
-			case STATUS_FAILED: //$FALL-THROUGH$
-			case STATUS_TESTING_FAILED: //$FALL-THROUGH$
+			case STATUS_FAILED, STATUS_TESTING_FAILED: //$FALL-THROUGH$
 			default:
 				break;
         }
@@ -1121,7 +1116,7 @@ public class WorkflowController implements XssCheckAware {
         return workflow;
     }
 
-    private void prepareViewPage(Admin admin, Model model, int workflowId) throws Exception {
+    private void prepareViewPage(Admin admin, Model model, int workflowId) {
         // @todo we need to think whether we need to set all that to request or is it better to get that by ajax requests when it is needed
         int companyId = admin.getCompanyID();
         List<TargetLight> allTargets = workflowService.getAllTargets(companyId);
@@ -1132,7 +1127,7 @@ public class WorkflowController implements XssCheckAware {
         model.addAttribute("allTargets", allTargets);
         model.addAttribute("campaigns", campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
         model.addAttribute("allMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
-        if (!isRedesign(admin)) {
+        if (!admin.isRedesignedUiUsed()) {
             model.addAttribute("allUserForms", workflowService.getAllUserForms(companyId));
         }
         model.addAttribute("localeDateTimePattern", admin.getDateTimeFormat().toPattern());
@@ -1144,14 +1139,13 @@ public class WorkflowController implements XssCheckAware {
                 ? new ArrayList<AutoImportLight>()
                 : autoImportService.getListOfAutoImportsForWorkflow(workflowId, companyId));
         model.addAttribute("allAutoExports", autoExportService == null ? new ArrayList<AutoExport>() : autoExportService.getAutoExports(admin));
-        if (!isRedesign(admin)) {
+        if (!admin.isRedesignedUiUsed()) {
             model.addAttribute("allMailings", workflowService.getAllMailings(admin));
         }
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("splitTypes", SPLIT_TYPES);
+        }
         addExtendedModelAttrs(admin, model, allTargets);
-    }
-    
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
     }
 
     protected void addExtendedModelAttrs(Admin admin, Model model, List<TargetLight> allTargets) {
@@ -1314,6 +1308,7 @@ public class WorkflowController implements XssCheckAware {
             case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID: return WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE;
             case WorkflowIconType.Constants.IMPORT_ID: return WorkflowIconType.Constants.IMPORT_VALUE;
             case WorkflowIconType.Constants.EXPORT_ID: return WorkflowIconType.Constants.EXPORT_VALUE;
+            case WorkflowIconType.Constants.SPLIT_ID: return WorkflowIconType.Constants.SPLIT_VALUE;
             default: throw new RuntimeException("Unknown icon type: " + icon.getType());
         }
     }
@@ -1450,8 +1445,7 @@ public class WorkflowController implements XssCheckAware {
             return false;
         }
 
-        if (model instanceof RedirectAttributes) {
-            RedirectAttributes attributes = (RedirectAttributes) model;
+        if (model instanceof RedirectAttributes attributes) {
             attributes.addFlashAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING);
             attributes.addFlashAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
             attributes.addFlashAttribute("affectedMailings", duplicatedMailings);
@@ -1470,7 +1464,7 @@ public class WorkflowController implements XssCheckAware {
 
         final int workflowId = workflow.getWorkflowId();
 
-        if (isValid && (isRedesign(admin) || validateStatusTransition(currentStatus, newStatus, errors))) {
+        if (isValid && (admin.isRedesignedUiUsed() || validateStatusTransition(currentStatus, newStatus, errors))) {
             if (newStatus == Workflow.WorkflowStatus.STATUS_ACTIVE || newStatus == Workflow.WorkflowStatus.STATUS_TESTING) {
                 boolean testing = newStatus == Workflow.WorkflowStatus.STATUS_TESTING;
                 boolean unpausing = WorkflowUtils.isUnpausing(currentStatus, newStatus);
@@ -1499,15 +1493,31 @@ public class WorkflowController implements XssCheckAware {
             jsonGenerator.writeFieldName(key.toUpperCase());
         }
     }
-    
-    private void setAutoOptData(Admin admin, WorkflowForm form, Model model) {
-        model.addAttribute("isTotalStatisticAvailable", workflowStatisticsService.isTotalStatisticAvailable(Workflow.WorkflowStatus.valueOf(form.getStatus().name()), form.getWorkflowIcons()));
-        model.addAttribute("autoOptData", optimizationService.getOptimizationLight(admin.getCompanyID(), form.getWorkflowId()));
-    }
 
-    @GetMapping("/{id:\\d+}/statistic.action")
-    public String statistic(@PathVariable int id, Admin admin, Model model) throws Exception {
-        model.addAttribute("statisticUrl", workflowStatisticsService.getReportUrl(id, admin));
-        return "workflow_stat_view";
+    @GetMapping("/{workflowId:\\d+}/statistic.action")
+    public String statistic(@PathVariable int workflowId, @ModelAttribute("mailingStatisticForm") MailingStatisticForm form,
+                            Admin admin, Model model, HttpSession session) {
+        if (DateMode.NONE.equals(form.getDateMode())) {
+            form.setDateMode(DateMode.SELECT_MONTH);
+        }
+
+        if (form.getMonth() == -1) {
+            form.setMonth(YearMonth.now().getMonth());
+        }
+        if (form.getYear() == 0) {
+            form.setYear(YearMonth.now().getYear());
+        }
+
+        Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
+
+        model.addAttribute("statWorkflowId", workflowId);
+        model.addAttribute("workflowName", workflow.getShortname());
+        model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(workflowId, admin));
+        model.addAttribute("birtUrl", workflowStatisticsService.getWorkflowStatUrl(workflow, admin, session.getId(), form));
+        model.addAttribute("monthlist", AgnUtils.getMonthList());
+        model.addAttribute("yearlist", AgnUtils.getYearList(workflowStatisticsService.getStartYear(workflowId, admin)));
+        model.addAttribute("isWorkflowStatistics", true);
+
+        return "stats_mailing_view";
     }
 }

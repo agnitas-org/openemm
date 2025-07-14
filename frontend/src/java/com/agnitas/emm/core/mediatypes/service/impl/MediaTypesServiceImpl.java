@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,9 +15,9 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -71,7 +71,7 @@ public class MediaTypesServiceImpl implements MediaTypesService {
     }
 
     @Override
-    public void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception {
+    public void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) {
         mediatypesDao.saveMediatypes(companyID, mailingId, mediatypes);
     }
 
@@ -80,6 +80,6 @@ public class MediaTypesServiceImpl implements MediaTypesService {
         return mailing.getMediatypes().entrySet().stream()
                 .filter(entry -> entry.getValue().getStatus() == MediaTypeStatus.Active.getCode())
                 .map(entry -> MediaTypes.getMediaTypeForCode(entry.getKey()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

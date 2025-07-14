@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,6 +19,7 @@ import java.util.Set;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLinkListItem;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
@@ -39,10 +40,10 @@ public interface TrackableLinkDao {
 	/**
 	 * Do not use this method directly for click tracking!
 	 * 
-	 * Use {@link ClickTrackingService#trackLinkClick(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)} instead. This
+	 * Use {@link ClickTrackingService#trackLinkClick(ExtensibleUID, String, DeviceClass, int, int)} instead. This
 	 * method respects the tracking settings of the customer.
 	 * 
-	 * @see ClickTrackingService#trackLinkClick(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)
+	 * @see ClickTrackingService#trackLinkClick(ExtensibleUID, String, DeviceClass, int, int)
 	 */
 	boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 	
@@ -66,7 +67,7 @@ public interface TrackableLinkDao {
 
     void deleteAdminAndTestClicks(int mailingId, int companyId);
 
-	void removeGlobalAndIndividualLinkExtensions(int companyId, int mailingId) throws Exception;
+	void removeGlobalAndIndividualLinkExtensions(int companyId, int mailingId);
 	
 	void removeLinkExtensionsByCompany(int companyID);
 	

@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8"%>
-<%@ page import="org.agnitas.util.AgnUtils"%>
+<%@ page import="com.agnitas.util.AgnUtils"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
@@ -23,7 +23,7 @@
     </div>
 
     <div class="upselling-content" data-sizing="scroll">
-        <c:url var="upsellingImageSrc" value="assets/core/images/facelift/general-upselling.png"/>
+        <c:url var="upsellingImageSrc" value="assets/core/images/facelift/general-upselling_old.png"/>
 
         <div class="row">
             <div class="col-sm-12">

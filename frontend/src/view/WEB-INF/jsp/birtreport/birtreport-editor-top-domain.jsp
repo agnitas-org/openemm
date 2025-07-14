@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
-<%@ page import="com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings" %>
+<%@ page import="com.agnitas.emm.core.birtreport.bean.impl.BirtReportDateRangedSettings" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -16,13 +16,13 @@
 
 
 <c:set var="TOP_DOMAIN_KEY" value="<%= ReportSettingsType.TOP_DOMAIN.getKey()%>"/>
-<c:set var="DATE_RANGE_PREDEFINED" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED%>" scope="request"/>
-<c:set var="DATE_RANGE_CUSTOM" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_CUSTOM%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED" value="<%=BirtReportDateRangedSettings.DATE_RANGE_PREDEFINED%>" scope="request"/>
+<c:set var="DATE_RANGE_CUSTOM" value="<%=BirtReportDateRangedSettings.DATE_RANGE_CUSTOM%>" scope="request"/>
 
-<c:set var="DATE_RANGE_PREDEFINED_WEEK" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_30_DAYS" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_30_DAYS%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_LAST_MONTH" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_LAST_MONTH%>" scope="request"/>
-<c:set var="DATE_RANGE_PREDEFINED_THREE_MONTHS" value="<%=ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_WEEK" value="<%=BirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_30_DAYS" value="<%=BirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_30_DAYS%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_LAST_MONTH" value="<%=BirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_LAST_MONTH%>" scope="request"/>
+<c:set var="DATE_RANGE_PREDEFINED_THREE_MONTHS" value="<%=BirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS%>" scope="request"/>
 
 <div class="tile vspace-bottom-0">
     <div class="tile-header">

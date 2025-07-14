@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComTrackpointDef;
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.beans.TrackpointDef;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -31,7 +31,7 @@ public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ActionOperationUpdateCustomerImpl.class);
 
-	private ComRecipientDao recipientDao;
+	private RecipientDao recipientDao;
 	
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -49,13 +49,13 @@ public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 			try {
 				if (op.isUseTrack()) {
 					switch ((Integer)params.get("trackingPointType")) {
-						case ComTrackpointDef.TYPE_SIMPLE:
+						case TrackpointDef.TYPE_SIMPLE:
 							updateValue = String.valueOf(params.get("trackingValue"));
 							break;
-						case ComTrackpointDef.TYPE_NUM:
+						case TrackpointDef.TYPE_NUM:
 							updateValue = String.valueOf(params.get("trackingValue"));
 							break;
-						case ComTrackpointDef.TYPE_ALPHA:
+						case TrackpointDef.TYPE_ALPHA:
 							updateValue = (String)params.get("trackingValue");
 							break;
 						default:
@@ -111,7 +111,7 @@ public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 		return aBuf.toString();
 	}
 	
-	public void setRecipientDao(ComRecipientDao recipientDao) {
+	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 }

@@ -4,7 +4,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
-<%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglists" type="java.util.List<com.agnitas.beans.Mailinglist>"--%>
 
 <mvc:form servletRelativeAction="/recipient/import/wizard/step/mailinglists.action" modelAttribute="importWizardSteps" data-form="resource">
     <c:set var="tileContent">

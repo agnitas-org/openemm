@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,10 +16,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -98,10 +98,8 @@ public class ProfileFieldHashTagSupport {
 	 * @param cust current recipient
 	 * 
 	 * @return content of profile field
-	 * 
-	 * @throws HashTagException on errors during processing
 	 */
-	protected final String handleProfileFieldAccess(final String expression, final Recipient cust) throws HashTagException {
+	protected String handleProfileFieldAccess(String expression, Recipient cust) {
 		return cust.getCustParametersNotNull(expression);
 	}
 

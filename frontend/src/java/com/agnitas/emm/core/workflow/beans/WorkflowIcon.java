@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowSplitImpl;
 import com.agnitas.emm.core.workflow.service.WorkflowIconTypeSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -53,7 +54,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 		@JsonSubTypes.Type(value = WorkflowMailingMediaTypePostImpl.class, name = WorkflowIconType.Constants.MAILING_MEDIATYPE_POST_VALUE),
 		@JsonSubTypes.Type(value = WorkflowFollowupMailingImpl.class, name = WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE),
 		@JsonSubTypes.Type(value = WorkflowImportImpl.class, name = WorkflowIconType.Constants.IMPORT_VALUE),
-		@JsonSubTypes.Type(value = WorkflowExportImpl.class, name = WorkflowIconType.Constants.EXPORT_VALUE)
+		@JsonSubTypes.Type(value = WorkflowExportImpl.class, name = WorkflowIconType.Constants.EXPORT_VALUE),
+		@JsonSubTypes.Type(value = WorkflowSplitImpl.class, name = WorkflowIconType.Constants.SPLIT_VALUE)
 })
 public interface WorkflowIcon {
     int getId();

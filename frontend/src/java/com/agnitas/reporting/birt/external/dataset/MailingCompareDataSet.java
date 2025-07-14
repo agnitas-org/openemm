@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,13 @@
 */
 
 package com.agnitas.reporting.birt.external.dataset;
+
+import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
+import com.agnitas.reporting.birt.external.beans.CompareStatRow;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.impl.MailingBaseImpl;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,19 +29,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.MailingBase;
-import org.agnitas.beans.impl.MailingBaseImpl;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
-import com.agnitas.reporting.birt.external.beans.CompareStatRow;
-
 public class MailingCompareDataSet extends ComparisonBirtDataSet  {
-
-	private static final Logger logger = LogManager.getLogger(MailingCompareDataSet.class);
 
     public static final int TARGET_NAME_LENGTH_MAX = 28;
     private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
@@ -174,7 +169,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
     }
 
     public List<MailingBase> getMailingsBaseInfo(String mailingIdsStr) {
-        List<MailingBase> mailings = select(logger,
+        List<MailingBase> mailings = select(
                 "SELECT a.mailing_id, a.shortname, a.description, MIN(c.mintime) send_date " +
                         "FROM mailing_tbl a " +
                         "   LEFT JOIN mailing_account_sum_tbl c ON (a.mailing_id = c.mailing_id) " +

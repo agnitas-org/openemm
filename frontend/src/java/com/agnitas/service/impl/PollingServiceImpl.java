@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.agnitas.emm.core.export.web.ExportController;
 import com.agnitas.emm.core.recipient.imports.wizard.web.RecipientImportWizardController;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.util.concurrent.ListenableFutureTask;
@@ -53,7 +52,6 @@ public class PollingServiceImpl implements PollingService {
         return task;
     }
 
-    @Required
     public void setWorkerExecutorService(ExecutorService workerExecutorService) {
         this.workerExecutorService = workerExecutorService;
     }

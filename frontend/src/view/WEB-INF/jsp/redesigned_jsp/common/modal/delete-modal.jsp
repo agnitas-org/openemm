@@ -11,7 +11,7 @@
 <c:set var="isBulkDeletion" value="${items.getClass().getName() ne 'java.lang.String'}"/>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" method="DELETE" modelAttribute="bulkActionForm">
             <div class="modal-header">
                 <h1 class="modal-title"><mvc:message code="${title}"/></h1>

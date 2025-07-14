@@ -1,0 +1,90 @@
+
+.dropdown--period-picker {
+  > .btn {
+    border: 0;
+    padding: 0;
+  }
+
+  .dropdown-toggle {
+    color: var(--tile-title-color);
+  }
+}
+
+.tile--period-picker {
+  padding: 0;
+
+  .tile-header {
+    padding: $gap-x-sm $gap-sm;
+  }
+
+  .tile-title-controls {
+    color: var(--calendar-selected-border-color);
+    gap: $gap-x-sm;
+  }
+
+  .tile-body {
+    padding: $gap-sm;
+  }
+
+  .tile-body div {
+    display: grid;
+    gap: $gap-sm;
+
+    > input:checked + .btn { // active
+      font-weight: $font-weight-medium;
+      color: var(--tile-title-color) !important;
+      @include border($border-radius-sm);
+      border-color: var(--tile-title-color) !important;
+      .alien {
+        color: var(--tile-title-color);
+      }
+    }
+  }
+}
+
+.period-picker__years, .period-picker__months {
+  grid-template-columns: repeat(4, 1fr);
+
+  > .btn {
+    @include border($border-radius-sm);
+    @include size(50px, 40px);
+    @include flex-center;
+    font-weight: $font-weight-normal;
+
+    &:hover {
+      background-color: var(--xl-calendar-hovered-day-bg);
+    }
+  }
+}
+
+.period-picker__weeks {
+  grid-template-columns: 1fr;
+
+  > .btn {
+    padding: 2px;
+    border-color: transparent;
+    @include flex-row($gap-x-sm);
+    justify-content: space-between;
+    font-weight: $font-weight-normal;
+
+    span {
+      @include flex-center;
+      width: 20px;
+    }
+
+    span:first-child {
+      font-weight: $font-weight-medium;
+    }
+
+    .alien {
+      color: var(--bs-secondary-color);
+    }
+  }
+}
+
+.period-picker__title-btn {
+  padding: 0;
+  border: none;
+  color: var(--calendar-selected-border-color);
+  font-weight: $font-weight-medium;
+}

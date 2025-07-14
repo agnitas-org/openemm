@@ -20,10 +20,13 @@ AGN.Lib.Controller.new('import-profile', function () {
   let profileFieldsColumns;
   let columnMappingRowTemplate;
   let $columnMappingsTable;
+  let isClientForceSendingActive;
 
   this.addDomInitializer('import-profile-view', function () {
     isMailingListWasDisabled = $getRecipientMailinglists().prop('disabled');
     availableGenderIntValues = this.config.availableGenderIntValues;
+    isClientForceSendingActive = this.config.isClientForceSendingActive;
+
     initGenderMappingTable(sortGenderMappingsByValue(this.config.genderMappings));
     updateMailingListsSelectState();
   });
@@ -65,7 +68,7 @@ AGN.Lib.Controller.new('import-profile', function () {
     const actionSelected = $newRecipientsAction.exists() && $newRecipientsAction.val() > 0;
     const isAllMailinglistsSelected = $allMalinglistsSlider.exists() && $allMalinglistsSlider.is(':checked');
 
-    const isMailingListsSelectDisabled = actionSelected || isMailingListWasDisabled || isAllMailinglistsSelected;
+    const isMailingListsSelectDisabled = (actionSelected && !isClientForceSendingActive) || isMailingListWasDisabled || isAllMailinglistsSelected;
     const mailinglists = Select.get($getRecipientMailinglists());
     mailinglists.toggleDisabled(isMailingListsSelectDisabled);
     if (isMailingListsSelectDisabled) {
@@ -73,7 +76,7 @@ AGN.Lib.Controller.new('import-profile', function () {
     }
 
     if ($allMalinglistsSlider.exists()) {
-      const shouldDisableAllMailinglistSlider = actionSelected || isMailingListWasDisabled;
+      const shouldDisableAllMailinglistSlider = (actionSelected && !isClientForceSendingActive) || isMailingListWasDisabled;
 
       $allMalinglistsSlider.prop('disabled', shouldDisableAllMailinglistSlider);
       $allMalinglistsSlider.parent().toggleClass('hidden', shouldDisableAllMailinglistSlider);
@@ -398,7 +401,7 @@ AGN.Lib.Controller.new('import-profile', function () {
 
     $columnMappingsTable = $('#extended-column-mappings-block');
     renderColumnMappings(mappings, true);
-    CoreInitializer.run('table', $columnMappingsTable.closest('table'));
+    CoreInitializer.run('table-cols-resizer', $columnMappingsTable.closest('table'));
   });
 
   this.addAction({click: 'save-extended-mappings'}, function () {

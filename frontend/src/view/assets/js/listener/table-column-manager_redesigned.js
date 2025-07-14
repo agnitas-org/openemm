@@ -1,4 +1,4 @@
-(function () {
+(() => {
 
   const Action = AGN.Lib.Action;
   const TableColumnManager = AGN.Lib.TableColumnManager;
@@ -17,4 +17,9 @@
     TableColumnManager.get(this.el).removeColumn(this.el.closest('th'));
   });
 
+  $(window).on("displayTypeChanged", (e, isMobileView) => {
+    if (isMobileView) {
+      TableColumnManager.get($('[data-manage-table-columns]'))?.discardChanges();
+    }
+  });
 })();

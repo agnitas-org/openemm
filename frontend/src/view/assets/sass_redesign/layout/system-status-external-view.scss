@@ -6,11 +6,10 @@ $system-status-content-max-width: 1000px;
   display: grid;
   gap: 40px;
   grid-template-columns: 1fr;
-  grid-template-rows: 50px 1fr min-content;
+  grid-template-rows: 50px 1fr;
   grid-template-areas:
 	"header"
-	"body"
-	"footer";
+	"body";
 
   header {
     grid-area: header;
@@ -48,14 +47,6 @@ $system-status-content-max-width: 1000px;
     .panel {
       max-width: $system-status-content-max-width;
     }
-  }
-
-  footer {
-    grid-area: footer;
-    padding: 0 $gap-sm $gap-sm $gap-sm;
-    display: flex;
-    justify-content: flex-end;
-    color: var(--text-gray-color);
   }
 
   .system-status__support {

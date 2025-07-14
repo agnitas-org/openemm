@@ -1,75 +1,71 @@
 
 <script id="module-ServiceMail" type="text/x-mustache-template">
-    <div id="serviceMailOperation" class="tile-body" data-module-content="{{- index}}">
+    <div id="serviceMailOperation" class="tile-body vstack gap-3" data-module-content="{{- index}}">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="ServiceMail"/>
         <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
 
-        <div class="row g-3">
-            <div class="col-12">
-                <label class="form-label" for="module_{{- index}}.toAddress"><mvc:message code="To"/></label>
-                <input type="text" name="modules[].toAddress" id="module_{{- index}}.toAddress" class="form-control" value="{{- toAddress}}">
+        <div>
+            <label class="form-label" for="module_{{- index}}.toAddress"><mvc:message code="To"/></label>
+            <input type="text" name="modules[].toAddress" id="module_{{- index}}.toAddress" class="form-control" value="{{- toAddress}}">
+        </div>
+
+        <div>
+            <label class="form-label" for="module_{{- index}}.fromAddress"><mvc:message code="From"/></label>
+            <input type="text" name="modules[].fromAddress" id="module_{{- index}}.fromAddress" class="form-control" value="{{- fromAddress}}">
+        </div>
+
+        <div>
+            <label class="form-label" for="module_{{- index}}.replyAddress"><mvc:message code="mailing.ReplyEmail"/></label>
+            <input type="text" name="modules[].replyAddress" id="module_{{- index}}.replyAddress" class="form-control" value="{{- replyAddress}}"/>
+        </div>
+
+        <div>
+            <label class="form-label" for="module_{{- index}}.subjectLine"><mvc:message code="mailing.Subject"/></label>
+            <input type="text" name="modules[].subjectLine" id="module_{{- index}}.subjectLine" class="form-control" value="{{- subjectLine}}"/>
+        </div>
+
+        <div>
+            <label class="form-label" for="module_{{- index}}.mailtype"><mvc:message code="action.Format"/></label>
+            <select name="modules[].mailtype" id="module_{{- index}}.mailtype" class="form-control">
+                <option value="0" {{ mailtype == 0 ? print('selected') : '' }}><mvc:message code="Text"/></option>
+                <option value="1" {{ mailtype == 1 ? print('selected') : '' }}><mvc:message code="mailing.Text_HTML"/></option>
+            </select>
+        </div>
+
+        <div class="tile tile--sm">
+            <div class="tile-header">
+                <h3 class="tile-title tile-title--grey"><mvc:message code="default.Content" /></h3>
+
+                <div class="tile-title-controls">
+                    <select id="service-mail-content-type-{{-index}}" name="service-mail-content-type-{{-index}}" class="form-control js-select"
+                            data-select-options="dropdownAutoWidth: true, width: 'auto'">
+                        <option value="text" {{ mailtype == 0 ? print('selected') : '' }} ><mvc:message code="Text_Version"/></option>
+                        <option value="html" {{ mailtype == 1 ? print('selected') : '' }}><mvc:message code="mailing.HTML_Version"/></option>
+                    </select>
+                </div>
+
+                <div class="tile-controls">
+                    <a href="#" data-modal="action-modal-editor"
+                       data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>, target: module_{{- index}}_htmlMail, id: htmlTemplateLarge, type: text"
+                       data-tooltip="<mvc:message code='editor.enlargeEditor'/>" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="html">
+                        <i class="icon icon-expand-arrows-alt"></i>
+                    </a>
+
+                    <a href="#" data-modal="action-modal-editor" data-modal-set="title: <mvc:message code="Text_Version"/>, target: module_{{- index}}_textMail, id: textTemplateLarge, type: text"
+                       data-tooltip="<mvc:message code='editor.enlargeEditor'/>" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="text">
+                        <i class="icon icon-expand-arrows-alt"></i>
+                    </a>
+                </div>
             </div>
+            <div class="tile-body tile-body--js-editor" data-field="validator">
+                <div class="h-100" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="text">
+                   <textarea name="modules[].textMail" id="module_{{- index}}_textMail" rows="14"
+                             data-field-validator="reject-script-element" class="form-control js-editor-text">{{- textMail}}</textarea>
+                </div>
 
-            <div class="col-12">
-                <label class="form-label" for="module_{{- index}}.fromAddress"><mvc:message code="From"/></label>
-                <input type="text" name="modules[].fromAddress" id="module_{{- index}}.fromAddress" class="form-control" value="{{- fromAddress}}">
-            </div>
-
-            <div class="col-12">
-                <label class="form-label" for="module_{{- index}}.replyAddress"><mvc:message code="mailing.ReplyEmail"/></label>
-                <input type="text" name="modules[].replyAddress" id="module_{{- index}}.replyAddress" class="form-control" value="{{- replyAddress}}"/>
-            </div>
-
-            <div class="col-12">
-                <label class="form-label" for="module_{{- index}}.subjectLine"><mvc:message code="mailing.Subject"/></label>
-                <input type="text" name="modules[].subjectLine" id="module_{{- index}}.subjectLine" class="form-control" value="{{- subjectLine}}"/>
-            </div>
-
-            <div class="col-12">
-                <label class="form-label" for="module_{{- index}}.mailtype"><mvc:message code="action.Format"/></label>
-                <select name="modules[].mailtype" id="module_{{- index}}.mailtype" class="form-control">
-                    <option value="0" {{ mailtype == 0 ? print('selected="selected"') : '' }}><mvc:message code="Text"/></option>
-                    <option value="1" {{ mailtype == 1 ? print('selected="selected"') : '' }}><mvc:message code="mailing.Text_HTML"/></option>
-                </select>
-            </div>
-
-            <div class="col-12">
-                <div class="tile tile--sm">
-                    <div class="tile-header">
-                        <h3 class="tile-title text-dark"><mvc:message code="default.Content" /></h3>
-
-                        <div class="tile-title-controls">
-                            <select id="service-mail-content-type-{{-index}}" name="service-mail-content-type-{{-index}}" class="form-control js-select"
-                                    data-select-options="dropdownAutoWidth: true, width: 'auto'">
-                                <option value="text" {{ mailtype == 0 ? print('selected="selected"') : '' }} ><mvc:message code="Text_Version"/></option>
-                                <option value="html" {{ mailtype == 1 ? print('selected="selected"') : '' }}><mvc:message code="mailing.HTML_Version"/></option>
-                            </select>
-                        </div>
-
-                        <div class="tile-controls">
-                            <a href="#" data-modal="action-modal-editor"
-                               data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>, target: module_{{- index}}_htmlMail, id: htmlTemplateLarge, type: text"
-                               data-tooltip="<mvc:message code='editor.enlargeEditor'/>" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="html">
-                                <i class="icon icon-expand-arrows-alt"></i>
-                            </a>
-
-                            <a href="#" data-modal="action-modal-editor" data-modal-set="title: <mvc:message code="Text_Version"/>, target: module_{{- index}}_textMail, id: textTemplateLarge, type: text"
-                               data-tooltip="<mvc:message code='editor.enlargeEditor'/>" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="text">
-                                <i class="icon icon-expand-arrows-alt"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="tile-body tile-body--js-editor" data-field="validator">
-                        <div class="h-100" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="text">
-                           <textarea name="modules[].textMail" id="module_{{- index}}_textMail" rows="14"
-                                     data-field-validator="reject-script-element" class="form-control js-editor-text">{{- textMail}}</textarea>
-                        </div>
-
-                        <div class="h-100" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="html">
-                           <textarea name="modules[].htmlMail" id="module_{{- index}}_htmlMail" rows="14"
-                                     data-field-validator="reject-script-element" class="form-control js-editor">{{- htmlMail}}</textarea>
-                        </div>
-                    </div>
+                <div class="h-100" data-show-by-select="#service-mail-content-type-{{-index}}" data-show-by-select-values="html">
+                   <textarea name="modules[].htmlMail" id="module_{{- index}}_htmlMail" rows="14"
+                             data-field-validator="reject-script-element" class="form-control js-editor">{{- htmlMail}}</textarea>
                 </div>
             </div>
         </div>

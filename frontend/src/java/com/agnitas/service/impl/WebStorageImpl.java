@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,8 +28,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.agnitas.beans.WebStorageEntry;
-import org.agnitas.service.WebStorageBundle;
+import com.agnitas.beans.WebStorageEntry;
+import com.agnitas.service.WebStorageBundle;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -62,6 +62,7 @@ public class WebStorageImpl implements WebStorage {
         dataMap.clear();
     }
 
+    // TODO: check usage and rempve when EMMGUI-714 will be finished and old design will be removed
     @SuppressWarnings("unchecked")
     @Override
     public <T extends WebStorageEntry> T get(WebStorageBundle<T> key) {

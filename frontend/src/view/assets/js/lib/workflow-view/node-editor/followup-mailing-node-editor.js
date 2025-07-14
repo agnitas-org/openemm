@@ -1,4 +1,5 @@
-(function () {
+(() => {
+
   const EditorsHelper = AGN.Lib.WM.EditorsHelper;
   const Messages = AGN.Lib.Messages;
   const Def = AGN.Lib.WM.Definitions;
@@ -37,15 +38,31 @@
     }
 
     createNewMailing() {
-      this.followupMailingEditorBase.createNewMailing();
+      this.#setSelectedOptionsToNode();
+      this.followupMailingEditorBase.createNewMailing(((mailingId, mailingName) => {
+        this.baseMailingEditorBase.node.setFilled(true);
+        const mailingSelect = this.followupMailingEditorBase.mailingSelect();
+
+        mailingSelect.addOption(mailingId, mailingName);
+        mailingSelect.selectOption(mailingId);
+        this.followupMailingEditorBase.setSelectMailingOptions(mailingId);
+      }));
     }
 
     editMailing() {
+      this.#setSelectedOptionsToNode();
       this.followupMailingEditorBase.editMailing(Def.constants.forwards.MAILING_EDIT.name);
     }
 
     copyMailing() {
+      this.#setSelectedOptionsToNode();
       this.followupMailingEditorBase.copyMailing(Def.constants.forwards.MAILING_COPY.name);
+    }
+
+    #setSelectedOptionsToNode() {
+      const data = this.baseMailingEditorBase.node.getData();
+      data.baseMailingId = this.baseMailingEditorBase.mailingId;
+      data.decisionCriterion = this.followupMailingEditorBase.getSelectedDecisionOption().val();
     }
 
     saveEditor() {

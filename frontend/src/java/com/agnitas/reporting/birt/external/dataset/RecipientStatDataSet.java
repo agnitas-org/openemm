@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,11 +10,22 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
+import com.agnitas.reporting.birt.external.beans.RecipientDoiRow;
+import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
+import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
+import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
+import com.agnitas.emm.common.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.jdbc.core.RowCallbackHandler;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,29 +41,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowCallbackHandler;
-
-import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
-import com.agnitas.reporting.birt.external.beans.RecipientDoiRow;
-import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
-import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
-import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_AND_NOT_ACTIVE_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.CONFIRMED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_AND_DELETED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.NOT_CONFIRMED_DOI;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.TOTAL_DOI;
 
 public class RecipientStatDataSet extends RecipientsBasedDataSet {
-
-	private static final Logger logger = LogManager.getLogger(RecipientStatDataSet.class);
 
 	public List<RecipientStatusRow> getRecipientStatus(int companyID, String targetIdStr, Integer mailinglistID,
                                                        int mediaType, String language, final String hiddenFilterTargetIdStr) {
@@ -103,7 +98,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		Map<UserStatus, Integer> resultMap = new HashMap<>();
 		RecipientStatusesMapCallback mapCallback = new RecipientStatusesMapCallback(resultMap);
-		query(logger, query.toString(), mapCallback, parameters.toArray(new Object[0]));
+		query(query.toString(), mapCallback, parameters.toArray(new Object[0]));
 
 		List<RecipientStatusRow> returnList = new ArrayList<>();
 
@@ -179,16 +174,16 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		int total = 0;
 		List<RecipientMailtypeRow> returnList = new ArrayList<>();
-		List<Map<String, Object>> result = select(logger, query.toString(), parameters.toArray(new Object[0]));
+		List<Map<String, Object>> result = select(query.toString(), parameters.toArray(new Object[0]));
 		for (Map<String, Object> row : result) {
-			int amount = ((Number) row.get("amount")).intValue();
+			int amount = toInt(row.get("amount"));
 			total += amount;
 		}
 
 		if (total > 0) {
 			for (Map<String, Object> row : result) {
-				int mailtype = ((Number) row.get("mailtype")).intValue();
-				int amount = ((Number) row.get("amount")).intValue();
+				int mailtype = toInt(row.get("mailtype"));
+				int amount = toInt(row.get("amount"));
 				returnList.add(new RecipientMailtypeRow(mailtype, Math.round(100 * amount / total)));
 			}
 		}
@@ -298,13 +293,13 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		RecipientMaxValues recipientMaxValues = new RecipientMaxValues();
 		Map<String, RecipientDetailRow> recipientRows = new HashMap<>();
 		RecipientDetailsMapCallback callback = new RecipientDetailsMapCallback(recipientRows, recipientMaxValues);
-		query(logger, query, callback, parameters.toArray(new Object[0]));
+		query(query, callback, parameters.toArray(new Object[0]));
 
 		if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyID)) {
 			// Select additional data from history tables
 			String hstQuery = query.replace(getCustomerBindingTableName(companyID), getHstCustomerBindingTableName(companyID));
 
-			query(logger, hstQuery, callback, parameters.toArray(new Object[0]));
+			query(hstQuery, callback, parameters.toArray(new Object[0]));
 		}
 
 		List<RecipientDetailRow> returnList = new ArrayList<>();
@@ -338,7 +333,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		return returnList;
     }
 
-    private static class RecipientStatusesMapCallback implements RowCallbackHandler {
+    private class RecipientStatusesMapCallback implements RowCallbackHandler {
 
 		private Map<UserStatus, Integer> map;
 
@@ -358,7 +353,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		}
 	}
 
-	private static class RecipientDetailsMapCallback implements RowCallbackHandler {
+	private class RecipientDetailsMapCallback implements RowCallbackHandler {
         private Map<String, RecipientDetailRow> dateMap;
         private RecipientMaxValues recipientMaxValues;
 

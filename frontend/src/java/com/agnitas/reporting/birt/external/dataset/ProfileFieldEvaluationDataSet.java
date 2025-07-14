@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,44 +10,110 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.emm.core.service.RecipientStandardField;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static com.agnitas.messages.I18nString.getLocaleString;
+import static java.util.Collections.emptyList;
+import static com.agnitas.util.DbUtilities.isTautologicWhereClause;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
-import static org.agnitas.util.DbUtilities.isTautologicWhereClause;
+import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.util.CsvWriter;
+import org.apache.commons.collections4.ListUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
-    private static final Logger logger = LogManager.getLogger(ProfileFieldEvaluationDataSet.class);
+    private final RecipientFieldService recipientFieldService;
 
+    public ProfileFieldEvaluationDataSet() { // TODO: EMMGUI-714: remove when old design will be removed
+        this.recipientFieldService = null;
+    }
+
+    @Autowired
+    public ProfileFieldEvaluationDataSet(RecipientFieldService recipientFieldService) {
+        this.recipientFieldService = recipientFieldService;
+    }
+
+    private static final RowMapper<ProfileFieldStatRow> ROW_MAPPER = (rs, i) -> new ProfileFieldStatRow(
+        rs.getString("value"),
+        rs.getInt("count"));
+
+
+    // TODO: EMMGUI-714: replace with com.agnitas.reporting.birt.external.dataset.ProfileFieldEvaluationDataSet.collect(com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm) when old design will be removed
     // used in profiledb_evaluation.rptdesign
     public List<ProfileFieldStatRow> collect(String colName, int companyId, int limit,
                                              int mailinglistId, int targetId, String hiddenTargetsCsv) {
+        colName = sanitizeColumnName(colName); // guard
+
         List<Object> params = new ArrayList<>();
+        String sql = """
+            SELECT %s value, COUNT(*) count
+            FROM %s cust WHERE %s IS NOT NULL AND %s = 0
+            %s %s
+            GROUP BY %s ORDER BY count DESC
+            """.formatted(colName, getCustomerTableName(companyId), colName,
+            RecipientStandardField.Bounceload.getColumnName(),
+            applyMailinglistFilter(mailinglistId, companyId, params),
+            applyTargetsFilter(targetId, hiddenTargetsCsv, companyId),
+            colName);
 
-        String sql = " SELECT " + colName + " value, COUNT(*) count" +
-            " FROM " + getCustomerTableName(companyId) + " cust" +
-            " WHERE " + colName + " IS NOT NULL" +
-            " AND " + RecipientStandardField.Bounceload.getColumnName() + " = 0" +
-            applyMailinglistFilter(mailinglistId, companyId, params) +
-            applyTargetsFilter(targetId, hiddenTargetsCsv, companyId) +
-            " GROUP BY " + colName +
-            " ORDER BY count DESC";
         sql = applySqlLimit(limit, sql, params);
-
-        List<ProfileFieldStatRow> stat = select(logger, sql,
-            (rs, i) -> new ProfileFieldStatRow(rs.getString("value"), rs.getInt("count")),
-            params.toArray());
-        calculateRates(stat);
-        return stat;
+        try {
+            List<ProfileFieldStatRow> stat = select(sql, ROW_MAPPER, params.toArray());
+            addRates(stat);
+            return stat;
+        } catch (Exception e) {
+            logger.error("Error while collecting profile fields stat: {}", e.getMessage(), e);
+            return emptyList();
+        }
     }
 
-    private void calculateRates(List<ProfileFieldStatRow> stat) {
+    private String sanitizeColumnName(String columnName) { return columnName.replaceAll("[^a-zA-Z0-9_]", ""); }
+
+    public List<ProfileFieldStatRow> collect(ProfileFieldStatForm form) {
+        final String colName = form.getColName();
+        int companyId = form.getCompanyId();
+        if (companyId <= 0) {
+            throw new IllegalArgumentException("Invalid company id");
+        }
+        if (isInvalidColumn(colName, companyId)) {
+            throw new IllegalArgumentException("Invalid column name: " + colName);
+        }
+        return collect(form.getColName(), form.getCompanyId(), form.getLimit(), form.getMailingListId(), form.getTargetId(), form.getHiddenTargetsCsv());
+    }
+
+    public byte[] csv(ProfileFieldStatForm form) throws Exception {
+        return CsvWriter.csv(ListUtils.union(
+            List.of(getHeaderForCsv(form.getLocale())),
+            getRowsForCsv(form)));
+    }
+
+    private List<List<String>> getRowsForCsv(ProfileFieldStatForm form) {
+        return collect(form).stream().map(row -> List.of(row.getValue(), row.getAmount())).toList();
+    }
+
+    private static List<String> getHeaderForCsv(Locale locale) {
+        return List.of(getLocaleString("Value", locale), getLocaleString("statistic.amount.percent", locale));
+    }
+
+    private boolean isInvalidColumn(String colName, int companyId) {
+        return recipientFieldService.getRecipientFields(companyId).stream()
+            .noneMatch(field -> colName.equals(field.getColumnName()));
+    }
+
+    private void addRates(List<ProfileFieldStatRow> stat) {
         int total = stat.stream().mapToInt(ProfileFieldStatRow::getCount).sum();
-        stat.forEach(row -> row.setRate((float) row.getCount() / total * 100));
+        stat.forEach(row -> row.setRate((float) row.getCount() / total * 100)); // TODO: EMMGUI-714: remove when old design will be removed
+        stat.forEach(row -> row.setAmount("%s (%.2f%%)".formatted(
+            row.getCount(),
+            (float) row.getCount() / total * 100)));
     }
 
     private String applySqlLimit(int limit, String sql, List<Object> params) {
@@ -79,9 +145,10 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
     public static class ProfileFieldStatRow {
 
-        private String value;
-        private int count;
-        private float rate;
+        private final int count;
+        private final String value;
+        private float rate; // TODO: EMMGUI-714: remove when old design will be removed
+        private String amount;
 
         public ProfileFieldStatRow(String value, int count) {
             this.value = value;
@@ -92,16 +159,16 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
             return value;
         }
 
-        public void setValue(String value) {
-            this.value = value;
-        }
-
         public int getCount() {
             return count;
         }
 
-        public void setCount(int count) {
-            this.count = count;
+        public String getAmount() {
+            return amount;
+        }
+
+        public void setAmount(String amount) {
+            this.amount = amount;
         }
 
         public float getRate() {

@@ -6,7 +6,7 @@
 <c:set var="agnNavigationKey" 		    value="admins" 						scope="request" />
 <c:set var="agnTitleKey" 			    value="settings.webservice.user"    scope="request" />
 <c:set var="sidemenu_active" 		    value="Administration" 				scope="request" />
-<c:set var="sidemenu_sub_active" 	    value="settings.Admin" 				scope="request" />
+<c:set var="sidemenu_sub_active" 	    value="UserActivitylog.Users" 		scope="request" />
 <c:set var="agnHighlightKey" 		    value="settings.webservice.user"    scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	    value="UserActivitylog.Users" 		scope="request" />
 <c:set var="agnEditViewKey" 	        value="soap-users-overview" 	    scope="request" />

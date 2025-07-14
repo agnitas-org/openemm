@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,12 +12,12 @@ package com.agnitas.service.job;
 
 import java.util.List;
 
-import org.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorker;
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.dao.ComUndoDynContentDao;
-import com.agnitas.dao.ComUndoMailingComponentDao;
-import com.agnitas.dao.ComUndoMailingDao;
+import com.agnitas.dao.UndoDynContentDao;
+import com.agnitas.dao.UndoMailingComponentDao;
+import com.agnitas.dao.UndoMailingDao;
 
 /**
  * Example Insert in DB:
@@ -63,7 +63,7 @@ public class UndoRelictCleanerJobWorker extends JobWorker {
 		}
 	}
 	
-	void doCleanUp(final List<Integer> undoIds) throws Exception {
+	void doCleanUp(List<Integer> undoIds){
 		undoIds.sort(Integer::compare);
 
 		for(final int undoId : undoIds) {
@@ -71,10 +71,10 @@ public class UndoRelictCleanerJobWorker extends JobWorker {
 		}
 	}
 	
-	void doCleanUp(final int undoId) throws Exception {
-        final ComUndoMailingDao undoMailingDao = daoLookupFactory.getBeanUndoMailingDao();
-        final ComUndoMailingComponentDao undoMailingComponentDao = daoLookupFactory.getBeanUndoMailingComponentDao();
-        final ComUndoDynContentDao undoDynContentDao = daoLookupFactory.getBeanUndoDynContentDao();
+	void doCleanUp(final int undoId) {
+        final UndoMailingDao undoMailingDao = daoLookupFactory.getBeanUndoMailingDao();
+        final UndoMailingComponentDao undoMailingComponentDao = daoLookupFactory.getBeanUndoMailingComponentDao();
+        final UndoDynContentDao undoDynContentDao = daoLookupFactory.getBeanUndoDynContentDao();
 
         undoMailingComponentDao.deleteUndoData(undoId);
 		undoDynContentDao.deleteUndoData(undoId);

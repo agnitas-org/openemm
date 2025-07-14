@@ -1,14 +1,14 @@
-<%@ page import="org.agnitas.beans.BaseTrackableLink" %>
+<%@ page import="com.agnitas.beans.BaseTrackableLink" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+<%--@elvariable id="notFormActions" type="java.util.List<com.agnitas.emm.core.action.bean.EmmAction>"--%>
 
 <c:set var="KEEP_UNCHANGED" value="<%= BaseTrackableLink.KEEP_UNCHANGED %>"/>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-xl">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <mvc:form id="bulkActionsForm" onsubmit="return false;">
                 <div class="modal-header">

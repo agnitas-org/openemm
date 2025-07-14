@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,15 +15,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.dao.TagDao;
+import com.agnitas.dao.TagDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.TimeoutLRUMap;
+import com.agnitas.util.TimeoutLRUMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
@@ -44,23 +42,20 @@ public class AlterHashTag implements HashTag { // TODO Derive from AbstractColon
 	
 	private TagDao tagDao;
 	
-	private ComRecipientDao recipientDao;
+	private RecipientDao recipientDao;
 	
 	private ConfigService configService;
 	
 	private TimeoutLRUMap<Integer, String> tagSelectColumnCache = null;
 
-	@Required
 	public void setTagDao(TagDao tagDao) {
 		this.tagDao = tagDao;
 	}
 
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
+	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
 	}
 
-	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
 <%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
@@ -20,8 +20,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title></title>
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<title><mvc:message code="logon.title" /></title>
 
 <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp" />
 
@@ -55,7 +54,7 @@
 		margin: 0;
 		font-size: 2.8em;
 	}
-	
+
 	div {
 		text-align: left;
 	}
@@ -80,7 +79,7 @@
 	}
 
 	.flexitem {
-		flex: 1;	
+		flex: 1;
 	}
 
 	.wrapper {
@@ -103,7 +102,7 @@
 		background: #ffffff;
 		color: #0071b9;
 	}
-	
+
 	.divider--down {
 		width: 0;
 		height: 0;
@@ -111,7 +110,7 @@
 		border-right: 100vw solid transparent;
 		overflow: hidden;
 	}
-	
+
 	.divider--up {
 		width: 0;
 		height: 0;
@@ -126,25 +125,25 @@
 		width: 100%;
 		align-items: center;
 	}
-	
+
 	.header--wrapper {
 		align-items: center;
 		padding-top: 3em;
 		padding-bottom: 3em;
 	}
-	
+
 	.header__logo {
-		
+
 	}
-	
+
 	.header__logo > img{
 		max-width: 27.9em;
 	}
-	
+
 	.header__link {
 		text-align: end;
 	}
-	
+
 	.header__link > :first-child {
 		color: #0071b9;
 	}
@@ -154,7 +153,7 @@
 	.version {
 		width: 100%;
 	}
-	
+
 	.version--wrapper {
 		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
 		background-position: 100% 15%;
@@ -164,26 +163,34 @@
 		align-items: start;
 		padding-top: 3em;
 	}
-	
+
 	.version__text {
 		color: #FFFFFF;
 		padding: 2em 30% 2em 0;
 	}
-	
+
 	.version__text--headline {
 		color: #FFFFFF;
 		padding-bottom: 1em;
+		webkit-box-shadow: 0px 0px 30px 1px rgba(0, 0, 0, 0.3);
+		-moz-box-shadow: 0px 0px 30px 1px rgba(0, 0, 0, 0.3);
+		box-shadow: 0px 0px 30px 1px rgba(0, 0, 0, 0.3);
+		background: rgba(0, 0, 0, 0.3);
+		padding: 10px;
+		border-radius: 10px 10px 0px 0px;
 	}
-	
+
 	.version__text--headline > h1{
 		color: #FFFFFF;
 	}
-	
+
 	.version__text--content {
 		-webkit-box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
 		-moz-box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
 		box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
 		background: rgba(0,0,0,0.3);
+		padding: 10px;
+		border-radius: 0px 0px 10px 10px;
 	}
 /*Version END*/
 

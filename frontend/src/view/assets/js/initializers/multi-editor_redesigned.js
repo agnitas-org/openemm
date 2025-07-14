@@ -18,19 +18,19 @@ Use `[data-modal-set]` to pass some options to enlarged modal.
     <div class="tile-header">
         <ul class="tile-title-controls gap-1">
             <li>
-                <a href="#" class="btn btn-icon btn-inverse active" data-toggle-tab="#first-editor-tab">
+                <a href="#" class="btn btn-icon btn-secondary active" data-toggle-tab="#first-editor-tab">
                     <i class="icon icon-code"></i>
                 </a>
             </li>
             <li>
-                <a href="#" class="btn btn-icon btn-inverse" data-multi-editor-option="wysiwyg" data-toggle-tab="#second-editor-tab">
+                <a href="#" class="btn btn-icon btn-secondary" data-multi-editor-option="wysiwyg" data-toggle-tab="#second-editor-tab">
                     <i class="icon icon-font"></i>
                 </a>
             </li>
             <li>
-                <a href="#" class="btn btn-icon btn-icon--wide btn-inverse" data-toggle-tab="#third-editor-tab">
+                <a href="#" class="btn btn-icon btn-icon--wide btn-secondary" data-toggle-tab="#third-editor-tab">
                     <i class="icon icon-table"></i>
-                    <i class="icon icon-flask text-secondary"></i>
+                    <i class="icon icon-flask"></i>
                 </a>
             </li>
         </ul>
@@ -68,6 +68,7 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
         this.$target = this.$el;
       }
       this.$container = this.$target.parent();
+      this._isQbEditor = this.$target.find('#queryBuilderRules').exists();
 
       this.#init();
     }
@@ -88,6 +89,7 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
         this.enlarge();
       }
       this.updateResizeBtn();
+      Editor.get(this.editor$)?.resize();
     }
 
     enlarge() {
@@ -114,11 +116,12 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
       const opts = Helpers.objFromString(this.$resizeBtn.data('modal-set'));
       this.$modal = Modal.fromTemplate(template, _.extend(MultiEditor.defaultOptions(), opts));
       this.$placeholder.replaceWith(this.$target);
-      AGN.Lib.CoreInitializer.run('select', this.$target);
+      if (this._isQbEditor) {
+        AGN.Lib.CoreInitializer.run('select', this.$target);
+      }
       this.$applyBtn.on('click', () => this.resize());
       this.$modal.on('hide.bs.modal', () => this.hideModal()); // close or backdrop click
       this.$el.trigger('enlarged');
-      Editor.get(this.editor$)?.resize();
     }
 
     hideModal() {
@@ -133,7 +136,9 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
       this.toggleWysiwygIfSelected(false)
       this.restore();
       this.$container.append(this.$target);
-      AGN.Lib.CoreInitializer.run('select', this.$target);
+      if (this._isQbEditor) {
+        AGN.Lib.CoreInitializer.run('select', this.$target);
+      }
       this.toggleWysiwygIfSelected(true)
     }
 
@@ -156,20 +161,22 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
       this.toggleWysiwygIfSelected(false);
       Modal.getInstance(this.$modal).hide();
       this.$container.append(this.$target);
-      AGN.Lib.CoreInitializer.run('select', this.$target);
+      if (this._isQbEditor) {
+        AGN.Lib.CoreInitializer.run('select', this.$target);
+      }
       this.toggleWysiwygIfSelected(true);
     }
-    
+
     toggleWysiwygIfSelected(show) {
       if (this.wysiwygSelected) {
         this.$el.trigger(show ? 'tile:show' : 'tile:hide');
       }
     }
-    
+
     get editor$() {
       return this.$el.find('.js-editor');
     }
-    
+
     get wysiwygSelected() {
       return this.$el.find('[data-multi-editor-option="wysiwyg"]').is('.active');
     }
@@ -181,16 +188,20 @@ AGN.Lib.CoreInitializer.new('multi-editor', function ($scope = $(document)) {
     get $resizeBtn() {
       return this.$el.find('[data-enlarged-modal]');
     }
-    
+
     get $applyBtn() {
       return this.$modal?.find('[data-apply-enlarged]');
     }
-    
+
     get $placeholder() {
       return this.$modal?.find('.modal-body [data-placeholder]');
     }
 
+    // TODO check if resize btn still exists anywhere and remove after ux redesign finished
     updateResizeBtn() {
+      if (!this.$resizeBtn.exists()) {
+        return;
+      }
       this.$resizeBtn.find('i')
         .toggleClass('icon-expand-arrows-alt', !this.enlarged)
         .toggleClass('icon-compress-arrows-alt', this.enlarged);

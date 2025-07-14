@@ -53,7 +53,6 @@
       var elements = [].slice.call(link.children);
       elements.push(link);
 
-      //lodash because JS map or Jquery map do not work for wkhtmltopdf
       var rects = _.map(elements, function(el) {
         return el.getBoundingClientRect();
       });
@@ -206,7 +205,7 @@
         .progress(_.throttle(updatePopupsPositions, 100))
         .always(function() {
           updatePopupsPositions();
-          window.status = "heatmapLoadFinished";
+          window.waitStatus = "heatmapLoadFinished";
         });
     }
 

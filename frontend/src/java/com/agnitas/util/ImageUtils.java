@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,12 +22,11 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Set;
-
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.apache.commons.collections4.SetUtils;
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,22 +34,21 @@ import org.springframework.xml.validation.XMLReaderFactoryUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.agnitas.emm.validator.ApacheTikaUtils;
-
 public class ImageUtils {
+
 	private static final Logger logger = LogManager.getLogger(ImageUtils.class);
 
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
 
-	public static final Set<String> availableImageExtensions = Set.of("png", "gif", "jpg", "jpeg", "svg", "ico");
-	public static final String[] ALLOWED_MIMETYPES = {"image/png", "image/jpg", "image/jpeg", "image/gif", "image/svg+xml", "image/x-icon"};
+	public static final Set<String> availableImageExtensions = Set.of("png", "gif", "jpg", "jpeg", "svg", "ico", "webp");
+	public static final String[] ALLOWED_MIMETYPES = {"image/png", "image/jpg", "image/jpeg", "image/gif", "image/svg+xml", "image/x-icon", "image/webp"};
 
 	public static boolean isValidImageFileExtension(String format) {
 		return availableImageExtensions.contains(format.toLowerCase());
 	}
 
 	public static Set<String> getValidImageFileExtensions() {
-		return SetUtils.unmodifiableSet(availableImageExtensions);
+		return availableImageExtensions;
 	}
 
 	/**
@@ -72,6 +70,8 @@ public class ImageUtils {
 			return ApacheTikaUtils.isValidImage(stream) && isValidImageFileExtension(extension);
 		}
 
+		stream.mark(Integer.MAX_VALUE);
+
 		try (ImageInputStream iis = ImageIO.createImageInputStream(stream)) {
 			Iterator<ImageReader> iterator = ImageIO.getImageReaders(iis);
 
@@ -79,6 +79,7 @@ public class ImageUtils {
 				ImageReader reader = iterator.next();
 				return isValidImageFileExtension(reader.getFormatName());
 			} else {
+				stream.reset();
 				return isValidImageFileExtension(ApacheTikaUtils.getFileExtension(stream, false));
 			}
 		} catch (IOException e) {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,14 +11,14 @@
 package com.agnitas.emm.core.serverstatus.forms;
 
 import com.agnitas.emm.core.commons.dto.DateRange;
-import org.agnitas.web.forms.FormSearchParams;
+import com.agnitas.web.forms.FormSearchParams;
 
 public class JobQueueFormSearchParams implements FormSearchParams<JobQueueOverviewFilter> {
 
     private Integer id;
     private Boolean running;
     private String name;
-    private DateRange startDate = new DateRange();
+    private DateRange nextStartDate = new DateRange();
     private Boolean successful;
 
     @Override
@@ -26,7 +26,7 @@ public class JobQueueFormSearchParams implements FormSearchParams<JobQueueOvervi
         this.id = filter.getId();
         this.running = filter.getRunning();
         this.name = filter.getName();
-        this.startDate = filter.getStartDate();
+        this.nextStartDate = filter.getNextStartDate();
         this.successful = filter.getSuccessful();
     }
 
@@ -35,7 +35,7 @@ public class JobQueueFormSearchParams implements FormSearchParams<JobQueueOvervi
         filter.setId(id);
         filter.setRunning(running);
         filter.setName(name);
-        filter.setStartDate(startDate);
+        filter.setNextStartDate(nextStartDate);
         filter.setSuccessful(successful);
     }
 
@@ -44,7 +44,7 @@ public class JobQueueFormSearchParams implements FormSearchParams<JobQueueOvervi
         id = null;
         running = null;
         name = null;
-        startDate = new DateRange();
+        nextStartDate = new DateRange();
         successful = null;
     }
 }

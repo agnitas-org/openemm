@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@ page import="com.agnitas.emm.core.commons.ActivenessStatus" %>
+<%@ page import="com.agnitas.emm.core.action.operations.ActionOperationType" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -8,7 +9,7 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
-<%--@elvariable id="actionListJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="actionListJson" type="org.json.JSONArray"--%>
 
 <c:set var="active" value="<%= ActivenessStatus.ACTIVE %>"/>
 <c:set var="inactive" value="<%= ActivenessStatus.INACTIVE %>"/>
@@ -19,7 +20,7 @@
 <c:set var="isDeletionAllowed" value="${emm:permissionAllowed('actions.delete', pageContext.request)}"/>
 <c:set var="isChangeAllowed"   value="${emm:permissionAllowed('actions.change', pageContext.request)}"/>
 
-<c:url var="confirmDeleteUrl" value="/action/deleteRedesigned.action"/>
+<c:url var="confirmDeleteUrl"  value="/action/deleteRedesigned.action"/>
 <c:url var="confirmRestoreUrl" value="/action/restore.action"/>
 
 <div class="filter-overview" data-controller="activeness-overview" data-editable-view="${agnEditViewKey}">
@@ -42,19 +43,19 @@
                                 <mvc:message code="default.list.entry.select" />
                             </p>
                             <div class="bulk-actions__controls">
-                                <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-action">
+                                <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="bulk-activate-js" data-bulk-action="activate-action">
                                     <i class="icon icon-check-circle"></i>
                                 </a>
-                                <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-action">
+                                <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="bulk-deactivate-js" data-bulk-action="deactivate-action">
                                     <i class="icon icon-times-circle"></i>
                                 </a>
 
                                 <c:if test="${isDeletionAllowed}">
-                                    <a href="#" class="icon-btn text-danger js-data-table-bulk-delete" data-tooltip="<mvc:message code="bulkAction.delete.action" />"
+                                    <a href="#" class="icon-btn icon-btn--danger js-data-table-bulk-delete" data-tooltip="<mvc:message code="bulkAction.delete.action" />"
                                        data-bulk-action="delete-action" data-bulk-url="${confirmDeleteUrl}">
                                         <i class="icon icon-trash-alt"></i>
                                     </a>
-                                    <a href="#" class="icon-btn text-primary" data-tooltip="${deactivateMsg}" data-bulk-action="restore" data-bulk-url="${confirmRestoreUrl}">
+                                    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${deactivateMsg}" data-bulk-action="restore" data-bulk-url="${confirmRestoreUrl}">
                                         <i class="icon icon-redo"></i>
                                     </a>
                                 </c:if>
@@ -69,11 +70,6 @@
             <script id="action-list" type="application/json">
                 {
                     "columns": [
-                        {
-                            "field": "select",
-                            "type": "bulkSelectColumn",
-                            "hide": ${not isChangeAllowed and not isDeletionAllowed}
-                        },
                         {
                             "headerName": "<mvc:message code='Status'/>",
                             "editable": false,
@@ -94,13 +90,13 @@
                         },
                         {
                             "headerName": "<mvc:message code='default.Name'/>",
-                            "editable": false,
+                            "type": "textCaseInsensitiveColumn",
                             "cellRenderer": "NotEscapedStringCellRenderer",
                             "field": "shortname"
                         },
                         {
                             "headerName": "<mvc:message code='Description'/>",
-                            "editable": false,
+                            "type": "textCaseInsensitiveColumn",
                             "cellRenderer": "NotEscapedStringCellRenderer",
                             "field": "description"
                         },
@@ -127,13 +123,19 @@
                             "type": "dateColumn"
                         },
                         {
+                          "headerName": "<mvc:message code='Steps'/>",
+                          "type": "setColumn",
+                          "field": "operationTypes",
+                          "hide": true
+                        },
+                        {
                             "field": "deleted",
                             "type": "tableActionsColumn",
                             "buttons": [
-                              {"name": "activate-action",    "template": "action-activate-btn",   "hide": ${not isChangeAllowed}},
-                              {"name": "deactivate-action",  "template": "action-deactivate-btn", "hide": ${not isChangeAllowed}},
-                              {"name": "delete-action",      "template": "action-delete-btn",     "hide": ${not isDeletionAllowed}},
-                              {"name": "restore",            "template": "action-restore-btn",    "hide": true}
+                              {"name": "activate-action",   "template": "action-activate-btn",   "hide": ${not isChangeAllowed}},
+                              {"name": "deactivate-action", "template": "action-deactivate-btn", "hide": ${not isChangeAllowed}},
+                              {"name": "delete-action",     "template": "action-delete-btn",     "hide": ${not isDeletionAllowed}},
+                              {"name": "restore",           "template": "action-restore-btn",    "hide": true}
                             ],
                             "hide": ${not isChangeAllowed and not isDeletionAllowed}
                         }
@@ -152,7 +154,7 @@
                 <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
             </h1>
             <div class="tile-controls">
-                <a class="btn btn-icon btn-inverse" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-secondary" id="reset-filter" data-form-clear="#filter-tile" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
                 <a class="btn btn-icon btn-primary" id="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
             </div>
         </div>
@@ -211,6 +213,15 @@
                     </label>
                 </div>
             </div>
+
+            <div>
+                <label for="operationTypes-filter" class="form-label"><mvc:message code="Steps" /></label>
+                <select id="operationTypes-filter" class="form-control" multiple data-result-template="action-operation-type" data-selection-template="action-operation-type">
+                    <c:forEach var="operationType" items="${ActionOperationType.values()}">
+                        <option value="${operationType}">${operationType.name}</option>
+                    </c:forEach>
+                </select>
+            </div>
         </div>
     </div>
 </div>
@@ -234,29 +245,33 @@
 </script>
 
 <script id="action-delete-btn" type="text/x-mustache-template">
-    <a href="${confirmDeleteUrl}{{= '?bulkIds=' + id }}" type="button" class="icon-btn text-danger js-data-table-delete"
+    <a href="${confirmDeleteUrl}{{= '?bulkIds=' + id }}" type="button" class="icon-btn icon-btn--danger js-data-table-delete"
        data-bulk-action="delete" data-tooltip="<mvc:message code="Delete" />">
         <i class="icon icon-trash-alt"></i>
     </a>
 </script>
 
 <script id="action-restore-btn" type="text/x-mustache-template">
-    <a data-bulk-url="${confirmRestoreUrl}" type="button" class="icon-btn text-primary"
+    <a data-bulk-url="${confirmRestoreUrl}" type="button" class="icon-btn icon-btn--primary"
        data-tooltip="<mvc:message code='default.restore' />" data-restore-row>
         <i class="icon icon-redo"></i>
     </a>
 </script>
 
 <script id="action-activate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--primary" data-tooltip="${activateMsg}" data-action="activate-js" data-item-id="{{- id }}">
         <i class="icon icon-check-circle"></i>
     </a>
 </script>
 
 <script id="action-deactivate-btn" type="text/x-mustache-template">
-    <a href="#" class="icon-btn text-danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
+    <a href="#" class="icon-btn icon-btn--danger" data-tooltip="${deactivateMsg}" data-action="deactivate-js" data-item-id="{{- id }}">
         <i class="icon icon-times-circle"></i>
     </a>
+</script>
+
+<script id="action-operation-type" type="text/x-mustache-template">
+    <span>{{- t('triggerManager.operation.' + text) }}</span>
 </script>
 
 <script type="text/javascript">

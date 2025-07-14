@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,18 +12,16 @@ package com.agnitas.mailing.preview.service;
 
 import java.util.Objects;
 
-import org.agnitas.preview.Page;
-import org.agnitas.preview.Preview;
-import org.agnitas.preview.PreviewFactory;
-import org.agnitas.util.SafeString;
-import org.springframework.beans.factory.annotation.Required;
-
+import com.agnitas.preview.Page;
+import com.agnitas.preview.Preview;
+import com.agnitas.preview.PreviewFactory;
+import com.agnitas.util.SafeString;
 public final class MailingPreviewServiceImpl implements MailingPreviewService {
 	
 	private PreviewFactory previewFactory;
 	
 	@Override
-	public final Page renderPreview(final int mailingID, final int customerID) throws Exception {
+	public Page renderPreview(int mailingID, int customerID) {
 		final Preview preview = previewFactory.createPreview();
 		final Page page = preview.makePreview(mailingID, customerID, false);
 		preview.done();
@@ -32,27 +30,27 @@ public final class MailingPreviewServiceImpl implements MailingPreviewService {
 	}
 	
 	@Override
-	public final String renderHtmlPreview(final int mailingID, final int customerID) throws Exception {
+	public String renderHtmlPreview(int mailingID, int customerID) {
 		return renderHtmlPreview(mailingID, customerID, HtmlPreviewOptions.createDefault());
 	}
 
 	@Override
-	public final String renderHtmlPreview(final int mailingID, final int customerID, final HtmlPreviewOptions options) throws Exception {
+	public String renderHtmlPreview(int mailingID, int customerID, HtmlPreviewOptions options) {
 		return postProcessHtmlPreview(renderPreview(mailingID, customerID).getHTML(), options);
 	}
 
 	@Override
-	public final String renderTextPreview(final int mailingID, final int customerID) throws Exception {
+	public String renderTextPreview(int mailingID, int customerID) {
 		return renderPreview(mailingID, customerID).getText();
 	}
 	
 	@Override
-	public final String renderSmsPreview(final int mailingID, final int customerID) throws Exception {
+	public String renderSmsPreview(int mailingID, int customerID) {
 		return renderPreview(mailingID, customerID).getSMS();
 	}
 
 	@Override
-	public final String renderPreviewFor(final int mailingID, final int customerID, final String fragment) throws Exception {
+	public String renderPreviewFor(int mailingID, int customerID, String fragment) {
 		final Preview preview = previewFactory.createPreview();
 		final String page = preview.makePreview(mailingID, customerID, fragment);
 		preview.done();
@@ -60,7 +58,6 @@ public final class MailingPreviewServiceImpl implements MailingPreviewService {
 		return page;
 	}
 
-	@Required
 	public final void setPreviewFactory(final PreviewFactory factory) {
 		this.previewFactory = Objects.requireNonNull(factory,"Preview factory is null");
 	}

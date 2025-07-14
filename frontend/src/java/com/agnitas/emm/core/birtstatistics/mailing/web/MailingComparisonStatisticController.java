@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -18,8 +18,21 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonSearchParams;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
@@ -37,22 +50,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonForm;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonSearchParams;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/statistics/mailing/comparison")
@@ -66,12 +65,12 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     public static final int MAX_MAILINGS_SELECTED = 10;
     private static final int MIN_MAILINGS_SELECTED = 2;
     
-    private final ComMailingBaseService mailingBaseService;
+    private final MailingBaseService mailingBaseService;
     private final BirtStatisticsService birtStatisticsService;
     private final ConversionService conversionService;
     private final WebStorage webStorage;
 
-    public MailingComparisonStatisticController(ComMailingBaseService mailingBaseService, BirtStatisticsService birtStatisticsService, ConversionService conversionService, WebStorage webStorage) {
+    public MailingComparisonStatisticController(MailingBaseService mailingBaseService, BirtStatisticsService birtStatisticsService, ConversionService conversionService, WebStorage webStorage) {
         this.mailingBaseService = mailingBaseService;
         this.birtStatisticsService = birtStatisticsService;
         this.conversionService = conversionService;
@@ -86,10 +85,10 @@ public class MailingComparisonStatisticController implements XssCheckAware {
 
     // In case of adding target select on ui, see history to rollback model attrs
     @RequestMapping("/list.action")
-    public String list(@RequestParam(required = false) boolean restoreSort, Admin admin, Model model, MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, Popups popups) {
+    public String list(@RequestParam(required = false) Boolean restoreSort, Admin admin, Model model, MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, Popups popups) {
         try {
             FormUtils.syncPaginationData(webStorage, WebStorage.MAILING_COMPARISON_OVERVIEW, filter, restoreSort);
-            if (isUiRedesign(admin)) {
+            if (admin.isRedesignedUiUsed()) {
                 FormUtils.syncSearchParams(searchParams, filter, true);
             }
 
@@ -101,10 +100,6 @@ public class MailingComparisonStatisticController implements XssCheckAware {
         }
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         return "stats_mailing_comp_list";
-    }
-
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
     }
 
     @GetMapping("/search.action")
@@ -120,42 +115,33 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     }
     
     @PostMapping("/compare.action")
-    public String compare(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Model model, Popups popups) {
+    public String compare(Admin admin, @ModelAttribute("form") MailingComparisonForm form, HttpSession session, Model model, Popups popups) {
         if (!validate(form, popups)) {
-            return isUiRedesign(admin) ? REDIRECT_TO_OVERVIEW : MESSAGES_VIEW;
+            return admin.isRedesignedUiUsed() ? REDIRECT_TO_OVERVIEW : MESSAGES_VIEW;
         }
     
-        try {
-            String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-            
-            MailingComparisonDto comparisonDto = conversionService.convert(form, MailingComparisonDto.class);
-            String birtReportUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, sessionId, comparisonDto);
-            
-            int companyId = admin.getCompanyID();
-            List<String> mailingNames = new ArrayList<>(mailingBaseService.getMailingNames(form.getBulkIds(), companyId).values());
-    
-            model.addAttribute("mailingNames", mailingNames);
-            model.addAttribute("birtReportUrl", birtReportUrl);
-            model.addAttribute("birtExportReportUrl", birtStatisticsService.changeFormat(birtReportUrl, "csv"));
+        MailingComparisonDto comparisonDto = conversionService.convert(form, MailingComparisonDto.class);
+        String birtReportUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, session.getId(), comparisonDto);
 
-        } catch (Exception e) {
-            logger.error("Mailings comparison exception: ", e);
-            popups.alert("error.exception");
-        }
-    
+        int companyId = admin.getCompanyID();
+        List<String> mailingNames = new ArrayList<>(mailingBaseService.getMailingNames(form.getBulkIds(), companyId).values());
+
+        model.addAttribute("mailingNames", mailingNames);
+        model.addAttribute("birtReportUrl", birtReportUrl);
+        model.addAttribute("birtExportReportUrl", birtStatisticsService.changeFormat(birtReportUrl, "csv"));
+
         return "stats_mailing_comp_view";
     }
     
     @PostMapping("/export.action")
-    public Object export(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Popups popups, RedirectAttributes model) throws Exception {
+    public Object export(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Popups popups, HttpSession session, RedirectAttributes model) {
         if (!validate(form, popups)) {
             model.addFlashAttribute("form", form);
             return new ModelAndView(REDIRECT_TO_OVERVIEW);
         }
         
-        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
         MailingComparisonDto comparisonDto = conversionService.convert(form, MailingComparisonDto.class);
-        String birtUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, sessionId, comparisonDto);
+        String birtUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, session.getId(), comparisonDto);
     
         File file = birtStatisticsService.getBirtMailingComparisonTmpFile(birtUrl, comparisonDto, admin.getCompanyID());
     

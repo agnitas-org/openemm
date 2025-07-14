@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,12 +15,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.useractivitylog.UserAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
 
 @Service("mailingParameterLogService")
@@ -29,7 +29,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
     private static final String PLACEHOLDER_EMPTY = "empty";
     
     @Override
-	public List<UserAction> getMailingParametersChangeLog(int mailingId, Map<Integer, ComMailingParameter> parametersOld, Map<Integer, ComMailingParameter> parametersNew) {
+	public List<UserAction> getMailingParametersChangeLog(int mailingId, Map<Integer, MailingParameter> parametersOld, Map<Integer, MailingParameter> parametersNew) {
 		List<UserAction> userActions = new ArrayList<>();
 		
 		CollectionUtils.union(parametersOld.keySet(), parametersNew.keySet()).forEach(p -> {
@@ -45,7 +45,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
 	}
     
     @Override
-    public UserAction getMailingParameterChangeLog(int mailingId, int parameterId, ComMailingParameter parameterOld, ComMailingParameter parameterNew) {
+    public UserAction getMailingParameterChangeLog(int mailingId, int parameterId, MailingParameter parameterOld, MailingParameter parameterNew) {
         UserAction userAction = null;
 
         List<String> changes = getParameterChanges(parameterOld, parameterNew);
@@ -59,7 +59,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
     }
     
     @Override
-    public UserAction getMailingParameterCreateLog(int mailingId, ComMailingParameter parameterNew) {
+    public UserAction getMailingParameterCreateLog(int mailingId, MailingParameter parameterNew) {
         UserAction userAction = null;
 
         List<String> changes = getParameterChanges(null, parameterNew);
@@ -79,7 +79,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
     }
     
     @Override
-	public List<String> getParameterChanges(ComMailingParameter oldParameter, ComMailingParameter newParameter) {
+	public List<String> getParameterChanges(MailingParameter oldParameter, MailingParameter newParameter) {
 		List<String> changes = new ArrayList<>();
 		
 		if (oldParameter != null && newParameter != null) {

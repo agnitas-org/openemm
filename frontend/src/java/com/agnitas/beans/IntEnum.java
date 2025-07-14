@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,13 +11,13 @@
 package com.agnitas.beans;
 
 public interface IntEnum {
-    static <T extends Enum<T> & IntEnum> T fromId(Class<T> clz, int id) {
+    static <T extends Enum<T> & IntEnum> T fromId(Class<T> clz, Integer id) {
         return fromId(clz, id, true);
     }
 
-    static <T extends Enum<T> & IntEnum> T fromId(Class<T> clz, int id, boolean safe) {
+    static <T extends Enum<T> & IntEnum> T fromId(Class<T> clz, Integer id, boolean safe) {
         for (T value : clz.getEnumConstants()) {
-            if (id == value.getId()) {
+            if (Integer.valueOf(value.getId()).equals(id)) {
                 return value;
             }
         }

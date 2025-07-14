@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,16 @@
 
 package com.agnitas.emm.core.wsmanager.web;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+
+import java.util.Objects;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserFormSearchParams;
@@ -25,21 +33,24 @@ import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
+import com.agnitas.exception.RequestErrorException;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.FormUtils;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Const;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,14 +62,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.Objects;
-
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping(value = "/administration/wsmanager")
@@ -67,6 +74,7 @@ import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 public class WebserviceUserManagerController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(WebserviceUserManagerController.class);
+    private static final String REDIRECT_TO_OVERVIEW = "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true";
 
     private static final String PASSWORD_STR = "password";
 
@@ -81,14 +89,10 @@ public class WebserviceUserManagerController implements XssCheckAware {
 
     private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
 
-    public WebserviceUserManagerController(final ConfigService configService,
-    		final WebserviceUserService webserviceUserService,
-    		final CompanyService companyService,
-    		final ConversionService conversionService,
-    		final WebStorage webStorage,
-    		final UserActivityLogService userActivityLogService,
-    		final WebservicePermissionService webservicePermissionService,
-    		final WebservicePermissionGroupService webservicePermissionGroupService) {
+    public WebserviceUserManagerController(ConfigService configService, WebserviceUserService webserviceUserService, CompanyService companyService,
+                                           ConversionService conversionService, WebStorage webStorage, UserActivityLogService userActivityLogService,
+                                           WebservicePermissionService webservicePermissionService, WebservicePermissionGroupService webservicePermissionGroupService) {
+
         this.configService = Objects.requireNonNull(configService);
         this.webserviceUserService = Objects.requireNonNull(webserviceUserService);
         this.companyService = Objects.requireNonNull(companyService);
@@ -105,8 +109,9 @@ public class WebserviceUserManagerController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/users.action")
+    // TODO: EMMGUI-714: Delete when deleting old design
     public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm,
-                       @RequestParam(required = false) boolean restoreSort, Model model) throws WebserviceUserServiceException {
+                       @RequestParam(required = false) Boolean restoreSort, Model model) throws WebserviceUserServiceException {
         FormUtils.syncPaginationData(webStorage, WebStorage.WS_MANAGER_OVERVIEW, userListForm, restoreSort);
 
         model.addAttribute("webserviceUserList",
@@ -128,7 +133,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
     @RequestMapping(value = "/usersRedesigned.action")
     @PermissionMapping("list")
     public String listRedesigned(Admin admin, @ModelAttribute("filter") WebserviceUserOverviewFilter filter, @ModelAttribute WebserviceUserFormSearchParams searchParams,
-                                 @RequestParam(required = false) boolean restoreSort, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
+                                 @RequestParam(required = false) Boolean restoreSort, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
         FormUtils.syncSearchParams(searchParams, filter, true);
         FormUtils.syncPaginationData(webStorage, WebStorage.WS_MANAGER_OVERVIEW, filter, restoreSort);
 
@@ -146,7 +151,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         FormUtils.syncSearchParams(searchParams, filter, false);
         model.addFlashAttribute("filter", filter);
 
-        return "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true";
+        return REDIRECT_TO_OVERVIEW;
     }
 
     @PostMapping(value = "/user/new.action")
@@ -154,17 +159,15 @@ public class WebserviceUserManagerController implements XssCheckAware {
         processCompanyId(admin, userForm);
         if (creationValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
-                return isRedesign(admin)
-                        ? "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true"
+                return admin.isRedesignedUiUsed()
+                        ? REDIRECT_TO_OVERVIEW
                         : "redirect:/administration/wsmanager/users.action?restoreSort=true";
             }
         }
 
-        model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-
         popups.alert("error.webserviceuser.cannot_create");
-        return isRedesign(admin)
-                ? "redirect:/administration/wsmanager/usersRedesigned.action?restoreSort=true"
+        return admin.isRedesignedUiUsed()
+                ? REDIRECT_TO_OVERVIEW
                 : "redirect:/administration/wsmanager/users.action?restoreSort=true";
     }
 
@@ -172,7 +175,9 @@ public class WebserviceUserManagerController implements XssCheckAware {
     public String update(Admin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups) {
         if (editingValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, false, userForm, popups)) {
-                return "redirect:/administration/wsmanager/users" + (isRedesign(admin) ? "Redesigned" : "") + ".action";
+                return admin.isRedesignedUiUsed()
+                        ? REDIRECT_TO_OVERVIEW
+                        : "redirect:/administration/wsmanager/users.action?restoreSort=true";
             }
         }
 
@@ -180,8 +185,32 @@ public class WebserviceUserManagerController implements XssCheckAware {
         return MESSAGES_VIEW;
     }
 
-    private boolean isRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
+    @GetMapping(value = "/user/delete.action")
+    public String confirmDelete(@RequestParam(required = false) Set<String> usernames, Model model) {
+        validateSelectedUsernames(usernames);
+        MvcUtils.addDeleteAttrs(model, usernames,
+                "settings.admin.delete", "settings.admin.delete.question",
+                "bulkAction.delete.admin", "bulkAction.delete.admin.question");
+
+        return "delete_modal";
+    }
+
+    @RequestMapping(value = "/user/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String delete(@RequestParam(required = false) Set<String> usernames, Popups popups) {
+        validateSelectedUsernames(usernames);
+        popups.success(Const.Mvc.SELECTION_DELETED_MSG);
+
+        for(final String username : usernames) {
+            this.webserviceUserService.deleteWebserviceUser(username);
+        }
+
+        return REDIRECT_TO_OVERVIEW;
+    }
+
+    private void validateSelectedUsernames(Set<String> usernames) {
+        if (CollectionUtils.isEmpty(usernames)) {
+            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+        }
     }
 
     private void processCompanyId(final Admin admin, final WebserviceUserForm userForm) {
@@ -204,7 +233,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
     private boolean creationValidation(WebserviceUserForm userForm, Popups popups) {
         boolean valid = true;
         if (StringUtils.isBlank(userForm.getUserName())) {
-            popups.field("userName", "error.webserviceuser.no_username");
+            popups.fieldError("userName", "error.webserviceuser.no_username");
             valid = false;
         }
 
@@ -215,7 +244,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         }
 
         if (StringUtils.isBlank(userForm.getPassword())) {
-            popups.field(PASSWORD_STR, "error.password.missing");
+            popups.fieldError(PASSWORD_STR, "error.password.missing");
             valid = false;
         }
 
@@ -224,7 +253,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         }
 
         if (userForm.getCompanyId() <= 0) {
-            popups.field("company", "error.webserviceuser.no_company");
+            popups.fieldError("companyId", "error.webserviceuser.no_company");
             valid = false;
         }
 
@@ -240,7 +269,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
 
         String email = userForm.getEmail();
         if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
-            popups.field("email", "error.email.invalid");
+            popups.fieldError("email", "error.email.invalid");
             valid = false;
         }
 
@@ -261,7 +290,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         	return true;
         } catch (WebserviceUserAlreadyExistsException e) {
             logger.error("Cannot create webservice user. {}", e.getMessage());
-            popups.field("userName", "error.webserviceuser.already_exists");
+            popups.fieldError("userName", "error.webserviceuser.already_exists");
         } catch (UnknownWebserviceUsernameException e) {
             logger.error("Cannot update webservice user. {}", e.getMessage());
             popups.alert("error.webserviceuser.unknown_user");

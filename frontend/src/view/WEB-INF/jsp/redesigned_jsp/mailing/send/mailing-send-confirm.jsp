@@ -8,7 +8,7 @@
 <%--@elvariable id="errorSizeThreshold" type="java.lang.Long"--%>
 
 <div class="modal" tabindex="-1">
-    <div class="modal-dialog modal-fullscreen-lg-down modal-lg">
+    <div class="modal-dialog modal-lg">
         <mvc:form cssClass="modal-content" servletRelativeAction="/mailing/send/send-world.action" modelAttribute="form">
 
             <mvc:hidden path="mailingID"/>

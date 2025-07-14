@@ -4,6 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="reportId" type="java.lang.Integer"--%>
+<%--@elvariable id="fromMailingStatPage" type="java.lang.Boolean"--%>
 <%--@elvariable id="reportShortname" type="java.lang.String"--%>
 <%--@elvariable id="backUrl" type="java.lang.String"--%>
 
@@ -11,8 +12,8 @@
 <c:set var="agnNavigationKey" 		value="none" 								    scope="request" />
 <c:set var="agnTitleKey" 			value="Reports" 								scope="request" />
 <c:set var="agnSubtitleKey" 		value="Reports" 								scope="request" />
-<c:set var="sidemenu_active" 		value="Statistics" 								scope="request" />
-<c:set var="sidemenu_sub_active"	value="Reports" 								scope="request" />
+<c:set var="sidemenu_active" 		value="${fromMailingStatPage ? 'Mailings' : 'Statistics'}" 		scope="request" />
+<c:set var="sidemenu_sub_active"	value="${fromMailingStatPage ? 'default.Overview' : 'Reports'}" scope="request" />
 <c:set var="agnHighlightKey" 		value="report.edit" 							scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 									scope="request"/>
 <c:set var="agnBreadcrumbsRootKey" 	value="Statistics" 								scope="request"/>

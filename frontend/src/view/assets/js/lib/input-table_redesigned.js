@@ -95,6 +95,7 @@ method          |description            |
       this.renderTable(this.config.data);
       this.addActions();
       this.$container.data('table', this);
+      this.$container.css("--column-count", this.$container.find('tr:first').children("td").length);
     };
 
     static get(container) {

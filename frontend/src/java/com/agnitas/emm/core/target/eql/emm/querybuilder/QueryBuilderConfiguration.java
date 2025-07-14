@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,12 +18,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ClickedInMailingRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ContainsRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DateRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.DefaultRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.EmptyRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.GenericRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.LikeRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ModRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotContainsRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotEmptyRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotLikeRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.NotStartsWithRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.OpenedMailingRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.ReceivedMailingRuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.RuleConverter;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.StartsWithRuleConverter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.ProfileFieldImpl;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.converter.*;
 import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFactory;
 
 public class QueryBuilderConfiguration {
@@ -107,7 +120,6 @@ public class QueryBuilderConfiguration {
 		this.defaultRuleConverter = defaultRuleConverter;
 	}
 
-	@Required
     public void setProfileFieldResolverFactory(EmmProfileFieldResolverFactory profileFieldResolverFactory) {
         this.profileFieldResolverFactory = profileFieldResolverFactory;
         for (RuleConverter ruleConverter : filterConvertersByType.values()) {

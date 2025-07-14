@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,21 +10,20 @@
 
 package com.agnitas.emm.core.components.logger;
 
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
-import com.agnitas.emm.common.MailingType;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.DateUtilities;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 @Component
 public class MailingSendLogWriter {
@@ -35,18 +34,6 @@ public class MailingSendLogWriter {
     @Autowired
     public MailingSendLogWriter(UserActivityLogService userActivityLogService) {
         this.userActivityLogService = userActivityLogService;
-    }
-
-    public void writeLogsAboutTestMailingSent(Mailing mailing, Admin admin, Date sendDate) {
-        MailingType mailingType = mailing.getMailingType();
-
-        if (mailingType == MailingType.ACTION_BASED) {
-            writeActionBasedActivationLog(admin, mailing);
-        } else if (mailingType == MailingType.DATE_BASED) {
-            writeDateBasedActivationLog(admin, mailing, sendDate);
-        } else if (mailingType == MailingType.NORMAL || mailingType == MailingType.FOLLOW_UP) {
-            writeScheduleMailingLog(admin, mailing, sendDate);
-        }
     }
 
     public void writeIntervalMailingActivationLog(Admin admin, Mailing mailing, Date sendDate, String actionDescription) {

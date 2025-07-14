@@ -1,25 +1,33 @@
 AGN.Lib.Controller.new('img-editor', function() {
-  const Form = AGN.Lib.Form;
+  const Modal = AGN.Lib.Modal;
   let cropX, cropY;
   let cropWidth = 0, cropHeight = 0;
   let originalImageSrc;
   let image;
   let canvas;
   let context;
+  let saveUrl;
+  let originalImageData;
+  let originalFormData;
 
   this.addDomInitializer('img-editor', function() {
+    saveUrl = this.el.data().saveUrl;
     canvas = document.getElementById('editor-canvas');
     context = canvas.getContext('2d');
-    originalImageSrc = $('#editor-img').attr('src');
-    loadImage();
-
-    // Should be disabled until some changes.
-    getResultFile$().prop('disabled', true);
+    loadImage(() => {
+      originalImageData = canvas.toDataURL();
+      originalFormData = getForm().$form.serializeArray();
+    });
   });
 
-  function loadImage() {
+  function loadImage(callback) {
+    let src = getImage$().attr('src');
+    if (!src.startsWith('data:')) {
+      src += `&t=${new Date().getTime()}`; // cache killer
+    }
+
     image = new Image();
-    image.src = $('#editor-img').attr('src');
+    image.src = src
     image.onload = function() {
       canvas.width = image.width;
       canvas.height = image.height;
@@ -28,6 +36,10 @@ AGN.Lib.Controller.new('img-editor', function() {
       updateSizeInputs();
       resetSizePercent();
       updateUIDimensions();
+
+      if (callback) {
+        callback();
+      }
     };
   }
 
@@ -97,12 +109,9 @@ AGN.Lib.Controller.new('img-editor', function() {
     resetSizePercent();
   }
 
-  async function reloadImage(keepResultDisabledState) {
+  async function reloadImage() {
     await new Promise(resolve => {
       image.src = canvas.toDataURL();
-      if (!keepResultDisabledState) {
-        getResultFile$().prop('disabled', false);
-      }
       image.onload = resolve;
     });
   }
@@ -201,7 +210,6 @@ AGN.Lib.Controller.new('img-editor', function() {
     getImgHeight$().val(newHeight);
     getImgWidth$().val(newWidth);
     updateUIDimensions();
-    getResultFile$().prop('disabled', false);
   }
 
   function getNewDimensionsToChangeSize() {
@@ -293,6 +301,10 @@ AGN.Lib.Controller.new('img-editor', function() {
     toggleBtn('resize', state);
   }
 
+  function getImage$() {
+    return $('#editor-img');
+  }
+
   function getCanvas$() {
     return $("#editor-canvas");
   }
@@ -339,43 +351,58 @@ AGN.Lib.Controller.new('img-editor', function() {
     updateSizeInputs();
   }
 
-  function getResultFile$() {
-    return $('[name="encodedFile"]');
+  function saveBlob(blob) {
+    const form = getForm();
+
+    const $fileInput = $('<input/>').attr({
+      type: 'file',
+      name: 'image'
+    }).css('display', 'none');
+
+    const container = new DataTransfer();
+    container.items.add(new File([blob], $('#filename')));
+    $fileInput[0].files = container.files;
+    form.get$().append($fileInput);
+    form.submit();
   }
 
   this.addAction({'click': 'save'}, async function() {
     await saveCrop();
-    await reloadImage(true);
-    const $result = getResultFile$();
-    let newSrc = canvas.toDataURL();
+    await reloadImage();
 
-    // Cut off a meta data prefix.
-    const separatorPosition = newSrc.indexOf(',');
-    if (separatorPosition >= 0) {
-      newSrc = newSrc.substring(separatorPosition + 1);
+    if (notChanged()) {
+      Modal.getWrapper(getImage$()).data('closedOnUnchangedSave', true);
+      Modal.getInstance(getImage$()).hide();
+      AGN.Lib.Messages.defaultSaved();
+      return;
     }
 
-    if ($result.val() != newSrc) {
-      $result.val(newSrc);
-    }
-    Form.get(this.el).submit();
+    canvas.toBlob(saveBlob);
   });
+
+  function getForm() {
+    return AGN.Lib.Form.get(getImage$());
+  }
+
+  function notChanged() {
+    const currentFormData = getForm().$form.serializeArray();
+    return _.isEqual(originalFormData, currentFormData)
+      && originalImageData === canvas.toDataURL();
+  }
 
   this.addAction({'upload:add': 'replace'}, function() {
     disableAllTools();
     const reader = new FileReader();
     reader.readAsDataURL(this.data.file);
     reader.onload = function (e) {
-      $('#editor-img').attr('src', e.target.result);
+      getImage$().attr('src', e.target.result);
       loadImage();
-      getResultFile$().prop('disabled', false);
     };
   });
 
   this.addAction({'click': 'reset'}, function() {
     disableAllTools();
-    $('#editor-img').attr('src', originalImageSrc);
+    getImage$().attr('src', originalImageSrc);
     loadImage();
-    getResultFile$().prop('disabled', true); // disable input since file not changed, so nothing to update
   });
 });
