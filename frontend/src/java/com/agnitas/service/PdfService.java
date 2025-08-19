@@ -24,15 +24,14 @@ public interface PdfService {
     byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users) throws DocumentException, IOException;
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException, DocumentException;
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException, DocumentException;
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException, DocumentException;
 
-    File generatePDF(final Admin admin, final PreviewSettings previewSettings, final boolean landscape, final String title, final String footerMsgKey, final String customCss) throws Exception;
-    File generatePDF(final Admin admin, final PreviewSettings previewSettings, final boolean landscape, final String title, final String footerMsgKey) throws Exception;
+    File generatePDF(Admin admin, PreviewSettings previewSettings, boolean landscape, String title, String footerMsgKey) throws Exception;
 
 }

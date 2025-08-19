@@ -654,14 +654,6 @@ Euer freundlicher EMM
 
 	<bean id="MailingSummaryDataSetFactory" class="com.agnitas.reporting.birt.external.beans.factory.impl.MailingSummaryDataSetFactoryImpl"/>
 
-	<bean id="PreviewImageService" class="com.agnitas.util.preview.impl.PreviewImageServiceImpl">
-		<property name="configService" ref="ConfigService"/>
-		<property name="mailingComponentDao" ref="MailingComponentDao"/>
-		<property name="recipientDao" ref="RecipientDao"/>
-		<property name="previewImageGenerationQueue" ref="PreviewImageGenerationQueue"/>
-		<property name="mediaTypesService" ref="MediaTypesService"/>
-	</bean>
-		  
 	<bean id="componentModelValidator" class="org.agnitas.emm.core.component.service.validation.ComponentModelValidator">
 		<constructor-arg value="validator-messages"/>
 	</bean>

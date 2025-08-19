@@ -25,7 +25,7 @@
                     <div>
                         <label class="form-label" for="profileFields"><mvc:message code="recipient.fields"/></label>
                         <mvc:select path="includedProfileFields" multiple="true" id="profileFields" cssClass="form-control js-select">
-                            <mvc:options items="${PROFILE_FIELDS}" itemValue="internalName" itemLabel="shortname"/>
+                            <mvc:options items="${PROFILE_FIELDS}" itemValue="columnName" itemLabel="shortName"/>
                         </mvc:select>
                     </div>
                 </c:if>

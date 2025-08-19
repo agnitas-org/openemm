@@ -66,11 +66,6 @@ public class ColumnInfoServiceImpl implements ColumnInfoService {
     public List<ProfileField> getComColumnInfos(int companyID, int adminID, boolean customSorting) {
 		return profileFieldDao.getComProfileFields(companyID, adminID, customSorting);
     }
-
-    @Override
-	public List<ProfileField> getHistorizedComColumnInfos(int companyID) {
-		return profileFieldDao.getHistorizedProfileFields(companyID);
-	}
 	
 	@Override
 	public CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID) {

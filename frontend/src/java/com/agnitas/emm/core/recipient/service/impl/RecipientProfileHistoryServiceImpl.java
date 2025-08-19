@@ -10,16 +10,15 @@
 
 package com.agnitas.emm.core.recipient.service.impl;
 
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.RecipientHistory;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
@@ -28,6 +27,9 @@ import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of {@link RecipientProfileHistoryService} interface.
@@ -82,6 +84,11 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 				logger.debug(String.format("Included profile field column '%s' in history", field.getColumn()));
 			}
 		}).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime from, int companyId) {
+		return profileHistoryDao.getChangedRecipients(fields, from, companyId);
 	}
 
 	@Override

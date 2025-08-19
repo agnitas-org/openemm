@@ -776,7 +776,6 @@
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="targetDao" ref="TargetDao" />
 		<property name="targetService" ref="targetService" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
 		<property name="adminService" ref="AdminService" />
 		<property name="userFormDao" ref="UserFormDao" />
 		<property name="birtCompanyDao" ref="BirtCompanyDao" />
@@ -971,7 +970,7 @@
 		<property name="mailingContentTypeCache" ref="MailingContentTypeCache" />
 		<property name="onMailingOpenedHandlers">
 			<list>
-				<ref bean="WebhookOnMailingOpenedHandler" />
+				<ref bean="WebhookOnMailOpenedHandler" />
 			</list>
 		</property>
 	</bean>
@@ -1305,7 +1304,7 @@
 		<property name="webhookMessageEnqueueService" ref="WebhookMessageEnqueueService" />
 	</bean>
 
-	<bean id="WebhookOnMailingOpenedHandler" class="com.agnitas.emm.core.webhooks.event.MailingOpenedWebhookHandler">
+	<bean id="WebhookOnMailOpenedHandler" class="com.agnitas.emm.core.webhooks.event.MailOpenedWebhookHandler">
 		<property name="webhookMessageEnqueueService" ref="WebhookMessageEnqueueService" />
 	</bean>
 
@@ -1351,15 +1350,18 @@
 		<property name="webhookBackendDataMessageGenerators">
 			<list>
 				<!-- Message generator for "mailing delivered" -->
-				<bean class="com.agnitas.emm.core.webhooks.messages.service.MailingDeliveryMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
+				<bean class="com.agnitas.emm.core.webhooks.messages.service.MailDeliveryMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
 
-				<bean class="com.agnitas.emm.core.webhooks.messages.service.TestMailingDeliveryMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
+				<bean class="com.agnitas.emm.core.webhooks.messages.service.TestMailDeliveryMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
 
 				<!-- Message generator for "hardbounce" -->
 				<bean class="com.agnitas.emm.core.webhooks.messages.service.HardbounceMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
 
 				<!-- Message generator for "mailing delivery complete" -->
 				<bean class="com.agnitas.emm.core.webhooks.messages.service.MailingDeliveryCompleteWebhookBackendDataMessageGenerator" parent="_MailingDeliveryMessageGenerator" />
+
+				<!-- Message generator for "profile field changed" -->
+				<bean class="com.agnitas.emm.core.webhooks.messages.service.ProfileFieldChangedMessageGeneratorImpl" parent="_MailingDeliveryMessageGenerator" />
 			</list>
 		</property>
 	</bean>

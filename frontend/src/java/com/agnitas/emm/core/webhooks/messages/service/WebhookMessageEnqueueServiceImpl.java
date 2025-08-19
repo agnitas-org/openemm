@@ -10,10 +10,15 @@
 
 package com.agnitas.emm.core.webhooks.messages.service;
 
+import static com.agnitas.emm.core.webhooks.common.WebhookEventType.PROFILE_FIELD_CHANGED;
+
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.Set;
 
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
 import com.agnitas.emm.core.webhooks.messages.common.JsonMessageUtils;
@@ -22,7 +27,6 @@ import com.agnitas.emm.core.webhooks.messages.dao.WebhookMessageQueueDao;
 import com.agnitas.emm.core.webhooks.profilefields.service.WebhookProfileFieldContentService;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookNotRegisteredException;
 import com.agnitas.emm.core.webhooks.registry.service.WebhookRegistrationService;
-import com.agnitas.emm.common.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,24 +50,30 @@ public final class WebhookMessageEnqueueServiceImpl implements WebhookMessageEnq
 	
 	/** DAO for storing and loading messages. */
 	private final WebhookMessageQueueDao messageQueueDao;
-	
-	public WebhookMessageEnqueueServiceImpl(final ConfigService configService, final WebhookRegistrationService registrationService, final WebhookProfileFieldContentService profileFieldService, final WebhookMessageQueueDao messageQueueDao) {
+
+	private final RecipientProfileHistoryService recipientProfileHistoryService;
+
+	public WebhookMessageEnqueueServiceImpl(ConfigService configService, WebhookRegistrationService registrationService,
+											WebhookProfileFieldContentService profileFieldService,
+											WebhookMessageQueueDao messageQueueDao,
+											RecipientProfileHistoryService recipientProfileHistoryService) {
 		this.configService = new WebhookConfigService(configService);
 		this.registrationService = Objects.requireNonNull(registrationService);
 		this.webhookProfileFieldService = Objects.requireNonNull(profileFieldService);
 		this.messageQueueDao = Objects.requireNonNull(messageQueueDao);
+		this.recipientProfileHistoryService = recipientProfileHistoryService;
 	}
 	
 	@Override
-	public void enqueueMailingOpenedMessage(int companyID, int mailingID, int customerID) {
-		final WebhookRecipientData profileFields = this.webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.MAILING_OPENED);
+	public void enqueueMailOpenedMessage(int companyID, int mailingID, int customerID) {
+		final WebhookRecipientData profileFields = this.webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.MAIL_OPENED);
 		
 		final JSONObject jsonPayload = new JSONObject();
 		
 		JsonMessageUtils.addMailingId(jsonPayload, mailingID);
 		JsonMessageUtils.addRecipientIdAndData(jsonPayload, profileFields);
 		
-		enqueueMessage(WebhookEventType.MAILING_OPENED, companyID, jsonPayload);
+		enqueueMessage(WebhookEventType.MAIL_OPENED, companyID, jsonPayload);
 	}
 
 	@Override
@@ -80,27 +90,27 @@ public final class WebhookMessageEnqueueServiceImpl implements WebhookMessageEnq
 	}
 	
 	@Override
-	public void enqueueMailingDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp) {
-		final WebhookRecipientData profileFields = this.webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.MAILING_DELIVERED);
+	public void enqueueMailDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp) {
+		final WebhookRecipientData profileFields = this.webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.MAIL_DELIVERED);
 
 		final JSONObject jsonPayload = new JSONObject();
 
 		JsonMessageUtils.addMailingId(jsonPayload, mailingID);
 		JsonMessageUtils.addRecipientIdAndData(jsonPayload, profileFields);
 		
-		enqueueMessage(WebhookEventType.MAILING_DELIVERED, companyID, jsonPayload, deliveryTimestamp);
+		enqueueMessage(WebhookEventType.MAIL_DELIVERED, companyID, jsonPayload, deliveryTimestamp);
 	}
 
 	@Override
-	public void enqueueTestMailingDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp) {
-		WebhookRecipientData profileFields = webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.TEST_MAILING_DELIVERED);
+	public void enqueueTestMailDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp) {
+		WebhookRecipientData profileFields = webhookProfileFieldService.readProfileFields(companyID, customerID, WebhookEventType.TEST_MAIL_DELIVERED);
 
 		JSONObject jsonPayload = new JSONObject();
 
 		JsonMessageUtils.addMailingId(jsonPayload, mailingID);
 		JsonMessageUtils.addRecipientIdAndData(jsonPayload, profileFields);
 
-		enqueueMessage(WebhookEventType.TEST_MAILING_DELIVERED, companyID, jsonPayload, deliveryTimestamp);
+		enqueueMessage(WebhookEventType.TEST_MAIL_DELIVERED, companyID, jsonPayload, deliveryTimestamp);
 	}
 
 	@Override
@@ -122,6 +132,21 @@ public final class WebhookMessageEnqueueServiceImpl implements WebhookMessageEnq
 		JsonMessageUtils.addMailingId(jsonPayload, mailingID);
 		
 		enqueueMessage(WebhookEventType.MAILING_DELIVERY_COMPLETE, companyID, jsonPayload, timestamp);
+	}
+
+	@Override
+	public void enqueueProfileFieldChangedMessages(int companyId, ZonedDateTime lastStart) {
+		if (!recipientProfileHistoryService.isProfileFieldHistoryEnabled(companyId)) {
+			return;
+		}
+		Set<String> fields = webhookProfileFieldService.getProfileFields(PROFILE_FIELD_CHANGED, companyId);
+		recipientProfileHistoryService.getChangedRecipients(fields, lastStart, companyId).stream()
+			.map(id -> webhookProfileFieldService.readProfileFields(companyId, id, PROFILE_FIELD_CHANGED))
+			.forEach(recipientData -> {
+				JSONObject jsonPayload = new JSONObject();
+				JsonMessageUtils.addRecipientIdAndData(jsonPayload, recipientData);
+				enqueueMessage(PROFILE_FIELD_CHANGED, companyId, jsonPayload, lastStart);
+			});
 	}
 
 	@Override

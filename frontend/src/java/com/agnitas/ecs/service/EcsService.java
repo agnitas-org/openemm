@@ -41,5 +41,5 @@ public interface EcsService {
      * Generate a PDF representation of the heat map by url.
      * @return a generated document.
      */
-    File generatePDF(Admin admin, String url, String title) throws IOException;
+    File generatePDF(Admin admin, String url, String title) throws Exception;
 }

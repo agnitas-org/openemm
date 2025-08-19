@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookBackendData;
 import com.agnitas.emm.core.webhooks.messages.dao.WebhookBackendDataProcessTimestampDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractWebhookBackendDataMessageGenerator implements WebhookBackendDataMessageGenerator {
 
@@ -30,11 +30,11 @@ public abstract class AbstractWebhookBackendDataMessageGenerator implements Webh
 	
 	private WebhookBackendDataService backendDataService;
 	protected WebhookMessageEnqueueService messageEnqueueService;
-	private WebhookBackendDataProcessTimestampDao processTimestampDao;
-	private WebhookConfigService configService;
+	protected WebhookBackendDataProcessTimestampDao processTimestampDao;
+	protected WebhookConfigService configService;
 	
 	@Override
-	public final void generateWebhookMessages(final int companyID) {
+	public void generateWebhookMessages(final int companyID) {
 		final Optional<ZonedDateTime> lastRunTimestampOpt = this.processTimestampDao.findTimestampOfLastRun(companyID, handledEventType());
 		
 		/*
@@ -61,31 +61,30 @@ public abstract class AbstractWebhookBackendDataMessageGenerator implements Webh
 		
 		this.processTimestampDao.updateTimestampOfLastRun(companyID, handledEventType(), now);
 	}
-	
+
 	private final List<WebhookBackendData> listBackendDataToProcess(final int companyID, final WebhookEventType eventType, final ZonedDateTime fromInclusive, final ZonedDateTime toExclusive) {
 		return this.backendDataService.listUnprocessedData(companyID, eventType, fromInclusive, toExclusive);
 	}
-	
+
 	abstract void generateWebhookMessage(final WebhookBackendData data);
-	
+
 	private final void deleteBackendData(final long backendDataId) {
 		this.backendDataService.deleteData(backendDataId);
 	}
-	
+
 	public final void setWebhookBackendDataService(final WebhookBackendDataService service) {
 		this.backendDataService = Objects.requireNonNull(service, "WebhookBackendDataService is null");
 	}
-	
+
 	public final void setWebhookMessageEnqueueService(final WebhookMessageEnqueueService service) {
 		this.messageEnqueueService = Objects.requireNonNull(service, "WebhookMessageEnqueueService is null");
 	}
-	
+
 	public final void setWebhookProcessTimestampDao(final WebhookBackendDataProcessTimestampDao dao) {
 		this.processTimestampDao = Objects.requireNonNull(dao, "WebhookProcessTimestampDao is null");
 	}
-	
+
 	public final void setConfigService(final ConfigService service) {
 		this.configService = new WebhookConfigService(service);
 	}
-
 }

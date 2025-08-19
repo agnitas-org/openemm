@@ -94,6 +94,14 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	}
 
 	@Override
+	public List<RecipientFieldDescription> getHistorizedFields(int companyId) {
+		Set<String> historizedStandardFields = RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames();
+		return getRecipientFields(companyId).stream()
+			.filter(f -> f.isHistorized() || historizedStandardFields.contains(f.getColumnName()))
+			.toList();
+	}
+
+	@Override
 	public Map<String, String> getEditableFieldsMap(int companyId) {
 		return getEditableFields(companyId)
 				.stream()

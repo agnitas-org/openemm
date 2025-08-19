@@ -13,7 +13,6 @@ package com.agnitas.emm.core.webhooks.messages.service;
 import java.time.ZonedDateTime;
 
 import com.agnitas.emm.common.UserStatus;
-
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 
@@ -23,13 +22,13 @@ import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 public interface WebhookMessageEnqueueService {
 
 	/**
-	 * Enqueues a message for {@link WebhookEventType#MAILING_OPENED} event.
+	 * Enqueues a message for {@link WebhookEventType#MAIL_OPENED} event.
 	 * 
 	 * @param companyID company ID of opened mailing
 	 * @param mailingID mailing ID of opened mailing
 	 * @param customerID recipient ID of opened mailing
 	 */
-	void enqueueMailingOpenedMessage(int companyID, int mailingID, int customerID);
+	void enqueueMailOpenedMessage(int companyID, int mailingID, int customerID);
 
 	/**
 	 * Enqueues a message for {@link WebhookEventType#LINK_CLICKED} event.
@@ -42,22 +41,22 @@ public interface WebhookMessageEnqueueService {
 	void enqueueLinkClickedMessage(int companyID, int mailingID, int customerID, int linkID);
 	
 	/**
-	 * Enqueues a message for {@link WebhookEventType#MAILING_DELIVERED} event.
+	 * Enqueues a message for {@link WebhookEventType#MAIL_DELIVERED} event.
 	 * 
 	 * @param companyID company ID
 	 * @param mailingID mailing ID
 	 * @param customerID recipient ID
 	 */
-	void enqueueMailingDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp);
+	void enqueueMailDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp);
 
 	/**
-	 * Enqueues a message for {@link WebhookEventType#TEST_MAILING_DELIVERED} event.
+	 * Enqueues a message for {@link WebhookEventType#TEST_MAIL_DELIVERED} event.
 	 *
 	 * @param companyID company ID
 	 * @param mailingID mailing ID
 	 * @param customerID recipient ID
 	 */
-	void enqueueTestMailingDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp);
+	void enqueueTestMailDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp);
 
 
 	/**
@@ -87,4 +86,12 @@ public interface WebhookMessageEnqueueService {
 	 * @param userStatus user status
 	 */
 	void enqueueRecipientBindingChanged(int companyID, int recipientID, int mailinglistID, MediaTypes mediatypeOrNull, UserStatus userStatus);
+
+	/**
+	 * Enqueues a message for {@link WebhookEventType#PROFILE_FIELD_CHANGED} event.
+	 *
+	 * @param companyId company ID
+	 * @param lastRun the starting time for searching changed profile fields
+	 */
+	void enqueueProfileFieldChangedMessages(int companyId, ZonedDateTime lastRun);
 }

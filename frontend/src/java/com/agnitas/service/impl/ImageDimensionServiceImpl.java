@@ -13,10 +13,11 @@ package com.agnitas.service.impl;
 import java.awt.Dimension;
 import java.util.Optional;
 
+import com.agnitas.emm.puppeteer.service.PuppeteerService;
 import com.agnitas.service.ImageDimensionService;
-import com.agnitas.util.preview.impl.PuppeteerServiceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -26,10 +27,16 @@ public class ImageDimensionServiceImpl implements ImageDimensionService {
 
     private static final Logger logger = LogManager.getLogger(ImageDimensionServiceImpl.class);
 
+    private final PuppeteerService puppeteerService;
+
+    public ImageDimensionServiceImpl(@Autowired(required = false) PuppeteerService puppeteerService) {
+        this.puppeteerService = puppeteerService;
+    }
+
     @Override
     public Optional<Dimension> detectDimension(String url) {
         ResponseEntity<Dimension> response = new RestTemplate().getForEntity(
-                "%s/dimension?imageUrl=%s".formatted(PuppeteerServiceManager.PUPPETEER_SERVICE_URL, url),
+                puppeteerService.getDimensionUrl(url),
                 Dimension.class
         );
 
@@ -40,4 +47,5 @@ public class ImageDimensionServiceImpl implements ImageDimensionService {
         logger.error("Dimension can't be determined for image with url <{}>", url);
         return Optional.empty();
     }
+
 }

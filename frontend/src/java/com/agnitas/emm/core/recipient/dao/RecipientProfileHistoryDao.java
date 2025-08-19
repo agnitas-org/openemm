@@ -10,7 +10,9 @@
 
 package com.agnitas.emm.core.recipient.dao;
 
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.RecipientHistory;
@@ -63,4 +65,6 @@ public interface RecipientProfileHistoryDao {
 	default void deactivateProfileHistory(int companyID) {
 		// default implementation
 	}
+
+	List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime startDate, int companyId);
 }

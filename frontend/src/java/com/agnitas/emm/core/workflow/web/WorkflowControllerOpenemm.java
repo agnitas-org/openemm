@@ -7,6 +7,7 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.WorkflowDataParser;
@@ -14,11 +15,11 @@ import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
 import com.agnitas.emm.core.workflow.service.WorkflowValidationService;
 import com.agnitas.service.PdfService;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.service.UserActivityLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -36,10 +37,10 @@ public class WorkflowControllerOpenemm extends WorkflowController {
                                      PdfService pdfService, CompanyDao companyDao, ConfigService configService,
                                      MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                                      ConversionService conversionService, MailingService mailingService, AdminService adminService,
-                                     TargetService targetService) {
+                                     TargetService targetService, RecipientFieldService recipientFieldService) {
 
         super(workflowService, validationService, workflowActivationService, workflowStatisticsService, autoImportService, autoExportService,
                 workflowDataParser, campaignDao, deliveryStatService, componentDao, pdfService, companyDao, configService, mailinglistApprovalService,
-                userActivityLogService, conversionService, mailingService, adminService, targetService);
+                userActivityLogService, conversionService, mailingService, adminService, targetService, recipientFieldService);
     }
 }

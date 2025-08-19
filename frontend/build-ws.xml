@@ -287,6 +287,7 @@
 		<delete>
 			<fileset dir="${deploydir}/${appname}/WEB-INF/classes/com/agnitas">
 				<include name="**/PuppeteerServiceManager.class" />
+				<include name="**/PuppeteerServiceImpl.class" />
 			</fileset>
 		</delete>
 	</target>
@@ -330,6 +331,7 @@
 			<exclude name="**/web/*ControllerOpenemm.java" />
 			<exclude name="**/web/*Action.java" />
 			<exclude name="**/PuppeteerServiceManager.java" />
+			<exclude name="**/PuppeteerServiceImpl.class" />
 			<exclude name="**/DbSchemaSnapshotLoader.java" />
 			
 			<!-- To add something to the classpath: -->

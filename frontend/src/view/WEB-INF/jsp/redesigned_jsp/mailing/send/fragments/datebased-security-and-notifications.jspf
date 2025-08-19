@@ -57,6 +57,7 @@
                             data-select-options="selectOnClose: true" placeholder="${emailPlaceholder}"
                             disabled="${isSecurityAndNotificationSettingsDisabled}" data-field-validator="email-validator" />
             </div>
+        </div>
     </div>
 </div>
 

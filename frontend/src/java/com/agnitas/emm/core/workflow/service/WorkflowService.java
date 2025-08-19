@@ -118,8 +118,6 @@ public interface WorkflowService {
 
 	List<TargetLight> getAllTargets(int companyId);
 
-	List<ProfileField> getHistorizedProfileFields(int companyId);
-
 	List<ProfileField> getProfileFields(int companyId);
 
 	List<AdminEntry> getAdmins(int companyId);

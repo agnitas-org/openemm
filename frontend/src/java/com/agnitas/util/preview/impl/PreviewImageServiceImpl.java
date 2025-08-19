@@ -19,55 +19,75 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.impl.MailingComponentImpl;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
+import com.agnitas.emm.puppeteer.service.PuppeteerService;
+import com.agnitas.service.exceptions.ScreenshotCreationException;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
-import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 // TODO Move thumbnail generation to new MailingThumbnailService
+@Service("PreviewImageService")
 public class PreviewImageServiceImpl implements PreviewImageService {
 
     private static final Logger logger = LogManager.getLogger(PreviewImageServiceImpl.class);
 
-	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
-    private static final String PDF_SERVICE_URL = PuppeteerServiceManager.PUPPETEER_SERVICE_URL + "/screenshot";
+    private static final int MAX_RETRIES_COUNT = 3;
+
+    private static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
 
     protected static final int PUPPETEER_VIEWPORT_WIDTH = 1024;
     private static final int PUPPETEER_TIMEOUT = 60_000; // 1 minute
 
-    protected ConfigService configService;
-    private RecipientDao recipientDao;
-    private MediaTypesService mediaTypesService;
-    private MailingComponentDao mailingComponentDao;
-    protected PreviewImageGenerationQueue queue;
+    protected final ConfigService configService;
+    protected final PreviewImageGenerationQueue queue;
+    private final RecipientDao recipientDao;
+    private final MediaTypesService mediaTypesService;
+    private final MailingComponentDao mailingComponentDao;
+    private final PuppeteerService puppeteerService;
+
+    public PreviewImageServiceImpl(ConfigService configService, PreviewImageGenerationQueue queue, RecipientDao recipientDao,
+                                   MediaTypesService mediaTypesService, MailingComponentDao mailingComponentDao,
+                                   @Autowired(required = false) PuppeteerService puppeteerService) {
+        this.configService = configService;
+        this.queue = queue;
+        this.recipientDao = recipientDao;
+        this.mediaTypesService = mediaTypesService;
+        this.mailingComponentDao = mailingComponentDao;
+        this.puppeteerService = puppeteerService;
+    }
 
     @Override
     public void generateMailingPreview(Admin admin, String sessionId, int mailingId, boolean async) {
@@ -89,7 +109,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 
                 return outputStream.toByteArray();
             }
-        } catch (IOException e) {
+        } catch (IOException | ScreenshotCreationException e) {
             logger.error("Error occurred while saving preview-image. URL: {}", url, e);
         } finally {
             if (outputStream != null) {
@@ -103,9 +123,14 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         return null;
     }
 
-    private BufferedImage createScreenshotWithPuppeteer(String url, Integer viewportWidth) throws IOException {
-        File imageTmpFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
+    private BufferedImage createScreenshotWithPuppeteer(String url, Integer viewportWidth) {
+        return createScreenshotWithPuppeteer(url, viewportWidth, 0);
+    }
+
+    private BufferedImage createScreenshotWithPuppeteer(String url, Integer viewportWidth, int retryCount) {
+        File imageTmpFile = null;
         try {
+            imageTmpFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -119,17 +144,37 @@ public class PreviewImageServiceImpl implements PreviewImageService {
             requestBody.put("timeout", PUPPETEER_TIMEOUT);
 
             HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(PDF_SERVICE_URL, request, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(puppeteerService.getScreenshotUrl(), request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && imageTmpFile.exists() && imageTmpFile.length() > 0) {
                 return ImageIO.read(imageTmpFile);
-            } else {
-                throw new IOException("Screenshot generation failed. Response: " + response.getBody());
             }
+
+            throw new ScreenshotCreationException("Screenshot generation failed. Response: %s".formatted(response.getBody()));
+        }  catch (ResourceAccessException rae) {
+            if (rae.getCause() instanceof ConnectException && !puppeteerService.isServiceRunning() && retryCount < MAX_RETRIES_COUNT) {
+                puppeteerService.startService();
+                tryDeleteFile(imageTmpFile);
+                return createScreenshotWithPuppeteer(url, viewportWidth, retryCount + 1);
+            }
+
+            throw new ScreenshotCreationException("Screenshot generation failed", rae);
         } catch (Exception e) {
-            throw new IOException("Error while creating screenshot with a new puppeteer method - " + e.getMessage());
+            throw new ScreenshotCreationException("Screenshot generation failed", e);
         } finally {
-            Files.deleteIfExists(imageTmpFile.toPath());
+            tryDeleteFile(imageTmpFile);
+        }
+    }
+
+    private boolean tryDeleteFile(File file) {
+        if (file == null) {
+            return false;
+        }
+
+        try {
+            return Files.deleteIfExists(file.toPath());
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -198,26 +243,6 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         graphics.dispose();
 
         return newImage;
-    }
-
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
-    }
-
-    public void setRecipientDao(RecipientDao recipientDao) {
-        this.recipientDao = recipientDao;
-    }
-
-    public void setMailingComponentDao(MailingComponentDao mailingComponentDao) {
-        this.mailingComponentDao = mailingComponentDao;
-    }
-
-    public void setPreviewImageGenerationQueue(PreviewImageGenerationQueue previewImageGenerationQueue) {
-        this.queue = previewImageGenerationQueue;
-    }
-
-    public void setMediaTypesService(MediaTypesService mediaTypesService) {
-        this.mediaTypesService = mediaTypesService;
     }
 
     private class MailingPreviewTask implements PreviewImageGenerationTask {
@@ -298,4 +323,5 @@ public class PreviewImageServiceImpl implements PreviewImageService {
             return mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaType().getMediaCode() + 1;
         }
     }
+
 }

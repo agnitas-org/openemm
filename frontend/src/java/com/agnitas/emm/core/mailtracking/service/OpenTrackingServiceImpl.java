@@ -17,7 +17,7 @@ import java.util.Objects;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
-import com.agnitas.emm.core.mailtracking.service.event.OnMailingOpenedHandler;
+import com.agnitas.emm.core.mailtracking.service.event.OnMailOpenedHandler;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -40,7 +40,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	/** Cache for content types of mailings. */
 	private MailingContentTypeCache mailingContentTypeCache;
 
-	private final List<OnMailingOpenedHandler> mailingOpenedHandlerList;
+	private final List<OnMailOpenedHandler> mailingOpenedHandlerList;
 
 	public OpenTrackingServiceImpl() {
 		this.mailingOpenedHandlerList = new ArrayList<>();
@@ -74,9 +74,9 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	private void notifyOnMailingOpenedHandlers(final int companyID, final int mailingID, final int customerID) {
 		assert this.mailingOpenedHandlerList != null; // Ensured by constructor and "final" modifier
 		
-		for(final OnMailingOpenedHandler handler : this.mailingOpenedHandlerList) {
+		for(final OnMailOpenedHandler handler : this.mailingOpenedHandlerList) {
 			try {
-				handler.handleMailingOpened(companyID, mailingID, customerID);
+				handler.handleMailOpened(companyID, mailingID, customerID);
 			} catch(final Exception e) {
 				logger.warn(
 						String.format(
@@ -123,7 +123,7 @@ public final class OpenTrackingServiceImpl implements OpenTrackingService {
 	 * @param handlers list of event handlers
 	 */
 	// Not @Required. List is initialized as empty list by default and this list can be left empty.
-	public void setOnMailingOpenedHandlers(final List<OnMailingOpenedHandler> handlers) {
+	public void setOnMailingOpenedHandlers(final List<OnMailOpenedHandler> handlers) {
 		this.mailingOpenedHandlerList.clear();
 		
 		if(handlers != null) {

@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.imports.web;
 
-import static com.agnitas.web.mvc.Pollable.SHORT_TIMEOUT;
-import static java.text.MessageFormat.format;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
+import static com.agnitas.web.mvc.Pollable.SHORT_TIMEOUT;
+import static java.text.MessageFormat.format;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,18 +33,28 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
+import com.agnitas.beans.impl.ImportStatusImpl;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.common.exceptions.TooManyFilesInZipToImportException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.imports.beans.ImportErrorCorrection;
 import com.agnitas.emm.core.imports.beans.ImportProgressSteps;
 import com.agnitas.emm.core.imports.beans.ImportResultFileType;
 import com.agnitas.emm.core.imports.form.ImportErrorsCorrectionsForm;
 import com.agnitas.emm.core.imports.form.RecipientImportForm;
+import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
 import com.agnitas.emm.core.imports.service.RecipientImportService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
@@ -52,36 +62,16 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
 import com.agnitas.emm.data.DataProvider;
 import com.agnitas.exception.RequestErrorException;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.AgnRedirectView;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.impl.PopupsImpl;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import com.agnitas.beans.ColumnMapping;
-import com.agnitas.beans.DatasourceDescription;
-import com.agnitas.beans.ImportProfile;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.DatasourceDescriptionImpl;
-import com.agnitas.beans.impl.ImportStatusImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.service.ImportException;
 import com.agnitas.service.ImportProfileService;
 import com.agnitas.service.ProfileImportWorker;
 import com.agnitas.service.ProfileImportWorkerFactory;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.service.impl.CSVColumnState;
 import com.agnitas.util.CaseInsensitiveSet;
+import com.agnitas.util.CsvDataInvalidItemCountException;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.ImportUtils;
 import com.agnitas.util.UserActivityUtil;
@@ -89,8 +79,19 @@ import com.agnitas.util.importvalues.Charset;
 import com.agnitas.util.importvalues.ImportMode;
 import com.agnitas.util.importvalues.Separator;
 import com.agnitas.util.importvalues.TextRecognitionChar;
-import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.AgnRedirectView;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.impl.PopupsImpl;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.emm.core.autoimport.service.RemoteFile;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -100,6 +101,7 @@ import org.json.JSONObject;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -148,6 +150,13 @@ public class RecipientImportController {
         this.importReporter = importReporter;
         this.userActivityLogService = userActivityLogService;
         this.recipientImportService = recipientImportService;
+    }
+
+    @ExceptionHandler(CsvDataInvalidItemCountException.class)
+    public String onCsvDataInvalidItemCountException(CsvDataInvalidItemCountException ex, Popups popups) {
+        LOGGER.error(ex.getMessage());
+        popups.alert("GWUA.error.imort.invalid.item.count", ex.getErrorLineNumber(), ex.getExpected(), ex.getActual());
+        return MESSAGES_VIEW;
     }
 
     @GetMapping("/chooseMethod.action")

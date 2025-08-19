@@ -133,7 +133,7 @@
                         <select id="startProfileField" name="profileField" class="form-control js-select" data-action="start-editor-profile-field-changed">
                             <option value="">--</option>
                             <c:forEach var="profileField" items="${profileFieldsHistorized}">
-                                <option value="${profileField.column}">${profileField.shortname}</option>
+                                <option value="${profileField.columnName}">${profileField.shortName}</option>
                             </c:forEach>
                         </select>
                     </div>

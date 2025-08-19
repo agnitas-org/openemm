@@ -10,22 +10,28 @@
 
 package com.agnitas.emm.core.recipient.dao.impl;
 
-import com.agnitas.beans.RecipientHistory;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.impl.RecipientHistoryImpl;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.core.recipient.CannotUseViewsException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Implementation of {@link RecipientProfileHistoryDao} interface.
@@ -119,6 +125,26 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 
 		return Collections.emptyList();
 	}
+
+    @Override
+    public List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime from, int companyId) {
+		List<Object> params = new ArrayList<>();
+		params.add(Date.from(from.toInstant()));
+		params.addAll(fields);
+		params.add(HistoryUpdateType.UPDATE.typeCode);
+		params.add(HistoryUpdateType.INSERT.typeCode);
+
+		return select("""
+			SELECT DISTINCT(cust.customer_id)
+			FROM customer_%d_tbl cust, hst_customer_%d_tbl hst
+			WHERE hst.customer_id = cust.customer_id
+			  AND hst.change_date > ?
+			  AND LOWER(hst.name) IN (%s)
+			  AND hst.change_type IN (?, ?)
+			""".formatted(companyId, companyId, AgnUtils.csvQMark(fields.size())),
+			IntegerRowMapper.INSTANCE,
+			params.toArray());
+    }
 
 	/**
 	 * Processes a single trigger.

@@ -237,7 +237,7 @@
                                 <!-- WYSIWYG EDITOR -->
                                 <div id="tab-success-template-wysiwyg" class="hidden">
                                     <div class="row">
-                                        <mvc:textarea path="successSettings.template" cssClass="form-control js-editor js-wysiwyg"
+                                        <mvc:textarea path="successSettings.template" cssClass="form-control js-editor js-wysiwyg hidden"
                                                       rows="14" cols="75" data-autosave="successForm"
                                                       data-editor-options="allowExternalScript: true, isFullHtml: true"
                                                       id="successTemplate"/>
@@ -373,7 +373,7 @@
                                 <!-- WYSIWYG EDITOR -->
                                 <div id="tab-error-template-wysiwyg" class="hidden">
                                     <div class="row">
-                                        <mvc:textarea path="errorSettings.template" cssClass="form-control js-editor js-wysiwyg"
+                                        <mvc:textarea path="errorSettings.template" cssClass="form-control js-editor js-wysiwyg hidden"
                                                       data-editor-options="allowExternalScript: true, isFullHtml: true"
                                                       rows="14" cols="75" data-autosave="errorForm"
                                                       id="errorTemplate"/>

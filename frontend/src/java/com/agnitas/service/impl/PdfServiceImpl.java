@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,11 +29,17 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.AdminGroup;
 import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
 import com.agnitas.emm.core.preview.service.PreviewSettings;
+import com.agnitas.emm.puppeteer.service.PuppeteerService;
 import com.agnitas.service.PdfService;
+import com.agnitas.service.exceptions.PdfCreationException;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.SafeString;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Image;
@@ -44,20 +51,18 @@ import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.PdfStamper;
 import com.lowagie.text.pdf.PdfWriter;
 import jakarta.servlet.ServletContext;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.SafeString;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.ServletContextAware;
 
@@ -66,7 +71,7 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 
     private static final Logger logger = LogManager.getLogger(PdfServiceImpl.class);
 
-	private static final String PDF_SERVICE_URL = "http://localhost:3000/pdf";
+	private static final int MAX_RETRIES_COUNT = 3;
 	private static final int PDF_TIMEOUT = 60_000; // 1 minute
 	private static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
     private static final String USER_STYLESHEET_CONTENT = "body {\n" +
@@ -74,14 +79,20 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
             "\twidth: 100% !important;\n" +
             "}\n";
 
-    private final AdminGroupDao adminGroupDao;
-    private ServletContext servletContext;
-	private MailingWebPreviewService mailingWebPreviewService;
+	private final AdminGroupDao adminGroupDao;
+	private final MailingWebPreviewService mailingWebPreviewService;
+	private final PuppeteerService puppeteerService;
+	private ServletContext servletContext;
 
-    public PdfServiceImpl(AdminGroupDao adminGroupDao, final MailingWebPreviewService mailingWebPreviewService) {
-        this.adminGroupDao = Objects.requireNonNull(adminGroupDao, "AdminGroupDao");
+	public PdfServiceImpl(
+			AdminGroupDao adminGroupDao,
+			MailingWebPreviewService mailingWebPreviewService,
+			@Autowired(required = false) PuppeteerService puppeteerService
+	) {
+		this.adminGroupDao = Objects.requireNonNull(adminGroupDao, "AdminGroupDao");
 		this.mailingWebPreviewService = Objects.requireNonNull(mailingWebPreviewService, "MailingWebPreviewService");
-    }
+		this.puppeteerService = puppeteerService;
+	}
 
     @Override
     public byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users) throws DocumentException, IOException {
@@ -133,44 +144,26 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
     }
 
 	@Override
-    public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException {
+	public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException, DocumentException {
 		File pdf = generatePDFWithPuppeteer(url, landscape, customCss, windowStatusForWaiting);
-		try {
-			return addAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
-		} catch (DocumentException ex) {
-			throw new IOException("Error while extending .pdf", ex);
-		} finally {
-			Files.delete(pdf.toPath());
-		}
-    }
-
-	public File generatePDF(final Admin admin, final PreviewSettings previewSettings, final boolean landscape, final String title, final String footerMsgKey) throws Exception {
-		return generatePDF(admin, previewSettings, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT);
+		return addAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
 	}
 
 	@Override
-	public File generatePDF(final Admin admin, final PreviewSettings previewSettings, final boolean landscape, final String title, final String footerMsgKey, final String customCss) throws Exception {
-		final File pdf = generatePDFWithPuppeteer(previewSettings, landscape, customCss, admin);
-		try {
-			return addAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
-		} catch (DocumentException ex) {
-			throw new IOException("Error while extending .pdf", ex);
-		} finally {
-			Files.delete(pdf.toPath());
-		}
+	public File generatePDF(Admin admin, PreviewSettings previewSettings, boolean landscape, String title, String footerMsgKey) throws Exception {
+		File pdf = generatePDFWithPuppeteer(previewSettings, landscape, admin);
+		return addAdditionalElements(admin.getLocale(), TimeZone.getTimeZone(admin.getAdminTimezone()), pdf, landscape, title, footerMsgKey);
 	}
 
-    @Override
-    public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException {
+	@Override
+	public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException, DocumentException {
 		return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, "");
 	}
 
 	@Override
-    public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException {
-        return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, windowStatusForWaiting);
-    }
-
-
+	public File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException, DocumentException {
+		return generatePDF(admin, url, landscape, title, footerMsgKey, USER_STYLESHEET_CONTENT, windowStatusForWaiting);
+	}
 
 	/**
 	 * Generates a .pdf file of the given web page
@@ -181,49 +174,53 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 	 * @param windowWaitStatus 		 js window.waitStatus status to be waited before generation
 	 * @return .pdf file of the web page
 	 */
-	@Deprecated
-    private File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowWaitStatus) throws IOException {
-        File customCssFile = createFileWithCustomCss(customCss);
-        try {
-			return createPdf(url, customCssFile.getAbsolutePath(), landscape, windowWaitStatus);
-        } finally {
-            Files.deleteIfExists(customCssFile.toPath());
-        }
-    }
-
-	private File generatePDFWithPuppeteer(final PreviewSettings previewSettings, final boolean landscape, final String customCss, final Admin admin) throws Exception {
-		// Get preview content
-		final PreviewResult previewResult = this.mailingWebPreviewService.getPreview(previewSettings, admin.getCompanyID(), admin);
-
-		// Write content to temporary file
-		final File temporaryPreviewFile = File.createTempFile("preview-", ".html");
-		try(final FileWriter out = new FileWriter(temporaryPreviewFile)) {
-			final String previewContent = previewResult.getPreviewContent().orElse("");
-
-			out.write(previewContent);
+	private File generatePDFWithPuppeteer(String url, boolean landscape, String customCss, String windowWaitStatus) {
+		File customCssFile;
+		try {
+			customCssFile = createFileWithCustomCss(customCss);
+		} catch (IOException e) {
+			throw new PdfCreationException("Error when creating custom css file", e);
 		}
 
-		// Create file for custom CSS
-		final File customCssFile = createFileWithCustomCss(customCss);
-
-		// Create PDF
 		try {
-			try {
-				return createPdf(temporaryPreviewFile, customCssFile.getAbsolutePath(), landscape);
-			} finally {
-				Files.deleteIfExists(customCssFile.toPath());
-			}
+			return createPdf(url, customCssFile.getAbsolutePath(), landscape, windowWaitStatus);
 		} finally {
-			if(temporaryPreviewFile.exists()) {
-				temporaryPreviewFile.delete();
-			}
+			tryDeleteFile(customCssFile);
 		}
 	}
 
-	@Deprecated
-	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus) throws IOException {
-		File pdf = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
+	private File generatePDFWithPuppeteer(PreviewSettings previewSettings, boolean landscape, Admin admin) throws Exception {
+		PreviewResult previewResult = this.mailingWebPreviewService.getPreview(previewSettings, admin.getCompanyID(), admin);
+
+		File temporaryPreviewFile = writePreviewToTempFile(previewResult);
+		File customCssFile = createFileWithCustomCss(USER_STYLESHEET_CONTENT);
+
 		try {
+			return createPdf(temporaryPreviewFile.toURI().toString(), customCssFile.getAbsolutePath(), landscape, "");
+		} finally {
+			tryDeleteFile(customCssFile);
+			tryDeleteFile(temporaryPreviewFile);
+		}
+	}
+
+	private File writePreviewToTempFile(PreviewResult previewResult) throws IOException {
+		File tmpFile = File.createTempFile("preview-", ".html");
+		try (FileWriter out = new FileWriter(tmpFile)) {
+			String previewContent = previewResult.getPreviewContent().orElse("");
+			out.write(previewContent);
+		}
+
+		return tmpFile;
+	}
+
+	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus) {
+		return createPdf(url, customCssPath, landscape, windowWaitStatus, 0);
+	}
+
+	private File createPdf(String url, String customCssPath, boolean landscape, String windowWaitStatus, int retryCount) {
+		File pdf = null;
+		try {
+			pdf = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
 			RestTemplate restTemplate = new RestTemplate();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.APPLICATION_JSON);
@@ -237,42 +234,35 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 			requestBody.put("timeout", PDF_TIMEOUT);
 
 			HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
-			ResponseEntity<String> response = restTemplate.postForEntity(PDF_SERVICE_URL, request, String.class);
+			ResponseEntity<String> response = restTemplate.postForEntity(puppeteerService.getPdfUrl(), request, String.class);
 
 			if (response.getStatusCode().is2xxSuccessful() && pdf.exists() && pdf.length() > 0) {
 				return pdf;
-			} else {
-				throw new IOException("Pdf generation failed. Response: " + response.getBody());
 			}
+
+			throw new PdfCreationException("Pdf generation failed. URL: '%s' Response: %s".formatted(url, response.getBody()));
+		} catch (ResourceAccessException rae) {
+			if (rae.getCause() instanceof ConnectException && !puppeteerService.isServiceRunning() && retryCount < MAX_RETRIES_COUNT) {
+				puppeteerService.startService();
+				tryDeleteFile(pdf);
+				return createPdf(url, customCssPath, landscape, windowWaitStatus, retryCount + 1);
+			}
+
+			throw new PdfCreationException("Error while creating pdf via puppeteer - '%s'".formatted(url), rae);
 		} catch (Exception e) {
-			throw new IOException("Error while creating pdf via puppeteer for URL '" + url + "' - " + e.getMessage());
+			throw new PdfCreationException("Error while creating pdf via puppeteer - '%s'".formatted(url), e);
 		}
 	}
 
-	private File createPdf(final File previewFile, final String customCssPath, final boolean landscape) throws IOException {
-		final File pdf = File.createTempFile("preview_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
+	private boolean tryDeleteFile(File file) {
+		if (file == null) {
+			return false;
+		}
+
 		try {
-			final RestTemplate restTemplate = new RestTemplate();
-			final HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
-
-			final JSONObject requestBody = new JSONObject();
-			requestBody.put("url", previewFile.toURI().toString());
-			requestBody.put("path", pdf.getAbsolutePath());
-			requestBody.put("landscape", landscape);
-			requestBody.put("customCssPath", customCssPath);
-			requestBody.put("timeout", PDF_TIMEOUT);
-
-			final HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
-			final ResponseEntity<String> response = restTemplate.postForEntity(PDF_SERVICE_URL, request, String.class);
-
-			if (response.getStatusCode().is2xxSuccessful() && pdf.exists() && pdf.length() > 0) {
-				return pdf;
-			} else {
-				throw new IOException("Pdf generation failed. Response: " + response.getBody());
-			}
-		} catch (Exception e) {
-			throw new IOException("Error while creating pdf with a new puppeteer method - " + e.getMessage(), e);
+			return Files.deleteIfExists(file.toPath());
+		} catch (IOException e) {
+			return false;
 		}
 	}
 
@@ -293,8 +283,6 @@ public class PdfServiceImpl implements PdfService, ServletContextAware {
 	 * @param title i.e. entity name
 	 * @param footerMsgKey key of the message to be displayed at footer
 	 * @return new pdf file with added logo and footer
-	 * @throws IOException
-	 * @throws com.lowagie.text.DocumentException
 	 */
     private File addAdditionalElements(final Locale locale, final TimeZone timeZone, File pdfInitialFile, boolean landscape, String title, String footerMsgKey) throws IOException, DocumentException {
         File finalFile = File.createTempFile("preview_final_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));

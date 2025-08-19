@@ -41,8 +41,6 @@ public interface ColumnInfoService {
 
     List<ProfileField> getComColumnInfos(int companyID, int adminID, boolean customSorting);
 
-	List<ProfileField> getHistorizedComColumnInfos(int companyID);
-
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 
 	void storeProfileFieldAdminPermissions(int companyID, String column, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;

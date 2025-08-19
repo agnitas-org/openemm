@@ -18,16 +18,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookRecipientData;
 import com.agnitas.emm.core.webhooks.profilefields.dao.WebhookProfileFieldDao;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 
 public final class WebhookProfileFieldContentServiceImpl implements WebhookProfileFieldContentService {
 
 	private WebhookProfileFieldDao profileFieldDao;
 	private RecipientService recipientService;
-	
+
+	@Override
+	public Set<String> getProfileFields(WebhookEventType eventType, int companyId) {
+		return this.profileFieldDao.listProfileFieldsForWebhook(companyId, eventType);
+	}
+
 	@Override
 	public final WebhookRecipientData readProfileFields(final int companyID, final int customerID, final WebhookEventType eventType) {
 		// Customer ID is assumed to be a recipient with tracking veto set

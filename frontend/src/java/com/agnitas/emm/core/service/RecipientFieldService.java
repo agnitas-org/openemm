@@ -80,6 +80,7 @@ public interface RecipientFieldService {
 	Set<String> getStandardFieldsNames(int companyId);
 	List<RecipientFieldDescription> getRecipientFields(int companyID);
 	List<RecipientFieldDescription> getEditableFields(int companyId);
+	List<RecipientFieldDescription> getHistorizedFields(int companyId);
 	List<RecipientFieldDescription> getRecipientFields(ProfileFieldForm profileForm, int companyId);
 	Map<String, String> getRecipientDBStructure(int companyID);
 	RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName);
@@ -96,5 +97,5 @@ public interface RecipientFieldService {
 	ServiceResult<List<String>> filterAllowedForDelete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	ServiceResult<UserAction> delete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	long getCountForOverview(int companyId);
-	Map<String, String> getEditableFieldsMap(int companyId);
+    Map<String, String> getEditableFieldsMap(int companyId);
 }

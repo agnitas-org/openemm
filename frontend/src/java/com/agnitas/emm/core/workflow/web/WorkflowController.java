@@ -58,7 +58,9 @@ import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
@@ -113,7 +115,6 @@ import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -190,6 +191,7 @@ public class WorkflowController implements XssCheckAware {
     protected final ConfigService configService;
     protected final TargetService targetService;
     private final WorkflowService workflowService;
+    private final RecipientFieldService recipientFieldService;
     private final WorkflowValidationService validationService;
     private final WorkflowActivationService workflowActivationService;
     private final WorkflowStatisticsService workflowStatisticsService;
@@ -212,7 +214,7 @@ public class WorkflowController implements XssCheckAware {
                               WorkflowDataParser workflowDataParser, CampaignDao campaignDao, MailingDeliveryStatService deliveryStatService, MailingComponentDao componentDao,
                               PdfService pdfService, CompanyDao companyDao, ConfigService configService, MailinglistApprovalService mailinglistApprovalService,
                               UserActivityLogService userActivityLogService, ConversionService conversionService, MailingService mailingService, AdminService adminService,
-                              TargetService targetService) {
+                              TargetService targetService, RecipientFieldService recipientFieldService) {
         this.workflowService = workflowService;
         this.validationService = validationService;
         this.workflowActivationService = workflowActivationService;
@@ -232,6 +234,7 @@ public class WorkflowController implements XssCheckAware {
         this.mailingService = mailingService;
         this.adminService = adminService;
         this.targetService = targetService;
+        this.recipientFieldService = recipientFieldService;
     }
 
     @InitBinder
@@ -943,7 +946,7 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @GetMapping("/{workflowId:\\d+}/generatePDF.action")
-    public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId, HttpSession session) throws IOException {
+    public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId, HttpSession session) throws Exception {
         String hostUrl = configService.getPreviewBaseUrl();
         String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + session.getId() + "?workflowId=" + workflowId;
 
@@ -1121,7 +1124,7 @@ public class WorkflowController implements XssCheckAware {
         int companyId = admin.getCompanyID();
         List<TargetLight> allTargets = workflowService.getAllTargets(companyId);
         model.addAttribute("profileFields", workflowService.getProfileFields(companyId));
-        model.addAttribute("profileFieldsHistorized", workflowService.getHistorizedProfileFields(companyId));
+        model.addAttribute("profileFieldsHistorized", recipientFieldService.getHistorizedFields(companyId));
         model.addAttribute("isMailtrackingActive", companyDao.isMailtrackingActive(companyId));
         model.addAttribute("admins", workflowService.getAdmins(companyId));
         model.addAttribute("allTargets", allTargets);

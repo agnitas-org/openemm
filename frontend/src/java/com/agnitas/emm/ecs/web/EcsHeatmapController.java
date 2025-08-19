@@ -11,7 +11,6 @@
 package com.agnitas.emm.ecs.web;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -19,28 +18,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.ecs.EcsPreviewSize;
+import com.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.ecs.EcsModeType;
 import com.agnitas.emm.ecs.form.EcsHeatmapForm;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.ecs.EcsPreviewSize;
-import com.agnitas.ecs.backend.service.EmbeddedClickStatService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -144,7 +143,7 @@ public class EcsHeatmapController implements XssCheckAware {
     }
 
     @PostMapping("/mailing/{mailingId:\\d+}/heatmap/export.action")
-    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) throws IOException {
+    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) throws Exception {
         String mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
         String previewHeatmapUrl = getHeatmapPreviewUrl(mailingId, form);
         File file = ecsService.generatePDF(admin, previewHeatmapUrl, mailingName);

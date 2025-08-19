@@ -17,8 +17,7 @@ import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 
 public interface WebhookBackendDataProcessTimestampDao {
 
-	public Optional<ZonedDateTime> findTimestampOfLastRun(final int companyID, final WebhookEventType eventType);
-	public void updateTimestampOfLastRun(final int companyID, final WebhookEventType eventType, final ZonedDateTime timestamp);
-	public boolean deleteDataByCompany(final int companyID);
-
+	Optional<ZonedDateTime> findTimestampOfLastRun(final int companyID, final WebhookEventType eventType);
+	void updateTimestampOfLastRun(final int companyID, final WebhookEventType eventType, final ZonedDateTime timestamp);
+	boolean deleteDataByCompany(final int companyID);
 }

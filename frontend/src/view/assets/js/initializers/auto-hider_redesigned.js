@@ -166,7 +166,6 @@ If you need to display some option even in case if nothing if selected in the dr
   function updateVisibleByCheckbox($el, $checkbox, showIfChecked) {
     const hide= showIfChecked ? !$checkbox.is(":checked") : $checkbox.is(":checked");
     $el.toggleClass("hidden", hide);
-    $el.trigger(hide ? "tile:hide" : "tile:show");
     AGN.Lib.CoreInitializer.run("truncated-text-popover", $el);
   }
 

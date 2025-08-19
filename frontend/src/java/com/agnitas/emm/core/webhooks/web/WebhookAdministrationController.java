@@ -17,17 +17,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookRegistrationException;
@@ -37,11 +28,18 @@ import com.agnitas.emm.core.webhooks.settings.service.WebhookSettingsService;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 @PermissionMapping("webhooks")
 public final class WebhookAdministrationController implements XssCheckAware {
-	
+
 	public static final String WEBHOOK_ATTRIBUTE_NAME = "WEBHOOKS";
 	public static final String EVENT_TYPE_ATTRIBUTE_NAME = "WEBHOOK_EVENT_TYPE";
 	public static final String PROFILEFIELDS_ATTRIBUTE_NAME = "PROFILE_FIELDS";
@@ -49,12 +47,13 @@ public final class WebhookAdministrationController implements XssCheckAware {
 
 	private final WebhookConfigService webhookConfigService;
 	private final WebhookSettingsService webhookSettingsService;
-	private final ProfileFieldService profileFieldService;
-	
-	public WebhookAdministrationController(final ConfigService configService, final WebhookSettingsService webhookSettingsService, final ProfileFieldService profileFieldService) {
+	private final RecipientFieldService recipientFieldService;
+
+	public WebhookAdministrationController(ConfigService configService, WebhookSettingsService webhookSettingsService,
+										   RecipientFieldService recipientFieldService) {
 		this.webhookConfigService = new WebhookConfigService(configService);
 		this.webhookSettingsService = Objects.requireNonNull(webhookSettingsService, "WebhookSettingsService is null");
-		this.profileFieldService = Objects.requireNonNull(profileFieldService, "ProfileFieldService is null");
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientFieldService is null");
 	}
 	
 	@GetMapping("/webhooks/list.action")
@@ -98,9 +97,11 @@ public final class WebhookAdministrationController implements XssCheckAware {
 		configForm.fillFrom(settings);
 	}
 
-	private String doView(final int companyID, final WebhookEventType eventType, final Model model) throws ProfileFieldListException {
+	private String doView(final int companyId, final WebhookEventType eventType, final Model model) {
 		model.addAttribute(EVENT_TYPE_ATTRIBUTE_NAME, eventType);
-		model.addAttribute(PROFILEFIELDS_ATTRIBUTE_NAME, listAvailableProfileFields(companyID));
+		model.addAttribute(PROFILEFIELDS_ATTRIBUTE_NAME,  eventType == WebhookEventType.PROFILE_FIELD_CHANGED
+            ? recipientFieldService.getHistorizedFields(companyId)
+            : recipientFieldService.getRecipientFields(companyId));
 		
 		return "webhook_view";
 	}
@@ -151,19 +152,6 @@ public final class WebhookAdministrationController implements XssCheckAware {
 			return WebhookEventType.valueOf(name);
 		} catch(final Exception e) {
 			throw new UnknownEventTypeException(e);
-		}
-	}
-	
-	private List<ProfileFieldListItem> listAvailableProfileFields(final int companyID) throws ProfileFieldListException {
-		try {
-			final List<ProfileField> fields = this.profileFieldService.getProfileFields(companyID);
-			
-			return fields
-					.stream()
-					.map(ProfileFieldListItem::from)
-					.collect(Collectors.toList());
-		} catch(final Exception e) {
-			throw new ProfileFieldListException(e);
 		}
 	}
 }

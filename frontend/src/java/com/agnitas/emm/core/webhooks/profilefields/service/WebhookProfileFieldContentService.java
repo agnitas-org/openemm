@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.webhooks.profilefields.service;
 
+import java.util.Set;
+
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookRecipientData;
 
@@ -40,6 +42,14 @@ public interface WebhookProfileFieldContentService {
 	 * 
 	 * @return profile field data
 	 */
-	public WebhookRecipientData readProfileFields(final int companyID, final int recipientID, final WebhookEventType eventType);
+	WebhookRecipientData readProfileFields(final int companyID, final int recipientID, final WebhookEventType eventType);
 
+	/**
+	 * Extracts profile field names selected in the given webhook.
+	 *
+	 * @param eventType    type of webhook to inspect
+	 * @param companyId    company ID associated with the webhook
+	 * @return set of selected profile field names
+	 */
+	Set<String> getProfileFields(WebhookEventType eventType, int companyId);
 }

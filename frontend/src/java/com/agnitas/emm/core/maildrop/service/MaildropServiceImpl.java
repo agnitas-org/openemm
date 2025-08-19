@@ -168,8 +168,11 @@ public class MaildropServiceImpl implements MaildropService {
 
 		if (existingEntry == null) {
 			int id = maildropStatusDao.insertMaildropEntry(entry);
-			checkMissingDkim(mailingID, entry.getCompanyID());
+			String configValue = configService.getValue(ConfigValue.SendMailingWithoutDkimCheck, entry.getCompanyID());
 
+			if (!"none".equalsIgnoreCase(configValue)) {
+				checkMissingDkim(mailingID, entry.getCompanyID());
+			}
 			return id;
 		}
 
@@ -198,7 +201,11 @@ public class MaildropServiceImpl implements MaildropService {
 		maildropStatusDao.batchUpdateMaildropEntries(companyId, mailingId, update);
 
 		if (!create.isEmpty()) {
-			checkMissingDkim(mailingId, companyId);
+			String configValue = configService.getValue(ConfigValue.SendMailingWithoutDkimCheck, companyId);
+
+			if (!"none".equalsIgnoreCase(configValue)) {
+				checkMissingDkim(mailingId, companyId);
+			}
 		}
 	}
 

@@ -10,8 +10,9 @@
 
 package com.agnitas.emm.core.recipient.service;
 
+import java.time.ZonedDateTime;
 import java.util.List;
-
+import java.util.Set;
 
 import com.agnitas.beans.RecipientHistory;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
@@ -45,7 +46,17 @@ public interface RecipientProfileHistoryService {
 	 * @throws RecipientProfileHistoryException on errors during processing the request
 	 */
 	void afterProfileFieldStructureModification(int companyId) throws RecipientProfileHistoryException;
-	
+
+	/**
+	 * Finds recipient IDs with profile field changes after the given time.
+	 *
+	 * @param fields     profile field names to check for changes
+	 * @param from       timestamp from which to start checking for changes
+	 * @param companyId  ID of the company to filter recipients by
+	 * @return list of recipient IDs with changed profile fields since the specified time
+	 */
+	List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime from, int companyId);
+
 	/**
 	 * Returns <code>true</code>, if history feature is enabled for given company ID.
 	 * 

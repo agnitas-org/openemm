@@ -18,14 +18,14 @@ import java.util.Optional;
  */
 public enum WebhookEventType {
 
-	/** Mailing has been opened. */
-	MAILING_OPENED(1, "mailing_opened", true),
+	/** Mailing has been opened by recipient. */
+	MAIL_OPENED(1, "mailing_opened", true),
 	
 	/** Link has been clicked. */
 	LINK_CLICKED(2, "link_clicked", true),
 	
 	/** Mailing has been delivered to recipient successfully. */
-	MAILING_DELIVERED(3, "mailing_delivered", true), 
+	MAIL_DELIVERED(3, "mailing_delivered", true),
 	
 	/** Hard bounce. */
 	HARD_BOUNCE(4, "hard_bounce", true),
@@ -43,8 +43,11 @@ public enum WebhookEventType {
 	BINDING_STATUS_CHANGED(6, "binding_changed", true),
 
 	/** Test/Admin mailing has been delivered to recipient successfully. */
-	TEST_MAILING_DELIVERED(7, "testmail_delivered", true);
-	
+	TEST_MAIL_DELIVERED(7, "testmail_delivered", true),
+
+	/** Value of the profile field changed. */
+	PROFILE_FIELD_CHANGED(8, "profile_field_changed", true);
+
 	/** Event code. */
 	private final int eventCode;
 	
@@ -61,7 +64,7 @@ public enum WebhookEventType {
 	 * @param stringRepresentation textual representation of this event type
 	 * @param includesRecipientData <code>true</code> if event data includes recipient data
 	 */
-	private WebhookEventType(final int eventCode, final String stringRepresentation, final boolean includesRecipientData) {
+	WebhookEventType(int eventCode, String stringRepresentation, boolean includesRecipientData) {
 		this.eventCode = eventCode;
 		this.stringRepresentation = Objects.requireNonNull(stringRepresentation, "stringRepresentation is null");
 		this.includesRecipientData = includesRecipientData;

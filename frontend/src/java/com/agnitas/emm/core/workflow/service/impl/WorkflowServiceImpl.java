@@ -130,7 +130,6 @@ import com.agnitas.mailing.autooptimization.service.OptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.messages.Message;
 import com.agnitas.reporting.birt.external.dao.BirtCompanyDao;
-import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.userform.bean.UserForm;
@@ -166,7 +165,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 
     private static final Logger logger = LogManager.getLogger(WorkflowServiceImpl.class);
 
-	private ColumnInfoService columnInfoService;
     private WorkflowValidationService workflowValidationService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
@@ -706,11 +704,6 @@ public class WorkflowServiceImpl implements WorkflowService {
     public List<TargetLight> getAllTargets(int companyId) {
         return targetDao.getTargetLights(companyId);
     }
-
-    @Override
-	public List<ProfileField> getHistorizedProfileFields(int companyId) {
-		return columnInfoService.getHistorizedComColumnInfos(companyId);
-	}
 
     @Override
     public List<ProfileField> getProfileFields(int companyId) {
@@ -2477,10 +2470,6 @@ public class WorkflowServiceImpl implements WorkflowService {
     public MailingDao getMailingDao() {
         return mailingDao;
     }
-
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
-	}
 
 	public void setAdminService(AdminService service) {
 		this.adminService = Objects.requireNonNull(service, "Admin service is null");

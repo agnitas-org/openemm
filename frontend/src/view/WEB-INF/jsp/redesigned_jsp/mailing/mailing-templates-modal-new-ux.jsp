@@ -90,7 +90,7 @@
                         </c:otherwise>
                     </c:choose>
 
-                    <a href="#" data-form-url="${newMailingUrl}" data-form-submit data-bs-dismiss="modal" class="horizontal-card">
+                    <a href="#" data-form-url="${newMailingUrl}" data-form-confirm data-bs-dismiss="modal" class="horizontal-card">
                         <div class="horizontal-card__header">
                             <img class="horizontal-card__thumbnail" src="${thumbnailSrc}"
                                  alt="Thumbnail" data-no-preview-src="${IMAGE_PATH_NO_PREVIEW}">
@@ -131,7 +131,7 @@
                         <c:param name="templateId" value="0" />
                     </c:url>
 
-                    <button type="button" class="btn btn-primary" data-form-url="${newMailingUrl}" data-form-submit data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-primary" data-form-url="${newMailingUrl}" data-form-confirm data-bs-dismiss="modal">
                         <i class="icon icon-angle-right"></i>
                         <span><mvc:message code="button.template.without"/></span>
                     </button>

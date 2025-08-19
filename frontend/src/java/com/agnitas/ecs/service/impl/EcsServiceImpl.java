@@ -51,7 +51,7 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File generatePDF(Admin admin, String url, String title) throws IOException {
+    public File generatePDF(Admin admin, String url, String title) throws Exception {
         return pdfService.generatePDF(
                 admin,
                 url,

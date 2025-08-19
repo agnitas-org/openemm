@@ -54,7 +54,7 @@
     <div class="col-12">
         <div class="row g-0">
             <div class="col-12">
-                <button type="submit" class="btn btn-light btn-lg w-100" data-controls-group="login">
+                <button data-form-submit-static class="btn btn-light btn-lg w-100" data-controls-group="login">
                     <span class="text"><mvc:message code="logon.login"/></span>
                     <i class="icon icon-caret-right"></i>
                 </button>
