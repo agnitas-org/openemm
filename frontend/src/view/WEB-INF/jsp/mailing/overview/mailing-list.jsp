@@ -142,7 +142,9 @@
                 <script type="application/json" data-initializer="web-storage-persist">
                     {
                         "mailing-overview": {
-                            "rows-count": ${mailingOverviewForm.numberOfRows}
+                            "rows-count": ${mailingOverviewForm.numberOfRows},
+                            "mailing-types": ${emm:toJson(mailingOverviewForm.mailingTypes)},
+                            "page": ${mailingOverviewForm.page}
                         }
                     }
                 </script>

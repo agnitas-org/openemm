@@ -29,9 +29,7 @@ public interface RecipientProfileHistoryDao {
 	 * @param profileFields list of profile fields to be included in history
 	 * @throws RecipientProfileHistoryException on errors processing request
 	 */
-	default void setupProfileHistory(final int companyID, final List<ProfileField> profileFields) throws RecipientProfileHistoryException {
-		// default implementation
-	}
+	void setupProfileHistory(final int companyId, final List<ProfileField> profileFields) throws RecipientProfileHistoryException;
 	
 	/**
 	 * This method is called, when the structure of the profile fields has been changed.
@@ -62,9 +60,7 @@ public interface RecipientProfileHistoryDao {
 	 */
 	List<RecipientHistory> listProfileFieldHistory(final int subscriberID, final int companyID);
 	
-	default void deactivateProfileHistory(int companyID) {
-		// default implementation
-	}
+	void deactivateProfileHistory(int companyId) throws RecipientProfileHistoryException;
 
 	List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime startDate, int companyId);
 }

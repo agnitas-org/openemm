@@ -13,10 +13,15 @@ package com.agnitas.emm.core;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.text.MessageFormat;
-
 import javax.sql.DataSource;
 
+import com.agnitas.beans.Company;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.ConfigTableDao;
+import com.agnitas.dao.LayoutDao;
+import com.agnitas.emm.common.LicenseType;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.target.service.TargetService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.util.ServerCommand.Server;
 import org.apache.commons.io.IOUtils;
@@ -24,11 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
-
-import com.agnitas.dao.CompanyDao;
-import com.agnitas.dao.ConfigTableDao;
-import com.agnitas.dao.LayoutDao;
-import com.agnitas.emm.core.target.service.TargetService;
 
 /**
  * ATTENTION: Before changing something in Database affecting all companies, please rethink.
@@ -40,15 +40,11 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 
 	protected DataSource dataSource;
 	protected JdbcTemplate jdbcTemplate;
-
 	protected ConfigService configService;
-
 	protected ConfigTableDao configTableDao;
-
 	protected CompanyDao companyDao;
-
 	protected TargetService targetService;
-	
+	protected RecipientProfileHistoryService recipientProfileHistoryService;
 	private LayoutDao layoutDao;
 	
 	public void setDataSource(DataSource dataSource) {
@@ -76,6 +72,10 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 		this.layoutDao = layoutDao;
 	}
 
+	public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
+		this.recipientProfileHistoryService = recipientProfileHistoryService;
+	}
+
 	@Override
 	public void checkValidity(WebApplicationContext webApplicationContext) {
 		if (configService.getApplicationType() == Server.EMM) {
@@ -86,12 +86,40 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				 */
 	
 	    		migrateLogosAndImages(webApplicationContext);
+
+				for (Company company : companyDao.getAllActiveCompanies()) {
+					if (isProfileHistoryRequired(company)) {
+						recipientProfileHistoryService.enableProfileFieldHistory(company.getId());
+						logger.warn("Activated ProfileFieldHistory for: {}", company.getId());
+					}
+					if (!configService.isRecipientProfileHistoryEnabled(company.getId())) {
+						recipientProfileHistoryService.disableProfileFieldHistory(company.getId());
+						logger.warn("Deactivated ProfileFieldHistory for: {}", company.getId());
+					}
+				}
 			} catch (Exception e) {
-				logger.error(MessageFormat.format("Cannot check installation validity: {0}", e.getMessage()), e);
+				logger.error("Cannot check installation validity: {}", e.getMessage(), e);
 			}
 		}
     }
-    
+
+	private boolean isProfileHistoryRequired(Company company) {
+		final LicenseType licenseType = configService.getLicenseType();
+		final int companyId = company.getId();
+		return licenseType == LicenseType.OpenEMM && companyId == 1
+			   || isWorkflowStartTriggerRequiresProfileHistory(companyId)
+			   || isWebhooksEnabledForLtsOrSaas(licenseType, companyId)
+			   || configService.isRecipientProfileHistoryEnabled(companyId); // explicitly enabled in db
+	}
+
+	protected boolean isWebhooksEnabledForLtsOrSaas(LicenseType licenseType, int companyId) {
+		return false;
+	}
+
+	protected boolean isWorkflowStartTriggerRequiresProfileHistory(int companyId) {
+		return false; // extended feature
+	}
+
 	/**
 	 * This AGNITAS logo and image files can be replaced by using the EMT/OMT, but they have to be initialized here at the first startup of EMM/OpenEMM after installation
 	 */

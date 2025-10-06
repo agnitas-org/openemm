@@ -26,6 +26,7 @@ $default-status-badges-defs: (
   push:       (background: $stat-violet,           icon: $fa-var-bell),
   clipboard:  (background: $stat-darkest-blue,     icon: $fa-var-clipboard-list),
   auto-opt:   (background: $stat-dark-cyan,        icon: $fa-var-project-diagram),
+  bell-slash: (background: $stat-grey,             icon: $fa-var-bell-slash),
 );
 
 @mixin default-status-badge($state) {

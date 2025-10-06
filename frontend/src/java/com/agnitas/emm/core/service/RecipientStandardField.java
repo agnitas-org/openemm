@@ -108,7 +108,11 @@ public enum RecipientStandardField {
 		}
 		return hiddenRecipientStandardFieldColumnNames;
 	}
-		
+
+	public static boolean isHistorized(RecipientFieldDescription field) {
+		return field.isHistorized() || getHistorizedRecipientStandardFieldColumnNames().contains(field.getColumnName());
+	}
+
 	public static Set<String> getHistorizedRecipientStandardFieldColumnNames() {
 		Set<String> historizedRecipientStandardFieldColumnNames = new CaseInsensitiveSet();
 		for (RecipientStandardField recipientStandardField : RecipientStandardField.values()) {

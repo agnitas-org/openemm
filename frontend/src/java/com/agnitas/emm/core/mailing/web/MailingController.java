@@ -340,9 +340,10 @@ public class MailingController implements XssCheckAware {
         webStorage.access(WebStorage.MAILING_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0 || form.getPage() > 1) {
                 storage.setRowsCount(form.getNumberOfRows());
+                storage.setMailingTypes(form.getMailingTypes());
+                storage.setPage(form.getPage());
 
                 if (!form.isForTemplates()) {
-                    storage.setPage(form.getPage());
                     storage.setSearchQueryText(form.getSearchQueryText());
                     if (isRedesign(admin)) {
                         if (!form.isInEditColumnsMode()) {
@@ -351,19 +352,18 @@ public class MailingController implements XssCheckAware {
                     } else {
                         storage.setSelectedFields(form.getSelectedFields());
                     }
-                    storage.setMailingTypes(form.getMailingTypes());
                     storage.setMediaTypes(form.getMediaTypes());
                 } else {
                     form.setSearchQueryText("");
                 }
             } else {
                 form.setNumberOfRows(storage.getRowsCount());
+                form.setMailingTypes(storage.getMailingTypes());
+                form.setPage(storage.getPage());
 
                 if (!form.isForTemplates()) {
-                    form.setPage(storage.getPage());
                     form.setSearchQueryText(storage.getSearchQueryText());
                     form.setSelectedFields(storage.getSelectedFields());
-                    form.setMailingTypes(storage.getMailingTypes());
                     form.setMediaTypes(storage.getMediaTypes());
                 } else {
                     form.setSearchQueryText("");

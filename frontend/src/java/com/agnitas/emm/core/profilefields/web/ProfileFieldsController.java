@@ -266,6 +266,9 @@ public class ProfileFieldsController implements XssCheckAware {
         }
 
         model.addAttribute("HISTORY_FEATURE_ENABLED", configService.isRecipientProfileHistoryEnabled(companyId));
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("userDefinedHistoryFieldsLimit", configService.getMaximumNumberOfUserDefinedHistoryProfileFields(companyId));
+        }
         model.addAttribute("creationDate", creationDate);
         model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).toList());
         model.addAttribute("changeDate", changeDate);
@@ -452,6 +455,9 @@ public class ProfileFieldsController implements XssCheckAware {
         model.addAttribute("fieldsWithIndividualSortOrder", recipientFields.stream().filter(x -> x.getSortOrder() > 0 && x.getSortOrder() < 1000).collect(Collectors.toList()));
         model.addAttribute("isNewField", true);
         model.addAttribute("HISTORY_FEATURE_ENABLED", configService.isRecipientProfileHistoryEnabled(admin.getCompanyID()));
+        if (admin.isRedesignedUiUsed()) {
+            model.addAttribute("userDefinedHistoryFieldsLimit", configService.getMaximumNumberOfUserDefinedHistoryProfileFields(companyId));
+        }
 
         return "settings_profile_field_view";
     }
@@ -641,19 +647,24 @@ public class ProfileFieldsController implements XssCheckAware {
         } else if (containNotAllowedValue(form, field.getDatabaseDataType(), dateFormat)) {
             popups.alert("error.profiledb.invalidFixedValue");
         } else if (form.isIncludeInHistory()) {
-            final int maximumHistoryFields = configService.getMaximumNumberOfUserDefinedHistoryProfileFields(companyId);
-            final Set<String> columnSet = recipientFieldService.getRecipientFields(companyId).stream().filter(x -> x.isHistorized()).map(x -> x.getColumnName()).collect(Collectors.toSet());
-
-            String fieldNameInLower = form.getFieldname().toLowerCase();
-            if (!RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames().contains(fieldNameInLower)) {
-                columnSet.add(fieldNameInLower);
-            }
-
-            if (columnSet.size() > maximumHistoryFields) {
-                popups.alert("error.profileHistory.tooManyFields");
-            }
+            validateHistorizedFieldsCount(companyId, form, popups);
         }
         alertIfUsedProfileFieldChanged(popups, companyId, field, form, locale);
+    }
+
+    private void validateHistorizedFieldsCount(int companyId, ProfileFieldForm form, Popups popups) {
+        int maximumHistoryFields = configService.getMaximumNumberOfUserDefinedHistoryProfileFields(companyId);
+        if (maximumHistoryFields < 0) {
+            return; // unlimited
+        }
+        int count = recipientFieldService.getHistorizedCustomFields(companyId).size();
+        String fieldNameLc = form.getFieldname().toLowerCase();
+        if (!RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames().contains(fieldNameLc)) {
+            count++;
+        }
+        if (count > maximumHistoryFields) {
+            popups.alert("error.profileHistory.tooManyFields");
+        }
     }
 
     private String getDefaultValueToValidate(ProfileFieldForm form, Locale locale) {

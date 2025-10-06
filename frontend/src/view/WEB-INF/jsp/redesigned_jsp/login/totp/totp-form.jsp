@@ -23,7 +23,7 @@
 	</c:if>
 
 	<div class="col-12">
-		<button data-form-submit-static class="btn btn-light btn-lg w-100">
+		<button data-form-submit-static class="btn btn-light btn-lg w-100" type="button">
 			<span class="text"><mvc:message code="logon.totp.send" /></span>
 			<i class="icon icon-caret-right"></i>
 		</button>

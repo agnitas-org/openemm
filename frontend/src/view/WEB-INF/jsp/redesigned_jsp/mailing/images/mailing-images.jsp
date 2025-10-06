@@ -164,9 +164,9 @@
                             </emm:column>
 
                             <emm:column headerClass="table-preview-hidden mobile-hidden" cssClass="table-actions mobile-hidden">
-                                <script type="text/x-mustache-template" class="js-row-popover">
+                                <template class="js-row-popover">
                                     <img src="${sourceSrc}" alt="" class="popover__thumbnail">
-                                </script>
+                                </template>
 
                                 <c:if test="${isChangeAllowed and image.type == MAILING_COMPONENT_HOSTED_IMAGE_TYPE}">
                                     <a href="#" data-modal="image-editor-modal" data-modal-set='id: ${image.id}, name: ${image.name}, link: ${image.link}, src: ${sourceSrc}' data-view-row></a>

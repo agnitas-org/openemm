@@ -1,1 +1,59 @@
-<%-- This file was left empty intentionally. --%>
+<%@ page contentType="text/html; charset=utf-8" %>
+
+<%--@elvariable id="showNoMoreItems" type="java.lang.Boolean"--%>
+<%--@elvariable id="MANUAL_BASE_PATH" type="java.lang.String"--%>
+<%--@elvariable id="systemType" type="java.lang.String"--%>
+
+<div id="help-center-docs-tab" class="grid"></div>
+
+<c:set var="manuals">
+    {
+        "title": "<mvc:message code="manual.restful"/>",
+        "description": "<mvc:message code="manual.restful.documentation"/>",
+        "files": [
+            {"name": "EMM_Restful_Documentation.html", "lang": "en"}
+        ]
+    },
+    {
+        "title": "<mvc:message code="manual.webservice"/>",
+        "description": "<mvc:message code="manual.webservice.description"/>",
+        "files": [
+            {"name": "webservice_pdf_en.pdf", "lang": "en"}
+        ]
+    },
+    {
+        "title": "<mvc:message code="manual.webhooks"/>",
+        "description": "<mvc:message code="manual.webhooks.documentation"/>",
+        "files": [
+            {"name": "AGNITAS_EMM_Webhooks-Documentation.pdf", "lang": "en"}
+        ]
+    }
+</c:set>
+
+<%@ include file="help-center-extended-manuals.jspf" %>
+
+<script data-initializer="help-center-docs" type="application/json">
+    {
+        "manuals": [
+            ${manuals}
+        ]
+    }
+</script>
+
+<script id="help-center-docs" type="text/x-mustache-template">
+    {{ _.each(manuals, manual => { }}
+        <div class="g-col-12 g-col-lg-6 card">
+            <div class="card-body p-2">
+                <h6 class="card-title"><b>{{- manual.title }}</b></h6>
+                <p class="card-text">{{- manual.description }}</p>
+            </div>
+            <div class="card-footer d-flex gap-2 bg-transparent border-top-0 p-2">
+                {{ _.each(manual.files, file => { }}
+                    <a class="btn btn-primary btn-sm flex-grow-1" href="{{- file.link }}" target="_blank">
+                        <i class="icon icon-file-pdf"></i><small><b>{{- file.btnMsgKey }}</b></small>
+                    </a>
+                {{ }); }}
+            </div>
+        </div>
+    {{ }); }}
+</script>

@@ -28,6 +28,7 @@ import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -106,7 +107,38 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 		
 		return profileHistoryDao.listProfileFieldHistory(recipientID, companyId);
 	}
-	
+
+	@Override
+	public void enableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
+		try {
+			List<ProfileField> profileFields = listProfileFieldsForHistory(companyId);
+
+			profileHistoryDao.setupProfileHistory(companyId, profileFields);
+			configService.writeValue(ConfigValue.RecipientProfileFieldHistory, companyId, "true");
+		} catch(RecipientProfileHistoryException e) {
+			throw e; // Need this to avoid catching exception by catch{} below.
+		} catch(Exception e) {
+			// TODO: Try rollback, when exception was thrown!
+			String errorMsg = String.format("Error activating profile field history for company %d", companyId);
+			logger.error(errorMsg, e);
+
+			throw new RecipientProfileHistoryException(errorMsg, e);
+		}
+	}
+
+	@Override
+	public void disableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
+		try {
+			profileHistoryDao.deactivateProfileHistory(companyId);
+			configService.writeBooleanValue(ConfigValue.RecipientProfileFieldHistory, companyId, false, "disabled RecipientProfileFieldHistory by EMM");
+			configService.writeBooleanValue(ConfigValue.RecipientProfileFieldHistoryRebuildOnStartup, companyId, false, "disabled RecipientProfileFieldHistory by EMM");
+		} catch(Exception e) {
+			// TODO: Try rollback, when exception was thrown!
+			logger.error(String.format("Error deactivating profile field history for company %d", companyId), e);
+
+			throw new RecipientProfileHistoryException(String.format("Error deactivating profile field history for company %d", companyId), e);
+		}
+	}
 	
 	/**
 	 * Set DAO for writing profile field history data.

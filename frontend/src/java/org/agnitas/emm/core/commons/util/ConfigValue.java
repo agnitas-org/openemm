@@ -307,7 +307,8 @@ public class ConfigValue {
 	public static final ConfigValue CustomerRevenueAverage = new ConfigValue("cust.revenue_average", "150");
 	public static final ConfigValue CustomerRevenueHigh = new ConfigValue("cust.revenue_high", "500");
 
-	/** Maximum allowed number of user-selected profile fields for history. */
+	/** Maximum allowed number of user-selected profile fields for history.
+	 * Use ConfigService.getMaximumNumberOfUserDefinedHistoryProfileFields() instead of direct access to this CV */
 	public static final ConfigValue MaximumNumberOfUserSelectedProfileFieldsInHistory = new ConfigValue("recipient.profile_history.max_userdefined_fields");
 
 	public static final ConfigValue HeatmapProxy = new ConfigValue("system.heatmap.proxy");

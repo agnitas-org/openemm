@@ -33,6 +33,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="targetService" ref="targetService"/>
 		<property name="layoutDao" ref="LayoutDao"/>
+		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
 	</bean>
 
 <!-- ============================================================================================================================== Access data -->

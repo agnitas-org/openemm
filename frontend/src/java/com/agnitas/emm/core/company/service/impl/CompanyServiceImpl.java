@@ -620,7 +620,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (initTables(companyId)) {
             logger.info("Company: " + companyId + " created");
 
-            LicenseType licenseType = LicenseType.getLicenseTypeByID(configService.getValue(ConfigValue.System_License_Type));
+            LicenseType licenseType = configService.getLicenseType();
 			if (licenseType == LicenseType.Inhouse || licenseType == LicenseType.OpenEMM || licenseType == LicenseType.OpenEMM_Plus) {
                 if (StringUtils.isBlank(configService.getValue(ConfigValue.RecipientProfileFieldHistory, companyId))) {
                     // Setup RecipientProfileFieldHistory for inhouse instances only

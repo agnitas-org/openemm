@@ -38,6 +38,8 @@ import org.springframework.jdbc.core.RowMapper;
  */
 public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements RecipientProfileHistoryDao {
 
+	private static final String TABLESPACE_DATA_CUSTOMER_TABLE = "data_cust_table";
+
 	/**
 	 * Implementation of {@link RowMapper} for profile field history.
 	 */
@@ -335,6 +337,76 @@ public class RecipientProfileHistoryDaoImpl extends BaseDaoImpl implements Recip
 		
 		if (DbUtilities.checkTableIsView(customerTable, getDataSource())) {
 			throw new CannotUseViewsException(companyID);
+		}
+	}
+
+	@Override
+	public void setupProfileHistory(int companyID, final List<ProfileField> profileFields) throws RecipientProfileHistoryException {
+		checkCompanyTables(companyID);
+
+		String tableName = buildHistoryTableName(companyID);
+
+		if (!DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
+			execute(isOracleDB()
+				? getCreateCustomerHstTblOracleSql(tableName)
+				: getCreateCustomerHstTblMariaSql(tableName));
+			execute("ALTER TABLE %s add constraint HSTC%d$chtcoldatecid$PK PRIMARY KEY (customer_id, change_date, name, change_Type)".formatted(tableName, companyID));
+			execute(createTriggerStatement(companyID, TriggerEvent.INSERT, profileFields));
+			execute(createTriggerStatement(companyID, TriggerEvent.UPDATE, profileFields));
+			execute(createTriggerStatement(companyID, TriggerEvent.DELETE, profileFields));
+		} else {
+			createOrReplaceTrigger(TriggerEvent.INSERT, companyID, profileFields);
+			createOrReplaceTrigger(TriggerEvent.UPDATE, companyID, profileFields);
+			createOrReplaceTrigger(TriggerEvent.DELETE, companyID, profileFields);
+		}
+	}
+
+	private static String getCreateCustomerHstTblMariaSql(String tableName) {
+		return """
+			CREATE TABLE %s (
+			  customer_id INTEGER UNSIGNED NOT NULL,
+			  change_Type INTEGER(1)       NOT NULL,
+			  name        VARCHAR(50)      NOT NULL,
+			  old_value   VARCHAR(4000),
+			  new_value   VARCHAR(4000),
+			  change_date TIMESTAMP        DEFAULT CURRENT_TIMESTAMP
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+			""".formatted(tableName);
+	}
+
+	private String getCreateCustomerHstTblOracleSql(String tableName) {
+		String tablespaceClause = DbUtilities.checkOracleTablespaceExists(getDataSource(), TABLESPACE_DATA_CUSTOMER_TABLE)
+			? " TABLESPACE " + TABLESPACE_DATA_CUSTOMER_TABLE
+			: "";
+		return """
+			CREATE TABLE %s (
+			  customer_id NUMBER           NOT NULL,
+			  change_Type NUMBER(1)        NOT NULL,
+			  name        VARCHAR2(50)     NOT NULL,
+			  old_value   VARCHAR2(4000),
+			  new_value   VARCHAR2(4000),
+			  change_date TIMESTAMP        DEFAULT CURRENT_TIMESTAMP
+			) %s
+			""".formatted(tableName, tablespaceClause);
+	}
+
+	@Override
+	public void deactivateProfileHistory(int companyID) {
+		if (isOracleDB()) {
+			String countSql = "SELECT COUNT(trigger_name) FROM user_triggers WHERE LOWER(trigger_name) = LOWER(?)";
+			if (selectInt(countSql, buildTriggerName(companyID, TriggerEvent.INSERT)) == 1) {
+				execute("DROP TRIGGER " + buildTriggerName(companyID, TriggerEvent.INSERT));
+			}
+			if (selectInt(countSql, buildTriggerName(companyID, TriggerEvent.UPDATE)) == 1) {
+				execute("DROP TRIGGER " + buildTriggerName(companyID, TriggerEvent.UPDATE));
+			}
+			if (selectInt(countSql, buildTriggerName(companyID, TriggerEvent.DELETE)) == 1) {
+				execute("DROP TRIGGER " + buildTriggerName(companyID, TriggerEvent.DELETE));
+			}
+		} else {
+			execute("DROP TRIGGER IF EXISTS " + buildTriggerName(companyID, TriggerEvent.INSERT));
+			execute("DROP TRIGGER IF EXISTS " + buildTriggerName(companyID, TriggerEvent.UPDATE));
+			execute("DROP TRIGGER IF EXISTS " + buildTriggerName(companyID, TriggerEvent.DELETE));
 		}
 	}
 }

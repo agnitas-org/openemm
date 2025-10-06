@@ -27,9 +27,7 @@ public interface RecipientProfileHistoryService {
 	 * @param companyId company ID
 	 * @throws RecipientProfileHistoryException on errors enabling profile field history
 	 */
-	default void enableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
-		// default implementation
-	}
+	void enableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException;
 	
 	/**
 	 * This method is called, when the structure of the profile fields has been changed.
@@ -79,7 +77,5 @@ public interface RecipientProfileHistoryService {
 	 */
 	List<RecipientHistory> listProfileFieldHistory(final int subscriberID, int companyId) throws RecipientProfileHistoryException;
 	
-	default void disableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
-		// default implementation
-	}
+	void disableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException;
 }

@@ -459,6 +459,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 IntegerRowMapper.INSTANCE, name, companyId);
     }
 
+    @Override
+    public LightweightMailing getMailingByName(String name, int companyId) {
+        return selectObject(addRowLimit("""
+            SELECT company_id, mailing_id, shortname, description, mailing_type, work_status, content_type
+            FROM mailing_tbl WHERE shortname = ? AND company_id = ? AND is_template = 0 AND deleted = 0
+            ORDER BY mailing_id""", 1), LightweightMailingRowMapper.INSTANCE, name, companyId);
+    }
+
     private String getDisabledMailinglistRestriction(int adminId, List<Object> queryParams, String tableAlias) {
         if (adminId > 0 && configService.isDisabledMailingListsSupported()) {
             queryParams.add(adminId);

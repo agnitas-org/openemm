@@ -51,6 +51,7 @@ import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
 import com.agnitas.dao.impl.ServerMessageDaoImpl;
+import com.agnitas.emm.common.LicenseType;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.JavaMailServiceImpl;
 import com.agnitas.emm.core.Permission;
@@ -1420,7 +1421,8 @@ public class ConfigService {
 	 * @return <code>true</code> if history on profile fields is enabled
 	 */
 	public boolean isRecipientProfileHistoryEnabled(final int companyID) {
-		return getBooleanValue(ConfigValue.RecipientProfileFieldHistory, companyID);
+		return getLicenseType() == LicenseType.OpenEMM && companyID == 1
+			   || getBooleanValue(ConfigValue.RecipientProfileFieldHistory, companyID);
 	}
 
 	/**
@@ -1431,7 +1433,8 @@ public class ConfigService {
 	 * @return maximum allowed number of user-selected profile fields in history
 	 */
 	public int getMaximumNumberOfUserDefinedHistoryProfileFields(final int companyID) {
-		return getIntegerValue(ConfigValue.MaximumNumberOfUserSelectedProfileFieldsInHistory, companyID, 5);
+		int defaultNumber = getLicenseType() == LicenseType.Saas ? 5 : -1;
+		return getIntegerValue(ConfigValue.MaximumNumberOfUserSelectedProfileFieldsInHistory, companyID, defaultNumber);
 	}
 
 	/**
@@ -1460,6 +1463,10 @@ public class ConfigService {
 
 	public final int getLicenseID() {
 		return getIntegerValue(ConfigValue.System_Licence);
+	}
+
+	public LicenseType getLicenseType() {
+		return LicenseType.getLicenseTypeByID(getValue(ConfigValue.System_License_Type));
 	}
 
 	public String getPushNotificationClickTrackingUrl(final int companyID) {

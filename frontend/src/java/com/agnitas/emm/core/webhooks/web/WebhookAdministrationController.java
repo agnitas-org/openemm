@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
@@ -48,12 +50,14 @@ public final class WebhookAdministrationController implements XssCheckAware {
 	private final WebhookConfigService webhookConfigService;
 	private final WebhookSettingsService webhookSettingsService;
 	private final RecipientFieldService recipientFieldService;
+	private final RecipientProfileHistoryService profileHistoryService;
 
 	public WebhookAdministrationController(ConfigService configService, WebhookSettingsService webhookSettingsService,
-										   RecipientFieldService recipientFieldService) {
+										   RecipientFieldService recipientFieldService, RecipientProfileHistoryService profileHistoryService) {
 		this.webhookConfigService = new WebhookConfigService(configService);
 		this.webhookSettingsService = Objects.requireNonNull(webhookSettingsService, "WebhookSettingsService is null");
 		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientFieldService is null");
+		this.profileHistoryService = profileHistoryService;
 	}
 	
 	@GetMapping("/webhooks/list.action")
@@ -70,8 +74,9 @@ public final class WebhookAdministrationController implements XssCheckAware {
 	}
 	
 	@PostMapping("/webhooks/enableInterface.action")
-	public String enableInterface(Admin admin, Model model, @ModelAttribute("enableInterfaceForm") WebhookEnableForm form) {
+	public String enableInterface(Admin admin, Model model, @ModelAttribute("enableInterfaceForm") WebhookEnableForm form) throws RecipientProfileHistoryException {
 		// TODO Check permission and update settings
+		profileHistoryService.enableProfileFieldHistory(admin.getCompanyID());
 		this.webhookConfigService.enableWebhooksInterface(admin.getCompanyID(), form.isEnable());
 		
 		return doListWebhookUrls(admin, model, form);
@@ -99,9 +104,7 @@ public final class WebhookAdministrationController implements XssCheckAware {
 
 	private String doView(final int companyId, final WebhookEventType eventType, final Model model) {
 		model.addAttribute(EVENT_TYPE_ATTRIBUTE_NAME, eventType);
-		model.addAttribute(PROFILEFIELDS_ATTRIBUTE_NAME,  eventType == WebhookEventType.PROFILE_FIELD_CHANGED
-            ? recipientFieldService.getHistorizedFields(companyId)
-            : recipientFieldService.getRecipientFields(companyId));
+		model.addAttribute(PROFILEFIELDS_ATTRIBUTE_NAME, recipientFieldService.getRecipientFields(companyId));
 		
 		return "webhook_view";
 	}

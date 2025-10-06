@@ -1,6 +1,7 @@
+<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
 <%@page import="com.agnitas.beans.ProfileFieldMode"%>
 <%@ page import="com.agnitas.util.DbColumnType" %>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/errorRedesigned.action" %>
+<%@ page import="com.agnitas.emm.core.service.RecipientStandardField" %>
 
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -70,7 +71,7 @@
 
                         <emm:column titleKey="settings.FieldName" sortable="true" sortProperty="shortname">
                             <div class="hstack gap-2 overflow-wrap-anywhere">
-                                <c:if test="${field.historized}">
+                                <c:if test="${RecipientStandardField.isHistorized(field)}">
                                     <span class="status-badge status.clipboard" data-tooltip="${profileHistoryMsg}"></span>
                                 </c:if>
                                 <span class="text-truncate-table">${field.shortName}</span>

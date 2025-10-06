@@ -24,7 +24,7 @@
 
 		<mvc:text path="totp" cssClass="form-control" maxlength="6" placeholder="123456" />
 
-		<button data-form-submit-static class="btn btn-light btn-lg flex-grow-1">
+		<button data-form-submit-static class="btn btn-light btn-lg flex-grow-1" type="button">
 			<span class="text"><mvc:message code="logon.totp.send" /></span>
 			<i class="icon icon-caret-right"></i>
 		</button>

@@ -793,7 +793,7 @@ public class LogonController implements XssCheckAware {
         attributes.setAttribute("companyID", admin.getCompany().getId(), RequestAttributes.SCOPE_SESSION);
         attributes.setAttribute("adminTimezone", admin.getAdminTimezone(), RequestAttributes.SCOPE_SESSION);
 
-        LicenseType licenseType = LicenseType.getLicenseTypeByID(configService.getValue(ConfigValue.System_License_Type));
+        LicenseType licenseType = configService.getLicenseType();
 		if (!configService.getBooleanValue(ConfigValue.IsLiveInstance)
         		|| licenseType == LicenseType.Inhouse
                 || licenseType == LicenseType.OpenEMM

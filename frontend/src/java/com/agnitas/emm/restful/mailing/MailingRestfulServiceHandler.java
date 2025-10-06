@@ -220,12 +220,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			
 			for (MailingType mailingType : mailingTypes) {
 				for (LightweightMailing mailing : mailingDao.getMailingsByType(mailingType.getCode(), admin.getCompanyID())) {
-					JsonObject mailingJsonObject = new JsonObject();
-					mailingJsonObject.add("mailing_id", mailing.getMailingID());
-					mailingJsonObject.add("type", mailing.getMailingType().name());
-					mailingJsonObject.add("name", mailing.getShortname());
-					mailingJsonObject.add("description", mailing.getMailingDescription());
-					
+					JsonObject mailingJsonObject = getBasicJson(mailing);
+
 					Mailing fullMailing = null;
 					
 					if (filterPatternMailingName != null && !filterPatternMailingName.matcher(mailing.getShortname().toLowerCase()).matches()) {
@@ -306,7 +302,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			String requestedMailingKeyValue = restfulContext[0];
 			
 			if (!AgnUtils.isNumber(requestedMailingKeyValue)) {
-				throw new RestfulClientException("Invalid request");
+				return getMailingByName(requestedMailingKeyValue, admin.getCompanyID());
 			}
 
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailing", new Date());
@@ -315,6 +311,9 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			int mailingID = Integer.parseInt(requestedMailingKeyValue);
 			
 			if (mailingDao.exist(mailingID, admin.getCompanyID())) {
+				if ("light".equals(request.getParameter("view"))) {
+					return getBasicJson(mailingDao.getLightweightMailing(admin.getCompanyID(), mailingID));
+				}
 				mailingExporter.exportMailingToJson(admin.getCompanyID(), mailingID, response.getOutputStream(), false, false);
 				return EXPORTED_TO_STREAM;
 			} else {
@@ -331,6 +330,23 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		} else {
 			throw new RestfulClientException("Invalid request");
 		}
+	}
+
+	private JsonObject getMailingByName(String name, int companyId) throws RestfulNoDataFoundException {
+		LightweightMailing mailing = mailingDao.getMailingByName(name, companyId);
+		if (mailing == null) {
+			throw new RestfulNoDataFoundException("No data found");
+		}
+		return getBasicJson(mailing);
+	}
+
+	private static JsonObject getBasicJson(LightweightMailing mailing) {
+		JsonObject json = new JsonObject();
+		json.add("mailing_id", mailing.getMailingID());
+		json.add("type", mailing.getMailingType().name());
+		json.add("name", mailing.getShortname());
+		json.add("description", mailing.getMailingDescription());
+		return json;
 	}
 
 	/**
@@ -386,13 +402,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 						thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), result.getMailingID());
 						
 						LightweightMailing mailing = mailingDao.getLightweightMailing(admin.getCompanyID(), result.getMailingID());
-						
-						JsonObject returnJsonObject = new JsonObject();
-						returnJsonObject.add("mailing_id", mailing.getMailingID());
-						returnJsonObject.add("type", mailing.getMailingType().name());
-						returnJsonObject.add("name", mailing.getShortname());
-						returnJsonObject.add("description", mailing.getMailingDescription());
-						return returnJsonObject;
+
+                        return getBasicJson(mailing);
 					} else {
 						throw new RestfulClientException("Error while creating mailing: " + result.getErrors());
 					}

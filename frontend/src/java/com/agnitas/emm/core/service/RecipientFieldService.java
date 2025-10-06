@@ -97,5 +97,6 @@ public interface RecipientFieldService {
 	ServiceResult<List<String>> filterAllowedForDelete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	ServiceResult<UserAction> delete(Map<String, SimpleServiceResult> validationResults, Admin admin);
 	long getCountForOverview(int companyId);
+    List<RecipientFieldDescription> getHistorizedCustomFields(int companyId);
     Map<String, String> getEditableFieldsMap(int companyId);
 }

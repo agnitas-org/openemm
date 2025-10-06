@@ -248,7 +248,7 @@
         "summary" : "Read existing mailing data",
         "tags" : [ "Mailing" ],
         "operationId" : "getMailingById",
-        "description" : "Read existing mailing data",
+        "description" : "Read existing mailing data. Use optional 'view=light' to return a condensed version.",
         "parameters" : [ {
           "in" : "path",
           "name" : "mailing_id",
@@ -257,6 +257,16 @@
             "type" : "integer"
           },
           "description" : "Numeric ID of the mailing to get"
+        },
+        {
+          "in" : "query",
+          "name" : "view",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum": ["light"]
+          },
+          "description" : "If set to 'light', returns a condensed version of the mailing data"
         } ],
         "responses" : {
           "200" : {
@@ -345,6 +355,49 @@
           },
           "400" : {
             "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailing/{mailing_name}" : {
+      "get" : {
+        "summary" : "Read existing mailing data by name",
+        "tags" : [ "Mailing" ],
+        "operationId" : "getMailingByName",
+        "description" : "Read first found mailing data by name",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "mailing_name",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            },
+            "description" : "Name of the mailing to get"
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "Condensed mailing data",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing name or not existing mailing"
           },
           "401" : {
             "description" : "Authorization information is missing or invalid"

@@ -198,6 +198,14 @@ public interface MailingDao {
 
     List<Integer> getClassicTemplatesByName(String name, int companyId);
 
+	/**
+	 * Retrieves the first mailing found with the specified name.
+	 *
+	 * @param name the name of the mailing to search for
+	 * @return the first {@link LightweightMailing} found with the given name, or {@code null} if no user is found
+	 */
+    LightweightMailing getMailingByName(String name, int companyId);
+
     List<LightweightMailing> getAllMailingsSorted(Admin admin, String sortFiled, String sortDirection);
 
     List<LightweightMailing> getMailingsDateSorted(Admin admin);

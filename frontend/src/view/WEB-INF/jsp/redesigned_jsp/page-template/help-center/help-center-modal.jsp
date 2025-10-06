@@ -19,7 +19,9 @@
                     </button>
                     <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="help-center-navbar">
                         <ul class="navbar-nav offcanvas-body">
-                            <%@ include file="tab/help-center-docs-tab.jspf" %>
+                            <li class="nav-item">
+                                <a class="btn btn-header-tab" href="#" data-toggle-tab="#help-center-docs-tab" data-bs-dismiss="offcanvas" data-help-tab="docs"><mvc:message code="default.documents"/></a>
+                            </li>
                             <li class="nav-item">
                                 <a class="btn btn-header-tab" href="#" data-toggle-tab="#help-center-manual-tab" data-bs-dismiss="offcanvas" data-help-tab="manual"><mvc:message code="manual.gui"/></a>
                             </li>

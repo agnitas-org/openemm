@@ -33,7 +33,7 @@
         <mvc:form cssClass="col-12" servletRelativeAction="/logon/change-password.action" method="POST">
             <input type="hidden" name="skip" value="true"/>
 
-            <button data-form-submit-static class="btn btn-lg btn-light w-100">
+            <button data-form-submit-static class="btn btn-lg btn-light w-100" type="button">
                 <mvc:message code="Proceed"/>
             </button>
         </mvc:form>

@@ -140,12 +140,13 @@
         window.setTimeout(() => {
           const $options = $el.data('select2').$dropdown.find('.select2-results__options');
           $el.data(SCROLLBAR_DATA_KEY, new AGN.Lib.Scrollbar($options, {wheelSpeed: 0.2}));
+          CoreInitializer.run('tooltip', $options);
         }, 20);
       });
 
       $el.on('select2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
 
-      $el.on('change.select2', e => CoreInitializer.run('truncated-text-popover', $el.next('.select2')));
+      $el.on('change.select2', e => CoreInitializer.run(['truncated-text-popover', 'tooltip'], $el.next('.select2')));
 
       const $exclusiveOptions = $el.find('option[data-exclusive]');
       if ($exclusiveOptions.exists()) {

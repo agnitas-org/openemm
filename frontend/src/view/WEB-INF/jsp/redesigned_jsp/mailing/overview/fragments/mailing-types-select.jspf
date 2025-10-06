@@ -1,0 +1,11 @@
+<%@ page import="com.agnitas.emm.common.MailingType" %>
+<div>
+	<label class="form-label" for="mailingType-filter"><mvc:message code="mailing.types"/></label>
+	<mvc:select id="mailingType-filter" path="mailingTypes" cssClass="form-control" multiple="true">
+		<mvc:option value="${MailingType.NORMAL}"><mvc:message code="Normal"/></mvc:option>
+		<mvc:option value="${MailingType.ACTION_BASED}"><mvc:message code="mailing.event"/></mvc:option>
+		<mvc:option value="${MailingType.DATE_BASED}"><mvc:message code="mailing.date"/></mvc:option>
+		<%@include file="filter-type-followup-option.jspf" %>
+		<%@include file="filter-type-interval-option.jspf" %>
+	</mvc:select>
+</div>

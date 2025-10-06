@@ -159,7 +159,7 @@
                             <mvc:checkbox path="includeInHistory" id="includeInHistory" cssClass="form-check-input" role="switch"/>
                             <label class="form-label form-check-label" for="includeInHistory">
                                 <mvc:message code="profileHistory.includeField"/>
-                                <a href="#" class="icon icon-question-circle" data-help="recipient/profileField/HistorisationAdd.xml"></a>
+                                <a href="#" class="icon icon-question-circle" data-help="recipient/profileField/HistorisationAdd.xml" data-help-options="max: ${userDefinedHistoryFieldsLimit}"></a>
                             </label>
                         </div>
                     </div>

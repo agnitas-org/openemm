@@ -93,6 +93,7 @@ window.I18n = {
     defaults: {
       apply: '<mvc:message javaScriptEscape="true" code="button.Apply"/>',
       delete: '<mvc:message javaScriptEscape="true" code="Delete" />',
+      download: '<mvc:message javaScriptEscape="true" code="button.Download"/>',
       reset: '<mvc:message javaScriptEscape="true" code="button.Reset" />',
       today: '<mvc:message javaScriptEscape="true" code="calendar.today.button" />',
       clear: '<mvc:message javaScriptEscape="true" code="button.Delete" />',

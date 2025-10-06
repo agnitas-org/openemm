@@ -316,9 +316,9 @@
                         </c:if>
 
                         <emm:column cssClass="table-actions mobile-hidden" headerClass="mobile-hidden ${forTemplates ? '' : 'columns-picker'}">
-                            <script type="text/x-mustache-template" class="js-row-popover">
+                            <template class="js-row-popover">
                                 <img src="${previewImageSrc}" alt="${fn:escapeXml(mailing.shortname)}" class="popover__thumbnail">
-                            </script>
+                            </template>
 
                             <c:choose>
                                 <c:when test="${mailingOverviewForm.useRecycleBin}">
@@ -397,10 +397,6 @@
                 <mvc:select id="mailinglists-filter" path="filterMailingLists" cssClass="form-control" multiple="true">
                     <mvc:options itemValue="id" itemLabel="shortname" items="${mailinglists}"/>
                 </mvc:select>
-
-                <c:if test="${forTemplates}">
-                    <%@include file="./fragments/use-recycle-bin-option.jspf" %>
-                </c:if>
             </div>
 
             <c:if test="${not forTemplates}">
@@ -475,20 +471,13 @@
                         </div>
                     </div>
                 </div>
+            </c:if>
 
-                <div>
-                    <label class="form-label" for="mailingType-filter"><mvc:message code="mailing.types"/></label>
-                    <mvc:select id="mailingType-filter" path="mailingTypes" cssClass="form-control" multiple="true">
-                        <mvc:option value="${MAILING_TYPE_NORMAL}"><mvc:message code="Normal"/></mvc:option>
-                        <mvc:option value="${MAILING_TYPE_ACTION_BASED}"><mvc:message code="mailing.event"/></mvc:option>
-                        <mvc:option value="${MAILING_TYPE_DATE_BASED}"><mvc:message code="mailing.date"/></mvc:option>
-                        <%@include file="./fragments/filter-type-followup-option.jspf" %>
-                        <%@include file="./fragments/filter-type-interval-option.jspf" %>
-                    </mvc:select>
+            <%@include file="fragments/mailing-types-select.jspf" %>
 
-                    <%@include file="./fragments/use-recycle-bin-option.jspf" %>
-                </div>
+            <%@include file="./fragments/use-recycle-bin-option.jspf" %>
 
+            <c:if test="${not forTemplates}">
                 <%@include file="./fragments/mediatypes-filter.jspf" %>
 
                 <%-- Plan date filter --%>

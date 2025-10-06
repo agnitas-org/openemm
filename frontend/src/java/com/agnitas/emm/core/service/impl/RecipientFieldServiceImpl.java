@@ -82,11 +82,11 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 				.filter(f -> StringUtils.isBlank(description) || (f.getDescription() != null && f.getDescription().toLowerCase().contains(description.toLowerCase())))
 				.filter(f -> type == null || type.equals(f.getSimpleDataType()))
 				.filter(f -> mode == null || mode.equals(f.getDefaultPermission()))
-				.filter(f -> historized == null || historized.equals(f.isHistorized()))
+				.filter(f -> historized == null || historized.equals(RecipientStandardField.isHistorized(f)))
 				.collect(Collectors.toList());
 	}
 
-	@Override
+    @Override
 	public List<RecipientFieldDescription> getEditableFields(int companyId) {
 		return getRecipientFields(companyId).stream()
 				.filter(t -> EnumSet.of(ProfileFieldMode.Editable).contains(t.getDefaultPermission()))
@@ -95,9 +95,18 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 
 	@Override
 	public List<RecipientFieldDescription> getHistorizedFields(int companyId) {
+		return getHistorizedFields(companyId, true);
+	}
+
+	@Override
+	public List<RecipientFieldDescription> getHistorizedCustomFields(int companyId) {
+		return getHistorizedFields(companyId, false);
+	}
+
+	private List<RecipientFieldDescription> getHistorizedFields(int companyId, boolean includeStandard) {
 		Set<String> historizedStandardFields = RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames();
 		return getRecipientFields(companyId).stream()
-			.filter(f -> f.isHistorized() || historizedStandardFields.contains(f.getColumnName()))
+			.filter(f -> f.isHistorized() || (!includeStandard || historizedStandardFields.contains(f.getColumnName())))
 			.toList();
 	}
 

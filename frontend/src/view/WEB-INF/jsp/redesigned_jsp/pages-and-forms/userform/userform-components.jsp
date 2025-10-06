@@ -136,9 +136,9 @@
                             </emm:column>
 
                             <emm:column headerClass="table-preview-hidden mobile-hidden" cssClass="table-actions mobile-hidden">
-                                <script type="text/x-mustache-template" class="js-row-popover">
+                                <template class="js-row-popover">
                                     <img src="${imageLinkNoCache}" alt="" class="popover__thumbnail">
-                                </script>
+                                </template>
 
                                 <div>
                                     <a href="${imageLinkNoCache}?download=true" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code='button.Download'/>" data-prevent-load download="${component.name}">

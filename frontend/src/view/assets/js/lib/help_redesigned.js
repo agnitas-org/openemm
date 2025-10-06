@@ -19,7 +19,11 @@
     }
 
     getConfig(key) {
-      return this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
+      const val = this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
+      if (!this.$el.is('[data-help-options]')) {
+        return val;
+      }
+      return _.template(val)(AGN.Lib.Helpers.objFromString(this.$el.data('help-options')));
     }
 
     popover() {

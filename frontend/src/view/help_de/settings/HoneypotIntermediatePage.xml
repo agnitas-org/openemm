@@ -1,6 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Bot Zwischenseite aktivieren]]></title>
-    <content><![CDATA[Diese Anzeige informiert Sie, ob die EMM Bot-Zwischenseite zum Schutz vor automatischen Linkklicks aktiv ist oder nicht.
-Um mehrfache Klicks durch automatisierte Bots im Mailing zu vermeiden, verf&#xFC;gen Sie im EMM &#xFC;ber die M&#xF6;glichkeit einer integrierten Zwischenseite. Wenn ein Linkklick durch einen potenziellen Bot erzeugt wird, schaltet der EMM automatisch auf eine Zwischenseite und leitet den Bot darauf. Um zum eigentlichen Linkziel zu gelangen, muss ein weiterer Klick auf dieser Seite ausgef&#xFC;hrt werden. Bei einem regul&#xE4;ren Empf&#xE4;nger findet diese Weiterleitung nicht statt, dieser kommt direkt zum Linkziel.
-Damit soll verhindert werden, dass Bots Linkklicks und deren Aktionen ausl&#xF6;sen und beispielsweise Statistiken im EMM verf&#xE4;lschen.]]></content>
-</HelpBalloon>
