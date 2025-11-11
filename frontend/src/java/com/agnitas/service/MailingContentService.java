@@ -10,19 +10,19 @@
 
 package com.agnitas.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Target;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
-import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Target;
+import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
+import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.web.mvc.Popups;
 
 public interface MailingContentService {
     boolean isGenerationAvailable(Mailing mailing);
@@ -40,4 +40,8 @@ public interface MailingContentService {
     Set<String> findDynNamesUsedInContent(String content, List<DynamicTag> dynTags);
 
     Map<String, DynTagDto> loadDynTags(Mailing mailing, Locale locale);
+
+    Map<Integer, String> getMailingContentNames(int mailingId, Admin admin);
+
+    Map<Integer, String> getNamesOfAvailableTargetsForContent(Admin admin);
 }

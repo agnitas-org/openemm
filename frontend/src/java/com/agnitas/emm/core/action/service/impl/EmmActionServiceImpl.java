@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
@@ -375,6 +376,13 @@ public class EmmActionServiceImpl implements EmmActionService {
     @Override
     public List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive) {
         return emmActionDao.getEmmNotFormActions(companyId, includeInactive);
+    }
+
+    @Override
+    public Map<Integer, String> getEmmNotFormActionsMap(int companyId) {
+        return getEmmNotFormActions(companyId, false)
+            .stream()
+            .collect(Collectors.toMap(EmmAction::getId, EmmAction::getShortname));
     }
 
     @Override

@@ -24,32 +24,24 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import com.agnitas.service.ImportResult;
-import com.agnitas.service.MailingExporter;
-import com.agnitas.service.MailingImporter;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import org.apache.commons.lang3.StringUtils;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -65,10 +57,19 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
-
+import com.agnitas.service.ImportResult;
+import com.agnitas.service.MailingExporter;
+import com.agnitas.service.MailingImporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This restful service is available at:
@@ -79,6 +80,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "mailing";
 
 	public static final Object EXPORTED_TO_STREAM = new Object();
+	private static final String TEMPLATE_ID_PARAM = "templateId";
 
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailingDao mailingDao;
@@ -87,6 +89,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	private MailingExporter mailingExporter;
 	private CopyMailingService copyMailingService;
 	private ThumbnailService thumbnailService;
+	private MailingService mailingService;
 	private MailingBaseService mailingBaseService;
 	private CompanyTokenService companyTokenService;
     private MaildropService maildropService;
@@ -112,6 +115,10 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 
 	public void setCopyMailingService(CopyMailingService copyMailingService) {
 		this.copyMailingService = copyMailingService;
+	}
+
+	public void setMailingService(MailingService mailingService) {
+		this.mailingService = mailingService;
 	}
 
 	public void setThumbnailService(ThumbnailService thumbnailService) {
@@ -391,11 +398,27 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 2);
+		Map<String, String[]> requestParameters = request.getParameterMap();
 		
 		if (restfulContext.length == 0) {
-			if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
+			if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0) && requestParameters.get(TEMPLATE_ID_PARAM) == null) {
 				throw new RestfulClientException("Missing request data");
 			} else {
+				if (requestParameters.get(TEMPLATE_ID_PARAM) != null) {
+					int templateId = Integer.parseInt(requestParameters.get(TEMPLATE_ID_PARAM)[0]);
+					Mailing template = mailingDao.getMailing(templateId, admin.getCompanyID());
+					if (template == null || !template.isIsTemplate()) {
+						throw new RestfulClientException("Error while creating mailing: template not exists");
+					}
+					MailingModel model = new MailingModel();
+					model.setCompanyId(admin.getCompanyID());
+					model.setTemplateId(templateId);
+					model.setShortname(template.getShortname());
+					model.setDescription(template.getDescription());
+					JsonObject returnJsonObject = new JsonObject();
+					returnJsonObject.add("mailing_id", mailingService.addMailingFromTemplate(model));
+					return returnJsonObject;
+				}
 				try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 					ImportResult result = mailingImporter.importMailingFromJson(admin.getCompanyID(), inputStream, false, null, null, true, false, true);
 					if (result.isSuccess()) {
@@ -542,6 +565,24 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									mailing.setMailingContentType(mailingContentType);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'mailing_content_type'. String expected");
+								}
+							} else if ("subject".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String subject) {
+									mailing.getEmailParam().setSubject(subject);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'subject'. String expected");
+								}
+							} else if ("sender_address".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String senderAddress) {
+									mailing.getEmailParam().setFromEmail(senderAddress);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'sender_address'. String expected");
+								}
+							} else if ("reply_address".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String replyAddress) {
+									mailing.getEmailParam().setReplyEmail(replyAddress);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'sender_address'. String expected");
 								}
 							} else if ("target_expression".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof String) {

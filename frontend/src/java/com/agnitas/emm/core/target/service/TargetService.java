@@ -24,20 +24,21 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
 import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.forms.PaginationForm;
 
 /**
@@ -198,8 +199,10 @@ public interface TargetService {
  	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
 
 	List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
-	
-	List<TargetLight> getSplitTargetLights(int companyId, String splitType);
+
+    List<TargetLight> getTargetLights(Admin admin, boolean content, TargetGroupDeliveryOption delivery);
+
+    List<TargetLight> getSplitTargetLights(int companyId, String splitType);
 
     PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
 

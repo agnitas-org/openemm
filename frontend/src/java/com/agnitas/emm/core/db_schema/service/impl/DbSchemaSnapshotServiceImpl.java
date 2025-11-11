@@ -28,7 +28,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.agnitas.emm.core.db_schema.bean.DbColumnInfo;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaCheckResult;
@@ -58,6 +60,32 @@ import org.springframework.web.multipart.MultipartFile;
 public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
 
     private static final Logger logger = LogManager.getLogger(DbSchemaSnapshotServiceImpl.class);
+
+    private static final List<Pattern> TABLES_TO_EXCLUDE = Stream.of(
+                    "hst_customer_[\\d]+_tbl",
+                    "mailtrack_process_.{2}_tbl",
+                    "tmp_crt_[0-9]+_tbl",
+                    "tmp_crt_[A-Z]_[0-9]+_[0-9]+_tbl",
+                    "tmp_scratch_.*_[0-9]+_tbl",
+
+                    "recvlimit_[0-9]+_tbl",
+                    "ahv_[0-9]+_tbl",
+                    "ahv_timestamp_tbl",
+                    "ahvencrypt_[0-9]+_tbl",
+                    "deliver_[0-9]+_tbl",
+                    "mail_skip_tbl",
+                    "mail_skip_checkpoint_tbl",
+                    "mia_lastrun_tbl",
+                    "omg_[0-9]+_tbl",
+                    "omg_temp_.{2}_tbl",
+                    "omg_timestamp_tbl",
+                    "pegi_.{2}_control_tbl",
+                    "priority_[0-9]+_tbl",
+                    "priority_config_tbl",
+                    "provider_delivery_tbl"
+            )
+            .map(tn -> Pattern.compile(tn, Pattern.CASE_INSENSITIVE))
+            .toList();
 
     private final DbSchemaSnapshotDao snapshotDao;
     private final RecipientFieldService recipientFieldService;
@@ -193,13 +221,18 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
 
         List<DbTableInfo> tables = snapshotDao.getTableNames()
                 .stream()
-                .filter(n -> n.matches(tableNamePattern))
+                .filter(n -> n.matches(tableNamePattern) && !isTableExcluded(n))
                 .map(n -> new DbTableInfo(n, snapshotDao.getTableColumns(n)))
                 .toList();
 
         excludeClientSpecificFields(tables);
 
         return new DbSchemaSnapshot(getApplicationVersion(), tables);
+    }
+
+    private boolean isTableExcluded(String tableName) {
+        return TABLES_TO_EXCLUDE.stream()
+                .anyMatch(p -> p.matcher(tableName).matches());
     }
 
     private void excludeClientSpecificFields(List<DbTableInfo> tables) {

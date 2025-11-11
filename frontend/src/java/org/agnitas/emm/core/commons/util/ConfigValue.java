@@ -693,7 +693,7 @@ public class ConfigValue {
 	public static final ConfigValue ResponseInbox_RetentionDays = new ConfigValue("responseInbox.retentationDays", "7");
 
 	public static final ConfigValue DB_Snapshot_TableNamingPattern = new ConfigValue("db.snapshot.tableNamingPattern", "^(?!ref_)(?!.*\\d.*\\d)([^0-9]*|[^0-9]*1[^0-9]*)$");
-	
+
 	/** All config values related to Facebook. */
 	public static final class Facebook {
 		public static final ConfigValue FacebookLeadAdsEnabled = new ConfigValue("facebook.leadads.enabled", "false");

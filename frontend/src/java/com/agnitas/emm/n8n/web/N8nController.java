@@ -13,11 +13,14 @@ package com.agnitas.emm.n8n.web;
 import java.util.Map;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.restful.RestfulAuthentificationException;
+import com.agnitas.service.MailingContentService;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.web.perm.annotations.Anonymous;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,11 +44,19 @@ public class N8nController {
     private final LogonService logonService;
     private final RecipientFieldService fieldService;
     private final MailinglistApprovalService mailinglistApprovalService;
+    private final EmmActionService actionService;
+    private final MailingContentService mailingContentService;
+    private final MailingService mailingService;
 
-    public N8nController(LogonService logonService, RecipientFieldService fieldService, MailinglistApprovalService mailinglistApprovalService) {
+    public N8nController(LogonService logonService, RecipientFieldService fieldService,
+                         MailinglistApprovalService mailinglistApprovalService, EmmActionService actionService,
+                         MailingContentService mailingContentService, MailingService mailingService) {
         this.logonService = logonService;
         this.fieldService = fieldService;
         this.mailinglistApprovalService = mailinglistApprovalService;
+        this.actionService = actionService;
+        this.mailingContentService = mailingContentService;
+        this.mailingService = mailingService;
     }
 
     @ExceptionHandler(RestfulAuthentificationException.class)
@@ -81,5 +93,25 @@ public class N8nController {
     @GetMapping("/mailinglists.action")
     public Map<Integer, String> getMailingLists(HttpServletRequest req) {
         return mailinglistApprovalService.getMailinglistsMap(tryGetAdmin(req));
+    }
+
+    @GetMapping("/triggers.action")
+    public Map<Integer, String> triggers(HttpServletRequest req) {
+        return actionService.getEmmNotFormActionsMap(tryGetAdmin(req).getCompanyID());
+    }
+
+    @GetMapping("/mailings/{mailingId:\\d+}/contents/names.action")
+    public Map<Integer, String> getMailingContentNames(@PathVariable int mailingId, HttpServletRequest req) {
+        return mailingContentService.getMailingContentNames(mailingId, tryGetAdmin(req));
+    }
+
+    @GetMapping("/content-targets/names.action")
+    public Map<Integer, String> getTargetNamesForContent(HttpServletRequest req) {
+        return mailingContentService.getNamesOfAvailableTargetsForContent(tryGetAdmin(req));
+    }
+
+    @GetMapping("/templates.action")
+    public Map<Integer, String> getMailingTemplateNames(HttpServletRequest req) {
+        return mailingService.getTemplateNames(tryGetAdmin(req));
     }
 }

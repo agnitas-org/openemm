@@ -55,6 +55,7 @@ import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
@@ -899,6 +900,17 @@ public class TargetServiceImpl implements TargetService {
 	@Override
 	public List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
 		return targetDao.getTargetLights(companyId, targetGroups, includeDeleted);
+	}
+
+	@Override
+	public List<TargetLight> getTargetLights(final Admin admin, boolean content, TargetGroupDeliveryOption delivery) {
+		TargetLightsOptions options = TargetLightsOptions.builder()
+			.setAdminId(admin.getAdminID())
+			.setCompanyId(admin.getCompanyID())
+			.setDeliveryOption(delivery)
+			.setContent(content)
+			.build();
+		return getTargetLights(options);
 	}
 
 	@Override

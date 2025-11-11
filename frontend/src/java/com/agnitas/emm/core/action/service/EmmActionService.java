@@ -80,7 +80,9 @@ public interface EmmActionService {
     List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive);
     
     boolean isReadonlyOperationRecipientField(ProfileField field);
-    
+
+    Map<Integer, String> getEmmNotFormActionsMap(int companyId);
+
     boolean containsReadonlyOperations(int actionId, Admin admin);
 
     boolean isReadonlyOperation(AbstractActionOperationParameters operation, Admin admin);

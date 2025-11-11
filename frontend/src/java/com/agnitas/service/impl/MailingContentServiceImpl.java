@@ -36,6 +36,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.Target;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.factory.DynamicTagContentFactory;
 import com.agnitas.beans.factory.DynamicTagFactory;
@@ -52,6 +53,7 @@ import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
+import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
@@ -89,7 +91,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
     protected static final Pattern MULTIPLE_WHITESPACES_PATTERN = Pattern.compile("[\\s\u00A0]{2,}");
 
     protected ApplicationContext applicationContext;
-    
+
     protected final ExtendedDefaultConversionService conversionService;
 	protected final DynamicTagContentFactory dynamicTagContentFactory;
     protected final DynamicTagFactory dynamicTagFactory;
@@ -399,7 +401,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
 	public final List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(final Target target) {
 		return this.dynamicTagDao.listContentBlocksUsingTargetGroup(target.getId(), target.getCompanyID());
 	}
-    
+
     private String generateTextContentTemplate(String html, Function<String, DynamicTag> getSourceTag, Function<String, DynamicTag> getTargetTag) {
         String text = generateTextContent(html);
         List<DynamicTag> mentionedTags = getDynamicTags(text);
@@ -540,7 +542,7 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
         } else if (StringUtils.isNotBlank(text)) {
             textLink = text;
         }
-        
+
         return StringUtils.isNotEmpty(textLink) ? " " + textLink + " " : textLink;
     }
 
@@ -775,6 +777,29 @@ public class MailingContentServiceImpl implements MailingContentService, Applica
             .map(DynContentDto::getTargetId)
             .map(id -> targetService.getTargetName(id, mailing.getCompanyID(), locale))
             .toList();
+    }
+
+    @Override
+    public Map<Integer, String> getMailingContentNames(int mailingId, Admin admin) {
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        return loadDynTags(mailing, admin.getLocale())
+            .values().stream()
+            .collect(Collectors.toMap(
+                DynTagDto::getId,
+                DynTagDto::getName
+            ));
+    }
+
+    @Override
+    public Map<Integer, String> getNamesOfAvailableTargetsForContent(Admin admin) {
+        boolean onlyForContent = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
+        return targetService.getTargetLights(admin, onlyForContent, TargetGroupDeliveryOption.FINAL)
+            .stream().collect(Collectors.toMap(
+                TargetLight::getId,
+                TargetLight::getTargetName,
+                (a, b) -> a,
+                LinkedHashMap::new
+            ));
     }
 
     private void clearBuildingBlocksFromTags(Mailing mailing, Map<String, DynamicTag> dynTags) {

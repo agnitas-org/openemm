@@ -1130,7 +1130,8 @@
 		<property name="copyMailingService" ref="CopyMailingService" />
 		<property name="thumbnailService" ref="ThumbnailService" />
 		<property name="mailingBaseService" ref="MailingBaseService"/>
-        <property name="companyTokenService" ref="CompanyTokenService" />
+		<property name="mailingService" ref="MailingService" />
+		<property name="companyTokenService" ref="CompanyTokenService" />
         <property name="maildropService" ref="MaildropService" />
 	</bean>
 	

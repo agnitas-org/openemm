@@ -899,6 +899,16 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		return mailingDao.getMailingTemplatesWithPreview(filter, admin);
 	}
 
+	@Override
+	public Map<Integer, String> getTemplateNames(Admin admin) {
+		MailingTemplateSelectionFilter filter = new MailingTemplateSelectionFilter();
+		return mailingDao.getMailingTemplatesWithPreview(filter, admin).stream()
+			.collect(Collectors.toMap(
+				MailingBase::getId,
+				MailingBase::getShortname
+			));
+	}
+
     @Override
     public List<MailingBase> getMailingsByStatusE(int companyId) {
         if (companyId > 0) {

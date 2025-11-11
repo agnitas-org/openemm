@@ -154,7 +154,9 @@ public interface MailingService {
 
 	List<MailingBase> getTemplatesWithPreview(MailingTemplateSelectionFilter filter, Admin admin);
 
-    List<MailingBase> getMailingsByStatusE(int companyId);
+	Map<Integer, String> getTemplateNames(Admin admin);
+
+	List<MailingBase> getMailingsByStatusE(int companyId);
 
     List<LightweightMailing> getUnsetMailingsForRootTemplate(int companyId, int templateId);
 

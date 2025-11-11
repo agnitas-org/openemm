@@ -288,7 +288,11 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 
 			DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 			dynamicTag.setMailingID(mailingID);
-			
+
+			if (StringUtils.isBlank(dynamicTag.getDynName())) {
+				throw new RestfulClientException("Missing value for property 'name'. String expected");
+			}
+
 			if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
 				throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 			} else {
@@ -322,8 +326,12 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 				if (existingDynamicTag == null) {
 					throw new RestfulClientException("Invalid non existing content_id: " + requestedContentKeyValue);
 				}
+
+				if (StringUtils.isBlank(dynamicTag.getDynName())) {
+					dynamicTag.setDynName(existingDynamicTag.getDynName());
+				}
 			} else {
-				int dynTagId = dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName());
+				int dynTagId = dynamicTagDao.getId(admin.getCompanyID(), mailingID, requestedContentKeyValue);
 				if (dynTagId > 0) {
 					existingDynamicTag = dynamicTagDao.getDynamicTag(dynTagId, admin.getCompanyID());
 				} else {
@@ -332,6 +340,10 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 				
 				if (existingDynamicTag == null) {
 					throw new RestfulClientException("Invalid non existing content name: " + requestedContentKeyValue);
+				}
+
+				if (StringUtils.isBlank(dynamicTag.getDynName())) {
+					dynamicTag.setDynName(existingDynamicTag.getDynName());
 				}
 			}
 			
@@ -469,10 +481,6 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 						} else {
 							throw new RestfulClientException("Unexpected property: " + entry.getKey());
 						}
-					}
-					
-					if (StringUtils.isBlank(dynamicTag.getDynName())) {
-						throw new RestfulClientException("Missing value for property 'name'. String expected");
 					}
 				} else {
 					throw new RestfulClientException("Invalid request data");
