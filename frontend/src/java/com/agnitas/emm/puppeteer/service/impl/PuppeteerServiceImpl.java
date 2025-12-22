@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.puppeteer.service.impl;
 
+import com.agnitas.emm.core.serverstatus.PuppeteerStatus;
 import com.agnitas.emm.puppeteer.PuppeteerServiceManager;
 import com.agnitas.emm.puppeteer.service.PuppeteerService;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,15 @@ public class PuppeteerServiceImpl implements PuppeteerService {
     @Override
     public void startService() {
         puppeteerServiceManager.start();
+    }
+
+    @Override
+    public PuppeteerStatus getStatus() {
+        if (!puppeteerServiceManager.isInstalled()) {
+            return PuppeteerStatus.MISSING;
+        }
+
+        return isServiceRunning() ? PuppeteerStatus.RUNNING : PuppeteerStatus.STOPPED;
     }
 
 }

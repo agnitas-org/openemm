@@ -1,0 +1,37 @@
+
+<script id="activate-campaign-dialog" type="text/x-mustache-template">
+    <div id="activate-modal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="${isPause ? 'button.continue.workflow' : 'workflow.activating.title'}"/></h1>
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <mvc:message code="${isPause ? 'workflow.continue.question' : 'workflow.activating.question'}"/>
+                    <c:if test="${!isPause}">
+                        <mvc:message code="workflow.activating.mailings"/>
+
+                        <div class="table-wrapper mt-3">
+                            <div class="table-wrapper__header justify-content-end">
+                                <div class="table-wrapper__controls">
+                                    <%@include file="../../../common/table/toggle-truncation-btn.jspf" %>
+                                    <jsp:include page="../common/table/entries-label.jsp" />
+                                </div>
+                            </div>
+                        </div>
+                    </c:if>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary js-confirm-positive" data-confirm-positive="false">
+                        <mvc:message code="${isPause ? 'button.continue.workflow' : 'workflow.activating.title'}"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

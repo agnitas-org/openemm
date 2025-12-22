@@ -11,7 +11,7 @@
 
 package com.agnitas.emm.springws.subscriptionrejection.service;
 
-import org.agnitas.emm.core.recipient.service.RecipientModel;
+import com.agnitas.emm.core.recipient.service.RecipientModel;
 
 @SuppressWarnings("unused") // GWUA-6077
 public final class NullSubscriptionRejectionServiceImpl implements SubscriptionRejectionService {

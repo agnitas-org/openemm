@@ -13,19 +13,14 @@ package com.agnitas.emm.springws.endpoint;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import com.agnitas.emm.core.components.entity.ComponentModel;
 import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.springws.jaxb.extended.UpdateMailingContentRequest;
 import com.agnitas.emm.springws.jaxb.extended.UpdateMailingContentResponse;
-import org.agnitas.emm.core.component.service.ComponentModel;
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -35,14 +30,17 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class UpdateMailingContentEndpoint extends BaseEndpoint {
 
-	private static final Logger LOGGER = LogManager.getLogger(UpdateMailingContentEndpoint.class);
-
 	private final ThumbnailService thumbnailService;
     private final ComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
 	private final SecurityContextAccess securityContextAccess;
 
-    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComponentService componentService, MailingEditableCheck mailingEditableCheck, ThumbnailService thumbnailService, SecurityContextAccess securityContextAccess) {
+    public UpdateMailingContentEndpoint(
+            @Qualifier("componentService") ComponentService componentService,
+            MailingEditableCheck mailingEditableCheck,
+            ThumbnailService thumbnailService,
+            SecurityContextAccess securityContextAccess
+    ) {
         this.componentService = Objects.requireNonNull(componentService, "componentService");
 		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
@@ -64,12 +62,8 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
         this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
         componentService.updateMailingContent(parseModel(request));
         
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getMailingID());
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", request.getMailingID()), e);
-		}
-        
+        thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, request.getMailingID());
+
         return new UpdateMailingContentResponse();
     }
 
@@ -85,4 +79,5 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
 
         return model;
     }
+
 }

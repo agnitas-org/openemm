@@ -12,19 +12,19 @@ package com.agnitas.emm.core.company.factory.impl;
 
 import java.util.Objects;
 
-import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
-import com.agnitas.emm.core.components.entity.TestRunOption;
-import org.agnitas.emm.core.commons.anonymization.RecipientAnonymizationSettings;
-import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
-import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
+import com.agnitas.emm.core.commons.anonymization.RecipientAnonymizationSettings;
+import com.agnitas.emm.core.commons.password.PasswordExpireSettings;
+import com.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.factory.CompanySettingsDtoFactory;
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
+import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory {
 
@@ -50,6 +50,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));
         companySettingsDto.setSendPasswordChangedNotification(AgnUtils.interpretAsBoolean(ConfigValue.SendPasswordChangedNotification.getDefaultValue()));
         companySettingsDto.setSendEncryptedMailings(AgnUtils.interpretAsBoolean(ConfigValue.SendEncryptedMailings.getDefaultValue()));
+        companySettingsDto.setEnableHoneypotIntermediatePage(AgnUtils.interpretAsBoolean(ConfigValue.Honeypot.EnableIntermediatePage.getDefaultValue()));
 
         companySettingsDto.setDefaultLinkExtension(ConfigValue.DefaultLinkExtension.getDefaultValue());
         companySettingsDto.setLinkcheckerLinktimeout(Integer.parseInt(ConfigValue.Linkchecker_Linktimeout.getDefaultValue()));

@@ -13,8 +13,8 @@ package com.agnitas.emm.springws.endpoint.mailing;
 import java.util.Collection;
 import java.util.List;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailing.service.MailingModel.Format;
+import com.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel.Format;
 import com.agnitas.emm.springws.jaxb.Template;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

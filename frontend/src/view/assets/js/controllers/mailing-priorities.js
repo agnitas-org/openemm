@@ -1,28 +1,120 @@
-AGN.Lib.Controller.new('mailing-priorities', function() {
-  var Template = AGN.Lib.Template,
-    Helpers = AGN.Lib.Helpers,
-    DateFormat = AGN.Lib.DateFormat;
+AGN.Lib.Controller.new('mailing-priorities', function () {
 
-  var DATE_BASED_TYPE = 2;
-  var NORMAL_TYPE = 0;
+  const Template = AGN.Lib.Template;
+  const Helpers = AGN.Lib.Helpers;
+  const DateFormat = AGN.Lib.DateFormat;
 
-  var $saveButton, $priorityCount, $orderedArea,
-    $unorderedDateBasedArea, $unorderedNormalArea;
+  const ENTRY_SELECTOR = '.mailing-priority';
+  const ENTRIES_CONTAINER_SELECTOR = '.mailing-priority-container';
 
-  var mailingsMap;
-  var originPrioritizedIds;
-  var originPriorityCount;
+  let $orderedArea;
+  let $unorderedArea;
+  let $saveButton;
+  let $priorityCount
 
-  var createEntry;
+  let originPrioritizedIds;
+  let originPriorityCount;
 
-  function updateBadges() {
-    var index = 1;
-    var nextDateBasedIndex = 10;
-    $orderedArea.children('.l-mailing-entry')
-      .each(function() {
-        var $e = $(this);
-        var priority = 0;
-        if ($e.data('type') == DATE_BASED_TYPE) {
+  let config;
+
+  const initDomVariables = () => {
+    $orderedArea = $('#ordered-area');
+    $unorderedArea = $('#unordered-area');
+    $priorityCount = $('#priorityCount');
+    $saveButton = $('#save-btn');
+  }
+
+  function minDay() {
+    return _.reduce(_.keys(config.mailingsMap), function(a, b) {
+      return a < b ? a : b;
+    });
+  }
+
+  const activateAvailableDates = () => {
+    const $picker = $('#date-picker');
+    const dates = _.keys(config.mailingsMap).sort();
+
+    if (dates.length) {
+      if (!$picker.datepicker('getDate')) {
+        $picker.datepicker('setDate', DateFormat.parse(minDay()))
+      }
+    }
+
+    $picker.trigger('change');
+  };
+
+  this.addDomInitializer('mailing-priorities', function () {
+    config = this.config;
+    initDomVariables();
+
+    const $container = $('.tiles-container');
+    $(ENTRIES_CONTAINER_SELECTOR).sortable({
+      handle: '.mailing-priority__drag-btn',
+      opacity: 0.4,
+      connectWith: ENTRIES_CONTAINER_SELECTOR,
+      items: ENTRY_SELECTOR,
+      helper: 'clone',
+      containment: $container,
+      appendTo: document.body,
+      update: function () {
+        if (this.id === $orderedArea.attr('id')) {
+          updatePriorityOrder();
+          checkOriginChanges();
+        }
+      },
+      out: function () {
+        highlightBackground($(this), false);
+      },
+      over: function (e, ui) {
+        highlightBackground($(e.target), false);
+        highlightBackground($(this), true);
+      },
+      start: function () {
+        highlightBackground($(this), true);
+      },
+      stop: function () {
+        highlightBackground($(this), false);
+      }
+    });
+
+    activateAvailableDates();
+  });
+
+  this.addAction({change: 'priorityCount'}, checkOriginChanges);
+  this.addAction({input: 'priorityCount'}, function () {
+    const value = parseFloat(this.el.val());
+    const newValue = !isNaN(value) && value >= 0 ? value : 0;
+    this.el.val(newValue);
+  });
+
+  this.addAction({change: 'change-date'}, function() {
+    const date = this.el.datepicker('getDate');
+    if (date) {
+      select(arrayDateToStr([date.getFullYear(), date.getMonth(), date.getDate()]));
+    } else {
+      select();
+    }
+  });
+
+  this.addAction({click: 'save'}, function() {
+    const form = AGN.Lib.Form.get(this.el);
+
+    form.setValueOnce('prioritizedIds', collectPrioritizedIds());
+    form.submit();
+  });
+
+  const highlightBackground = ($target, activate) => {
+    $target.closest(ENTRIES_CONTAINER_SELECTOR).toggleClass('highlighted', activate);
+  };
+
+  function updatePriorityOrder() {
+    let index = 1;
+    let nextDateBasedIndex = 10;
+    $orderedArea.children(ENTRY_SELECTOR)
+      .each(function () {
+        const $e = $(this);
+        let priority = 0;
+        if ($e.data('type') == config.DATE_BASED_TYPE) {
           priority = nextDateBasedIndex;
           index = nextDateBasedIndex;
           nextDateBasedIndex += 10;
@@ -34,16 +126,100 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
         }
         index++;
 
-        $e.find('.l-badge .badge').text(priority);
+        $e.find('.mailing-priority__order').text(`${priority}.`);
       });
   }
 
-  function collectPrioritizedIds(separator) {
-    var ids = [];
+  function select(day) {
+    const entries = collectMailingEntries(day);
+    $(ENTRY_SELECTOR).remove();
+    moveToProperBox(entries);
+    checkOriginChanges(true);
+  }
 
-    $orderedArea.children('.l-mailing-entry')
+  function collectMailingEntries(day) {
+    let entries = (config.mailingsMap[day] || [])
+      .filter(e => e.mailingType !== config.DATE_BASED_TYPE || e.priority > 0);
+
+    const excludeIds = entries.map(e => e.id);
+
+    const dateBasedMailingsWithoutPriority = getAllDateBasedMailingsWithoutPriority(excludeIds);
+    return _.union(entries, dateBasedMailingsWithoutPriority, 'id')
+      .sort((a, b) => a.priority > b.priority ? 1 : -1);
+  }
+
+  const getAllDateBasedMailingsWithoutPriority = (excludeIds) => {
+    const dateBasedMailings = [];
+    const exclude = _.clone(excludeIds);
+
+    _.keys(config.mailingsMap).forEach(date => {
+      config.mailingsMap[date].forEach(entry => {
+        if (entry.mailingType == config.DATE_BASED_TYPE && !exclude.includes(entry.id)) {
+          //reset priority for general list
+          exclude.push(_.clone(entry).id);
+          dateBasedMailings.push(entry);
+        }
+      });
+
+    });
+
+    return dateBasedMailings;
+  };
+
+  function moveToProperBox(entries) {
+    if (entries && entries.length) {
+      entries.forEach(function (e) {
+        if (e.thumbnailId) {
+          e.thumbnailUrl = config.thumbnailLinkPattern.replace('__thumbnailId__', e.thumbnailId);
+        } else {
+          e.thumbnailUrl = config.noPreviewUrl;
+        }
+
+        const $priorityEntry = Template.dom('draggable-mailing-priority-entry', e);
+
+        if (e.priority) {
+          $orderedArea.append($priorityEntry);
+        } else {
+          $unorderedArea.append($priorityEntry);
+        }
+
+        AGN.runAll($priorityEntry);
+      });
+    }
+  }
+
+  // [yyyy, mm, dd] -> "yyyy-mm-dd"
+  function arrayDateToStr(date) {
+    return `${Helpers.pad(date[0], 4)}-${Helpers.pad(parseInt(date[1]) + 1, 2)}-${Helpers.pad(date[2], 2)}`;
+  }
+
+  // Disable save button if there's nothing to save.
+  function checkOriginChanges(reset) {
+    const newPrioritizedIds = collectPrioritizedIds(';');
+    const newPriorityCount = $priorityCount.val();
+
+    if (originPrioritizedIds == null && originPriorityCount == null || reset) {
+      originPrioritizedIds = newPrioritizedIds;
+      originPriorityCount = newPriorityCount;
+
+      if (newPriorityCount > 0) {
+        $saveButton.prop('disabled', true);
+      } else {
+        const count = countPrioritizedTemplates();
+        $priorityCount.val(count);
+        $saveButton.prop('disabled', !count);
+      }
+    } else {
+      $saveButton.prop('disabled', newPrioritizedIds == originPrioritizedIds && newPriorityCount == originPriorityCount);
+    }
+  }
+
+  function collectPrioritizedIds(separator) {
+    const ids = [];
+
+    $orderedArea.children(ENTRY_SELECTOR)
       .each(function() {
-        var id = $(this).data('id');
+        const id = $(this).data('id');
         if (id > 0) {
           ids.push(id);
         }
@@ -53,303 +229,11 @@ AGN.Lib.Controller.new('mailing-priorities', function() {
   }
 
   function countPrioritizedTemplates() {
-    var count = 0;
-
-    $orderedArea.children('.l-mailing-entry')
-      .each(function() {
-        if ($(this).data('id') > 0) {
-          count++;
-        }
-      });
-
-    return count;
+    return $orderedArea
+      .children(ENTRY_SELECTOR)
+      .filter(function () {
+        return $(this).data('id') > 0;
+      })
+      .length;
   }
-
-  // Disable save button if there's nothing to save.
-  function checkOriginChanges(reset) {
-    var newPrioritizedIds = collectPrioritizedIds(';');
-    var newPriorityCount = $priorityCount.val();
-
-    if (originPrioritizedIds == null && originPriorityCount == null || reset) {
-      originPrioritizedIds = newPrioritizedIds;
-      originPriorityCount = newPriorityCount;
-
-      if (newPriorityCount > 0) {
-        $saveButton.prop('disabled', true);
-      } else {
-        var count = countPrioritizedTemplates();
-        $priorityCount.val(count);
-        $saveButton.prop('disabled', !count);
-      }
-    } else {
-      $saveButton.prop('disabled', newPrioritizedIds == originPrioritizedIds && newPriorityCount == originPriorityCount);
-    }
-  }
-
-  function clear() {
-    $('#datebased-container, #normal-container, #ordered-area')
-      .find('.l-mailing-entry').remove();
-  }
-
-  // "yyyy-mm-dd" -> [yyyy, mm, dd]
-  function strDateToArray(date, stub) {
-    return DateFormat.toArray(DateFormat.parse(date), stub);
-  }
-
-  // [yyyy, mm, dd] -> "yyyy-mm-dd"
-  function arrayDateToStr(date) {
-    return Helpers.pad(date[0], 4) + '-' + Helpers.pad(parseInt(date[1]) + 1, 2) + '-' + Helpers.pad(date[2], 2);
-  }
-
-  function shiftDateArray(dateArray, years, months, days) {
-    var newDate = _.clone(dateArray);
-    if (!!years) {
-      newDate[0] = dateArray[0] + years;
-    }
-
-    if (!!months) {
-      newDate[1] = dateArray[1] + months;
-    }
-
-    if (!!days) {
-      newDate[2] = dateArray[2] + days;
-    }
-
-    return newDate;
-  }
-
-  function minDay() {
-    return _.reduce(_.keys(mailingsMap), function(a, b) {
-      return a < b ? a : b;
-    });
-  }
-
-  var getAllDateBasedMailingsPriority = function(excludeIds) {
-    var dateBasedMailings = [];
-    var exclude = _.clone(excludeIds);
-    _.keys(mailingsMap).forEach(function(date){
-        mailingsMap[date].forEach(function(e){
-          if (e.mailingType == DATE_BASED_TYPE && !exclude.includes(e.id)) {
-            //reset priority for general list
-            var m = _.clone(e);
-            exclude.push(m.id);
-            dateBasedMailings.push(e);
-          }
-        });
-
-    });
-
-    return dateBasedMailings;
-  };
-
-  function collectMailingEntries(day) {
-    var entries = mailingsMap[day] || [];
-    entries = entries.filter(function(e){return e.mailingType != DATE_BASED_TYPE || (e.mailingType == DATE_BASED_TYPE && e.priority > 0);});
-    var excludeIds = entries.map(function (e) { return e.id;});
-    return _.union(entries, getAllDateBasedMailingsPriority(excludeIds), 'id').sort(function(a, b){return a.priority > b.priority ? 1 : -1});
-  }
-
-  function select(day) {
-    var entries = collectMailingEntries(day);
-    clear();
-    moveToProperBox(entries);
-    checkOriginChanges(true);
-  }
-
-  function moveToProperBox(entries) {
-    if (entries && entries.length) {
-      entries.forEach(function(e) {
-        updateIconClass(e);
-        var html = createEntry(e);
-        var ordered = e.priority;
-        var type = e.mailingType;
-
-        if (ordered) {
-          $orderedArea.find('.l-stub').before(html);
-        } else {
-          if (type == DATE_BASED_TYPE) {
-            $unorderedDateBasedArea.find('.l-stub').before(html);
-          }
-          if (type == NORMAL_TYPE) {
-            $unorderedNormalArea.find('.l-stub').before(html);
-          }
-        }
-      });
-    }
-  }
-
-  function updateIconClass(e) {
-    var iconClass = 'normal-mailing-icon';
-    if (e.mailingType == DATE_BASED_TYPE) {
-      iconClass = 'datebase-mailing-icon';
-    }
-
-    e.iconClass = iconClass;
-  }
-
-  var isAppropriateType = function (targetId, mailingType) {
-    var isDateBasedArea = targetId === $unorderedDateBasedArea.attr('id');
-    var isNormalArea = targetId === $unorderedNormalArea.attr('id');
-    var isOrderedArea = targetId === $orderedArea.attr('id');
-
-    return isOrderedArea || (isDateBasedArea && mailingType == DATE_BASED_TYPE) ||
-      (isNormalArea && mailingType == NORMAL_TYPE);
-  };
-
-  var highlightBackground = function ($target, activate) {
-      if (activate) {
-        $target.parent().addClass('highlight');
-      } else {
-        $target.parent().removeClass('highlight');
-      }
-  };
-  var findDateBasedStart = function(dates) {
-    for (var key in dates) {
-      var firstMailing = mailingsMap[dates[key]].find(function(value){
-        return value.mailingType == DATE_BASED_TYPE;
-      });
-      if (!!firstMailing) {
-        return dates[key];
-      }
-    }
-
-    return '';
-  };
-
-  var computeDisableConstraints = function(dates) {
-    var constraints = [true];
-
-    var dateBasedStart = strDateToArray(findDateBasedStart(dates));
-    var filteredDates = !dateBasedStart ? dates : dates.filter(function(d){return d < dateBasedStart});
-
-    filteredDates.forEach(function (str) {
-        var date = strDateToArray(str);
-        if (date) {
-          constraints.push(date);
-        }
-      });
-
-    if (!!dateBasedStart) {
-      constraints.push({'from': dateBasedStart, 'to': shiftDateArray(dateBasedStart, 50)});
-    }
-
-    return constraints;
-  };
-
-  var activateAvailableDates = function(mailingsMap) {
-    var $picker = $('#date-picker');
-    var dates = _.keys(mailingsMap).sort();
-
-    if (dates.length) {
-      var constraints = computeDisableConstraints(dates, mailingsMap);
-
-      $picker.pickadate(_.merge({
-        editable: true,
-        disable: constraints,
-        klass: {
-          input: 'picker__input js-datepicker',
-          holder: 'datepicker__holder picker__holder datepicker__holder-right'
-        }
-      }, Helpers.objFromString($picker.data('datepicker-options'))));
-
-      var picker = $picker.pickadate('picker');
-      if (!picker.get('select')) {
-        picker.set('select', strDateToArray(minDay()));
-      }
-    } else {
-      $picker.pickadate({editable: false});
-    }
-
-    $picker.trigger('change');
-  };
-
-  function init(config) {
-    $saveButton = $('#save-button');
-    $priorityCount = $('#priorityCount');
-    $orderedArea = $('#ordered-area');
-
-    $unorderedDateBasedArea = $("#datebased-container");
-    $unorderedNormalArea = $("#normal-container");
-
-    mailingsMap = config.mailingsMap;
-    createEntry = Template.prepare('draggable-mailing-entry');
-  }
-
-  this.addDomInitializer('mailing-priorities', function() {
-    var self = this;
-    init(self.config);
-
-    var $container = $('.l-content-area');
-    $('.priority-container').sortable({
-      opacity: 0.4,
-      connectWith: '.priority-container',
-      items: '.l-mailing-entry',
-      helper: 'clone',
-      containment: $container,
-      appendTo: $container,
-      update: function() {
-        if (this.id === $orderedArea.attr('id')) {
-          updateBadges();
-          checkOriginChanges();
-        }
-      },
-      out: function() {
-        highlightBackground($(this), false);
-      },
-      over: function(e, ui) {
-        highlightBackground($(e.target), false);
-        highlightBackground($(this), true);
-      },
-      start: function() {
-        highlightBackground($(this), true);
-      },
-      stop: function() {
-        highlightBackground($(this), false);
-      },
-      receive: function(e, ui) {
-        var mailingType = ui.item.data('type');
-        var targetId = e.target.id;
-
-        if (!isAppropriateType(targetId, mailingType)) {
-          ui.sender.sortable("cancel");
-        }
-      }
-    });
-
-    activateAvailableDates(mailingsMap);
-  });
-
-  this.addAction({
-    click: 'back'
-  }, function() {
-    window.history.back();
-  });
-
-  this.addAction({
-    click: 'save'
-  }, function() {
-    var form = AGN.Lib.Form.get(this.el);
-
-    form.setValueOnce('prioritizedIds', collectPrioritizedIds());
-    form.submit();
-  });
-
-  this.addAction({
-    change: 'priorityCount'
-  }, function() {
-    checkOriginChanges();
-  });
-
-  this.addAction({
-    change: 'change-date'
-  }, function() {
-    var d = this.el.pickadate('picker')
-      .get('select');
-
-    if (d) {
-      select(arrayDateToStr([d.year, d.month, d.date]));
-    } else {
-      select();
-    }
-  });
 });

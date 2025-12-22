@@ -141,7 +141,7 @@ public class OdsDataProvider extends DataProvider {
 								Date dateValue = DateUtilities.parseIso8601DateTimeString(dateAttributeValue);
 								returnList.add(dateValue);
 							} else {
-								throw new Exception("Unsupported datatype: " + dataType);
+								throw new UnsupportedOperationException("Unsupported datatype: " + dataType);
 							}
 
 							while (xmlReader.next() > 0) {

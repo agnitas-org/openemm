@@ -146,14 +146,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 
 	/**
 	 * This method has to be called in initialize function of the report, it loads the data to be retrieved later.
-	 * @param mailingID
-	 * @param companyID
-	 * @param selectedTargetsAsString
-	 * @param domainsMax
-	 * @param language
-	 * @param topLevelDomains
 	 * @return identifier of temporary table (just created)
-	 * @throws Exception
 	 */
 	public int prepareReport(int mailingID, int companyID, String selectedTargetsAsString, int domainsMax, String language, boolean topLevelDomains) throws Exception {
 		int tempTableID = createTempTable();
@@ -813,6 +806,8 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		String getPosExpression;
 		if (isOracleDB()) {
 			getPosExpression = topLevelDomains ? "INSTR(email, '.', -1) " : "INSTR(email, '@')";
+		} else if (isPostgreSQL()) {
+			getPosExpression = topLevelDomains ? "LENGTH(email) - STRPOS(REVERSE(email), '.')" : "STRPOS(email, '@')";
 		} else {
 			getPosExpression = topLevelDomains ? "LENGTH(email) - INSTR(REVERSE(email), '.')" : "INSTR(email, '@')";
 		}

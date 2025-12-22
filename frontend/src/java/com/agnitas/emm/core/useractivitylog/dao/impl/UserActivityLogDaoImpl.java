@@ -14,24 +14,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
 import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
 import com.agnitas.util.UserActivityLogActions;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
-/**
- * Implementation of {@link UserActivityLogDao}.
- */
 public class UserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements UserActivityLogDao {
 
 	private static final int MAX_DESCRIPTION_LENGTH = 4000;
@@ -41,9 +36,11 @@ public class UserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implement
 	public void writeUserActivityLog(Admin admin, String action, String description) {
 		String username = "";
 		String supervisorName = null;
+        int companyId = 0;
 
 		if (admin != null) {
 			username = admin.getUsername();
+            companyId = admin.getCompanyID();
 
 			if (admin.getSupervisor() != null) {
 				supervisorName = admin.getSupervisor().getSupervisorName();
@@ -55,96 +52,88 @@ public class UserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implement
 			description = StringUtils.abbreviate(description, MAX_DESCRIPTION_LENGTH);
 		}
 
-		String insertSql = "INSERT INTO userlog_tbl (logtime, username, supervisor_name, action, description) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?)";
-		update(insertSql, username, supervisorName, action, description);
+		String insertSql = "INSERT INTO userlog_tbl (logtime, company_id, username, supervisor_name, action, description) VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)";
+		update(insertSql, companyId, username, supervisorName, action, description);
 	}
 
 	@Override
-	public PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
-		if (StringUtils.isBlank(sortColumn)) {
-			sortColumn = "logtime";
-		}
-		
-		boolean sortDirectionAscending = "asc".equalsIgnoreCase(sortDirection) || "ascending".equalsIgnoreCase(sortDirection);
-		
-		SqlPreparedStatementManager sqlPreparedStatementManager =
-				prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, selectedAction, from, to, description);
+	public PaginatedList<LoggedUserAction> getUserActivityEntries(UserActivityLogFilter filter) {
+        SqlPreparedStatementManager sqlPreparedStatementManager = prepareSqlStatementForEntriesRetrieving(filter);
 
-		PaginatedListImpl<LoggedUserAction> list = selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(), "userlog_tbl", sortColumn,
-				sortDirectionAscending, pageNumber, pageSize, new LoggedUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+		PaginatedList<LoggedUserAction> list = selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(),
+				"userlog_tbl", filter, new LoggedUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
 
-		if (from != null || to != null || (StringUtils.isNotBlank(selectedAdmin) && !"0".equals(selectedAdmin)) || StringUtils.isNotBlank(description)
-				|| UserActivityLogActions.ANY.getIntValue() != selectedAction) {
-			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins));
+		if (filter.isUiFiltersSet()) {
+			list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
 		}
 
 		return list;
     }
 
-	private int getTotalUnfilteredCountForOverview(List<AdminEntry> visibleAdmins) {
+	private int getTotalUnfilteredCountForOverview(Integer companyId) {
 		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM userlog_tbl");
 
-		if (CollectionUtils.isNotEmpty(visibleAdmins)) {
-			String condition = buildVisibleAdminsCondition(visibleAdmins);
-			if (!condition.isBlank()) {
-				query.append(" WHERE ").append(condition);
-			}
+		if (companyId != null) {
+			query.append(" WHERE (company_id = ").append(companyId)
+					.append(" OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ")
+					.append(companyId)
+					.append("))");
 		}
 
 		return selectIntWithDefaultValue(query.toString(), 0);
 	}
 
     @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description) {
+    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(UserActivityLogFilter filter) {
 		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT logtime, username, supervisor_name, action, description FROM userlog_tbl");
 
-		if (from != null) {
-			sqlPreparedStatementManager.addWhereClause("logtime >= ?", from);
-		}
-		if (to != null) {
-			sqlPreparedStatementManager.addWhereClause("logtime < ?", DateUtilities.addDaysToDate(to, 1));
+		if (filter.getTimestamp().getFrom() != null) {
+			sqlPreparedStatementManager.addWhereClause("logtime >= ?", filter.getTimestamp().getFrom());
 		}
 
-		//  If set, any of the visible admins must match
-		if (CollectionUtils.isNotEmpty(visibleAdmins)) {
-			String visibleAdminsCondition = buildVisibleAdminsCondition(visibleAdmins);
-			if (!visibleAdminsCondition.isBlank()) {
-				sqlPreparedStatementManager.addWhereClause(visibleAdminsCondition);
-			}
+		if (filter.getTimestamp().getTo() != null) {
+			sqlPreparedStatementManager.addWhereClause(
+					"logtime < ?",
+					DateUtilities.addDaysToDate(filter.getTimestamp().getTo(), 1)
+			);
+		}
+
+		if (filter.getCompanyId() != null) {
+			sqlPreparedStatementManager.addWhereClause(
+					"(company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?))",
+					filter.getCompanyId(), filter.getCompanyId());
 		}
 
 		// If set, the selected admin must match
-		if (StringUtils.isNotBlank(selectedAdmin) && !"0".equals(selectedAdmin)) {
-			sqlPreparedStatementManager.addWhereClause("username = ?", selectedAdmin);
+		if (StringUtils.isNotBlank(filter.getUsername())) {
+			sqlPreparedStatementManager.addWhereClause("username = ?", filter.getUsername());
 		}
 
-		if (StringUtils.isNotBlank(description)) {
+		if (StringUtils.isNotBlank(filter.getDescription())) {
 			if (isOracleDB()) {
-				sqlPreparedStatementManager.addWhereClause("description LIKE ('%' || ? || '%')", description);
+				sqlPreparedStatementManager.addWhereClause("description LIKE ('%' || ? || '%')", filter.getDescription());
 			} else {
-				sqlPreparedStatementManager.addWhereClause("description LIKE CONCAT('%', ?, '%')", description);
+				sqlPreparedStatementManager.addWhereClause("description LIKE CONCAT('%', ?, '%')", filter.getDescription());
 			}
 		}
 
-		// If set, the selected action must match
-		if (UserActivityLogActions.ANY.getIntValue() != selectedAction) {
-			if (UserActivityLogActions.LOGIN_LOGOUT.getIntValue() == selectedAction) {
-				sqlPreparedStatementManager.addWhereClause("action IN ('do login', 'do logout', 'login', 'logout', ?)", UserActivityLogActions.getLocalValue(selectedAction));
-			} else if (UserActivityLogActions.ANY_WITHOUT_LOGIN.getIntValue() == selectedAction) {
-				sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
-			} else {
-				sqlPreparedStatementManager.addAndClause();
-				sqlPreparedStatementManager.appendOpeningParenthesis();
-				String[] localValues = UserActivityLogActions.getLocalValues(selectedAction);
-				for(int i = 0; i < localValues.length; i++){
-					if(i != 0){
-						sqlPreparedStatementManager.addOrClause();
-					}
-					sqlPreparedStatementManager.addWhereClauseSimple("(LOWER(action) LIKE ? OR LOWER(action) = ?)", localValues[i].toLowerCase() + " %", localValues[i].toLowerCase());
+		if (UserActivityLogActions.LOGIN_LOGOUT == filter.getAction()) {
+			sqlPreparedStatementManager.addWhereClause("action IN ('do login', 'do logout', 'login', 'logout', ?)", filter.getAction().getLocalValue());
+		} else if (UserActivityLogActions.ANY_WITHOUT_LOGIN == filter.getAction()) {
+			sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
+		} else if (filter.getAction() != null) {
+			sqlPreparedStatementManager.addWhereClause("1=1");
+			sqlPreparedStatementManager.addAndClause();
+			sqlPreparedStatementManager.appendOpeningParenthesis();
+			String[] localValues = filter.getAction().getLocalValues();
+			for(int i = 0; i < localValues.length; i++){
+				if(i != 0){
+					sqlPreparedStatementManager.addOrClause();
 				}
-				sqlPreparedStatementManager.appendClosingParenthesis();
-				sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
+				sqlPreparedStatementManager.addWhereClauseSimple("(LOWER(action) LIKE ? OR LOWER(action) = ?)", localValues[i].toLowerCase() + " %", localValues[i].toLowerCase());
 			}
+			sqlPreparedStatementManager.appendClosingParenthesis();
+			sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
 		}
 
 		return sqlPreparedStatementManager;
@@ -162,4 +151,10 @@ public class UserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implement
 			return new LoggedUserAction(action, description, username, supervisorName, new Date(date.getTime()));
 		}
 	}
+
+	@Override
+	protected String getTableName() {
+		return "userlog_tbl";
+	}
+
 }

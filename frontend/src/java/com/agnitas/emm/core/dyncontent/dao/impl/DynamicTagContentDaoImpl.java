@@ -10,21 +10,6 @@
 
 package com.agnitas.emm.core.dyncontent.dao.impl;
 
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.util.SpecialCharactersWorker;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.impl.DynamicTagContentImpl;
-import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.util.AgnUtils;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -34,6 +19,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.SpecialCharactersWorker;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagContentDao {
 
@@ -63,12 +63,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 		try {
 			HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
 		} catch(HtmlCheckerException e) {
-			throw new IllegalStateException("Mailing content name contains unallowed HTML tags");
+			throw new IllegalArgumentException("Mailing content name contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
 		} catch(HtmlCheckerException e) {
-			throw new IllegalStateException("Mailing content description contains unallowed HTML tags");
+			throw new IllegalArgumentException("Mailing content description contains unallowed HTML tags");
 		}
 
 		if (isExisting(dynamicTagContent.getCompanyID(), dynamicTagContent.getMailingID(), dynamicTagContent.getDynNameID(), dynamicTagContent.getId())) {
@@ -82,7 +82,7 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 				update(insertSql, dynamicTagContent.getMailingID(), dynamicTagContent.getCompanyID(), dynamicTagContent.getDynNameID(), dynContentId, dynamicTagContent.getDynContent(), dynamicTagContent.getDynOrder(), dynamicTagContent.getTargetID());
 			} else {
 				final String insertSql = "INSERT INTO dyn_content_tbl (mailing_id, company_id, dyn_name_id, dyn_content, dyn_order, target_id) VALUES (?, ?, ?, ?, ?, ?)";
-				dynContentId = insertIntoAutoincrementMysqlTable("dyn_content_id", insertSql, dynamicTagContent.getMailingID(), dynamicTagContent.getCompanyID(), dynamicTagContent.getDynNameID(), dynamicTagContent.getDynContent(), dynamicTagContent.getDynOrder(), dynamicTagContent.getTargetID());
+				dynContentId = insert("dyn_content_id", insertSql, dynamicTagContent.getMailingID(), dynamicTagContent.getCompanyID(), dynamicTagContent.getDynNameID(), dynamicTagContent.getDynContent(), dynamicTagContent.getDynOrder(), dynamicTagContent.getTargetID());
 			}
 			dynamicTagContent.setId(dynContentId);
 		}
@@ -131,8 +131,7 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 		return selectInt(selectSql, companyId, mailingId, dynNameId) > 0;
 	}
 	
-	@Override
-	public Map<Integer, List<Integer>> getExistingDynContentForDynName(int companyId, int mailingId, List<Integer> dynamicTags) {
+	private Map<Integer, List<Integer>> getExistingDynContentForDynName(int companyId, int mailingId, List<Integer> dynamicTags) {
 		String selectSql = "SELECT dyn_name_id, dyn_content_id FROM dyn_content_tbl WHERE company_id = ? AND mailing_id = ? " +
 				"AND " + makeBulkInClauseForInteger("dyn_name_id", dynamicTags);
 		
@@ -218,12 +217,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 			try {
 				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
 			} catch(HtmlCheckerException e) {
-				throw new IllegalStateException("Mailing content name contains unallowed HTML tags");
+				throw new IllegalArgumentException("Mailing content name contains unallowed HTML tags");
 			}
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
 			} catch(HtmlCheckerException e) {
-				throw new IllegalStateException("Mailing content description contains unallowed HTML tags");
+				throw new IllegalArgumentException("Mailing content description contains unallowed HTML tags");
 			}
 		}
 		
@@ -257,7 +256,7 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 
 
             final String insertSql = "INSERT INTO dyn_content_tbl (mailing_id, company_id, dyn_name_id, dyn_content, dyn_order, target_id) VALUES (?, ?, ?, ?, ?, ?)";
-            int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable("dyn_content_id", insertSql, paramList);
+            int[] generatedKeys = batchInsertWithAutoincrement("dyn_content_id", insertSql, paramList);
 
             for (int i = 0; i < generatedKeys.length && i < dynamicTagContents.size(); i++) {
                 dynamicTagContents.get(i).setId(generatedKeys[i]);
@@ -271,12 +270,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 			try {
 				HtmlChecker.checkForNoHtmlTags(dynamicTagContent.getDynName());
 			} catch(HtmlCheckerException e) {
-				throw new IllegalStateException("Mailing content name contains unallowed HTML tags");
+				throw new IllegalArgumentException("Mailing content name contains unallowed HTML tags");
 			}
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
 			} catch(HtmlCheckerException e) {
-				throw new IllegalStateException("Mailing content description contains unallowed HTML tags");
+				throw new IllegalArgumentException("Mailing content description contains unallowed HTML tags");
 			}
 		}
 		

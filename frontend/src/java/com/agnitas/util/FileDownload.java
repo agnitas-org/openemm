@@ -15,13 +15,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.jakartaee.commons.io.IOUtils;
@@ -65,21 +65,20 @@ public final class FileDownload {
 		final HttpGet request = new HttpGet(url);
 		
 		// Execute request
-		try(final CloseableHttpResponse response = httpClient.execute(request)) {
-			final int statusCode = response.getStatusLine().getStatusCode();
+		try (CloseableHttpResponse response = httpClient.execute(request)) {
+			final int statusCode = response.getCode();
 			
 			// Check response state
 			if(statusCode != HttpStatus.SC_OK) {
 				// Response does not indicate success
-				logger.warn(String.format("Downloading from url '%s' returned HTTP status %d (%s)", url, statusCode, response.getStatusLine().getReasonPhrase()));
-				
+				logger.warn("Downloading from url '{}' returned HTTP status {} ({})", url, statusCode, response.getReasonPhrase());
 				return false;
 			} 
 
 			// Resonse indicates success, so copy response body to file
 			final HttpEntity responseBody = response.getEntity();
-			try(final FileOutputStream out = new FileOutputStream(file)) {
-				try(final InputStream in = responseBody.getContent()) {
+			try (FileOutputStream out = new FileOutputStream(file)) {
+				try (InputStream in = responseBody.getContent()) {
 					IOUtils.copy(in, out);
 				}
 			}

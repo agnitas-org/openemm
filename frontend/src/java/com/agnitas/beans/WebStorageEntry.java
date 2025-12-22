@@ -14,7 +14,7 @@ import com.agnitas.service.WebStorageBundle;
 
 /**
  * An interface that all the web-storage data bundle classes must implement.
- *
+ * <p>
  * There are a few other conventions that your class should conform:
  * - provide default constructor;
  * - use default values for all the fields (just in case some or all properties are invalid or missing from browser's local storage);
@@ -22,9 +22,11 @@ import com.agnitas.service.WebStorageBundle;
  * - use annotations {@link com.fasterxml.jackson.annotation} to have a control over JSON (de-) serialization.
  */
 public interface WebStorageEntry extends Cloneable {
+
     /**
      * Keep in mind to implement this method properly to make sure that {@link com.agnitas.service.WebStorage#get(WebStorageBundle)}
      * works as intended.
      */
     WebStorageEntry clone() throws CloneNotSupportedException;
+
 }

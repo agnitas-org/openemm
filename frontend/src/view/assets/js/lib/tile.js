@@ -1,138 +1,49 @@
-// /*doc
-// ---
-// title: Tiles & tabs
-// name: tilesjs-01-tabs
-// parent: tilesjs
-// ---
-//
-// Clicking on a tab of a closed tile will automatically open the tile
-//
-// ```htmlexample
-// <div class="tile">
-//     <div class="tile-header">
-//         <a href="#" class="headline" data-toggle-tile="#tiletab">
-//             <i class="tile-toggle icon icon-angle-down"></i>
-//             Tile
-//         </a>
-//         <ul class="tile-header-nav">
-//             <li>
-//                 <a href="#" data-toggle-tab="#tiletab1-id">Tab 1</a>
-//             </li>
-//             <li>
-//                 <a href="#" data-toggle-tab="#tiletab2-id">Tab 2</a>
-//             </li>
-//         </ul>
-//     </div>
-//
-//     <div class="tile-content tile-content-forms hidden" id="tiletab">
-//       <div id="tiletab1-id">
-//         <p>Tab 1 Content</p>
-//       </div>
-//
-//       <div id="tiletab2-id">
-//         <p>Tab 2 Content</p>
-//       </div>
-//     </div>
-// </div>
-// ```
-// */
-
-(function(){
-
+(() => {
   const Storage = AGN.Lib.Storage;
+  const COLLAPSED_CLASS = 'tile--collapsed';
 
-  var init,
-      toggle,
-      trigger,
-      show,
-      hide;
-
-
-  init = function($trigger) {
-    const target = $trigger.data('toggle-tile'),
-          conf = Storage.get('toggle_tile' + target);
-
-      if (!conf) {
-        const defaultState = $trigger.data('toggle-tile-default-state');
-
-        if (typeof defaultState !== 'undefined') {
-          if (defaultState === 'open') {
-            showTile($trigger, false);
-          } else {
-            hideTile($trigger, false);
-          }
-        }
-
-       return;
+  class Tile {
+    constructor($el) {
+      this.$el = $el.closest('.tile');
+      this.$toggle = this.$el.all('[data-toggle-tile]');
+      this.toggleCollapse(this.initiallyHidden);
+      this.$el.data('tile', this);
     }
 
-    if (conf.hidden) {
-      hide($trigger);
-    } else {
-      show($trigger);
-    }
-  }
-
-  toggle = function($trigger) {
-    const $target = $($trigger.data('toggle-tile'));
-
-    if ($target.hasClass('hidden')) {
-      show($trigger);
-    } else {
-      hide($trigger);
-    }
-  }
-
-  show = function($trigger) {
-    showTile($trigger, true);
-  }
-
-  function showTile($trigger, updateStorage) {
-    const $icon = $trigger.find('.icon'),
-        target = $trigger.data('toggle-tile'),
-        $target = $(target);
-
-    $target.removeClass('hidden');
-    $icon.addClass('icon-angle-up');
-    $icon.removeClass('icon-angle-down');
-
-    if (updateStorage) {
-      Storage.set('toggle_tile' + target, {hidden: false});
+    get initiallyHidden() {
+      const id = this.$el.attr('id');
+      const conf = id ? Storage.get('toggle_tile#' + id) : undefined;
+      return conf ? conf.hidden : this.$toggle.data('toggle-tile') === false;
     }
 
-    // Load lazy data if any
-    AGN.Lib.CoreInitializer.run('load', $target);
-  }
+    get collapsed() {
+      return !this.$el.hasClass(COLLAPSED_CLASS);
+    }
 
-  trigger = function($needle) {
-    return $needle.
-              closest('.tile').
-              find('[data-toggle-tile]');
-  }
+    toggleCollapse(hidden = this.collapsed) {
+      this.$el.toggleClass(COLLAPSED_CLASS, hidden);
+      this.#rotateIcon(hidden);
 
-  hide = function($trigger) {
-    hideTile($trigger, true);
-  }
+      if (this.$el.attr('id')) {
+        Storage.set(`toggle_tile#${this.$el.attr('id')}`, {hidden});
+      }
+      if (!hidden) {
+        AGN.Lib.CoreInitializer.run('load', this.$el.find('.tile-body')); // Load lazy data if any
+        AGN.Lib.Scrollbar.get(this.$el)?.update();
+      }
+    }
 
-  function hideTile($trigger, updateStorage) {
-    const $icon = $trigger.find('.icon'),
-        target = $trigger.data('toggle-tile');
+    #rotateIcon(hidden) {
+      this.$el.find('> .tile-header .tile-title i.icon')
+        .toggleClass('icon-caret-down', hidden)
+        .toggleClass('icon-caret-up', !hidden);
+    }
 
-    $(target).addClass('hidden');
-    $icon.addClass('icon-angle-down');
-    $icon.removeClass('icon-angle-up');
-
-    if (updateStorage) {
-      Storage.set('toggle_tile' + target, {hidden: true})
+    static get($el) {
+      const tile = $el.closest('.tile').data('tile');
+      return !tile ? new Tile($el) : tile;
     }
   }
 
-  AGN.Lib.Tile = {
-    toggle: toggle,
-    init: init,
-    show: show,
-    hide: hide,
-    trigger: trigger
-  }
-
+  AGN.Lib.Tile = Tile;
 })();

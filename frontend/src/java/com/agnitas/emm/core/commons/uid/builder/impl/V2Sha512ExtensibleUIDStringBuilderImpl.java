@@ -13,13 +13,6 @@ package com.agnitas.emm.core.commons.uid.builder.impl;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.TimeoutLRUMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.RdirMailingData;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
@@ -29,8 +22,15 @@ import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
-import com.agnitas.emm.core.commons.uid.daocache.impl.RdirMailingDataDaoCache;
+import com.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
+import com.agnitas.emm.core.commons.uid.daocache.impl.RdirMailingDataDaoCache;
+import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class V2Sha512ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuilder {
 

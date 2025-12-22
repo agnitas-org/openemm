@@ -1,176 +1,168 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp --%>
-<%@ page import="com.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jsp --%>
-<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp--%>
 
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.ACTIVATE_DOUBLE_OPT_IN" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.UNSUBSCRIBE_CUSTOMER" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.UPDATE_CUSTOMER" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.SUBSCRIBE_CUSTOMER" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.SERVICE_MAIL" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.SEND_MAILING" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.IDENTIFY_CUSTOMER" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.GET_CUSTOMER" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.GET_ARCHIVE_MAILING" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.GET_ARCHIVE_LIST" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.EXECUTE_SCRIPT" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.CONTENT_VIEW" %>
-<%@ page import="static com.agnitas.emm.core.action.operations.ActionOperationType.SEND_LAST_NEWSLETTER" %>
+<%@ page import="com.agnitas.emm.core.action.operations.ActionOperationType" %>
+<%@ page import="com.agnitas.emm.core.action.bean.EmmActionDependency" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="operationList" type="java.util.List"--%>
 <%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionForm"--%>
 <%--@elvariable id="eventBasedMailings" type="java.util.List<com.agnitas.beans.Campaign>"--%>
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
 <script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
-<c:if test="${not empty operationList}">
+<c:set var="operationTypes" value="<%= ActionOperationType.values() %>" />
+<c:set var="MAILING_DEPENDENCY_TYPE" value="<%= EmmActionDependency.Type.MAILING %>" />
+<c:set var="FORM_DEPENDENCY_TYPE" value="<%= EmmActionDependency.Type.FORM %>" />
 
-    <mvc:form servletRelativeAction="/action/save.action" data-form="resource"
+<c:if test="${not empty operationList}">
+    <mvc:form id="emm-action-view" servletRelativeAction="/action/save.action" data-form="resource"
               data-controller="action-view" data-initializer="action-view" data-action="save-action-data"
-              modelAttribute="form" id="emmActionForm" cssClass="hidden" data-validator="action">
+              modelAttribute="form" cssClass="tiles-container" data-validator="action"
+              data-editable-view="${agnEditViewKey}">
+
         <mvc:hidden path="id"/>
+
         <script type="application/json" id="config:action-view">
             {
                 "modules" : ${emm:toJson(form.modulesSchema)},
                 "operationTypes" : {
-                    "ACTIVATE_DOUBLE_OPT_IN" : "<%= ACTIVATE_DOUBLE_OPT_IN.getName() %>",
-                    "CONTENT_VIEW" : "<%= CONTENT_VIEW.getName() %>",
-                    "EXECUTE_SCRIPT" : "<%= EXECUTE_SCRIPT.getName() %>",
-                    "GET_ARCHIVE_LIST" : "<%= GET_ARCHIVE_LIST.getName() %>",
-                    "GET_ARCHIVE_MAILING" : "<%= GET_ARCHIVE_MAILING.getName() %>",
-                    "GET_CUSTOMER" : "<%= GET_CUSTOMER.getName() %>",
-                    "IDENTIFY_CUSTOMER" : "<%= IDENTIFY_CUSTOMER.getName() %>",
-					"SEND_LAST_NEWSLETTER" : "<%= SEND_LAST_NEWSLETTER.getName() %>",
-                    "SEND_MAILING" : "<%= SEND_MAILING.getName() %>",
-                    "SERVICE_MAIL" : "<%= SERVICE_MAIL.getName() %>",
-                    "SUBSCRIBE_CUSTOMER" : "<%= SUBSCRIBE_CUSTOMER.getName() %>",
-                    "UNSUBSCRIBE_CUSTOMER" : "<%= UNSUBSCRIBE_CUSTOMER.getName() %>",
-                    "UPDATE_CUSTOMER" : "<%= UPDATE_CUSTOMER.getName() %>"
+                    <c:forEach var="operationType" items="${operationTypes}" varStatus="status">
+                        "${operationType.name()}": ${emm:toJson(operationType.name)}
+                        <c:if test="${status.index + 1 lt fn:length(operationTypes)}">,</c:if>
+                    </c:forEach>
                 }
             }
         </script>
 
-        <div class="tile">
-            <div class="tile-header">
-                <h2 class="headline"><mvc:message code="action.Edit_Action"/></h2>
-
-                <ul class="tile-header-actions">
-                    <li>
-                        <label class="btn btn-regular btn-ghost toggle">
-                            <span class="text"><mvc:message code="default.status.active"/></span>
-                            <mvc:checkbox path="active" id="active"/>
-                            <div class="toggle-control"></div>
-                        </label>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="tile-content tile-content-forms">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="shortname">
+        <div class="tiles-block flex-column">
+            <div id="settings-tile" class="tile" data-editable-tile style="flex: 1 0 min-content">
+                <div class="tile-header">
+                    <h1 class="tile-title text-truncate"><mvc:message code="Settings" /></h1>
+                </div>
+                <div class="tile-body vstack gap-3">
+                    <div>
+                        <label class="form-label" for="shortname">
                             <mvc:message var="nameMsg" code="default.Name"/>
                             ${nameMsg}*
                         </label>
-                    </div>
-                    <div class="col-sm-8">
+
                         <mvc:text path="shortname" id="shortname" maxlength="50" size="42" cssClass="form-control" placeholder="${nameMsg}" />
                     </div>
-                </div>
 
-                <div class="form-group">
-                	<div class="col-sm-4">
-                    	<label class="control-label" for="type"><mvc:message code="Usage"/></label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:select path="type" id="type" cssClass="form-control js-select" size="1">
+                    <div>
+                        <label class="form-label" for="type"><mvc:message code="Usage"/></label>
+                        <mvc:select path="type" id="type" cssClass="form-control">
                             <mvc:option value="0"><mvc:message code="actionType.link"/></mvc:option>
                             <mvc:option value="1"><mvc:message code="actionType.form"/></mvc:option>
                             <mvc:option value="9"><mvc:message code="actionType.all"/></mvc:option>
                         </mvc:select>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="description">
-                            <mvc:message var="descriptionMsg" code="default.description"/>
+                    <div>
+                        <label class="form-label" for="description">
+                            <mvc:message var="descriptionMsg" code="Description"/>
                             ${descriptionMsg}
                         </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" cols="12" placeholder="${descriptionMsg}"/>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label checkbox-control-label" for="advertising">
-                            <mvc:message code="mailing.contentType.advertising"/>
-                            <button class="icon icon-help" data-help="help_${helplanguage}/actions/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <label class="toggle">
-                            <mvc:checkbox path="advertising" id="advertising"/>
-                            <div class="toggle-control"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tile">
-            <div class="tile-header">
-                <h2 class="headline"><mvc:message code="Steps"/></h2>
-            </div>
-            <div class="tile-content">
-                <div class="tile-content-forms">
-                    <div id="module-list">
-                        <%-- this block load by JS--%>
+                        <mvc:textarea path="description" id="description" cssClass="form-control" rows="1" placeholder="${descriptionMsg}"/>
                     </div>
 
-                    <div id="action-line" class="inline-tile">
-                        <div class="inline-tile-header">
-                            <h2 class="headline"><mvc:message code="action.step.add"/></h2>
+                    <div>
+                        <div class="form-check form-switch">
+                            <mvc:checkbox path="advertising" id="advertising" cssClass="form-check-input" role="switch"/>
+                            <label class="form-label form-check-label" for="advertising">
+                                <mvc:message code="mailing.contentType.advertising"/>
+                                <a href="#" class="icon icon-question-circle" data-help="actions/AdvertisingMsg.xml"></a>
+                            </label>
                         </div>
-                        <div class="inline-tile-content">
-                            <div class="form-group">
-                                <div class="col-sm-4">
-                                    <label class="control-label" for="moduleName"><mvc:message code="default.Type"/></label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <select id="moduleName" size="1" class="form-control js-select">
-                                        <c:forEach  items="${operationList}" var="module">
-                                            <option value="${module.name}"><mvc:message code="action.op.${module.name}"/></option>
-                                        </c:forEach>
-                                    </select>
+                    </div>
+                </div>
+            </div>
+
+            <c:if test="${form.id gt 0}">
+                <div id="used-in-tile" class="tile" data-editable-tile>
+                    <div class="tile-body">
+                        <div class="table-wrapper" data-js-table="dependencies-table">
+                            <div class="table-wrapper__header">
+                                <h1 class="table-wrapper__title"><mvc:message code="default.usedIn" /></h1>
+                                <div class="table-wrapper__controls">
+                                    <%@include file="../common/table/toggle-truncation-btn.jspf" %>
+                                    <jsp:include page="../common/table/entries-label.jsp" />
                                 </div>
                             </div>
                         </div>
-                        <div class="inline-tile-footer">
+
+                        <script id="dependencies-table" type="application/json">
+                            {
+                                "columns": [
+                                    {
+                                        "headerName": "<mvc:message code='default.Type'/>",
+                                        "editable": false,
+                                        "cellRenderer": "MustacheTemplateCellRender",
+                                        "cellRendererParams": {"templateName": "action-dependency-type"},
+                                        "field": "type"
+                                    },
+                                    {
+                                        "headerName": "<mvc:message code='default.Name'/>",
+                                        "editable": false,
+                                        "cellRenderer": "NotEscapedStringCellRenderer",
+                                        "field": "name"
+                                    }
+                                ],
+                                "options": {
+                                    "pagination": false,
+                                    "showRecordsCount": "simple",
+                                    "viewLinkTemplate": "action-dependency-view-link"
+                                },
+                                "data": ${dependencies}
+                            }
+                        </script>
+                    </div>
+                </div>
+            </c:if>
+        </div>
+
+        <div id="steps-tile" class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title text-truncate"><mvc:message code="Steps"/></h1>
+            </div>
+            <div class="tile-body js-scrollable">
+                <div class="vstack gap-3">
+                    <div id="module-list" class="row g-3">
+                        <%-- Loads by JS --%>
+                    </div>
+                    <div class="tile tile--md">
+                        <div class="tile-header">
+                            <h2 class="tile-title text-truncate"><mvc:message code="dashboard.tile.add" /></h2>
+
                             <emm:ShowByPermission token="actions.change">
-                                <button class="btn btn-primary btn-regular" type="button" data-action="add-new-module" data-config="moduleTypeSelector: '#moduleName'">
-                                    <i class="icon icon-plus-circle"></i>
-                                    <mvc:message code="button.Add"/>
-                                </button>
+                                <div class="tile-controls">
+                                    <button class="btn btn-primary btn-icon" type="button" data-action="add-new-module">
+                                        <i class="icon icon-plus"></i>
+                                    </button>
+                                </div>
                             </emm:ShowByPermission>
+                        </div>
+
+                        <div class="tile-body border-top">
+                            <label class="form-label" for="moduleName"><mvc:message code="default.Type"/></label>
+                            <select id="moduleName" class="form-control">
+                                <c:forEach  items="${operationList}" var="module">
+                                    <option value="${module.name}"><mvc:message code="action.op.${module.name}"/></option>
+                                </c:forEach>
+                            </select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </mvc:form>
 
-    <%--load column info for module templates: IdentifyCustomer.jsp, SubscribeCustomer.jsp--%>
+    <%--load column info for module templates: IdentifyCustomer.jspf, SubscribeCustomer.jspf--%>
     <emm:instantiate var="columnInfo" type="java.util.LinkedHashMap">
         <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
                             hide="change_date, timestamp, creation_date, datasource_id, bounceload, sys_tracking_veto,
@@ -182,60 +174,86 @@
         </emm:ShowColumnInfo>
     </emm:instantiate>
 
-    <%@include file="ops/ActivateDoubleOptIn.jsp"%>
-    <%@include file="ops/ContentView.jsp"%>
-    <%@include file="ops/ExecuteScript.jsp"%>
-    <%@include file="ops/GetArchiveList.jsp"%>
-    <%@include file="ops/GetArchiveMailing.jsp"%>
-    <%@include file="ops/GetCustomer.jsp"%>
-    <%@include file="ops/SendMailing.jsp"%>
-    <%@include file="ops/ServiceMail.jsp"%>
-    <%@include file="ops/UnsubscribeCustomer.jsp"%>
-
-    <%@include file="ops/SubscribeCustomer.jsp"%>
-    <%@include file="ops/IdentifyCustomer.jsp"%>
-    <%@include file="ops/UpdateCustomer.jsp"%>
-    <%@include file="ops/SendLastNewsletter.jsp" %>
+    <%@include file="fragments/ActivateDoubleOptIn.jspf"%>
+    <%@include file="fragments/ContentView.jspf"%>
+    <%@include file="fragments/GetArchiveList.jspf"%>
+    <%@include file="fragments/GetArchiveMailing.jspf"%>
+    <%@include file="fragments/GetCustomer.jspf"%>
+    <%@include file="fragments/IdentifyCustomer.jspf"%>
+    <%@include file="fragments/SendMailing.jspf"%>
+    <%@include file="fragments/SubscribeCustomer.jspf"%>
+    <%@include file="fragments/UnsubscribeCustomer.jspf"%>
+    <%@include file="fragments/UpdateCustomer.jspf"%>
+    <%@include file="fragments/ServiceMail.jspf"%>
+    <%@include file="fragments/ExecuteScript.jspf"%>
+    <%@include file="fragments/SendLastNewsletter.jspf"%>
 
     <script id="common-module-data" type="text/x-mustache-template">
-        <div class="inline-tile" data-action-module >
-            <div class="inline-tile-header">
-                <h2 class="headline"><span class="module-count"></span>&nbsp;{{- moduleName}} </h2>
-            </div>
+        <div class="col-12" data-action-module>
+            <div class="tile tile--md">
+                <div class="tile-header border-bottom">
+                    <h2 class="tile-title">
+                        <span data-module-index></span>
+                        <span class="text-truncate">{{- moduleName}}</span>
+                    </h2>
 
+                    <emm:ShowByPermission token="actions.change">
+                        <div class="tile-controls">
+                            <button class="btn btn-icon btn-danger" type="button" data-action="action-delete-module" data-tooltip="<mvc:message code="button.Delete"/>">
+                                <i class="icon icon-trash-alt"></i>
+                            </button>
+                        </div>
+                    </emm:ShowByPermission>
+                </div>
+            </div>
         </div>
-        <div class="tile-separator"></div>
     </script>
 
     <script id="action-modal-editor" type="text/x-mustache-template">
-        <div class="modal modal-editor">
+        <div class="modal modal-adaptive modal-editor">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close-icon close" data-dismiss="modal">
-                            <i aria-hidden="true" class="icon icon-times-circle"></i>
+                        <h1 class="modal-title">{{= title }}</h1>
+                        <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                            <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                         </button>
-                        <h4 class="modal-title">{{= title }}</h4>
                     </div>
+
                     <div class="modal-body">
-                        <textarea id="{{= id }}" data-sync="\#{{= target}}" class="form-control js-editor{{- (typeof(type) == 'undefined') ? '' : '-' + type }}"></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
-                                <i class="icon icon-times"></i>
-                                <span class="text"><mvc:message code="button.Cancel"/></span>
-                            </button>
-                            <emm:ShowByPermission token="actions.change">
-                                <button type="button" class="btn btn-primary btn-large" data-sync-from="\#{{= id }}" data-sync-to="\#{{= target }}" data-dismiss="modal" data-form-target="#emmActionForm" data-form-submit-event="">
-                                    <i class="icon icon-save"></i>
-                                    <span class="text"><mvc:message code="button.Save"/></span>
-                                </button>
-                            </emm:ShowByPermission>
+                        <div class="modal-editors-container">
+                            <textarea id="{{= id }}" data-sync="\#{{= target}}" class="form-control js-editor{{- (typeof(type) == 'undefined') ? '' : '-' + type }}"></textarea>
                         </div>
                     </div>
+                    <emm:ShowByPermission token="actions.change">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary"
+                                    data-sync-from="\#{{= id }}" data-sync-to="\#{{= target }}" data-bs-dismiss="modal" data-form-target="#emm-action-view" data-form-submit-event="">
+                                <i class="icon icon-save"></i>
+                                <span class="text"><mvc:message code="button.Save"/></span>
+                            </button>
+                        </div>
+                    </emm:ShowByPermission>
                 </div>
             </div>
         </div>
     </script>
 </c:if>
+
+<script id="action-dependency-view-link" type="text/x-mustache-template">
+    {{ if ('${MAILING_DEPENDENCY_TYPE.name()}' === type) { }}
+        /mailing/{{- id }}/settings.action
+    {{ } else if ('${FORM_DEPENDENCY_TYPE.name()}' === type) { }}
+        /webform/{{- id }}/view.action
+    {{ } }}
+</script>
+
+<script id="action-dependency-type" type="text/x-mustache-template">
+    <span class="text-truncate-table">
+        {{ if ('${MAILING_DEPENDENCY_TYPE.name()}' === value) { }}
+            <mvc:message code="Mailing" />
+        {{ } else if ('${FORM_DEPENDENCY_TYPE.name()}' === value) { }}
+            <mvc:message code="Form" />
+        {{ } }}
+    </span>
+</script>

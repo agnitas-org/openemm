@@ -48,6 +48,83 @@ public class BindingHistoryDaoImpl extends BaseDaoImpl implements BindingHistory
 					+ "\temm_log_db_errors(v_error_msg, " + companyID + ", 'hst_customer_" + companyID + "_bind_trg');\n"
 				+ "END;";
 			execute(sql);
+		} else if (isPostgreSQL()) {
+			String query = """
+					DROP TRIGGER IF EXISTS hst_customer_%d_bind_delete_trigger
+					    ON customer_%d_binding_tbl
+					""".formatted(companyID, companyID);
+			execute(query);
+
+			query = """
+                    CREATE OR REPLACE FUNCTION hst_customer_%d_bind_delete_func()
+                        RETURNS TRIGGER AS $$
+                    DECLARE
+                        v_hist  text;
+                        v_email text;
+                    BEGIN
+                        -- Build history text
+                        v_hist := 'Client: ' || current_user;
+                    
+                        -- Fetch email of the customer being deleted
+                        SELECT email
+                        INTO v_email
+                        FROM customer_%d_tbl
+                        WHERE customer_id = OLD.customer_id;
+                    
+                        -- Insert into history table
+                        INSERT INTO hst_customer_%d_binding_tbl (
+                            customer_id,
+                            email,
+                            mailinglist_id,
+                            user_type,
+                            user_status,
+                            user_remark,
+                            referrer,
+                            creation_date,
+                            "timestamp",
+                            exit_mailing_id,
+                            entry_mailing_id,
+                            mediatype,
+                            timestamp_change,
+                            change_type,
+                            client_info
+                        ) VALUES (
+                                     OLD.customer_id,
+                                     v_email,
+                                     OLD.mailinglist_id,
+                                     OLD.user_type,
+                                     OLD.user_status,
+                                     OLD.user_remark,
+                                     OLD.referrer,
+                                     OLD.creation_date,
+                                     OLD."timestamp",
+                                     OLD.exit_mailing_id,
+                                     OLD.entry_mailing_id,
+                                     OLD.mediatype,
+                                     CURRENT_TIMESTAMP,
+                                     0,
+                                     v_hist
+                                 );
+                    
+                        RETURN OLD;
+                    EXCEPTION
+                        WHEN OTHERS THEN
+                            INSERT INTO emm_log_db_errors(message, code, trigger_name, log_time)
+                            VALUES (SQLERRM, %d, 'hst_customer_%d_bind_delete_trigger', CURRENT_TIMESTAMP);
+                            RETURN OLD;
+                    END;
+                    $$ LANGUAGE plpgsql
+                    """.formatted(companyID, companyID, companyID, companyID, companyID);
+
+			execute(query);
+
+			query = """
+					CREATE TRIGGER hst_customer_%d_bind_delete_trigger
+					    BEFORE DELETE ON customer_%d_binding_tbl
+					    FOR EACH ROW
+					EXECUTE FUNCTION hst_customer_%d_bind_delete_func();
+					""".formatted(companyID, companyID, companyID);
+			execute(query);
 		} else {
 			execute("DROP TRIGGER IF EXISTS hst_customer_" + companyID + "_bind_delete_trigger");
 			execute("CREATE TRIGGER hst_customer_" + companyID + "_bind_delete_trigger\n" +

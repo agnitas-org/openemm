@@ -16,8 +16,8 @@ import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.grid.grid.beans.GridTemplate;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface MailingGridService {
@@ -39,9 +39,8 @@ public interface MailingGridService {
     @Transactional
     void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId);
     
-    void deleteUndoDataOverLimit(int mailingId, int gridTemplateId);
-    
     void restoreGridMailingUndo(int undoId, Mailing mailing);
 
     void clearUndoData(List<Integer> mailingsIds);
+
 }

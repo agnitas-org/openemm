@@ -14,26 +14,24 @@ import java.util.Objects;
 import java.util.Optional;
 
 import com.agnitas.beans.Company;
+import com.agnitas.beans.Recipient;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.mailing.service.FullviewException;
 import com.agnitas.emm.core.mailing.service.FullviewService;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.recipient.service.RecipientModel;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
 import com.agnitas.userform.bean.UserForm;
-import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.recipient.service.RecipientModel;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,7 +49,7 @@ public final class FullviewServiceImpl implements FullviewService {
 	private CompanyTokenService companyTokenService;
 	
 	@Override
-	public String getFullviewUrl(int companyID, int mailingID, int customerID, String formNameOrNull) throws UnknownCompanyIdException, FormNotFoundException, FullviewException {
+	public String getFullviewUrl(int companyID, int mailingID, int customerID, String formNameOrNull) throws FullviewException {
 		if(logger.isInfoEnabled()) {
 			logger.info(String.format("Creating personalized fullview URL (company ID %d, mailing ID %d, customer ID %d)", companyID, mailingID, customerID));
 		}

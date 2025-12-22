@@ -10,15 +10,7 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import static com.agnitas.util.DateUtilities.YYYY_MM_DD;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,7 +21,15 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static com.agnitas.util.DateUtilities.YYYY_MM_DD;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
@@ -246,7 +246,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
     // don't use String.format() to generate this sql. target sql may contain % which can clash with % placeholder
     private void calculateAmount(TreeMap<String, RecipientsDetailedStatisticsRow> dataMap, int mailinglistId, LightTarget target, String hiddenTargetStr, Date startDate, Date endDate, int companyId, boolean useBindingHistory) {
         String truncDateFn = isOracleDB() ? "TRUNC" : "DATE";
-        String dateRangeClause = DbUtilities.makeSelectRangeOfDates("selected_date", DateUtils.addDays(startDate, 1), DateUtils.addDays(endDate, 1), isOracleDB());
+        String dateRangeClause = DbUtilities.makeSelectRangeOfDates("selected_date", DateUtils.addDays(startDate, 1), DateUtils.addDays(endDate, 1), getDataSource());
         String filterTargetSql = getHiddenTargetSql(companyId, target, hiddenTargetStr);
         String countClause = useBindingHistory
                 ? "COUNT(DISTINCT (CASE WHEN bind.timestamp < dates.selected_date AND bind.timestamp_change > dates.selected_date THEN bind.customer_id END))"

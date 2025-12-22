@@ -1,26 +1,17 @@
 AGN.Lib.Controller.new('template-css', function() {
-  this.addAction({
-    click: 'updatePreview'
-  }, function() {
-    var $previewForm = $('#layoutPreviewForm');
 
-    $previewForm.find('input[name="css"]')
-      .val($('#cssContents').val());
-    $previewForm.submit();
-  });
+  const Form = AGN.Lib.Form;
 
-  this.addAction({
-    click: 'saveLayoutCss'
-  }, function() {
-    var formObj = AGN.Lib.Form.get($('#gridTemplateForm'));
-    var mailingsIds = $('#save-css-approve-modal-form select[name="templatesToUpdate"]').val();
+  this.addAction({click: 'saveCss'}, function() {
+    const form = Form.get($('#gridTemplateForm'));
+    const ids = this.el.closest('.modal').find(`[name="templatesToUpdate"]`).val();
 
-    var currentTemplateId = formObj.getValue("templateId");
-    if(currentTemplateId) {
-      mailingsIds.push(currentTemplateId);
+    const currentTemplateId = form.getValue("templateId");
+    if (currentTemplateId) {
+      ids.push(currentTemplateId);
     }
 
-    formObj.setValueOnce("bulkIds", mailingsIds);
-    formObj.submit();
+    form.setValueOnce("bulkIds", ids);
+    form.submit();
   });
 });

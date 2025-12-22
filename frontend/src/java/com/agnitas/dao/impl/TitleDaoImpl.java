@@ -21,15 +21,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.impl.TitleImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.TitleDao;
 import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
-import com.agnitas.beans.SalutationEntry;
-import com.agnitas.beans.Title;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.beans.impl.SalutationEntryImpl;
-import com.agnitas.beans.impl.TitleImpl;
-import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -59,7 +56,7 @@ public class TitleDaoImpl extends PaginatedBaseDaoImpl implements TitleDao {
 	}
 
 	@Override
-	public PaginatedListImpl<Title> overview(SalutationOverviewFilter filter) {
+	public PaginatedList<Title> overview(SalutationOverviewFilter filter) {
 		List<Object> params = new ArrayList<>();
 		String sql = "SELECT * FROM ("
 			+ " SELECT t.title_id, t.description, t.company_id,"
@@ -78,7 +75,7 @@ public class TitleDaoImpl extends PaginatedBaseDaoImpl implements TitleDao {
 			? " " + filter.getOrder() + " NULLS LAST"
 			: " IS NULL, " + sortCol + " " + filter.getOrder());
 
-		PaginatedListImpl<Title> list = selectPaginatedListWithSortClause(sql, sortClause, sortCol,
+		PaginatedList<Title> list = selectPaginatedListWithSortClause(sql, sortClause, sortCol,
 			filter.ascending(), filter.getPage(), filter.getNumberOfRows(),
 			new OverviewRowMapper(), params.toArray());
 
@@ -127,17 +124,6 @@ public class TitleDaoImpl extends PaginatedBaseDaoImpl implements TitleDao {
 		return new ArrayList<>(List.of(companyId));
 	}
 
-	@Override
-	public PaginatedListImpl<SalutationEntry> getSalutationList(int companyID, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
-		if (StringUtils.isBlank(sortColumn)) {
-			sortColumn = "title_id";
-		}
-
-		boolean sortDirectionAscending = AgnUtils.sortingDirectionToBoolean(sortDirection);
-
-		return selectPaginatedList("SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?)", "title_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new SalutationEntry_RowMapper(), companyID);
-	}
-
 	/**
 	 * Get a List of light title entries for dropdown display in a JSP
 	 */
@@ -172,10 +158,10 @@ public class TitleDaoImpl extends PaginatedBaseDaoImpl implements TitleDao {
 				update("INSERT INTO title_tbl (title_id, company_id, description) VALUES (?, ?, ?)", newID, title.getCompanyID(), title.getDescription());
 				title.setId(newID);
 			} else {
-				int newID = insertIntoAutoincrementMysqlTable("title_id", "INSERT INTO title_tbl (company_id, description) VALUES (?, ?)", title.getCompanyID(), title.getDescription());
+				int newID = insert("title_id", "INSERT INTO title_tbl (company_id, description) VALUES (?, ?)", title.getCompanyID(), title.getDescription());
 				title.setId(newID);
 			}
-			
+
 			// Only save gender mapping if the item has some new mapping
 			if (title.getTitleGender() != null) {
 				// Save gender mapping
@@ -259,11 +245,5 @@ public class TitleDaoImpl extends PaginatedBaseDaoImpl implements TitleDao {
 			return title;
 		}
 	}
-    
-    private static class SalutationEntry_RowMapper implements RowMapper<SalutationEntry> {
-		@Override
-		public SalutationEntry mapRow(ResultSet resultSet, int row) throws SQLException {
-			return new SalutationEntryImpl(resultSet.getInt("title_id"), resultSet.getString("description"), resultSet.getInt("company_id"));
-		}
-	}
+
 }

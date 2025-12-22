@@ -13,8 +13,8 @@ package com.agnitas.emm.core.loginmanager.entity;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.emm.core.logintracking.LoginStatus;
-import org.agnitas.emm.core.logintracking.bean.LoginData;
+import com.agnitas.emm.core.loginmanager.enums.LoginStatus;
+import com.agnitas.emm.core.loginmanager.bean.LoginData;
 
 public final class BlockedAddressData {
 	

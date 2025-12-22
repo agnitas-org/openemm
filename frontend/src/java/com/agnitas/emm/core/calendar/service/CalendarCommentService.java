@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.calendar.service;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -18,11 +17,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.calendar.beans.CalendarComment;
 import com.agnitas.emm.core.calendar.beans.CalendarCommentRecipient;
 
-import org.json.JSONArray;
-
 public interface CalendarCommentService {
-
-    JSONArray getComments(Admin admin, LocalDate startDate, LocalDate endDate);
 
     List<CalendarComment> getComments(Date start, Date end, Admin admin);
 

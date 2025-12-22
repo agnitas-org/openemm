@@ -239,6 +239,7 @@ public class Code {
 						break;
 					case "comment":
 					case "coding":
+					case "install":
 						break;
 					default:
 						data.logging(Log.WARNING, "code", "Unknown option \"" + opt + "\" with paramater \"" + param + "\" found in " + name);

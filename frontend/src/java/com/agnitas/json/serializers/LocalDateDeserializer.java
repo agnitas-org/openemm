@@ -11,7 +11,6 @@
 package com.agnitas.json.serializers;
 
 import java.io.IOException;
-import java.time.DateTimeException;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -27,7 +26,7 @@ public class LocalDateDeserializer extends LocalDateTimeBaseDeserializer<LocalDa
     }
 
     @Override
-    protected LocalDate deserializeOne(JsonParser parser, DeserializationContext context) throws DateTimeException, IOException {
+    protected LocalDate deserializeOne(JsonParser parser, DeserializationContext context) throws IOException {
         return LocalDate.of(getInt(parser, context), getInt(parser, context), getInt(parser, context));
     }
 }

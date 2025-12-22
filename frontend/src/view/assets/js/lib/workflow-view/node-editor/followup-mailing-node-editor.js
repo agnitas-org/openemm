@@ -81,9 +81,11 @@
       if (this.disableFollowup) {
         return;
       }
-      var baseMailingSelector = $(this.baseMailingEditorBase.formNameJId + ' ' + this.baseMailingEditorBase.selectNameJId);
-      var followupMailingSelector = $(this.followupMailingEditorBase.formNameJId + ' ' + this.followupMailingEditorBase.selectNameJId);
-      if (baseMailingSelector.val() > 0 && followupMailingSelector.val() > 0) {
+
+      const $baseMailing = $(`${this.baseMailingEditorBase.formNameJId} ${this.baseMailingEditorBase.selectNameJId}`);
+      const $followupMailing = $(`${this.followupMailingEditorBase.formNameJId} ${this.followupMailingEditorBase.selectNameJId}`);
+
+      if ($baseMailing.val() > 0 && $followupMailing.val() > 0) {
         this.saveWithCheckStatus();
       } else {
         Messages.warn('error.workflow.noMailing');

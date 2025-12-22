@@ -66,6 +66,8 @@ import javax.sql.DataSource;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
@@ -91,17 +93,15 @@ import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Const;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -111,7 +111,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 
 public class BirtReportServiceImpl implements BirtReportService {
-    /** The logger. */
+
     private static final Logger logger = LogManager.getLogger(BirtReportServiceImpl.class);
 
     public static final String KEY_START_DATE = "from";
@@ -184,7 +184,7 @@ public class BirtReportServiceImpl implements BirtReportService {
                 BirtReportType reportType = BirtReportType.getTypeByCode(birtReport.getReportType());
 
                 if (reportType == null) {
-                    throw new RuntimeException("Invalid report type");
+                    throw new IllegalArgumentException("Invalid report type");
                 }
 
                 final Date activationDate = birtReport.getActivationDate();
@@ -207,7 +207,7 @@ public class BirtReportServiceImpl implements BirtReportService {
                         endCalendar.add(GregorianCalendar.DATE, -7);
                         break;
                     default:
-                        throw new RuntimeException("Invalid report type");
+                        throw new IllegalArgumentException("Invalid report type");
                 }
 
                 final Date startDate = startCalendar.getTime();
@@ -429,7 +429,7 @@ public class BirtReportServiceImpl implements BirtReportService {
                     // Time triggered reports, which do have an additional unfulfilled condition for being sent will be retried after next interval
                     // (e.g. reports for mailings of a defined mailinglists to be sent within the last week, when no fitting mailing was sent in that week)
                     birtReport.setNextStart(DateUtilities.calculateNextJobStart(birtReport.getIntervalpattern()));
-                    birtReportDao.announceStart(birtReport);
+                    announceStart(birtReport);
                     birtReportDao.announceEnd(birtReport);
                 }
             }
@@ -550,17 +550,7 @@ public class BirtReportServiceImpl implements BirtReportService {
     }
 
     @Override
-    public boolean deleteReport(int companyId, int reportId) {
-        return birtReportDao.deleteReport(companyId, reportId);
-    }
-
-    @Override
-    public PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String sortOrder, int page, int rownums) {
-        return birtReportDao.getPaginatedReportList(companyId, sort, sortOrder, page, rownums);
-    }
-
-    @Override
-    public PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId) {
+    public PaginatedList<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId) {
         return birtReportDao.getPaginatedReportList(filter, companyId);
     }
 
@@ -583,13 +573,11 @@ public class BirtReportServiceImpl implements BirtReportService {
         return getDatesRestrictionMap(periodType, settings, formatter);
     }
 
-    @Override
-    public String getReportName(int companyId, int reportId) {
+    private String getReportName(int companyId, int reportId) {
         return birtReportDao.getReportName(companyId, reportId);
     }
 
-    @Override
-    public boolean isReportExist(int companyId, int reportId) {
+    private boolean isReportExist(int companyId, int reportId) {
         return birtReportDao.isReportExist(companyId, reportId);
     }
 

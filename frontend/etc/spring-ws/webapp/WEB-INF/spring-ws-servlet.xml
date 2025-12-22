@@ -12,7 +12,6 @@
 	<import resource="spring-ws-common.xml" />
 
 	<context:component-scan base-package="com.agnitas"/>
-	<context:component-scan base-package="org.agnitas"/>
 
 	<sws:annotation-driven />
 
@@ -42,7 +41,7 @@
 		<property name="exceptionMappings">
 			<map>
 				<entry key="com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException" value=""/>
-                <entry key="com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException" value="Unknown target group ID"/>
+                <entry key="com.agnitas.emm.core.target.exception.TargetGroupNotFoundException" value="Unknown target group ID"/>
                 <entry key="com.agnitas.emm.core.target.exception.EqlFormatException" value="Invalid EQL."/>
 			</map>
 		</property>

@@ -10,18 +10,22 @@
 
 package com.agnitas.emm.core.address_management.web;
 
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+
+import java.util.List;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.address_management.dto.AddressManagementEntry;
 import com.agnitas.emm.core.address_management.form.AddressManagementSearchForm;
 import com.agnitas.emm.core.address_management.service.AddressManagementService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.emm.core.company.service.CompanyService;
+import com.agnitas.exception.BadRequestException;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.emm.core.company.service.CompanyService;
-import com.agnitas.util.AgnUtils;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -34,13 +38,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
-
 @Controller
-@PermissionMapping("address.management")
+@RequiredPermission("admin.management.show")
 public class AddressManagementController {
 
     private final AddressManagementService addressManagementService;
@@ -65,7 +64,7 @@ public class AddressManagementController {
     public ResponseEntity<DataResponseDto<List<AddressManagementEntry>>> deleteEntries(@RequestBody List<AddressManagementEntry> entries,
                                                                                      @RequestParam String email, Admin admin, Popups popups) {
         if (CollectionUtils.isEmpty(entries)) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return ResponseEntity.ok(new DataResponseDto<>(popups, false));
         }
 
@@ -90,7 +89,7 @@ public class AddressManagementController {
     public ResponseEntity<DataResponseDto<List<AddressManagementEntry>>> replaceEmail(@RequestBody List<AddressManagementEntry> entries, @RequestParam String email, @RequestParam String oldEmail,
                                                            Admin admin, Popups popups) {
         if (CollectionUtils.isEmpty(entries)) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return ResponseEntity.ok(new DataResponseDto<>(popups, false));
         }
 
@@ -110,7 +109,7 @@ public class AddressManagementController {
         checkEmail(searchForm);
 
         addressManagementService.replaceEmails(searchForm.getEmail(), newEmail, admin);
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         ra.addFlashAttribute("searchForm", searchForm);
         return "redirect:/address-management.action";
@@ -118,7 +117,8 @@ public class AddressManagementController {
 
     private static void checkEmail(AddressManagementSearchForm searchForm) {
         if (StringUtils.isBlank(searchForm.getEmail())) {
-            throw new RequestErrorException(ERROR_MSG);
+            throw new BadRequestException(ERROR_MSG);
         }
     }
+
 }

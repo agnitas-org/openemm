@@ -10,15 +10,16 @@
 
 package com.agnitas.emm.core.components.exception;
 
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
-
 import java.util.Set;
 
-public class AttachmentDownloadException extends RequestErrorException {
+import com.agnitas.exception.UiMessageException;
+import com.agnitas.messages.Message;
+
+public class AttachmentDownloadException extends UiMessageException {
+
     private static final long serialVersionUID = 6429920494944339556L;
 
-	private int mailingId;
+	private final int mailingId;
 
     public AttachmentDownloadException(Set<Message> errors, int mailingId) {
         super(errors);

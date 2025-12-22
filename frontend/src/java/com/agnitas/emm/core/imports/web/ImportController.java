@@ -24,7 +24,7 @@ import com.agnitas.service.UserActivityLogService;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,6 +55,7 @@ public class ImportController {
     }
 
     @GetMapping("/view.action")
+    @RequiredPermission("mailing.import|forms.import")
     public String view(Model model) {
         addModelAttributesForViewPage(model);
         return "import_view";
@@ -65,8 +66,9 @@ public class ImportController {
     }
 
     @PostMapping("/execute.action")
-    public Object execute(@ModelAttribute ImportForm form, Popups popups, Admin admin, HttpServletRequest req) throws Exception {
-        boolean isWorkflowDriven = admin.isRedesignedUiUsed() && !WorkflowParametersHelper.isEmptyParams(req);
+    @RequiredPermission("mailing.import")
+    public Object execute(@ModelAttribute ImportForm form, Popups popups, Admin admin, HttpServletRequest req) {
+        boolean isWorkflowDriven = !WorkflowParametersHelper.isEmptyParams(req);
         if (!existsUploadedFile(form.getUploadFile(), popups)) {
             return isWorkflowDriven ? ResponseEntity.ok().body(new BooleanResponseDto(popups, false)) : MESSAGES_VIEW;
         }
@@ -112,21 +114,10 @@ public class ImportController {
     }
 
     @GetMapping("/file.action")
+    @RequiredPermission("mailing.import|forms.import")
     public String file(@RequestParam ImportType type, @ModelAttribute("form") ImportForm form, Model model) {
         model.addAttribute("type", type);
         return "import_modal";
-    }
-
-    @GetMapping("/mailing.action")
-    @PermissionMapping("view.mailing")
-    public String viewMailingImport() {
-        return "mailing_import";
-    }
-
-    @GetMapping("/template.action")
-    @PermissionMapping("view.template")
-    public String viewTemplateImport(@ModelAttribute("form") ImportForm form) {
-        return "template_import";
     }
 
     private void addImportErrors(ImportResult importResult, Popups popups) {
@@ -153,4 +144,5 @@ public class ImportController {
     protected void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, action, description, LOGGER);
     }
+
 }

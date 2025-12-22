@@ -10,19 +10,22 @@
 
 package com.agnitas.emm.core.company.dto;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.post.PostalField;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class CompanySettingsDto {
 
     private String technicalContacts;
+	private Set<String> systemMessageEmails = new HashSet<>();
     private boolean hasMailTracking;
     private int statisticsExpireDays;
     private boolean hasActivatedAccessAuthorization;
@@ -47,6 +50,7 @@ public class CompanySettingsDto {
     private int hostauthCookieExpireDays;
     private boolean sendPasswordChangedNotification;
     private boolean sendEncryptedMailings;
+	private boolean enableHoneypotIntermediatePage;
     private String defaultLinkExtension;
     private int linkcheckerLinktimeout;
     private int linkcheckerThreadcount;
@@ -91,7 +95,11 @@ public class CompanySettingsDto {
 	private String testMailToAddressMark;
 	private boolean useDefaultAddressFieldsForPost;
 	private Map<PostalField, String> postalFieldsMappings = new HashMap<>();
-    private boolean showAllDashboardCalendarMailings; // TODO: remove after EMMGUI-714 will be finished and old design will be removed
+    private boolean showAllDashboardCalendarMailings;
+    private boolean vouchersMandatory;
+    private boolean voucherEnableReport;
+    private String voucherCcReportEmails;
+    private String voucherBccReportEmails;
 
 	public String getListHelpUrl() {
 		return listHelpUrl;
@@ -299,6 +307,14 @@ public class CompanySettingsDto {
 
 	public void setSendEncryptedMailings(boolean sendEncryptedMailings) {
 		this.sendEncryptedMailings = sendEncryptedMailings;
+	}
+
+	public boolean isEnableHoneypotIntermediatePage() {
+		return enableHoneypotIntermediatePage;
+	}
+
+	public void setEnableHoneypotIntermediatePage(boolean enableHoneypotIntermediatePage) {
+		this.enableHoneypotIntermediatePage = enableHoneypotIntermediatePage;
 	}
 
 	public String getDefaultLinkExtension() {
@@ -648,4 +664,45 @@ public class CompanySettingsDto {
 	public void setTestMailToAddressMark(String testMailToAddressMark) {
 		this.testMailToAddressMark = testMailToAddressMark;
 	}
+
+	public boolean isVouchersMandatory() {
+		return vouchersMandatory;
+	}
+
+	public void setVouchersMandatory(boolean vouchersMandatory) {
+		this.vouchersMandatory = vouchersMandatory;
+	}
+
+	public boolean isVoucherEnableReport() {
+		return voucherEnableReport;
+	}
+
+	public void setVoucherEnableReport(boolean voucherEnableReport) {
+		this.voucherEnableReport = voucherEnableReport;
+	}
+
+	public String getVoucherCcReportEmails() {
+		return voucherCcReportEmails;
+	}
+
+	public void setVoucherCcReportEmails(String voucherCcReportEmails) {
+		this.voucherCcReportEmails = voucherCcReportEmails;
+	}
+
+	public String getVoucherBccReportEmails() {
+		return voucherBccReportEmails;
+	}
+
+	public void setVoucherBccReportEmails(String voucherBccReportEmails) {
+		this.voucherBccReportEmails = voucherBccReportEmails;
+	}
+
+	public Set<String> getSystemMessageEmails() {
+		return systemMessageEmails;
+	}
+
+	public void setSystemMessageEmails(Set<String> systemMessageEmails) {
+		this.systemMessageEmails = systemMessageEmails;
+	}
+
 }

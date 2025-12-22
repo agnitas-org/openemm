@@ -18,7 +18,7 @@ import com.agnitas.emm.core.archive.service.CampaignService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.Const;
 import com.agnitas.web.forms.PaginationForm;
@@ -36,7 +36,7 @@ public class CampaignServiceImpl implements CampaignService {
     private BulkActionValidationService<Integer, Campaign> bulkActionValidationService;
 
     @Override
-    public PaginatedListImpl<Campaign> getOverview(Admin admin, PaginationForm form) {
+    public PaginatedList<Campaign> getOverview(Admin admin, PaginationForm form) {
         return campaignDao.getOverview(admin.getCompanyID(), form.getSort(), form.ascending(), form.getPage(), form.getNumberOfRows());
     }
 
@@ -51,7 +51,7 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
-    public PaginatedListImpl<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin) {
+    public PaginatedList<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin) {
         return campaignDao.getCampaignMailings(campaignId, form, admin);
     }
 

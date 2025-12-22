@@ -10,6 +10,9 @@
 
 package com.agnitas.taglib.spring;
 
+import java.util.Map;
+
+import jakarta.servlet.jsp.JspException;
 import org.springframework.web.servlet.tags.form.InputTag;
 import org.springframework.web.servlet.tags.form.TagWriter;
 
@@ -20,4 +23,17 @@ public class SpringInputTag extends InputTag {
     protected TagWriter createTagWriter() {
         return new CustomTagWriter(pageContext);
     }
+
+    @Override
+    protected void writeOptionalAttributes(TagWriter tagWriter) throws JspException {
+        Map<String, Object> dynamicAttributes = getDynamicAttributes();
+        if (dynamicAttributes == null) {
+            setDynamicAttribute("", "autocomplete", "off");
+        } else {
+            dynamicAttributes.putIfAbsent("autocomplete", "off");
+        }
+
+        super.writeOptionalAttributes(tagWriter);
+    }
+
 }

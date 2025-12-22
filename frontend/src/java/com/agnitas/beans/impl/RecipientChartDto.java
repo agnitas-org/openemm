@@ -21,7 +21,6 @@ public class RecipientChartDto {
     private LinkedHashMap<String, Integer> reactorType = new LinkedHashMap<>();
     private float rebuyRate;
     private String rebuyTitle;
-    private String notAvailable; // TODO: EMMGUI-714: remove property if redundant
     private LinkedHashMap<String, Integer> revenue = new LinkedHashMap<>();
     private Map<String, String> favoriteOpeningDays = new LinkedHashMap<>();
     private Map<String, String> favoriteOpeningHours = new LinkedHashMap<>();
@@ -111,11 +110,4 @@ public class RecipientChartDto {
         this.rebuyTitle = rebuyTitle;
     }
 
-    public String getNotAvailable() {
-        return notAvailable;
-    }
-
-    public void setNotAvailable(String notAvailable) {
-        this.notAvailable = notAvailable;
-    }
 }

@@ -23,7 +23,6 @@ import com.agnitas.backend.exceptions.CancelException;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.util.Bit;
 import com.agnitas.util.Log;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 /**
@@ -162,7 +161,7 @@ public class MailgunImpl implements Mailgun {
 		} catch (CancelException e) {
 			str = e.message ();
 			data.logging (Log.WARNING, "mailout", "Creation has canceled due to " + str);
-			data.mailing.setWorkStatus (e.getMailingStatus (), null);
+			data.mailing.setWorkStatus (e.getMailingStatus ());
 			data.updateGenerateionStateForCancel ();
 		} catch (Exception e) {
 			if (data != null) {
@@ -374,7 +373,7 @@ public class MailgunImpl implements Mailgun {
 		}
 
 		@Override
-		public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
+		public Object extractData(ResultSet rset) throws SQLException {
 			while (rset.next()) {
 				mmap.add(rset.getLong(1), rset.getInt (2), rset.getInt(3));
 			}
@@ -403,7 +402,11 @@ public class MailgunImpl implements Mailgun {
 	protected void finalizeMailingToDatabase(MailWriter mailer) {
 		//
 		// EMM-4150 & EMM-7151
-		data.mailing.setWorkStatus(data.totalReceivers == 0 ? MailingStatus.NORECIPIENTS : MailingStatus.GENERATION_FINISHED, MailingStatus.IN_GENERATION);
+		if (data.maildropStatus.isAdminMailing () || data.maildropStatus.isTestMailing () || data.maildropStatus.isWorldMailing ()) {
+			data.mailing.setWorkStatus (data.totalReceivers == 0 ? MailingStatus.NORECIPIENTS : MailingStatus.GENERATION_FINISHED, MailingStatus.IN_GENERATION);
+		} else if (data.maildropStatus.isRuleMailing () || data.maildropStatus.isOnDemandMailing () || data.maildropStatus.isCampaignMailing ()) {
+			data.mailing.setWorkStatus (MailingStatus.ACTIVE, MailingStatus.CANCELED, MailingStatus.INSUFFICIENT_VOUCHERS);
+		}
 		data.toMailtrack();
 		//
 		// EMM-2952 & BAUR-790

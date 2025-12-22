@@ -18,12 +18,11 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.navigation.ConditionsHandler;
+import com.agnitas.emm.core.navigation.condition.NavItemCondition;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
-import org.agnitas.emm.core.navigation.ConditionsHandler;
-import org.agnitas.emm.core.navigation.condition.NavItemCondition;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +35,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  *  displayed.
  */
 public class ShowNavigationTag extends BodyTagSupport {
+
 	private static final long serialVersionUID = 6251408976255583139L;
 
 	private static final Logger logger = LogManager.getLogger(ShowNavigationTag.class);
@@ -43,7 +43,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
-	private String redesigned; // TODO: EMMGUI-714 remove after old design will be removed
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
@@ -122,10 +121,6 @@ public class ShowNavigationTag extends BodyTagSupport {
 		this.highlightKey = highlightKey;
 	}
 
-	public void setRedesigned(String redesigned) {
-		this.redesigned = redesigned;
-	}
-
 	@Override
 	public int doStartTag() {
 		prepareNavigationData();
@@ -184,11 +179,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 			}
 
 			try {
-				if (BooleanUtils.toBoolean(redesigned)) {
-					bundle = ResourceBundle.getBundle("navigation_redesigned." + navigation);
-				} else {
-					bundle = ResourceBundle.getBundle("navigation." + navigation);
-				}
+				bundle = ResourceBundle.getBundle("navigation." + navigation);
 			} catch (Exception e) {
 				if (navigation.endsWith("Sub")) {
 					// no such submenu properties file found => no submenu
@@ -271,14 +262,8 @@ public class ShowNavigationTag extends BodyTagSupport {
 		logger.info("setting navigation attributes {}_navigation_href = {}", prefix, navigationData.getHref());
 
 		if (StringUtils.isNotBlank(highlightKey) && StringUtils.equals(navigationData.getMessage(), highlightKey)) {
-			if (!BooleanUtils.toBoolean(redesigned)) {
-				pageContext.setAttribute(prefix + "_navigation_switch", "on");
-			}
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.TRUE);
         } else {
-			if (!BooleanUtils.toBoolean(redesigned)) {
-				pageContext.setAttribute(prefix + "_navigation_switch", "off");
-			}
             pageContext.setAttribute(prefix + "_navigation_isHighlightKey", Boolean.FALSE);
         }
 

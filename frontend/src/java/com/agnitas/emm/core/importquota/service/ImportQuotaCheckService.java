@@ -10,11 +10,9 @@
 
 package com.agnitas.emm.core.importquota.service;
 
-import com.agnitas.service.ImportException;
-
 public interface ImportQuotaCheckService {
 	
-	void checkImportQuota(final int companyID, final int linesToImport) throws ImportException;
+	void checkImportQuota(int companyID, int linesToImport);
 
 	boolean checkWarningLimitReached(final int companyId, final int importedLines);
 	

@@ -10,9 +10,8 @@
 
 package com.agnitas.emm.springws.exceptionresolver.mailinglist;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotEmptyException;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistInUseException;
 import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistNotEmptyException;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 public class MailinglistExceptionResolver extends AbstractEmmExceptionResolver {
@@ -23,11 +22,8 @@ public class MailinglistExceptionResolver extends AbstractEmmExceptionResolver {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Mailinglist not empty");
 			return definition;
-		} else if(ex instanceof MailinglistInUseException) {
-			final SoapFaultDefinition definition = getDefaultDefinition(ex);
-			definition.setFaultStringOrReason("Mailinglist in use");
-			return definition;
 		}
+
 		return super.getFaultDefinition(endpoint, ex);
 	}
 

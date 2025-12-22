@@ -13,10 +13,15 @@ package com.agnitas.web.dto;
 import com.agnitas.web.mvc.Popups;
 
 public class BooleanResponseDto extends ResponseDto {
+
     private boolean success;
 
     public BooleanResponseDto(boolean success) {
         this.success = success;
+    }
+
+    public BooleanResponseDto(Popups popups) {
+        this(popups, !popups.hasAlertPopups());
     }
 
     public BooleanResponseDto(Popups popups, boolean success) {

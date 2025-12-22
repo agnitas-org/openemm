@@ -69,7 +69,7 @@ public class CalendarCommentDaoImpl extends ReminderBaseDaoImpl implements Calen
                 String insertStatement = "INSERT INTO calendar_comment_tbl (company_id, admin_id, comment_content, comment_date, deadline, planned_send_date)"
                 	+ " VALUES (" + AgnUtils.repeatString("?", 6, ", ") + ")";
                 
-                newID = insertIntoAutoincrementMysqlTable("comment_id", insertStatement, values.toArray());
+                newID = insert("comment_id", insertStatement, values.toArray());
             }
 
             calendarComment.setCommentId(newID);

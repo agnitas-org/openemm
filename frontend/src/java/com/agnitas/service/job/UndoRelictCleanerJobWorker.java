@@ -12,12 +12,12 @@ package com.agnitas.service.job;
 
 import java.util.List;
 
-import com.agnitas.service.JobWorker;
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.dao.UndoDynContentDao;
 import com.agnitas.dao.UndoMailingComponentDao;
 import com.agnitas.dao.UndoMailingDao;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Example Insert in DB:
@@ -27,7 +27,8 @@ import com.agnitas.dao.UndoMailingDao;
  *  Optional:
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'UndoRelictCleaner'), 'retentionTime', '60');
  */
-public class UndoRelictCleanerJobWorker extends JobWorker {
+@JobWorker("UndoRelictCleaner")
+public class UndoRelictCleanerJobWorker extends JobWorkerBase {
 	
 	/**
 	 * Default retention time for undo records in days.

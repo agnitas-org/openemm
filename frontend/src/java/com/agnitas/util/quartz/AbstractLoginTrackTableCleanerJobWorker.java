@@ -10,8 +10,8 @@
 
 package com.agnitas.util.quartz;
 
-import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
-import com.agnitas.service.JobWorker;
+import com.agnitas.emm.core.loginmanager.dao.LoginTrackDao;
+import com.agnitas.service.JobWorkerBase;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  * </ul>
  *
  */
-public abstract class AbstractLoginTrackTableCleanerJobWorker extends JobWorker {
+public abstract class AbstractLoginTrackTableCleanerJobWorker extends JobWorkerBase {
 		
 	@Override
 	public final String runJob() throws Exception {

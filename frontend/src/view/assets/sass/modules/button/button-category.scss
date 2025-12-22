@@ -1,0 +1,47 @@
+/*doc
+---
+title: Category button
+name: buttons_02_category
+parent: buttons
+---
+
+`.btn-category` has special styles. Applicable in places where there are some categories and there should be a switch view depending on the selected category
+
+```htmlexample
+<ul class="vstack gap-2">
+  <li class="flex-grow-1">
+      <button type="button" class="btn btn-category w-100">
+          <b>Category 1</b>
+          <span>10</span>
+      </button>
+  </li>
+  <li>
+     <button type="button" class="btn btn-category w-100">
+        <b>Category 2</b>
+        <span>5</span>
+     </button>
+  </li>
+  <li>
+     <button type="button" class="btn btn-category w-100" disabled>
+        <b>Disabled</b>
+        <span>11</span>
+     </button>
+  </li>
+</ul>
+```
+*/
+
+.btn-category {
+  @extend .btn-secondary;
+  justify-content: space-between;
+  font-size: $font-size-md;
+
+  border-radius: $border-radius-sm;
+  padding: $gap-sm;
+
+  &[disabled], &[readonly] {
+    color: var(--base-disabled-color);
+    background-color: var(--base-disabled-bg);
+    opacity: 1;
+  }
+}

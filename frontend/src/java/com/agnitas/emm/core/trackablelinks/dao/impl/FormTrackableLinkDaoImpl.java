@@ -10,22 +10,22 @@
 
 package com.agnitas.emm.core.trackablelinks.dao.impl;
 
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
-import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
-import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
+import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackableLinkDao {
 
@@ -48,7 +48,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	public int saveUserFormTrackableLink(int userFormId, int companyId, TrackableUserFormLink trackableLink) {
 		int result = 0;
 		if (trackableLink != null && userFormId >= 0 && companyId != 0) {
-			String usage = isOracleDB() ? "usage" : "`usage`";
+			String usage = getUsageCol();
 			String sql = "SELECT url_id, form_id, action_id, " + usage + ", full_url, shortname, deep_tracking, company_id FROM rdir_url_userform_tbl WHERE form_id = ? AND company_id = ? AND full_url = ?";
 			List<TrackableUserFormLink> existingLinks = select(sql, new TrackableUserFormLink_RowMapper(), userFormId, companyId, trackableLink.getFullUrl());
 			if (existingLinks.size() > 0) {
@@ -74,7 +74,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 					sql = "INSERT INTO rdir_url_userform_tbl (url_id, company_id, form_id, action_id, usage, full_url, shortname, deep_tracking) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 					update(sql, trackableLink.getId(), companyId, userFormId, trackableLink.getActionID(), trackableLink.getUsage(), trackableLink.getFullUrl(), trackableLink.getShortname(), trackableLink.getDeepTracking());
 				} else {
-					String insertStatement = "INSERT INTO rdir_url_userform_tbl (company_id, form_id, action_id, `usage`, full_url, shortname, deep_tracking) VALUES (?, ?, ?, ?, ?, ?, ?)";
+					String insertStatement = "INSERT INTO rdir_url_userform_tbl (company_id, form_id, action_id, %s, full_url, shortname, deep_tracking) VALUES (?, ?, ?, ?, ?, ?, ?)".formatted(getUsageCol());
 
 					Object[] paramsWithNext = new Object[7];
 					paramsWithNext[0] = companyId;
@@ -85,7 +85,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 					paramsWithNext[5] = trackableLink.getShortname();
 					paramsWithNext[6] = trackableLink.getDeepTracking();
 
-					int linkId = insertIntoAutoincrementMysqlTable("url_id", insertStatement, paramsWithNext);
+					int linkId = insert("url_id", insertStatement, paramsWithNext);
 					trackableLink.setId(linkId);
 				}
 
@@ -97,9 +97,12 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 		return result;
 	}
 
-	@Override
+	private String getUsageCol() {
+		return isOracleDB() || isPostgreSQL() ? "usage" : "`usage`";
+	}
+
 	@DaoUpdateReturnValueCheck
-	public void storeUserFormTrackableLinkProperties(TrackableUserFormLink link) {
+	private void storeUserFormTrackableLinkProperties(TrackableUserFormLink link) {
 		update("DELETE FROM rdir_url_userform_param_tbl WHERE url_id = ?", link.getId());
 		if (link.getProperties() != null) {
 			String insertSql = "INSERT INTO rdir_url_userform_param_tbl (url_id, param_type, param_key, param_value) VALUES(?, ?, ?, ?)";
@@ -127,17 +130,10 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 		TrackableUserFormLink trackableUserFormLink;
 		if (linkID > 0) {
-			String usage = isOracleDB() ? "usage" : "`usage`";
+			String usage = getUsageCol();
 			String sql = "SELECT url_id, form_id, action_id, " + usage + ", full_url, shortname, deep_tracking, company_id FROM rdir_url_userform_tbl WHERE url_id = ?";
 
-			List<TrackableUserFormLink> existingLinks = select(sql, new FormTrackableLinkWithProperties(), linkID);
-			if (existingLinks == null || existingLinks.isEmpty()) {
-				trackableUserFormLink =  null;
-			} else if (existingLinks.size() == 1) {
-				trackableUserFormLink = existingLinks.get(0);
-			} else {
-				throw new IllegalStateException("Invalid number of userformlinks found");
-			}
+			trackableUserFormLink = selectObjectDefaultNull(sql, new FormTrackableLinkWithProperties(), linkID);
 		} else {
 			trackableUserFormLink = null;
 		}
@@ -149,7 +145,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 	@Override
 	public TrackableUserFormLink getUserFormTrackableLink(int companyId, int formId, int linkId) {
-		String usage = isOracleDB() ? "usage" : "`usage`";
+		String usage = getUsageCol();
 		String sql = "SELECT url_id, form_id, action_id, " + usage + ", full_url, shortname, deep_tracking, company_id " +
 				"FROM rdir_url_userform_tbl WHERE company_id =? AND form_id = ? AND url_id = ?";
 
@@ -158,18 +154,10 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 	@Override
 	public TrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(int companyID, int formID) {
-		String usage = isOracleDB() ? "usage" : "`usage`";
+		String usage = getUsageCol();
 		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, deep_tracking FROM rdir_url_userform_tbl WHERE company_id = ? AND form_id = ? AND LOWER(full_url) = 'form'";
 
-		List<TrackableUserFormLink> list = select(sql, new TrackableUserFormLink_RowMapper(), companyID, formID);
-
-		if (list == null || list.size() > 1) {
-			throw new IllegalStateException("Unexpected result in getDummyUserFormTrackableLinkForStatisticCount");
-		} else if (list.isEmpty()) {
-			return null;
-		} else {
-			return list.get(0);
-		}
+		return selectObjectDefaultNull(sql, new TrackableUserFormLink_RowMapper(), companyID, formID);
 	}
 
 	@Override
@@ -185,34 +173,11 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 	@Override
 	public List<TrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID) {
-		String usage = isOracleDB() ? "usage" : "`usage`";
+		String usage = getUsageCol();
 		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, deep_tracking " +
 				" FROM rdir_url_userform_tbl WHERE form_id = ? AND company_id = ? AND LOWER(full_url) != 'form'";
 
 		return select(sql, new FormTrackableLinkWithProperties(), formID, companyID);
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public boolean deleteUserFormTrackableLink(int linkID, int companyID) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("deleteUserFormTrackableLink started - link id: " + linkID + " company id: " + companyID);
-		}
-
-		try {
-			update("DELETE FROM rdir_url_userform_param_tbl WHERE url_id IN (SELECT url_id FROM rdir_url_userform_tbl WHERE company_id = ? AND url_id = ?)", companyID, linkID);
-
-			int deletedEntries = update("DELETE FROM rdir_url_userform_tbl WHERE url_id = ? AND company_id = ?", linkID, companyID);
-			if (logger.isDebugEnabled()) {
-				logger.debug("deleteUserFormTrackableLink finished - link id: " + linkID + " company id: " + companyID);
-			}
-
-			return deletedEntries == 1;
-		} catch (Exception e) {
-			logger.error("deleteUserFormTrackableLink finished with error - link id: " + linkID + " company id: " + companyID, e);
-
-			return false;
-		}
 	}
 
 	private List<LinkProperty> getUserFormTrackableLinkProperties(int linkId) {
@@ -223,7 +188,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	@Override
 	public boolean logUserFormTrackableLinkClickInDB(TrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("logUserFormTrackableLinkClickInDB started - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr);
+			logger.debug("logUserFormTrackableLinkClickInDB started - link id: {} customer id: {} remote address: {}", link.getId(), customerID, remoteAddr);
 		}
 
 		String sql = "INSERT INTO rdirlog_userform_" + link.getCompanyID() + "_tbl (form_id, customer_id, url_id, company_id, ip_adr, mailing_id, device_class_id, device_id, client_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -232,13 +197,12 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 			update(sql, link.getFormID(), customerID, link.getId(), link.getCompanyID(), remoteAddr, mailingID, deviceClass.getId(), deviceID, clientID);
 
 			if (logger.isDebugEnabled()) {
-				logger.debug("logUserFormTrackableLinkClickInDB finished - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr);
+				logger.debug("logUserFormTrackableLinkClickInDB finished - link id: {} customer id: {} remote address: {}", link.getId(), customerID, remoteAddr);
 			}
 
 			return true;
 		} catch (Exception e) {
-			logger.error("logUserFormTrackableLinkClickInDB finished with error - link id: " + link.getId() + " customer id: " + customerID + " remote address: " + remoteAddr, e);
-
+			logger.error("logUserFormTrackableLinkClickInDB finished with error - link id: {} customer id: {} remote address: {}", link.getId(), customerID, remoteAddr, e);
 			return false;
 		}
 	}
@@ -252,8 +216,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 			return result == 1;
 		} catch (Exception e) {
-			logger.error("logUserFormCallInDB finished with error - companyID: " + companyID + " formID: " + formID + " linkID: " + linkID + " customerID: " + customerID + " remoteAddr: " + remoteAddr, e);
-
+			logger.error("logUserFormCallInDB finished with error - companyID: {} formID: {} linkID: {} customerID: {} remoteAddr: {}", companyID, formID, linkID, customerID, remoteAddr, e);
 			return false;
 		}
 	}
@@ -261,12 +224,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	private static class TrackableUserFormLinkProperty_RowMapper implements RowMapper<LinkProperty> {
 		@Override
 		public LinkProperty mapRow(ResultSet resultSet, int row) throws SQLException {
-			LinkProperty.PropertyType type;
-			try {
-				type = LinkProperty.PropertyType.parseString(resultSet.getString("param_type"));
-			} catch (Exception e) {
-				throw new SQLException("Error when reading properties param_type", e);
-			}
+			LinkProperty.PropertyType type = LinkProperty.PropertyType.parseString(resultSet.getString("param_type"));
 			return new LinkProperty(type, resultSet.getString("param_key"), resultSet.getString("param_value"));
 		}
 	}

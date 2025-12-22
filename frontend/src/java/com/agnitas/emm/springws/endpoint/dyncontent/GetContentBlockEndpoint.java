@@ -13,8 +13,8 @@ package com.agnitas.emm.springws.endpoint.dyncontent;
 import java.util.Objects;
 
 import com.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.GetContentBlockRequest;

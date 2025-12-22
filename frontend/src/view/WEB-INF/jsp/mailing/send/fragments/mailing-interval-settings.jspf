@@ -1,0 +1,153 @@
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingIntervalType" %>
+
+<c:set var="isEditingDenied" value="${form.worldMailingSend}"/>
+<emm:ShowByPermission token="mailing.content.change.always">
+    <c:set var="isEditingDenied" value="${false}"/>
+</emm:ShowByPermission>
+
+<emm:ShowByPermission token="mailing.interval">
+    <div class="col-12" data-field="toggle-vis">
+        <div class="tile tile--sm">
+            <div class="tile-header">
+                <h3 class="tile-title tile-title--grey"><mvc:message code="default.interval" /></h3>
+            </div>
+            <div class="tile-body vstack gap-3 border-top p-3" data-action="save-interval-settings">
+                <div>
+                    <label for="intervalType" class="form-label"><mvc:message code="mailing.interval" /></label>
+
+                    <mvc:select id="intervalType" path="intervalSettings.intervalType" cssClass="form-control" disabled="${isEditingDenied}" data-field-vis="">
+                        <mvc:option value="${MailingIntervalType.NONE}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-weekdays-block, #interval-months-block, #interval-delivery-time-block, #interval-weekday-month-block">
+                            <mvc:message code="Interval.none"/>
+                        </mvc:option>
+
+                        <emm:ShowByPermission token="mailing.interval.short">
+                            <mvc:option value="${MailingIntervalType.SHORT}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-months-block, #interval-weekdays-block, #interval-weekday-month-block, #interval-delivery-time-block">
+                                <mvc:message code="Interval.short"/>
+                            </mvc:option>
+                        </emm:ShowByPermission>
+
+                        <mvc:option value="${MailingIntervalType.WEEKLY}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-months-block, #interval-weekday-month-block"
+                                    data-field-vis-show="#interval-weekdays-block, #interval-delivery-time-block">
+                            <mvc:message code="Interval.weekly"/>
+                        </mvc:option>
+
+                        <mvc:option value="${MailingIntervalType.TWO_WEEKLY}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-months-block, #interval-weekday-month-block"
+                                    data-field-vis-show="#interval-weekdays-block, #interval-delivery-time-block">
+                            <mvc:message code="Interval.2weekly"/>
+                        </mvc:option>
+
+                        <mvc:option value="${MailingIntervalType.MONTHLY}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-weekdays-block, #interval-weekday-month-block"
+                                    data-field-vis-show="#interval-months-block, #interval-delivery-time-block">
+                            <mvc:message code="Interval.monthly"/>
+                        </mvc:option>
+
+                        <mvc:option value="${MailingIntervalType.WEEKDAILY}" data-field-vis-nondisabled="" data-field-vis-hide="#interval-months-block"
+                                    data-field-vis-show="#interval-weekdays-block, #interval-weekday-month-block, #interval-delivery-time-block">
+                            <mvc:message code="report.autosend.days"/>
+                        </mvc:option>
+                    </mvc:select>
+                </div>
+
+                <div id="interval-months-block" class="row g-3">
+                    <div class="col-12">
+                        <label for="interval-months-number" class="form-label"><mvc:message code="Month" /></label>
+
+                        <mvc:select id="interval-months-number" path="intervalSettings.numberOfMonth" cssClass="form-control" disabled="${isEditingDenied}">
+                            <c:forEach var="month" begin="1" end="12">
+                                <mvc:option value="${month}"><mvc:message code="default.every${month}Month"/></mvc:option>
+                            </c:forEach>
+                        </mvc:select>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="interval-day-of-month" class="form-label"><mvc:message code="mailing.interval.month.day" /></label>
+                        <mvc:select id="interval-day-of-month" path="intervalSettings.dayOfMonth" cssClass="form-control" disabled="${isEditingDenied}">
+                            <mvc:option value="1"><mvc:message code="firstDayOfMonth"/></mvc:option>
+                            <c:forEach var="dayOfMonth" begin="2" end="31">
+                                <mvc:option value="${dayOfMonth}">${dayOfMonth}.</mvc:option>
+                            </c:forEach>
+                            <mvc:option value="99"><mvc:message code="ultimoDayOfMonth"/></mvc:option>
+                        </mvc:select>
+                    </div>
+                </div>
+
+                <div id="interval-weekday-month-block">
+                    <label for="interval-month-day" class="form-label"><mvc:message code="mailing.interval.month.day" /></label>
+                    <mvc:select id="interval-month-day" path="intervalSettings.weekdayOrdinal" cssClass="form-control" disabled="${isEditingDenied}">
+                        <c:forEach var="weekdayNumber" begin="1" end="5">
+                            <mvc:option value="${weekdayNumber}"><mvc:message code="mailing.interval.weekdayOrdinal.${weekdayNumber}"/></mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+                </div>
+
+                <div id="interval-weekdays-block">
+                    <label class="form-label"><mvc:message code="report.autosend.days"/></label>
+
+                    <div class="row g-1">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[monday]_id" path="intervalSettings.intervalDays[1]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[monday]_id"><mvc:message code="calendar.dayOfWeek.2"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[tuesday]_id" path="intervalSettings.intervalDays[2]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[tuesday]_id"><mvc:message code="calendar.dayOfWeek.3"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[wednesday]_id" path="intervalSettings.intervalDays[3]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[wednesday]_id"><mvc:message code="calendar.dayOfWeek.4"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[thursday]_id" path="intervalSettings.intervalDays[4]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[thursday]_id"><mvc:message code="calendar.dayOfWeek.5"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[friday]_id" path="intervalSettings.intervalDays[5]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[friday]_id"><mvc:message code="calendar.dayOfWeek.6"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[saturday]_id" path="intervalSettings.intervalDays[6]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[saturday]_id"><mvc:message code="calendar.dayOfWeek.7"/></label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox id="interval[sunday]_id" path="intervalSettings.intervalDays[0]" cssClass="form-check-input" role="switch" value="true" disabled="${isEditingDenied}"/>
+                                <label class="form-label form-check-label fw-normal" for="interval[sunday]_id"><mvc:message code="calendar.dayOfWeek.1"/></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="interval-delivery-time-block" class="has-feedback">
+                    <label for="interval-delivery-time" class="form-label"><mvc:message code="mailing.SendingTime" /></label>
+
+                    <div class="time-picker-container">
+                        <mvc:text id="interval-delivery-time" path="intervalSettings.intervalTime" cssClass="form-control js-timepicker" data-timepicker-options="mask: 'h:s'" disabled="${isEditingDenied}"/>
+
+                        <div class="form-control-feedback-message">
+                            <mvc:message code="default.interval"/>: <mvc:message code="default.minutes.10"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</emm:ShowByPermission>
+

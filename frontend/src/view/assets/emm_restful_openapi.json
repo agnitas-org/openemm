@@ -4278,6 +4278,103 @@
       }
     },
     "/binding" : {
+      "get" : {
+        "summary" : "Get list of existing bindings",
+        "tags" : [ "Binding" ],
+        "operationId" : "getBindings",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "mailinglistId",
+          "schema" : {
+            "type" : "integer"
+          },
+          "required" : false,
+          "description" : "Filter for mailinglist"
+        },
+        {
+          "in" : "query",
+          "name" : "status",
+          "schema" : {
+            "type" : "integer"
+          },
+          "required" : false,
+          "description" : "Filter for status at Mailinglist (Active(1), Bounce(2), AdminOut(3), UserOut(4), WaitForConfirm(5), Blacklisted(6), Suspend(7))"
+        },
+        {
+          "in" : "query",
+          "name" : "timestamp",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for status-entries with timestamp (Format yyyy-MM-dd, wildcard *)"
+        },
+          {
+            "in" : "query",
+            "name" : "page",
+            "schema" : {
+              "type" : "integer",
+              "default": 1
+            },
+            "required" : false,
+            "description" : "Page number used for pagination. Default is 1"
+          },
+          {
+            "in" : "query",
+            "name" : "size",
+            "schema" : {
+              "type" : "integer",
+              "default": 50
+            },
+            "required" : false,
+            "description" : "Page size for pagination. Default is 50"
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "List of bindings data with pagination data",
+            "content" : {
+              "application/json" : {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page": { "type": "integer", "example": 1 },
+                    "size": { "type": "integer", "example": 50 },
+                    "totalCount": { "type": "integer", "example": 130 },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "mailinglist_id": { "type": "integer", "example": 1 },
+                          "user_type": { "type": "string", "nullable": true, "example": "T" },
+                          "mediatype": { "type": "string", "nullable": true, "example": "SMS" },
+                          "user_status": { "type": "string", "example": "Active" },
+                          "user_remark": { "type": "string", "example": "Opt-In by ADMIN (emm-master)" },
+                          "creation_date": { "type": "string", "format": "date-time", "example": "2023-03-16T13:07:02+02" },
+                          "change_date": { "type": "string", "format": "date-time", "example": "2023-10-06T15:31:02+03" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
       "put" : {
         "summary" : "Bulk change of existing subscriptions",
         "tags" : [ "Binding" ],
@@ -7643,11 +7740,6 @@
             "type" : "string",
             "example" : "https://link.domain/param=123"
           },
-          "keywords" : {
-            "type" : "string",
-            "description" : "Comma separated keywords for tagging",
-            "example" : 4714
-          },
           "mimetype" : {
             "type" : "string",
             "description" : "Mimetype for emm_block or bin_block",
@@ -8133,9 +8225,6 @@
         "type" : "object",
         "required" : [ "shortname", "mailinglist_id" ],
         "properties" : {
-          "version" : {
-            "type" : "string"
-          },
           "id" : {
             "type" : "integer"
           },
@@ -8186,9 +8275,6 @@
         "type" : "object",
         "required" : [ "formname", "description" ],
         "properties" : {
-          "version" : {
-            "type" : "string"
-          },
           "id" : {
             "type" : "integer"
           },

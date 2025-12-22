@@ -11,6 +11,7 @@
 package com.agnitas.beans;
 
 import java.util.Date;
+import java.util.Set;
 
 import com.agnitas.beans.impl.CompanyStatus;
 
@@ -62,7 +63,7 @@ public interface Company {
      *
      * @return Value of property mailloopDomain.
      */
-    public String getMailloopDomain();
+    String getMailloopDomain();
 
     /**
      * Getter for property status.
@@ -125,7 +126,7 @@ public interface Company {
      *
      * @param mailloopDomain New value of property mailloopDomain.
      */
-    public void setMailloopDomain(String mailloopDomain);
+    void setMailloopDomain(String mailloopDomain);
 
     /**
      * Setter for property status.
@@ -198,6 +199,10 @@ public interface Company {
 	String getContactTech();
 
 	void setContactTech(String contactTech);
+
+    Set<String> getSystemMessageEmails();
+
+    void setSystemMessageEmails(Set<String> emails);
 	
 	String getListHelpUrl();
 	

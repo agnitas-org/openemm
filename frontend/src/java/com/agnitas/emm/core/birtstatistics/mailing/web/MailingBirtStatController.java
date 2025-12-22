@@ -18,7 +18,6 @@ import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_O
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
 import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.text.ParseException;
@@ -38,7 +37,9 @@ import java.util.stream.Stream;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.archive.service.CampaignService;
@@ -52,24 +53,23 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.commons.dto.DateTimeRange;
 import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
 import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.beans.MailingSendStatus;
-import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
-import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.forms.FormDateTime;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -98,6 +98,15 @@ public class MailingBirtStatController implements XssCheckAware {
             TOP_DOMAINS,
             BOUNCES
     );
+
+    private static final MailingAdditionalColumn[] ADDITIONAL_COLUMNS = new MailingAdditionalColumn[] {
+        MailingAdditionalColumn.CREATION_DATE,
+        MailingAdditionalColumn.TEMPLATE,
+        MailingAdditionalColumn.SUBJECT,
+        MailingAdditionalColumn.TARGET_GROUPS,
+        MailingAdditionalColumn.MAILING_ID,
+        MailingAdditionalColumn.RECIPIENTS_COUNT
+    };
 
     protected final BirtStatisticsService birtStatisticsService;
     protected final CompanyService companyService;
@@ -153,42 +162,23 @@ public class MailingBirtStatController implements XssCheckAware {
             return MESSAGES_VIEW;
         }
 
-        syncFormProps(form, admin);
+        syncFormProps(form);
 
-        // init search properties;
         MailingsListProperties props = getMailingsListProperties(admin, form);
 
         model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
         model.addAttribute("mailingStatisticList", mailingBaseService.getPaginatedMailingsData(admin, props));
-        model.addAttribute("availableAdditionalFields", getAvailableAdditionalFields(admin));
+        model.addAttribute("availableAdditionalFields", ADDITIONAL_COLUMNS);
         model.addAttribute("availableMailingLists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
         model.addAttribute("availableArchives", campaignService.getCampaigns(admin.getCompanyID()));
-        if (!admin.isRedesignedUiUsed()) {
-            model.addAttribute("availableTargetGroups", targetService.getTargetLights(admin));
-        }
 
         return "stats_mailing_list";
-    }
-
-    private static MailingAdditionalColumn[] getAvailableAdditionalFields(Admin admin) {
-        if (admin.isRedesignedUiUsed()) {
-            return new MailingAdditionalColumn[]{
-                    MailingAdditionalColumn.CREATION_DATE,
-                    MailingAdditionalColumn.TEMPLATE,
-                    MailingAdditionalColumn.SUBJECT,
-                    MailingAdditionalColumn.TARGET_GROUPS,
-                    MailingAdditionalColumn.MAILING_ID,
-                    MailingAdditionalColumn.RECIPIENTS_COUNT
-            };
-        } else {
-            return MailingAdditionalColumn.values();
-        }
     }
 
     @PostMapping("/setSelectedFields.action")
     public @ResponseBody BooleanResponseDto updateSelectedFields(@RequestParam(required = false) List<String> selectedFields, Popups popups) {
         webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> storage.setSelectedFields(selectedFields));
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         return new BooleanResponseDto(popups, !popups.hasAlertPopups());
     }
@@ -245,7 +235,7 @@ public class MailingBirtStatController implements XssCheckAware {
 
         int workflowId = mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID());
         model.addAttribute("workflowId", workflowId);
-        if (admin.isRedesignedUiUsed() && statWorkflowId != null && statWorkflowId > 0) {
+        if (statWorkflowId != null && statWorkflowId > 0) {
             model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(statWorkflowId, admin));
             model.addAttribute("statWorkflowId", statWorkflowId);
         }
@@ -284,14 +274,10 @@ public class MailingBirtStatController implements XssCheckAware {
         return null;
     }
 
-    protected MailingsListProperties getMailingsListProperties(final Admin admin, final MailingStatatisticListForm statForm) {
+    protected MailingsListProperties getMailingsListProperties(Admin admin, MailingStatatisticListForm statForm) {
         MailingsListProperties props = new MailingsListProperties();
-        props.setSearchQuery(statForm.getSearchQueryText());
-        props.setSearchName(statForm.isSearchNameChecked());
-        props.setSearchDescription(statForm.isSearchDescriptionChecked());
         props.setSearchNameStr(statForm.getFilterName());
         props.setSearchDescriptionStr(statForm.getFilterDescription());
-        props.setRedesignedUiUsed(admin.isRedesignedUiUsed());
         props.setMailingStatisticsOverview(true);
         props.setTypes("0,1,2,3,4"); // all mailing types
         props.setStatuses(Collections.singletonList(MailingStatus.SENT.getDbKey())); // just sent mailings
@@ -302,12 +288,8 @@ public class MailingBirtStatController implements XssCheckAware {
         props.setAdditionalColumns(SetUtils.union(Set.of("archives"), statForm.getAdditionalFieldsSet()));
         props.setMailingLists(statForm.getFilteredMailingListsAsList());
         props.setArchives(statForm.getFilterArchives());
-        if (admin.isRedesignedUiUsed()) {
-            props.setSendDateBegin(tryParseDate(statForm.getFilterSendDateBegin(), admin));
-            props.setSendDateEnd(tryParseDate(statForm.getFilterSendDateEnd(), admin));
-        } else {
-            props.setTargetGroups(statForm.getFilteredTargetGroupsAsList());
-        }
+        props.setSendDateBegin(tryParseDate(statForm.getFilterSendDateBegin(), admin));
+        props.setSendDateEnd(tryParseDate(statForm.getFilterSendDateEnd(), admin));
 
         return props;
     }
@@ -332,12 +314,8 @@ public class MailingBirtStatController implements XssCheckAware {
         }
         SimpleDateFormat localeFormat = admin.getDateFormat();
 
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
-            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
-        } else {
-            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingStatisticDto.getMailingId()));
-        }
+        model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
+        model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
         model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
         model.addAttribute("targetlist", targetService.getTargetLights(admin));
         model.addAttribute("monthlist", AgnUtils.getMonthList());
@@ -348,7 +326,7 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) {
-        if(mailingStatisticDto.getType() == null) {
+        if (mailingStatisticDto.getType() == null || mailingStatisticDto.getType() == StatisticType.BENCHMARK) {
             return null;
         }
 
@@ -385,16 +363,12 @@ public class MailingBirtStatController implements XssCheckAware {
         return DateMode.NONE == oldDateMode || DateMode.NONE == dateMode ? dateMode : oldDateMode;
     }
 
-    private void syncFormProps(MailingStatatisticListForm form, Admin admin){
+    private void syncFormProps(MailingStatatisticListForm form){
         webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0) {
                 storage.setRowsCount(form.getNumberOfRows());
-                if (admin.isRedesignedUiUsed()) {
-                    if (!form.isInEditColumnsMode()) {
-                        form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
-                    }
-                } else {
-                    storage.setSelectedFields(Arrays.asList(form.getAdditionalFields()));
+                if (!form.isInEditColumnsMode()) {
+                    form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
                 }
             } else {
                 form.setNumberOfRows(storage.getRowsCount());
@@ -404,11 +378,9 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     private boolean validate(MailingStatatisticListForm form, Popups popups) {
-        if (form.isSearchNameChecked() || form.isSearchDescriptionChecked()) {
-            for (String error : DbUtilities.validateFulltextSearchQueryText(form.getSearchQueryText())) {
-                popups.alert(error);
-            }
-        }
+        Stream.of(form.getFilterName(), form.getFilterDescription())
+                .flatMap(x -> DbUtilities.validateFulltextSearchQueryText(x).stream())
+                .forEach(popups::alert);
 
         return !popups.hasAlertPopups();
     }
@@ -492,5 +464,9 @@ public class MailingBirtStatController implements XssCheckAware {
         if (form.getYear() == 0) {
             form.setYear(YearMonth.now().getYear());
         }
+    }
+
+    protected void writeUAL(Admin admin, String action, String description) {
+        UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
     }
 }

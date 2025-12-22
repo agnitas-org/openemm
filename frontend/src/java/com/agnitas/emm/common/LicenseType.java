@@ -11,12 +11,13 @@
 package com.agnitas.emm.common;
 
 public enum LicenseType {
+
 	Saas("Saas"),
 	Inhouse("Inhouse"),
 	OpenEMM("OpenEMM"),
 	OpenEMM_Plus("OpenEMM_Plus");
 	
-	private String id;
+	private final String id;
 	
 	LicenseType(final String id) {
 		this.id = id;
@@ -32,6 +33,6 @@ public enum LicenseType {
 				return licenseType;
 			}
 		}
-		throw new RuntimeException("Unknown license type id: " + id);
+		throw new IllegalArgumentException("Unknown license type id: " + id);
 	}
 }

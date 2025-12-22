@@ -11,25 +11,28 @@
 package com.agnitas.emm.core.trackablelinks.common;
 
 public enum DeepTrackingMode {
+
 	NONE(0),
 	ONLY_COOKIE(1);
 
 	private final int deepTrackingModeCode;
 	
-	private DeepTrackingMode(final int deepTrackingModeCode) {
+	DeepTrackingMode(int deepTrackingModeCode) {
 		this.deepTrackingModeCode = deepTrackingModeCode;
 	}
 	
-	public final int getDeepTrackingModeCode() {
+	public int getDeepTrackingModeCode() {
 		return deepTrackingModeCode;
 	}
 	
-	public static DeepTrackingMode getDeepTrackingModeByCode(final int deepTrackingModeCode) {
+	public static DeepTrackingMode getDeepTrackingModeByCode(int deepTrackingModeCode) {
 		for (DeepTrackingMode deepTrackingMode : DeepTrackingMode.values()) {
 			if (deepTrackingMode.getDeepTrackingModeCode() == deepTrackingModeCode) {
 				return deepTrackingMode;
 			}
 		}
-		throw new RuntimeException("Unknown deepTrackingModeCode for trackable link: " + deepTrackingModeCode);
+
+		throw new IllegalArgumentException("Unknown deepTrackingModeCode for trackable link: " + deepTrackingModeCode);
 	}
+
 }

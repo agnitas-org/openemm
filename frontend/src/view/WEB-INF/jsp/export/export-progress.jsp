@@ -1,29 +1,33 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 <%--@elvariable id="progressPercentage" type="java.lang.Integer"--%>
 <%--@elvariable id="id" type="java.lang.Integer"--%>
 
-<mvc:form servletRelativeAction="/export/${id}/evaluate.action" modelAttribute="exportForm" data-form="loading">
+<div id="evaluate-loader-modal" class="modal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <mvc:form cssClass="modal-content" servletRelativeAction="/export/${id}/evaluate.action" modelAttribute="exportForm" data-form="loading">
+            <div class="modal-header">
+                <svg><use href="<c:url value="/assets/core/images/facelift/sprite.svg"/>#msgs_msg-uploading"></use></svg>
+                <h1><mvc:message code="export.process"/></h1>
+            </div>
 
-    <mvc:hidden path="exportStartTime"/>
-    <mvc:hidden path="inProgress" value="true"/>
+            <mvc:hidden path="exportStartTime"/>
+            <mvc:hidden path="inProgress" value="true"/>
 
-    <div class="msg-tile msg-tile-primary">
-        <div class="msg-tile-header">
-            <c:url var="uploadingImageSvg" value="/assets/core/images/facelift/msgs_msg-uploading_old.svg"/>
-            <c:url var="uploadingImagePng" value="assets/core/images/facelift/msgs_msg-uploading_old.png"/>
-            <img alt="" src="${uploadingImageSvg}" onerror="this.onerror=null; this.src='${uploadingImagePng}'">
-        </div>
-        <div class="msg-tile-content">
-            <h3><mvc:message code="export.data"/></h3>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" aria-valuenow="${progressPercentage}" aria-valuemin="0" aria-valuemax="100" style="width: ${progressPercentage}%">
-                    <mvc:message code="export.csv_exporting_data"/> ${progressPercentage}%
+            <div class="modal-body">
+                <div class="progress">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         aria-valuenow="${progressPercentage}"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         style="width: ${progressPercentage}%"></div>
+                    <div class="percentage">${progressPercentage}%</div>
                 </div>
             </div>
-        </div>
+        </mvc:form>
     </div>
-</mvc:form>
+</div>

@@ -1,79 +1,75 @@
-AGN.Lib.Controller.new('target-group-view', function ($scope) {
+AGN.Lib.Controller.new('target-group-view', function () {
 
-  var Action = AGN.Lib.Action,
-    Form = AGN.Lib.Form,
-    Editor = AGN.Lib.Editor;
+  const Form = AGN.Lib.Form;
+  const ScheduleTimeTable = AGN.Lib.ScheduleTimeTable;
+  const PeriodRow = AGN.Lib.ScheduleTimeTable.PeriodRow;
 
-  Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function() {
-      AGN.Lib.Messages(t('defaults.error'), t('querybuilder.errors.general'), 'alert');
+  let scheduleTimeTable;
+
+  AGN.Lib.Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function () {
+    AGN.Lib.Messages.alert('querybuilder.errors.general');
   });
 
   this.addDomInitializer('target-group-view', function () {
-    var $el = $(this.el);
-
-    $('[data-toggle-tab]').on('click', function (e) {
-      //skip empty rule to proper validation while toggling between tabs
-      var isValid = Form.get($el).validate({skip_empty: true});
-      if (!isValid) {
-        e.preventDefault();
-        return false;
-      }
-    });
-
     if (this.config.errorPositionDetails) {
       handleEqlErrorDetails(this.config.errorPositionDetails);
     }
   });
 
-  this.addAction({click: 'switch-tab-viewEQL'}, function() {
-      var element = this.el,
-        form = AGN.Lib.Form.get($(element));
+  this.addAction({change: 'toggle-editor-tab'}, function () {
+    const $el = this.el;
+    const isChecked = $el.is(':checked');
+    $el.prop('checked', !isChecked); // change switch to previous state (it will be changed after form submit)
 
-      form.setValueOnce('viewFormat', 'EQL');
-      form.submit('', {skip_empty: true});
-  });
-
-  this.addAction({click: 'switch-tab-viewQB'}, function() {
-    var element = this.el,
-      form = AGN.Lib.Form.get($(element));
-
-    form.setValueOnce('viewFormat', 'QUERY_BUILDER');
-    const jqxhr = form.submit('', {skip_empty: true});
-    jqxhr.done(function(resp) {
-      handleFormSaveResponse(resp);
-      AGN.Lib.Tab.show($('#eql-editor-tab-trigger'));
-      $('#eql-alert').remove();
-      $('#eql').before(getNotificationMessage(resp.popups.alert[0]));
-    });
-  });
-
-  this.addAction({submission: 'save-target'}, function() {
-    Form
-      .get(this.el)
-      .submit(this.el.data('submit-type'))
-      .done(handleFormSaveResponse);
-  });
-
-  function handleFormSaveResponse(resp) {
-    if (resp.success) {
+    const form = Form.get($el);
+    if (!form.validate({skip_empty: true})) {
       return;
     }
-    handleEqlErrorDetails(resp.data);
-    AGN.Lib.JsonMessages(resp.popups);
-  }
+
+    form.setValueOnce('viewFormat', isChecked ? 'EQL' : 'QUERY_BUILDER');
+    form.submit('', {skip_empty: true});
+  });
+
+  this.addAction({submission: 'save-target'}, function () {
+    Form.get(this.el)
+      .submit(this.el.data('submit-type'))
+      .done(resp => {
+        if (typeof resp == 'object' && !resp.success) {
+          handleEqlErrorDetails(resp.data);
+          AGN.Lib.JsonMessages(resp.popups);
+        }
+      });
+  });
 
   function handleEqlErrorDetails(details) {
-    const eqlEditor = Editor.get($('#eql')).editor;
-
-    eqlEditor.focus();
-    eqlEditor.gotoLine(details.line, details.column);
+    AGN.Lib.Editor.get($('#eql')).goToLine(details.line, details.column);
   }
 
-  function getNotificationMessage(msg) {
-    return '<ul = id="eql-alert">' +
-      '         <div class="tile">' +
-      '             <li class="tile-notification tile-notification-alert">' + msg + '</li>' +
-      '         </div>' +
-      '    </ul>'
-  }
-})
+  // Scheduler
+
+  this.addDomInitializer('target-scheduler-init', function () {
+    scheduleTimeTable?.clean();
+    scheduleTimeTable = new ScheduleTimeTable($('#target-scheduler-block'));
+
+    let period = [];
+    if (this.config.intervalAsJson) {
+      period = JSON.parse(this.config.intervalAsJson)
+        .map(object => PeriodRow.deserialize(object));
+    }
+
+    if (period.length === 0) {
+      scheduleTimeTable.addEmptyPeriodRow();
+    } else {
+      period.forEach(day => scheduleTimeTable.addRow(day));
+    }
+
+    Form.get(this.el).initFields();
+  });
+
+  this.addAction({click: 'activate-schedule'}, function () {
+    const url = this.el.attr('href');
+    const intervalAsJson = scheduleTimeTable.getSubmissionJson('period');
+
+    $.post(url, {intervalAsJson}).done(resp => AGN.Lib.Page.render(resp));
+  });
+});

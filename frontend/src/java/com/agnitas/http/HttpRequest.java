@@ -63,17 +63,14 @@ public class HttpRequest {
 
 	/**
 	 * Http POST Request
-	 *
-	 * @param url
-	 * @throws Exception
 	 */
-	public HttpRequest(final String url) throws Exception {
+	public HttpRequest(String url) {
 		this(HttpMethod.POST, url);
 	}
 
-	public HttpRequest(final HttpMethod requestMethod, final String url) throws Exception {
+	public HttpRequest(HttpMethod requestMethod, String url) {
 		if (StringUtils.isBlank(url)) {
-			throw new Exception("Invalid empty url");
+			throw new IllegalArgumentException("Invalid empty url");
 		}
 		this.requestMethod = requestMethod == null ? HttpMethod.GET : requestMethod;
 		this.url = url;
@@ -99,14 +96,9 @@ public class HttpRequest {
 
 	/**
 	 * Check for protocol "https://" or "http://" (fallback: "http://")
-	 *
-	 * @return
-	 * @throws Exception
 	 */
-	public String getUrlWithProtocol() throws Exception {
-		if (StringUtils.isBlank(url)) {
-			throw new Exception("Invalid empty URL for http request");
-		} else if (url.startsWith(SECURE_HTTP_PROTOCOL_SIGN) || url.startsWith(HTTP_PROTOCOL_SIGN)) {
+	public String getUrlWithProtocol() {
+		if (url.startsWith(SECURE_HTTP_PROTOCOL_SIGN) || url.startsWith(HTTP_PROTOCOL_SIGN)) {
 			return url;
 		} else {
 			return HTTP_PROTOCOL_SIGN + url;
@@ -123,9 +115,9 @@ public class HttpRequest {
 		return this;
 	}
 
-	public HttpRequest addUserAgentHeader(final String userAgent) throws Exception {
+	public HttpRequest addUserAgentHeader(String userAgent) {
 		if (headers.containsKey(HEADER_NAME_USER_AGENT)) {
-			throw new Exception("Request already contains a UserAgentHeader");
+			throw new IllegalStateException("Request already contains a UserAgentHeader");
 		} else {
 			addHeader(HttpRequest.HEADER_NAME_USER_AGENT, userAgent);
 
@@ -133,9 +125,9 @@ public class HttpRequest {
 		}
 	}
 
-	public HttpRequest addBasicAuthenticationHeader(final String username, final String password) throws Exception {
+	public HttpRequest addBasicAuthenticationHeader(String username, String password) {
 		if (headers.containsKey(HEADER_NAME_BASIC_AUTHENTICATION)) {
-			throw new Exception("Request already contains a BasicAuthenticationHeader");
+			throw new IllegalStateException("Request already contains a BasicAuthenticationHeader");
 		} else {
 			addHeader(HttpRequest.HEADER_NAME_BASIC_AUTHENTICATION, HttpUtilities.createBasicAuthenticationHeaderValue(username, password));
 
@@ -143,9 +135,9 @@ public class HttpRequest {
 		}
 	}
 
-	public HttpRequest addBasicAuthenticationHeader(final String username, final char[] password) throws Exception {
+	public HttpRequest addBasicAuthenticationHeader(String username, char[] password) {
 		if (headers.containsKey(HEADER_NAME_BASIC_AUTHENTICATION)) {
-			throw new Exception("Request already contains a BasicAuthenticationHeader");
+			throw new IllegalStateException("Request already contains a BasicAuthenticationHeader");
 		} else {
 			addHeader(HttpRequest.HEADER_NAME_BASIC_AUTHENTICATION, HttpUtilities.createBasicAuthenticationHeaderValue(username, password));
 
@@ -167,11 +159,11 @@ public class HttpRequest {
 		return postParameters;
 	}
 
-	public HttpRequest addPostParameter(final String key, final Object value) throws Exception {
+	public HttpRequest addPostParameter(String key, Object value) {
 		if (requestBody != null) {
-			throw new Exception("RequestBody is already set. Post parameters cannot be set therefore");
+			throw new IllegalStateException("RequestBody is already set. Post parameters cannot be set therefore");
 		} else if (requestBodyContentStream != null) {
-			throw new Exception("RequestBodyContentStream is already set. Post parameters cannot be set therefore");
+			throw new IllegalStateException("RequestBodyContentStream is already set. Post parameters cannot be set therefore");
 		} else {
 			postParameters.add(new Tuple<>(key, value));
 
@@ -183,11 +175,11 @@ public class HttpRequest {
 		return uploadFileAttachments;
 	}
 
-	public HttpRequest addUploadFileData(final String htmlInputName, final String fileName, final byte[] data) throws Exception {
+	public HttpRequest addUploadFileData(String htmlInputName, String fileName, byte[] data) {
 		if (requestBody != null) {
-			throw new Exception("RequestBody is already set. UploadFileAttachments cannot be set therefore");
+			throw new IllegalStateException("RequestBody is already set. UploadFileAttachments cannot be set therefore");
 		} else if (requestBodyContentStream != null) {
-			throw new Exception("RequestBodyContentStream is already set. UploadFileAttachments cannot be set therefore");
+			throw new IllegalStateException("RequestBodyContentStream is already set. UploadFileAttachments cannot be set therefore");
 		} else {
 			uploadFileAttachments.add(new Triple<>(htmlInputName, fileName, data));
 
@@ -199,9 +191,9 @@ public class HttpRequest {
 		return downloadStream;
 	}
 
-	public HttpRequest setDownloadStream(final OutputStream downloadStream) throws Exception {
+	public HttpRequest setDownloadStream(OutputStream downloadStream) {
 		if (downloadFile != null) {
-			throw new Exception("DownloadFile is already set. DownloadStream cannot be set therefore");
+			throw new IllegalStateException("DownloadFile is already set. DownloadStream cannot be set therefore");
 		} else {
 			this.downloadStream = downloadStream;
 
@@ -213,9 +205,9 @@ public class HttpRequest {
 		return downloadFile;
 	}
 
-	public HttpRequest setDownloadFile(final File downloadFile) throws Exception {
+	public HttpRequest setDownloadFile(File downloadFile) {
 		if (downloadStream != null) {
-			throw new Exception("DownloadStream is already set. DownloadFile cannot be set therefore");
+			throw new IllegalStateException("DownloadStream is already set. DownloadFile cannot be set therefore");
 		} else {
 			this.downloadFile = downloadFile;
 
@@ -261,13 +253,13 @@ public class HttpRequest {
 		return requestBodyContentStream;
 	}
 
-	public HttpRequest setRequestBody(final String requestBody) throws Exception {
+	public HttpRequest setRequestBody(String requestBody) {
 		if (postParameters.size() > 0) {
-			throw new Exception("Post parameters are already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("Post parameters are already set. RequestBody cannot be set therefore");
 		} else if (uploadFileAttachments.size() > 0) {
-			throw new Exception("UploadFileAttachments are already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("UploadFileAttachments are already set. RequestBody cannot be set therefore");
 		} else if (requestBodyContentStream != null) {
-			throw new Exception("RequestBodyContentStream is already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("RequestBodyContentStream is already set. RequestBody cannot be set therefore");
 		} else {
 			this.requestBody = requestBody;
 
@@ -275,13 +267,13 @@ public class HttpRequest {
 		}
 	}
 
-	public HttpRequest setRequestBodyContentStream(InputStream requestBodyContentStream) throws Exception {
+	public HttpRequest setRequestBodyContentStream(InputStream requestBodyContentStream) {
 		if (postParameters.size() > 0) {
-			throw new Exception("Post parameters are already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("Post parameters are already set. RequestBody cannot be set therefore");
 		} else if (uploadFileAttachments.size() > 0) {
-			throw new Exception("UploadFileAttachments are already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("UploadFileAttachments are already set. RequestBody cannot be set therefore");
 		} else if (requestBody != null) {
-			throw new Exception("UploadFileAttachments are already set. RequestBody cannot be set therefore");
+			throw new IllegalStateException("UploadFileAttachments are already set. RequestBody cannot be set therefore");
 		} else {
 			this.requestBodyContentStream = requestBodyContentStream;
 

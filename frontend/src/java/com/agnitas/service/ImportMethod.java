@@ -11,12 +11,13 @@
 package com.agnitas.service;
 
 public enum ImportMethod {
+
 	ClearBeforeInsert("importMethod.clearOldBeforeInsert"),
 	UpdateAndInsert("importMethod.updateAndInsert"),
 	InsertOnly("importMethod.insertOnly"),
 	UpdateOnly("importMethod.updateOnly");
 	
-	private String messageKey;
+	private final String messageKey;
 	
 	ImportMethod(String messageKey) {
 		this.messageKey = messageKey;
@@ -26,12 +27,13 @@ public enum ImportMethod {
 		return messageKey;
 	}
 	
-	public static ImportMethod getImportMethodFromString(String value) throws Exception {
+	public static ImportMethod getImportMethodFromString(String value) {
 		for (ImportMethod method : ImportMethod.values()) {
 			if (method.toString().equalsIgnoreCase(value) || method.messageKey.equalsIgnoreCase(value)) {
 				return method;
 			}
 		}
-		throw new Exception("Invalid ImportMethod: " + value);
+
+		throw new IllegalArgumentException("Invalid ImportMethod: " + value);
 	}
 }

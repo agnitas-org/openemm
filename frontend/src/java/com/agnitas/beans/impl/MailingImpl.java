@@ -33,17 +33,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.common.FollowUpType;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.components.service.MailingComponentsService;
+import com.agnitas.emm.core.linkcheck.exception.ParseLinkException;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkScanResult;
@@ -53,25 +59,19 @@ import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
-import com.agnitas.service.AgnDynTagGroupResolverFactory;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.util.ImageUtils;
-import com.agnitas.util.LinkUtils;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.emm.core.action.bean.EmmAction;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.emm.common.FollowUpType;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.preview.AgnTagError;
 import com.agnitas.preview.TagSyntaxChecker;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
 import com.agnitas.service.UserMessageException;
 import com.agnitas.util.AgnTagUtils;
-import com.agnitas.util.MailoutClient;
+import com.agnitas.util.DynTagException;
+import com.agnitas.util.ImageUtils;
+import com.agnitas.util.LinkUtils;
 import com.agnitas.util.SafeString;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -186,43 +186,12 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return locked;
 	}
 
-	@Deprecated
-	/**
-	  * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
-	 */
 	@Override
-	public boolean triggerMailing(int maildropStatusID) {
-		try {
-			if (maildropStatusID <= 0) {
-				logger.warn( "maildropStatisID is 0");
-				return false;
-			}
-			
-			// Interval Mailings are only triggered by an Jobqueue Worker
-			if (getMailingType() != MailingType.INTERVAL) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Before Mailgun");
-				}
-				MailoutClient aClient = new MailoutClient();
-				// aClient.invoke("fire", Integer.toString(maildropStatusID) + blockType);
-				aClient.invoke("fire", Integer.toString(maildropStatusID));
-				if (logger.isDebugEnabled()) {
-					logger.debug("After Mailgun");
-				}
-			}
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	@Override
-	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, String rdirDomain) throws Exception {
+	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, String rdirDomain) {
 		return scanForLinks(text, textModuleName, applicationContext, null, null, null, rdirDomain);
 	}
 
-	@Override
-	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, List<Message> warnings, List<Message> errors, Admin admin, String rdirDomain) throws Exception {
+	private Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, List<Message> warnings, List<Message> errors, Locale locale, String rdirDomain) {
 		final int defaultTrackingMode = readDefaultLinkTrackingMode(applicationContext, companyID);
 		
 		try {
@@ -307,7 +276,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 						
 						final String errorText = I18nString.getLocaleString(
 								linkScanResult.getErroneousLinks().get(0).getErrorMessageKey(),
-								admin.getLocale(),
+								locale,
 								linkText
 							);
 
@@ -321,55 +290,43 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				
 				return foundLinkUrls;
 			}
-		} catch (LinkService.ParseLinkException e) {
-			logger.error("scanForLinks error in " + textModuleName + ": " + e.getMessage(), e);
-			if (errors == null) {
-				throw e;
-			}
-			Locale locale = admin.getLocale();
-			String message = SafeString.getLocaleString(e.getErrorMessage(), locale) + ":<br>" + e.getErrorLink();
-
-			errors.add(Message.of("error.invalid.link", SafeString.getLocaleString("error.in", locale)
-					+ " " + textModuleName + "<br> " + message));
 		} catch (Exception e) {
             logger.error("scanForLinks error in " + textModuleName + ": " + e.getMessage(), e);
             if (errors == null) {
                 throw e;
             }
 
-            Locale locale = admin.getLocale();
-            if (e.getCause() instanceof LinkService.ErrorLinkStorage) {
-                LinkService.ErrorLinkStorage linkError = (LinkService.ErrorLinkStorage) e.getCause();
+            if (e.getCause() instanceof ParseLinkException parseError) {
                 errors.add(Message.of("error.invalid.link",
-                        String.format("%s %s<br> %s", SafeString.getLocaleString("error.in", locale), textModuleName, linkError.getErrorLink())));
+                        String.format("%s %s<br> %s", SafeString.getLocaleString("error.in", locale), textModuleName, parseError.getErrorLink())));
             } else {
                 errors.add(Message.of("error.invalid.link", SafeString.getLocaleString("error.in", locale)
                         + " " + textModuleName + "<br> " + e.getMessage()));
             }
         }
-		
+
 		return new Vector<>();
 	}
 
 	@Override
-	public Vector<String> scanForLinks(ApplicationContext applicationContext) throws Exception {
+	public Vector<String> scanForLinks(ApplicationContext applicationContext) {
         return scanForLinks(applicationContext, null, null, null);
     }
 
-	private Vector<String> scanForLinks(ApplicationContext applicationContext, List<Message> messages, List<Message> errors, Admin admin) throws Exception {
+	private Vector<String> scanForLinks(ApplicationContext applicationContext, List<Message> messages, List<Message> errors, Locale locale) {
 		Vector<String> addedLinks = new Vector<>();
 		
         String rdirDomain = getLinkService(applicationContext).getRdirDomain(companyID);
 
 		for (MailingComponent component : components.values()) {
 			if (component.getType() == MailingComponentType.Template) {
-				addedLinks.addAll(scanForLinks(component.getEmmBlock(), component.getComponentName(), applicationContext, messages, errors, admin, rdirDomain));
+				addedLinks.addAll(scanForLinks(component.getEmmBlock(), component.getComponentName(), applicationContext, messages, errors, locale, rdirDomain));
 			}
 		}
 
 		for (DynamicTag tag : dynTags.values()) {
 			for (DynamicTagContent content : tag.getDynContent().values()) {
-				addedLinks.addAll(scanForLinks(content.getDynContent(), tag.getDynName(), applicationContext, messages, errors, admin, rdirDomain));
+				addedLinks.addAll(scanForLinks(content.getDynContent(), tag.getDynName(), applicationContext, messages, errors, locale, rdirDomain));
 				removeActionTag(content);
 			}
 		}
@@ -602,7 +559,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
      */
     @Deprecated
 	@Override
-	public Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws Exception {
+	public Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws DynTagException {
 		AgnTagService service = con.getBean("AgnTagService", AgnTagService.class);
 		AgnDynTagGroupResolverFactory resolverFactory = con.getBean("AgnDynTagGroupResolverFactory", AgnDynTagGroupResolverFactory.class);
 		List<DynamicTag> tags = service.getDynTags(aTemplate, resolverFactory.create(companyID, id));
@@ -619,7 +576,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return names;
 	}
 
-	private Vector<String> findDynTagsInTemplates(ApplicationContext con) throws Exception {
+	private Vector<String> findDynTagsInTemplates(ApplicationContext con) throws DynTagException {
 		Vector<String> names = new Vector<>();
 
 		for (MailingComponent component : components.values()) {
@@ -636,7 +593,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return names;
 	}
 
-	public Vector<String> scanForComponents(ApplicationContext con, int companyIDToCheckFor) throws Exception {
+	private Vector<String> scanForComponents(ApplicationContext con, int companyIDToCheckFor) throws Exception {
 		Vector<String> addedTags = new Vector<>();
 		Set<MailingComponent> componentsToAdd = new HashSet<>();
 		Set<String> mediapoolImages = new HashSet<>();
@@ -662,9 +619,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				try {
 					addedTags.addAll(scanForComponents(dyncontent.getDynContent(), con, componentsToAdd, mediapoolImages, companyIDToCheckFor, mailingHostedImages));
 					addedTags.addAll(TagSyntaxChecker.scanForAgnTagNameValues(dyncontent.getDynContent(), "agnIMAGE", "agnIMGLINK"));
-				} catch (LinkService.ParseLinkException e){
-					logger.error("Error in dyncontent " + name + ": " + e.getMessage(), e);
-					throw new LinkService.ParseLinkException ("Error in dyncontent " + name + ": " + e.getMessage(), e);
 				} catch (Exception e) {
 					logger.error("Error in dyncontent " + name + ": " + e.getMessage(), e);
 					throw new Exception("Error in dyncontent " + name + ": " + e.getMessage(), e);
@@ -678,7 +632,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public List<String> replaceAndGetMeasuredSeparatelyLinks(List<String> links, ApplicationContext context) throws Exception {
+	public List<String> replaceAndGetMeasuredSeparatelyLinks(List<String> links, ApplicationContext context) {
 		Map<String, Long> counters = scanForLinks(context).stream()
                 .filter(links::contains)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -713,7 +667,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		}
 	}
 
-	private Vector<String> scanForComponents(String text, ApplicationContext applicationContext, Set<MailingComponent> componentsToAdd, Set<String> mediapoolImages, int companyIDToCheckFor, List<String> mailingHostedImageNames) throws Exception {
+	private Vector<String> scanForComponents(String text, ApplicationContext applicationContext, Set<MailingComponent> componentsToAdd, Set<String> mediapoolImages, int companyIDToCheckFor, List<String> mailingHostedImageNames) {
 		final Vector<String> foundComponentUrls = new Vector<>();
 		final LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, companyIDToCheckFor);
 
@@ -854,11 +808,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	
 	@Override
 	public void setMailingTypeCode(int mailingTypeCode) {
-		try {
-			this.mailingType = MailingType.fromCode(mailingTypeCode);
-		} catch (Exception e) {
-			throw new RuntimeException("Invalid code for MailngType: " + mailingTypeCode);
-		}
+		this.mailingType = MailingType.getByCode(mailingTypeCode);
 	}
 
 	@Override
@@ -1109,8 +1059,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		mediatypes.put(MediaTypes.EMAIL.getMediaCode(), type);
 	}
 
-	@Override
-	public List<String> cleanupDynTags(Vector<String> keep) {
+	protected List<String> cleanupDynTags(List<String> keep) {
 		List<String> remove = new ArrayList<>();
 
 		dynTags.keySet().removeIf(name -> {
@@ -1125,13 +1074,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return remove;
 	}
 
-	@Override
-	public void cleanupTrackableLinks(Vector<String> keep) {
+	private void cleanupTrackableLinks(List<String> keep) {
 		trackableLinks.keySet().removeIf(name -> !keep.contains(name));
 	}
 
-	@Override
-	public void cleanupMailingComponents(Vector<String> keep) {
+	protected void cleanupMailingComponents(List<String> keep) {
 		// first find keys which should be removed
 		List<String> removeKeys = new Vector<>();
 		for (MailingComponent mailingComponent : components.values()) {
@@ -1175,11 +1122,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception {
+	public boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Locale locale) throws Exception {
 		List<Message> errors = new ArrayList<>();
 		List<Message> warnings = new ArrayList<>();
 
-		boolean result = buildDependencies(scanDynTags, dynNamesForDeletion, con, warnings, errors, admin);
+		boolean result = buildDependencies(scanDynTags, dynNamesForDeletion, con, warnings, errors, locale);
 
 		errors.forEach(popups::alert);
 		warnings.forEach(popups::warning);
@@ -1188,7 +1135,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin) throws Exception {
+	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Locale locale) throws Exception {
 		Vector<String> componentsToCheck = new Vector<>();
 
 		// scan for Dyntags
@@ -1227,7 +1174,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		// scan for Links
 		// in template-components and dyncontent
-		Vector<String> links = new Vector<>(scanForLinks(con, warnings, errors, admin));
+		Vector<String> links = new Vector<>(scanForLinks(con, warnings, errors, locale));
 		// if(ConfigService.isOracleDB()) {
 		// causes problem with links in OpenEMM
 		cleanupTrackableLinks(links);
@@ -1255,10 +1202,10 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
                 .getMailingComponents(getId(), getCompanyID(), MailingComponentType.HostedImage, false)
                 .stream()
                 .map(MailingComponent::getComponentName)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-	private Vector<String> findDynTagsInDynContent(Vector<String> names, ApplicationContext con) throws Exception {
+	private Vector<String> findDynTagsInDynContent(Vector<String> names, ApplicationContext con) throws DynTagException {
 		Set<String> dynNamesInUse = new HashSet<>(names);
 		Set<String> namesToScan = new HashSet<>(dynNamesInUse);
 
@@ -1400,13 +1347,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public void setFrequencyCounterDisabled(boolean isDisabled) {
 		isFrequencyCounterDisabled = isDisabled;
 	}
-
-    /**
-     * For testing purposes only
-     */
-    public void setLinkService(LinkService linkService) {
-        this.linkService = linkService;
-    }
 
     // TODO Replace this method. Access to ApplicationContext is not a good practice.
     protected final LinkService getLinkService(ApplicationContext applicationContext) {

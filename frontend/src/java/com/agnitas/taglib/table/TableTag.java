@@ -22,21 +22,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.util.SortDirection;
 import com.agnitas.taglib.spring.SpringFormTag;
 import com.agnitas.taglib.table.decorator.TableDecorator;
 import com.agnitas.taglib.table.util.TableTagUtils;
 import com.agnitas.taglib.table.writer.TableTagHtmlWriter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.PaginationForm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.displaytag.properties.SortOrderEnum;
 
 public class TableTag extends BodyTagSupport {
 
@@ -50,7 +50,7 @@ public class TableTag extends BodyTagSupport {
     private int pageSize;
 
     private List<?> list;
-    private PaginatedListImpl<?> paginatedList;
+    private PaginatedList<?> paginatedList;
     private Iterator<?> iterator;
 
     private int rowIndex;
@@ -107,7 +107,7 @@ public class TableTag extends BodyTagSupport {
 
         if (items == null) {
             list = Collections.emptyList();
-        } else if (items instanceof PaginatedListImpl<?> paginatesItems) {
+        } else if (items instanceof PaginatedList<?> paginatesItems) {
             paginatedList = paginatesItems;
             list = paginatedList.getList();
             fullListSize = paginatedList.getFullListSize();
@@ -139,7 +139,7 @@ public class TableTag extends BodyTagSupport {
                         .toList();
             }
         } else {
-            throw new IllegalStateException("Table tag can't work with '" + items.getClass().getName() + "' type!");
+            throw new IllegalArgumentException("Table tag can't work with '" + items.getClass().getName() + "' type!");
         }
 
         htmlWriter = new TableTagHtmlWriter(pageContext, getRequestUri(), fullListSize, list.size(), currentPage, totalPages);
@@ -198,31 +198,31 @@ public class TableTag extends BodyTagSupport {
         return htmlWriter;
     }
 
-    protected String getNextSortDir(String sortProperty) {
+    protected SortDirection getNextSortDir(String sortProperty) {
         if (!StringUtils.equals(sortProperty, getSortCriterion())) {
-            return "asc";
+            return SortDirection.ASCENDING;
         }
 
-        return SortOrderEnum.ASCENDING.equals(getSortDir()) ? "desc" : "asc";
+        return SortDirection.ASCENDING.equals(getSortDir()) ? SortDirection.DESCENDING : SortDirection.ASCENDING;
     }
 
     protected String getSortOrderClass() {
-        return SortOrderEnum.DESCENDING.equals(getSortDir()) ? "order2" : "order1";
+        return "order-" + getSortDir().getId();
     }
 
     protected boolean isSortedBy(String property) {
         return StringUtils.equals(property, getSortCriterion());
     }
 
-    private SortOrderEnum getSortDir() {
+    private SortDirection getSortDir() {
         return Optional.ofNullable(paginatedList)
-                .map(PaginatedListImpl::getSortDirection)
-                .orElseGet(() -> getSortDirParamValue().equals("desc") ? SortOrderEnum.DESCENDING : SortOrderEnum.ASCENDING);
+                .map(PaginatedList::getSortDirection)
+                .orElseGet(() -> getSortDirParamValue().equals("desc") ? SortDirection.DESCENDING : SortDirection.ASCENDING);
     }
 
     private String getSortCriterion() {
         return Optional.ofNullable(paginatedList)
-                .map(PaginatedListImpl::getSortCriterion)
+                .map(PaginatedList::getSortCriterion)
                 .orElse(getSortColumnParamValue());
     }
 

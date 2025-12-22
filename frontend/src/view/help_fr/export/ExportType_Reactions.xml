@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title><![CDATA[Type d'exportation : R&eacute;actions]]></title>
-	<content><![CDATA[Toutes les r&eacute;actions de la veille sont r&eacute;sum&eacute;es dans cette exportation. Les champs suivants sont disponibles : Mailing_ID, Customer_ID, E-Mail, Event (1=clic de lien, 2=ouverture, 3=d&eacute;sabonnement, 4=livraison, 5=softbounce, 6=hardbounce, 7=liste noire, 8=revenu), Timestamp (pour la r&eacute;action), Link (si c'&eacute;tait un clic de lien) et Revenu.]]></content>
-</HelpBalloon>

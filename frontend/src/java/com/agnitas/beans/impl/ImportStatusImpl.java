@@ -28,8 +28,8 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportStatusImpl implements ImportStatus {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ImportStatusImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ImportStatusImpl.class);
 
 	protected int id;
 

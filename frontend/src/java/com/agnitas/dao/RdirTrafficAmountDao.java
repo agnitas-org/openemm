@@ -21,7 +21,7 @@ public interface RdirTrafficAmountDao	{
 
 	List<Integer> getCompaniesForAggregation(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 	
-	boolean emtpyTrafficTables(int companyID);
+	boolean emptyTrafficTables(int companyID);
 	
 	boolean dropTrafficTables(int companyID);
 }

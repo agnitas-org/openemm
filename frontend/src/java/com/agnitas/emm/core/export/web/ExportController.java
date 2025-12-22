@@ -10,39 +10,61 @@
 
 package com.agnitas.emm.core.export.web;
 
+import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
+import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.UserActivityUtil.addChangedFieldLog;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+
+import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.export.form.ExportForm;
-import com.agnitas.emm.core.export.util.ExportUtils;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.target.service.TargetService;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.ExportPredefService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import jakarta.servlet.http.HttpSession;
 import com.agnitas.beans.ExportColumnMapping;
 import com.agnitas.beans.ExportPredef;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.emm.core.export.form.ExportForm;
+import com.agnitas.emm.core.export.reporter.RecipientExportReporter;
+import com.agnitas.emm.core.export.util.ExportUtils;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.ExportPredefService;
 import com.agnitas.service.RecipientExportWorker;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.MvcUtils;
 import com.agnitas.util.UserActivityUtil;
 import com.agnitas.util.importvalues.DateFormat;
-import com.agnitas.emm.core.export.reporter.RecipientExportReporter;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.NotAllowedActionException;
+import com.agnitas.web.perm.annotations.RequiredPermission;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,30 +85,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
-import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static com.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-import static com.agnitas.util.UserActivityUtil.addChangedFieldLog;
-import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-
 public class ExportController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(ExportController.class);
@@ -94,8 +92,8 @@ public class ExportController implements XssCheckAware {
     public static final String EXPORT_KEY = "EXPORT_RECIPIENTS";
     private static final String SHORTNAME_FIELD = "shortname";
 
+    protected final ExportPredefService exportService;
     private final TargetService targetService;
-    private final ExportPredefService exportService;
     private final ColumnInfoService columnInfoService;
     private final MailinglistService mailinglistService;
     private final UserActivityLogService userActivityLogService;
@@ -116,6 +114,7 @@ public class ExportController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
+    @RequiredPermission("wizard.export")
     public String list(@RequestParam(required = false) Boolean restoreSort, @ModelAttribute("form") PaginationForm form, Model model, Admin admin) {
         FormUtils.syncPaginationData(webStorage, WebStorage.EXPORT_PROFILE_OVERVIEW, form, restoreSort);
         model.addAttribute("exports", exportService.getExportProfilesOverview(form, admin));
@@ -124,13 +123,14 @@ public class ExportController implements XssCheckAware {
     }
 
     @GetMapping("/{id:\\d+}/view.action")
+    @RequiredPermission("wizard.export")
     public String view(@PathVariable int id, ExportForm form, Model model, Admin admin,
-                       @RequestHeader("referer") String referringUrl, Popups popups) throws Exception {
+                       @RequestHeader("referer") String referringUrl, Popups popups) {
         ExportPredef export = null;
         if (id != 0) {
             export = exportService.get(id, admin.getCompanyID());
             if (!allowedToView(admin, export)) {
-                popups.alert(PERMISSION_DENIED_MSG);
+                popups.permissionDenied();
                 return "redirect:" + AgnUtils.removeJsessionIdFromUrl(referringUrl);
             }
             exportToForm(export, form, admin);
@@ -147,7 +147,8 @@ public class ExportController implements XssCheckAware {
     }
 
     @PostMapping("/{id:\\d+}/save.action")
-    public String save(@PathVariable int id, ExportForm form, Admin admin, Popups popups) throws Exception {
+    @RequiredPermission("export.change")
+    public String save(@PathVariable int id, ExportForm form, Admin admin, Popups popups) {
         if (isInvalidForm(form, admin, popups)) {
             return MESSAGES_VIEW;
         }
@@ -156,7 +157,7 @@ public class ExportController implements XssCheckAware {
         } else {
             updateExport(id, form, admin, admin.getCompanyID());
         }
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         return redirectToView(id);
     }
 
@@ -168,7 +169,7 @@ public class ExportController implements XssCheckAware {
         return "redirect:/export/" + id + "/view.action";
     }
 
-    private void updateExport(int id, ExportForm form, Admin admin, int companyId) throws Exception {
+    private void updateExport(int id, ExportForm form, Admin admin, int companyId) {
         ExportPredef export = exportService.get(id, companyId);
         ExportPredef oldExport = exportService.get(id, companyId);
         formToExport(form, export, admin);
@@ -180,7 +181,7 @@ public class ExportController implements XssCheckAware {
         }
     }
 
-    private int createNewExport(ExportForm form, Admin admin, int companyId) throws Exception {
+    private int createNewExport(ExportForm form, Admin admin, int companyId) {
         ExportPredef export = new ExportPredef();
         export.setCompanyID(companyId);
         formToExport(form, export, admin);
@@ -189,7 +190,7 @@ public class ExportController implements XssCheckAware {
         return newId;
     }
 
-    private void formToExport(ExportForm form, ExportPredef export, Admin admin) {
+    protected void formToExport(ExportForm form, ExportPredef export, Admin admin) {
         export.setShortname(form.getShortname());
         export.setDescription(form.getDescription());
         export.setMailinglists(StringUtils.join(ArrayUtils.toObject(form.getMailinglists()), ";"));
@@ -268,13 +269,9 @@ public class ExportController implements XssCheckAware {
     }
 
     private List<ExportColumnMapping> getExportCustomColumns(ExportPredef export, Admin admin) {
-        if (admin.isRedesignedUiUsed()) {
-            List<ExportColumnMapping> customCols = ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
-            customCols.sort(Comparator.comparing(ExportColumnMapping::getDbColumn));
-            return customCols;
-        } else {
-            return ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
-        }
+        List<ExportColumnMapping> customCols = ExportUtils.getCustomColumnMappingsFromExport(export, admin, columnInfoService);
+        customCols.sort(Comparator.comparing(ExportColumnMapping::getDbColumn));
+        return customCols;
     }
 
     private String changelog(ExportPredef oldExport, ExportPredef newExport, Admin admin) {
@@ -308,7 +305,7 @@ public class ExportController implements XssCheckAware {
     private String getExportColumnsCsv(ExportPredef newExport) {
         return StringUtils.join(newExport.getExportColumnMappings().stream()
                 .map(ExportColumnMapping::getDbColumn)
-                .collect(Collectors.toList()), ",");
+                .toList(), ",");
     }
 
     protected boolean isInvalidForm(ExportForm form, Admin admin, Popups popups) {
@@ -318,7 +315,7 @@ public class ExportController implements XssCheckAware {
         return popups.hasAlertPopups();
     }
 
-    protected void prepareViewAttrs(Model model, Admin admin, ExportPredef export) throws Exception {
+    protected void prepareViewAttrs(Model model, Admin admin, ExportPredef export) {
         model.addAttribute("timeZones", TimeZone.getAvailableIDs());
         model.addAttribute("dateFormats", DateFormat.values());
         model.addAttribute("dateTimeFormats", DateFormat.values());
@@ -349,7 +346,7 @@ public class ExportController implements XssCheckAware {
         form.setTimeLimitsLinkedByAnd(true);
     }
 
-    private void exportToForm(ExportPredef export, ExportForm form, Admin admin) throws Exception {
+    protected void exportToForm(ExportPredef export, ExportForm form, Admin admin) {
         form.setShortname(export.getShortname());
         form.setDescription(export.getDescription());
 
@@ -388,7 +385,7 @@ public class ExportController implements XssCheckAware {
         form.setUserStatus(export.getUserStatus());
     }
 
-    private void setFileFormatToForm(ExportPredef export, ExportForm form) throws Exception {
+    private void setFileFormatToForm(ExportPredef export, ExportForm form) {
         form.setSeparator(export.getSeparator());
         form.setDelimiter(export.getDelimiter());
         form.setAlwaysQuote(export.isAlwaysQuote());
@@ -428,33 +425,9 @@ public class ExportController implements XssCheckAware {
         return "de".equalsIgnoreCase(admin.getAdminLang());
     }
 
-    @GetMapping("/{id:\\d+}/confirmDelete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String confirmDelete(@PathVariable int id, Model model, Admin admin, Popups popups) {
-        ServiceResult<ExportPredef> result = exportService.getExportForDeletion(id, admin.getCompanyID());
-        if (!result.isSuccess()) {
-            popups.addPopups(result);
-            return MESSAGES_VIEW;
-        }
-        model.addAttribute(SHORTNAME_FIELD, result.getResult().getShortname());
-        return "export_delete";
-    }
-
-    @PostMapping("/{id:\\d+}/delete.action")
-    public String delete(@PathVariable int id, Admin admin, Popups popups) {
-        ServiceResult<ExportPredef> result = exportService.delete(id, admin.getCompanyID());
-        if (!result.isSuccess()) {
-            popups.addPopups(result);
-            return MESSAGES_VIEW;
-        }
-        popups.success(SELECTION_DELETED_MSG);
-        writeUserActivityLog(admin, "delete export definition", result.getResult().toString());
-        return "redirect:/export/list.action?restoreSort=true";
-    }
-
     @GetMapping(value = "/delete.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+    @RequiredPermission("export.delete")
+    public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
         validateDeletion(bulkIds);
 
         ServiceResult<List<ExportPredef>> result = exportService.getAllowedForDeletion(bulkIds, admin.getCompanyID());
@@ -471,8 +444,8 @@ public class ExportController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    @PermissionMapping("delete")
-    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+    @RequiredPermission("export.delete")
+    public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
         validateDeletion(bulkIds);
         ServiceResult<UserAction> result = exportService.delete(bulkIds, admin);
 
@@ -484,11 +457,12 @@ public class ExportController implements XssCheckAware {
 
     private void validateDeletion(Set<Integer> ids) {
         if (isEmpty(ids)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+            throw new BadRequestException(NOTHING_SELECTED_MSG);
         }
     }
 
     @PostMapping("/{id:\\d+}/evaluate.action")
+    @RequiredPermission("wizard.export")
     public Object evaluate(@PathVariable int id, ExportForm form, Model model,
                            Admin admin, HttpSession session, Popups popups) {
         Callable<Object> exportWorker = () -> {
@@ -500,25 +474,19 @@ public class ExportController implements XssCheckAware {
             ExportPredef export = prepareExportToEvaluate(id, form, admin);
 
             if (!exportService.isManageAllowed(export, admin)) {
-                throw new UnsupportedOperationException();
+                throw new NotAllowedActionException();
             }
 
             RecipientExportWorker worker = exportService.getRecipientsToZipWorker(export, admin);
             worker.call();
             createExportReport(worker, admin, popups);
             writeEvaluationLog(form, admin, worker);
-            if (admin.isRedesignedUiUsed()) {
-                model.addAttribute("titleKey", "export.finish")
-                        .addAttribute("message", I18nString.getLocaleString("export.finished.result", admin.getLocale(), worker.getExportedLines()))
-                        .addAttribute("downloadUrl", String.format("/export/%d/download.action", id))
-                        .addAttribute("tmpFileName", new File(worker.getExportFile()).getName())
-                        .addAttribute("success", true);
-            } else {
-                model.addAttribute("tmpFileName", new File(worker.getExportFile()).getName());
-                model.addAttribute("exportedLines", worker.getExportedLines());
-                model.addAttribute("downloadFileName", new File(worker.getExportFile()).getName());
-            }
-            return new ModelAndView("export_result", model.asMap());
+            model.addAttribute("titleKey", "export.finish")
+                    .addAttribute("message", I18nString.getLocaleString("export.finished.result", admin.getLocale(), worker.getExportedLines()))
+                    .addAttribute("downloadUrl", String.format("/export/%d/download.action", id))
+                    .addAttribute("tmpFileName", new File(worker.getExportFile()).getName())
+                    .addAttribute("success", true);
+            return new ModelAndView("evaluation_finished", model.asMap());
         };
         updateProgressStatus(model, form);
         return new Pollable<>(
@@ -651,6 +619,7 @@ public class ExportController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{id:\\d+}/download.action", produces = "application/zip")
+    @RequiredPermission("wizard.export")
     public Object download(@PathVariable int id, @RequestParam String tmpFileName, Admin admin, Popups popups) {
         ServiceResult<File> result = exportService.getExportFileToDownload(tmpFileName, admin);
         if (!result.isSuccess()) {
@@ -668,4 +637,5 @@ public class ExportController implements XssCheckAware {
     private void writeUserActivityLog(Admin admin, String action, String description) {
         UserActivityUtil.log(userActivityLogService, admin, action, description, LOGGER);
     }
+
 }

@@ -16,23 +16,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.annotation.Resource;
-
-import com.agnitas.service.UserFormExporter;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.json.JsonWriter;
+import com.agnitas.service.UserFormExporter;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import jakarta.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class UserFormExporterImpl extends ActionExporter implements UserFormExporter {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormExporterImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormExporterImpl.class);
 	
 	@Resource(name="UserFormDao")
 	protected UserFormDao userFormDao;
@@ -45,7 +43,7 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 		UserForm userForm = userFormDao.getUserForm(formID, companyID);
 		Set<Integer> actionIDs = new HashSet<>();
 		
-		try (JsonWriter writer = new JsonWriter(output, "UTF-8")) {
+		try (JsonWriter writer = new JsonWriter(output)) {
 			writer.openJsonObject();
 			
 			if (exportVersionSignAndCompanyId) {

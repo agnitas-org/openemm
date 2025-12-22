@@ -20,28 +20,27 @@ import java.util.Vector;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
 import com.agnitas.emm.core.preview.service.PreviewSettings;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
 import com.agnitas.messages.I18nString;
-import com.agnitas.preview.PreviewFactory;
-import com.agnitas.preview.TAGCheckFactory;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import com.agnitas.preview.AgnTagException;
 import com.agnitas.preview.Page;
 import com.agnitas.preview.Preview;
+import com.agnitas.preview.PreviewFactory;
 import com.agnitas.preview.PreviewHelper;
 import com.agnitas.preview.TAGCheck;
+import com.agnitas.preview.TAGCheckFactory;
 import com.agnitas.util.SafeString;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
@@ -54,13 +53,8 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     private PreviewFactory previewFactory;
     private TAGCheckFactory tagCheckFactory;
 
-
     @Override
     public PreviewResult getPreview(PreviewSettings settings, int companyId, Admin admin) throws Exception {
-        if (companyId <= 0) {
-            throw new UnknownCompanyIdException(companyId);
-        }
-
         final Mailing mailing = mailingDao.getMailing(settings.getMailingId(), companyId);
         if (mailing == null) {
             return new PreviewResult(settings.getFormat(), Optional.empty());
@@ -72,11 +66,6 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         }
 
         return renderMailingTypeDependentPreview(mediaType, mailing, admin.getLocale(), settings);
-    }
-
-    @Override
-    public boolean isPostMailing(Mailing mailing) {
-        return false;
     }
 
     @Override
@@ -117,8 +106,7 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
         return output;
     }
 
-    @Override
-    public Page generateBackEndPreview(PreviewSettings settings) {
+    private Page generateBackEndPreview(PreviewSettings settings) {
         final Preview.Size size = settings.getPreviewSize();
         final boolean isMobileView = size == Preview.Size.MOBILE_PORTRAIT || size == Preview.Size.MOBILE_LANDSCAPE;
 

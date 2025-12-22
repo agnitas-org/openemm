@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
 import net.htmlparser.jericho.Attribute;
 import net.htmlparser.jericho.Attributes;
 import net.htmlparser.jericho.Source;
@@ -47,9 +47,9 @@ public final class HtmlChecker {
 		} catch (HtmlCheckerException e) {
 			HtmlCheckerError error = e.getErrors().iterator().next();
 			if (StringUtils.isNotBlank(field) && error instanceof HtmlCheckerForbiddenTagError tagError) {
-				throw new RequestErrorException(Map.of(field, tagError.toMessage()));
+				throw new BadRequestException(Map.of(field, tagError.toMessage()));
 			}
-			throw new RequestErrorException(error.toMessage());
+			throw new BadRequestException(error.toMessage());
 		}
     }
 

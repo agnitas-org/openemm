@@ -14,11 +14,7 @@
     }
 
     #domInitializer() {
-      if (this.config.isUxUpdateRollback) {
-        new AGN.Lib.Dashboard.Calendar(this.el, this.config);
-      } else {
-        new AGN.Lib.Dashboard.CalendarLight(this.el, this.config);
-      }
+      new AGN.Lib.Dashboard.CalendarLight(this.el, this.config);
     }
 
     remove() {

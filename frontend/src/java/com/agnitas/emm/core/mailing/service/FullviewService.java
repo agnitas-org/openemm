@@ -10,11 +10,8 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.exception.FormNotFoundException;
-
 public interface FullviewService {
 
-	String getFullviewUrl(int companyID, int mailingID, int customerID, String formNameOrNull) throws UnknownCompanyIdException, FormNotFoundException, FullviewException;
+	String getFullviewUrl(int companyID, int mailingID, int customerID, String formNameOrNull) throws FullviewException;
 	
 }

@@ -10,13 +10,21 @@
 
 package com.agnitas.web.mvc;
 
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.util.Map;
+
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
-import com.agnitas.exception.DetailedRequestErrorException;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.DetailedUiMessageException;
+import com.agnitas.exception.ForbiddenException;
+import com.agnitas.exception.ResourceNotFoundException;
+import com.agnitas.exception.UiMessageException;
+import com.agnitas.util.HttpUtils;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.exception.NoPreviewImageException;
-import com.agnitas.util.HttpUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -24,10 +32,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
-
-import java.util.Map;
-
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import org.springframework.web.servlet.ModelAndView;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {
@@ -44,18 +49,18 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler(BindException.class)
-    public String onBindException(final BindException e, final Popups popups) {
+    public String onBindException(BindException e, Popups popups) {
         final FieldError fieldError = e.getFieldError();
         if (fieldError != null && fieldError.getRejectedValue() != null) {
             popups.alert("error.input.invalid", fieldError.getRejectedValue());
         } else {
-            popups.alert("Error");
+            popups.defaultError();
         }
         return MESSAGES_VIEW;
     }
 
 	@ExceptionHandler(XSSHtmlException.class)
-	public String onXSSHtmlException(final XSSHtmlException e, final Popups popups) {
+	public String onXSSHtmlException(XSSHtmlException e, Popups popups) {
 		for (HtmlCheckError error : e.getErrors()) {
 			popups.alert(error.toMessage());
 		}
@@ -63,24 +68,41 @@ public class ControllerExceptionHandler {
 		return MESSAGES_VIEW;
 	}
 
-	@ExceptionHandler(RequestErrorException.class)
-    public String onRequestErrorException(RequestErrorException e, Popups popups) {
-        e.getErrors().forEach(popups::alert);
-        e.getFieldsErrors().forEach(popups::fieldError);
-        return MESSAGES_VIEW;
+    @ExceptionHandler(BadRequestException.class)
+    public ModelAndView onBadRequestException(BadRequestException e, Popups popups) {
+        return showErrors(e, popups, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(UnsupportedOperationException.class)
-    public String onUnsupportedOperationException(Popups popups) {
-        popups.alert("Error");
-        return MESSAGES_VIEW;
+    @ExceptionHandler(ForbiddenException.class)
+    public ModelAndView onForbiddenException(ForbiddenException e, Popups popups) {
+        return showErrors(e, popups, HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(DetailedRequestErrorException.class)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ModelAndView onResourceNotFoundException(ResourceNotFoundException e, Popups popups) {
+        return showErrors(e, popups, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UiMessageException.class)
+    public ModelAndView onUiMessageException(UiMessageException e, Popups popups) {
+        return showErrors(e, popups, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(DetailedUiMessageException.class)
     @ResponseBody
-    public DataResponseDto<Map<String, Object>> onDetailedRequestErrorException(DetailedRequestErrorException e, Popups popups) {
-        e.getErrors().forEach(popups::alert);
-        e.getFieldsErrors().forEach(popups::fieldError);
+    public DataResponseDto<Map<String, Object>> onDetailedRequestErrorException(DetailedUiMessageException e, Popups popups) {
+        addErrors(e, popups);
         return new DataResponseDto<>(e.getDetails(), popups, false);
     }
+
+    private ModelAndView showErrors(UiMessageException exception, Popups popups, HttpStatus httpStatus) {
+        addErrors(exception, popups);
+        return new ModelAndView(MESSAGES_VIEW, httpStatus);
+    }
+
+    private void addErrors(UiMessageException exception, Popups popups) {
+        exception.getErrors().forEach(popups::alert);
+        exception.getFieldsErrors().forEach(popups::fieldError);
+    }
+
 }

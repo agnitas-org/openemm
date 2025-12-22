@@ -10,29 +10,7 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.beans.Campaign;
-import com.agnitas.dao.impl.CampaignDaoImpl;
-import com.agnitas.dao.impl.MailingComponentDaoImpl;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
-import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
-import jakarta.mail.internet.InternetAddress;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
-import com.agnitas.dao.impl.mapper.DateRowMapper;
-import com.agnitas.util.SafeString;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-
 import java.text.DateFormat;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,9 +24,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Campaign;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
+import com.agnitas.dao.impl.CampaignDaoImpl;
+import com.agnitas.dao.impl.MailingComponentDaoImpl;
+import com.agnitas.dao.impl.mapper.DateRowMapper;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightMailing;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
+import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
+import com.agnitas.util.SafeString;
+import jakarta.mail.internet.InternetAddress;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+
 public class MailingDataSet extends BIRTDataSet {
 
 	public static class MailingData {
+
         int mailingId;
 		String mailingName;
         String description;
@@ -465,7 +465,7 @@ public class MailingDataSet extends BIRTDataSet {
             }
             return mailingIds;
         } catch (Exception e) {
-            logger.error(MessageFormat.format("Error occured: {0}", e.getMessage()), e);
+            logger.error("Error occurred: %s".formatted(e.getMessage()), e);
             return new LinkedList<>();
         }
     }

@@ -151,8 +151,7 @@ public class AdminGroupImpl implements AdminGroup {
 	    return groupIds;
 	}
 
-	@Override
-	public boolean permissionAllowedByParentGroups(Permission... permission) {
+	private boolean permissionAllowedByParentGroups(Permission... permission) {
 		if (parentGroups != null && !parentGroups.isEmpty() ) {
 			for (AdminGroup adminGroup : parentGroups) {
 				if (adminGroup.permissionAllowed(permission)) {

@@ -12,8 +12,8 @@ package com.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.recipient.service.RecipientModel;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientModel;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.endpoint.Utils;

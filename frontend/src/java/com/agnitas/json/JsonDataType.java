@@ -11,6 +11,7 @@
 package com.agnitas.json;
 
 public enum JsonDataType {
+
     STRING,
     INTEGER,
     NUMBER,
@@ -23,12 +24,12 @@ public enum JsonDataType {
 		return name().toLowerCase();
 	}
 
-	public static JsonDataType getFromString(String value) throws Exception {
+	public static JsonDataType getFromString(String value) {
 		for (JsonDataType jsonDataType : JsonDataType.values()) {
 			if (jsonDataType.name().toLowerCase().equals(value)) {
 				return jsonDataType;
 			}
 		}
-		throw new Exception("Invalid JSON data type: " + value);
+		throw new IllegalArgumentException("Invalid JSON data type: " + value);
 	}
 }

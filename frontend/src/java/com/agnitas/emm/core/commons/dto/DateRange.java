@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.commons.dto;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 public class DateRange extends BaseRange<Date> {
@@ -20,4 +21,12 @@ public class DateRange extends BaseRange<Date> {
     public DateRange(Date from, Date to) {
         super(from, to);
     }
+
+    public DateRange(ZonedDateTime from, ZonedDateTime to) {
+        this(
+                from == null ? null : Date.from(from.toInstant()),
+                to == null ? null : Date.from(to.toInstant())
+        );
+    }
+
 }

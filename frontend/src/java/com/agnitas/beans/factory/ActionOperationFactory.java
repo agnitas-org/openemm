@@ -8,7 +8,6 @@
 
 */
 
-
 package com.agnitas.beans.factory;
 
 import java.util.List;
@@ -16,12 +15,9 @@ import java.util.List;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 
-
 public interface ActionOperationFactory {
 	
 	AbstractActionOperationParameters newActionOperation(String typeName);
-
-    AbstractActionOperationParameters newActionOperation(ActionOperationType type);
 
     List<ActionOperationType> getTypesList();
 

@@ -7,17 +7,15 @@ import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.user.service.UserSelfService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/user/self")
-@PermissionMapping("user.self")
 public class UserSelfControllerOpenemm extends UserSelfController {
 
     public UserSelfControllerOpenemm(WebStorage webStorage, CompanyDao companyDao, AdminPreferencesDao adminPreferencesDao, AdminService adminService, AdminGroupDao adminGroupDao, ConfigService configService, UserActivityLogService userActivityLogService, PasswordCheck passwordCheck, EmmLayoutBaseDao layoutBaseDao, LogonService logonService, UserSelfService userSelfService) {

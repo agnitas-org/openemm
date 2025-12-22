@@ -19,6 +19,7 @@ import	java.util.Map;
 import com.agnitas.backend.DBase;
 import com.agnitas.backend.URL;
 import com.agnitas.backend.URLExtension;
+import com.agnitas.backend.exceptions.ItemException;
 
 /**
  * Accesses all tag relevant tables (rdir_url_tbl, rdir_url_param_tbl
@@ -32,7 +33,7 @@ public class UrlDAO {
 		mailingID = forMailingID;
 	}
 	
-	public List <URL> retrieve (DBase dbase, URLExtension urlExtension) throws SQLException {
+	public List <URL> retrieve (DBase dbase, URLExtension urlExtension) throws SQLException, ItemException {
 		try (DBase.With with = dbase.with ()) {
 			List <Map <String, Object>>	rq;
 			String 				escape = dbase.isOracle () ? "" : "`";
@@ -61,7 +62,7 @@ public class UrlDAO {
 					urls.put (urlID, url);
 				}
 				if ((url != null) && (usage == 0) && (paramKey != null) && (paramValue != null)) {
-					urlExtension.add (urlID, paramKey, paramValue);
+					urlExtension.add (url, paramKey, paramValue);
 				}
 			}
 			return new ArrayList<>(urls.values ());

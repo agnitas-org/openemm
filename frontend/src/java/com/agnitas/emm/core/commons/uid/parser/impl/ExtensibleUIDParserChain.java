@@ -15,14 +15,14 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
+import com.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of ExtensibleUIDParser interface to register a list of parsers.

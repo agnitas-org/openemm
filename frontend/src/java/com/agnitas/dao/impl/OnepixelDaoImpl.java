@@ -14,8 +14,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.dao.OnepixelDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +86,13 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 				// If more than 1 row was incremented, then we have to subtract the number of wrongly incremented rows
 				final int correctionValue = touchedLines - 1;
 				
-				logger.error("Invalid data: invalid number of entries found for companyid:" + companyID + ", mailingid:" + mailingID + ", custid:" + recipientID + " , entries:" + touchedLines + " (cleaning up entries exept for the first one)");
+				logger.error("""
+					Invalid data: invalid number of entries found for
+					company id: {},
+					mailing id:{},
+					recipient id: {},
+					entries: {}
+					(cleaning up entries exept for the first one)""", companyID, mailingID, recipientID, touchedLines);
 				// If more than one entry exists, there was an error on the first insert caused by parallel inserts, which will be repaired now
 				// We delete all entries and insert a new single one with the sum of counting of the deleted ones
 				// This is a bit of optimistic, because another process could have found this problem too, and tries to resolve it. But this will not happen too many times

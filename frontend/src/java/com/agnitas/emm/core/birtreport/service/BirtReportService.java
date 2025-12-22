@@ -20,6 +20,8 @@ import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.bean.ReportEntry;
@@ -29,10 +31,8 @@ import com.agnitas.emm.core.birtreport.dto.BirtReportType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 import com.agnitas.emm.core.birtreport.forms.BirtReportForm;
 import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ServiceResult;
 
 public interface BirtReportService {
 
@@ -53,25 +53,18 @@ public interface BirtReportService {
 	void deleteExpired(Date expireDate, int companyId);
 
 	BirtReportDto getBirtReport(Admin admin, int reportId);
+
 	BirtReport getBirtReport(int reportId, int companyId);
 
 	ReportSettingsType getBirtReportSettingsTypeForEvaluation(int activeTab, Admin admin);
 
 	BirtReportDownload evaluate(BirtReportForm form, Admin admin);
 
-	boolean deleteReport(int companyId, int reportId);
-
-	// TODO: EMMGUI-714: Check usages and remove when removing old design
-	PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String sortOrder, int page, int rownums);
-	PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
+	PaginatedList<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
 
 	List<Campaign> getCampaignList(int companyId);
 
 	Map<String, LocalDate> getDatesRestrictionMap(Admin admin, ReportSettingsType type, SimpleDateFormat dateFormatPattern, Map<String, Object> settings);
-
-	String getReportName(int companyId, int reportId);
-
-	boolean isReportExist(int companyId, int reportId);
 
 	List<MailingBase> getFilteredMailings(Admin admin, int filterType, int filterValue, MailingType mailingType);
 
@@ -94,6 +87,7 @@ public interface BirtReportService {
 	ServiceResult<UserAction> markDeleted(Set<Integer> ids, int companyID);
 
     List<ReportEntry> findAllByEmailPart(String email, int companyID);
+
     List<ReportEntry> findAllByEmailPart(String email);
 
 	void storeBirtReportEmailRecipients(List<String> emails, int reportId);

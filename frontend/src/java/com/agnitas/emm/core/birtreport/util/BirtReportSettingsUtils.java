@@ -118,14 +118,12 @@ public class BirtReportSettingsUtils {
     public static final String SUMMARY_GROUP = "report.summary";
     public static final String DETAIL_ANALYSIS_GROUP = "statistic.analysis.detail";
     public static final String OPENER_GROUP = "statistic.opener";
-    public static final String SENDING_OPENER_GROUP = "statistic.sending.opener";
     public static final String DEVICES_GROUP = "statistic.devices";
     public static final String FORMATS_GROUP = "statistic.formats";
 
     public static final int MAILINGS_PREDEFINED = 1;
     public static final int MAILINGS_CUSTOM = 2;
-    public static final int MAILINGS_BASED = 3;
-    
+
     public static final int MAILINGS_GENERAL_NORMAL = 3;
     
     public static final int COMPARISON_PREDEFINED_PERIOD = 0;

@@ -11,10 +11,8 @@
 package com.agnitas.backend;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -383,58 +381,5 @@ public class StringOps {
 				return StringEscapeUtils.unescapeHtml4(returnValue.toString());
 			}
 		}
-	}
-
-	/**
-	 * Find possible columns in a hash-tag that may be used for
-	 * further processing
-	 *
-	 * @param s the string to examine
-	 * @return a list of found columns
-	 */
-	public static List<String> findColumnsInHashtags(String s) {
-		List<String> rc = new ArrayList<>();
-
-		if (s == null) {
-			return rc;
-		}
-
-		int slen = s.length();
-
-		for (int pos = 0; pos < slen; ) {
-			int start = s.indexOf("##", pos);
-
-			if (start != -1) {
-				int end = s.indexOf("##", start + 2);
-
-				if (end != -1) {
-					String hashtag = s.substring(start + 2, end);
-					String[] elements = hashtag.split(":");
-
-					if (elements.length > 0) {
-						switch (elements[0]) {
-							case "MAILING_ID":
-							case "URL_ID":
-							case "SENDDATE-UNENCODED":
-							case "DATE":
-							case "MAILING":
-							case "MAILING-UNENCODED":
-							case "AGNUID":
-							case "PUBID":
-								break;
-							default:
-								rc.add(elements[elements.length - 1].trim().toLowerCase());
-								break;
-						}
-					}
-					pos = end + 2;
-				} else {
-					pos = slen;
-				}
-			} else {
-				pos = slen;
-			}
-		}
-		return rc;
 	}
 }

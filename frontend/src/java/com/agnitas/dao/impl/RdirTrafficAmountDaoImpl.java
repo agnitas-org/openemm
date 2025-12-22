@@ -62,7 +62,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	 * called for reseting company tables
 	 */
 	@Override
-	public boolean emtpyTrafficTables(int companyID) {
+	public boolean emptyTrafficTables(int companyID) {
 		try {
 			update("TRUNCATE TABLE rdir_traffic_agr_"+ companyID + "_tbl");
 			update("TRUNCATE TABLE rdir_traffic_amount_"+ companyID + "_tbl");

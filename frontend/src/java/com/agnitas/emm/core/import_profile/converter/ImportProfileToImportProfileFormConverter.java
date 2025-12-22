@@ -11,12 +11,9 @@
 package com.agnitas.emm.core.import_profile.converter;
 
 import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.util.importvalues.CheckForDuplicates;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -36,7 +33,6 @@ public class ImportProfileToImportProfileFormConverter implements Converter<Impo
         form.setNoHeaders(importProfile.isNoHeaders());
         form.setZipPassword(importProfile.getZipPassword());
         form.setFirstKeyColumn(importProfile.getFirstKeyColumn());
-        form.setCheckForDuplicates(importProfile.getCheckForDuplicates());
         form.setShouldCheckForDuplicates(CheckForDuplicates.COMPLETE.equals(detectCheckForDuplicates(importProfile.getCheckForDuplicates())));
         form.setUpdateAllDuplicates(importProfile.getUpdateAllDuplicates());
         form.setDefaultMailType(importProfile.getDefaultMailType());
@@ -53,7 +49,6 @@ public class ImportProfileToImportProfileFormConverter implements Converter<Impo
         form.setMailinglistsAll(importProfile.isMailinglistsAll());
         form.setImportMode(importProfile.getImportMode());
         form.setReportLocale(localeAsStr(importProfile.getReportLocale()));
-        form.setMediatypes(createMediatypesMap(importProfile));
         form.setSelectedMediatypes(importProfile.getMediatypes());
 
         return form;
@@ -65,11 +60,6 @@ public class ImportProfileToImportProfileFormConverter implements Converter<Impo
         } catch (Exception e) {
             return CheckForDuplicates.COMPLETE;
         }
-    }
-
-    private Map<Integer, String> createMediatypesMap(ImportProfile importProfile) {
-        return importProfile.getMediatypes().stream()
-                .collect(Collectors.toMap(MediaTypes::getMediaCode, m -> "true"));
     }
 
     private String localeAsStr(Locale locale) {

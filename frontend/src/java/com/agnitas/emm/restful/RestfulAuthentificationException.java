@@ -11,6 +11,7 @@
 package com.agnitas.emm.restful;
 
 public class RestfulAuthentificationException extends RuntimeException {
+
 	private static final long serialVersionUID = -6003718491976452085L;
 
 	public RestfulAuthentificationException() {

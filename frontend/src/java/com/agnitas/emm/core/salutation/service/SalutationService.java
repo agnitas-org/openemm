@@ -14,18 +14,15 @@ import java.util.List;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.SalutationEntry;
 import com.agnitas.beans.Title;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ServiceResult;
 
 public interface SalutationService {
 
-    PaginatedListImpl<SalutationEntry> paginatedList(int companyId, String sort, String order, int page, int rowsCount);
-
-    PaginatedListImpl<Title> overview(SalutationOverviewFilter filter);
+    PaginatedList<Title> overview(SalutationOverviewFilter filter);
 
     List<Title> getAll(int companyId, boolean includeGenders);
 
@@ -33,12 +30,10 @@ public interface SalutationService {
 
     void save(Title title);
 
-    boolean delete(int salutationId, int companyId);
-
     ServiceResult<List<Title>> getAllowedForDeletion(Set<Integer> ids, int companyId);
-
 
     ServiceResult<UserAction> bulkDelete(Set<Integer> ids, int companyId);
 
     String resolve(int salutationId, int recipientId, int type, Admin admin);
+
 }

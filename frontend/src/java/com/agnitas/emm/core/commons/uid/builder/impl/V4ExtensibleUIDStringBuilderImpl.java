@@ -19,9 +19,9 @@ import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
-import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 
 public class V4ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuilder {
 

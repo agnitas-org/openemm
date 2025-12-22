@@ -16,17 +16,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map.Entry;
 
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.impl.DynamicTagContentImpl;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import org.apache.commons.lang3.StringUtils;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TargetDao;
-import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
@@ -46,10 +44,12 @@ import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.service.MailingContentService;
-
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This restful service is available at:
@@ -58,8 +58,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	
 	public static final String NAMESPACE = "content";
-
-	public static final Object EXPORTED_TO_STREAM = new Object();
 
 	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailingDao mailingDao;
@@ -246,18 +244,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 
 		DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 		dynamicTag.setMailingID(mailingID);
-		
-		if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
-			throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
-		} else {
-			dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
-
-			// Load and save the new mailing to let any adjustments happen that may be needed
-			mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
-			
-			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
-			return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
-		}
+		return createDynTag(admin, mailingID, dynamicTag);
 	}
 
 	/**
@@ -292,18 +279,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			if (StringUtils.isBlank(dynamicTag.getDynName())) {
 				throw new RestfulClientException("Missing value for property 'name'. String expected");
 			}
-
-			if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
-				throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
-			} else {
-				dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
-				
-				// Load and save the new mailing to let any adjustments happen that may be needed
-				mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
-				
-				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
-				return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
-			}
+			return createDynTag(admin, mailingID, dynamicTag);
 		} else {
 			// Update content of a mailing by name or content_id
 			String requestedContentKeyValue = restfulContext[1];
@@ -354,15 +330,26 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			DynamicTag storedDynamicTag = dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID());
 			
 			if (storedDynamicTag != null) {
-				// Load and save the new mailing to let any adjustments happen that may be needed
-				mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
+				mailingContentService.saveDynTag(dynamicTag, admin.getCompanyID());
 				
 				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
+				mailingDao.updateStatus(admin.getCompanyID(), mailingID, MailingStatus.EDIT, null);
 				return createContentJsonObject(storedDynamicTag);
 			} else {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 		}
+	}
+
+	private JsonObject createDynTag(Admin admin, int mailingID, DynamicTag dynamicTag) throws Exception {
+		if (dynamicTagDao.getId(admin.getCompanyID(), mailingID, dynamicTag.getDynName()) > 0) {
+			throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
+		}
+		if (!mailingContentService.saveDynTag(dynamicTag, admin.getCompanyID())) {
+			throw new RestfulClientException("Content name '%s' is not used in mailing templates".formatted(dynamicTag.getDynName()));
+		}
+		thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
+		return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 	}
 
 	private JsonObject createContentJsonObject(DynamicTag dynamicTag) {
@@ -469,7 +456,9 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 												throw new RestfulClientException("Unexpected 'content' item property: " + contentItemEntry.getKey());
 											}
 										}
-										
+										if (!((JsonObject) contentObject).containsPropertyKey("order")) {
+											dynamicTagContent.setDynOrder(1);
+										}
 										dynamicTag.addContent(dynamicTagContent);
 									} else {
 										throw new RestfulClientException("Invalid data type for 'content' item. JsonObject expected");

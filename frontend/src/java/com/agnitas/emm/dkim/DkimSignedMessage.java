@@ -34,16 +34,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.sun.mail.util.QPEncoderStream;
 import jakarta.mail.Header;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeUtility;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import com.sun.mail.util.QPEncoderStream;
 
 public class DkimSignedMessage extends MimeMessage {
 	private static final int MAXIMUM_MESSAGE_HEADER_LENGTH = 67;
@@ -61,15 +59,21 @@ public class DkimSignedMessage extends MimeMessage {
 		super(session);
 	}
 
-	public DkimSignedMessage setDkimKeyData(String domain, String selector, RSAPrivateKey privateRsaKey, String identity) throws Exception {
+	public DkimSignedMessage setDkimKeyData(String domain, String selector, RSAPrivateKey privateRsaKey, String identity) {
 		if (StringUtils.isBlank(domain)) {
-			throw new Exception("DKIM domain may not be empty");
-		} else if (StringUtils.isBlank(selector)) {
-			throw new Exception("DKIM key selector may not be empty");
-		} else if (privateRsaKey == null) {
-			throw new Exception("DKIM private key may not be empty");
-		} else if (StringUtils.isBlank(identity)) {
-			throw new Exception("DKIM identity may not be empty");
+			throw new IllegalArgumentException("DKIM domain may not be empty");
+		}
+
+		if (StringUtils.isBlank(selector)) {
+			throw new IllegalArgumentException("DKIM key selector may not be empty");
+		}
+
+		if (privateRsaKey == null) {
+			throw new IllegalArgumentException("DKIM private key may not be empty");
+		}
+
+		if (StringUtils.isBlank(identity)) {
+			throw new IllegalArgumentException("DKIM identity may not be empty");
 		}
 		
 		this.domain = domain;

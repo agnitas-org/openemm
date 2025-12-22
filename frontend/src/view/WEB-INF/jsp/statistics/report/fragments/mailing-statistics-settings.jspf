@@ -1,0 +1,224 @@
+<%@ page import="com.agnitas.emm.core.birtreport.dto.FilterType" %>
+<%@ page import="com.agnitas.emm.core.birtreport.dto.PredefinedType" %>
+<%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
+
+<%--@elvariable id="birtReportForm" type="com.agnitas.emm.core.birtreport.forms.BirtReportForm"--%>
+<%--@elvariable id="propertiesMap" type="java.util.Map<ReportSettingsType, Map<String, List<BirtReportSettings.Properties>>>"--%>
+<%--@elvariable id="actionBasedMailings" type="java.util.List"--%>
+<%--@elvariable id="dateBasedMailings" type="java.util.List"--%>
+<%--@elvariable id="intervalBasedMailings" type="java.util.List"--%>
+<%--@elvariable id="followupMailings" type="java.util.List"--%>
+<%--@elvariable id="targetList" type="java.util.List"--%>
+
+<c:set var="PREDEFINED_LAST_ONE" value="<%=PredefinedType.PREDEFINED_LAST_ONE.getValue()%>" scope="request"/>
+<c:set var="PREDEFINED_LAST_THREE" value="<%=PredefinedType.PREDEFINED_LAST_THREE.getValue()%>" scope="request"/>
+<c:set var="PREDEFINED_LAST_FIVE" value="<%=PredefinedType.PREDEFINED_LAST_FIVE.getValue()%>" scope="request"/>
+
+<c:set var="FILTER_NO_FILTER" value="<%=FilterType.FILTER_NO_FILTER.getKey()%>" scope="request"/>
+<c:set var="FILTER_ARCHIVE" value="<%=FilterType.FILTER_ARCHIVE.getKey()%>" scope="request"/>
+<c:set var="FILTER_MAILINGLIST" value="<%=FilterType.FILTER_MAILINGLIST.getKey()%>" scope="request"/>
+<c:set var="FILTER_TARGET" value="<%=FilterType.FILTER_TARGET.getKey()%>" scope="request"/>
+
+<c:set var="MAILING" value="<%= ReportSettingsType.MAILING%>"/>
+<c:set var="MAILING_KEY" value="<%= ReportSettingsType.MAILING.getKey()%>"/>
+
+<c:set var="predefined" value="${birtReportForm.settings[MAILING]['predefineMailing']}"/>
+<c:if test="${empty predefined}">
+    <c:set var="predefined" value="0"/>
+</c:if>
+
+<c:set var="filter" value="${birtReportForm.settings[MAILING]['mailingFilter']}"/>
+<c:if test="${empty filter}">
+    <c:set var="filter" value="${FILTER_NO_FILTER}"/>
+</c:if>
+
+<script id="config:report-settings" type="application/json">
+    {
+        "settingsType" : ${MAILING_KEY},
+        "data" : {
+            "mailingType": ${birtReportForm.settings[MAILING]['mailingType']},
+            "mailingFilter": ${filter},
+            "predefineMailing": ${predefined},
+            "selectedMailings": ${emm:toJson(birtReportForm.settings[MAILING]['selectedMailings'])}
+        },
+        "selectors" : {
+            "filterBlockId" : "#mailing-stat-filter-block select",
+            "normalMailing" : "#normal-mailings-mailing-settings select",
+            "mailingType" : "[name$='settings[MAILING][mailingType]']",
+            "mailingFilter" : "[name='settings[MAILING][mailingFilter]']",
+            "predefineMailing" : "[name='settings[MAILING][predefineMailing]']"
+        }
+
+    }
+</script>
+
+<div>
+    <label class="form-label"><mvc:message code="mailing.Mailing_Type"/></label>
+    <mvc:select path="settings[MAILING][mailingGeneralType]" cssClass="form-control" data-field-vis="">
+        <mvc:option value="3" data-field-vis-hide="#actionbased-mailings-stats,
+                                                        #intervalbased-mailings-stats,
+                                                        #followup-mailings-stats,
+                                                        #datebased-mailings-stats,
+                                                        #mailing-statistic-period"
+                    data-field-vis-show="#normal-type-mailings-stats, #filter-normal-mailing">
+            <mvc:message code="Normal_Mailing"/>
+        </mvc:option>
+        <mvc:option value="4" data-field-vis-hide="#normal-type-mailings-stats,
+                                                        #intervalbased-mailings-stats,
+                                                        #followup-mailings-stats,
+                                                        #datebased-mailings-stats,
+                                                        #filter-normal-mailing"
+                    data-field-vis-show="#actionbased-mailings-stats, #mailing-statistic-period">
+            <mvc:message code="mailing.action.based.mailing"/>
+        </mvc:option>
+        <mvc:option value="5" data-field-vis-hide="#normal-type-mailings-stats,
+                                                        #actionbased-mailings-stats,
+                                                        #intervalbased-mailings-stats,
+                                                        #followup-mailings-stats,
+                                                        #filter-normal-mailing"
+                    data-field-vis-show="#datebased-mailings-stats, #mailing-statistic-period">
+            <mvc:message code="mailing.Rulebased_Mailing"/>
+        </mvc:option>
+        <mvc:option value="6" data-field-vis-hide="#normal-type-mailings-stats,
+                                                        #actionbased-mailings-stats,
+                                                        #followup-mailings-stats,
+                                                        #datebased-mailings-stats,
+                                                        #filter-normal-mailing"
+                    data-field-vis-show="#intervalbased-mailings-stats, #mailing-statistic-period">
+            <mvc:message code="mailing.Interval_Mailing"/>
+        </mvc:option>
+        <mvc:option value="7" data-field-vis-hide="#normal-type-mailings-stats,
+                                                        #actionbased-mailings-stats,
+                                                        #intervalbased-mailings-stats,
+                                                        #datebased-mailings-stats,
+                                                        #filter-normal-mailing"
+                    data-field-vis-show="#followup-mailings-stats, #mailing-statistic-period">
+            <mvc:message code="mailing.Followup_Mailing"/>
+        </mvc:option>
+    </mvc:select>
+</div>
+
+<div>
+    <label class="form-label"><mvc:message code="report.mailings"/></label>
+
+    <div id="normal-type-mailings-stats" class="row g-1">
+        <div class="col-12">
+            <mvc:select  path="settings[MAILING][mailingType]" cssClass="form-control" data-field-vis="">
+                <mvc:option value="1" data-field-vis-hide="#normal-mailings-mailing-settings" data-field-vis-show="#report-mailings-stats">
+                    <mvc:message code="birt.report.predefinedMailing"/>
+                </mvc:option>
+                <mvc:option value="3" data-field-vis-hide="#report-mailings-stats" data-field-vis-show="#normal-mailings-mailing-settings">
+                    <mvc:message var="selectMailingMsg" code="report.mailing.select"/>
+                    ${selectMailingMsg}
+                </mvc:option>
+            </mvc:select>
+        </div>
+
+        <div id="report-mailings-stats" class="col-12">
+            <mvc:select path="settings[MAILING][predefinedMailings]" cssClass="form-control" size="1">
+                <mvc:option value="${PREDEFINED_LAST_ONE}"><mvc:message code="report.mailing.last"/></mvc:option>
+                <mvc:option value="${PREDEFINED_LAST_THREE}"><mvc:message code="report.mailing.last.three"/></mvc:option>
+                <mvc:option value="${PREDEFINED_LAST_FIVE}"><mvc:message code="report.mailing.last.five"/></mvc:option>
+            </mvc:select>
+        </div>
+
+        <div id="normal-mailings-mailing-settings" class="col-12">
+            <mvc:select path="settings[MAILING][selectedMailings]" multiple="true" cssClass="form-control" placeholder="${selectMailingMsg}">
+            </mvc:select>
+        </div>
+    </div>
+
+    <div id="actionbased-mailings-stats">
+        <mvc:select id="action-based-mailings" path="settings[MAILING][selectedMailings]" multiple="true" cssClass="form-control" placeholder="${selectMailingMsg}">
+            <mvc:options items="${actionBasedMailings}" itemValue="id" itemLabel="shortname"/>
+        </mvc:select>
+    </div>
+
+    <div id="datebased-mailings-stats">
+        <mvc:select id="date-based-mailings" path="settings[MAILING][selectedMailings]" multiple="true" cssClass="form-control" placeholder="${selectMailingMsg}">
+            <mvc:options items="${dateBasedMailings}" itemValue="id" itemLabel="shortname"/>
+        </mvc:select>
+    </div>
+
+    <div id="intervalbased-mailings-stats">
+        <mvc:select id="interval-mailings" path="settings[MAILING][selectedMailings]" multiple="true" cssClass="form-control" placeholder="${selectMailingMsg}">
+            <mvc:options items="${intervalBasedMailings}" itemValue="id" itemLabel="shortname"/>
+        </mvc:select>
+    </div>
+
+    <div id="followup-mailings-stats">
+        <mvc:select id="followup-mailings" path="settings[MAILING][selectedMailings]" multiple="true" cssClass="form-control" placeholder="${selectMailingMsg}">
+            <mvc:options items="${followupMailings}" itemValue="id" itemLabel="shortname"/>
+        </mvc:select>
+    </div>
+</div>
+
+<div id="mailing-statistic-period">
+    <jsp:include page="fragments/birtreport-editor-period.jsp">
+        <jsp:param name="periodPath" value="settings[MAILING][periodType]"/>
+        <jsp:param name="startDatePath" value="settings[MAILING][startDate]"/>
+        <jsp:param name="stopDatePath" value="settings[MAILING][stopDate]"/>
+    </jsp:include>
+</div>
+
+<div id="filter-normal-mailing" class="row g-3">
+    <div class="col">
+        <label class="form-label"><mvc:message code="report.mailing.filter"/></label>
+        <mvc:select path="settings[MAILING][mailingFilter]" cssClass="form-control" data-field-vis="" size="1">
+            <mvc:option value="${FILTER_NO_FILTER}" data-field-vis-hide="#mailing-stat-filter-block">
+                <mvc:message code="report.mailing.filter.default"/>
+            </mvc:option>
+            <mvc:option value="${FILTER_ARCHIVE}" data-field-vis-show="#mailing-stat-filter-block">
+                <mvc:message code="mailing.archive"/>
+            </mvc:option>
+            <mvc:option value="${FILTER_MAILINGLIST}" data-field-vis-show="#mailing-stat-filter-block">
+                <mvc:message code="Mailinglist"/>
+            </mvc:option>
+            <mvc:option value="${FILTER_TARGET}" data-field-vis-show="#mailing-stat-filter-block">
+                <mvc:message code="target.Target"/>
+            </mvc:option>
+        </mvc:select>
+    </div>
+
+    <div id="mailing-stat-filter-block" class="col">
+        <div class="d-flex align-items-end h-100">
+            <mvc:select path="settings[MAILING][predefineMailing]" cssClass="form-control" size="1">
+            </mvc:select>
+        </div>
+    </div>
+</div>
+
+<div>
+    <label class="form-label" for="availableTargets_mailing-stat"><mvc:message code="Target-Groups"/></label>
+    <mvc:message var="addTargetGroupMessage" code="addTargetGroup" />
+    <mvc:select path="settings[MAILING][selectedTargets]" id="availableTargets_mailing-stat" cssClass="form-control" multiple="true" placeholder="${addTargetGroupMessage}">
+        <mvc:options items="${targetList}" itemValue="id" itemLabel="targetName"/>
+    </mvc:select>
+</div>
+
+<div class="grid gap-2" style="grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, min-content)">
+    <c:forEach items="${propertiesMap}" var="settings">
+        <c:if test="${settings.key.key == MAILING_KEY}">
+            <c:forEach items="${settings.value}" var="group">
+                <div class="tile tile--sm tile--headless">
+                    <div class="tile-header">
+                        <div class="form-check form-switch">
+                            <input id="general-information-toggle-all" class="form-check-input" type="checkbox" role="switch" data-toggle-checkboxes="on">
+                            <label class="form-label form-check-label" for="general-information-toggle-all"><mvc:message code="${group.key}"/></label>
+                        </div>
+                    </div>
+                    <div class="tile-body vstack gap-2">
+                        <c:forEach items="${group.value}" var="prop">
+                            <div class="form-check form-switch">
+                                <mvc:checkbox path="settings[MAILING][${prop.propName}]" id="property_mailing_${prop.propName}" cssClass="form-check-input" value="true" role="switch"/>
+                                <label class="form-label form-check-label fw-normal" for="property_mailing_${prop.propName}">
+                                    <mvc:message code="${prop.labelCode}"/>
+                                </label>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </div>
+            </c:forEach>
+        </c:if>
+    </c:forEach>
+</div>

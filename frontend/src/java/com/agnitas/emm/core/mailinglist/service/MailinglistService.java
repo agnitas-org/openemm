@@ -10,32 +10,20 @@
 
 package com.agnitas.emm.core.mailinglist.service;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.beans.Mailinglist;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
-import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.service.ServiceResult;
-
 import org.json.JSONArray;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface MailinglistService {
-
-	void bulkDelete(Collection<Integer> mailinglistIds, int companyId);
-
-	List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId);
-
-	void deleteRecipientBindings(Set<Integer> mailinglistIds, int companyId);
-
-	List<LightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId);
 
 	List<Mailinglist> getMailinglists(int companyId);
 
@@ -50,6 +38,7 @@ public interface MailinglistService {
 	String getMailinglistName(int mailinglistId, int companyId);
 
 	ServiceResult<List<Mailinglist>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+
 	List<Integer> delete(Set<Integer> ids, Admin admin);
 
 	List<Mailinglist> getAllMailingListsNames(int companyId);

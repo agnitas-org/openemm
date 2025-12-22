@@ -15,7 +15,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan base-package="org.agnitas, com.agnitas">
+	<context:component-scan base-package="com.agnitas">
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
@@ -62,7 +62,7 @@
 	<bean id="Campaign" class="com.agnitas.beans.impl.CampaignImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Companies -->
-	<bean id="CompanyDaoCache" class="org.agnitas.emm.core.commons.daocache.CompanyDaoCache">
+	<bean id="CompanyDaoCache" class="com.agnitas.emm.core.commons.daocache.CompanyDaoCache">
 		<property name="configService" ref="ConfigService" />
 		<property name="companyDao" ref="CompanyDao" />
 	</bean>
@@ -173,7 +173,7 @@
 	<bean id="MediatypeEmail" class="com.agnitas.beans.impl.MediatypeEmailImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Password handling -->
-	<bean id="PasswordCheck" class="org.agnitas.emm.core.commons.password.PasswordCheckImpl">
+	<bean id="PasswordCheck" class="com.agnitas.emm.core.commons.password.PasswordCheckImpl">
 		<property name="adminService" ref="AdminService" />
 		<property name="configService" ref="ConfigService" />
 	</bean>
@@ -285,7 +285,7 @@
 		</property>
 	</bean>
 
-	<util:list id="extensibleUIDParsers" value-type="org.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser">
+	<util:list id="extensibleUIDParsers" value-type="com.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser">
 		<!-- Add parser for new UID versions at start of list -->
 		<ref bean="UID_5_Parser" />
 		<ref bean="UID_4_Parser" />
@@ -307,12 +307,12 @@
 		</constructor-arg>
 	</bean>
 
-	<bean id="VelocityWrapperFactory" class="org.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl">
+	<bean id="VelocityWrapperFactory" class="com.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl">
 		<property name="velocityWrapperCache" ref="VelocityWrapperCache" />
         <property name="companyAccessCheck" ref="CompanyAccessCheck" />
 	</bean>
 		
-	<bean id="VelocityDirectiveScriptValidator" class="org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator" />
+	<bean id="VelocityDirectiveScriptValidator" class="com.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator" />
 
 <!-- ============================================================================================================================== Misc. -->
 
@@ -550,24 +550,12 @@ Euer freundlicher EMM
 	<!--  =================================================================================
 			 Hashtag-related stuff
 		  ================================================================================= -->
-	<bean id="SaltFileDESKeyProvider" class="com.agnitas.emm.core.commons.encrypt.SaltFileDESKeyProvider">
-		<property name="configService" ref="ConfigService" />
-	</bean>
-	
-	<bean id="ProfileFieldEncryptor" class="com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor">
-		<property name="keyProvider" ref="SaltFileDESKeyProvider" />
-	</bean>
-	
+
 	<bean id="ProfileFieldHashTag" class="com.agnitas.emm.core.hashtag.tags.ProfileFieldHashTag">
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 	
 	<bean id="UnencodedProfileFieldHashTag" class="com.agnitas.emm.core.hashtag.tags.UnencodedProfileFieldHashTag">
-		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
-	</bean>
-	
-	<bean id="ProfileFieldEncryptionHashTag" class="com.agnitas.emm.core.hashtag.tags.ProfileFieldEncryptionHashTag">
-		<property name="profileFieldEncryptor" ref="ProfileFieldEncryptor" />
 		<property name="profileFieldHashTagSupport" ref="ProfileFieldHashTagSupport" />
 	</bean>
 	
@@ -653,12 +641,12 @@ Euer freundlicher EMM
 	</bean>
 
 	<bean id="MailingSummaryDataSetFactory" class="com.agnitas.reporting.birt.external.beans.factory.impl.MailingSummaryDataSetFactoryImpl"/>
-
-	<bean id="componentModelValidator" class="org.agnitas.emm.core.component.service.validation.ComponentModelValidator">
+		  
+	<bean id="componentModelValidator" class="com.agnitas.emm.core.components.entity.validation.ComponentModelValidator">
 		<constructor-arg value="validator-messages"/>
 	</bean>
 
-	<bean id="blacklistModelValidator" class="org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator">
+	<bean id="blacklistModelValidator" class="com.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator">
 		<constructor-arg value="validator-messages"/>
 	</bean>
 
@@ -666,11 +654,11 @@ Euer freundlicher EMM
         <constructor-arg value="validator-messages"/>
     </bean>
     
-    <bean id="bindingModelValidator" class="org.agnitas.emm.core.binding.service.validation.BindingModelValidator">
+    <bean id="bindingModelValidator" class="com.agnitas.emm.core.binding.service.validation.BindingModelValidator">
         <constructor-arg value="validator-messages"/>
     </bean>
     
-    <bean id="recipientModelValidator" class="org.agnitas.emm.core.recipient.service.validation.RecipientModelValidator">
+    <bean id="recipientModelValidator" class="com.agnitas.emm.core.recipient.service.validation.RecipientModelValidator">
         <constructor-arg value="validator-messages"/>
         <constructor-arg ref="ConfigService" />
     </bean>
@@ -679,7 +667,7 @@ Euer freundlicher EMM
         <constructor-arg value="validator-messages"/>
     </bean>
     
-    <bean id="nameModelValidator" class="org.agnitas.emm.core.dynname.service.validation.NameModelValidator">
+    <bean id="nameModelValidator" class="com.agnitas.emm.core.dynname.validation.NameModelValidator">
         <constructor-arg value="validator-messages"/>
     </bean>
     

@@ -12,8 +12,8 @@ package com.agnitas.reporting.birt.external.web.filter;
 
 import java.io.IOException;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import jakarta.servlet.Filter;

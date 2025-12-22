@@ -11,13 +11,14 @@
 package com.agnitas.emm.core.mobile.dao.impl;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.mobile.bean.AccessData;
 import com.agnitas.emm.core.mobile.dao.AccessDataDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
+import org.apache.commons.lang3.StringUtils;
 
 public class AccessDataDaoImpl extends BaseDaoImpl implements AccessDataDao {
 	
-	public static final int MAXIMUM_USERAGENT_STORAGESIZE = 2200;
+	public static final int MAXIMUM_USERAGENT_STORAGESIZE = 2000;
 	public static final int MAXIMUM_REFERRER_STORAGESIZE = 2000;
 
 	@Override
@@ -27,20 +28,21 @@ public class AccessDataDaoImpl extends BaseDaoImpl implements AccessDataDao {
 		
 		// Cut UserAgent to maximum length
 		String userAgentForStorage = accessData.getUserAgent();
-		if (userAgentForStorage != null && userAgentForStorage.length() > MAXIMUM_USERAGENT_STORAGESIZE) {
-			userAgentForStorage = userAgentForStorage.substring(0, MAXIMUM_USERAGENT_STORAGESIZE - 4) + " ...";
+		if (StringUtils.length(userAgentForStorage) > MAXIMUM_USERAGENT_STORAGESIZE) {
+			userAgentForStorage = StringUtils.abbreviate(userAgentForStorage, MAXIMUM_USERAGENT_STORAGESIZE);
 		}
 
 		// Cut referrer to maximum length
 		String refererForStorage = accessData.getReferer();
-		if (refererForStorage != null && refererForStorage.length() > MAXIMUM_REFERRER_STORAGESIZE) {
-			refererForStorage = refererForStorage.substring(0, MAXIMUM_REFERRER_STORAGESIZE - 4) + " ...";
+		if (StringUtils.length(refererForStorage) > MAXIMUM_REFERRER_STORAGESIZE) {
+			refererForStorage = StringUtils.abbreviate(refererForStorage, MAXIMUM_REFERRER_STORAGESIZE);
 		}
 		
 		try {
 			update(sql, userAgentForStorage, accessData.getXuid(), accessData.getIp(), refererForStorage, accessData.getAccessType().toString(), accessData.getMailingID(), accessData.getCustomerID(), accessData.getLinkID(), accessData.getDeviceID());
 		} catch (Exception e) {
-			logger.error("Error inserting Data in access_data_tbl. CustomerID: " + accessData.getXuid(), e);
+			logger.error("Error inserting Data in access_data_tbl. CustomerID: {}", accessData.getXuid(), e);
 		}
 	}
+
 }

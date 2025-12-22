@@ -36,7 +36,7 @@ public class MailingSendOptions {
     private boolean reportSendAfter24h;
     private boolean reportSendAfter48h;
     private boolean reportSendAfter1Week;
-    private boolean requestApproval; // GWUA-5738
+    private int approvalRequester;
     private List<String> reportEmails;
 
     public static Builder builder() {
@@ -122,12 +122,8 @@ public class MailingSendOptions {
         return overwriteTestRecipientId;
     }
 
-    public boolean isRequestApproval() {
-        return requestApproval;
-    }
-
-    public void setRequestApproval(boolean requestApproval) {
-        this.requestApproval = requestApproval;
+    public int getApprovalRequester() {
+        return approvalRequester;
     }
 
     public static class Builder {
@@ -149,7 +145,7 @@ public class MailingSendOptions {
         private boolean reportSendAfter48h;
         private boolean reportSendAfter1Week;
         private DeliveryType deliveryType;
-        private boolean requestApproval; // GWUA-5738
+        private int approvalRequester;
         private List<String> reportEmails;
 
         public Builder setDate(Date date) {
@@ -247,8 +243,8 @@ public class MailingSendOptions {
             return this;
         }
 
-        public Builder setRequestApproval(boolean requestApproval) {
-            this.requestApproval = requestApproval;
+        public Builder setApprovalRequester(int approvalRequester) {
+            this.approvalRequester = approvalRequester;
             return this;
         }
 
@@ -274,8 +270,7 @@ public class MailingSendOptions {
             options.deliveryType = deliveryType;
             options.isActivateAgainToday = isActivateAgainToday;
             options.overwriteTestRecipientId = overwriteTestRecipientId;
-            options.requestApproval = requestApproval;
-
+            options.approvalRequester = approvalRequester;
             return options;
         }
     }

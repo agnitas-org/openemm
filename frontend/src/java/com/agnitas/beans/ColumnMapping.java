@@ -92,20 +92,6 @@ public interface ColumnMapping {
     void setMandatory(boolean mandatory);
 
     /**
-     * Getter for property encrypted
-     *
-     * @return encrypted property for this ColumnMapping
-     */
-    boolean isEncrypted();
-
-    /**
-     * Setter for property encrypted
-     *
-     * @param encrypted new value for encrypted property
-     */
-    void setEncrypted(boolean encrypted);
-
-    /**
      * Getter for property defaultValue
      *
      * @return defaultValue property for this ColumnMapping

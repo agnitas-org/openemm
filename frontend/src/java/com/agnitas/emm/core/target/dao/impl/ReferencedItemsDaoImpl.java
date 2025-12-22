@@ -103,15 +103,15 @@ public class ReferencedItemsDaoImpl extends BaseDaoImpl implements ReferencedIte
 		
 		final BatchPreparedStatementSetter bpss = new BatchPreparedStatementSetter() {
 			@Override
-			public final int getBatchSize() {
+			public int getBatchSize() {
 				return profileFieldNames.size();
 			}
 
 			@Override
-			public final void setValues(final PreparedStatement ps, final int index) throws SQLException {
+			public void setValues(final PreparedStatement ps, final int index) throws SQLException {
 				ps.setInt(1, companyID);
 				ps.setInt(2, targetID);
-				ps.setNString(3, profileFieldNames.get(index));
+				ps.setString(3, profileFieldNames.get(index));
 			}
 		};
 		

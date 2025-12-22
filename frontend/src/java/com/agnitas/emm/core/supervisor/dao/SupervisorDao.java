@@ -75,10 +75,8 @@ public interface SupervisorDao {
 	 * @param pwd password to check
 	 *
 	 * @return {@code true} if given password is current password
-	 *
-	 * @throws SupervisorException on errors checking password
 	 */
-	boolean isCurrentPassword(int id, String pwd) throws SupervisorException;
+	boolean isCurrentPassword(int id, String pwd);
 
 	Supervisor getSupervisor(String supervisorName);
 	
@@ -86,8 +84,6 @@ public interface SupervisorDao {
 	
 	/**
 	 * Creates a new supervisor by given data
-	 *
-	 * @param supervisor
 	 * @return new supervisorID
 	 */
 	int createSupervisor(Supervisor supervisor);

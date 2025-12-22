@@ -11,6 +11,8 @@
 package com.agnitas.web.mvc.impl;
 
 import com.agnitas.messages.Message;
+import com.agnitas.messages.entity.MessagePopup;
+import com.agnitas.messages.enums.MessageType;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -28,27 +30,27 @@ public class PopupsJsonSerializer extends JsonSerializer<PopupsImpl> {
     }
 
     private PopupsDto adopt(PopupsImpl source) {
-        List<PopupsImpl.MessagePopup> popupsMessages = source.getPopupsMessages();
+        List<MessagePopup> popupsMessages = source.getPopupsMessages();
 
         PopupsDto popups = new PopupsDto();
 
-        popups.setSuccess(getMessages(popupsMessages, PopupsImpl.MessageType.SUCCESS));
-        popups.setAlert(getMessages(popupsMessages, PopupsImpl.MessageType.ERROR));
-        popups.setWarning(getMessages(popupsMessages, PopupsImpl.MessageType.WARNING));
-        popups.setInfo(getMessages(popupsMessages, PopupsImpl.MessageType.INFO));
+        popups.setSuccess(getMessages(popupsMessages, MessageType.SUCCESS));
+        popups.setAlert(getMessages(popupsMessages, MessageType.ERROR));
+        popups.setWarning(getMessages(popupsMessages, MessageType.WARNING));
+        popups.setInfo(getMessages(popupsMessages, MessageType.INFO));
         popups.setFields(source.getFieldsMessages());
 
         return popups;
     }
 
-    private List<Message> getMessages(List<PopupsImpl.MessagePopup> messages, PopupsImpl.MessageType type) {
+    private List<Message> getMessages(List<MessagePopup> messages, MessageType type) {
         if (CollectionUtils.isEmpty(messages)) {
             return Collections.emptyList();
         }
 
         return messages.stream()
                 .filter(m -> type.equals(m.getType()))
-                .map(PopupsImpl.MessagePopup::getMessage)
+                .map(MessagePopup::getMessage)
                 .collect(Collectors.toList());
     }
 

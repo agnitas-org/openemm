@@ -10,7 +10,7 @@
 
 package com.agnitas.util.quartz;
 
-import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
+import com.agnitas.emm.core.loginmanager.dao.LoginTrackDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'retentionTime', '7');
  *  INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'LoginTrackTableCleaner'), 'deleteBlockSize', '1000');
  */
+@JobWorker("LoginTrackTableCleaner")
 public class LoginTrackTableCleanerJobWorker extends AbstractLoginTrackTableCleanerJobWorker {
 	
 	/**

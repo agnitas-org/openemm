@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.springws.exceptionresolver.component;
 
-import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
-import org.agnitas.emm.core.component.service.ComponentNotExistException;
+import com.agnitas.emm.core.components.exception.ComponentAlreadyExistException;
+import com.agnitas.emm.core.components.exception.ComponentNotExistException;
 import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 

@@ -17,8 +17,8 @@ import java.util.Objects;
 import javax.sql.DataSource;
 
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.service.RecipientDuplicateSqlOptions;
 import com.agnitas.service.RecipientOptions;
 import com.agnitas.service.RecipientQueryBuilder;
@@ -87,18 +87,18 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     }
 
     @Override
-    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(com.agnitas.beans.Admin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) throws Exception {
+    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(com.agnitas.beans.Admin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) {
         logger.warn("getDuplicateAnalysisSQLStatement is unsupported!");
         return null;
     }
 
     @Override
-    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(com.agnitas.beans.Admin admin, RecipientDuplicateSqlOptions options, java.util.List<String> selectedColumns, boolean includeBounceLoad) throws Exception {
+    public SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(com.agnitas.beans.Admin admin, RecipientDuplicateSqlOptions options, java.util.List<String> selectedColumns, boolean includeBounceLoad) {
         logger.warn("getDuplicateAnalysisSQLStatement is unsupported!");
         return null;
     }
 
-    protected void addBindingCheck(final int companyId, final int adminId, final RecipientOptions options, final SqlPreparedStatementManager mainStatement, boolean isDuplicate) throws Exception {
+    protected void addBindingCheck(final int companyId, final int adminId, final RecipientOptions options, final SqlPreparedStatementManager mainStatement, boolean isDuplicate) {
         SqlPreparedStatementManager sqlCheckBinding = createBindingCheckQuery(companyId, adminId, options);
         // The mailingListId == -1 means "No binding", but ignored ("All" option used instead) in restricted mode (when checkDisabledMailingLists == true).
         if (options.getListId() >= 0) {
@@ -120,11 +120,11 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
         return String.format((isPositive ? "EXISTS (%s)" : "NOT EXISTS (%s)"), statement.getPreparedSqlString());
     }
 
-    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, RecipientOptions options) throws Exception {
+    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, RecipientOptions options) {
         return createBindingCheckQuery(companyId, adminId, options.getListId(), options.getUserStatus(), options.getUserTypes());
     }
 
-    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, int mailingListId, int userStatus, List<String> userTypes) throws Exception {
+    protected SqlPreparedStatementManager createBindingCheckQuery(int companyId, int adminId, int mailingListId, int userStatus, List<String> userTypes) {
         SqlPreparedStatementManager sqlCheckBinding;
 
         sqlCheckBinding = new SqlPreparedStatementManager("SELECT 1 FROM customer_" + companyId + "_binding_tbl bind");
@@ -139,7 +139,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
         if (mailingListId >= 0) {
             if (userStatus != 0) {
                 // Check for valid UserStatus code
-                UserStatus.getUserStatusByID(userStatus);
+                UserStatus.getByCode(userStatus);
 
                 sqlCheckBinding.addWhereClause("bind.user_status = ?", userStatus);
             }

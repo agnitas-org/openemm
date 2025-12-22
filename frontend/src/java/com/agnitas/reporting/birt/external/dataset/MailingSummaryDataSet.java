@@ -10,25 +10,6 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightMailing;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.SendStatRow;
-import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import com.agnitas.util.DbUtilities;
-import com.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.EmptyResultDataAccessException;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +21,24 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightMailing;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.SendStatRow;
+import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 /**
  * Methods in this class must be kept "public", so they can be called from Birt via "rptdesign"-files, which use the class "MailingStatisticDataSet".
@@ -125,20 +124,20 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
      */
     public int createTempTable() throws Exception {
         int tempTableID = getNextTmpID();
-        StringBuilder createTable = new StringBuilder("CREATE TABLE ");
-        createTable.append(getTempTableName(tempTableID))
-                .append(" (")
-                .append("category VARCHAR(200)")
-                .append(", category_index INTEGER")
-                .append(", targetgroup_id INTEGER")
-                .append(", targetgroup VARCHAR(200)")
-                .append(", targetgroup_index INTEGER")
-                .append(", value INTEGER")
-                .append(", partial_value INTEGER")
-                .append(", rate DOUBLE")
-                .append(", rate_delivered DOUBLE")
-                .append(")");
-        updateEmbedded(createTable.toString());
+        updateEmbedded("""
+                CREATE TABLE %s
+                (
+                    category          VARCHAR(200),
+                    category_index    INTEGER,
+                    targetgroup_id    INTEGER,
+                    targetgroup       VARCHAR(200),
+                    targetgroup_index INTEGER,
+                    value             INTEGER,
+                    partial_value     INTEGER,
+                    rate              DOUBLE,
+                    rate_delivered    DOUBLE
+                )
+                """.formatted(getTempTableName(tempTableID)));
         return tempTableID;
     }
 
@@ -225,11 +224,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         queryBuilder
                 .append("SELECT mailtypes.id AS mailtype, SUM(CASE WHEN no_of_mailings IS NULL THEN 0 ELSE no_of_mailings END) mails_sent ")
                 .append("FROM ( ")
-                .append("SELECT ").append(MailType.HTML.getIntValue()).append(" AS id FROM dual ")
-                .append("UNION ALL SELECT ").append(MailType.HTML_OFFLINE.getIntValue()).append(" AS id FROM dual ")
+                .append("SELECT ").append(MailType.HTML.getIntValue()).append(" AS id ").append(isPostgreSQL() ? "" : "FROM dual ")
+                .append("UNION ALL SELECT ").append(MailType.HTML_OFFLINE.getIntValue()).append(" AS id ").append(isPostgreSQL() ? "" : "FROM dual ")
                 // adds unknown mail type "3" for correct sent mails calculation
-                .append("UNION ALL SELECT ").append(3).append(" AS id FROM dual ")
-                .append("UNION ALL SELECT ").append(MailType.TEXT.getIntValue()).append(" AS id FROM dual) mailtypes ")
+                .append("UNION ALL SELECT ").append(3).append(" AS id ").append(isPostgreSQL() ? "" : "FROM dual ")
+                .append("UNION ALL SELECT ").append(MailType.TEXT.getIntValue()).append(" AS id ").append(isPostgreSQL() ? "" : "FROM dual ").append(") mailtypes ")
                 .append("LEFT JOIN mailing_account_tbl ma ")
                 .append("ON ma.mailtype = mailtypes.id ")
                 .append("AND ma.company_id = ? ")
@@ -1576,7 +1575,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     private String getTargetIds(int mailingId, int companyId) {
         String query = "SELECT target_expression FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
-        String targetExpression = selectObjectDefaultNull(query, StringRowMapper.INSTANCE, mailingId, companyId);
+        String targetExpression = selectStringDefaultNull(query, mailingId, companyId);
         final Pattern pattern = Pattern.compile("^.*?(\\d+)(.*)$");
         Set<Integer> targetIds = new HashSet<>();
         if (targetExpression != null) {

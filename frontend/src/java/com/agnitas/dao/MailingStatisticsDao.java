@@ -11,6 +11,7 @@
 package com.agnitas.dao;
 
 import java.util.Map;
+import java.util.Set;
 
 import com.agnitas.beans.Mailing;
 
@@ -23,9 +24,14 @@ public interface MailingStatisticsDao {
 	/**
 	 * This method returns the Follow-up statistics for the given mailing.
 	 */
-	int getFollowUpStat(int mailingID, int baseMailing, String followUpType, int companyID, boolean useTargetGroups);
+	int getFollowUpRecipientsCount(int mailingID, int baseMailing, String followUpType, int companyID);
 
-	int getFollowUpStat(int followUpFor, String followUpType, int companyID, String sqlTargetExpression);
+	int getFollowUpRecipientsCount(int followUpFor, String followUpType, int companyID, String sqlTargetExpression);
 
 	Map<Integer, Integer> getSendStats(Mailing mailing, int companyId);
+
+	int getRecipientsCount(Mailing mailing);
+
+	Set<Integer> getRecipientsIds(Mailing mailing);
+
 }

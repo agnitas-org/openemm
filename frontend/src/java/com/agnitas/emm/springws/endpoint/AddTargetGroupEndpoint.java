@@ -12,8 +12,12 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.TargetImpl;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
+import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupRequest;
+import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +26,6 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.Target;
-import com.agnitas.beans.impl.TargetImpl;
-import com.agnitas.emm.core.target.service.TargetService;
-import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
-import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupRequest;
-import com.agnitas.emm.springws.jaxb.extended.AddTargetGroupResponse;
-
 @Endpoint
 public class AddTargetGroupEndpoint extends BaseEndpoint {
 
@@ -36,7 +33,7 @@ public class AddTargetGroupEndpoint extends BaseEndpoint {
     private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-    public AddTargetGroupEndpoint(TargetService targetService, final SecurityContextAccess securityContextAccess) {
+    public AddTargetGroupEndpoint(TargetService targetService, SecurityContextAccess securityContextAccess) {
         this.targetService = Objects.requireNonNull(targetService, "targetService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }

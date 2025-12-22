@@ -11,52 +11,12 @@
 package com.agnitas.json.schema.validator;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
 public class NumberUtilities {
-	public static DecimalFormat NUMBER_WITH_POINTS = new DecimalFormat("###,##0");
-	public static DecimalFormat NUMBER_WITH_MIN_2_DIGITS = new DecimalFormat("00");
-	public static DecimalFormat NUMBER_WITH_MIN_4_DIGITS = new DecimalFormat("0000");
-	public static DecimalFormat NUMBER_WITH_MIN_6_DIGITS = new DecimalFormat("000000");
-	public static DecimalFormat NUMBER_WITH_MIN_7_DIGITS = new DecimalFormat("0000000");
-
-	/**
-	 * Check for a single digit
-	 *
-	 * @param value
-	 * @return
-	 */
-	public static boolean isDigit(final String digitString) {
-		for (final char character : digitString.toCharArray()) {
-			if (!Character.isDigit(character)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Check for a integer value without decimals
-	 *
-	 * @param value
-	 * @return
-	 */
-	public static boolean isInteger(final String value) {
-		try {
-			Integer.parseInt(value);
-			return true;
-		} catch (final NumberFormatException e) {
-			return false;
-		}
-	}
 
 	/**
 	 * Check for a double value with optional decimals after a dot(.) and exponent
-	 *
-	 * @param value
-	 * @return
 	 */
 	public static boolean isDouble(final String value) {
 		try {
@@ -89,12 +49,8 @@ public class NumberUtilities {
 	 * Parse a number of unknown type in english notation like "1,234,567.90E-12".
 	 * Resulting type may be Integer, Long, Float, Double, BigDecimal. Byte and Short are returned as Integer.
 	 * The resulting type is the smallest type able to contain the given number without loss of accuracy.
-	 *
-	 * @param numberString
-	 * @return
-	 * @throws NumberFormatException
 	 */
-	public static Number parseNumber(final String numberString) throws NumberFormatException {
+	public static Number parseNumber(String numberString) {
 		if (!isNumber(numberString)) {
 			throw new NumberFormatException("Not a number: '" + numberString + "'");
 		} else if (numberString.contains("e") || numberString.contains("E")) {
@@ -148,30 +104,4 @@ public class NumberUtilities {
 		}
 	}
 
-	public static boolean isHexNumber(final String numberString) {
-		return Pattern.matches("0(x|X)[0-9A-Fa-f]+", numberString);
-	}
-
-	public static Number parseHexNumber(final String hexNumberString) throws NumberFormatException {
-		if (!isHexNumber(hexNumberString)) {
-			throw new NumberFormatException("Not a hex number: '" + hexNumberString + "'");
-		} else {
-			if (hexNumberString.length() < 12) {
-				return Integer.parseInt(hexNumberString.substring(2), 16);
-			} else {
-				final BigInteger value = new BigInteger(hexNumberString.substring(2), 16);
-				final boolean isInteger = BigInteger.valueOf(Integer.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0;
-				if (isInteger) {
-					return Integer.parseInt(hexNumberString.substring(2), 16);
-				} else {
-					final boolean isLong = BigInteger.valueOf(Long.MIN_VALUE).compareTo(value) < 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) < 0;
-					if (isLong) {
-						return Long.parseLong(hexNumberString.substring(2), 16);
-					} else {
-						return value;
-					}
-				}
-			}
-		}
-	}
 }

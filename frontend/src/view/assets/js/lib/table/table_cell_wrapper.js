@@ -1,17 +1,25 @@
-(function () {
-  
-  AGN.Lib.TableCellWrapper = function (link) {
-    if (link) {
-      var cell = document.createElement('a');
-      cell.href = link;
-      cell.style.cssText =
-        'display: block;' +
-        'height: 33px;' +
-        'margin:  -8px -6px;' +
-        'padding: 8px 6px;';
+(() => {
+
+  const Template = AGN.Lib.Template;
+
+  AGN.Lib.TableCellWrapper = function (viewLinkTemplate, viewInModal, isRestoreMode, data) {
+    if (viewLinkTemplate && !isRestoreMode) {
+      const cell = document.createElement('a');
+
+      if (!Template.exists(viewLinkTemplate)) {
+        Template.register(viewLinkTemplate, viewLinkTemplate);
+      }
+
+      cell.href = AGN.url(Template.text(viewLinkTemplate, data).trim());
+      cell.classList.add('ag-grid-cell-link');
+
+      if (viewInModal) {
+        cell.setAttribute('data-confirm', '')
+      }
+
       return cell;
-    } else {
-      return document.createElement('div');
     }
+
+    return document.createElement('div');
   };
 })();

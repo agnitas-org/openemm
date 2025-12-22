@@ -10,18 +10,18 @@
 
 package com.agnitas.emm.core.logon.dao;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Implementation of {@link HostAuthenticationDao}.
@@ -46,12 +46,10 @@ import java.util.List;
 public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthenticationDao {
 
 	@Override
-	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
+	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Reading security code for admin " + adminID + " on host " + hostID);
-		}
+		logger.info("Reading security code for admin {} on host {}", adminID, hostID);
 
 		List<String> list = select("SELECT security_code FROM hostauth_pending_tbl WHERE admin_id = ? AND host_id = ?", new HostAuthenticationSecurityCodeRowMapper(), adminID, hostID);
 
@@ -65,12 +63,10 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	}
 	
 	@Override
-	public String getSecurityCode(Supervisor supervisor, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
+	public String getSecurityCode(Supervisor supervisor, String hostID) throws HostAuthenticationDaoException {
 		int supervisorID = supervisor.getId();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Reading security code for supervisor " + supervisorID + " on host " + hostID);
-		}
+		logger.info("Reading security code for supervisor {} on host {}", supervisorID, hostID);
 
 		List<String> list = select("SELECT security_code FROM hostauth_pending_sv_tbl WHERE supervisor_id = ? AND host_id = ?", new HostAuthenticationSecurityCodeRowMapper(), supervisorID, hostID);
 
@@ -88,9 +84,7 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public void writePendingSecurityCode(Admin admin, String hostID, String securityCode) {
 		int adminID = admin.getAdminID();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Writing new pending security code for admin " + adminID + " on host " + hostID);
-		}
+		logger.info("Writing new pending security code for admin {} on host {}", adminID, hostID);
 
 		update("INSERT INTO hostauth_pending_tbl (admin_id, host_id, security_code) VALUES (?, ?, ?)", adminID, hostID, securityCode);
 	}
@@ -100,9 +94,7 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public void writePendingSecurityCode(Supervisor supervisor, String hostID, String securityCode) {
 		int supervisorID = supervisor.getId();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Writing new pending security code for supervisor " + supervisorID + " on host " + hostID);
-		}
+		logger.info("Writing new pending security code for supervisor {} on host {}",supervisorID, hostID);
 
 		update("INSERT INTO hostauth_pending_sv_tbl (supervisor_id, host_id, security_code) VALUES (?, ?, ?)", supervisorID, hostID, securityCode);
 	}
@@ -111,15 +103,11 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public boolean isHostAuthenticated(Admin admin, String hostID) {
 		int adminID = admin.getAdminID();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Checking host authentication for admin " + adminID + " on host " + hostID);
-		}
+		logger.info("Checking host authentication for admin {} on host {}", adminID, hostID);
 
 		int count = selectInt("SELECT count(*) FROM authenticated_hosts_tbl WHERE admin_id = ? AND host_id = ? AND expire_date >= CURRENT_TIMESTAMP", adminID, hostID);
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Found " + count + " host authentication records for admin " + adminID + " on host " + hostID);
-		}
+		logger.info("Found {} host authentication records for admin {} on host {}", count, adminID, hostID);
 
 		return count > 0;
 	}
@@ -128,15 +116,11 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public boolean isHostAuthenticated(Supervisor supervisor, String hostID) {
 		int supervisorID = supervisor.getId();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Checking host authentication for supervisor " + supervisorID + " on host " + hostID);
-		}
+		logger.info("Checking host authentication for supervisor {} on host {}", supervisorID, hostID);
 
 		int count = selectInt("SELECT count(*) FROM authenticated_hosts_sv_tbl WHERE supervisor_id = ? AND host_id = ? AND expire_date >= CURRENT_TIMESTAMP", supervisorID, hostID);
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Found " + count + " host authentication records for supervisor " + supervisorID + " on host " + hostID);
-		}
+		logger.info("Found {} host authentication records for supervisor {} on host {}", count, supervisorID, hostID);
 
 		return count > 0;
 	}
@@ -145,21 +129,15 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Writing host authentication for admin " + adminID + " on host " + hostID);
-		}
-		
+		logger.info("Writing host authentication for admin {} on host {}", adminID, hostID);
+
 		try {
 			if (!renewHostAuthenticationData(admin, hostID, expiresInDays)) {
-				if (logger.isInfoEnabled()) {
-					logger.info("Writing new host authentication data for admin " + adminID + " on host " + hostID);
-				}
+				logger.info("Writing new host authentication data for admin {} on host {}", adminID, hostID);
 
 				writeNewHostAuthenticationData(admin, hostID, expiresInDays);
 			} else {
-				if (logger.isInfoEnabled()) {
-					logger.info("Renewed host authentication data for admin " + adminID + " on host " + hostID);
-				}
+				logger.info("Renewed host authentication data for admin {} on host {}", adminID, hostID);
 			}
 		} catch (Exception e) {
 			String message = "Error writing host authentication data for admin " + adminID + " on host + " + hostID;
@@ -174,21 +152,15 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	public void writeHostAuthentication(Supervisor supervisor, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
 		int supervisorID = supervisor.getId();
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Writing host authentication for supervisor " + supervisorID + " on host " + hostID);
-		}
-		
+		logger.info("Writing host authentication for supervisor {} on host {}", supervisorID, hostID);
+
 		try {
 			if (!renewHostAuthenticationData(supervisor, hostID, expiresInDays)) {
-				if (logger.isInfoEnabled()) {
-					logger.info("Writing new host authentication data for supervisor " + supervisorID + " on host " + hostID);
-				}
+				logger.info("Writing new host authentication data for supervisor {} on host {}", supervisorID, hostID);
 
 				writeNewHostAuthenticationData(supervisor, hostID, expiresInDays);
 			} else {
-				if (logger.isInfoEnabled()) {
-					logger.info("Renewed host authentication data for supervisor " + supervisorID + " on host " + hostID);
-				}
+				logger.info("Renewed host authentication data for supervisor {} on host {}", supervisorID, hostID);
 			}
 		} catch (Exception e) {
 			String message = "Error writing host authentication data for supervisor " + supervisorID + " on host + " + hostID;
@@ -288,43 +260,32 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void removeExpiredHostAuthentications() {
-		if (logger.isInfoEnabled()) {
-			logger.info("Removing expired host authentications");
-		}
-		
+		logger.info("Removing expired host authentications");
+
 		// Remove pending host authentications for admins
 		int count = update("DELETE FROM authenticated_hosts_tbl WHERE expire_date < CURRENT_TIMESTAMP");
 		// Remove pending host authentications for supervisors
 		count += update("DELETE FROM authenticated_hosts_sv_tbl WHERE expire_date < CURRENT_TIMESTAMP");
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Removed " + count + " expired host authentications.");
-		}
+		logger.info("Removed {} expired host authentications.", count);
 	}
 
 	@Override
-	public void removeAuthentictedHost(final String hostId) {
-		final String sql= "DELETE FROM authenticated_hosts_tbl WHERE host_id=?";
-		
-		update(sql, hostId);
+	public void removeAuthenticatedHost(String hostId) {
+        update("DELETE FROM authenticated_hosts_tbl WHERE host_id = ?", hostId);
 	}
 
-
 	@Override
-	public final void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes) {
-		if(logger.isInfoEnabled()) {
-			logger.info(String.format("Removing all pending host authentications older than %d minutes", maxPendingHostAuthenticationsAgeMinutes));
-		}
-		
+	public void removeExpiredPendingAuthentications(int maxPendingHostAuthenticationsAgeMinutes) {
+		logger.info("Removing all pending host authentications older than {} minutes", maxPendingHostAuthenticationsAgeMinutes);
+
 		final Calendar threshold = new GregorianCalendar();
 		threshold.add(Calendar.MINUTE, -maxPendingHostAuthenticationsAgeMinutes);
 		
 		int count = update("DELETE FROM hostauth_pending_tbl WHERE creation_date < ?", threshold);
 		count += update("DELETE FROM hostauth_pending_sv_tbl WHERE creation_date < ?", threshold);
 		
-		if (logger.isInfoEnabled()) {
-			logger.info("Removed " + count + " expired pending host authentications.");
-		}
+		logger.info("Removed {} expired pending host authentications.", count);
 	}
 	
 	/**
@@ -345,7 +306,7 @@ public class HostAuthenticationDaoImpl extends BaseDaoImpl implements HostAuthen
 	/**
 	 * Row mapper for mapping security codes to {@link java.lang.String}.
 	 */
-	protected class HostAuthenticationSecurityCodeRowMapper implements RowMapper<String> {
+	protected static class HostAuthenticationSecurityCodeRowMapper implements RowMapper<String> {
 		@Override
 		public String mapRow(ResultSet resultSet, int row) throws SQLException {
 			return resultSet.getString("security_code");

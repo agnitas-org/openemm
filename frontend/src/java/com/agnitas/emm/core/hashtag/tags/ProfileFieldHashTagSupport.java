@@ -18,18 +18,17 @@ import java.util.Objects;
 
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.hashtag.HashTagContext;
+import com.agnitas.emm.core.hashtag.exception.HashTagException;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.emm.core.hashtag.HashTagContext;
-import com.agnitas.emm.core.hashtag.exception.HashTagException;
-
 public class ProfileFieldHashTagSupport {
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(ProfileFieldHashTagSupport.class);
+
+	private static final Logger LOGGER = LogManager.getLogger(ProfileFieldHashTagSupport.class);
 	
 	/** Factory creating new recipients. */
 	private final RecipientFactory recipientFactory;
@@ -50,7 +49,7 @@ public class ProfileFieldHashTagSupport {
 		final DateFormat dateFormat = new SimpleDateFormat(dateFormatPattern);
 		
 		for(final String s : parts) {
-			final String value = evaluateSubExpression(context, s, dateFormat);
+			final String value = evaluateSubExpression(context, s.toLowerCase (), dateFormat);
 			
 			if (StringUtils.isNotEmpty(value)) {
 				return value;
@@ -70,8 +69,7 @@ public class ProfileFieldHashTagSupport {
 				if(value != null) {
 					return value.toString();
 				} else {
-					LOGGER.warn(String.format("Value '%s' in statis value map is set to null", expression));
-					
+					LOGGER.warn("Value '{}' in statis value map is set to null", expression);
 					return "";
 				}
 			}

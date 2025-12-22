@@ -1,0 +1,16 @@
+
+<div class="col">
+	<label for="recipient-import-datatype" class="form-label text-truncate">
+		<mvc:message code="import.datatype" />
+		<a href="#" class="icon icon-question-circle" data-help="importwizard/step_1/Datatype.xml"></a>
+	</label>
+
+	<mvc:select id="recipient-import-datatype" path="datatype" cssClass="form-control" data-field-vis="">
+		<mvc:option value="CSV" data-field-vis-show="#separator-block,#text-recognition-block,#without-csv-headers-block">CSV</mvc:option>
+		<mvc:option value="XLS" data-field-vis-hide="#separator-block,#text-recognition-block,#without-csv-headers-block">Excel</font></mvc:option>
+		<mvc:option value="ODS" data-field-vis-hide="#separator-block,#text-recognition-block,#without-csv-headers-block">ODS</font></mvc:option>
+		<c:if test="${isJsonImportAllowed}">
+			<mvc:option value="JSON" data-field-vis-hide="#separator-block,#text-recognition-block,#without-csv-headers-block">JSON</mvc:option>
+		</c:if>
+	</mvc:select>
+</div>

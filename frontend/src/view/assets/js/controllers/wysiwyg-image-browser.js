@@ -1,77 +1,85 @@
+AGN.Lib.Controller.new('wysiwyg-image-browser', function () {
 
-AGN.Lib.Controller.new('wysiwyg-image-browser', function() {
+  let config;
 
-    var config;
+  const mailingId = getUrlParam('mailingID');
 
-    var funcNum = getUrlParam('CKEditorFuncNum');
-    var mailingId = getUrlParam('mailingID');
+  function getUrlParam(paramName) {
+    const reParam = new RegExp('(?:[\?&]|&amp;)' + paramName + '=([^&]+)', 'i');
+    const match = window.location.search.match(reParam);
+    return (match && match.length > 1) ? match[1] : '';
+  }
 
-    this.addDomInitializer("wysiwyg-image-browser", function() {
-        config = this.config;
-        updateImg();
-    });
+  this.addDomInitializer("wysiwyg-image-browser", function () {
+    config = this.config;
+    updateImg();
+  });
 
-    this.addAction({click: 'submit-image'}, function() {
-        var activeImageTab = $('li[image-tab-name].active').attr('image-tab-name');
-        if(activeImageTab === 'mediapool') {
-            submit_mediapool_images_tab();
-        } else {
-            submit_other_images_tab();
-        }
-    });
+  this.addAction({change: 'update-image'}, function () {
+    updateImg();
+  });
 
-    this.addAction({change: 'update-image'}, function() {
-        updateImg();
-    });
+  function updateImg() {
+    const imageNameValue = getOtherImgSelectVal();
+    const $imgPreview = $('#image-preview');
+    const $noImgMessage = $('#no-image-message');
 
-    this.addAction({click: 'close-window'}, function () {
-        window.close();
-    });
+    const imageExists = !!(imageNameValue && imageNameValue.length);
 
-    function updateImg() {
-        var imageNameValue = getOtherImgSelectVal();
-        var $imgPreview = $('#other-images-tab .image-preview');
-        var $noImgMessage = $('#other-images-tab .no_image_message');
-        if (!imageNameValue || !imageNameValue.length) {
-            $noImgMessage.show();
-            $imgPreview.hide();
-        } else {
-            $imgPreview.attr('src', normalizeName(imageNameValue))
-            $imgPreview.show();
-            $noImgMessage.hide();
-        }
-        return 1;
+    $noImgMessage.toggleClass('hidden', imageExists);
+    $imgPreview.parent().toggleClass('hidden', !imageExists);
+
+    if (imageExists) {
+      $imgPreview.attr('src', normalizeName(imageNameValue))
     }
+  }
 
-    function getUrlParam(paramName) {
-        var reParam = new RegExp('(?:[\?&]|&amp;)' + paramName + '=([^&]+)', 'i');
-        var match = window.location.search.match(reParam);
-        return (match && match.length > 1) ? match[1] : '';
+  this.addAction({click: 'submit-image'}, function () {
+    const activeImageTab = $('.navbar li .active').data('image-tab-name');
+    if (activeImageTab === 'mediapool') {
+      applyMediapoolImage();
+    } else {
+      applyOtherImage();
     }
+  });
 
-    function submit_other_images_tab() {
-        var correctLink = normalizeName(getOtherImgSelectVal());
-        window.opener.CKEDITOR.tools.callFunction(funcNum, correctLink);
-        window.close();
-    }
+  this.addAction({click: 'close-window'}, function () {
+    window.close();
+  });
 
-    function submit_mediapool_images_tab() {
-        var selectedImgContainer = document.querySelector('[data-action="mpSelectImage"].active');
-        if(selectedImgContainer) {
-            var imgSrc = selectedImgContainer.querySelector('img').getAttribute('src');
-            window.opener.CKEDITOR.tools.callFunction(funcNum, imgSrc);
-            window.close();
-        }
-    }
+  function applyOtherImage() {
+    const correctLink = normalizeName(getOtherImgSelectVal());
+    submitLink(correctLink);
+  }
 
-    function normalizeName(fname) {
-        if (fname.substr(0, 4).toLowerCase() !== 'http') {
-            return config.rdirDomain + '/image?ci=' + config.companyId + '&mi=' + mailingId + '&name=' + encodeURIComponent(fname);
-        }
-        return encodeURI(fname)
+  function applyMediapoolImage() {
+    const $pickedImage = $('tr.picked');
+    if ($pickedImage.exists()) {
+      const imgSrc = $pickedImage.find('img').attr('src');
+      submitLink(imgSrc);
+    } else {
+      AGN.Lib.Messages.alert('messages.error.nothing_selected');
     }
+  }
+  
+  function submitLink(link) {
+    if (window.opener.Jodit) {
+      const editorId = getUrlParam('editorId');
+      window.opener.AGN.Lib.Messaging.send(`image-browser:selectedLink:${editorId}`, link);
+    } else {
+      window.opener.CKEDITOR.tools.callFunction(getUrlParam('CKEditorFuncNum'), link);
+    }
+    window.close();
+  }
 
-    function getOtherImgSelectVal() {
-        return $('#other-images-tab [data-action="update-image"]').val();
+  function normalizeName(fname) {
+    if (fname.substr(0, 4).toLowerCase() !== 'http') {
+      return `${config.rdirDomain}/image?ci=${config.companyId}&mi=${mailingId}&name=${encodeURIComponent(fname)}`;
     }
+    return encodeURI(fname)
+  }
+
+  function getOtherImgSelectVal() {
+    return $('#image-dropdown').val();
+  }
 });

@@ -49,61 +49,54 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.Recipient;
 import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.RecipientMailing;
 import com.agnitas.beans.RecipientReaction;
 import com.agnitas.beans.Target;
+import com.agnitas.beans.Title;
 import com.agnitas.beans.WebtrackingHistoryEntry;
+import com.agnitas.beans.factory.BindingEntryFactory;
+import com.agnitas.beans.factory.RecipientFactory;
 import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.beans.impl.RecipientHistoryImpl;
 import com.agnitas.beans.impl.RecipientLiteImpl;
 import com.agnitas.beans.impl.RecipientMailingImpl;
 import com.agnitas.beans.impl.RecipientReactionImpl;
+import com.agnitas.beans.impl.ViciousFormDataException;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.bean.impl.MailingRecipientStatRowImpl;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
-import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
-import com.agnitas.emm.core.recipient.RecipientException;
+import com.agnitas.emm.core.profilefields.exception.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
+import com.agnitas.emm.core.recipient.exception.InvalidDataException;
+import com.agnitas.emm.core.recipient.exception.ProfileFieldHistoryFeatureNotEnabledException;
+import com.agnitas.emm.core.recipient.exception.RecipientException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.util.NumericUtil;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.DatasourceDescription;
-import com.agnitas.beans.Recipient;
-import com.agnitas.beans.Title;
-import com.agnitas.beans.factory.BindingEntryFactory;
-import com.agnitas.beans.factory.RecipientFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.beans.impl.RecipientImpl;
-import com.agnitas.beans.impl.ViciousFormDataException;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.InvalidDataException;
-import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
 import com.agnitas.service.ImportException;
-import com.agnitas.service.MailingRecipientExportWorker;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.CaseInsensitiveSet;
 import com.agnitas.util.CsvColInfo;
@@ -111,6 +104,7 @@ import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.NumericUtil;
 import com.agnitas.util.ParameterParser;
 import com.agnitas.util.SafeString;
 import com.agnitas.util.SqlPreparedInsertStatementManager;
@@ -352,341 +346,6 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		}
 	}
 
-	@Override
-	public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int pageSize, String sortCriterion, boolean sortAscending, List<String> columns) {
-		Map<String, String> sortableColumns = new CaseInsensitiveMap<>();
-
-		if (columns != null && !columns.isEmpty()) {
-			List<String> columnNames = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_tbl");
-			for (String column : columns) {
-				if (columnNames.contains(column)) {
-					sortableColumns.put(column, "cust." + column);
-				}
-			}
-		} else {
-			columns = new ArrayList<>();
-		}
-
-		if (!columns.contains("firstname")) {
-			columns.add("firstname");
-		}
-		if (!columns.contains("lastname")) {
-			columns.add("lastname");
-		}
-		if (!columns.contains("email")) {
-			columns.add("email");
-		}
-
-		sortableColumns.put("firstname", "cust.firstname");
-		sortableColumns.put("lastname", "cust.lastname");
-		sortableColumns.put("email", "cust.email");
-		sortableColumns.put("receive_time", "receive_time");
-		sortableColumns.put("open_time", "open_time");
-		sortableColumns.put("openings", "openings");
-		sortableColumns.put("click_time", "click_time");
-		sortableColumns.put("clicks", "clicks");
-		sortableColumns.put("bounce_time", "bounce_time");
-		sortableColumns.put("optout_time", "optout_time");
-
-		final int mailingListId = selectInt("SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
-
-		// Keep the order of requested columns
-		List<String> sqlColumns = new ArrayList<>();
-		final List<String> toRemove = new ArrayList<>();
-		for (String column : columns) {
-			if (sortableColumns.get(column) == null) {
-				toRemove.add(column);
-			} else if (sortableColumns.get(column).startsWith("cust.")) {
-				sqlColumns.add(sortableColumns.get(column));
-			}
-		}
-		columns.removeAll(toRemove);
-
-		int totalRows = getNumberOfMailingRecipients(companyId, filterType, mailingId, mailingListId, sqlColumns);
-		List<Object> params = new ArrayList<>();
-		String selectSql;
-		List<MailingRecipientStatRow> recipients;
-		if (isRecipientsNumberExceedsLimit(totalRows, companyId)) {
-			// if the maximum number of recipients to show is exceeded
-			// only the first page of unsorted recipients is shown to discharge the database and its performance
-			// BTW: another sql statement will be executed that was optimized
-			pageNumber = 1;
-			selectSql = getMailingRecipientsQueryWithoutSorting(companyId, mailingId, mailingListId, filterType, columns, pageSize, params);
-		} else {
-			if ("customer_id".equalsIgnoreCase(sortCriterion)) {
-				sortCriterion = "customer_id";
-			} else if (StringUtils.isBlank(sortCriterion) || !sortableColumns.containsKey(sortCriterion)) {
-				sortCriterion = "receive_time";
-			} else if (sortableColumns.containsKey(sortCriterion)) {
-				sortCriterion = sortableColumns.get(sortCriterion);
-			}
-
-			selectSql =
-					"SELECT cust.customer_id,"
-							+ " " + StringUtils.join(sqlColumns, ", ") + ","
-							+ " MAX(succ.timestamp) AS receive_time,"
-							+ " MIN(opl.first_open) AS open_time,"
-							+ " COALESCE(MAX(opl.open_count), 0) AS openings,"
-							+ " MIN(rlog.timestamp) AS click_time,"
-							+ " COUNT(DISTINCT rlog.timestamp) AS clicks,"
-							+ " MAX(bind1.timestamp) AS bounce_time,"
-							+ " MAX(bind2.timestamp) AS optout_time"
-							+ " FROM customer_" + companyId + "_tbl cust"
-							+ " JOIN mailtrack_" + companyId + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ?"
-							+ " LEFT OUTER JOIN success_" + companyId + "_tbl succ ON succ.customer_id = cust.customer_id AND succ.mailing_id = ?"
-							+ " LEFT OUTER JOIN onepixellog_" + companyId + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ?"
-							+ " LEFT OUTER JOIN rdirlog_" + companyId + "_tbl rlog ON rlog.customer_id = cust.customer_id AND rlog.mailing_id = ?"
-							+ " LEFT OUTER JOIN customer_" + companyId + "_binding_tbl bind1 ON bind1.customer_id = cust.customer_id AND bind1.exit_mailing_id = ? AND bind1.user_status = ? AND bind1.user_type NOT IN (?, ?, ?)"
-							+ " LEFT OUTER JOIN customer_" + companyId + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)"
-							+ " WHERE EXISTS"
-							+ " (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? AND bind.user_type NOT IN (?, ?, ?))"
-							+ " GROUP BY cust.customer_id, " + StringUtils.join(sqlColumns, ", ");
-
-			switch (filterType) {
-				case MailingRecipientExportWorker.MAILING_RECIPIENTS_OPENED:
-					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE open_time IS NOT NULL";
-					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
-						sortCriterion = sortCriterion.substring(5);
-					}
-					break;
-
-				case MailingRecipientExportWorker.MAILING_RECIPIENTS_CLICKED:
-					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE click_time IS NOT NULL";
-					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
-						sortCriterion = sortCriterion.substring(5);
-					}
-					break;
-
-				case MailingRecipientExportWorker.MAILING_RECIPIENTS_BOUNCED:
-					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE bounce_time IS NOT NULL";
-					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
-						sortCriterion = sortCriterion.substring(5);
-					}
-					break;
-
-				case MailingRecipientExportWorker.MAILING_RECIPIENTS_UNSUBSCRIBED:
-					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE optout_time IS NOT NULL";
-					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
-						sortCriterion = sortCriterion.substring(5);
-					}
-					break;
-
-				default:
-					// filter nothing
-			}
-
-			String sortClause = "ORDER BY ";
-			if (isOracleDB()) {
-				sortClause += sortCriterion + " " + (sortAscending ? "ASC" : "DESC") + " NULLS LAST";
-			} else {
-				// Force MySQL sort null values the same way that Oracle does
-				if ("receive_time".equals(sortCriterion)
-						|| "open_time".equals(sortCriterion)
-						|| "openings".equals(sortCriterion)
-						|| "click_time".equals(sortCriterion)
-						|| "clicks".equals(sortCriterion)
-						|| "bounce_time".equals(sortCriterion)
-						|| "optout_time".equals(sortCriterion)) {
-					if (filterType == 0) {
-						selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel");
-					}
-				}
-				sortClause += "ISNULL(" + sortCriterion + "), " + sortCriterion + " " + (sortAscending ? "ASC" : "DESC");
-			}
-			sortClause += ", customer_id " + (sortAscending ? "ASC" : "DESC");
-
-			params.add(mailingId);
-			params.add(mailingId);
-			params.add(mailingId);
-			params.add(mailingId);
-			params.add(mailingId);
-			params.add(UserStatus.Bounce.getStatusCode());
-			params.add(BindingEntry.UserType.Admin.getTypeCode());
-			params.add(BindingEntry.UserType.TestUser.getTypeCode());
-			params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-			params.add(mailingId);
-			params.add(UserStatus.UserOut.getStatusCode());
-			params.add(UserStatus.AdminOut.getStatusCode());
-			params.add(BindingEntry.UserType.World.getTypeCode());
-			params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
-			params.add(mailingListId);
-			params.add(BindingEntry.UserType.Admin.getTypeCode());
-			params.add(BindingEntry.UserType.TestUser.getTypeCode());
-			params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-
-			pageNumber = AgnUtils.getValidPageNumber(totalRows, pageNumber, pageSize);
-			int offset = pageNumber * pageSize;
-
-			if (isOracleDB()) {
-				selectSql = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectSql + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
-				params.addAll(List.of((offset - pageSize + 1), offset));
-			} else {
-				selectSql = selectSql + " " + sortClause + " LIMIT ?, ?";
-				params.addAll(List.of((offset - pageSize), pageSize));
-			}
-		}
-
-		List<String> selectedColumns = new ArrayList<>(columns);
-		selectedColumns.addAll(List.of(
-				"customer_id", "receive_time", "open_time", "openings", "click_time", "clicks", "bounce_time", "optout_time"
-		));
-
-		recipients = select(selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
-		return new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, sortCriterion, sortAscending);
-	}
-
-	private String getMailingRecipientsQueryWithoutSorting(int companyId, int mailingId, int mailingListId, int filterType, List<String> columns, int pageSize, List<Object> params) {
-		String sqlColumns = joinWithPrefixes(columns, "cust.");
-		String s3Columns = joinWithPrefixes(columns, "s3.");
-
-		String filteringQuery = "SELECT cust.customer_id, " + sqlColumns +
-				" FROM customer_" + companyId + "_tbl cust " +
-				"    JOIN mailtrack_" + companyId + "_tbl track " +
-				"        ON track.customer_id = cust.customer_id AND track.mailing_id = ? " +
-				"    JOIN customer_" + companyId + "_binding_tbl cb " +
-				"        ON cust.customer_id = cb.customer_id AND cb.mailinglist_id = ? AND cb.user_type NOT IN (?, ?, ?) ";
-
-		params.add(mailingId);
-		params.add(mailingListId);
-		params.add(BindingEntry.UserType.Admin.getTypeCode());
-		params.add(BindingEntry.UserType.TestUser.getTypeCode());
-		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-
-		filteringQuery += createJoinStatementWithMailingRecipientsFiltering(filterType, params, companyId, mailingId);
-		filteringQuery += " GROUP BY cust.customer_id, " + sqlColumns +
-				" ORDER BY cust.customer_id ";
-
-		String limitedFilteredSelect;
-
-		if (isOracleDB()) {
-			String s1Columns = joinWithPrefixes(columns, "s1.");
-			String s2Columns = joinWithPrefixes(columns, "s2.");
-
-			String filteredRowNumSelect = String.format("SELECT s1.customer_id, %s, rownum AS r FROM (%s) s1", s1Columns, filteringQuery);
-			limitedFilteredSelect = String.format("SELECT s2.customer_id, %s, s2.r FROM (%s) s2 WHERE s2.r BETWEEN 1 AND ?", s2Columns, filteredRowNumSelect);
-		} else {
-			limitedFilteredSelect = filteringQuery + " LIMIT 0, ?";
-		}
-
-		params.add(pageSize);
-
-		String selectQuery = "SELECT s3.customer_id, %s," +
-				"       MAX(succ.timestamp)              AS receive_time, " +
-				"       MIN(opl.first_open)              AS open_time, " +
-				"       COALESCE(MAX(opl.open_count), 0) AS openings, " +
-				"       MIN(rlog.timestamp)              AS click_time, " +
-				"       COUNT(DISTINCT rlog.timestamp)   AS clicks, " +
-				"       MAX(b1.timestamp)                AS bounce_time, " +
-				"       MAX(b2.timestamp)                AS optout_time " +
-				"FROM (%s) s3 " +
-				"     LEFT OUTER JOIN success_" + companyId + "_tbl succ " +
-				"             ON succ.customer_id = s3.customer_id AND succ.mailing_id = ? " +
-				"     LEFT OUTER JOIN onepixellog_" + companyId + "_tbl opl " +
-				"             ON opl.customer_id = s3.customer_id AND opl.mailing_id = ? " +
-				"     LEFT OUTER JOIN rdirlog_" + companyId + "_tbl rlog " +
-				"             ON rlog.customer_id = s3.customer_id AND rlog.mailing_id = ? " +
-				"     LEFT OUTER JOIN customer_" + companyId + "_binding_tbl b1 " +
-				"             ON b1.customer_id = s3.customer_id AND b1.exit_mailing_id = ? AND " +
-				"                     b1.user_status = ? AND b1.user_type NOT IN (?, ?, ?) " +
-				"     LEFT OUTER JOIN customer_" + companyId + "_binding_tbl b2 " +
-				"             ON b2.customer_id = s3.customer_id AND b2.exit_mailing_id = ? AND " +
-				"                     b2.user_status IN (?, ?) AND b2.user_type IN (?, ?) " +
-				"GROUP BY s3.customer_id, %s ";
-
-		params.add(mailingId);
-		params.add(mailingId);
-		params.add(mailingId);
-		params.add(mailingId);
-		params.add(UserStatus.Bounce.getStatusCode());
-		params.add(BindingEntry.UserType.Admin.getTypeCode());
-		params.add(BindingEntry.UserType.TestUser.getTypeCode());
-		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-
-		params.add(mailingId);
-		params.add(UserStatus.UserOut.getStatusCode());
-		params.add(UserStatus.AdminOut.getStatusCode());
-		params.add(BindingEntry.UserType.World.getTypeCode());
-		params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
-
-		return String.format(selectQuery, s3Columns, limitedFilteredSelect, s3Columns);
-	}
-
-	private String joinWithPrefixes(List<String> strings, String prefix) {
-		return strings.stream()
-				.map(s -> prefix + s)
-				.collect(Collectors.joining(", "));
-	}
-
-	private int getNumberOfMailingRecipients(int companyId, int filterType, int mailingId, int mailinglistId, List<String> columns) {
-		List<Object> params = new ArrayList<>();
-		params.add(mailingId);
-
-		String subSel = "SELECT cust.customer_id, " + StringUtils.join(columns, ", ") +
-				" FROM customer_" + companyId + "_tbl cust " +
-				"         JOIN mailtrack_" + companyId + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ? ";
-
-		subSel += createJoinStatementWithMailingRecipientsFiltering(filterType, params, companyId, mailingId);
-
-		subSel += " WHERE EXISTS(SELECT 1 FROM customer_" + companyId + "_binding_tbl bind " +
-				" WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? " +
-				" AND bind.user_type NOT IN (?, ?, ?)) " +
-				" GROUP BY cust.customer_id, " + StringUtils.join(columns, ", ");
-
-		params.add(mailinglistId);
-		params.add(BindingEntry.UserType.Admin.getTypeCode());
-		params.add(BindingEntry.UserType.TestUser.getTypeCode());
-		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-
-		return selectInt(String.format("SELECT COUNT(*) FROM (%s) sel", subSel), params.toArray());
-	}
-
-	private String createJoinStatementWithMailingRecipientsFiltering(int filterType, List<Object> params, int companyId, int mailingId) {
-		String joinStatement = "";
-
-		switch (filterType) {
-			case MailingRecipientExportWorker.MAILING_RECIPIENTS_OPENED:
-				joinStatement = " JOIN onepixellog_" + companyId + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ? ";
-				params.add(mailingId);
-				break;
-
-			case MailingRecipientExportWorker.MAILING_RECIPIENTS_CLICKED:
-				joinStatement = " JOIN rdirlog_" + companyId + "_tbl rlog ON rlog.customer_id = cust.customer_id AND rlog.mailing_id = ? ";
-				params.add(mailingId);
-				break;
-
-			case MailingRecipientExportWorker.MAILING_RECIPIENTS_BOUNCED:
-				joinStatement = " JOIN customer_" + companyId + "_binding_tbl bind1 ON bind1.customer_id = cust.customer_id AND bind1.exit_mailing_id = ? " +
-						"AND bind1.user_status = ? AND bind1.user_type NOT IN (?, ?, ?)";
-				params.add(mailingId);
-				params.add(UserStatus.Bounce.getStatusCode());
-				params.add(BindingEntry.UserType.Admin.getTypeCode());
-				params.add(BindingEntry.UserType.TestUser.getTypeCode());
-				params.add(BindingEntry.UserType.TestVIP.getTypeCode());
-				break;
-
-			case MailingRecipientExportWorker.MAILING_RECIPIENTS_UNSUBSCRIBED:
-				joinStatement = " JOIN customer_" + companyId + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? " +
-						"AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)";
-				params.add(mailingId);
-				params.add(UserStatus.UserOut.getStatusCode());
-				params.add(UserStatus.AdminOut.getStatusCode());
-				params.add(BindingEntry.UserType.World.getTypeCode());
-				params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
-				break;
-
-			default:
-				// filter nothing
-		}
-
-		return joinStatement;
-	}
-
-	@Override
-	public List<Recipient> getDuplicateRecipients(int companyId, String email, String select, Object[] queryParams) {
-    	logger.warn("Unsupported method getDuplicateRecipients()");
-    	return new ArrayList<>();
-	}
-
 	public static class RecipientRowMapper implements RowMapper<Recipient> {
 		
 		private final RecipientFactory recipientFactory;
@@ -726,44 +385,13 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		}
 	}
 
-	public class MailingRecipientStatRow_RowMapper implements RowMapper<MailingRecipientStatRow> {
-		private int companyId;
-		private List<String> selectedColumns;
-
-		public MailingRecipientStatRow_RowMapper(int companyId, List<String> selectedColumns) {
-			this.companyId = companyId;
-			this.selectedColumns = selectedColumns;
-		}
-
-		@Override
-		public MailingRecipientStatRow mapRow(ResultSet resultSet, int row) throws SQLException {
-			Recipient recipient = new RecipientImpl();
-			recipient.setCompanyID(companyId);
-
-			Map<String, Object> recipientValues = new HashMap<>();
-			for (String column : selectedColumns) {
-				Object value = resultSet.getObject(column);
-				if (isOracleDB() && value != null && value.getClass().getName().equalsIgnoreCase("oracle.sql.TIMESTAMP")) {
-					recipientValues.put(column, resultSet.getTimestamp(column));
-				} else {
-					recipientValues.put(column, value);
-				}
-			}
-			recipient.setCustParameters(recipientValues);
-
-			MailingRecipientStatRow mailingRecipientStatRow = new MailingRecipientStatRowImpl();
-			mailingRecipientStatRow.setRecipient(recipient);
-			return mailingRecipientStatRow;
-		}
-	}
-
 	@Override
 	public int getIntResult(SqlPreparedStatementManager statementManager) {
 		return selectInt(statementManager.getPreparedSqlString(), statementManager.getPreparedSqlParameters());
 	}
 
 	@Override
-	public PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String statement, Object[] parameters, String sortColumn, boolean sortedAscending, int pageNumber, int pageSize) {
+	public PaginatedList<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String statement, Object[] parameters, String sortColumn, boolean sortedAscending, int pageNumber, int pageSize) {
 		int totalRows = getNumberOfRecipients(companyID, statement, parameters);
 
 		String modifiedSqlStatementForData = statement;
@@ -797,12 +425,12 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 
 		try {
 			List<Map<String, Object>> recipientsData = getRecipientDataList(modifiedSqlStatementForData, parameters);
-			return new PaginatedListImpl<>(recipientsData, totalRows, pageSize, pageNumber, sortColumn, sortedAscending);
+			return new PaginatedList<>(recipientsData, totalRows, pageSize, pageNumber, sortColumn, sortedAscending);
 		} catch(SQLException e) {
 			logger.error("Caught SQL exception", e);
 		}
 
-		return new PaginatedListImpl<>(new ArrayList<>(), 0, pageSize, 1, sortColumn, sortedAscending);
+		return new PaginatedList<>(new ArrayList<>(), 0, pageSize, 1, sortColumn, sortedAscending);
 	}
 
 	protected boolean isRecipientsNumberExceedsLimit(int totalRows, int companyID) {
@@ -940,12 +568,6 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		sqlParameters.addAll(Arrays.asList(sqlConditionParameters));
 
 		return selectInt(sqlStatement, sqlParameters.toArray());
-	}
-
-	protected void setRuleOptimizerMode(Connection connection, boolean isRuleMode) throws SQLException {
-		try (Statement stmt = connection.createStatement()) {
-			stmt.execute("ALTER SESSION SET OPTIMIZER_MODE=" + (isRuleMode ? "RULE" : "ALL_ROWS"));
-		}
 	}
 
 	/**
@@ -1105,10 +727,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	 * Find Subscriber by providing a column-name and a value and an customer object. Fills the customer_id of this customer object if found. Only exact matches possible.
 	 *
 	 * @return customerID or 0 if no matching record found
-	 * @param keyColumn
-	 *			Column-Name
-	 * @param value
-	 *			Value to search for in col
+	 * @param keyColumn Column-Name
+	 * @param value     Value to search for in col
 	 */
 	@Override
 	public int findByKeyColumn(Recipient customer, String keyColumn, String value) {
@@ -1127,7 +747,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 						int intValue = Integer.parseInt(value);
 						custList = select("SELECT customer_id FROM " + getCustomerTableName(customer.getCompanyID()) + " cust WHERE cust." + SafeString.getSafeDbColumnName(keyColumn) + " = ? AND " + RecipientStandardField.Bounceload.getColumnName() + " = 0", intValue);
 					} else {
-						throw new Exception("Invalid search value for numeric key column: " + value);
+						throw new IllegalArgumentException("Invalid search value for numeric key column: " + value);
 					}
 				}
 
@@ -1241,11 +861,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			String mailingMtParameter = resultSet.getString("mt_param");
 			recipientMailing.setSubject(mailingMtParameter != null ? new ParameterParser(mailingMtParameter).parse("subject") : "");
 			
-			try {
-				recipientMailing.setMailingType(MailingType.fromCode(resultSet.getInt("mailing_type")));
-			} catch (Exception e) {
-				throw new SQLException("Invalid MailingType code: " + resultSet.getInt("mailing_type"));
-			}
+			recipientMailing.setMailingType(MailingType.getByCode(resultSet.getInt("mailing_type")));
 			recipientMailing.setSendDate(resultSet.getTimestamp("send_date"));
 			recipientMailing.setDeliveryDate(resultSet.getTimestamp("delivery_date"));
 			recipientMailing.setNumberOfOpenings(resultSet.getInt("openings"));
@@ -1263,11 +879,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	public List<RecipientHistory> getRecipientProfileHistory(int recipientID, int companyID) {
 		try {
 			return recipientProfileHistoryService.listProfileFieldHistory(recipientID, companyID);
-		} catch(ProfileFieldHistoryFeatureNotEnabledException e) {
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Profile field history feature not enabled for company ID %d", companyID));
-			}
-
+		} catch (ProfileFieldHistoryFeatureNotEnabledException e) {
+			logger.info("Profile field history feature not enabled for company ID {}", companyID);
 			return new ArrayList<>();
 		} catch(Exception e) {
 			logger.error(String.format("Error reading profile field history for company %d, recipient %d", companyID, recipientID), e);
@@ -1473,7 +1086,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		return recipientHistories;
 	}
 
-	protected String buildCustomerTimestamp(Recipient customer, String fieldName) throws Exception {
+	protected String buildCustomerTimestamp(Recipient customer, String fieldName) {
 		try {
 			int day = Integer.parseInt(customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_DAY));
 			int month = Integer.parseInt(customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_MONTH));
@@ -1488,7 +1101,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				return DbUtilities.getToDateString_MySQL(day, month, year, hour, minute, second);
 			}
 		} catch (Exception e) {
-			throw new Exception("Invalid date data for field '" + fieldName + "'", e);
+			throw new IllegalArgumentException("Invalid date data for field '" + fieldName + "'", e);
 		}
 	}
 
@@ -1498,7 +1111,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				&& customer.hasCustParameter(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_YEAR);
 	}
 
-	private SqlPreparedInsertStatementManager prepareInsertStatement(CaseInsensitiveMap<String, RecipientFieldDescription> customerTableStructure, Recipient customer, boolean withEmptyParameters) throws Exception {
+	private SqlPreparedInsertStatementManager prepareInsertStatement(CaseInsensitiveMap<String, RecipientFieldDescription> customerTableStructure, Recipient customer, boolean withEmptyParameters) {
 		SqlPreparedInsertStatementManager insertStatementManager = new SqlPreparedInsertStatementManager("INSERT INTO " + getCustomerTableName(customer.getCompanyID()));
 		insertStatementManager.addValue("creation_date", "CURRENT_TIMESTAMP", true);
 		insertStatementManager.addValue("timestamp", "CURRENT_TIMESTAMP", true);
@@ -1547,7 +1160,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 							format.setLenient(false);
 							date = format.parse(customer.getCustParametersNotNull(fieldName));
 						} catch (ParseException e) {
-							throw new Exception("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
+							throw new IllegalArgumentException("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
 						}
 						insertStatementManager.addValue(fieldName, date);
 					} else {
@@ -1562,7 +1175,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 						value = AgnUtils.normalizeEmail(value);
 					}
 				} else if (fieldName.equalsIgnoreCase("datasource_id")) {
-					logger.trace("Prepare insert. New datasourceID = " + value + " for recipient with email " + customer.getEmail());
+					logger.trace("Prepare insert. New datasourceID = {} for recipient with email {}", value, customer.getEmail());
 				}
 			
 				if (StringUtils.isEmpty(value)) {
@@ -1572,7 +1185,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 							//don't miss any parameter - for batch processing
 							insertStatementManager.addValue(fieldName, null);
 							if (fieldName.equalsIgnoreCase("datasource_id")) {
-								logger.trace("Prepare insert. Adding empty datasourceID for recipient with email " + customer.getEmail());
+								logger.trace("Prepare insert. Adding empty datasourceID for recipient with email {}", customer.getEmail());
 							}
 						}
 						continue;
@@ -1581,12 +1194,12 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				if (SimpleDataType.Numeric == columnType) {
 					insertStatementManager.addValue(fieldName, NumberUtils.toInt(value.trim(), 0));
 					if (fieldName.equalsIgnoreCase("datasource_id")) {
-						logger.trace("Prepare insert. Adding INTEGER datasourceID for recipient with email " + customer.getEmail());
+						logger.trace("Prepare insert. Adding INTEGER datasourceID for recipient with email {}", customer.getEmail());
 					}
 				} else if (SimpleDataType.Float == columnType) {
 					insertStatementManager.addValue(fieldName, NumericUtil.tryParseDouble(value, 0));
 				} else { // if (columnType.equalsIgnoreCase("VARCHAR") || columnType.equalsIgnoreCase("CHAR")) {
-					insertStatementManager.addValue(fieldName, "".equals(value) ? null : value);		// Make "" to null (-> EMM-4948)
+					insertStatementManager.addValue(fieldName, value.isEmpty() ? null : value);		// Make "" to null (-> EMM-4948)
 				}
 			}
 		}
@@ -1594,15 +1207,15 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		return insertStatementManager;
 	}
 
-    private Date tryParseIso8601DateTimeStr(String fieldName, String valueStr) throws Exception {
+    private Date tryParseIso8601DateTimeStr(String fieldName, String valueStr) {
         try {
             return DateUtilities.parseIso8601DateTimeString(valueStr);
         } catch (ParseException e) {
-            throw new Exception("Invalid date value for field '" + fieldName + "': " + valueStr);
+            throw new IllegalArgumentException("Invalid date value for field '%s': %s".formatted(fieldName, valueStr));
         }
     }
 
-	private SqlPreparedUpdateStatementManager prepareUpdateStatement(CaseInsensitiveMap<String, RecipientFieldDescription> customerTableStructure, Recipient customer, boolean missingFieldsToNull) throws Exception {
+	private SqlPreparedUpdateStatementManager prepareUpdateStatement(CaseInsensitiveMap<String, RecipientFieldDescription> customerTableStructure, Recipient customer, boolean missingFieldsToNull) {
 		SqlPreparedUpdateStatementManager updateStatementManager = new SqlPreparedUpdateStatementManager("UPDATE " + getCustomerTableName(customer.getCompanyID()) + " SET ");
 
 		updateStatementManager.addValue("timestamp", "CURRENT_TIMESTAMP", true);
@@ -1627,12 +1240,12 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				// Only update datasource_id if it is not set yet
 				if (customer.hasCustParameter("DATASOURCE_ID")) {
 					int datasourceID = selectIntWithDefaultValue("SELECT datasource_id FROM " + getCustomerTableName(customer.getCompanyID()) + " WHERE customer_id = ?", -1, customer.getCustomerID());
-					logger.trace("Prepare update. Existing datasourceID = " + datasourceID + " for recipient with email " + customer.getEmail());
+					logger.trace("Prepare update. Existing datasourceID = {} for recipient with email {}", datasourceID, customer.getEmail());
 					if (datasourceID <= 0) {
 						String value = customer.getCustParametersNotNull("DATASOURCE_ID");
-						logger.trace("Prepare update. New datasourceID = " + value + " for recipient with email " + customer.getEmail());
+						logger.trace("Prepare update. New datasourceID = {} for recipient with email {}", value, customer.getEmail());
 						if (StringUtils.isNotEmpty(value) && AgnUtils.isNumber(value)) {
-							logger.trace("Prepare update. Adding for recipient with email " + customer.getEmail());
+							logger.trace("Prepare update. Adding for recipient with email {}", customer.getEmail());
 							updateStatementManager.addValue(fieldName, Integer.parseInt(value));
 						}
 					}
@@ -1659,7 +1272,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 							format.setLenient(false);
 							date = format.parse(customer.getCustParametersNotNull(fieldName));
 						} catch (ParseException e) {
-							throw new Exception("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
+							throw new IllegalArgumentException("Invalid value for customer field '" + entry.getKey() + "' with expected format '" + (customer.getCustParametersNotNull(fieldName + RecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT)) + "'");
 						}
 						updateStatementManager.addValue(fieldName, date);
 					} else {
@@ -1667,7 +1280,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 						try {
 							date = DateUtilities.parseIso8601DateTimeString(customer.getCustParametersNotNull(fieldName));
 						} catch (ParseException e) {
-							throw new Exception("Invalid date value for field '" + fieldName + "': " + customer.getCustParametersNotNull(fieldName));
+							throw new IllegalArgumentException("Invalid date value for field '" + fieldName + "': " + customer.getCustParametersNotNull(fieldName));
 						}
 						updateStatementManager.addValue(fieldName, date);
 					}
@@ -1712,7 +1325,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			
 			String currentSqlStatement = null;
 			List<Object[]> currentSqlParameters = new ArrayList<>();
-
+			
 			for (int i = 0; i < recipients.size(); i++) {
 				Recipient customer = recipients.get(i);
 				checkHtmlTags(customer.getCustParameters(), companyID);
@@ -1752,7 +1365,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					} else {
 						// Check, if profilefield from parameter "keyField" exists
 						if (!recipientFieldsMap.containsKey(keyField)) {
-							throw new Exception ("Invalid profilefield " + keyField + " for company " + companyID);
+							throw new IllegalArgumentException("Invalid profilefield " + keyField + " for company " + companyID);
 						}
 						
 						List<Integer> customerIds = select("SELECT customer_id FROM " + getCustomerTableName(companyID) +
@@ -1793,11 +1406,11 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 						currentSqlParameters.add(nextParameters);
 					} else {
 						if (currentSqlStatement == null) {
-							throw new Exception("currentSqlStatement was null");
+							throw new IllegalStateException("currentSqlStatement was null");
 						} else if (isOracleDB() || currentSqlStatement.toLowerCase().startsWith("update")) {
 							batchupdate(currentSqlStatement, currentSqlParameters);
 						} else {
-							int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable(currentSqlStatement, currentSqlParameters);
+							int[] generatedKeys = batchInsertWithAutoincrement(currentSqlStatement, currentSqlParameters);
 							for (int generatedKey : generatedKeys) {
 								results.add(generatedKey);
 							}
@@ -1812,11 +1425,11 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			// Execute bulk sql for last sqlstatement block
 			if (currentSqlParameters.size() > 0) {
 				if (currentSqlStatement == null) {
-					throw new Exception("currentSqlStatement was null");
+					throw new IllegalStateException("currentSqlStatement was null");
 				} else if (isOracleDB() || currentSqlStatement.toLowerCase().startsWith("update")) {
 					batchupdate(currentSqlStatement, currentSqlParameters);
 				} else {
-					int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable(currentSqlStatement, currentSqlParameters);
+					int[] generatedKeys = batchInsertWithAutoincrement(currentSqlStatement, currentSqlParameters);
 					for (int generatedKey : generatedKeys) {
 						results.add(generatedKey);
 					}
@@ -1872,16 +1485,14 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			List<Object> results = new ArrayList<>();
 			List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyID);
 			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>(recipientFields.stream().collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
-
+			
 			String currentSqlStatement = null;
 			List<Object[]> currentSqlParameters = new ArrayList<>();
 			for (Recipient customer : recipients) {
 				checkHtmlTags(customer.getCustParameters(), companyID);
 
 				if (companyID != customer.getCompanyID()) {
-					if(logger.isInfoEnabled()) {
-						logger.info(String.format("Rejected updating recipient %d: Belongs to foreign company ID", customer.getCustomerID()));
-					}
+					logger.info("Rejected updating recipient {}: Belongs to foreign company ID", customer.getCustomerID());
 
 					results.add(false);
 					continue;
@@ -1913,9 +1524,9 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					int[] touchedLinesArray = batchupdate(currentSqlStatement, currentSqlParameters);
 					for (int touchedLines : touchedLinesArray) {
 						if(!(touchedLines > 0 || touchedLines == Statement.SUCCESS_NO_INFO)) {
-							logger.warn(String.format("SQL batch update returned code %d", touchedLines));
-							logger.warn(String.format("  Statement:  %s", currentSqlStatement));
-							logger.warn(String.format("  Parameters: %s", currentSqlParameters));
+							logger.warn("SQL batch update returned code {}", touchedLines);
+							logger.warn("  Statement:  {}", currentSqlStatement);
+							logger.warn("  Parameters: {}", currentSqlParameters);
 						}
 						
 						results.add(touchedLines > 0 || touchedLines == Statement.SUCCESS_NO_INFO);
@@ -1931,9 +1542,9 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				int[] touchedLinesArray = batchupdate(currentSqlStatement, currentSqlParameters);
 				for (int touchedLines : touchedLinesArray) {
 					if(!(touchedLines > 0 || touchedLines == Statement.SUCCESS_NO_INFO)) {
-						logger.warn(String.format("SQL batch update returned code %d", touchedLines));
-						logger.warn(String.format("  Statement:  %s", currentSqlStatement));
-						logger.warn(String.format("  Parameters: %s", currentSqlParameters));
+						logger.warn("SQL batch update returned code {}", touchedLines);
+						logger.warn("  Statement:  {}", currentSqlStatement);
+						logger.warn("  Parameters: {}", currentSqlParameters);
 					}
 					
 					results.add(touchedLines > 0 || touchedLines == Statement.SUCCESS_NO_INFO);
@@ -1996,51 +1607,13 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public final int insertNewCustWithException(final Recipient customer) throws Exception {
+	public final int insertNewCustWithException(Recipient customer) {
 		final int companyID = customer.getCompanyID();
 		if (companyID == 0) {
 			return 0;
 		}
 		
-		final Object email = customer.getCustParameters().get("email");
-		final Object gender = customer.getCustParameters().get("gender");
-		final Object firstname = customer.getCustParameters().get("firstname");
-		final Object lastname = customer.getCustParameters().get("lastname");
-
-		if (!configService.getBooleanValue(ConfigValue.AllowEmptyEmail, customer.getCompanyID()) && StringUtils.isBlank((String) email)) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data is invalid: email is empty");
-		} else if (email != null && email instanceof String && StringUtils.isNotBlank((String) email) && !AgnUtils.isEmailValid((String) email)) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data is invalid: email is invalid");
-		} else if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:") || ((String) firstname).toLowerCase().contains("www."))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" contains http link data");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).length() > 100)) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" is to long (maximum 100) characters");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:") || ((String) lastname).toLowerCase().contains("www."))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).length() > 100)) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" is to long (maximum 100) characters");
-		}
-
-		if (customer.getCustParameters().containsKey("plz") && configService.getBooleanValue(ConfigValue.CheckWellKnownProfileFields, customer.getCompanyID())) {
-			String plzValue = customer.getCustParameters().get("plz") == null ? null : customer.getCustParameters().get("plz").toString();
-			if (StringUtils.isNotBlank(plzValue) && !Pattern.matches("^[0-9]{5}$", plzValue)) {
-				throw new ViciousFormDataException("Cannot create customer, because customer data field \"plz\" is invalid");
-			}
-		}
-
-		boolean allowHtmlTags = configService.allowHtmlInReferenceAndProfileFields(customer.getCompanyID());
-		for (Entry<String, Object> entry : customer.getCustParameters().entrySet()) {
-			if (entry.getValue() instanceof String) {
-				// Check for unallowed html content
-				try {
-					HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
-				} catch(final HtmlCheckerException e) {
-					throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
-				}
-			}
-		}
+		checkRecipientDataValidity(customer);
 
 		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyID);
 		CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>(recipientFields.stream().collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
@@ -2055,7 +1628,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			insertStatementManager.addValue("customer_id", customerID);
 			update(insertStatementManager.getPreparedSqlString(), insertStatementManager.getPreparedSqlParameters());
 		} else {
-			customerID = insertIntoAutoincrementMysqlTable("customer_id", insertStatementManager.getPreparedSqlString(), insertStatementManager.getPreparedSqlParameters());
+			customerID = insert("customer_id", insertStatementManager.getPreparedSqlString(), insertStatementManager.getPreparedSqlParameters());
 		}
 
 		logger.debug("new customerID: {}", customerID);
@@ -2065,76 +1638,63 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 	
 	@Override
-	public final boolean updateInDbWithException(final Recipient recipient) throws Exception {
+	public final boolean updateInDbWithException(Recipient recipient) {
 		return updateInDbWithException(recipient, true);
 	}
 	
 	@Override
-	public final boolean updateInDbWithException(final Recipient recipient, final boolean missingFieldsToNull) throws Exception {
-		return updateInDB(recipient, missingFieldsToNull, true);
+	public final boolean updateInDbWithException(Recipient customer, boolean missingFieldsToNull) {
+		checkRecipientDataValidity(customer);
+
+		if (customer.getCustomerID() == 0) {
+			logger.info("updateInDB: creating new customer");
+			return insertNewCustWithException(customer) > 0;
+		}
+
+		if (!customer.isChangeFlag()) {
+			logger.info("updateInDB: nothing changed");
+			return true;
+		}
+
+		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(customer.getCompanyID());
+		CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>(recipientFields.stream().collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
+
+		final SqlPreparedUpdateStatementManager updateStatementManager = prepareUpdateStatement(recipientFieldsMap, customer, missingFieldsToNull);
+		// Execute update
+		update(updateStatementManager.getPreparedSqlString(), updateStatementManager.getPreparedSqlParameters());
+
+		return true;
 	}
 
-	private boolean updateInDB(final Recipient customer, final boolean missingFieldsToNull, final boolean throwExceptionOnError) throws Exception {
+	private void checkRecipientDataValidity(Recipient customer) {
 		final Object email = customer.getCustParameters().get("email");
 		final Object gender = customer.getCustParameters().get("gender");
 		final Object firstname = customer.getCustParameters().get("firstname");
 		final Object lastname = customer.getCustParameters().get("lastname");
 
 		if (!configService.getBooleanValue(ConfigValue.AllowEmptyEmail, customer.getCompanyID()) && StringUtils.isBlank((String) email)) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data is invalid: email is empty");
-		} else if (email != null && email instanceof String && StringUtils.isNotBlank((String) email) && !AgnUtils.isEmailValid((String) email)) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data is invalid: email is invalid");
-		} else if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data is missing or invalid: gender is empty");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:") || ((String) firstname).toLowerCase().contains("www."))) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data field \"firstname\" contains http link data");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).length() > 100)) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data field \"firstname\" is to long (maximum 100) characters");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:") || ((String) lastname).toLowerCase().contains("www."))) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data field \"lastname\" contains http link data");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).length() > 100)) {
-			throw new ViciousFormDataException("Cannot update customer, because customer data field \"lastname\" is to long (maximum 100) characters");
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data is invalid: email is empty");
+		} else if (email != null && email instanceof String emailStr && StringUtils.isNotBlank(emailStr) && !AgnUtils.isEmailValid(emailStr)) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data is invalid: email is invalid");
+		} else if (gender == null || (gender instanceof String genderStr && StringUtils.isBlank(genderStr))) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data is missing or invalid: gender is empty");
+		} else if (firstname instanceof String fisrtNameStr && (fisrtNameStr.toLowerCase().contains("http:") || fisrtNameStr.toLowerCase().contains("https:") || fisrtNameStr.toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data field \"firstname\" contains http link data");
+		} else if (firstname instanceof String fisrtNameStr && (fisrtNameStr.length() > 100)) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data field \"firstname\" is to long (maximum 100) characters");
+		} else if (lastname instanceof String lastNameStr && (lastNameStr.toLowerCase().contains("http:") || lastNameStr.toLowerCase().contains("https:") || lastNameStr.toLowerCase().contains("www."))) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data field \"lastname\" contains http link data");
+		} else if (lastname instanceof String lastNameStr && (lastNameStr.length() > 100)) {
+			throw new ViciousFormDataException("Cannot create/update customer, because customer data field \"lastname\" is to long (maximum 100) characters");
 		}
 
 		if (customer.getCustParameters().containsKey("plz") && configService.getBooleanValue(ConfigValue.CheckWellKnownProfileFields, customer.getCompanyID())) {
 			String plzValue = customer.getCustParameters().get("plz") == null ? null : customer.getCustParameters().get("plz").toString();
 			if (StringUtils.isNotBlank(plzValue) && !Pattern.matches("^[0-9]{5}$", plzValue)) {
-				throw new ViciousFormDataException("Cannot update customer, because customer data field \"plz\" is invalid");
+				throw new ViciousFormDataException("Cannot create/update customer, because customer data field \"plz\" is invalid");
 			}
 		}
-        checkHtmlTags(customer.getCustParameters(), customer.getCompanyID());
-
-		if (customer.getCustomerID() == 0) {
-			if (logger.isInfoEnabled()) {
-				logger.info("updateInDB: creating new customer");
-			}
-
-			return insertNewCustWithException(customer) > 0;
-		}
-		if (!customer.isChangeFlag()) {
-			if (logger.isInfoEnabled()) {
-				logger.info("updateInDB: nothing changed");
-			}
-			return true;
-		}
-
-		try {
-			List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(customer.getCompanyID());
-			CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap = new CaseInsensitiveMap<>(recipientFields.stream().collect(Collectors.toMap(RecipientFieldDescription::getColumnName, Function.identity())));
-
-			final SqlPreparedUpdateStatementManager updateStatementManager = prepareUpdateStatement(recipientFieldsMap, customer, missingFieldsToNull);
-			// Execute update
-			update(updateStatementManager.getPreparedSqlString(), updateStatementManager.getPreparedSqlParameters());
-		} catch (final Exception e) {
-			logger.error("Exception in prepareUpdateStatement or new getQueryProperties", e);
-			if (!throwExceptionOnError)  {
-				return false;
-			} else {
-				throw e;
-			}
-		}
-
-		return true;
+		checkHtmlTags(customer.getCustParameters(), customer.getCompanyID());
 	}
 
 	/**
@@ -2385,9 +1945,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		Map<Integer, Map<Integer, BindingEntry>> result = new HashMap<>();
 		String sql = "SELECT mailinglist_id, user_type, user_status, user_remark, timestamp, mediatype, exit_mailing_id FROM " + getCustomerBindingTableName(companyID) + " WHERE customer_id = ? ORDER BY mailinglist_id, mediatype";
 
-		if (logger.isInfoEnabled()) {
-			logger.info("getAllMailingLists: " + sql);
-		}
+		logger.info("getAllMailingLists: {}", sql);
 
 		List<Map<String, Object>> list = select(sql, customerID);
 		for (Map<String, Object> map : list) {
@@ -2507,7 +2065,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			optionalTablespacePart = " TABLESPACE data_temp";
 		}
 	
-		String tableName = "tmp_" + String.valueOf(System.currentTimeMillis()) + "del_tbl";
+		String tableName = "tmp_" + System.currentTimeMillis() + "del_tbl";
 
 		String sql;
 		if (isOracleDB()) {
@@ -2530,7 +2088,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	public void deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean notAdminsAndTests) {
 		final int stepSize = configService.getIntegerValue(ConfigValue.DeleteBindingStepsize, companyID);
 		if (stepSize <= 0) {
-			throw new RuntimeException("Invalid config value for 'DeleteBindingStepsize': less or equal than zero");
+			throw new IllegalStateException("Invalid config value for 'DeleteBindingStepsize': less or equal than zero");
 		}
 		StringBuilder sql = new StringBuilder("DELETE FROM " + getCustomerBindingTableName(companyID) + " WHERE mailinglist_id = ?");
 
@@ -2545,9 +2103,9 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		int touchedLines = 0;
 		do {
 			if (isOracleDB()) {
-				touchedLines = update(sql.toString() + " AND ROWNUM <= ?", mailinglistID, stepSize);
+				touchedLines = update(sql + " AND ROWNUM <= ?", mailinglistID, stepSize);
 			} else {
-				touchedLines = update(sql.toString() + " LIMIT ?", mailinglistID, stepSize);
+				touchedLines = update(sql + " LIMIT ?", mailinglistID, stepSize);
 			}
 		} while (touchedLines == stepSize);
 	}
@@ -2643,14 +2201,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				+ " WHERE bind.user_type in (?, ?, ?) AND bind.user_status = ? AND bind.mailinglist_id = m.mailinglist_id AND bind.customer_id = cust.customer_id AND m.mailing_id = ?"
 				+ " ORDER BY bind.user_type, bind.customer_id";
 
-		if (isOracleDB()) {
-			// Outer query required to honour a sorting
-			sql = "SELECT * FROM (" + sql + ") WHERE ROWNUM = 1";
-		} else {
-			sql = sql + " LIMIT 1";
-		}
-
-		return selectIntWithDefaultValue(sql, 0, UserType.Admin.getTypeCode(), UserType.TestUser.getTypeCode(), UserType.TestVIP.getTypeCode(), UserStatus.Active.getStatusCode(), mailingId);
+		return selectIntWithDefaultValue(addRowLimit(sql, 1), 0, UserType.Admin.getTypeCode(),
+				UserType.TestUser.getTypeCode(), UserType.TestVIP.getTypeCode(), UserStatus.Active.getStatusCode(), mailingId);
 	}
 
 	@Override
@@ -2868,7 +2420,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					break;
 				
 				default:
-					throw new Exception("Invalid update value type");
+					throw new IllegalArgumentException("Invalid update value type: " + updateValue);
 			}
 		
 			try {
@@ -2903,7 +2455,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					break;
 					
 				default:
-					throw new Exception("Invalid update value type");
+					throw new IllegalArgumentException("Invalid update value type: " + updateType);
 			}
 
 			value = updateValue;
@@ -2918,7 +2470,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				try {
 					value = Double.parseDouble(updateValue);
 				} catch (Exception e) {
-					throw new Exception("Invalid value for increment of '" + columnName + "': " + updateValue);
+					throw new IllegalArgumentException("Invalid value for increment of '" + columnName + "': " + updateValue);
 				}
 			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_DECREMENT_BY) {
 				if (isOracleDB()) {
@@ -2930,7 +2482,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 				try {
 					value = Double.parseDouble(updateValue);
 				} catch (Exception e) {
-					throw new Exception("Invalid value for decrement of '" + columnName + "': " + updateValue);
+					throw new IllegalArgumentException("Invalid value for decrement of '" + columnName + "': " + updateValue);
 				}
 			} else if (updateType == ActionOperationUpdateCustomerParameters.TYPE_SET_VALUE) {
 				Matcher matcher = ActionOperationUpdateCustomerParameters.DATE_ARITHMETICS_PATTERN.matcher(updateValue.toUpperCase());
@@ -2956,10 +2508,10 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					value = updateValue;
 				}
 			} else {
-				throw new Exception("Invalid update value type");
+				throw new IllegalArgumentException("Invalid update value type: " + updateType);
 			}
 		} else {
-			throw new Exception("Invalid update value type");
+			throw new UnsupportedOperationException("Invalid column type: " + columnType);
 		}
 
 		updateStatement.append(" WHERE customer_id = ?");
@@ -2979,7 +2531,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	@Override
 	public int bulkUpdateEachRecipientsFields(int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception {
 		List<String> alreadyRunningImports = select("SELECT description FROM import_temporary_tables WHERE import_table_name = ?", StringRowMapper.INSTANCE, "customer_" + companyId + "_tbl");
-		if (alreadyRunningImports.size() > 0) {
+		if (!alreadyRunningImports.isEmpty()) {
 			throw new ImportException(false, "error.import.AlreadyRunning", alreadyRunningImports.get(0));
 		}
 		
@@ -3105,7 +2657,6 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	 * @param adminId             - id of current admin
 	 * @param mailingListId       - either type of operation or mailing list id
 	 * @param sqlTargetExpression - sql from of some target groups
-	 * @return
 	 */
 	protected String getWhereSubStatement(List<Object> parameters, int companyId, int adminId, int mailingListId, String sqlTargetExpression) {
 		return getWhereSubStatement(parameters, companyId, adminId, mailingListId, sqlTargetExpression, false);
@@ -3146,8 +2697,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 	
 	private static Object replaceEmptyStringsWithNull(Object value) {
-		if (value instanceof String) {
-			return StringUtils.trimToNull((String) value);
+		if (value instanceof String strVal) {
+			return StringUtils.trimToNull(strVal);
 		}
 		
 		return value;
@@ -3160,7 +2711,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 
 	@Override
-	public List<Integer> insertTestRecipients(int companyId, int mailingListId, UserStatus userStatus, String remark, List<String> addresses) throws Exception {
+	public List<Integer> insertTestRecipients(int companyId, int mailingListId, UserStatus userStatus, String remark, List<String> addresses) {
 		if (companyId <= 0 || CollectionUtils.isEmpty(addresses)) {
 			return Collections.emptyList();
 		}
@@ -3200,13 +2751,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		}
 
 		// Keep in mind that recipientId can be equal to 0.
-		String sqlCheckAddressInUse = String.format("SELECT customer_id FROM %s WHERE LOWER(email) = ? AND customer_id <> ?", getCustomerTableName(companyId));
-		if (isOracleDB()) {
-		    sqlCheckAddressInUse += " AND ROWNUM=1";
-        } else {
-            sqlCheckAddressInUse += " LIMIT 1";
-        }
-		return selectInt(sqlCheckAddressInUse, StringUtils.trimToEmpty(email).toLowerCase(), recipientId);
+		String query = String.format("SELECT customer_id FROM %s WHERE LOWER(email) = ? AND customer_id <> ?", getCustomerTableName(companyId));
+		return selectInt(addRowLimit(query, 1), StringUtils.trimToEmpty(email).toLowerCase(), recipientId);
 	}
 
 	@Override
@@ -3237,14 +2783,14 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	}
 
     @Override
-    public int getOrCreateRecipientOfAdmin(Admin admin) throws Exception {
+    public int getOrCreateRecipientOfAdmin(Admin admin) {
         int recipientId = getRecipientIdByAddress(admin.getEmail(), -1, admin.getCompanyID());
         return recipientId > 0
                 ? recipientId
                 : insertTestRecipient(admin.getCompanyID(), admin.getEmail());
     }
 
-	private int insertTestRecipient(int companyId, String address) throws Exception {
+	private int insertTestRecipient(int companyId, String address) {
 		Recipient recipient = recipientFactory.newRecipient();
 
 		recipient.setCompanyID(companyId);
@@ -3275,10 +2821,6 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 
 		public RecipientLite_RowMapper(){
 			columnPrefix = StringUtils.EMPTY;
-		}
-
-		public RecipientLite_RowMapper(String columnPrefix){
-			this.columnPrefix = StringUtils.defaultString(columnPrefix, StringUtils.EMPTY);
 		}
 
 		@Override
@@ -3330,10 +2872,10 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		}
 	}
 
-	private DatasourceDescription getDatasourceDescription(String description) throws Exception {
+	private DatasourceDescription getDatasourceDescription(String description) {
 		DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.Other, 0, description);
 		if (Objects.isNull(datasourceDescription)) {
-			throw new Exception("Missing datasourceDescription: " + description);
+			throw new IllegalArgumentException("Missing datasourceDescription: " + description);
 		}
 
 		return datasourceDescription;
@@ -3514,7 +3056,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues) throws Exception {
+	public int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues) {
 		if (companyId == 0) {
 			return 0;
 		}
@@ -3527,7 +3069,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			for (String column : recipientValues.keySet()) {
 				//ignore customer id column
 				if (!column.equalsIgnoreCase(RecipientStandardField.CustomerID.getColumnName())) {
-					if (dataPart.length() > 0) {
+					if (!dataPart.isEmpty()) {
 						dataPart.append(", ");
 					}
 
@@ -3543,12 +3085,12 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 					}
 				}
 			}
-			String sql = "UPDATE " + getCustomerTableName(companyId) + " SET " + dataPart.toString() + " WHERE customer_id = ?";
+			String sql = "UPDATE " + getCustomerTableName(companyId) + " SET " + dataPart + " WHERE customer_id = ?";
 			sqlParameters.add(recipientId);
 			boolean updated = update(sql, sqlParameters.toArray()) > 0;
 			return updated ? recipientId : 0;
 		} else {
-			throw new Exception("Invalid call of saveRecipient for new recipient");
+			throw new IllegalArgumentException("Invalid call of saveRecipient for new recipient");
 		}
 	}
 
@@ -3783,12 +3325,8 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
         String sql = "SELECT detail FROM bounce_tbl" +
                 " WHERE mailing_id = ? AND customer_id = ? AND company_id = ?" +
                 " ORDER BY timestamp DESC";
-        if (isOracleDB()) {
-            sql = String.format("SELECT * FROM (%s) WHERE rownum = 1", sql);
-        } else {
-            sql += " LIMIT 1";
-        }
-        return selectInt(sql, mailingId, recipientId, companyId);
+
+        return selectInt(addRowLimit(sql, 1), mailingId, recipientId, companyId);
     }
 
 	@Override

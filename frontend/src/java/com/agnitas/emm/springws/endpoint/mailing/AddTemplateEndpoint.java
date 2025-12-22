@@ -13,17 +13,15 @@ package com.agnitas.emm.springws.endpoint.mailing;
 import java.util.Objects;
 
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.AddTemplateRequest;
 import com.agnitas.emm.springws.jaxb.AddTemplateRequest.TargetIDList;
 import com.agnitas.emm.springws.jaxb.AddTemplateResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -33,20 +31,22 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class AddTemplateEndpoint extends BaseEndpoint {
 
-	private static final Logger LOGGER = LogManager.getLogger(AddTemplateEndpoint.class);
-
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
 	private final SecurityContextAccess securityContextAccess;
 
-	public AddTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, ThumbnailService thumbnailService, SecurityContextAccess securityContextAccess) {
+	public AddTemplateEndpoint(
+			@Qualifier("MailingService") MailingService mailingService,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess
+	) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddTemplateRequest")
-	public @ResponsePayload AddTemplateResponse addTemplate(@RequestPayload AddTemplateRequest request) throws Exception {
+	public @ResponsePayload AddTemplateResponse addTemplate(@RequestPayload AddTemplateRequest request) {
 		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		final MailingModel model = new MailingModel();
@@ -74,12 +74,8 @@ public class AddTemplateEndpoint extends BaseEndpoint {
 
 		final int mailingID = mailingService.addMailing(model);
 		
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, mailingID);
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", mailingID), e);
-		}
-		
+		thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, mailingID);
+
 		final AddTemplateResponse response = new AddTemplateResponse();
 		response.setTemplateID(mailingID);
 		

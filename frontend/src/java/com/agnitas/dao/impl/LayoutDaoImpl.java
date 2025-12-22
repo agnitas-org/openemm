@@ -10,12 +10,12 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.LayoutDao;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.LayoutDao;
 
 public class LayoutDaoImpl extends BaseDaoImpl implements LayoutDao {
 
@@ -45,14 +45,5 @@ public class LayoutDaoImpl extends BaseDaoImpl implements LayoutDao {
 		}
 		updateBlob("UPDATE layout_tbl SET data = ? WHERE company_id = ? AND item_name = ?", data, companyID, itemName);
 	}
-	
-	@Override
-	public void updateItemImage(String itemName, byte[] newImage, int companyId) {
-        try {
-            updateBlob("UPDATE layout_tbl SET data = ? WHERE company_id = ? AND item_name = ?",
-                    newImage, companyId, itemName);
-        } catch (Exception e) {
-            logger.error("Error saving item_name={}, company_id={} image in layout_tbl", itemName, companyId, e);
-        }
-    }
+
 }

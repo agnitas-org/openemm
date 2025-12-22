@@ -20,11 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Iterator;
 import java.util.Set;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 
 import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,32 +56,14 @@ public class ImageUtils {
 	 * @param stream {@link InputStream} File input stream
 	 * @return true if validation pass, false in other case
 	 */
-	public static boolean isValidImage(InputStream stream, boolean useAdvancedFileContentTypeDetection) {
+	public static boolean isValidImage(InputStream stream) {
 		if (stream == null) {
 			throw new IllegalArgumentException("File stream could not be empty.");
 		}
 
-		if (useAdvancedFileContentTypeDetection) {
-        	// Detect mimetype by file content (not file name extension)
-			String extension = ApacheTikaUtils.getFileExtension(stream, false);
-			return ApacheTikaUtils.isValidImage(stream) && isValidImageFileExtension(extension);
-		}
-
-		stream.mark(Integer.MAX_VALUE);
-
-		try (ImageInputStream iis = ImageIO.createImageInputStream(stream)) {
-			Iterator<ImageReader> iterator = ImageIO.getImageReaders(iis);
-
-			if (iterator.hasNext()) {
-				ImageReader reader = iterator.next();
-				return isValidImageFileExtension(reader.getFormatName());
-			} else {
-				stream.reset();
-				return isValidImageFileExtension(ApacheTikaUtils.getFileExtension(stream, false));
-			}
-		} catch (IOException e) {
-			return false;
-		}
+		// Detect mimetype by file content (not file name extension)
+		String extension = ApacheTikaUtils.getFileExtension(stream, false);
+		return ApacheTikaUtils.isValidImage(stream) && isValidImageFileExtension(extension);
 	}
 
 	/**
@@ -93,10 +72,10 @@ public class ImageUtils {
 	 * @param data image file content.
 	 * @return true if validation pass, false in other case
 	 */
-	public static boolean isValidImage(byte[] data, boolean useAdvancedFileContentTypeDetection) {
+	public static boolean isValidImage(byte[] data) {
 		boolean valid;
 		try (InputStream stream = new ByteArrayInputStream(data)) {
-			valid = isValidImage(stream, useAdvancedFileContentTypeDetection);
+			valid = isValidImage(stream);
 		} catch (IOException e) {
 			valid = false;
 		}

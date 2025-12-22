@@ -10,18 +10,11 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.DatasourceDescription;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
-
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.velocity.VelocityWrapperFactory;
 import com.agnitas.util.ScriptHelper;
+import com.agnitas.emm.core.commons.util.ConfigService;
 
 public abstract class BeanLookupFactory {
 	abstract public Mailing getBeanMailing();

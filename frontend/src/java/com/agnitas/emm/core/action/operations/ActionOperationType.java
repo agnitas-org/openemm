@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.action.operations;
 
 public enum ActionOperationType {
+
 	ACTIVATE_DOUBLE_OPT_IN("ActivateDoubleOptIn"),
 	CONTENT_VIEW("ContentView"),
 	EXECUTE_SCRIPT("ExecuteScript"),
@@ -25,7 +26,7 @@ public enum ActionOperationType {
 	UNSUBSCRIBE_CUSTOMER("UnsubscribeCustomer"),
 	UPDATE_CUSTOMER("UpdateCustomer");
 	
-	private String name;
+	private final String name;
 	
 	ActionOperationType(String name) {
 		this.name = name;
@@ -35,7 +36,7 @@ public enum ActionOperationType {
 		return name;
 	}
 	
-	public static final ActionOperationType fromTypeName(final String name) {
+	public static ActionOperationType fromTypeName(String name) {
 		for(final ActionOperationType type : values()) {
 			if(type.getName().equals(name)) {
 				return type;

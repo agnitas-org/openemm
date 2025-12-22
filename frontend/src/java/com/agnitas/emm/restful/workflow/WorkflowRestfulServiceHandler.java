@@ -14,8 +14,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.logging.log4j.LogManager;

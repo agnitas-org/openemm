@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.company.dto;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +41,7 @@ public class CompanyInfoDto {
     }
     
     public byte[] getNameBytes() {
-        return StringUtils.defaultString(name, "").getBytes(Charset.forName("UTF-8"));
+        return StringUtils.defaultString(name).getBytes(StandardCharsets.UTF_8);
     }
 
     public String getDescription() {

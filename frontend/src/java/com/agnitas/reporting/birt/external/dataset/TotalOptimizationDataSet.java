@@ -18,13 +18,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -591,37 +591,39 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	
 	public int createSummaryTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		String createTable = "CREATE TABLE tmp_report_aggregation_" + tempTableID + "_tbl" +
-				" (" +
-				"category VARCHAR(200)" +
-				", category_index INTEGER" +
-				", mailing_id INTEGER" +
-				", group_id INTEGER" +
-				", value INTEGER" +
-				", rate DOUBLE" +
-				", rate_delivered DOUBLE" +
-				")";
-		updateEmbedded(createTable);
+		updateEmbedded("""
+				CREATE TABLE %s
+				(
+				    category       VARCHAR(200),
+				    category_index INTEGER,
+				    mailing_id     INTEGER,
+				    group_id       INTEGER,
+				    value          INTEGER,
+				    rate           DOUBLE,
+				    rate_delivered DOUBLE
+				)
+				""".formatted("tmp_report_aggregation_" + tempTableID + "_tbl"));
 		return tempTableID;
 	}
 	
 	@Override
 	public int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		String createTable = "CREATE TABLE tmp_report_aggregation_" + tempTableID + "_tbl" +
-				" (" +
-				"  mailing_id INTEGER" +
-				", mailing_name VARCHAR(200)" +
-				", mailing_subject VARCHAR(200)" +
-				", group_id INTEGER" +
-				", is_winner INTEGER" +
-				", base_mailing_id INTEGER" +
-				", target_group_id INTEGER" +
-				", target_group_name VARCHAR(200)" +
-				", avg_mailing_size DOUBLE" +
-				", send_date TIMESTAMP DEFAULT NULL" +
-				")";
-		updateEmbedded(createTable);
+		updateEmbedded("""
+				CREATE TABLE %s
+				(
+				    mailing_id        INTEGER,
+				    mailing_name      VARCHAR(200),
+				    mailing_subject   VARCHAR(200),
+				    group_id          INTEGER,
+				    is_winner         INTEGER,
+				    base_mailing_id   INTEGER,
+				    target_group_id   INTEGER,
+				    target_group_name VARCHAR(200),
+				    avg_mailing_size  DOUBLE,
+				    send_date         TIMESTAMP DEFAULT NULL
+				)
+				""".formatted("tmp_report_aggregation_" + tempTableID + "_tbl"));
 		return tempTableID;
 	}
 	
@@ -652,6 +654,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	}
 	
 	public static class OptimizationMailingSummaryRow extends MailingSummaryRow {
+
 		private int mailingId;
 		private String mailingName;
 		private int groupId;

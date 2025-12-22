@@ -14,18 +14,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
-import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
+import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class ProfileImportWorkerFactory {
 	private ConfigService configService;
@@ -64,7 +65,7 @@ public class ProfileImportWorkerFactory {
 		this.importQuotaCheckService = Objects.requireNonNull(service, "import quota check service");
 	}
 	
-	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, int companyID, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
+	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, int companyID, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) {
 		ProfileImportWorker profileImportWorker = new ProfileImportWorker();
 
 		profileImportWorker.setConfigService(configService);
@@ -86,7 +87,10 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setThrottleImportPerBlock(configService.getIntegerValue(ConfigValue.ImportThrottlingSecondsPerBlock, companyID));
 		
 		if (importProfile.isMailinglistsAll()) {
-			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(companyID).stream().map(mailinglist -> mailinglist.getId()).collect(Collectors.toList()));
+			profileImportWorker.setMailingListIdsToAssign(mailinglistDao.getMailinglists(companyID)
+					.stream()
+					.map(Mailinglist::getId)
+					.collect(Collectors.toList()));
 		} else {
 			profileImportWorker.setMailingListIdsToAssign(mailingListIdsToAssign);
 		}

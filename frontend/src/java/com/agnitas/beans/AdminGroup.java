@@ -114,5 +114,4 @@ public interface AdminGroup {
 
 	List<Integer> getParentGroupIds();
 
-	boolean permissionAllowedByParentGroups(Permission... permission);
 }

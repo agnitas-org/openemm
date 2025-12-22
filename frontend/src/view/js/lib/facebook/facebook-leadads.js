@@ -1,12 +1,7 @@
 AGN_FACEBOOK.LeadAds = {};
 
 AGN_FACEBOOK.LeadAds.getTableApi = function (selector) {
-  var table = AGN.Lib.Table.get($(selector));
-  if (table) {
-    return table.api;
-  }
-
-  return null;
+  return AGN.Lib.Table.get($(selector))?.api;
 };
 
 AGN_FACEBOOK.LeadAds.connect_pages = function (userAccessToken, url, selector, mailinglistId, doiMailingId, onSuccess, onError, onPageCompanyConflict) {
@@ -19,7 +14,7 @@ AGN_FACEBOOK.LeadAds.connect_pages = function (userAccessToken, url, selector, m
     }
   });
 
-  var payload = {
+  const payload = {
     mailinglist_id: mailinglistId,
     doi_mailing_id: doiMailingId,
     user_access_token: userAccessToken,
@@ -62,9 +57,9 @@ AGN_FACEBOOK.LeadAds.connect_pages = function (userAccessToken, url, selector, m
 AGN_FACEBOOK.LeadAds.list_manageable_pages = function (userAccessToken, url, selector, onError) {
 
   function update_table(jsonData, selector) {
-    var table = AGN.Lib.Table.get($(selector));
+    const table = AGN.Lib.Table.get($(selector));
     if (table) {
-      table.api.setRowData(jsonData.pages);
+      table.api.setGridOption('rowData', jsonData.pages)
       table.redraw();
     }
   }

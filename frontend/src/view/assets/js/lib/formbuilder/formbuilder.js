@@ -1,36 +1,30 @@
-(function () {
+(() => {
 
-    var Utils = AGN.Lib.FormBuilder.Utils;
-    var EmmControls = AGN.Lib.FormBuilder.EmmControls;
-    var Templates = AGN.Lib.FormBuilder.Templates;
+    const Utils = AGN.Lib.FormBuilder.Utils;
+    const EmmControls = AGN.Lib.FormBuilder.EmmControls;
+    const Templates = AGN.Lib.FormBuilder.Templates;
 
-    var template = "<html>\n" +
-        "    <head>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/jquery/jquery-3.5.1.js", true) + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.js", true) + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.date.js", true) + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/formbuilder/generated-form.js", true) + "\"></script>\n" +
-        "        <link rel=\"stylesheet\" href=\"" + AGN.url("/assets/form.css", true) + "\">" +
-        "        {{ if (cssUrl) { }}\n" +
-        "        <link rel=\"stylesheet\" href=\"{{- cssUrl }}\">\n" +
-        "        {{ } }}\n" +
-        "    </head>\n" +
-        "    <body>\n" +
-        "        <div class=\"container\" style=\"margin-top: 50px;\">\n" +
-        "            <form action=\"form.action\">\n" +
-        "                {{= generatedHTML}}\n" +
-        "            </form>\n" +
-        "        </div>\n" +
-        "    </body>\n" +
-        "</html>"
+    const template = `
+        <html>
+            <head>
+                <link rel="stylesheet" href="${AGN.url("/assets/form.css", true)}">
+                {{ if (cssUrl) { }}
+                    <link rel="stylesheet" href="{{- cssUrl }}">
+                {{ } }}
+            </head>
+            <body>
+                <div class="container" style="margin-top: 50px;">
+                    <form action="form.action">
+                        {{= generatedHTML}}
+                    </form>
+                </div>
+            </body>
+        </html>
+    `;
 
-    var Confirm = AGN.Lib.Confirm;
+    const DEFAULT_ATTR = ['required', 'label', 'description', 'name', 'className', 'placeholder', 'value'];
 
-    var FormBuilder;
-
-    var DEFAULT_ATTR = ['required', 'label', 'description', 'name', 'className', 'placeholder', 'value'];
-
-    FormBuilder = function (textArea, options) {
+    const FormBuilder = function (textArea, options) {
         this.options = $.extend({}, options);
         var self = this;
         self.$el = $(textArea);
@@ -332,62 +326,58 @@
     }
 
     FormBuilder.prototype.generateHtml = function() {
-        var formData = this.builder.actions.getData();
-        var cssUrl = this.options.cssUrl;
-
-        var $renderContainer = $('<form/>');
+        const $renderContainer = $('<form/>');
         $renderContainer.formRender({
-            formData: formData,
+            formData: this.builder.actions.getData(),
             controls: this.controls,
             templates: {
                 date: Templates.dateForRender
             }
         });
-        var generatedHtml;
-        if(template) {
-            generatedHtml = _.template(template)({generatedHTML: $renderContainer.html(), cssUrl: cssUrl});
+
+        let generatedHtml;
+        if (template) {
+            generatedHtml = _.template(template)({
+                generatedHTML: $renderContainer.html(),
+                cssUrl: this.options.cssUrl
+            });
         } else {
             generatedHtml = $renderContainer.html();
         }
         $renderContainer.remove();
 
-        generatedHtml = addNewLinesAfterTags(generatedHtml);
-
-        return generatedHtml;
+        return addNewLinesAfterTags(generatedHtml);
     }
 
     FormBuilder.prototype.generateHtmlToTarget = function() {
-        var self = this;
-        var $target = this.$target;
-        if(!$target) {
-            return;
-        }
-        var editor = AGN.Lib.Editor.get($target);
-        if(!editor) {
+        const $target = this.$target;
+        if (!$target) {
             return;
         }
 
-        var confirmationModal = this.options.confirmationModal;
-
-        if(!confirmationModal || !editor.val()) {
-            processHtmlGeneration(self, editor);
+        const editor = AGN.Lib.Editor.get($target);
+        if (!editor) {
             return;
         }
 
-        Confirm.from('warning-html-generation-modal').done(function () {
-            processHtmlGeneration(self, editor);
-        });
+        const confirmationModal = this.options.confirmationModal;
+        if (!confirmationModal || !editor.val()) {
+            processHtmlGeneration(this, editor);
+            return;
+        }
+
+        AGN.Lib.Confirm.from(confirmationModal)
+          .done(() => processHtmlGeneration(this, editor));
     }
 
     FormBuilder.prototype.downloadHtml = function() {
-        var generatedHtml = this.generateHtml();
-        var encodedValue = window.btoa(generatedHtml);
-        var fileName = 'Generated form.txt';
-        if(this.options.formName) {
+        const encodedValue = window.btoa(this.generateHtml());
+        let fileName = 'Generated form.txt';
+        if (this.options.formName) {
             fileName = this.options.formName + '.txt';
         }
 
-        var tmpElement = document.createElement('a');
+        const tmpElement = document.createElement('a');
         tmpElement.setAttribute('href', 'data:application/octet-stream;charset=utf-8;base64,' + encodedValue);
         tmpElement.setAttribute('download', fileName);
 
@@ -423,7 +413,7 @@
     }
 
     FormBuilder.prototype.isChanged = function () {
-        var self = this;
+        const self = this;
         if (self.options.data) {
             return self.getInitJson() !== self.getJson();
         } else {
@@ -437,7 +427,7 @@
     }
 
     function getTypeUserAttrs(builder) {
-        var userAttrsByType = {
+        const userAttrsByType = {
             formName: {
                 formName: {
                     label: t('userform.formBuilder.formName'),
@@ -484,8 +474,9 @@
                 }
             }
         };
-        var typesForTextEmmAttrs = ['text', 'hidden', 'textarea', 'radio-group', 'checkbox-group'];
-        typesForTextEmmAttrs.forEach(function (type) {
+
+        const typesForTextEmmAttrs = ['text', 'hidden', 'textarea', 'radio-group', 'checkbox-group'];
+        typesForTextEmmAttrs.forEach(type=> {
             userAttrsByType[type] = {
                 emmField: {
                     label: t('userform.formBuilder.emmField'),
@@ -497,7 +488,7 @@
     }
 
     function createTemplateName(templateName) {
-        return t('userform.formBuilder.template.template') + ': ' + templateName;
+        return `${t('userform.formBuilder.template.template')}: ${templateName}`;
     }
 
     function addNewLinesAfterTags(html) {
@@ -508,4 +499,5 @@
     }
 
     AGN.Lib.FormBuilder.FormBuilder = FormBuilder;
+
 })();

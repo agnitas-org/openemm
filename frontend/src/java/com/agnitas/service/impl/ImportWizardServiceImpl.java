@@ -28,23 +28,21 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.impl.ImportStatusImpl;
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardFileStepForm;
 import com.agnitas.emm.core.recipient.imports.wizard.form.ImportWizardSteps;
 import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.agnitas.beans.ImportStatus;
-import com.agnitas.beans.impl.ImportStatusImpl;
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.service.ImportWizardHelper;
 import com.agnitas.service.ImportWizardService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Blacklist;
 import com.agnitas.util.CsvColInfo;
@@ -56,7 +54,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -166,11 +165,17 @@ public class ImportWizardServiceImpl implements ImportWizardService {
     }
 
     @Override
-    public ServiceResult<List<CsvColInfo>> parseFirstLine(ImportWizardHelper helper) throws IOException {
+    public ServiceResult<List<CsvColInfo>> parseFirstLine(ImportWizardHelper helper) {
         ImportStatus status = helper.getStatus();
-        if (helper.getFile().toBytes().length == 0) {
-            return ServiceResult.error(Message.of("error.import.no_file"));
+        try {
+            if (helper.getFile().toBytes().length == 0) {
+                return ServiceResult.error(Message.of("error.import.no_file"));
+            }
+        } catch (IOException e) {
+            logger.error("Error occurred when read file content: {}", e.getMessage(), e);
+            return ServiceResult.error(Message.of("error.import.parse.firstline", e.getMessage()));
         }
+
         try (CsvReader csvReader = new CsvReader(
                 new ByteArrayInputStream(helper.getFile().toBytes()),
                 status.getCharset(),
@@ -183,17 +188,10 @@ public class ImportWizardServiceImpl implements ImportWizardService {
                 logger.error("parseFirstLine: A duplicate CSV column was found: {}", duplicateCsvColumn);
                 return ServiceResult.error(Message.of("error.duplicate.csvcolumn", duplicateCsvColumn));
             }
-            return ServiceResult.success(firstLineHeaders.stream().map(CsvColInfo::new).collect(Collectors.toList()));
+            return ServiceResult.success(firstLineHeaders.stream().map(CsvColInfo::new).toList());
         } catch (InvalidCharsetException e) {
             logger.error("parseFirstLine: {}", e.getMessage(), e);
             return ServiceResult.error(Message.of("error.import.charset"));
-        } catch (ImportWizardContentParseException e) {
-            logger.error("parseFirstline: {}  key: {}", e.getMessage(), e.getErrorMessageKey(), e);
-            if (e.getAdditionalErrorData() != null && e.getAdditionalErrorData().length > 0) {
-                return ServiceResult.error(Message.of(e.getErrorMessageKey(), e.getAdditionalErrorData()));
-            } else {
-                return ServiceResult.error(Message.of(e.getErrorMessageKey()));
-            }
         } catch (Exception e) {
             logger.error("parseFirstLine: {}", e.getMessage(), e);
             return ServiceResult.error(Message.of("error.import.parse.firstline", e.getMessage()));

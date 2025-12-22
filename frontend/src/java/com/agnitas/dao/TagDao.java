@@ -10,7 +10,6 @@
 
 package com.agnitas.dao;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,12 +19,11 @@ import com.agnitas.beans.TagDefinition;
  * Dao for tag_tbl which contains the agnTAG definitions
  */
 public interface TagDao {
+
 	TagDefinition getTag(int companyID, String name);
 
 	Set<String> extractDeprecatedTags(int companyID, Set<String> tagNames);
 	
-	List<TagDefinition> getTagDefinitions(int companyID);
-
 	Map<String, TagDefinition> getTagDefinitionsMap(int companyID);
 
 	Map<String, String> getSelectValues(int companyID);

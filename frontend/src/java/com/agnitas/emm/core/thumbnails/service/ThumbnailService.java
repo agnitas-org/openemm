@@ -10,13 +10,15 @@
 
 package com.agnitas.emm.core.thumbnails.service;
 
+import com.agnitas.emm.core.thumbnails.exception.ThumbnailCreationException;
+
 /**
  * Service to generate mailing thumbnails.
  */
 public interface ThumbnailService {
     
-    public static final int MAILING_THUMBNAIL_WIDTH = 300;
-    public static final int MAILING_THUMBNAIL_HEIGHT = 300;
+    int MAILING_THUMBNAIL_WIDTH = 300;
+    int MAILING_THUMBNAIL_HEIGHT = 300;
 
 	/**
 	 * Invoked by webservice to update thumbnails of mailings.
@@ -24,8 +26,10 @@ public interface ThumbnailService {
 	 * @param companyID company ID 
 	 * @param mailingID mailing ID
 	 * 
-	 * @throws Exception on errors updating thumbnail 
+	 * @throws ThumbnailCreationException on errors updating thumbnail
 	 */
-	void updateMailingThumbnailByWebservice(final int companyID, final int mailingID) throws Exception;
-	
+	void updateMailingThumbnailByWebservice(int companyID, int mailingID);
+
+	void tryUpdateMailingThumbnailByWebservice(int companyID, int mailingID);
+
 }

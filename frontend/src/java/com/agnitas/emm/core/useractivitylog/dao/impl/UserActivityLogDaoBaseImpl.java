@@ -12,19 +12,19 @@ package com.agnitas.emm.core.useractivitylog.dao.impl;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDaoBase;
-import com.agnitas.beans.AdminEntry;
 import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDaoBase;
 
 public abstract class UserActivityLogDaoBaseImpl extends PaginatedBaseDaoImpl implements UserActivityLogDaoBase {
 
     @Override
     public void addAdminUseOfFeature(Admin admin, String feature, Date date) {
         if (admin != null && admin.getAdminID() != 0) {
-            if (isOracleDB()) {
+            if (isOracleDB() || isPostgreSQL()) {
                 String updateSql = "UPDATE admin_use_tbl SET use_count = use_count + 1, last_use = ? WHERE admin_id = ? AND feature = ?";
                 int updatedLines = update(updateSql, date, admin.getAdminID(), feature);
                 if (updatedLines == 0) {
@@ -47,16 +47,25 @@ public abstract class UserActivityLogDaoBaseImpl extends PaginatedBaseDaoImpl im
         }
     }
 
-    protected String buildVisibleAdminsCondition(List<AdminEntry> visibleAdmins) {
-        List<String> usernames = visibleAdmins.stream()
-                .filter(Objects::nonNull)
-                .map(AdminEntry::getUsername)
-                .toList();
-
-        if (!usernames.isEmpty()) {
-            return makeBulkInClauseForString("username", usernames);
+    public List<String> getDistinctUsernames(Integer companyId) {
+        String query = "SELECT DISTINCT username FROM " + getTableName();
+        if (companyId != null) {
+            query += " WHERE company_id = " + companyId + " OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = " + companyId + ")";
         }
 
-        return "";
+        return select(query, StringRowMapper.INSTANCE);
     }
+
+    public void deleteByUsernames(Set<String> usernames, int companyID) {
+        if (usernames.isEmpty()) {
+            return;
+        }
+
+        update("DELETE FROM " + getTableName() + " WHERE "
+                + makeBulkInClauseForString("username", usernames)
+                + " AND company_id = ?", companyID);
+    }
+
+    protected abstract String getTableName();
+
 }

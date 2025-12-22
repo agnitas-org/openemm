@@ -12,8 +12,8 @@ package com.agnitas.emm.core.mediatypes.dao;
 
 import java.util.Map;
 
-import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.beans.Mediatype;
 
 /**
  * Interface for accessing media types of mailings.
@@ -29,10 +29,8 @@ public interface MediatypesDao {
 	 * @param companyId company ID
 	 * 
 	 * @return mapping from media type code to media type
-	 * 
-	 * @throws MediatypesDaoException on errors during reading media types
 	 */
-	Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId) throws MediatypesDaoException;
+	Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId);
 
-	Map<Integer, Mediatype> loadMediatypesByStatus(MediaTypeStatus status, int mailingId, int companyId) throws MediatypesDaoException;
+	Map<Integer, Mediatype> loadMediatypesByStatus(MediaTypeStatus status, int mailingId, int companyId);
 }

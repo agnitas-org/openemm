@@ -12,10 +12,10 @@ package com.agnitas.emm.springws.logintrack;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.bean.LoginTrackSettings;
-import org.agnitas.emm.core.logintracking.dao.LoginTrackSettingsDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.loginmanager.bean.LoginTrackSettings;
+import com.agnitas.emm.core.loginmanager.dao.LoginTrackSettingsDao;
 public final class WebserviceLoginTrackSettingsDaoImpl implements LoginTrackSettingsDao {
 	
 	private ConfigService configService;

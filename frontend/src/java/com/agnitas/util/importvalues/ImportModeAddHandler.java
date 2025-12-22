@@ -22,9 +22,13 @@ import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.service.ImportException;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbUtilities;
@@ -33,13 +37,10 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class ImportModeAddHandler implements ImportModeHandler {
-    private static final transient Logger logger = LogManager.getLogger(ImportModeAddHandler.class);
+
+    private static final Logger logger = LogManager.getLogger(ImportModeAddHandler.class);
     
     private ImportRecipientsDao importRecipientsDao;
     private ConfigService configService;
@@ -143,10 +144,10 @@ public class ImportModeAddHandler implements ImportModeHandler {
 			}
 		}
 		
-		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
+		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl");
 		status.setInvalidNullValues(invalidNullValueEntries);
 		
-		int insertedEntries = importRecipientsDao.insertNewCustomers(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), companyId);
+		int insertedEntries = importRecipientsDao.insertNewCustomers(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType());
 		status.setInserted(insertedEntries);
 	}
 

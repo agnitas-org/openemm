@@ -1,0 +1,45 @@
+
+.benchmark-bar {
+
+  --benchmark-bar-bg-color: #{$stat-light-red};
+  --benchmark-bar-border-color: #{$stat-light-red};
+
+  display: flex;
+  gap: $gap-x-sm;
+
+  > div:first-child {
+    color: $white;
+    max-width: 125px;
+    height: 20px;
+    background: var(--benchmark-bar-bg-color);
+    border: 1px solid var(--benchmark-bar-border-color);
+  }
+
+  &--best {
+    --benchmark-bar-bg-color: #{$stat-green};
+    --benchmark-bar-border-color: #{$stat-green};
+    font-weight: $font-weight-medium;
+  }
+}
+
+@include color-mode(light-contrast) {
+  .benchmark-bar {
+    --benchmark-bar-bg-color: #{$stat-light-red};
+    --benchmark-bar-border-color: #{$con-dark-blue};
+  }
+  .benchmark-bar--best {
+    --benchmark-bar-bg-color: #{$stat-light-lime};
+    --benchmark-bar-border-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .benchmark-bar {
+    --benchmark-bar-bg-color: #{$stat-light-red};
+    --benchmark-bar-border-color: #{$white};
+  }
+  .benchmark-bar--best {
+    --benchmark-bar-bg-color: #{$stat-light-lime};
+    --benchmark-bar-border-color: #{$white};
+  }
+}

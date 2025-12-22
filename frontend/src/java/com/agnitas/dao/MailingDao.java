@@ -20,29 +20,28 @@ import java.util.concurrent.TimeUnit;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingBase;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.RdirMailingData;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
-import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
 import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
 import com.agnitas.emm.core.mailing.bean.MailingDto;
 import com.agnitas.emm.core.mailing.dao.MailingDaoOptions;
 import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
 import com.agnitas.emm.core.mailing.service.ListMailingFilter;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.MailingSendStatus;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
 import com.agnitas.util.FulltextSearchInvalidQueryException;
 
 public interface MailingDao {
@@ -55,6 +54,7 @@ public interface MailingDao {
 	
 	// returns all Mailings in a linked List.
 	List<Integer> getAllMailings(int companyID);
+
 	// returns the given amount of mailings
 	List<Mailing> getMailings(int companyID, int adminId, int count, String mailingStatus, boolean takeMailsForPeriod);
 
@@ -68,7 +68,7 @@ public interface MailingDao {
 	 * 
 	 * @return List of Mailing objects
 	 */
-	List<Mailing> listMailings(final int companyId, final boolean template, final ListMailingFilter filter);
+	List<Mailing> listMailings(int companyId, boolean template, ListMailingFilter filter);
 
 	List<Map<String, Object>> getMailings(int companyId, String commaSeparatedMailingIds);
 	
@@ -101,13 +101,6 @@ public interface MailingDao {
 
     int saveUndoMailing(int mailingId, int adminId);
 
-	/**
-	 * returns the type of a Followup Mailing as String.
-	 * The String can be fount in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER)
-	 * if no followup is found, null is the returnvalue!
-	 */
-	String getFollowUpType(int mailingID);
-
     int getCompanyIdForMailingId(int mailingId);
 	
 	RdirMailingData getRdirMailingData(int mailingId);
@@ -117,7 +110,7 @@ public interface MailingDao {
 	 */
 	String getFollowUpFor(int mailingID);
 	
-    PaginatedListImpl<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums);
+    PaginatedList<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums);
 
     /**
      * Get the last n sent world mailings in descend order
@@ -148,51 +141,11 @@ public interface MailingDao {
 
 	List<MailingDto> getSentAndScheduled(MailingDaoOptions opts, Admin admin);
 
-	List<Map<String, Object>> getSentAndScheduled(Admin admin, Date startDate, Date endDate, int limit);
-
     List<MailingPopoverInfo> getMailingsCalendarInfo(Set<Integer> mailingIds, Admin admin);
-
-    List<Map<String, Object>> getSentAndScheduledLight(Admin admin, Date startDate, Date endDate);
 
 	List<ScheduledMailing> getScheduledMailings(Admin admin, Date startDate, Date endDate);
 
     List<MailingDto> getPlannedMailings(MailingDaoOptions opts, Admin admin);
-
-	List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate, int limit);
-
-    List<Map<String, Object>> getPlannedMailingsLight(Admin admin, Date startDate, Date endDate);
-
-	Map<Integer, Integer> getOpeners(int companyId, List<Integer> mailingsId);
-
-	/**
-	 * Calculate a number of an openers for each mailingId.
-	 *
-	 * @param companyId an identifier of a company.
-	 * @param mailingsId a collections of mailing identifiers.
-	 * @param currentRecipientsOnly whether ({@code true}) or not ({@code false}) exclude recipients who are not present
-	 *                                 in a current mailing list of a mailing (notice that unsubscribed customers
-	 *                                 like "Opt-Out by Admin" are considered present anyway).
-     * @return a map of an openers count (mailingId -> openersCount)
-     */
-	Map<Integer, Integer> getOpeners(int companyId, Collection<Integer> mailingsId, boolean currentRecipientsOnly);
-
-    Map<Integer, Integer> getClickers(int companyId, List<Integer> mailingsId);
-
-	/**
-	 * Calculate a number of a clickers for each mailingId.
-	 *
-	 * @param companyId an identifier of a company.
-	 * @param mailingsId a collections of mailing identifiers.
-	 * @param currentRecipientsOnly whether ({@code true}) or not ({@code false}) exclude recipients who are not present
-	 *                                 in a current mailing list of a mailing (notice that unsubscribed customers
-	 *                                 like "Opt-Out by Admin" are considered present anyway).
-	 * @return a map of a clickers count (mailingId -> clickersCount)
-	 */
-	Map<Integer, Integer> getClickers(int companyId, Collection<Integer> mailingsId, boolean currentRecipientsOnly);
-
-	PaginatedListImpl<Map<String, Object>> getUnsentMailings(Admin admin, int rownums);
-
-	PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, int rownums);
 
 	List<LightweightMailing> getMailingNames(Admin admin);
 
@@ -226,11 +179,6 @@ public interface MailingDao {
 
 	List<MailingDto> getUnsentMailings(Admin admin, boolean planned);
 
-    // Todo EMMGUI-953 check usage and remove after
-	List<CalendarUnsentMailing> getNotSentMailings(Admin admin, boolean planned);
-
-    boolean usedInCampaignManager(int mailingId);
-
 	/**
 	 * Check if a mailing referenced by {@code mailingId} is being used in a running (status is either "active" or "testing") workflow.
 	 *
@@ -248,15 +196,11 @@ public interface MailingDao {
 
     MailingStatus getStatus(int companyID, int mailingID);
     
-	List<Integer> getMailingIdsForIntervalSend();
-
-	List<LightweightMailing> getLightweightMailings(int companyID, int targetId);
-
 	List<Integer> getSampleMailingIDs();
 	
-	List<LightweightMailing> getMailingsByType(final int mailingType, final  int companyId);
+	List<LightweightMailing> getMailingsByType(int mailingType, int companyId);
 	
-	List<LightweightMailing> getMailingsByType(final int mailingType, final  int companyId, boolean includeInactive);
+	List<LightweightMailing> getMailingsByType(int mailingType, int companyId, boolean includeInactive);
 
     String getMailingName(int mailingId, int companyId);
 
@@ -313,9 +257,9 @@ public interface MailingDao {
 	 * @return {@code true} if succeeded or {@code false} if mailing doesn't exist (or marked as deleted).
 	 * @throws TooManyTargetGroupsInMailingException if a target expression is too long.
 	 */
-	boolean setTargetExpression(int mailingId, int companyId, String targetExpression) throws TooManyTargetGroupsInMailingException;
+	boolean setTargetExpression(int mailingId, int companyId, String targetExpression);
 
-	boolean isActiveIntervalMailing(final int mailingID);
+	boolean isActiveIntervalMailing(int mailingID);
 
 	boolean deleteAccountSumEntriesByCompany(int companyID);
 	
@@ -493,7 +437,7 @@ public interface MailingDao {
 	 *
 	 * @return PaginatedList of MailingBase
 	 */
-	PaginatedListImpl<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
+	PaginatedList<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
 
 	List<LightweightMailing> getLightweightMailings(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
 
@@ -560,17 +504,6 @@ public interface MailingDao {
 	boolean isTransmissionRunning(int mailingID);
 
 	/**
-	 *  Checks if any action related to given mailing exists
-	 *
-	 * @param mailingId
-	 *              Id of the mailing in database
-	 * @param companyID
-	 *              Id of the company that created a mailing
-	 * @return true - has at list one action, otherwise - false
-	 */
-	boolean hasActions(int mailingId, int companyID);
-
-	/**
 	 * Returns the mailing IDs referencing the given template.
 	 *
 	 * @param mailTemplate
@@ -613,16 +546,7 @@ public interface MailingDao {
 	 * @param admin current user
 	 * @return  List of MailingBase bean objects
 	 */
-	PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
-
-	/**
-	 * Loads list of non-deleted templates of certain company
-	 *
-	 * @param companyID
-	 *               Id of the company
-	 * @return List of MailingBase bean objects
-	 */
-	List<MailingBase> getTemplateMailingsByCompanyID( int companyID);
+	PaginatedList<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
 
 	/**
 	 * Loads list of action-based mailings have been sent by certain company
@@ -673,8 +597,6 @@ public interface MailingDao {
 	 */
 	String getEmailParameter(int mailingID);
 
-	String getSQLExpression(String targetExpression);
-
 	MailingType getMailingType(int mailingID);
 
 	List<MailingBase> getMailingTemplatesWithPreview(MailingTemplateSelectionFilter filter, Admin admin);
@@ -684,4 +606,5 @@ public interface MailingDao {
 	boolean isTemplate(int mailingId, int companyId);
 
 	boolean isMarkedAsDeleted(int mailingId, int companyID);
+
 }

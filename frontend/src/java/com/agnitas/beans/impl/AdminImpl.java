@@ -25,19 +25,15 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.admin.enums.UiLayoutType;
-import com.agnitas.emm.core.commons.password.PasswordReminderState;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
-import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
-import com.agnitas.util.AgnUtils;
-import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminGroup;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.enums.UiLayoutType;
+import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class AdminImpl implements Admin {
 	protected Company company = new CompanyImpl();
@@ -432,40 +428,6 @@ public class AdminImpl implements Admin {
 		} else {
 			return permissionAllowedByGroups(permissions);
 		}
-	}
-
-	@Override
-	public boolean isRedesignedUiUsed() {
-		return !permissionAllowed(Permission.USE_OLD_UI);
-	}
-
-	@Override
-	public boolean isUpdatedUxUsed() {
-		return isRedesignedUiUsed() && permissionAllowed(Permission.UX_UPDATES);
-	}
-
-	@Override
-	public boolean isUxUpdateRollback() {
-		return permissionAllowed(Permission.UX_UPDATES_ROLLBACK);
-	}
-
-	@Override
-	public boolean isUpdatedUxUsed(HttpServletRequest req) {
-		if (req == null) {
-			return isUpdatedUxUsed();
-		}
-		return isUpdatedUxUsed() || (isRedesignedUiUsed() && isUxUpdateFromWorkflow(req));
-	}
-
-	private static boolean isUxUpdateFromWorkflow(HttpServletRequest req) {
-		WorkflowParameters workflowParameters = WorkflowParametersHelper.find(req);
-		if (!WorkflowParametersHelper.isEmpty(workflowParameters)) {
-			if (workflowParameters.getParamsAsMap() != null) {
-				return !workflowParameters.getParamsAsMap().containsKey("preventUxUpdateParamsCheck");
-			}
-			return true;
-		}
-		return false;
 	}
 
 	@Override

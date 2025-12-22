@@ -10,10 +10,13 @@
 
 package com.agnitas.emm.core.webhooks.sender;
 
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 public interface WebhookHttpClientFactory {
 
 	CloseableHttpClient createHttpClient(int companyID) throws WebhookHttpClientFactoryException;
+
+	CloseableHttpAsyncClient createHttpAsyncClient(int companyID) throws WebhookHttpClientFactoryException;
 
 }

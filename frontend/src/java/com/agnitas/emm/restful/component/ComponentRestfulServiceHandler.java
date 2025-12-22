@@ -17,15 +17,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
-import java.util.Optional;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.impl.MailingComponentImpl;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import org.apache.commons.lang3.StringUtils;
-import com.agnitas.beans.Admin;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.MailingDao;
@@ -48,10 +44,12 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
-
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This restful service is available at:
@@ -361,8 +359,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		MailingComponent mailingComponent = new MailingComponentImpl();
 		mailingComponent.setCompanyID(admin.getCompanyID());
 
-		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
-		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+        String companyToken = companyTokenService.getCompanyToken(admin.getCompanyID()).orElse(null);
 		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
@@ -399,17 +396,9 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 							}
 						} else if ("type".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof String) {
-								try {
-									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) entry.getValue()));
-								} catch (Exception e) {
-									throw new RestfulClientException("Invalid value for 'type'");
-								}
+								mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) entry.getValue()));
 							} else if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								try {
-									mailingComponent.setType(MailingComponentType.getMailingComponentTypeByCode((Integer) entry.getValue()));
-								} catch (Exception e) {
-									throw new RestfulClientException("Invalid value for 'type'");
-								}
+								mailingComponent.setType(MailingComponentType.getMailingComponentTypeByCode((Integer) entry.getValue()));
 							} else {
 								throw new RestfulClientException("Invalid data type for 'type'. String expected");
 							}

@@ -10,26 +10,25 @@
 
 package com.agnitas.emm.core.webhooks.messages.dao;
 
-import com.agnitas.emm.core.webhooks.common.WebhookEventType;
-import com.agnitas.emm.core.webhooks.messages.common.WebhookMessage;
-import com.agnitas.emm.core.webhooks.messages.common.WebhookMessageStatus;
-import org.json.JSONObject;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Inplementation of {@link WebhookMessageQueueDao}.
- */
-public final class WebhookMessageQueueDaoImpl extends BaseDaoImpl implements WebhookMessageQueueDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.webhooks.common.WebhookEventType;
+import com.agnitas.emm.core.webhooks.messages.common.WebhookMessage;
+import com.agnitas.emm.core.webhooks.messages.common.WebhookMessageStatus;
+import org.json.JSONObject;
+
+public class WebhookMessageQueueDaoImpl extends BaseDaoImpl implements WebhookMessageQueueDao {
 
 	private ConfigService configService;
-	
+
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -41,61 +40,70 @@ public final class WebhookMessageQueueDaoImpl extends BaseDaoImpl implements Web
 				: "INSERT INTO webhook_message_tbl (company_ref, event_type, event_timestamp, send_timestamp, retry_count, payload, status, status_note) VALUES (?, ?, ?, ?, 0, ?, ?, 'Message enqueued')";
 
 		final Date eventDate = Date.from(eventTimestamp.toInstant());
-		
+
 		update(sql, companyId, eventType.getEventCode(), eventDate, eventDate, payload.toString(), WebhookMessageStatus.IDLE.getStatusCode());
 	}
 
 	@Override
-	public final List<WebhookMessage> listAndMarkMessagesForSending(final Date limitDate) {
+	public List<WebhookMessage> listAndMarkMessagesForSending(Date limitDate) {
 		// Get oldest entry for delivery
-		int nextCompanyIdToSend = 0;
-		int nextEventTypeToSend = 0;
-		if (isOracleDB()) {
-			List<Map<String,Object>> result = select("SELECT company_ref, event_type FROM (SELECT company_ref, event_type FROM webhook_message_tbl WHERE status = ? AND send_timestamp <= ? ORDER BY send_timestamp ASC) WHERE rownum <= 1", WebhookMessageStatus.IDLE.getStatusCode(), limitDate);
-			if (result.size() > 0) {
-				nextCompanyIdToSend = ((Number) result.get(0).get("company_ref")).intValue();
-				nextEventTypeToSend = ((Number) result.get(0).get("event_type")).intValue();
-			}
-		} else {
-			List<Map<String,Object>> result = select("SELECT company_ref, event_type FROM webhook_message_tbl WHERE status = ? AND send_timestamp <= ? ORDER BY send_timestamp ASC LIMIT 1", WebhookMessageStatus.IDLE.getStatusCode(), limitDate);
-			if (result.size() > 0) {
-				nextCompanyIdToSend = ((Number) result.get(0).get("company_ref")).intValue();
-				nextEventTypeToSend = ((Number) result.get(0).get("event_type")).intValue();
-			}
+        List<Map<String, Object>> result = select(addRowLimit("""
+				SELECT company_ref, event_type
+				FROM webhook_message_tbl
+				WHERE status = ?
+				  AND send_timestamp <= ?
+				ORDER BY send_timestamp ASC
+				""", 1), WebhookMessageStatus.IDLE.getStatusCode(), limitDate);
+
+		if (result.isEmpty()) {
+			return Collections.emptyList();
 		}
-		
-		if (nextCompanyIdToSend > 0) {
-			int messagePackageSizeLimit = configService.getIntegerValue(ConfigValue.Webhooks.WebhooksMessagePacketSizeLimit, nextCompanyIdToSend);
-			// Select all messages that can be sent for this companyid
-			final List<WebhookMessage> messages;
-			if (isOracleDB()) {
-				messages = select("SELECT * FROM (SELECT * FROM webhook_message_tbl WHERE status = ? AND company_ref = ? AND event_type = ? AND send_timestamp <= CURRENT_TIMESTAMP ORDER BY send_timestamp ASC) WHERE rownum <= " + messagePackageSizeLimit, WebhookMessageRowMapper.INSTANCE, WebhookMessageStatus.IDLE.getStatusCode(), nextCompanyIdToSend, nextEventTypeToSend);
-			} else {
-				messages = select("SELECT * FROM webhook_message_tbl WHERE status = ? AND company_ref = ? AND event_type = ? AND send_timestamp <= CURRENT_TIMESTAMP ORDER BY send_timestamp ASC LIMIT " + messagePackageSizeLimit, WebhookMessageRowMapper.INSTANCE, WebhookMessageStatus.IDLE.getStatusCode(), nextCompanyIdToSend, nextEventTypeToSend);
-			}
-			
-			if (!messages.isEmpty()) {
-				// Mark all messages as "sending"
-				List<Object[]> parameterList = new ArrayList<>();
-				for (final WebhookMessage message : messages) {
-					parameterList.add(new Object[] { WebhookMessageStatus.SENDING.getStatusCode(), message.getEventId() });
-				}
-	            batchupdate("UPDATE webhook_message_tbl SET status = ?, status_note = 'Sending' WHERE message_id = ?", parameterList);
-			}
-			
-			return messages;
-		} else {
-			return null;
+
+		int nextCompanyIdToSend = ((Number) result.get(0).get("company_ref")).intValue();
+		int nextEventTypeToSend = ((Number) result.get(0).get("event_type")).intValue();
+
+		int messagePackageSizeLimit = configService.getIntegerValue(ConfigValue.Webhooks.WebhooksMessagePacketSizeLimit, nextCompanyIdToSend);
+
+		List<WebhookMessage> messages = select(
+				addRowLimit("""
+						SELECT *
+						FROM webhook_message_tbl
+						WHERE status = ?
+						  AND company_ref = ?
+						  AND event_type = ?
+						  AND send_timestamp <= CURRENT_TIMESTAMP
+						ORDER BY send_timestamp ASC
+						""", messagePackageSizeLimit),
+				WebhookMessageRowMapper.INSTANCE,
+				WebhookMessageStatus.IDLE.getStatusCode(),
+				nextCompanyIdToSend,
+				nextEventTypeToSend
+		);
+
+		markAsSending(messages);
+
+		return messages;
+	}
+
+	private void markAsSending(List<WebhookMessage> messages) {
+		if (messages.isEmpty()) {
+			return;
 		}
+
+		List<Object[]> parameterList = new ArrayList<>();
+		for (WebhookMessage message : messages) {
+			parameterList.add(new Object[] { WebhookMessageStatus.SENDING.getStatusCode(), message.getEventId() });
+		}
+		batchupdate("UPDATE webhook_message_tbl SET status = ?, status_note = 'Sending' WHERE message_id = ?", parameterList);
 	}
 
 	@Override
-	public final void updateMessagesStatus(final List<WebhookMessage> messages, final ZonedDateTime newSendDate, final WebhookMessageStatus newStatus, final String note) {
+	public void updateMessagesStatus(List<WebhookMessage> messages, ZonedDateTime newSendDate, WebhookMessageStatus newStatus, String note) {
 		if (!messages.isEmpty()) {
 			final Date timestamp = Date.from(newSendDate.toInstant());
 
 			List<Object[]> parameterList = new ArrayList<>();
-			for (final WebhookMessage message : messages) {
+			for (WebhookMessage message : messages) {
 				parameterList.add(new Object[] { newStatus.getStatusCode(), note, timestamp, message.getEventId() });
 			}
             batchupdate("UPDATE webhook_message_tbl SET status = ?, status_note = ?, send_timestamp = ? WHERE message_id = ?", parameterList);
@@ -103,30 +111,32 @@ public final class WebhookMessageQueueDaoImpl extends BaseDaoImpl implements Web
 	}
 
 	@Override
-	public final void updateMessageStatus(final long messageId, final ZonedDateTime newSendDate, final WebhookMessageStatus newStatus, final int newRetryCount, final String note) {
+	public void updateMessageStatus(long messageId, ZonedDateTime newSendDate, WebhookMessageStatus newStatus, int newRetryCount, String note) {
 		final String sql = "UPDATE webhook_message_tbl SET status = ?, retry_count = ?, status_note = ?, send_timestamp = ? WHERE message_id = ?";
-		
+
 		final Date timestamp = Date.from(newSendDate.toInstant());
-		
+
 		update(sql, newStatus.getStatusCode(), newRetryCount, note, timestamp, messageId);
 	}
 
 	@Override
-	public void cleanupMessagesBefore(final ZonedDateTime before) {
+	public void cleanupMessagesBefore(ZonedDateTime before) {
 		final Date beforeDate = Date.from(before.toInstant());
-		
-		final String sql = "DELETE FROM webhook_message_tbl WHERE (status = ? OR STATUS = ?) AND send_timestamp < ?";
-		
+
+		final String sql = "DELETE FROM webhook_message_tbl WHERE (status = ? OR status = ?) AND send_timestamp < ?";
+
 		update(sql, WebhookMessageStatus.SENT.getStatusCode(), WebhookMessageStatus.CANCELLED.getStatusCode(), beforeDate);
 	}
+
 	@Override
-	public boolean cleanupMessagesByCompany(final int companyId) {
+	public boolean cleanupMessagesByCompany(int companyId) {
 		int touchedLines = update("DELETE FROM webhook_message_tbl WHERE company_ref = ?", companyId);
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		int remaining = selectInt("SELECT COUNT(*) FROM webhook_message_tbl WHERE company_ref = ?", companyId);
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_message_tbl WHERE company_ref = ?", companyId);
+		return remaining == 0;
 	}
+
 }

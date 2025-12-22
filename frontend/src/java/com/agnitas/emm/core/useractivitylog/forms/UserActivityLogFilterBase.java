@@ -10,18 +10,18 @@
 
 package com.agnitas.emm.core.useractivitylog.forms;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.web.forms.PaginationForm;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.util.Map;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.web.forms.PaginationForm;
 
 public class UserActivityLogFilterBase extends PaginationForm {
 
-    private DateRange timestamp;
+    private DateRange timestamp = new DateRange();
     private String username;
-    private int companyId;
+    private Integer companyId;
 
     public DateRange getTimestamp() {
         return timestamp;
@@ -39,11 +39,11 @@ public class UserActivityLogFilterBase extends PaginationForm {
         this.username = username;
     }
 
-    public int getCompanyId() {
+    public Integer getCompanyId() {
         return companyId;
     }
 
-    public void setCompanyId(int companyId) {
+    public void setCompanyId(Integer companyId) {
         this.companyId = companyId;
     }
 

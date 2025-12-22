@@ -12,24 +12,15 @@ package com.agnitas.emm.core.workflow.dao;
 
 import java.util.List;
 
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.TargetDao;
-import com.agnitas.beans.CompaniesConstraints;
-
 import com.agnitas.emm.core.workflow.beans.WorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStep;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepInstance;
 
 public interface WorkflowReactionDao {
-	/**
-	 * Check if there's a reaction having such an identifier.
-	 *
-	 * @param reactionId an identifier of the reaction to check.
-	 * @param companyId an identifier of a company that owns referenced reaction.
-	 * @return whether ({@code true}) or not ({@code false}) the referenced reaction exists.
-	 */
-	boolean exists(int reactionId, int companyId);
 
 	WorkflowReaction getReaction(int reactionId, int companyId);
 
@@ -80,8 +71,6 @@ public interface WorkflowReactionDao {
 	 * @param keepReactionLog whether or not to keep reaction logs.
 	 */
 	void deactivateReaction(int reactionId, int companyId, boolean keepReactionLog);
-
-	void activateReaction(int reactionId, int companyId);
 
 	/**
 	 * See {@link #deleteReaction(int, int)} and {@link #getReactionId(int, int)}.
@@ -176,4 +165,5 @@ public interface WorkflowReactionDao {
     int getReactionId(int workflowId, int companyId);
 
     boolean isLinkUsedInActiveWorkflow(TrackableLink linkId);
+
 }

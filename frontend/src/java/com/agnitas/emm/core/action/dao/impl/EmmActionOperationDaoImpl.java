@@ -28,7 +28,6 @@ public class EmmActionOperationDaoImpl extends BaseDaoImpl implements EmmActionO
 
 	private ActionOperationFactory actionOperationFactory;
 
-	
 	// TODO Change type of key to ActionOperationType (-> Application Context!)
 	private Map<String, ActionOperationDao> daos = new HashMap<>();
 
@@ -69,10 +68,10 @@ public class EmmActionOperationDaoImpl extends BaseDaoImpl implements EmmActionO
 		ActionOperationDao dao = daos.get(operation.getOperationType().getName());
 		if (operation.getId() == 0) {
 			if (isOracleDB()) {
-				operation.setId(selectInt("SELECT actop_tbl_seq.NEXTVAL FROM DUAL"));
+                operation.setId(selectInt("SELECT actop_tbl_seq.NEXTVAL FROM DUAL"));
 				update("INSERT INTO actop_tbl (action_operation_id, action_id, company_id, type) VALUES (?, ?, ?, ?)", operation.getId(), operation.getActionId(), operation.getCompanyId(), operation.getOperationType().getName());
 			} else {
-				int newActionOperationId = insertIntoAutoincrementMysqlTable("action_operation_id", "INSERT INTO actop_tbl (action_id, company_id, type) VALUES (?, ?, ?)", operation.getActionId(), operation.getCompanyId(), operation.getOperationType().getName());
+				int newActionOperationId = insert("action_operation_id", "INSERT INTO actop_tbl (action_id, company_id, type) VALUES (?, ?, ?)", operation.getActionId(), operation.getCompanyId(), operation.getOperationType().getName());
 				operation.setId(newActionOperationId);
 			}
 			

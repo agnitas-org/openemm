@@ -10,14 +10,16 @@
 
 package com.agnitas.web.forms;
 
-import com.agnitas.service.WebStorage;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.RowsCountWebStorageEntry;
 import com.agnitas.beans.SortingWebStorageEntry;
+import com.agnitas.service.WebStorage;
 import com.agnitas.service.WebStorageBundle;
 import com.agnitas.util.AgnUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.displaytag.pagination.PaginatedList;
+import org.springframework.web.bind.ServletRequestDataBinder;
 
 public class FormUtils {
 
@@ -58,11 +60,11 @@ public class FormUtils {
         entry.setAscendingOrder(AgnUtils.sortingDirectionToBoolean(form.getDir()));
     }
 
-    public static void setPaginationParameters(PaginationForm form, PaginatedList paginatedList) {
+    public static void setPaginationParameters(PaginationForm form, PaginatedList<?> paginatedList) {
         form.setSort(paginatedList.getSortCriterion());
-        form.setDir(paginatedList.getSortDirection().getName());
+        form.setDir(paginatedList.getSortDirection().getId());
         form.setPage(paginatedList.getPageNumber());
-        form.setNumberOfRows(paginatedList.getObjectsPerPage());
+        form.setNumberOfRows(paginatedList.getPageSize());
     }
 
     public static <E> void syncSearchParams(FormSearchParams<E> searchParams, E form, boolean restore) {
@@ -77,4 +79,18 @@ public class FormUtils {
         searchParams.resetParams();
         searchParams.restoreParams(form);
     }
+
+    public static <T> T bindRequestParameters(HttpServletRequest request, Class<T> targetClazz) {
+        try {
+            T target = targetClazz.getDeclaredConstructor().newInstance();
+            ServletRequestDataBinder servletRequestDataBinder = new ServletRequestDataBinder(target);
+            servletRequestDataBinder.bind(request);
+
+            return target;
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Failed to bind request parameters to " + targetClazz.getSimpleName(), e);
+        }
+    }
+
 }

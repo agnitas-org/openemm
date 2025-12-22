@@ -22,7 +22,7 @@ public class OpenemmRecipientExportWorkerFactory implements RecipientExportWorke
 	private MailinglistService mailinglistService;
 
 	@Override
-	public RecipientExportWorker newWorker(ExportPredef exportProfile, Admin admin) throws Exception {
+	public RecipientExportWorker newWorker(ExportPredef exportProfile, Admin admin) {
 		return new RecipientExportWorker(exportProfile, admin, targetService, recipientFieldService, mailinglistService);
 	}
 }

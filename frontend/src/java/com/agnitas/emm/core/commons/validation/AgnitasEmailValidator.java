@@ -19,36 +19,36 @@ public class AgnitasEmailValidator implements EmailValidator {
 	private static final String VALID_CHARS_REGEXP = "[^\\s" + SPECIAL_CHARS_REGEXP + "]";
 	private static final String QUOTED_USER_REGEXP = "(\"[^\"]*\")";
 	private static final String WORD_REGEXP = "((" + VALID_CHARS_REGEXP + "|')+|" + QUOTED_USER_REGEXP + ")";
-
+	
 	private static final String DOMAIN_PART_REGEX = "\\p{Alnum}(?>[\\p{Alnum}-]*\\p{Alnum})*";
 	private static final String TOP_DOMAIN_PART_REGEX = "\\p{Alpha}{2,}";
 	private static final String DOMAIN_NAME_REGEX = "^(?:" + DOMAIN_PART_REGEX + "\\.)+" + "(" + TOP_DOMAIN_PART_REGEX + ")$";
 
-	/**
-	 * Regular expression for parsing email addresses.
-	 *
-	 * Taken from Apache Commons Validator.
-	 * If this is not working, shame on Apache ;)
+	/** 
+	 * Regular expression for parsing email addresses. 
+	 * 
+	 * Taken from Apache Commons Validator. 
+	 * If this is not working, shame on Apache ;) 
 	 */
-	private static final String EMAIL_REGEX = "^\\s*?(.+)@(.+?)\\s*$";
+    private static final String EMAIL_REGEX = "^\\s*?(.+)@(.+?)\\s*$";
+    
+    private static final String USER_REGEX = "^\\s*" + WORD_REGEXP + "(\\." + WORD_REGEXP + ")*$";
+    
+    /** Regular expression pattern for parsing email addresses. */
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
-	private static final String USER_REGEX = "^\\s*" + WORD_REGEXP + "(\\." + WORD_REGEXP + ")*$";
-
-	/** Regular expression pattern for parsing email addresses. */
-	private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
-
-	private static final Pattern USER_PATTERN = Pattern.compile(USER_REGEX);
-
-	private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
+    private static final Pattern USER_PATTERN = Pattern.compile(USER_REGEX);
+    
+    private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
 	private static final Pattern ASCII_ONLY = Pattern.compile("\\p{ASCII}*");
+    
+    /** Singleton instance. */
+    private static final AgnitasEmailValidator INSTANCE = new AgnitasEmailValidator();
 
-	/** Singleton instance. */
-	private static final AgnitasEmailValidator INSTANCE = new AgnitasEmailValidator();
-
-	public static AgnitasEmailValidator getInstance() {
-		return INSTANCE;
-	}
+    public static AgnitasEmailValidator getInstance() {
+    	return INSTANCE;
+    }
 
 	@Override
 	public boolean isValidUtf8Email(String emailAddress) {
@@ -56,10 +56,10 @@ public class AgnitasEmailValidator implements EmailValidator {
 	}
 
 	@Override
-	public boolean isValid(String emailAddress) {
+    public boolean isValid(String emailAddress) {
 		return isValidEmail(emailAddress, false);
-	}
-
+    }
+	
 	private boolean isValidEmail(String emailAddress, boolean allowUtf8Chars) {
 		Matcher m = EMAIL_PATTERN.matcher(emailAddress);
 
@@ -75,17 +75,17 @@ public class AgnitasEmailValidator implements EmailValidator {
 
 		return isValidDomain(m.group(2));
 	}
-
-	public boolean isValidUser(String user, boolean allowUtf8Chars) {
+    
+    public boolean isValidUser(String user, boolean allowUtf8Chars) {
 		if (!USER_PATTERN.matcher(user).matches()) {
 			return false;
 		}
-
+		
 		return allowUtf8Chars || ASCII_ONLY.matcher(user).matches();
 	}
 
 	public boolean isValidDomain(String domain) {
-		String asciiDomainName;
+    	String asciiDomainName;
 		try {
 			asciiDomainName = java.net.IDN.toASCII(domain);
 		} catch (Exception e) {
@@ -93,12 +93,12 @@ public class AgnitasEmailValidator implements EmailValidator {
 			return false;
 		}
 
-		// Do not allow ".local" top level domain
-		if (asciiDomainName.toLowerCase().endsWith(".local")) {
-			return false;
-		}
-
-		return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
-	}
+    	// Do not allow ".local" top level domain
+    	if (asciiDomainName.toLowerCase().endsWith(".local")) {
+    		return false;
+    	}
+    	
+    	return DOMAIN_NAME_PATTERN.matcher(asciiDomainName).matches();
+    }
 
 }

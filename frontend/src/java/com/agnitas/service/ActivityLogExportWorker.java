@@ -13,16 +13,12 @@ package com.agnitas.service;
 import java.text.DateFormat;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-
 import javax.sql.DataSource;
-
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.util.SqlPreparedStatementManager;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
+import com.agnitas.util.SqlPreparedStatementManager;
 
 public class ActivityLogExportWorker extends GenericExportWorker {
 
@@ -30,14 +26,12 @@ public class ActivityLogExportWorker extends GenericExportWorker {
     private final Admin admin;
     private final UserActivityLogService.UserType userType;
     private final UserActivityLogService userActivityLogService;
-    private final List<AdminEntry> filterAdmins;
 
-    public ActivityLogExportWorker(UserActivityLogService.UserType userType, UserActivityLogFilterBase filter, List<AdminEntry> filterAdmins,
+    public ActivityLogExportWorker(UserActivityLogService.UserType userType, UserActivityLogFilterBase filter,
                                    Admin admin, UserActivityLogService userActivityLogService) {
         super();
         this.filter = filter;
         this.userType = userType;
-        this.filterAdmins = filterAdmins;
         this.admin = admin;
         this.userActivityLogService = userActivityLogService;
     }
@@ -53,7 +47,7 @@ public class ActivityLogExportWorker extends GenericExportWorker {
                 sortColumn = "timestamp";
             }
 
-            SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForDownload(filter, filterAdmins, userType, admin);
+            SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForDownload(filter, userType, admin);
 
             selectStatement = sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY " + sortColumn + " ASC";
             selectParameters = Arrays.asList(sqlPreparedStatementManager.getPreparedSqlParameters());
@@ -85,7 +79,6 @@ public class ActivityLogExportWorker extends GenericExportWorker {
         private UserActivityLogFilterBase filter;
         private UserActivityLogService userActivityLogService;
         private UserActivityLogService.UserType userType;
-        private List<AdminEntry> filterAdmins;
         private Admin admin;
 
         public Builder(DataSource dataSource) {
@@ -133,16 +126,10 @@ public class ActivityLogExportWorker extends GenericExportWorker {
             return this;
         }
 
-        public Builder setFilterAdmins(List<AdminEntry> filterAdmins) {
-            this.filterAdmins = filterAdmins;
-            return this;
-        }
-
         public ActivityLogExportWorker build() {
             ActivityLogExportWorker worker = new ActivityLogExportWorker(
                     userType,
                     filter,
-                    filterAdmins,
                     admin,
                     userActivityLogService
             );

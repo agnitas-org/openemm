@@ -19,8 +19,7 @@
         if (!href) {
             this.eGui.innerHTML = params.value;
         } else {
-            params.eGridCell.classList.add('ag-cell-table-actions');
-            this.eGui.innerHTML = '<button type="button" class="btn btn-regular "><i class="icon icon-share-square-o"></i><span>' + params.value + '</span></button>';
+            this.eGui.innerHTML = '<button type="button" class="table__btn btn btn-secondary"><i class="icon icon-external-link-alt"></i><span>' + params.value + '</span></button>';
 
             this.eButton = this.eGui.querySelector('.btn');
 

@@ -10,20 +10,19 @@
 
 package com.agnitas.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.ExportPredef;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.util.importvalues.Charset;
-import com.agnitas.web.forms.PaginationForm;
-
 import java.io.File;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.ExportPredef;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.web.forms.PaginationForm;
 
 public interface ExportPredefService {
 
@@ -34,22 +33,18 @@ public interface ExportPredefService {
     int save(ExportPredef src, Admin admin);
 
     List<ExportPredef> getExportProfiles(Admin admin);
-    PaginatedListImpl<ExportPredef> getExportProfilesOverview(PaginationForm form, Admin admin);
+
+    PaginatedList<ExportPredef> getExportProfilesOverview(PaginationForm form, Admin admin);
 
     List<Integer> getExportProfileIds(Admin admin);
 
-    ServiceResult<ExportPredef> getExportForDeletion(int exportId, int companyId);
-
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-    ServiceResult<ExportPredef> delete(int exportId, int companyId);
-
-    RecipientExportWorker getRecipientsToZipWorker(ExportPredef export, Admin admin) throws Exception;
+    RecipientExportWorker getRecipientsToZipWorker(ExportPredef export, Admin admin);
 
     ServiceResult<File> getExportFileToDownload(String exportFileName, Admin admin);
 
     Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export);
 
-    Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException;
+    Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export);
 
     EnumSet<BindingEntry.UserType> getAvailableUserTypeOptionsForDisplay(Admin admin, ExportPredef export);
 
@@ -58,4 +53,13 @@ public interface ExportPredefService {
     ServiceResult<List<ExportPredef>> getAllowedForDeletion(Set<Integer> ids, int companyId);
 
     ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
+
+    boolean isReferenceTableExportAllowed(Admin admin);
+
+    List<ExportPredef> getExportProfilesByReferenceTable(int tableId, int companyId);
+
+    List<ExportPredef> getExportProfilesByReferenceTableColumn(int tableId, String columnName, int companyId);
+
+    void renameUsedReferenceTableColumn(int tableId, String oldName, String newName, int companyId);
+
 }

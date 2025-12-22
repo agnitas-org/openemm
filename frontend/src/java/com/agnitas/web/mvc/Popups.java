@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.Locale;
 
 public interface Popups extends Serializable {
+
     /**
      * Add a new alert popup.
      *
@@ -57,6 +58,7 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups info(Message popup);
+
     Popups info(String code, Object ...arguments);
 
     /**
@@ -100,7 +102,6 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups exactSuccess(String text);
-
 
     Popups addPopups(ServiceResult<?> serviceResult);
 
@@ -163,4 +164,15 @@ public interface Popups extends Serializable {
     void clear();
 
     String getFullErrorsText(Locale locale);
+
+    Popups changesSaved();
+
+    Popups selectionDeleted();
+
+    Popups defaultError();
+
+    Popups permissionDenied();
+
+    Popups nothingSelected();
+
 }

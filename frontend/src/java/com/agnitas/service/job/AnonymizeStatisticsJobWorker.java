@@ -15,9 +15,10 @@ import java.util.stream.Collectors;
 
 import com.agnitas.dao.AnonymizeStatisticsDao;
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +27,8 @@ import org.apache.logging.log4j.Logger;
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *     VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '0000', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 0);
  */
-public class AnonymizeStatisticsJobWorker extends JobWorker {
+@JobWorker("AnonymizeStatistics")
+public class AnonymizeStatisticsJobWorker extends JobWorkerBase {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnonymizeStatisticsJobWorker.class);
 

@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.context.ApplicationContext;
 
 /**

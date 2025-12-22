@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.user.form;
 
 import com.agnitas.emm.core.admin.enums.UiLayoutType;
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
 import com.agnitas.web.forms.PaginationForm;
 
 import java.util.Locale;
@@ -40,6 +41,7 @@ public class UserSelfForm extends PaginationForm {
     private int mailingSettingsView;
     private int livePreviewPosition;
     private int statisticLoadType;
+    private MailingSettingsViewType mailingSettingsViewType;
     private String title;
     private String currentPassword;
 
@@ -217,6 +219,14 @@ public class UserSelfForm extends PaginationForm {
 
     public void setLivePreviewPosition(int livePreviewPosition) {
         this.livePreviewPosition = livePreviewPosition;
+    }
+
+    public MailingSettingsViewType getMailingSettingsViewType() {
+        return mailingSettingsViewType;
+    }
+
+    public void setMailingSettingsViewType(MailingSettingsViewType mailingSettingsViewType) {
+        this.mailingSettingsViewType = mailingSettingsViewType;
     }
 
     public int getStatisticLoadType() {

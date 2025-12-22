@@ -12,11 +12,13 @@ package com.agnitas.json;
 
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
 import com.agnitas.util.BasicReader;
 
 public class JsonPath {
+
 	private Stack<Object> pathParts = new Stack<>();
 
 	/**
@@ -92,7 +94,7 @@ public class JsonPath {
 	
 	private class JsonPathReader extends BasicReader {
 		public JsonPathReader(String jsonPathString) throws Exception {
-			super(new ByteArrayInputStream(jsonPathString.getBytes("UTF-8")));
+			super(new ByteArrayInputStream(jsonPathString.getBytes(StandardCharsets.UTF_8)));
 			
 			pathParts = new Stack<>();
 			

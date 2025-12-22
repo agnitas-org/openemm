@@ -15,18 +15,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookBackendData;
 import com.agnitas.emm.core.webhooks.messages.dao.WebhookBackendDataProcessTimestampDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractWebhookBackendDataMessageGenerator implements WebhookBackendDataMessageGenerator {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AbstractWebhookBackendDataMessageGenerator.class);
+	private static final Logger LOGGER = LogManager.getLogger(AbstractWebhookBackendDataMessageGenerator.class);
 	
 	private WebhookBackendDataService backendDataService;
 	protected WebhookMessageEnqueueService messageEnqueueService;

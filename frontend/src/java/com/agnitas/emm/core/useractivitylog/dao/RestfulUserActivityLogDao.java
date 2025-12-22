@@ -10,28 +10,25 @@
 
 package com.agnitas.emm.core.useractivitylog.dao;
 
-import java.util.Date;
 import java.util.List;
-
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.util.SqlPreparedStatementManager;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
+import com.agnitas.util.SqlPreparedStatementManager;
 
 public interface RestfulUserActivityLogDao extends UserActivityLogDaoBase {
 
+    List<String> getDistinctUsernames(Integer companyId);
+
     void writeUserActivityLog(String endpoint, String description, String httpMethod, String host, Admin admin);
 
-    // TODO: EMMGUI-714: Remove when removing old design
-    PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize);
-    PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntriesRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
+    PaginatedList<RestfulUserActivityAction> getUserActivityEntries(RestfulUserActivityLogFilter filter);
 
-    // TODO: EMMGUI-714: Remove when removing old design
-    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description);
+    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter);
 
-    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
+    void deleteByUsernames(Set<String> usernames, int companyID);
 
 }

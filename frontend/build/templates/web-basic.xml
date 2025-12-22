@@ -11,7 +11,7 @@
 	<context-param>
 		<description>spring context</description>
 		<param-name>contextConfigLocation</param-name>
-		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
+		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
 	</context-param>
 
 	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
@@ -139,22 +139,16 @@
 	</filter-mapping>
 
 	<!-- Session Binding -->
-	<!--
+
 	<filter>
 		<filter-name>SessionBindingFilter</filter-name>
 		<filter-class>com.agnitas.emm.security.sessionbinding.web.filter.SessionBindingRequestFilter</filter-class>
 		<async-supported>true</async-supported>
-
-		<init-param>
-			<param-name>excluded-clients</param-name>
-			<param-value>localhost</param-value>
-		</init-param>
 	</filter>
 	<filter-mapping>
 		<filter-name>SessionBindingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    -->
 
 	<!-- Stores an original request URI to make it available within JSPs -->
 	<filter>
@@ -222,6 +216,10 @@
 	<servlet>
 		<servlet-name>spring-mvc</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextClass</param-name>
+			<param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+		</init-param>
 		<load-on-startup>1</load-on-startup>
 		<async-supported>true</async-supported>
 		<multipart-config>
@@ -253,15 +251,6 @@
 		<servlet-name>ShowImageServlet</servlet-name>
 		<url-pattern>/image</url-pattern>
 		<url-pattern>/image/*</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>CssServlet</servlet-name>
-		<servlet-class>com.agnitas.web.CssServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>CssServlet</servlet-name>
-		<url-pattern>/application.min.css</url-pattern>
 	</servlet-mapping>
 
 	<servlet>
@@ -424,7 +413,7 @@
 
 	<!-- Welcome File -->
 	<welcome-file-list>
-		<welcome-file>/WEB-INF/jsp/login.jsp</welcome-file>
+		<welcome-file>/WEB-INF/jsp/login/login_redirect.jsp</welcome-file>
 	</welcome-file-list>
 
 	<!-- For JS file that contains some data from static context -->
@@ -449,11 +438,11 @@
 	<!-- Error Pages -->
 	<error-page>
 		<exception-type>jakarta.servlet.ServletException</exception-type>
-		<location>/error.action?allowRedesigned=true</location>
+		<location>/error.action</location>
 	</error-page>
 	<error-page>
 		<exception-type>java.lang.Exception</exception-type>
-		<location>/error.action?allowRedesigned=true</location>
+		<location>/error.action</location>
 	</error-page>
 	<error-page>
 		<error-code>404</error-code>

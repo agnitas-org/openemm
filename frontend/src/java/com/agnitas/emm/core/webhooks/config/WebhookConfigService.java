@@ -12,8 +12,8 @@ package com.agnitas.emm.core.webhooks.config;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 /**
  * Wrapper around {@link ConfigService} providing only
@@ -31,7 +31,7 @@ public final class WebhookConfigService {
 	 * 
 	 * @throws NullPointerException if given {@link ConfigService} is <code>null</code>
 	 */
-	public WebhookConfigService(final ConfigService service) {
+	public WebhookConfigService(ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 	
@@ -42,7 +42,7 @@ public final class WebhookConfigService {
 	 * 
 	 * @return <code>true</code> if webhook interface is enabled
 	 */
-	public final boolean isWebhookInterfaceEnabled(final int companyID) {
+	public boolean isWebhookInterfaceEnabled(int companyID) {
 		return configService.getBooleanValue(ConfigValue.Webhooks.WebhooksEnabled, companyID);
 	}
 
@@ -53,7 +53,7 @@ public final class WebhookConfigService {
 	 * 
 	 * @return maximum number of retries
 	 */
-	public final int getMaximumRetryCount(final int companyId) {
+	public int getMaximumRetryCount(int companyId) {
 		return configService.getIntegerValue(ConfigValue.Webhooks.MaximumRetryCount, companyId);
 	}
 
@@ -64,7 +64,7 @@ public final class WebhookConfigService {
 	 * 
 	 * @return delay (in seconds) for next retry
 	 */
-	public final int getRetryDelaySeconds(final int companyId) {
+	public int getRetryDelaySeconds(int companyId) {
 		return configService.getIntegerValue(ConfigValue.Webhooks.RetryDelaySeconds, companyId);
 	}
 
@@ -75,7 +75,7 @@ public final class WebhookConfigService {
 	 * 
 	 * @return connect timeout in milliseconds
 	 */
-	public final int getConnectTimeoutMillis(final int companyId) {
+	public int getConnectTimeoutMillis(int companyId) {
 		return configService.getIntegerValue(ConfigValue.Webhooks.ConnectTimeoutMillis, companyId);
 	}
 
@@ -86,24 +86,28 @@ public final class WebhookConfigService {
 	 * 
 	 * @return socket timeout in milliseconds
 	 */
-	public final int getSocketTimeoutMillis(final int companyId) {
+	public int getSocketTimeoutMillis(int companyId) {
 		return configService.getIntegerValue(ConfigValue.Webhooks.SocketTimeoutMillis, companyId);
 	}
 
-	public final int getMessageRetentionSeconds() {
+	public int getMessageRetentionSeconds() {
 		return configService.getIntegerValue(ConfigValue.Webhooks.MessageRetentionTimeSeconds);
 	}
 	
-	public final int getMessageGenerationGracePeriodSeconds(final int companyID) {
+	public int getMessageGenerationGracePeriodSeconds(int companyID) {
 		return configService.getIntegerValue(ConfigValue.Webhooks.MessageGenerationGracePeriodSeconds, companyID);
 	}
 
-	public void enableWebhooksInterface(final int companyID, final boolean enable) {
+	public void enableWebhooksInterface(int companyID, boolean enable) {
 		this.configService.writeOrDeleteIfDefaultBooleanValue(
 				ConfigValue.Webhooks.WebhooksEnabled, 
 				companyID, 
 				enable,
 				String.format("Webhook interfaced %s", enable ? "enabled" : "disabled"));
+	}
+
+	public boolean useAsyncClient(int companyId) {
+		return configService.getBooleanValue(ConfigValue.Development.UseAsyncHttpClientForWebhooks, companyId);
 	}
 	
 }

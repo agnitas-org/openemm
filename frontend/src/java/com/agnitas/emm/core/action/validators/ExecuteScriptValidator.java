@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.action.validators;
 
-import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
-import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
-import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidator;
+import com.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
+import com.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
+import com.agnitas.emm.core.velocity.scriptvalidator.ScriptValidator;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.Admin;

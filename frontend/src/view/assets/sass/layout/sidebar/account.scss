@@ -1,0 +1,23 @@
+.sidebar__block--account {
+  white-space: nowrap;
+  order: 1000;
+
+  .sidebar__tooltip.open {
+    @include flex-column($gap-sm);
+    bottom: 0;
+    padding: $gap $gap $gap-sm $gap-sm;
+  }
+}
+
+.sidebar__account-avatar {
+  @include sidebar-colors-inverse;
+  @include font($font-size-base);
+}
+
+.sidebar__account-title {
+  @include font($font-size-lg);
+}
+
+.sidebar__account-label {
+  @include font($font-size-base, $font-weight-base);
+}

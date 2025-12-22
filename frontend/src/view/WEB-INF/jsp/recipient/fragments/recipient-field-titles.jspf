@@ -1,0 +1,35 @@
+
+<emm:instantiate type="org.apache.commons.collections4.map.CaseInsensitiveMap" var="titles">
+    <c:set target="${titles}" property="gender" value="recipient.Salutation"/>
+    <c:set target="${titles}" property="firstname" value="Firstname"/>
+    <c:set target="${titles}" property="lastname" value="Lastname"/>
+    <c:set target="${titles}" property="creation_date" value="default.creationDate"/>
+    <c:set target="${titles}" property="timestamp" value="default.changeDate"/>
+</emm:instantiate>
+
+<script type="application/json" data-table-column-manager-config>
+    {
+        "columns": [
+        <c:forEach var="field" items="${fieldsMap}" varStatus="loop_status">
+            <c:set var="text" value="${field.value}"/>
+            <c:set var="titleKey" value="${titles.get(field.key)}"/>
+            <c:if test="${not empty titleKey}">
+                <mvc:message var="text" code="${titleKey}"/>
+            </c:if>
+            <c:choose>
+                <c:when test="${fn:toLowerCase(field.key) eq 'gender'}">
+                    <mvc:message var="text" code="Gender" />
+                </c:when>
+                <c:when test="${fn:indexOf(['creation_date', 'timestamp'], fn:toLowerCase(field.key)) != -1}">
+                    <c:set var="text" value="${text} (${field.key})"/>
+                </c:when>
+            </c:choose>
+            {
+                "name": ${emm:toJson(field.key)},
+                "text": ${emm:toJson(text)},
+                "selected": ${listForm.isSelectedColumn(field.key)}
+            }${loop_status.index + 1 lt fn:length(fieldsMap) ? ',' : ''}
+        </c:forEach>
+        ]
+    }
+</script>

@@ -1,136 +1,180 @@
-AGN.Lib.Controller.new('sidemenu', function() {
-  var STATUSPANEL_HEIGHT_PX = 20;
-  var WebStorage = AGN.Lib.WebStorage;
-  var submenuCloseDelay = 500;
-  var tooltipCloseDelay = 400;
-  var submenuOpenDelay = 1000/3; //this config is for JS(narrow) menu, for wide menu change delay in CSS
+AGN.Lib.Controller.new('side-menu', function () {
 
-  this.addAction({
-    mouseenter: 'activateSubmenu'
-  }, function() {
-    var $item = $(this.el).find('.menu-item');
-    var $submenu = $item.next('.submenu');
-    var $subitems = $submenu.find('.subitems');
+  const cursorExists = !!window.matchMedia("(pointer: fine)").matches;
+  const TOOLTIP_CLOSE_DELAY = cursorExists ? 400 : 0;
 
-    $('.submenu.open').not($submenu).each(function() {
-      closeSubmenu($(this));
-    });
-
-    if(!checkIfSidebarIsWide()){
-      clearTimeout($item.data('closeTimerId'));
-
-      $submenu.addClass('open');
-      var $arrow = $submenu.find('.arrow');
-      setSubmenuOffset($arrow, $submenu, $item);
-      setArrowOffset($arrow, $submenu, $item);
-
-      $item.data('openTimerId', setTimeout(function() {
-        if($submenu.is('.open')) {
-          $subitems.addClass('open');
-        }
-      }, submenuOpenDelay));
-    }
+  this.addAction({click: 'logout'}, function () {
+    handleSidebarItemClick(
+      this.el,
+      this.event,
+      () => AGN.Lib.Form.get($('#logoutForm')).submit('static')
+    );
   });
 
-  this.addAction({
-    click: 'switch-to-new-design'
-  }, function() {
-    const $el = this.el;
-    $.post(AGN.url('/ui-design/switch.action'))
-      .done(function() {
-        $el.prop('disabled', true);
-        // hack for wait for visual toggle switch.
-        window.setTimeout(function () {
-          AGN.Lib.Page.reload($el.data('switch-url'))
-        }, 500);
-      }).fail(function () {
-        $el.prop("checked", !$el.prop("checked"));
-      });
-  });
+  this.addAction({click: 'expand'}, function() {
+    const isWide = isSidebarWide();
+    $('.sidebar').toggleClass('sidebar--wide', !isWide);
+    saveSidebarState(!isWide);
 
-  this.addAction({
-    mouseleave: 'activateSubmenu'
-  }, function() {
-    var $item = $(this.el).find('.menu-item');
-    var $submenu = $item.next('.submenu');
-    var $subitems = $submenu.find('.subitems');
-
-    if(!checkIfSidebarIsWide()){
-      clearTimeout($item.data('openTimerId'));
-      var closeDelay = $subitems.is('.open') ? submenuCloseDelay : tooltipCloseDelay;
-      $item.data('closeTimerId', setTimeout(function() {
-        closeSubmenu($submenu);
-      }, closeDelay));
-    }
-  });
-
-  this.addAction({
-    click: 'expandMenu'
-  }, function() {
-    if(checkIfSidebarIsWide()) {
-      collapseMenu();
-    } else {
-      expandMenu();
-    }
     $(window).trigger('viewportChanged');
   });
 
-  function closeSubmenu($submenu){
-    $submenu.removeClass('open');
-    $submenu.find('.subitems').removeClass('open');
+  function saveSidebarState(isWide){
+    AGN.Lib.WebStorage.set('is-wide-sidebar', {value: isWide});
+    $.post(AGN.url("/sidebar/setIsWide.action"), { isWide });
   }
 
-  function setSubmenuOffset($arrow, $submenu, $menuItem) {
-    var $header = $submenu.find('.submenu-header');
-    var top = $menuItem.scrollTop() + $menuItem.offset().top + $menuItem.outerHeight() / 2.0 - $header.outerHeight() / 2.0;
-    var left = $menuItem.offset().left + $menuItem.outerWidth() + $arrow.outerWidth();
-    var $window = $(window);
-    var subMenuHeight = $header.outerHeight() + getSubitemsHeight($submenu);
-    
+  this.addAction({click: 'open-help'}, function () {
+    handleSidebarItemClick(this.el, this.event, AGN.Lib.Helpers.openHelpModal);
+  });
+
+  function handleSidebarItemClick($el, event, callback) {
+    const $tooltip = $el.find('.sidebar__tooltip');
+
+    if (!cursorExists && !$tooltip.hasClass('open')) {
+      displayTooltip($tooltip);
+      event.preventDefault();
+
+      if (!cursorExists) {
+        $(document).one('click touchstart', e => {
+          if (!$(e.target).closest($el).exists()) {
+            closeTooltip($tooltip);
+          }
+        });
+      }
+    } else {
+      callback();
+
+      if (!cursorExists) {
+        closeTooltip($tooltip);
+      }
+    }
+  }
+
+  if (cursorExists) {
+    this.addAction({mouseenter: 'display-tooltip'}, function () {
+      if (this.el.find('.sidebar__icon').exists() || !isSidebarWide()) {
+        const $tooltip = this.el.find('.sidebar__tooltip');
+        displayTooltip($tooltip);
+      }
+    });
+
+    this.addAction({mouseleave: 'display-tooltip'}, function () {
+      const $tooltip = this.el.find('.sidebar__tooltip');
+      $tooltip.data('closeTimerId', setTimeout(() => closeTooltip($tooltip), TOOLTIP_CLOSE_DELAY));
+    });
+
+    this.addAction({mouseenter: 'activateSubmenu'}, function () {
+      openSubMenu(this.el);
+    });
+
+    this.addAction({mouseleave: 'activateSubmenu'}, function () {
+      const $link = $(this.el).find('.sidebar__link');
+      const $submenu = $link.next('.sidebar__submenu');
+
+      $link.data('closeTimerId', setTimeout(() => closeSubmenu($submenu), TOOLTIP_CLOSE_DELAY));
+    });
+  } else {
+    this.addAction({click: 'activateSubmenu'}, function () {
+      const $submenu = this.el.find('.sidebar__link').next('.sidebar__submenu');
+
+      if ($submenu.hasClass('open')) {
+        const $link = $(this.event.target).closest('a');
+        if ($link.exists() && !$link.is('[data-confirm]')) {
+          AGN.Lib.Page.reload($link.attr('href'));
+        }
+      } else {
+        openSubMenu(this.el);
+        this.event.preventDefault();
+
+        const bindCloseHandler = () => {
+          $(document).one('click touchstart', e => {
+            if ($(e.target).closest(this.el).exists()) {
+              bindCloseHandler();
+            } else {
+              closeSubmenu($submenu);
+            }
+          });
+        }
+
+        bindCloseHandler();
+      }
+    });
+
+    this.addAction({click: 'open-account-data'}, function () {
+      handleSidebarItemClick(
+        this.el,
+        this.event,
+        () => AGN.Lib.Page.reload(AGN.url(this.el.data('url')))
+      );
+    });
+  }
+
+  function displayTooltip($tooltip) {
+    closeAnotherSidebarTooltips($tooltip);
+    clearTimeout($tooltip.data('closeTimerId'));
+    $tooltip.css('left', getSidebarWidth() - 1);
+    $tooltip.addClass('open');
+  }
+
+  function openSubMenu($el) {
+    const $link = $el.find('.sidebar__link');
+    const $submenu = $link.next('.sidebar__submenu');
+    const $submenuList = $submenu.find('.sidebar__submenu-list');
+
+    closeAnotherSidebarTooltips($submenu);
+    clearTimeout($link.data('closeTimerId'));
+
+    $submenu.addClass('open');
+    setSubmenuOffset($submenu, $link);
+
+    $submenuList.addClass('open');
+  }
+
+  function closeAnotherSidebarTooltips($el) {
+    $('.sidebar__tooltip.open').not($el).each(function () {
+      closeTooltip($(this));
+    });
+
+    $('.sidebar__submenu.open').not($el).each(function () {
+      closeSubmenu($(this));
+    });
+  }
+
+  function closeTooltip($el) {
+    $el.removeClass('open');
+  }
+
+  function closeSubmenu($submenu) {
+    $submenu.removeClass('open');
+    $submenu.find('.sidebar__submenu-list').removeClass('open');
+  }
+
+  function setSubmenuOffset($submenu, $link) {
+    const $window = $(window);
+    const $title = $submenu.find('.sidebar__submenu-title');
+    const itemsGap = parseInt($link.parent().parent().css('gap'));
+
+    let top = $link.scrollTop() + $link.offset().top + $link.outerHeight() / 2.0 - $title.outerHeight() / 2.0 - itemsGap;
+    const subMenuHeight = $submenu.outerHeight();
+
     if (top + subMenuHeight > $window.height() + $window.scrollTop()) {
-      top = $window.height() + $window.scrollTop() - subMenuHeight - STATUSPANEL_HEIGHT_PX;
+      top = $window.height() + $window.scrollTop() - subMenuHeight - itemsGap;
     }
     if (top - $window.scrollTop() < 0) {
       top = $window.scrollTop();
     }
 
-    $submenu.offset({top: top, left: left});
-  }
-  
-  function getSubitemsHeight($submenu) {
-    return $submenu.find('.subitems').find('li').first().height() 
-            * $submenu.find('.subitems').find('li').length;
+    $submenu.offset({ top });
+    $submenu.css('left', getSidebarWidth() - 1);
   }
 
-  function setArrowOffset($arrow, $submenu, $menuItem) {
-    var top = $menuItem.offset().top + $menuItem.outerHeight() / 2.0 - $arrow.outerHeight() / 2.0;
-    $arrow.offset({top: top, left: $arrow.offset().left})
+  function isSidebarWide() {
+    return $('.sidebar').hasClass('sidebar--wide');
   }
 
-  function expandMenu() {
-    saveIfSidebarIsWide(true);
-    $('body').addClass('wide-sidebar');
+  function getSidebarWidth() {
+    return $('.sidebar').outerWidth();
   }
 
-  function collapseMenu() {
-    saveIfSidebarIsWide(false);
-    $('body').removeClass('wide-sidebar');
-  }
-
-  function saveIfSidebarIsWide(val){
-    if(val !== true) {
-      val = false;
-    }
-    WebStorage.set('is-wide-sidebar', {value: val});
-    $.ajax(AGN.url("/sidebar/ajax/setIsWide.action"), {
-      type: 'GET',
-      data: {
-        isWide: val
-      }
-    });
-  }
-
-  function checkIfSidebarIsWide() {
-    return $('body').hasClass('wide-sidebar');
-  }
 });

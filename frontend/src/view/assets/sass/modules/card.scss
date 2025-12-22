@@ -1,0 +1,229 @@
+/*doc
+---
+title: Cards
+name: cards
+category: Components - Cards
+---
+
+Cards are one of the design elements. Documentation about them can be found [here](https://getbootstrap.com/docs/5.3/components/card).
+Here we will look at their custom subtype - horizontal cards:
+
+## Basic Structure
+
+```htmlexample
+<div class="horizontal-card">
+    <div class="horizontal-card__header">
+        <span class="horizontal-card__icon icon-badge badge--grey"><i class="icon icon-upload"></i></span>
+    </div>
+    <div class="horizontal-card__body">
+        <p class="horizontal-card__title">Standard Mailing</p>
+        <p class="horizontal-card__subtitle">Create new mailing via HTML</p>
+    </div>
+</div>
+```
+
+### Elements Breakdown
+
+#### `.horizontal-card`
+
+The main container with flex alignment, padding, border, and rounded corners.
+
+`Note:` The `.disabled` class applies a muted background and disables interaction.
+
+`Note:` When used as a link (`<a>`), it changes border and header colors on hover.
+
+#### `.horizontal-card__header`
+
+Optional header section that can contain:
+
+**Status badge:**
+
+```htmlexample
+<span class="status-badge status-badge--xl mailing.mediatype.email badge--blue"></span>
+```
+
+**Thumbnail image:**
+
+```htmlexample
+<img class="horizontal-card__thumbnail" src="https://picsum.photos/200" alt="Thumbnail">
+```
+
+#### `.horizontal-card__icon`
+
+An alternative to the thumbnail — a circular icon with fixed size and border radius.
+
+```htmlexample
+<div class="horizontal-card__header">
+    <i class="horizontal-card__icon icon icon-clock"></i>
+</div>
+```
+
+#### `.horizontal-card__body`
+
+The main content area arranged vertically.
+
+**`.horizontal-card__title`** — Main title, usually bold and colored.
+
+```htmlexample
+<p class="horizontal-card__title">
+    <span class="status-badge mailing.status.datebased"></span>
+    <span>Mailing name</span>
+</p>
+```
+
+**`.horizontal-card__subtitle`** — Secondary information. Can include icons:
+
+```htmlexample
+<p class="horizontal-card__subtitle">
+    <i class="icon icon-list"></i>
+    <span>Default-Mailinglist</span>
+</p>
+```
+
+#### `.horizontal-card__footer`
+
+Optional footer area for actions or icons (e.g., drag handles):
+
+```htmlexample
+<div class="horizontal-card__footer">
+    <a class="icon icon-arrows-alt" type="button"></a>
+</div>
+```
+
+## Examples
+
+### Example with Thumbnail and Multiple Subtitles
+
+```htmlexample
+<div class="horizontal-card">
+    <div class="horizontal-card__header">
+        <img class="horizontal-card__thumbnail" src="https://picsum.photos/200" alt="Thumbnail">
+    </div>
+    <div class="horizontal-card__body gap-4">
+        <p class="horizontal-card__title">Title</p>
+
+        <p class="horizontal-card__subtitle">
+            <i class="icon icon-th"></i>
+            <span class="text-truncate">Some info</span>
+        </p>
+
+        <p class="horizontal-card__subtitle">
+            <i class="icon icon-clock"></i>
+            <span class="text-truncate">3/13/2025 13:56</span>
+        </p>
+    </div>
+</div>
+```
+
+### Example with Footer Action
+
+```htmlexample
+<div class="horizontal-card">
+    <div class="horizontal-card__header">
+        <img class="horizontal-card__thumbnail" src="https://picsum.photos/200" alt="Thumbnail">
+    </div>
+    <div class="horizontal-card__body">
+        <p class="horizontal-card__title">
+            <span class="status-badge mailing.status.datebased"></span>
+            <span>Mailing name</span>
+        </p>
+        <p class="horizontal-card__subtitle">
+            <i class="icon icon-list"></i>
+            <span>Default-Mailinglist</span>
+        </p>
+    </div>
+    <div class="horizontal-card__footer">
+        <a class="icon icon-arrows-alt" type="button"></a>
+    </div>
+</div>
+```
+*/
+
+.horizontal-card {
+  --horizontal-card-spacer: #{$gap-md};
+  --horizontal-card-color: #{$gray-600};
+  --horizontal-card-header-color: #{$dark-grey};
+  --horizontal-card-footer-color: var(--horizontal-card-header-color);
+  --horizontal-card-thumbnail-size: 100px;
+
+  @include flex-row(var(--horizontal-card-spacer));
+  align-items: center;
+  width: 100%;
+
+  overflow: hidden;
+
+  padding: var(--horizontal-card-spacer);
+  border: $border-default;
+  border-radius: $border-radius;
+
+  &__header {
+    @include flex-row(var(--horizontal-card-spacer));
+    color: var(--horizontal-card-header-color);
+  }
+
+  &__icon {
+    @include size(60px);
+    font-size: 40px;
+    border-radius: $border-radius;
+  }
+
+  &__thumbnail {
+    max-width: var(--horizontal-card-thumbnail-size);
+  }
+
+  &__body {
+    @include flex-column(var(--horizontal-card-spacer));
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  &__title {
+    font-size: $font-size-md;
+    color: var(--horizontal-card-header-color);
+    font-weight: $font-weight-medium;
+
+    @include flex-row($gap-x-sm);
+    align-items: center;
+  }
+
+  &__subtitle {
+    color: var(--horizontal-card-color);
+    @include flex-row($gap-x-sm);
+    align-items: center;
+  }
+
+  &__footer {
+    color: var(--horizontal-card-footer-color);
+  }
+
+  &.disabled {
+    background: var(--base-disabled-bg);
+    pointer-events: none;
+  }
+
+  &:is(a):hover {
+    border-color: $blue-var;
+    --horizontal-card-header-color: #{$blue-var};
+  }
+}
+
+@include color-mode(dark) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$light-grey};
+    --horizontal-card-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$con-dark-blue};
+    --horizontal-card-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .horizontal-card {
+    --horizontal-card-header-color: #{$white};
+    --horizontal-card-color: #{$white};
+  }
+}

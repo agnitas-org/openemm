@@ -10,18 +10,16 @@
 
 package com.agnitas.emm.core.globalblacklist.forms;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 public class BlacklistDeleteForm {
 
     private Set<String> emails = new HashSet<>();
 
-    private List<Integer> mailingListIds;
+    private List<Integer> mailingListIds = new ArrayList<>();
 
     public Set<String> getEmails() {
         return emails;
@@ -43,11 +41,4 @@ public class BlacklistDeleteForm {
         this.mailingListIds = mailingIds;
     }
 
-    public Set<Integer> getMailingListIdSet() {
-        if (CollectionUtils.isNotEmpty(mailingListIds)) {
-            return new HashSet<>(mailingListIds);
-        } else {
-            return Collections.emptySet();
-        }
-    }
 }

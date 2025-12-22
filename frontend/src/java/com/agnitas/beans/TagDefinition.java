@@ -22,6 +22,7 @@ public class TagDefinition {
 	public static Pattern COMPLEX_PARAMETER_PATTERN = Pattern.compile("\\{[A-Za-z0-9_]+\\}");
 	
 	public enum TagType {
+
 		/**
 		 * Selects in DB without replacements like {name}
 		 */
@@ -42,7 +43,7 @@ public class TagDefinition {
 		 */
 		FLOW;
 		
-		public static TagType getTypeFromString(String value) throws Exception {
+		public static TagType getTypeFromString(String value) {
 			if ("SIMPLE".equalsIgnoreCase(value)) {
 				return SIMPLE;
 			} else if ("COMPLEX".equalsIgnoreCase(value)) {
@@ -52,7 +53,7 @@ public class TagDefinition {
 			} else if ("FLOW".equalsIgnoreCase(value)) {
 				return FLOW;
 			} else {
-				throw new Exception("Invalid TagDefinitionType");
+				throw new IllegalArgumentException("Invalid TagDefinitionType");
 			}
 		}
 	}
@@ -98,7 +99,7 @@ public class TagDefinition {
 		this.type = type;
 	}
 	
-	public void setTypeString(String typeString) throws Exception {
+	public void setTypeString(String typeString) {
 		this.type = TagType.getTypeFromString(typeString);
 	}
 	

@@ -10,35 +10,35 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.ColumnMapping;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.service.ProfileImportException.ReasonCode;
-import com.agnitas.util.DbColumnType;
-import com.agnitas.util.ImportUtils.ImportErrorType;
-import com.agnitas.emm.common.UserStatus;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.sql.DataSource;
+
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.service.ProfileImportException.ReasonCode;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.ImportUtils.ImportErrorType;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 public interface ImportRecipientsDao {
+
 	String VALIDATOR_RESULT_RESERVED = "VALIDATOR_RESULT_RESERVED";
 	String ERROR_EDIT_RECIPIENT_EDIT_RESERVED = "ERROR_EDIT_RECIPIENT_EDIT_RESERVED";
 	String ERROR_EDIT_REASON_KEY_RESERVED = "ERROR_EDIT_REASON_KEY_RESERVED";
-	String TYPE = "type";
 
 	/**
 	 * Method checks if key column is indexed in database
 	 *
-	 * @param companyId	company id
-	 * @param keyColumn	key column name
+	 * @param companyId	 company id
+	 * @param keyColumns key columns names
 	 * @return is key column indexed
 	 */
-	boolean isKeyColumnIndexed( int companyId, List<String> keyColumns);
+	boolean isKeyColumnIndexed(int companyId, List<String> keyColumns);
 		
 	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int datasourceID, List<String> keyColumns, String sessionId, String description);
 
@@ -52,11 +52,11 @@ public interface ImportRecipientsDao {
 
 	int markDuplicatesEntriesSingleTable(int companyID, String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
 	
-	int removeNewCustomersWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, List<ColumnMapping> columnMapping);
+	int removeNewCustomersWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName);
 
-	int insertNewCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
+	int insertNewCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType);
 
-	int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId2);
+	int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId);
 
 	int getNumberOfEntriesForInsert(String temporaryImportTableName, String duplicateIndexColumn);
 
@@ -65,10 +65,12 @@ public interface ImportRecipientsDao {
 	int assignExistingCustomerWithoutBindingToMailingList(String temporaryImportTableName, int companyId, int mailingListId, MediaTypes mediatype, UserStatus status);
 
 	int changeStatusInMailingList(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, MediaTypes mediatype, UserStatus currentStatus, UserStatus newStatus, String remark);
+
+	int updateLatestDataSourceId(int dataSourceId, String temporaryImportTableName, List<String> keyColumns, int companyId);
 	
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
-	int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId);
+	int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId);
 
 	String createTemporaryCustomerErrorTable(int companyId, int datasourceId, List<String> columns, String sessionId);
 
@@ -82,7 +84,7 @@ public interface ImportRecipientsDao {
 
 	int dropLeftoverTables(String hostName);
 
-	PaginatedListImpl<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize);
+	PaginatedList<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize);
 
 	List<Integer> updateTemporaryErrors(int companyID, String temporaryErrorTableName, List<String> importedCsvFileColumns, Map<String, String> changedValues);
 

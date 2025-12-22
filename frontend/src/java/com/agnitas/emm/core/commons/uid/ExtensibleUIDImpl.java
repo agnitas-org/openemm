@@ -38,12 +38,18 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 
 	/** URL ID. */
 	private final int urlID;
+	
+	/** position of URL */
+	private final int position;
 
 	/** The bit field. */
 	private final long bitField;
 	
 	/** The senddate in seconds */
 	private long sendDate;
+	
+	/** the maildrop_status_tbl.status_field value if applicated */
+	private char statusField;
 
 	/**
 	 * Create and initialize new UID instance.
@@ -52,15 +58,17 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 	 *
 	 * @see UIDFactory
 	 */
- 	ExtensibleUIDImpl(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final long bitfield) {
+ 	ExtensibleUIDImpl(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final int position, final long bitfield) {
  		this.prefix = prefix;
  		this.licenseID = licenseID;
  		this.companyID = warnIfZero(companyID, "Company ID is 0");
  		this.customerID = warnIfZero(customerID, "Customer ID is 0");
  		this.mailingID = urlID == 0 ? mailingID : warnIfZero(mailingID, "Mailing ID is 0, but URL ID given"); // Warn, if mailing ID is 0, but URL ID is <> 0
  		this.urlID = urlID;
+		this.position = position < 1 ? 1 : position;
  		this.bitField = bitfield;
 		this.sendDate = 0L;
+		this.statusField = '\0';
 	}
 
  	/**
@@ -91,8 +99,10 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 		this.mailingID = uid.getMailingID();
 		this.prefix = uid.getPrefix();
 		this.urlID = uid.getUrlID();
+		this.position = uid.getPosition();
 		this.bitField = uid.getBitField();
 		this.sendDate = uid.getSendDate ();
+		this.statusField = uid.getStatusField ();
 	}
 
 	@Override
@@ -124,6 +134,11 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 	public final int getUrlID() {
 		return this.urlID;
 	}
+	
+	@Override
+	public final int getPosition() {
+		return this.position;
+	}
 
 	@Override
 	public final long getBitField() {
@@ -140,6 +155,17 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 		this.sendDate = sendDate;
 		return this;
 	}
+	
+	@Override
+	public char getStatusField () {
+		return statusField;
+	}
+	
+	@Override
+	public ExtensibleUID setStatusField (char statusField) {
+		this.statusField = statusField;
+		return this;
+	}
 
 	@Override
 	public String toString() {
@@ -150,8 +176,10 @@ final class ExtensibleUIDImpl implements ExtensibleUID {
 				", customerID=" + customerID +
 				", mailingID=" + mailingID +
 				", urlID=" + urlID +
+				", position=" + position +
 				", bitField=" + bitField +
 				", sendDate=" + sendDate +
+				", statusField=" + statusField +
 				'}';
 	}
 }

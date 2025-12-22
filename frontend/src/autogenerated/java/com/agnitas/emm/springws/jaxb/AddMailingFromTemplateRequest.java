@@ -34,6 +34,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *         &lt;element name="templateID" type="{http://www.w3.org/2001/XMLSchema}int"/&gt;
  *         &lt;element name="shortname" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+ *         &lt;element name="preHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
  *         &lt;element name="autoUpdate" type="{http://www.w3.org/2001/XMLSchema}boolean"/&gt;
  *         &lt;element name="plannedDate" type="{http://www.w3.org/2001/XMLSchema}dateTime" minOccurs="0"/&gt;
  *       &lt;/all&gt;
@@ -56,6 +57,7 @@ public class AddMailingFromTemplateRequest {
     @XmlElement(required = true)
     protected String shortname;
     protected String description;
+    protected String preHeader;
     protected boolean autoUpdate;
     @XmlElement(type = String.class)
     @XmlJavaTypeAdapter(DateAdapter.class)
@@ -124,6 +126,30 @@ public class AddMailingFromTemplateRequest {
      */
     public void setDescription(String value) {
         this.description = value;
+    }
+
+    /**
+     * Gets the value of the preHeader property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getPreHeader() {
+        return preHeader;
+    }
+
+    /**
+     * Sets the value of the preHeader property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setPreHeader(String value) {
+        this.preHeader = value;
     }
 
     /**

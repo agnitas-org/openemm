@@ -154,8 +154,7 @@ CKEDITOR.editorConfig = function(config) {
     // next toolbar is just for reference and not actively used by EMM
     /*features available in toolbar "Default"*/
     /*FCKConfig.ToolbarSets["Default"]*/
-    config.toolbar_Full = getFullToolbarConfig(false) ;
-    config.toolbar_Full_AI = getFullToolbarConfig(true) ;
+    config.toolbar_Full = getFullToolbarConfig() ;
 
     /*ADVANCED*/
 
@@ -163,20 +162,17 @@ CKEDITOR.editorConfig = function(config) {
     config.extraPlugins = 'emm,image,flash,htmlwriter,table,tabletools,pastefromword,showprotected,textwatcher,autocomplete,textmatch,emoji';
     config.removePlugins = 'uploadimage';
 
-    config.toolbar_EMM = getEmmToolbarConfig(false);
-    config.toolbar_EMM_AI = getEmmToolbarConfig(true);
+    config.toolbar_EMM = getEmmToolbarConfig();
 
     /*features available in toolbar "EMC"*/
     /*FCKConfig.ToolbarSets["EMC"]*/
-    config.toolbar_EMC = getEmcToolbarConfig(false);
-    config.toolbar_EMC_AI = getEmcToolbarConfig(true);
+    config.toolbar_EMC = getEmcToolbarConfig();
 
     /*features available in toolbar "Classic"*/
     /*FCKConfig.ToolbarSets["Trimmed"]*/
-    config.toolbar_Trimmed = getTrimmedToolbarConfig(false);
-    config.toolbar_Trimmed_AI = getTrimmedToolbarConfig(true);
+    config.toolbar_Trimmed = getTrimmedToolbarConfig();
 
-    function getFullToolbarConfig(withAiTextGeneration) {
+    function getFullToolbarConfig() {
         return [
             ['Source','DocProps','-','Save','NewPage','Preview','-','Templates'],
             ['Cut','Copy','-','Print','SpellCheck','Scayt'],
@@ -187,7 +183,7 @@ CKEDITOR.editorConfig = function(config) {
             ['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote','NumberedList','BulletedList'],
             ['JustifyLeft','JustifyCenter','JustifyRight','JustifyFull','JustifyBlock'],
             ['Link','Unlink','Anchor'],
-            ['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak','HorizontalRule','AGNTag',withAiTextGeneration ? 'AiTextGeneration' : '-'],
+            ['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak','HorizontalRule','AGNTag', '-'],
             '/',
             ['Style','FontFormat','FontName','FontSize','Font','Styles','Format'],
             ['TextColor','BGColor'],
@@ -195,12 +191,12 @@ CKEDITOR.editorConfig = function(config) {
         ];
     }
 
-    function getEmmToolbarConfig(withAiTextGeneration) {
+    function getEmmToolbarConfig() {
         return [
             { name: 'clipboard', items : [ 'Cut','Copy','-','Undo','Redo' ] },
             { name: 'editing', items : [ 'Find','Replace','-','SelectAll','-','Scayt' ] },
             { name: 'links', items : [ 'Link','Unlink','Anchor' ] },
-            { name: 'insert', items : [ 'Image','Table','HorizontalRule','SpecialChar','AGNTag',withAiTextGeneration?'AiTextGeneration':'-','EmojiPanel' ] },
+            { name: 'insert', items : [ 'Image','Table','HorizontalRule','SpecialChar','AGNTag', '-', 'EmojiPanel' ] },
             { name: 'styles', items : [ 'Font','FontSize' ] },
             { name: 'format', items : [ 'Styles','Format' ] },
             { name: 'colors', items : [ 'TextColor','BGColor' ] },
@@ -211,19 +207,20 @@ CKEDITOR.editorConfig = function(config) {
         ];
     }
 
-    function getEmcToolbarConfig(withAiTextGeneration) {
+    function getEmcToolbarConfig() {
         return [
             ['Cut', 'Copy'],
             ['Undo','Redo','-','Find','Replace', '-', 'SelectAll'],
-            ['Scayt', '-', 'Link', 'Unlink', 'SpecialChar', 'AGNTag', withAiTextGeneration?'AiTextGeneration':'-', 'Format', 'EmojiPanel'],
+            ['Scayt', '-', 'Link', 'Unlink', 'SpecialChar', 'AGNTag', '-', 'Font','FontSize', 'Format', 'EmojiPanel'],
+            ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock'],
             ['TextColor', 'BGColor', '-', 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', 'RemoveFormat']
         ];
     }
 
-    function getTrimmedToolbarConfig(withAiTextGeneration) {
+    function getTrimmedToolbarConfig() {
         return [
             ['Cut', 'Copy'],
-            ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar', 'AGNTag', withAiTextGeneration?'AiTextGeneration':'-', 'EmojiPanel'],
+            ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar', 'AGNTag', '-', 'EmojiPanel'],
             '/',
             ['Bold', 'Italic', 'Underline', 'Subscript', 'Superscript', 'RemoveFormat', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'],
             ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent']

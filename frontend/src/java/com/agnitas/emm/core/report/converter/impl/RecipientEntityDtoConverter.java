@@ -13,7 +13,7 @@ package com.agnitas.emm.core.report.converter.impl;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 

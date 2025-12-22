@@ -11,35 +11,31 @@
 package com.agnitas.emm.core.dashboard.web;
 
 import java.text.ParseException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.form.DashboardCalendarForm;
 import com.agnitas.emm.core.calendar.service.CalendarService;
-import com.agnitas.emm.core.calendar.web.CalendarController;
 import com.agnitas.emm.core.dashboard.enums.DashboardMode;
 import com.agnitas.emm.core.dashboard.form.DashboardForm;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
-import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.service.WebStorage;
-import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.commons.collections4.CollectionUtils;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
+import com.agnitas.web.perm.annotations.RequiredPermission;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.displaytag.pagination.PaginatedList;
 import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -68,29 +64,8 @@ public class DashboardController implements XssCheckAware {
     }
 
     @RequestMapping("/dashboard.action")
+    @AlwaysAllowed
     public String view(Admin admin, DashboardForm form, DashboardCalendarForm calendarForm, Model model) {
-        if (!admin.isRedesignedUiUsed() || admin.isUxUpdateRollback()) {
-            PaginatedList mailingList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
-            List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
-
-            if (CollectionUtils.isNotEmpty(worldMailinglist)) {
-                int lastSentMailingId = (Integer) (worldMailinglist.get(0).get("mailingid"));
-
-                form.setLastSentMailingId(lastSentMailingId);
-            }
-
-            model.addAttribute("mailinglist", mailingList);
-            model.addAttribute("worldmailinglist", worldMailinglist);
-            model.addAttribute("newsTypes", NewsType.values());
-            if (admin.isRedesignedUiUsed()) {
-                addRedesignAttrs(admin, model);
-            }
-
-            loadData(model, admin.getLocale(), admin);
-            return "dashboard_view";
-        }
-
-        String dashboardLayout = adminService.getDashboardLayout(admin);
         syncForm(form);
         syncCalendarForm(calendarForm);
 
@@ -99,11 +74,12 @@ public class DashboardController implements XssCheckAware {
             return "dashboard_calendar";
         }
 
-        addGridViewModelAttrs(admin, model, form, dashboardLayout);
+        addGridViewModelAttrs(admin, model, form);
         return "dashboard_grid";
     }
 
     @GetMapping("/calendar/unsent-mailings.action")
+    @RequiredPermission("calendar.show")
     public String calendarUnsentList(Model model, DashboardCalendarForm form, Admin admin) {
         syncCalendarForm(form);
         addUnsentMailingsModelAttr(model, form, admin);
@@ -151,9 +127,9 @@ public class DashboardController implements XssCheckAware {
         });
     }
 
-    protected void addGridViewModelAttrs(Admin admin, Model model, DashboardForm form, String dashboardLayout) {
+    protected void addGridViewModelAttrs(Admin admin, Model model, DashboardForm form) {
         addCommonViewModelAttrs(model, admin);
-        PaginatedList mailingsList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
+        PaginatedList<Map<String, Object>> mailingsList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
         List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
         model
             .addAttribute("mailinglist", mailingsList)
@@ -161,20 +137,14 @@ public class DashboardController implements XssCheckAware {
             .addAttribute("workflows", dashboardService.getWorkflows(admin))
             .addAttribute("adminDateTimeFormat", admin.getDateTimeFormat().toPattern())
             .addAttribute("recipientReports", dashboardService.getRecipientReports(admin))
-            .addAttribute("layout", dashboardLayout)
+            .addAttribute("layout", adminService.getDashboardLayout(admin))
             .addAttribute("language", admin.getAdminLang())
             .addAttribute("adminTimeZone", admin.getAdminTimezone())
             .addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
     }
 
-    protected void addRedesignAttrs(Admin admin, Model model) {
-        model.addAttribute("workflows", dashboardService.getWorkflows(admin));
-        model.addAttribute("adminDateTimeFormat", admin.getDateTimeFormat().toPattern());
-        model.addAttribute("recipientReports", dashboardService.getRecipientReports(admin));
-        model.addAttribute("layout", adminService.getDashboardLayout(admin));
-    }
-
     @GetMapping(value = "/dashboard/statistics.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
+    @RequiredPermission("stats.mailing")
     public @ResponseBody
     Map<String, Object> getStatistics(Admin admin, @RequestParam(name = "mailingId") int mailingId) {
         JSONObject result;
@@ -191,6 +161,7 @@ public class DashboardController implements XssCheckAware {
     }
 
     @GetMapping("/dashboard/scheduledMailings.action")
+    @AlwaysAllowed
     public @ResponseBody ResponseEntity<?> getScheduledMailings(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) throws ParseException {
         if (StringUtils.isBlank(start) || StringUtils.isBlank(end)) {
             return ResponseEntity.badRequest().build();
@@ -208,35 +179,9 @@ public class DashboardController implements XssCheckAware {
     }
 
     @PostMapping("/dashboard/layout/save.action")
-    public @ResponseBody BooleanResponseDto saveLayout(@RequestParam("layout") String layout, Admin admin) {
+    @AlwaysAllowed
+    public ResponseEntity<BooleanResponseDto> saveLayout(@RequestParam("layout") String layout, Admin admin) {
         adminService.saveDashboardLayout(layout, admin);
-        return new BooleanResponseDto(true);
-    }
-
-    private void loadData(Model model, Locale locale, Admin admin) {
-        int companyId = admin.getCompanyID();
-        Map<String, String> adminsMap = adminService.mapIdToUsernameByCompanyAndEmail(companyId);
-
-        //admin's parameters
-        model.addAttribute("language", admin.getAdminLang());
-        model.addAttribute("currentAdmin", admin.getAdminID());
-        model.addAttribute("companyAdmins", adminsMap);
-        model.addAttribute("currentAdminName", admin.getUsername());
-
-        //admin's time configurations
-        model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
-        model.addAttribute("localeTablePattern", admin.getDateFormat().toPattern());
-        model.addAttribute("adminTimeZone", admin.getAdminTimezone());
-        model.addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
-        model.addAttribute("adminTimeFormat", admin.getTimeFormat().toPattern());
-
-        if (!admin.isRedesignedUiUsed()) {
-            //other
-            model.addAttribute("firstDayOfWeek", Calendar.getInstance(locale).getFirstDayOfWeek() - 1);
-
-            model.addAttribute("monthlist", AgnUtils.getMonthList());
-            model.addAttribute("yearlist", AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM));
-        }
-        model.addAttribute("showALlCalendarEntries", configService.getBooleanValue(ConfigValue.DashboardCalendarShowALlEntries, companyId));
+        return ResponseEntity.ok(new BooleanResponseDto(true));
     }
 }

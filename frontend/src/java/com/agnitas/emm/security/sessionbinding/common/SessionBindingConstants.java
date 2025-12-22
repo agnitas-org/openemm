@@ -10,20 +10,18 @@
 
 package com.agnitas.emm.security.sessionbinding.common;
 
-import com.agnitas.emm.core.sessionhijacking.web.SessionHijackingPreventionConstants;
-
 public final class SessionBindingConstants {
 
     private SessionBindingConstants() {
         // Just to avoid instantiation
     }
 
-    public static final transient String HTTP_SESSION_BINDING_DATA_ATTRIBUTE = "com.agnitas.emm.security.sessionbinding.SessionBinding";
+    public static final String HTTP_SESSION_BINDING_DATA_ATTRIBUTE = "com.agnitas.emm.security.sessionbinding.SessionBinding";
 
-    public static final transient String FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME = SessionHijackingPreventionConstants.FORCED_LOGOUT_MARKER_ATTRIBUTE_NAME;
+    public static final String SKIP_COOKIE_CHECK_ON_FIRST_REQUEST = "sessionBinding.SkipCookieCheckOnFirstRequest";
 
-    public static final transient String SESSION_BINDING_COOKIE_NAME_PREFIX = "com.agnitas.emm.sb";
+    public static final String SESSION_BINDING_COOKIE_NAME_PREFIX = "com.agnitas.emm.sb";
 
-    public static final transient int SESSION_IDLE_GRACE_SECONDS = 36000; // 10 minutes
+    public static final int SESSION_IDLE_GRACE_SECONDS = 36000; // 10 minutes
 
 }

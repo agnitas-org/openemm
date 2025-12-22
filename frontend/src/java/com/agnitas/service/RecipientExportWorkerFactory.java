@@ -16,6 +16,6 @@ import com.agnitas.beans.Admin;
 
 public interface RecipientExportWorkerFactory {
 
-	public RecipientExportWorker newWorker(final ExportPredef exportProfile, final Admin admin) throws Exception;
+	RecipientExportWorker newWorker(ExportPredef exportProfile, Admin admin);
 	
 }

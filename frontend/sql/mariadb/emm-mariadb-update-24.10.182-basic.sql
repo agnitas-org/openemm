@@ -29,8 +29,8 @@ DELETE FROM company_info_tbl WHERE cname = 'webpush.sftp.sshkey.file';
 DELETE FROM config_tbl WHERE class='webpush' AND (name='sftp.sshkey.passphrase_encrypted' OR name LIKE 'sftp.sshkey.passphrase_encrypted.%');
 DELETE FROM company_info_tbl WHERE cname = 'webpush.sftp.sshkey.passphrase_encrypted';
 
-DELETE FROM config_tbl WHERE class='development' AND (name='webpush.useNewPnostman' OR name LIKE 'webpush.useNewPnostman.%');
-DELETE FROM company_info_tbl WHERE cname = 'development.webpush.useNewPnostman';
+DELETE FROM config_tbl WHERE class='development' AND (name='webpush.useNewPostman' OR name LIKE 'webpush.useNewPostman.%');
+DELETE FROM company_info_tbl WHERE cname = 'development.webpush.useNewPostman';
 
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)

@@ -26,7 +26,6 @@ public interface ProfileFieldService {
 
     List<ProfileField> getProfileFieldsWithInterest(Admin admin);
 
-
     List<ProfileField> getSortedColumnInfo(int companyId);
 
     List<String> getAllExceptSpecifiedNames(List<String> excludedFields, int companyId);

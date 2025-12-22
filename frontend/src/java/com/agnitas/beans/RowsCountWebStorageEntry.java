@@ -32,9 +32,8 @@ public class RowsCountWebStorageEntry implements WebStorageEntry {
     }
 
     @Override
-    public RowsCountWebStorageEntry clone() throws CloneNotSupportedException {
-        RowsCountWebStorageEntry entry = (RowsCountWebStorageEntry) super.clone();
-        entry.setRowsCount(rowsCount);
-        return entry;
+    public WebStorageEntry clone() throws CloneNotSupportedException {
+        throw new UnsupportedOperationException();
     }
+
 }

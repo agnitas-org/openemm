@@ -677,8 +677,11 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	public String makePreviewForHeatmap(long mailingID, long customerID) {
-		Page page = makePreview(mailingID, customerID, null, null, false, false, true, false, false, null, false, 0L, false);
-
+		Page	page = makePreview (build ()
+					    .mailingID (mailingID)
+					    .customerID (customerID)
+					    .ecsUIDs (true)
+		);
 		return page != null ? page.getHTML() : null;
 	}
 

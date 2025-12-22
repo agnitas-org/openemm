@@ -1,1 +1,0 @@
-// TODO: EMMGUI-714 remove after remove of old design

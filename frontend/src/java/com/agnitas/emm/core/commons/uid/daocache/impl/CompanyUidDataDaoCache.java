@@ -10,8 +10,7 @@
 
 package com.agnitas.emm.core.commons.uid.daocache.impl;
 
-import org.agnitas.emm.core.commons.daocache.DaoCache;
-
+import com.agnitas.emm.core.commons.daocache.DaoCache;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
 
 public interface CompanyUidDataDaoCache extends DaoCache<CompanyUidData> {

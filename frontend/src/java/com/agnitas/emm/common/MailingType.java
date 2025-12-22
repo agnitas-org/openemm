@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.common;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 /**
  * Type of mailing.
  */
@@ -43,9 +46,9 @@ public enum MailingType {
 	 * 
 	 * @param code magic number of mailing type
 	 */
-	MailingType(int code, String messagekey, final String webserviceCode) {
+	MailingType(int code, String messageKey, final String webserviceCode) {
 		this.code = code;
-		this.messagekey = messagekey;
+		this.messagekey = messageKey;
 		this.webserviceCode = webserviceCode;
 	}
 
@@ -66,35 +69,34 @@ public enum MailingType {
 		return this.webserviceCode;
 	}
 	
-	public static MailingType fromCode(final int code) throws Exception {
+	public static Optional<MailingType> findByCode(int code) {
 		for (final MailingType mailingType : values()) {
 			if (mailingType.code == code) {
-				return mailingType;
+				return Optional.of(mailingType);
 			}
 		}
-		throw new Exception("Invalid MailingType code: " + code);
+
+		return Optional.empty();
 	}
 
-	public static MailingType findByCode(int code) {
-        try {
-            return fromCode(code);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+	public static MailingType getByCode(int code) {
+		return findByCode(code)
+				.orElseThrow(() -> new NoSuchElementException("No MailingType found for code: " + code));
+	}
 	
-	public static MailingType fromWebserviceCode(final String code) throws Exception {
+	public static MailingType fromWebserviceCode(String code) {
 		for (final MailingType mailingType : values()) {
 			if (mailingType.webserviceCode.equals(code)) {
 				return mailingType;
 			}
 		}
-		throw new Exception("Invalid MailingType WS code: " + code);
+
+		throw new IllegalArgumentException("No mailing type with WS code " + code + " found");
 	}
 
-	public static MailingType fromName(final String name) throws Exception {
+	public static MailingType fromName(String name) {
 		if (name == null) {
-			throw new Exception("Invalid empty MailingType name");
+			throw new IllegalArgumentException("Invalid empty MailingType name");
 		}
 		
 		for (final MailingType mailingType : values()) {
@@ -108,7 +110,7 @@ public enum MailingType {
 		} else if ("rulebased".equalsIgnoreCase(name.replace("_", "").replace("-", ""))) {
 			return MailingType.DATE_BASED;
 		} else {
-			throw new Exception("Invalid MailingType name: " + name);
+			throw new IllegalArgumentException("Invalid MailingType name: " + name);
 		}
 	}
 }

@@ -79,7 +79,11 @@ public class DomainStatDataSet extends BIRTDataSet {
 		String instrEmail;
         if (isOracleDB()) {
         	instrEmail = topLevelDomains ? "INSTR(email, '.', -1)" : "INSTR(email, '@')";
-        } else {
+        } else if (isPostgreSQL()) {
+			instrEmail = topLevelDomains
+					? "LENGTH(email) - POSITION('.' IN REVERSE(email))"
+					: "POSITION('@' IN email)";
+		} else {
             instrEmail = topLevelDomains ? "LENGTH(email) - INSTR(REVERSE(email), '.')" : "INSTR(email, '@')";
         }
 		
@@ -115,7 +119,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 	
 	private static class DomainRowMapper implements RowMapper<DomainStatRow> {
 		
-		private AtomicInteger totalValue = new AtomicInteger();
+		private final AtomicInteger totalValue = new AtomicInteger();
 		
 		private int getTotalValue() {
 			return totalValue.get();

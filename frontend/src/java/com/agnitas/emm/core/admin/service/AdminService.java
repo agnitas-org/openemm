@@ -18,10 +18,12 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.EmmLayoutBase;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
@@ -32,11 +34,6 @@ import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.Tuple;
 
 public interface AdminService {
@@ -51,6 +48,7 @@ public interface AdminService {
      * @return {@link Admin} for given user name
      */
 	Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException;
+
 	Optional<Admin> findAdminByCredentials(final String username, final String password);
 
 	Map<String, String> mapIdToUsernameByCompanyAndEmail(int companyId);
@@ -59,9 +57,8 @@ public interface AdminService {
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
 
-	ServiceResult<Admin> isPossibleToDeleteAdmin(int adminId, int companyId);
-
 	ServiceResult<Admin> delete(Admin admin, int adminIdToDelete);
+
     boolean deleteAdmin(final int adminID, final int companyID);
 
     AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, Admin editorAdmin);
@@ -82,23 +79,19 @@ public interface AdminService {
      */
     Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID);
 
-    void grantPermission(Admin admin, Permission permission);
-
-    void revokePermission(Admin admin, Permission permission);
-
     Admin getAdmin(int adminID, int companyID);
 
     boolean adminExists(String username);
 
     boolean isGuiAdminLimitReached(int companyID);
 
-    List<AdminGroup> getAdminGroups(int companyID, Admin admin);
-
     List<Company> getCreatedCompanies(int companyID);
 
-    boolean adminGroupExists(int companyId, String groupname);
+    List<String> getGuiUsernames(Integer companyId);
 
-    PaginatedListImpl<AdminEntry> getAdminList(
+    List<String> getRestfulUsernames(Integer companyId);
+
+    PaginatedList<AdminEntry> getAdminList(
             int companyID,
             String searchFirstName,
             String searchLastName,
@@ -116,12 +109,9 @@ public interface AdminService {
             int pageNumber,
             int pageSize);
 
-    PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
+    PaginatedList<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
 
     List<AdminEntry> listAdminsByCompanyID(final int companyID);
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin);
-    List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin, UserActivityLogService.UserType type);
 
     PasswordState getPasswordState(Admin admin);
 
@@ -140,32 +130,28 @@ public interface AdminService {
     boolean isDarkmodeEnabled(Admin admin);
 
 	Optional<Admin> getAdminByName(String username);
+
 	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
+
 	Admin getOldestAdminOfCompany(int companyId);
 
 	void save(Admin admin);
 
 	boolean isAdminPassword(Admin admin, String password);
+
 	boolean isEnabled(Admin admin);
+
 	Admin getAdminByLogin(String name, String password);
 
     int getAccessLimitTargetId(Admin admin);
     
     boolean isExtendedAltgEnabled(Admin admin);
     
-	int getAdminWelcomeMailingId(String language);
-	
-	int getPasswordResetMailingId(String language);
-	
-	int getPasswordChangedMailingId(String language);
-	
-	int getSecurityCodeMailingId(String language);
-	
 	int getOpenEmmDemoAccountWaitingMailingID(String language);
 	
 	int getOpenEmmDemoAccountDataMailingID(String language);
 	
-	PaginatedListImpl<AdminEntry> getRestfulUserList(
+	PaginatedList<AdminEntry> getRestfulUserList(
             int companyID,
             String searchFirstName,
             String searchLastName,
@@ -186,11 +172,13 @@ public interface AdminService {
 	List<Admin> getAdmins(int companyID, boolean restful);
 
 	void setDefaultPreferencesSettings(AdminPreferences preferences);
+
 	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
 	
 	int getNumberOfRestfulUsers(int companyID);
 	
 	int getNumberOfGuiAdmins(int companyID);
+
 	void deleteAdminPermissionsForCompany(int companyID);
 
     void saveDashboardLayout(String layout, Admin admin);
@@ -199,19 +187,18 @@ public interface AdminService {
 
     void warnAdminsAboutPasswordExpiration(CompaniesConstraints constraints);
 
-    int getPasswordExpirationMailingId(String language);
-
     void setPasswordReminderState(int adminId, PasswordReminderState state);
 
-    int getEmailChangedMailingId(String language);
-
     List<AdminEntry> findAllByEmailPart(String email, int companyID);
+
     List<AdminEntry> findAllByEmailPart(String email);
 
     AdminEntry findByEmail(String email, int companyId);
 
     ServiceResult<List<Admin>> getAllowedForDeletion(Set<Integer> ids, int companyID);
+
     List<Admin> delete(Set<Integer> ids, int companyId);
+
     SimpleServiceResult delete(int id, int companyId);
 
     void updateEmail(String email, int id, int companyId);

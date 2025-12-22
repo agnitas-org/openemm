@@ -12,35 +12,26 @@ package com.agnitas.emm.core.mobile.service.impl;
 
 import java.util.Objects;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mobile.bean.AccessData;
 import com.agnitas.emm.core.mobile.bean.AccessData.AccessType;
 import com.agnitas.emm.core.mobile.dao.AccessDataDao;
 import com.agnitas.emm.core.mobile.service.AccessDataService;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class AccessDataServiceImpl implements AccessDataService {
-	AccessDataDao accessDataDao;
 
-	public final void setAccessDataDao(final AccessDataDao accessDataDao) {
-		this.accessDataDao = Objects.requireNonNull(accessDataDao, "DAO cannot be null");
-	}
+	private AccessDataDao accessDataDao;
 	
-	@Override
-	public void writeAccessData(final AccessData data) {
-		accessDataDao.writeData(data);
-	}
-
 	@Override
 	public void logAccess(final HttpServletRequest request, final ExtensibleUID uid, final int deviceID) {
 		final AccessData data = new AccessData();
-		
+
 		data.setIp(request.getRemoteAddr());
 		data.setReferer(request.getHeader("referer")); 	// can be null!
 		data.setUserAgent(request.getHeader("User-Agent"));
 		data.setXuid(request.getParameter("uid"));	// can be null
-		
+
 		AccessType requestType;
 		if (request.getRequestURL().indexOf("g.html") > 0) {
 			requestType = AccessType.ONEPIXEL;
@@ -50,15 +41,23 @@ public class AccessDataServiceImpl implements AccessDataService {
 			requestType = AccessType.UNKNOWN;
 		}
 		data.setAccessType(requestType);
-		
+
 		if (uid != null) {
 			data.setMailingID(uid.getMailingID());
 			data.setCustomerID(uid.getCustomerID());
 			data.setLinkID(uid.getUrlID());
 		}
-		
+
 		data.setDeviceID(deviceID);
-		
+
 		writeAccessData(data);
+	}
+
+	private void writeAccessData(AccessData data) {
+		accessDataDao.writeData(data);
+	}
+
+	public void setAccessDataDao(AccessDataDao accessDataDao) {
+		this.accessDataDao = Objects.requireNonNull(accessDataDao, "DAO cannot be null");
 	}
 }

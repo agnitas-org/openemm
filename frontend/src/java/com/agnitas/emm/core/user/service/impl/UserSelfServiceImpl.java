@@ -12,8 +12,8 @@ package com.agnitas.emm.core.user.service.impl;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.user.service.UserSelfService;
-import org.agnitas.emm.core.logintracking.bean.LoginData;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
+import com.agnitas.emm.core.loginmanager.bean.LoginData;
+import com.agnitas.emm.core.loginmanager.service.LoginTrackService;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;

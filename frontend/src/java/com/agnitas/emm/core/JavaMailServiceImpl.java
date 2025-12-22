@@ -17,8 +17,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -128,10 +128,8 @@ public class JavaMailServiceImpl implements JavaMailService {
 			
 							String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
 					
-							if (logger.isInfoEnabled()) {
-								logger.info("Sending error message:\n" + messageBuilder.toString());
-							}
-				
+							logger.info("Sending error message:\n{}", messageBuilder.toString());
+
 							try {
 								final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
 								
@@ -171,15 +169,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 
 				String subjectText = "EMM License Error (Server: " + AgnUtils.getHostName() + ")";
 		
-				if (logger.isInfoEnabled()) {
-					logger.info("License error message: \n" + messageBuilder.toString());
-				}
-	
+				logger.info("License error message: \n{}", messageBuilder.toString());
+
 				try {
 					final boolean result = sendEmail(0, toAddress, subjectText, messageBuilder.toString(), null);
 					
 					if (!result) {
-						logger.error("Could not send license error mail - unreported error is: " + errorText);
+						logger.error("Could not send license error mail - unreported error is: {}", errorText);
 					}
 					
 					return result;
@@ -191,7 +187,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 				return true;
 			}
 		} else {
-			logger.error("Error sending email with license error (ConfigService not initialized): " + errorText);
+			logger.error("Error sending email with license error (ConfigService not initialized): {}", errorText);
 			return false;
 		}
 	}
@@ -207,6 +203,11 @@ public class JavaMailServiceImpl implements JavaMailService {
 	}
 
 	@Override
+	public boolean sendReplyEmail(int dkimCompanyID, String toAddressList, String subject, String bodyText, String bodyHtml, String replyEmail) {
+		return sendEmail(dkimCompanyID, null, null, replyEmail, null, null, toAddressList, null, subject, bodyText, bodyHtml, null);
+	}
+
+	@Override
 	public boolean sendEmail(int dkimCompanyID, String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
 		return sendEmail(dkimCompanyID, fromAddress, null, replyToAddress, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
 	}
@@ -214,7 +215,6 @@ public class JavaMailServiceImpl implements JavaMailService {
 	@Override
 	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
 		return sendEmail(dkimCompanyID, fromAddress, fromName, replyToAddress, replyToName, bounceAddress, toAddressList, ccAddressList, null, subject, bodyText, bodyHtml, charset, attachments);
-		
 	}
 
 	/**
@@ -228,7 +228,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String bccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
 		String smtpMailRelayHostname = configService.getValue(ConfigValue.SmtpMailRelayHostname);
 		if (StringUtils.isBlank(smtpMailRelayHostname)) {
-			logger.error("smtpMailRelayHostname is missing, so no mail was sent. emailSubject: " + subject);
+			logger.error("smtpMailRelayHostname is missing, so no mail was sent. emailSubject: {}", subject);
 			return false;
 		}
 		
@@ -409,14 +409,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 				transport.connect();
 				transport.sendMessage(mimeMessage, mimeMessage.getRecipients(Message.RecipientType.TO));
 				
-				if (logger.isDebugEnabled()) {
-					logger.debug("Sending java email:\nfrom: " + fromAddress + "\nto: " + toAddressList + "\nsubject: " + subject);
-				}
-				
+				logger.debug("Sending java email:\nfrom: {}\nto: {}\nsubject: {}", fromAddress, toAddressList, subject);
+
 				return true;
 			}
 		} catch (Exception e) {
-			logger.error("Error sending email via " + smtpMailRelayHostname + ": " + e.getMessage() + " \nemailSubject: " + subject + " \nemailContent: " + (StringUtils.isBlank(bodyText) ? bodyHtml : bodyText), e);
+			logger.error("Error sending email via {}: {} \nemailSubject: {} \nemailContent: {}",
+					smtpMailRelayHostname, e.getMessage(), subject, StringUtils.isBlank(bodyText) ? bodyHtml : bodyText, e);
 			return false;
 		}
 	}
@@ -431,7 +430,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 					nextAddress.validate();
 					emailAddresses.add(nextAddress);
 				} catch (AddressException e) {
-					logger.error("Invalid Emailaddress found: " + address);
+					logger.error("Invalid Emailaddress found: {}", address);
 				}
 			} else {
 				throw new IllegalArgumentException("Invalid email address: " + address);

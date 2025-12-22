@@ -3,7 +3,6 @@
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="CKEDITOR_PATH" value="${emm:ckEditorPath(pageContext.request)}" scope="page"/>
-<c:set var="showAiTextGenerationBtn" value="${not empty param.showAiTextGenerationBtn and param.showAiTextGenerationBtn}" />
 
 <%@include file="ckeditor-browse-server-url.jspf" %>
 
@@ -22,21 +21,21 @@
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
         let imageBrowserUrl = '${imageBrowserUrl}';
         if (imageBrowserUrl && !!mailingId) {
-          imageBrowserUrl += !!window.isRedesignedUI + '&mailingID=' + mailingId;
+          imageBrowserUrl += '?mailingID=' + mailingId;
         }
 
         if (!isEditorVisible(textAreaId)) {
             const config = {
                 customConfig: 'emm_config.js',
                 fullPage: fullPage,
-                toolbar: '${param.toolbarType}' ? '${param.toolbarType}${showAiTextGenerationBtn ? '_AI' : ''}' : 'EMM${showAiTextGenerationBtn ? '_AI' : ''}',
+                toolbar: '${param.toolbarType}' ? '${param.toolbarType}' : 'EMM',
                 width: editorWidth,
                 height: editorHeight,
                 language: '${emm:getLocale(pageContext.request).language}',
                 baseHref: '<c:url value="/${CKEDITOR_PATH}/"/>',
                 filebrowserImageBrowseUrl: imageBrowserUrl,
                 filebrowserImageBrowseLinkUrl: imageBrowserUrl,
-                filebrowserImageWindowWidth: window.isRedesignedUI ? '1200' : '700',
+                filebrowserImageWindowWidth: '1200',
                 filebrowserImageWindowHeight: '600',
                 resize_enabled: !isResizeNotEnabled,
                 mailingId: mailingId,
@@ -80,11 +79,7 @@
                         event.editor.updateElement();
                     },
                     save: function(e) {
-                        if (window.isRedesignedUI) {
-                          $(e.sender.element.$).trigger('ckeditor-save');
-                        } else {
-                          $(document).trigger('ckeditor-save');
-                        }
+                        $(e.sender.element.$).trigger('ckeditor-save');
                         e.cancel();
                     }
                 }

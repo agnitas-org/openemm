@@ -10,17 +10,17 @@
 
 package com.agnitas.emm.core.import_profile.form;
 
-import com.agnitas.emm.core.import_profile.bean.ImportProfileColumnMapping;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.util.importvalues.ImportMode;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.emm.core.import_profile.bean.ImportProfileColumnMapping;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.importvalues.ImportMode;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ImportProfileForm {
 
@@ -32,8 +32,6 @@ public class ImportProfileForm {
     private boolean noHeaders;
     private String zipPassword;
     private String firstKeyColumn;
-    /*** TODO: replace usages with {@link shouldCheckForDuplicates} after EMMGUI-714 will be finished and old design will be removed */
-    private int checkForDuplicates;
     private boolean updateAllDuplicates = true;
     private int defaultMailType;
     private int importProcessActionID;
@@ -53,11 +51,7 @@ public class ImportProfileForm {
     private Set<MediaTypes> selectedMediatypes = new HashSet<>();
     private int importMode = ImportMode.ADD_AND_UPDATE.getIntValue();
     private final Map<Integer, String> genderMappings = new HashMap<>();
-    private final Map<Integer, String> mailinglists = new HashMap<>(); // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    private final Map<Integer, String> mediatypes = new HashMap<>(); // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-
-    private List<ImportProfileColumnMapping> columnsMappings = new ArrayList<>();
-
+    private final List<ImportProfileColumnMapping> columnsMappings = new ArrayList<>();
     private MultipartFile uploadFile;
 
     public int getId() {
@@ -132,14 +126,6 @@ public class ImportProfileForm {
         this.firstKeyColumn = firstKeyColumn;
     }
 
-    public int getCheckForDuplicates() {
-        return checkForDuplicates;
-    }
-
-    public void setCheckForDuplicates(int checkForDuplicates) {
-        this.checkForDuplicates = checkForDuplicates;
-    }
-
     public boolean isUpdateAllDuplicates() {
         return updateAllDuplicates;
     }
@@ -210,24 +196,6 @@ public class ImportProfileForm {
 
     public void setActionForNewRecipients(int actionForNewRecipients) {
         this.actionForNewRecipients = actionForNewRecipients;
-    }
-
-    public void setMailinglists(Map<Integer, String> map) {
-        this.mailinglists.clear();
-        this.mailinglists.putAll(map);
-    }
-
-    public Map<Integer, String> getMailinglist() {
-        return mailinglists;
-    }
-
-    public void setMediatypes(Map<Integer, String> map) {
-        this.mediatypes.clear();
-        this.mediatypes.putAll(map);
-    }
-
-    public Map<Integer, String> getMediatype() {
-        return mediatypes;
     }
 
     public int getCharset() {

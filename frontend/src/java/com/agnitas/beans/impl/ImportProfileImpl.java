@@ -348,17 +348,6 @@ public class ImportProfileImpl implements ImportProfile {
         return false;
     }
 
-	@Override
-	public Set<String> getEncryptedColumns() {
-		Set<String> encryptedColumns = new HashSet<>();
-		for (ColumnMapping columnMappingEntry : getColumnMapping()) {
-			if (columnMappingEntry.isEncrypted()) {
-				encryptedColumns.add(columnMappingEntry.getDatabaseColumn());
-			}
-		}
-		return encryptedColumns;
-	}
-
     @Override
 	public void setImportProcessActionID(int importProcessActionID) {
     	this.importProcessActionID = importProcessActionID;
@@ -462,7 +451,7 @@ public class ImportProfileImpl implements ImportProfile {
 		
 		output.append("ColumnMapping: \n");
 		for (ColumnMapping mapping : columnMapping) {
-			output.append("\t" + mapping.getDatabaseColumn() + " = " + mapping.getFileColumn() + (mapping.isEncrypted() ? " encrypted" : "") + "\n");
+			output.append("\t" + mapping.getDatabaseColumn() + " = " + mapping.getFileColumn() + "\n");
 		}
 		
 		output.append("KeyColumns: " + StringUtils.join(keyColumns, ", "));

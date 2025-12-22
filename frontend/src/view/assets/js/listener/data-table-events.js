@@ -1,90 +1,135 @@
-(function(){
+(() => {
 
-  var Table = AGN.Lib.Table,
-      WebStorage = AGN.Lib.WebStorage;
+  const Table = AGN.Lib.Table;
+  const WebStorage = AGN.Lib.WebStorage;
+  const Confirm = AGN.Lib.Confirm;
 
-  $(document).on('click', '.js-data-table-first-page', function(e) {
-    Table.get($(this)).api.paginationGoToFirstPage();
+  const RESTORE_ROW_SELECTOR = '[data-restore-row]';
+  const BULK_RESTORE_ROWS_SELECTOR = '[data-bulk-action="restore"]';
+
+  $(document).on('click', '[data-js-table-page]', function () {
+    const $el = $(this);
+    const page = $el.data('js-table-page');
+
+    const api = Table.get($el).api;
+
+    if (page === 'first') {
+      api.paginationGoToFirstPage();
+    } else if (page === 'prev') {
+      api.paginationGoToPreviousPage();
+    } else if (page === 'next') {
+      api.paginationGoToNextPage();
+    } else if (page === 'last') {
+      api.paginationGoToLastPage();
+    } else {
+      api.paginationGoToPage(page);
+    }
+
+    api.deselectAll();
   });
 
-  $(document).on('click', '.js-data-table-prev-page', function(e) {
-    Table.get($(this)).api.paginationGoToPreviousPage();
-  });
+  $(document).on('change', "[data-js-table] [data-number-of-rows]", function () {
+    const $e = $(this);
+    const pageSize = $e.val();
 
-  $(document).on('click', '.js-data-table-page', function(e) {
-    Table.get($(this)).api.paginationGoToPage($(this).data('page'));
-  });
+    Table.get($e).api.setGridOption('paginationPageSize', pageSize);
 
-  $(document).on('click', '.js-data-table-next-page', function(e) {
-    Table.get($(this)).api.paginationGoToNextPage();
-  });
-
-  $(document).on('click', '.js-data-table-last-page', function(e) {
-    Table.get($(this)).api.paginationGoToLastPage();
-  });
-
-  $(document).on('click', '.js-data-table-paginate', function(e) {
-    var $e = $(this);
-    var pageSize = $e.data('page-size');
-    var api = Table.get($e).api;
-
-    api.paginationSetPageSize(pageSize);
-
-    // Close drop down menu as user clicked on button within.
-    $e.closest('.dropdown-menu').trigger('click');
-
-    var bundle = $e.data('web-storage');
+    const bundle = $e.closest('.table-wrapper').data('web-storage');
     if (bundle) {
       WebStorage.extend(bundle, {"paginationPageSize": parseInt(pageSize)});
     }
   });
 
-  $(window).on('viewportChanged', function(e) {
-    $(document).all('.js-data-table-body').each(function() {
-      AGN.Lib.Table.get($(this)).redraw();
+  $(window).on('viewportChanged', function () {
+    $(document).all('.table-wrapper').each(function () {
+      AGN.Lib.Table.get($(this))?.redraw();
     })
   });
 
-  $(document).on('click', '.js-data-table-bulk-delete', function(e) {
-    var $e = $(this);
-    bulkDelete($e, false);
+  $(document).on('click', '.js-data-table-delete', function (e) {
+    const $el = $(this);
+    const table = Table.get($el);
+
+    $.get($el.attr('href')).done(resp => {
+      if ($(resp).all('.modal').exists()) {
+        Confirm.create(resp).done(positiveResp => {
+          const row = table?.findRowByElement($el);
+          if (row) {
+            row.data.deleted = true;
+            row.data.active = 'false';
+            table.api?.applyTransaction(isRestoreModeAvailable() ? {update: [row.data]} : {remove: [row.data]});
+            row.setSelected(false);
+          }
+          if (typeof positiveResp === 'object') {
+            AGN.Lib.JsonMessages(positiveResp.popups, true);
+          } else {
+            AGN.Lib.RenderMessages($(positiveResp));
+          }
+        });
+      } else {
+        AGN.Lib.Page.render(resp);
+      }
+    });
+
+    e.preventDefault();
   });
 
-  function bulkDelete($e) {
-    var field = $e.data('bulk-field') || 'id';
-    var requestField = $e.data('bulk-request-field') || 'bulkIds';
+  $(document).on('click', '.js-data-table-bulk-delete', e => deleteRows($(e.currentTarget)));
+  $(document).on('click', `${BULK_RESTORE_ROWS_SELECTOR}, ${RESTORE_ROW_SELECTOR}`, e => restoreRows($(e.currentTarget)));
 
-    var api = Table.get($e).api;
-    var rows = api.getSelectedRows();
-    var ids = rows.map(function(row) { return row[field]; });
-
-    var data = {};
-    data[requestField] = ids;
-
-    requestBulkDelete(ids, $e.data('bulk-url'), data).done(function() {
-      api.updateRowData({remove: rows});
-    });
+  function deleteRows($el) {
+    hideRowsAfterAction($el, false);
   }
 
-  function requestBulkDelete(ids, url, data) {
-    var deferred = $.Deferred();
+  function restoreRows($el) {
+    hideRowsAfterAction($el, true);
+  }
 
-    if (ids && ids.length) {
-      var jqxhr = $.ajax(url, {
-        method: 'POST',
-        traditional: false,
-        data: data
-      }).fail(function(){
-        deferred.reject();
+  function hideRowsAfterAction($el, restore) {
+    const table = Table.get($el);
+    const tableApi = table.api;
+    const rows = $el.is(RESTORE_ROW_SELECTOR) ? [table?.findRowByElement($el)?.data] : tableApi.getSelectedRows();
+    const ids = rows.map(row => row.id);
+
+    requestAction(ids, $el.data('bulk-url'), restore ? 'POST' : $el.data('method'))
+      .done(() => removeRows(tableApi, rows, restore));
+  }
+
+  function removeRows(tableApi, rows, restore) {
+    rows.forEach(row => {
+      row.active = 'false';
+      row.deleted = !restore;
+      tableApi.getSelectedNodes().forEach(node => {
+        if (node.data.id === row.id) {
+          node.setSelected(false);
+        }
       });
+    });
+    tableApi.applyTransaction(isRestoreModeAvailable() ? {update: rows} : {remove: rows});
+  }
 
-      AGN.Lib.Confirm.request(jqxhr)
+  function isRestoreModeAvailable() {
+    return $(BULK_RESTORE_ROWS_SELECTOR).exists();
+  }
+
+  function requestAction(bulkIds, url, method = 'GET') {
+    const deferred = $.Deferred();
+
+    if (bulkIds && bulkIds.length) {
+      const jqxhr = $.ajax(url, {
+        method,
+        traditional: true,
+        data: {bulkIds}
+      }).fail(() => deferred.reject());
+
+      Confirm.request(jqxhr)
         .then(deferred.resolve, deferred.reject)
     } else {
       deferred.reject();
-      AGN.Lib.Messages(t("Error"), t("messages.error.nothing_selected"), "alert");
+      AGN.Lib.Messages.alert('messages.error.nothing_selected');
     }
 
     return deferred.promise();
   }
+
 })();

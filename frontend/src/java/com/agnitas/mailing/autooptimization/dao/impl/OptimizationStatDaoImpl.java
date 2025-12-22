@@ -10,24 +10,13 @@
 
 package com.agnitas.mailing.autooptimization.dao.impl;
 
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.mailing.autooptimization.dao.OptimizationStatDao;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
-import java.util.Map;
 
 public class OptimizationStatDaoImpl extends BaseDaoImpl implements OptimizationStatDao {
-
-	@Override
-	public int getBounces(int mailingID, int companyID) {
-		String query = "SELECT COUNT(DISTINCT customer_id) FROM customer_" + companyID + "_binding_tbl"
-			+ " WHERE user_status = ? AND exit_mailing_id = ?"
-			+ " AND user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "')";
-		return selectInt(query, UserStatus.Bounce.getStatusCode(), mailingID);
-	}
 
     private String getRecipientsTypeCondition(String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
@@ -72,20 +61,6 @@ public class OptimizationStatDaoImpl extends BaseDaoImpl implements Optimization
                 .append(getRecipientsTypeCondition(recipientsType));
         return select(queryBuilder.toString().replace("<COMPANYID>", String.valueOf(companyId)), Integer.class, mailingId);
     }
-
-    @Override
-	public int getOptOuts(int mailingID, int companyID) {
-		String query = "SELECT count(distinct (bind.customer_id)) AS optout FROM " +
-			" customer_<COMPANYID>_binding_tbl bind " +
-			" WHERE bind.exit_mailing_id= ? AND (bind.user_status = 3 OR  bind.user_status = 4)" +
-			" AND user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') and mailinglist_id=(" +
-			"select mailinglist_id from mailing_tbl where mailing_id = ?) ";
-
-		query = query.replace("<COMPANYID>", Integer.toString(companyID));
-			
-		Map<String, Object> optoutMap = select(query, mailingID, mailingID).get(0);
-		return optoutMap.get("optout") != null ? ((Number)optoutMap.get("optout")).intValue():0 ;
-	}
 
     @Override
     public int getSend(int mailingId, String recipientsType) {

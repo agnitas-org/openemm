@@ -10,27 +10,21 @@
 
 package com.agnitas.emm.wsmanager.service.impl;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserEntryDto;
+import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
 import com.agnitas.emm.wsmanager.bean.WebservicePermissions;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
@@ -48,15 +42,17 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Implementation of {@link WebserviceUserService} interface.
- */
 @Service("WebserviceUserService")
 public class WebserviceUserServiceImpl implements WebserviceUserService {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(WebserviceUserServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(WebserviceUserServiceImpl.class);
 
 	private static final String USER_DESCRIPTION_PATTERN = "WS2-User \"%s\"";
     private static final String DATA_SOURCE_URI = "";
@@ -87,10 +83,10 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 	
 	@Override
-	public PaginatedListImpl<WebserviceUserEntryDto> getPaginatedWSUserList(int companyID, String sort, String direction, int page, int rownums, boolean masterView) throws WebserviceUserServiceException {
+	public PaginatedList<WebserviceUserEntryDto> getPaginatedWSUserList(int companyID, String sort, String direction, int page, int rownums, boolean masterView) throws WebserviceUserServiceException {
 
 		try {
-			PaginatedListImpl<WebserviceUserListItem> listFromDb;
+			PaginatedList<WebserviceUserListItem> listFromDb;
 			if (masterView) {
 				listFromDb = webserviceUserDao.getWebserviceUserMasterList(sort, AgnUtils.sortingDirectionToBoolean(direction), page, rownums);
 			} else {
@@ -106,13 +102,13 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public PaginatedListImpl<WebserviceUserEntryDto> getPaginatedWSUserList(WebserviceUserOverviewFilter filter, Admin admin) throws WebserviceUserServiceException {
+	public PaginatedList<WebserviceUserEntryDto> getPaginatedWSUserList(WebserviceUserOverviewFilter filter, Admin admin) throws WebserviceUserServiceException {
 		try {
 			if (!admin.permissionAllowed(Permission.MASTER_SHOW)) {
 				filter.setCompanyId(admin.getCompanyID());
 			}
 
-			PaginatedListImpl<WebserviceUserListItem> listFromDb = webserviceUserDao.getWebserviceUserList(filter);
+			PaginatedList<WebserviceUserListItem> listFromDb = webserviceUserDao.getWebserviceUserList(filter);
 			return conversionService.convertPaginatedList(listFromDb, WebserviceUserListItem.class, WebserviceUserEntryDto.class);
 		} catch(WebserviceUserDaoException e) {
 			logger.error("Error accessing webservice user list", e);
@@ -126,7 +122,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	public void createWebserviceUser(WebserviceUserDto user) throws WebserviceUserException, WebserviceUserServiceException {
 		String username = user.getUserName();
 		if (webserviceUserDao.webserviceUserExists(username)) {
-			logger.info("Webservice user '" + username + "' already exists");
+			logger.info("Webservice user '{}' already exists", username);
 			throw new WebserviceUserAlreadyExistsException(username);
 		}
 
@@ -143,7 +139,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 
 			final int bulkSizeLimit = this.configService.getWebserviceBulkSizeLimit(user.getCompanyId());
 
-			logger.info(String.format("Created datasource ID %d as default datasource for webservice user %s", convertedUser.getDefaultDatasourceID(), username));
+			logger.info("Created datasource ID {} as default datasource for webservice user {}", convertedUser.getDefaultDatasourceID(), username);
 
 			webserviceUserDao.createWebserviceUser(convertedUser, dataSourceId, bulkSizeLimit);
 			saveGrantedPermissionsAndGroups(convertedUser);
@@ -246,4 +242,14 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	public boolean webserviceUserExists(String username) {
 		return webserviceUserDao.webserviceUserExists(username);
 	}
+
+	@Override
+	public List<String> getUsernames(Integer companyId) {
+		if (companyId == null) {
+			return webserviceUserDao.getUsernames();
+		}
+
+		return webserviceUserDao.getUsernames(companyId);
+	}
+
 }

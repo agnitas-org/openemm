@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.mailtracking.service;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;

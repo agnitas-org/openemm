@@ -17,8 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class LoggedUserAction extends UserAction {
-	private final String supervisorName;
 
+	private final String supervisorName;
 	private final String username;
 	private final Date date;
 
@@ -35,6 +35,10 @@ public class LoggedUserAction extends UserAction {
 
 	public String getUsername() {
 		return username;
+	}
+
+	public String getSupervisorName() {
+		return supervisorName;
 	}
 
 	@Override

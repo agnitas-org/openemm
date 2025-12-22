@@ -26,9 +26,6 @@ public class DynamicTagContentImpl implements DynamicTagContent {
     protected int targetID;
     protected String dynContent;
     
-    public static int WITHOUT_CLOB_CONTENT=0;
-    public static int WITH_CLOB_CONTENT=1;
-    
     /** Creates new DynamicTagContent */
     public DynamicTagContentImpl() {
     }

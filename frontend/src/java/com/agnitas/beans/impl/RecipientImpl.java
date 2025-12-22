@@ -10,32 +10,6 @@
 
 package com.agnitas.beans.impl;
 
-import com.agnitas.dao.BindingEntryDao;
-import com.agnitas.dao.RecipientDao;
-import com.agnitas.dao.impl.RecipientDaoImpl;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientStandardField;
-import jakarta.servlet.http.HttpServletRequest;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.Recipient;
-import com.agnitas.beans.factory.BindingEntryFactory;
-import com.agnitas.beans.factory.RecipientFactory;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.recipient.RecipientUtils;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbColumnType;
-import com.agnitas.util.HttpUtils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -45,6 +19,32 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.Recipient;
+import com.agnitas.beans.factory.BindingEntryFactory;
+import com.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.impl.RecipientDaoImpl;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.HttpUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import com.agnitas.emm.core.recipient.utils.RecipientUtils;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Manually executed test
@@ -144,7 +144,7 @@ public class RecipientImpl implements Recipient {
 	}
 	
 	@Override
-	public boolean updateInDbWithException() throws Exception {
+	public boolean updateInDbWithException() {
 		return recipientDao.updateInDbWithException(this);
 	}
 	
@@ -194,18 +194,6 @@ public class RecipientImpl implements Recipient {
 	
 	@Override
 	public int insertNewCustWithException() throws Exception {
-		Object gender = getCustParameters().get("gender");
-		Object firstname = getCustParameters().get("firstname");
-		Object lastname = getCustParameters().get("lastname");
-
-		if (gender == null || (gender instanceof String && StringUtils.isBlank((String) gender))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data is missing or invalid: gender is empty");
-		} else if (firstname != null && firstname instanceof String && (((String) firstname).toLowerCase().contains("http:") || ((String) firstname).toLowerCase().contains("https:"))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"firstname\" contains http link data");
-		} else if (lastname != null && lastname instanceof String && (((String) lastname).toLowerCase().contains("http:") || ((String) lastname).toLowerCase().contains("https:"))) {
-			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" contains http link data");
-		}
-
 		return recipientDao.insertNewCustWithException(this);
 		
 	}
@@ -641,7 +629,7 @@ public class RecipientImpl implements Recipient {
 		}
 	}
 
-	private final void doUpdateBindings(final boolean doubleOptIn, final int mediatype, final int mailinglistID, final int mailingID, BindingEntry aEntry, final int subscribeStatus, final String remoteAddr, final String referrer) throws Exception {
+	private void doUpdateBindings(boolean doubleOptIn, int mediatype, int mailinglistID, int mailingID, BindingEntry aEntry, int subscribeStatus, String remoteAddr, String referrer) {
 		// find BindingEntry or create new one
 		Map<Integer, BindingEntry> mList = listBindings.get(mailinglistID);
 		if (mList != null) {
@@ -650,10 +638,8 @@ public class RecipientImpl implements Recipient {
 
 		if (aEntry != null) {
 			// put changes in db
-			switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
-				case AdminOut:
-				case Bounce:
-				case UserOut:
+			switch (UserStatus.getByCode(aEntry.getUserStatus())) {
+				case AdminOut, Bounce, UserOut:
 					if (subscribeStatus == 1) {
 						// Subscribe this currently inactive recipient
 						if (!doubleOptIn) {
@@ -676,8 +662,7 @@ public class RecipientImpl implements Recipient {
 						bindingEntryDao.updateStatus(aEntry, companyID);
 					}
 					break;
-				case WaitForConfirm:
-				case Active:
+				case WaitForConfirm, Active:
 					if (subscribeStatus == 0) {
 						// Unsubscribe this currently active recipient
 						aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
@@ -690,9 +675,7 @@ public class RecipientImpl implements Recipient {
 						bindingEntryDao.updateStatus(aEntry, companyID);
 					}
 					break;
-				case Blacklisted:
-					break;
-				case Suspend:
+				case Blacklisted, Suspend:
 					break;
 				default:
 					break;

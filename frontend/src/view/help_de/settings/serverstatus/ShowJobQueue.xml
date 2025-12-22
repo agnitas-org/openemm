@@ -1,4 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Jobliste anzeigen]]></title>
-    <content><![CDATA[An dieser Stelle erhalten Sie eine Liste aller existierenden Batch Jobs in der Tabelle "job_queue_tbl" der Datenbank sowie deren aktueller Status.]]></content>
-</HelpBalloon>

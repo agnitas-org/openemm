@@ -10,16 +10,19 @@
 
 package com.agnitas.emm.core.mailing.forms;
 
-import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
-import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
 
@@ -31,7 +34,6 @@ public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
     private String firstname;
     private String lastname;
     private String email;
-    private int recipientsFilter; // TODO: EMMGUI-714: remove when old design will be removed
 
     @Override
     public boolean isDefaultColumn(String column) {
@@ -49,14 +51,6 @@ public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
 
     public void setTypes(List<MailingRecipientType> types) {
         this.types = types;
-    }
-
-    public int getRecipientsFilter() {
-        return recipientsFilter;
-    }
-
-    public void setRecipientsFilter(int recipientsFilter) {
-        this.recipientsFilter = recipientsFilter;
     }
 
     public boolean isLoadRecipients() {
@@ -99,6 +93,13 @@ public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
         this.inEditColumnsMode = inEditColumnsMode;
     }
 
+    public Set<String> selectedFieldsWithoutAdditional() {
+        Set<String> fields = new HashSet<>(getSelectedFields());
+        fields.removeAll(MailingRecipientsAdditionalColumn.getColumns());
+        fields.removeIf(StringUtils::isBlank);
+        return fields;
+    }
+
     public boolean isUiFiltersSet() {
         return isNotBlank(firstname) || isNotBlank(lastname) || isNotBlank(email) || CollectionUtils.isNotEmpty(types);
     }
@@ -106,7 +107,6 @@ public class MailingRecipientsOverviewFilter extends RecipientListBaseForm {
     @Override
     public Object[] toArray() {
         return ArrayUtils.addAll(Arrays.asList(
-                recipientsFilter,
                 selectedFields,
                 loadRecipients,
                 inEditColumnsMode,

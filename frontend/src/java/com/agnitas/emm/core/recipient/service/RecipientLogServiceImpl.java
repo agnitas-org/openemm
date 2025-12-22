@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.recipient.service;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.getSalutationByGenderId;
+import static com.agnitas.emm.core.recipient.utils.RecipientUtils.getSalutationByGenderId;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.recipient.RecipientUtils;
+import com.agnitas.emm.core.recipient.utils.RecipientUtils;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;

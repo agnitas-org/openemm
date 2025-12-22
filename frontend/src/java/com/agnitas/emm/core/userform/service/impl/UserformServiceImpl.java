@@ -10,57 +10,8 @@
 
 package com.agnitas.emm.core.userform.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.impl.RecipientLiteImpl;
-import com.agnitas.dao.RecipientDao;
-import com.agnitas.dao.UserFormDao;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.commons.ActivenessStatus;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
-import com.agnitas.emm.core.userform.dto.ResultSettings;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.service.UserFormTestUrl;
-import com.agnitas.emm.core.userform.service.UserformService;
-import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.userform.bean.UserForm;
-import com.helger.commons.url.URLValidator;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.agnitas.dao.EmmActionDao;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
-import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
-import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
-import com.agnitas.exception.FormNotFoundException;
-import com.agnitas.service.UserFormExporter;
-import com.agnitas.service.UserFormImporter;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbColumnType;
-import com.agnitas.util.FileUtils;
-import com.agnitas.util.Tuple;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -68,12 +19,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,7 +35,52 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.impl.RecipientLiteImpl;
+import com.agnitas.dao.EmmActionDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
+import com.agnitas.emm.core.userform.dto.ResultSettings;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.exception.UserFormCopyException;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.service.UserFormTestUrl;
+import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.emm.core.userform.web.WebFormUrlBuilder;
+import com.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
+import com.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
+import com.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptValidator;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.UserFormExporter;
+import com.agnitas.service.UserFormImporter;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.FileUtils;
+import com.agnitas.util.Tuple;
+import com.helger.commons.url.URLValidator;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class UserformServiceImpl implements UserformService {
 
@@ -167,7 +163,7 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
-    public UserForm getUserForm(int companyID, String formName) throws FormNotFoundException {
+    public UserForm getUserForm(int companyID, String formName) {
         final UserForm form = userFormDao.getUserFormByName(formName, companyID);
 
         if(form == null) {
@@ -187,9 +183,10 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
-    public void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistID, String rdirDomain, Map<Integer, Integer> actionIdReplacements) throws Exception {
-        File userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
+    public void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistID, String rdirDomain, Map<Integer, Integer> actionIdReplacements) {
+        File userFormTempFile = null;
         try {
+            userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
             try (OutputStream userFormOutputStream = new FileOutputStream(userFormTempFile)) {
                 userFormExporter.exportUserFormToJson(companyId, id, userFormOutputStream, true);
             }
@@ -200,19 +197,19 @@ public class UserformServiceImpl implements UserformService {
                 userFormImporter.importUserForm(newCompanyId, userFormInputStream, null, actionIdReplacements);
             }
         } catch (Exception e) {
-            throw new Exception(String.format("Could not copy user form (%d) for new company (%d): %s", id, newCompanyId, e.getMessage()), e);
+            throw new UserFormCopyException("Could not copy user form (%d) for new company (%d): %s".formatted(id, newCompanyId, e.getMessage()), e);
         } finally {
-            if (userFormTempFile.exists()) {
+            if (userFormTempFile != null && userFormTempFile.exists()) {
                 userFormTempFile.delete();
             }
         }
     }
 
     private void replacePlaceholdersInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws Exception {
-        Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(companyID);
-        String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+        String companyToken = companyTokenService.getCompanyToken(companyID)
+                .orElse(null);
 
-        String content = org.apache.commons.io.FileUtils.readFileToString(userFormTempFile, StandardCharsets.UTF_8);
+        String content = Files.readString(userFormTempFile.toPath());
 
         String cid = Integer.toString(companyID);
         content = StringUtils.replaceEach(content, new String[]{"<CID>", "<cid>", "[COMPANY_ID]", "[company_id]", "[Company_ID]"},
@@ -255,57 +252,6 @@ public class UserformServiceImpl implements UserformService {
     }
 
     @Override
-    public UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness) {
-        if (MapUtils.isEmpty(activeness) || companyId <= 0) {
-            return null;
-        }
-
-        String action = "edited user form activeness";
-        String description = StringUtils.EMPTY;
-
-        int affectedRows = 0;
-        List<Integer> activeFormIds = new LinkedList<>();
-        List<Integer> inactiveFormIds = new LinkedList<>();
-
-        List<UserForm> oldStateOfUserForms = userFormDao.getByIds(companyId, activeness.keySet());
-        oldStateOfUserForms.stream()
-                // excluding forms which has identical active value
-                .filter(oldStateOfUserForm -> {
-                    boolean oldValueOfActiveness = oldStateOfUserForm.getIsActive();
-                    boolean newValueOfActiveness = activeness.getOrDefault(oldStateOfUserForm.getId(), oldValueOfActiveness);
-                    return oldValueOfActiveness != newValueOfActiveness;
-                })
-                // distribution between active ids and inactive ids
-                .forEach(oldStateOfUserForm -> {
-                    int formId = oldStateOfUserForm.getId();
-                    if (!oldStateOfUserForm.isActive()) {
-                        activeFormIds.add(formId);
-                    } else {
-                        inactiveFormIds.add(formId);
-                    }
-                });
-
-        // make certain forms active
-        if (CollectionUtils.isNotEmpty(activeFormIds)) {
-            affectedRows += updateActiveness(companyId, activeFormIds, true);
-            description += "Made active: " + StringUtils.join(activeFormIds, ", ");
-        }
-
-        // make certain form inactive
-        if (CollectionUtils.isNotEmpty(inactiveFormIds)) {
-            affectedRows += updateActiveness(companyId, inactiveFormIds, false);
-            description += StringUtils.isNotBlank(description) ? "\n" : "";
-            description += "Made inactive: " + StringUtils.join(inactiveFormIds, ", ");
-        }
-
-        if (BooleanUtils.toBoolean(affectedRows)) {
-            return new UserAction(action, description);
-        }
-
-        return null;
-    }
-
-    @Override
     public ServiceResult<List<UserForm>> setActiveness(Set<Integer> ids, int companyId, boolean activate) {
         Function<Integer, ServiceResult<UserForm>> validationFunction = id -> {
             UserForm userForm = userFormDao.getUserForm(id, companyId);
@@ -343,13 +289,11 @@ public class UserformServiceImpl implements UserformService {
     @Override
     public JSONArray getUserFormsJson(Admin admin) {
     	final String placeholder = "{%FORMNAME%}";
-    	
-    	final Optional<String> companyTokenOpt = companyTokenForAdmin(admin);
+
+        final Optional<String> companyTokenOpt = companyTokenService.getCompanyToken(admin.getCompanyID());
     	
         final JSONArray actionsJson = new JSONArray();
-		final List<UserForm> userForms = admin.isRedesignedUiUsed()
-            ? userFormDao.overview(admin.getCompanyID())
-            : userFormDao.getUserForms(admin.getCompanyID());
+		final List<UserForm> userForms = userFormDao.overview(admin.getCompanyID());
 
 		//collect action ID which are used by forms
         final List<Integer> usedActionIds = new ArrayList<>();
@@ -386,14 +330,8 @@ public class UserformServiceImpl implements UserformService {
 			entry.put("actionNames", actions);
 			entry.put("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
 			entry.put("changeDate", DateUtilities.toLong(userForm.getChangeDate()));
-            if (admin.isRedesignedUiUsed()) {
-                entry.put("deleted", userForm.isDeleted());
-            }
-            if (admin.isRedesignedUiUsed()) {
-                entry.put("active", String.valueOf(userForm.isActive()));
-            } else {
-                entry.put("activeStatus", userForm.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
-            }
+            entry.put("deleted", userForm.isDeleted());
+            entry.put("active", String.valueOf(userForm.isActive()));
 			entry.put("webformUrl", url);
 
 			actionsJson.put(entry);
@@ -441,16 +379,6 @@ public class UserformServiceImpl implements UserformService {
         }
 
         return deletedUserForms;
-    }
-
-    @Override
-    public boolean deleteUserForm(int formId, int companyId) {
-        UserFormDto userForm = getUserForm(companyId, formId);
-        if (userForm != null) {
-            userFormDao.deleteUserForm(formId, companyId);
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -596,14 +524,6 @@ public class UserformServiceImpl implements UserformService {
     @Override
     public boolean isActive(int formId) {
         return userFormDao.isActive(formId);
-    }
-
-    private Optional<String> companyTokenForAdmin(final Admin admin) {
-    	try {
-    		return companyTokenService.getCompanyToken(admin.getCompanyID());
-    	} catch(final UnknownCompanyIdException e) {
-    		return Optional.empty();
-    	}
     }
 
     public void setEmmActionDao(EmmActionDao emmActionDao) {

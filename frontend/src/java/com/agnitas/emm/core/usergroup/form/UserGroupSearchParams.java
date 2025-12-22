@@ -30,11 +30,4 @@ public class UserGroupSearchParams extends UserGroupOverviewFilter implements Fo
         form.setClientName(this.getClientName());
     }
 
-    @Override
-    public void resetParams() {
-        this.setGroupName("");
-        this.setDescription("");
-        this.setClientName("");
-        this.setClientId(0);
-    }
 }

@@ -50,7 +50,12 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 public class XmlUtilities {
-	private static final transient Logger logger = LogManager.getLogger(XmlUtilities.class);
+
+	private XmlUtilities() {
+
+	}
+
+	private static final Logger logger = LogManager.getLogger(XmlUtilities.class);
 
 	/**
 	 * @see <a href="https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet#JAXP_DocumentBuilderFactory.2C_SAXParserFactory_and_DOM4J">OWASP</a>

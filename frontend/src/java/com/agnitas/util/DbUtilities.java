@@ -46,10 +46,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
-import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
@@ -57,6 +57,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
 
@@ -418,6 +419,19 @@ public class DbUtilities {
 		}
 	}
 
+	public static boolean checkDbVendorIsPostgreSQL(DataSource dataSource) {
+		if (dataSource == null) {
+			throw new IllegalArgumentException("Cannot detect db vendor: dataSource is null");
+		}
+
+		try (Connection connection = dataSource.getConnection()) {
+			return checkDbVendorIsPostgreSQL(connection);
+		} catch (Exception e) {
+			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
+			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
+		}
+	}
+
 	public static boolean checkDbVendorIsOracle(DataSource dataSource) {
 		if (dataSource == null) {
 			throw new IllegalArgumentException("Cannot detect db vendor: dataSource is null");
@@ -426,7 +440,7 @@ public class DbUtilities {
 		try (final Connection connection = dataSource.getConnection()) {
 			return checkDbVendorIsOracle(connection);
 		} catch (Exception e) {
-			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
+			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
 			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
 		}
 	}
@@ -439,7 +453,7 @@ public class DbUtilities {
 		try (final Connection connection = dataSource.getConnection()) {
 			return checkDbVendorIsMariaDB(connection);
 		} catch (Exception e) {
-			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
+			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
 			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
 		}
 	}
@@ -451,6 +465,24 @@ public class DbUtilities {
 
 		try (final Connection connection = dataSource.getConnection()) {
 			return checkDbVendorIsMySQL(connection);
+		} catch (Exception e) {
+			logger.error("Cannot detect db vendor: {}", e.getMessage(), e);
+			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
+		}
+	}
+
+	public static boolean checkDbVendorIsPostgreSQL(Connection connection) {
+		if (connection == null) {
+			throw new IllegalArgumentException("Cannot detect db vendor: connection is null");
+		}
+
+		try {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
+			if (databaseMetaData != null) {
+				String productName = databaseMetaData.getDatabaseProductName();
+				return "postgresql".equalsIgnoreCase(productName);
+			}
+			return false;
 		} catch (Exception e) {
 			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
 			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
@@ -624,6 +656,18 @@ public class DbUtilities {
 					throw new Exception("Table '" + tableName + "' does not exist");
 				}
 			}
+		} else if (checkDbVendorIsPostgreSQL(connection)) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA AND table_name = ?")) {
+				preparedStatement.setString(1, tableName.toLowerCase());
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					resultSet.next();
+					if (resultSet.getInt(1) <= 0) {
+						throw new Exception("Table '" + tableName + "' does not exist");
+					}
+				} catch (Exception e) {
+					throw new Exception("Table '" + tableName + "' does not exist");
+				}
+			}
 		} else {
 			try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ?")) {
 				preparedStatement.setNString(1, tableName.toLowerCase());
@@ -639,7 +683,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static TextTableBuilder getResultAsTextTable(DataSource datasource, String selectString) throws Exception {
+	public static TextTableBuilder getResultAsTextTable(DataSource datasource, String selectString) {
 		List<Map<String, Object>> results = new JdbcTemplate(datasource).queryForList(selectString);
 		if (results != null && results.size() > 0) {
 			TextTableBuilder textTable = new TextTableBuilder();
@@ -763,11 +807,15 @@ public class DbUtilities {
 						}
 					}
 	        	} else {
-	        		String sql = "SELECT data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)";
+					boolean isPostgreSQL = checkDbVendorIsPostgreSQL(dataSource);
+
+					String schemaFunc = isPostgreSQL ? "CURRENT_SCHEMA()" : "SCHEMA()";
+					String dataTypeColumn = isPostgreSQL ? "udt_name AS data_type" : "data_type";
+	        		String sql = "SELECT " + dataTypeColumn + ", character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = " + schemaFunc + " AND lower(table_name) = lower(?) AND lower(column_name) = lower(?)";
 
 	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setNString(1, tableName);
-						preparedStatement.setNString(2, columnName);
+						preparedStatement.setString(1, tableName);
+						preparedStatement.setString(2, columnName);
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -888,10 +936,15 @@ public class DbUtilities {
 						}
 					}
 	        	} else {
-	        		String sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+	        		String sql;
+					if (checkDbVendorIsPostgreSQL(connection)) {
+						sql = "SELECT column_name, udt_name AS data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+					} else {
+						sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+					}
 
-	        		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-						preparedStatement.setNString(1, tableName);
+	        		try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+						preparedStatement.setString(1, tableName);
 
 						try (final ResultSet resultSet = preparedStatement.executeQuery()) {
 							while (resultSet.next()) {
@@ -1014,6 +1067,34 @@ public class DbUtilities {
 				}
 
 				return extractStringLiteral(value);
+			} else if (checkDbVendorIsPostgreSQL(dataSource)) {
+				String sql = """
+                        SELECT CASE
+                                     WHEN column_default LIKE 'NULL::%' THEN NULL
+                                     ELSE regexp_replace(column_default, '::.*$', '')
+                                     END AS column_default
+                        FROM information_schema.columns
+                        WHERE table_schema = CURRENT_SCHEMA()
+                          AND LOWER(table_name) = LOWER(?)
+                          AND LOWER(column_name) = LOWER(?)
+                        """;
+				String value;
+				try {
+					value = new JdbcTemplate(dataSource).queryForObject(sql, String.class, tableName, columnName);
+				} catch (EmptyResultDataAccessException e) {
+					value = null;
+				}
+
+				if (StringUtils.isNotBlank(value)) {
+					// A trailing whitespace appears in Oracle.
+					value = StringUtils.removeEnd(value, " ");
+				}
+
+				if (StringUtils.equalsIgnoreCase(value, "null")) {
+					return null;
+				}
+
+				return extractStringLiteral(value);
 			} else {
 				final String sql = "SELECT column_default FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ? AND column_name = ?";
 				String value = new JdbcTemplate(dataSource).queryForObject(sql, String.class, tableName, columnName);
@@ -1051,6 +1132,24 @@ public class DbUtilities {
 						value = StringUtils.removeEnd(value, " ");
 					}
 	
+					if (!StringUtils.equalsIgnoreCase(value, "null")) {
+						returnMap.put(columnName, extractStringLiteral(value));
+					}
+				}
+				return returnMap;
+			} else if (checkDbVendorIsPostgreSQL(dataSource)) {
+				CaseInsensitiveMap<String, String> returnMap = new CaseInsensitiveMap<>();
+				final String sql = "SELECT column_name, column_default FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA() AND table_name = ?";
+				List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(sql, tableName);
+				for (Map<String, Object> row : result) {
+					String columnName = (String) row.get("column_name");
+					String value = (String) row.get("column_default");
+
+					if (StringUtils.isNotBlank(value)) {
+						// A trailing whitespace appears in Oracle.
+						value = StringUtils.removeEnd(value, " ");
+					}
+
 					if (!StringUtils.equalsIgnoreCase(value, "null")) {
 						returnMap.put(columnName, extractStringLiteral(value));
 					}
@@ -1179,7 +1278,9 @@ public class DbUtilities {
 				throw new RuntimeException("Invalid fieldtype");
 			}
 
-			String addColumnStatement = "ALTER TABLE " + tablename + " ADD (" + fieldname.toLowerCase() + " " + dbType;
+			boolean isPostgreSQL = checkDbVendorIsPostgreSQL(dataSource);
+
+			String addColumnStatement = "ALTER TABLE " + tablename + " ADD " + (isPostgreSQL ? "" : "(") + fieldname.toLowerCase() + " " + dbType;
 			if ("VARCHAR".equalsIgnoreCase(fieldType)) {
 				if (length <= 0) {
 					length = 100;
@@ -1220,13 +1321,15 @@ public class DbUtilities {
 				}
 			}
 
-			addColumnStatement += ")";
+			if (!isPostgreSQL) {
+				addColumnStatement += ")";
+			}
 
 			try {
 				new JdbcTemplate(dataSource).update(addColumnStatement);
 				return true;
 			} catch (Exception e) {
-				logger.error("Cannot create db column: " + addColumnStatement, e);
+				logger.error("Cannot create db column: {}", addColumnStatement, e);
 				return false;
 			}
 		}
@@ -1412,7 +1515,7 @@ public class DbUtilities {
 					new JdbcTemplate(dataSource).update(changeColumnStatement);
 					return true;
 				} catch (Exception e) {
-					logger.error("Cannot change db column: " + changeColumnStatement, e);
+					logger.error("Cannot change db column: {}", changeColumnStatement, e);
 					return false;
 				}
 			} else {
@@ -1903,7 +2006,29 @@ public class DbUtilities {
 	            }
         	}
             return true;
-        } else {
+        } else if (checkDbVendorIsPostgreSQL(dataSource)) {
+			for (String keyColumn : keyColumns) {
+				String query = """
+                        SELECT i.relname AS index_name, a.attname AS column_name
+						FROM pg_class t
+								 JOIN pg_index ix ON t.oid = ix.indrelid
+								 JOIN pg_class i ON i.oid = ix.indexrelid
+								 JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (ix.indkey)
+						WHERE t.relname = ? AND a.attname = ?
+				""";
+
+				List<Map<String, Object>> resultList = new JdbcTemplate(dataSource).queryForList(
+						query,
+						tableName.toLowerCase(),
+						keyColumn.toLowerCase()
+				);
+
+				if (resultList.isEmpty()) {
+					return false;
+				}
+			}
+			return true;
+		} else {
         	for (String keyColumn : keyColumns) {
 	            String query = "SHOW INDEX FROM " + tableName.toLowerCase() + " WHERE column_name = ?";
 
@@ -1960,7 +2085,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static String getDateConstraint(String fieldName, Date dateBegin, Date dateEnd, boolean isOracleDB) {
+	public static String getDateConstraint(String fieldName, Date dateBegin, Date dateEnd, boolean isOracleOrPostgres) {
 		StringBuilder dateCondition = new StringBuilder();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -1970,7 +2095,7 @@ public class DbUtilities {
 
 		dateCondition.append(fieldName);
 
-		if (isOracleDB) {
+		if (isOracleOrPostgres) {
 			if (dateEnd == null) {
 				dateCondition.append(" > TO_DATE('").append(dateFormat.format(dateBegin)).append("', 'yyyy-mm-dd') ");
 			} else if (dateBegin == null) {
@@ -2063,7 +2188,7 @@ public class DbUtilities {
 		return clauseBuilder.toString();
 	}
 
-	public static String makeSelectRangeOfDates(String fieldName, Date fromDate, Date toDate, boolean isOracle) {
+	public static String makeSelectRangeOfDates(String fieldName, Date fromDate, Date toDate, DataSource dataSource) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		if (fromDate == null || toDate == null) {
 			throw new IllegalArgumentException("Could not create SQL without date limits");
@@ -2078,21 +2203,30 @@ public class DbUtilities {
 			dateEnd = fromDate;
 		}
 
-		if (isOracle) {
+		if (checkDbVendorIsOracle(dataSource)) {
 			return String.format("SELECT TRUNC(TO_DATE('%2$s', 'yyyy-mm-dd') + 1 - ROWNUM) " + fieldName +
 					" FROM DUAL " +
 					" CONNECT BY ROWNUM <= (TO_DATE('%2$s', 'yyyy-mm-dd') + 1 - TO_DATE('%1$s', 'yyyy-mm-dd'))",
 					dateFormat.format(dateBegin), dateFormat.format(dateEnd));
-		} else {
-			return "SELECT * FROM" +
-					"(SELECT ADDDATE('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) " + fieldName + " FROM " +
-					" (SELECT 0 t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t0, " +
-					" (SELECT 0 t1 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t1, " +
-					" (SELECT 0 t2 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t2, " +
-					" (SELECT 0 t3 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t3, " +
-					" (SELECT 0 t4 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t4) v " +
-					" WHERE v." + fieldName + " BETWEEN STR_TO_DATE('" + dateFormat.format(dateBegin) + "', '%Y-%m-%d') AND STR_TO_DATE('" + dateFormat.format(dateEnd) + "', '%Y-%m-%d')";
 		}
+
+		if (checkDbVendorIsPostgreSQL(dataSource)) {
+			return String.format(
+					"SELECT generate_series(DATE '%s', DATE '%s', INTERVAL '1 day')::date AS %s",
+					dateFormat.format(dateBegin),
+					dateFormat.format(dateEnd),
+					fieldName
+			);
+		}
+
+		return "SELECT * FROM" +
+				"(SELECT ADDDATE('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) " + fieldName + " FROM " +
+				" (SELECT 0 t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t0, " +
+				" (SELECT 0 t1 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t1, " +
+				" (SELECT 0 t2 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t2, " +
+				" (SELECT 0 t3 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t3, " +
+				" (SELECT 0 t4 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t4) v " +
+				" WHERE v." + fieldName + " BETWEEN STR_TO_DATE('" + dateFormat.format(dateBegin) + "', '%Y-%m-%d') AND STR_TO_DATE('" + dateFormat.format(dateEnd) + "', '%Y-%m-%d')";
 	}
 
 	/**
@@ -2141,7 +2275,7 @@ public class DbUtilities {
 
 		try {
 			template.execute(String.format("DROP TRIGGER %s", name));		// FIXME SQL injection possible
-			
+
 			return true;
 		} catch(final Exception e) {
 			return false;
@@ -2160,7 +2294,7 @@ public class DbUtilities {
 				|| StringUtils.startsWithIgnoreCase(sqlStatement, "with\r");
 	}
 
-	public static final boolean resultsetHasColumn(ResultSet resultSet, String columnNameToSearch) throws SQLException {
+	public static boolean resultsetHasColumn(ResultSet resultSet, String columnNameToSearch) throws SQLException {
 		ResultSetMetaData metaData = resultSet.getMetaData();
 		int numberOfColumns = metaData.getColumnCount();
 		for (int i = 1; i < numberOfColumns + 1; i++) {
@@ -2172,11 +2306,16 @@ public class DbUtilities {
 		return false;
 	}
 
+	public static String getStringOrNull(ResultSet resultSet, String columnName) throws SQLException {
+		if (!resultsetHasColumn(resultSet, columnName)) {
+			return null;
+		}
+
+		return resultSet.getString(columnName);
+	}
+
 	/**
 	 * Convert '?' and '*' into SQL LIKE placeholders '_' and '%', but keeps them if they are escaped by '\'
-	 *
-	 * @param searchText
-	 * @return
 	 */
 	public static String normalizeSqlLikeSearchPlaceholders(String searchText) {
 		if (searchText == null) {
@@ -2523,14 +2662,14 @@ public class DbUtilities {
 		}
 	}
 	
-    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, boolean isOracle) {
-        return getAltgRestrictionsSqlIfNeeded(adminAltgIds, altgIdsWithoutAdminAltgIds, params, null, isOracle);
+    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, DataSource dataSource) {
+        return getAltgRestrictionsSqlIfNeeded(adminAltgIds, altgIdsWithoutAdminAltgIds, params, null, dataSource);
     }
 
     /**
      * Should return restriction that leaves mailings that contains any of admin ALTG (1st step)
      * and not contains any ALTG that not assigned to the admin (2nd step).
-     * 
+     * <p>
      * The approach for 2nd step:
      * 1. We take all existing ALTGs;
      * 2. We subtract ALTGs assigned to current admin from (1) {@code altgIdsWithoutAdminAltgIds};
@@ -2538,48 +2677,44 @@ public class DbUtilities {
      * @param adminAltgIds ALTGs assigned to the admin
      * @param altgIdsWithoutAdminAltgIds all ALTGs minus the ones assigned to the admin
      */
-    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, boolean isOracle) {
+    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, DataSource dataSource) {
         String restriction = "";
         if (isNotEmpty(adminAltgIds)) {
-            restriction = " AND (" + createTargetsExpressionRestriction(adminAltgIds, params, tableAlias, isOracle) + ") ";
+            restriction = " AND (" + createTargetsExpressionRestriction(adminAltgIds, params, tableAlias, dataSource) + ") ";
             if (isNotEmpty(altgIdsWithoutAdminAltgIds)) {
-                restriction += " AND NOT (" + getContainsOnlyAdminAltgRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, isOracle) + ") ";
+                restriction += " AND NOT (" + getContainsOnlyAdminAltgRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, dataSource) + ") ";
             }
         }
         return restriction;
     }
-	    
+
     // user cannot see a mailing if it uses at least one ALTG for which he has no permissions
-    private static String getContainsOnlyAdminAltgRestriction(Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, boolean isOracle) {
+    private static String getContainsOnlyAdminAltgRestriction(Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, DataSource dataSource) {
         if (isNotEmpty(altgIdsWithoutAdminAltgIds)) {
-            return createTargetsExpressionRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, isOracle);
+            return createTargetsExpressionRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, dataSource);
         }
         return "";
     }
     
-    public static String createTargetsExpressionRestriction(Set<Integer> targetIds, List<Object> params, final boolean isOracle) {
-        return createTargetsExpressionRestriction(targetIds, params, null, isOracle);
-    }
-    
-    public static String createTargetsExpressionRestriction(Collection<Integer> targetIds, List<Object> params, String mailingTableName, final boolean isOracle) {
+    public static String createTargetsExpressionRestriction(Collection<Integer> targetIds, List<Object> params, String mailingTableName, final DataSource dataSource) {
         List<String> targetRestrictions = new ArrayList<>();
         targetIds.forEach(targetId -> {
-            targetRestrictions.add(createTargetExpressionRestriction(isOracle, mailingTableName));
+            targetRestrictions.add(createTargetExpressionRestriction(dataSource, mailingTableName));
             params.add(targetId);
         });
         return StringUtils.join(targetRestrictions, " OR ");
     }
 
-	public static String createTargetExpressionRestriction(final boolean isOracle) {
-		return createTargetExpressionRestriction(isOracle, null);
+	public static String createTargetExpressionRestriction(final DataSource dataSource) {
+		return createTargetExpressionRestriction(dataSource, null);
 	}
 
-	public static String createTargetExpressionRestriction(final boolean isOracle, final String mailingTableName) {
+	public static String createTargetExpressionRestriction(DataSource dataSource, final String mailingTableName) {
 		final StringBuilder targetExpressionRestriction = new StringBuilder();
 
 		final String appendMailingTableName = mailingTableName == null ? "" : mailingTableName + ".";
 
-		if (isOracle) {
+		if (checkDbVendorIsOracle(dataSource)) {
 			// Works three times faster than an MySQL-incompatible REGEXP_INSTR() version
 			targetExpressionRestriction.append("INSTR(':' || ");
 
@@ -2593,6 +2728,9 @@ public class DbUtilities {
 					.append("')");
 
 			targetExpressionRestriction.append(" || ':', ':' || ? || ':') <> 0");
+		} else if (checkDbVendorIsPostgreSQL(dataSource)) {
+			return "POSITION(':' || ? || ':' IN ':' || TRANSLATE(target_expression, '%s', '::::::') || ':') <> 0"
+				.formatted(TARGET_EXPRESSION_NON_NUMERIC_CHARACTERS);
 		} else {
 			// Works three times faster than an MySQL-incompatible REGEXP_INSTR() version
 			// MySQL: "||" is NOT concatenation, but an boolean expression. Concatenation is done by "concat()"
@@ -2750,4 +2888,24 @@ public class DbUtilities {
 		}
 		throw new SQLException("Column not found: " + columnName);
 	}
+
+	public static String getFullTextSearchPart(String column, DataSource dataSource) {
+		if (checkDbVendorIsOracle(dataSource)) {
+			return "CONTAINS(%s, ?)".formatted(column);
+		}
+		if (checkDbVendorIsPostgreSQL(dataSource)) {
+			return "to_tsvector(%s) @@ to_tsquery(?)".formatted(column);
+		}
+		return "MATCH(%s) AGAINST(? IN BOOLEAN MODE)".formatted(column);
+	}
+
+	public static Integer getIntegerFromResultSet(ResultSet resultSet, String column) throws SQLException {
+		int result = resultSet.getInt(column);
+		if (resultSet.wasNull()) {
+			return null;
+		}
+
+		return result;
+	}
+
 }

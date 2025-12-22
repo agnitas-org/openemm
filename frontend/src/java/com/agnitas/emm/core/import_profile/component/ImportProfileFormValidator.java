@@ -15,12 +15,12 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
 import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.web.mvc.Popups;
-import jakarta.mail.internet.InternetAddress;
 import com.agnitas.service.ImportProfileService;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.util.importvalues.CheckForDuplicates;
 import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.Separator;
+import com.agnitas.web.mvc.Popups;
+import jakarta.mail.internet.InternetAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -59,7 +59,7 @@ public class ImportProfileFormValidator {
         }
 
         if ((form.getImportMode() == ImportMode.ADD_AND_UPDATE.getIntValue() || form.getImportMode() == ImportMode.UPDATE.getIntValue())
-                && form.getCheckForDuplicates() != CheckForDuplicates.COMPLETE.getIntValue()) {
+                && !form.isShouldCheckForDuplicates()) {
 
             popups.alert("error.import.updateNeedsCheckForDuplicates");
             return false;
@@ -72,6 +72,10 @@ public class ImportProfileFormValidator {
         boolean isCustomerIdImported = importProfileService.isColumnWasImported(RecipientStandardField.CustomerID.getColumnName(), form.getId());
         if (isCustomerIdImported && (form.getImportMode() == ImportMode.ADD.getIntValue() || form.getImportMode() == ImportMode.ADD_AND_UPDATE.getIntValue())) {
             popups.alert("error.import.customerid_insert");
+        }
+
+        if (Separator.getSeparatorById(form.getSeparator()).getValueChar() == form.getDecimalSeparator()) {
+            popups.fieldError("separator", "error.import.separator.same");
         }
 
         return !popups.hasAlertPopups();

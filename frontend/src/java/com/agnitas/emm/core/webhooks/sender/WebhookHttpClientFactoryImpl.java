@@ -13,116 +13,133 @@ package com.agnitas.emm.core.webhooks.sender;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.HostnameVerifier;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.util.NetworkUtil;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.ssl.SSLContextBuilder;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
+import com.agnitas.util.NetworkUtil;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
 
 /**
  * Implementation of {@link WebhookHttpClientFactory}.
  */
 public final class WebhookHttpClientFactoryImpl implements WebhookHttpClientFactory {
-	
-	/** Configuration service. */
-	private WebhookConfigService configService;
-	
+
+	private final WebhookConfigService configService;
+
+	public WebhookHttpClientFactoryImpl(ConfigService configService) {
+		this.configService = new WebhookConfigService(configService);
+	}
+
 	@Override
-	public final CloseableHttpClient createHttpClient(final int companyID) throws WebhookHttpClientFactoryException {
+	public CloseableHttpAsyncClient createHttpAsyncClient(int companyID) throws WebhookHttpClientFactoryException {
+		try {
+			return doCreateHttpAsyncClient(companyID);
+		} catch (Exception e) {
+			throw new WebhookHttpClientFactoryException("Error creating CloseableHttpClient", e);
+		}
+	}
+
+	private CloseableHttpAsyncClient doCreateHttpAsyncClient(int companyId) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		PoolingAsyncClientConnectionManager connectionManager = PoolingAsyncClientConnectionManagerBuilder
+				.create()
+				.setTlsStrategy(new DefaultClientTlsStrategy(createSSLContext(), NoopHostnameVerifier.INSTANCE))
+				.build();
+
+		return HttpAsyncClients
+				.custom()
+				.setConnectionManager(connectionManager)
+				.setDefaultRequestConfig(createAsyncRequestConfig(companyId))
+				.build();
+	}
+
+	@Override
+	public CloseableHttpClient createHttpClient(int companyID) throws WebhookHttpClientFactoryException {
 		try {
 			return doCreateHttpClient(companyID);
 		} catch(final Exception e) {
 			throw new WebhookHttpClientFactoryException("Error creating CloseableHttpClient", e);
 		}
 	}
-	
+
 	/**
 	 * Creates the HTTP client for sending webhook messages.
-	 * 
+	 *
 	 * @param companyID company ID
-	 * 
+	 *
 	 * @return HTTP client
-	 * 
+	 *
 	 * @throws KeyManagementException on error setting up TLS configuration
 	 * @throws NoSuchAlgorithmException on errors setting up TLS configuration
 	 * @throws KeyStoreException on errors setting up TLS configuration
 	 */
-	private final CloseableHttpClient doCreateHttpClient(final int companyID) throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		final HostnameVerifier hostnameVerifier = NoopHostnameVerifier.INSTANCE;
-		final SSLContext sslContext = createSSLContext();
-		final SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-		final Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-				.register("http", PlainConnectionSocketFactory.getSocketFactory())
-				.register("https", sslSocketFactory)
+	private CloseableHttpClient doCreateHttpClient(int companyID) throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder
+				.create()
+				.setTlsSocketStrategy(new DefaultClientTlsStrategy(createSSLContext(), NoopHostnameVerifier.INSTANCE))
 				.build();
-		
-		final HttpClientBuilder builder = HttpClientBuilder.create();
-	    builder.setSSLContext(sslContext);
-	    builder.setConnectionManager(new PoolingHttpClientConnectionManager(socketFactoryRegistry));
-	    builder.setDefaultRequestConfig(createRequestConfig(companyID));
-	    
-	    return builder.build();
+
+		return HttpClientBuilder
+				.create()
+				.setConnectionManager(connectionManager)
+				.setDefaultRequestConfig(createRequestConfig(companyID))
+				.build();
 	}
-	
+
 	/**
 	 * Creates the SSL context for the HTTP client.
 	 * The SSL context is configured to accept any server certificate without checking.
-	 * 
+	 *
 	 * @return SSL context
-	 * 
+	 *
 	 * @throws KeyManagementException on errors creating the SSL context
 	 * @throws NoSuchAlgorithmException on errors creating the SSL context
 	 * @throws KeyStoreException on errors creating the SSL context
 	 */
-	private final SSLContext createSSLContext() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		final SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
-	        @Override
-			public boolean isTrusted(X509Certificate[] arg0, String arg1) {
-	            return true;
-	        }
-	    }).build();
-		
-		return sslContext;
+	private SSLContext createSSLContext() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		return new SSLContextBuilder()
+				.loadTrustMaterial(null, (arg0, arg1) -> true)
+				.build();
 	}
 
 	/**
 	 * Creates the request configuration for the HTTP client.
 	 * Configures timeouts according to {@link ConfigService} and HTTP proxy from system.
-	 * 
+	 *
 	 * @param companyId company ID
-	 * 
+	 *
 	 * @return request configuration
 	 */
-	private final RequestConfig createRequestConfig(final int companyId) {
-	    final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT);
-	    configBuilder.setConnectTimeout(this.configService.getConnectTimeoutMillis(companyId));
-	    configBuilder.setSocketTimeout(this.configService.getSocketTimeoutMillis(companyId));
+	private RequestConfig createRequestConfig(int companyId) {
+		final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT)
+				.setConnectionRequestTimeout(configService.getConnectTimeoutMillis(companyId), TimeUnit.MILLISECONDS)
+				.setResponseTimeout(configService.getSocketTimeoutMillis(companyId), TimeUnit.MILLISECONDS);
+
 		NetworkUtil.setHttpClientProxyFromSystem(configBuilder, null);
 
-	    return configBuilder.build();
+		return configBuilder.build();
 	}
 
-	/**
-	 * Set configuration service.
-	 * 
-	 * @param service configuration service
-	 */
-	public final void setConfigService(final ConfigService service) {
-		this.configService = new WebhookConfigService(service);
+	private RequestConfig createAsyncRequestConfig(int companyId) {
+		final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT)
+				.setConnectionRequestTimeout(configService.getConnectTimeoutMillis(companyId), TimeUnit.MILLISECONDS)
+				.setResponseTimeout(configService.getSocketTimeoutMillis(companyId), TimeUnit.MILLISECONDS);
+
+		NetworkUtil.setHttpClientProxyFromSystem(configBuilder, null);
+
+		return configBuilder.build();
 	}
+
 }

@@ -243,7 +243,7 @@ var sc = reportContext.getHttpServletRequest().getSession().getServletContext();
 //ApplicationContext 
 spring = WebApplicationContextUtils.getWebApplicationContext(sc);
 var configService = spring.getBean("ConfigService");
-reportContext.setPersistentGlobalVariable("logo", configService.getValue(Packages.org.agnitas.emm.core.commons.util.ConfigValue.SystemUrl)  + "/layout/0/report_logo.png");]]></method>
+reportContext.setPersistentGlobalVariable("logo", configService.getValue(Packages.com.agnitas.emm.core.commons.util.ConfigValue.SystemUrl)  + "/layout/0/report_logo.png");]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
     <property name="bidiLayoutOrientation">ltr</property>

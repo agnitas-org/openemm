@@ -14,6 +14,6 @@ import java.net.InetAddress;
 
 public interface SessionHijackingPreventionService {
 
-	public boolean isAddressAllowed(final InetAddress sessionIpAddress, final InetAddress clientIpAddress);
+	boolean isAddressAllowed(InetAddress sessionIpAddress, InetAddress clientIpAddress);
 	
 }

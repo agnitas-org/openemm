@@ -11,12 +11,9 @@
 package com.agnitas.emm.core.dyncontent.dao;
 
 import java.util.List;
-import java.util.Map;
-
-import com.agnitas.beans.DynamicTagContent;
-
 
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 
 public interface DynamicTagContentDao {
 
@@ -70,9 +67,8 @@ public interface DynamicTagContentDao {
 	 */
 	boolean isContentValueNotEmpty(int companyId, int mailingId, int dynNameId);
 	
-	Map<Integer, List<Integer>> getExistingDynContentForDynName(int companyId, int mailingId, List<Integer> dynamicTags);
-
 	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags);
+
 	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, boolean removeUnusedContent);
 
 	boolean deleteContentFromMailing(int companyId, int mailingId, int contentId);

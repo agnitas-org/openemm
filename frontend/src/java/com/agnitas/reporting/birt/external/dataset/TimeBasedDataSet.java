@@ -12,28 +12,16 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
 
 import org.springframework.util.StringUtils;
 
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
 public class TimeBasedDataSet extends BIRTDataSet {
+
 	protected static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";
-	}
-	
-	protected List<DeviceClass> getDeviceClassesToShow() {
-		List<DeviceClass> devices = DeviceClass.getOnlyKnownDeviceClasses();
-		// for Mixed deviceclasses
-		devices.add(null);
-		return devices;
 	}
 	
 	protected static Date parseTimeBasedDate(String dateString, boolean isStartDate) throws Exception {
@@ -60,55 +48,5 @@ public class TimeBasedDataSet extends BIRTDataSet {
 		}
 		return date;
 	}
-	
-	protected List<TimeBasedClickStatRow> getTimeBasedClickStat(List<DeviceClass> deviceClassesForDisplay,
-																Map<Integer, LightTarget> targetGroups, Map<Integer, Integer> targetGroupIndexes,
-																GregorianCalendar nextPeriodDate, GregorianCalendar endPeriodDate, boolean hourly) {
-		List<TimeBasedClickStatRow> returnList = new ArrayList<>();
-		while (nextPeriodDate.before(endPeriodDate)) {
-			for (Map.Entry<Integer, LightTarget> targetEntry : targetGroups.entrySet()) {
-				for (DeviceClass deviceClass : deviceClassesForDisplay) {
-					boolean found = false;
-					for (TimeBasedClickStatRow entry : returnList) {
-						if (entry.getClickTime().equals(nextPeriodDate.getTime()) && entry.getDeviceClass() == deviceClass) {
-							found = true;
-							break;
-						}
-					}
-					if (!found) {
-						TimeBasedClickStatRow timeBasedClickStatRow = new TimeBasedClickStatRow();
-						timeBasedClickStatRow.setClickTime(nextPeriodDate.getTime());
-						timeBasedClickStatRow.setClicksNet(0);
-						timeBasedClickStatRow.setDeviceClass(deviceClass);
-						timeBasedClickStatRow.setTargetgroup(targetGroups.get(targetEntry.getKey()) == null ?
-								CommonKeys.ALL_SUBSCRIBERS : targetGroups.get(targetEntry.getKey()).getName());
-						timeBasedClickStatRow.setColumnIndex(targetGroupIndexes.get(targetEntry.getKey()));
-						returnList.add(timeBasedClickStatRow);
-					}
-				}
-			}
-			
-			nextPeriodDate.add(hourly ? Calendar.HOUR_OF_DAY : Calendar.DAY_OF_MONTH, 1);
-		}
-		
-		return returnList;
-	}
-	
-	protected void sortTimeBasedClickStatResult(List<TimeBasedClickStatRow> returnList) {
-		returnList.sort((item1, item2) -> {
-        	    int cmp = item1.getClickTime().compareTo(item2.getClickTime());
-        	    if (cmp == 0) {
-        	    	if (item1.getDeviceClass() == item2.getDeviceClass()) {
-        	    		cmp = Integer.compare(item1.getColumnIndex(), item2.getColumnIndex());
-        	    	} else if (item1.getDeviceClass() == null) {
-        	    		cmp = 1;
-        	    	} else if (item2.getDeviceClass() == null) {
-        	    		cmp = -1;
-        	    	} else {
-        	    		cmp = item1.getDeviceClass().compareTo(item2.getDeviceClass());
-        	    	}
-        	    }
-        	    return cmp;
-        	});
-	}
+
 }

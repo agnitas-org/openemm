@@ -10,8 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import java.io.InputStream;
-import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -20,42 +18,25 @@ import java.util.Set;
 
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.FormComponentDao;
-import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
-/**
- * The Class FormComponentDaoImpl.
- */
 public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormComponentDao {
 	
-	/* (non-Javadoc)
-	 * @see com.agnitas.dao.FormComponentDao#exists(int, int, int)
-	 */
-	@Override
-	public boolean exists(int formID, int companyID, int componentID) {
-		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND id = ?";
-		int total = selectInt(sql, formID, companyID, componentID);
-		return total > 0;
-	}
-
 	@Override
 	public boolean exists(int formId, int companyId, String componentName) {
 		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND name = ?";
 		return selectInt(sql, formId, companyId, componentName) > 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.agnitas.dao.FormComponentDao#getFormComponentByName(int, int, java.lang.String)
-	 */
 	@Override
 	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType) {
 		List<FormComponent> list;
@@ -71,11 +52,11 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 	}
 
 	@Override
-	public PaginatedListImpl<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter) {
+	public PaginatedList<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter) {
 		StringBuilder query = new StringBuilder("SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl");
 		List<Object> params = applyOverviewFilter(filter, query);
 
-		PaginatedListImpl<FormComponent> list = selectPaginatedList(query.toString(), "form_component_tbl", filter,
+		PaginatedList<FormComponent> list = selectPaginatedList(query.toString(), "form_component_tbl", filter,
 				new FormComponentRowMapperWithoutData(), params.toArray());
 
 		if (filter.isUiFiltersSet()) {
@@ -139,7 +120,7 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 		StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM form_component_tbl");
 		List<Object> params = applyRequiredOverviewFilter(query, filter);
 
-		return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
+		return selectInt(query.toString(), params.toArray());
 	}
 
 	private List<Object> applyRequiredOverviewFilter(StringBuilder query, UserFormImagesOverviewFilter filter) {
@@ -147,27 +128,12 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 		return new ArrayList<>(List.of(filter.getCompanyId(), filter.getFormId(), filter.getType().getId()));
 	}
 
-	/**
-	 * The Class FormComponentRowMapper.
-	 */
-	protected class FormComponentRowMapper extends FormComponentRowMapperWithoutData {
-		/* (non-Javadoc)
-		 * @see org.springframework.jdbc.core.RowMapper#mapRow(java.sql.ResultSet, int)
-		 */
+	protected static class FormComponentRowMapper extends FormComponentRowMapperWithoutData {
 		@Override
 		public FormComponent mapRow(ResultSet resultSet, int index) throws SQLException {
 			FormComponent component = super.mapRow(resultSet, index);
-
-			Blob blob = resultSet.getBlob("data");
-			if (blob != null) {
-				try (InputStream dataStream = blob.getBinaryStream()) {
-					byte[] data = IOUtils.toByteArray(dataStream);
-					component.setData(data);
-				} catch (Exception ex) {
-					logger.error("Error:" + ex, ex);
-				}
-			}
-
+			assert component != null;
+			component.setData(resultSet.getBytes("data"));
 			return component;
 		}
 	}
@@ -176,9 +142,6 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 	 * The Class FormComponentRowMapper without reading data byte[] (Lite/Snowflake)
 	 */
 	protected static class FormComponentRowMapperWithoutData implements RowMapper<FormComponent> {
-		/* (non-Javadoc)
-		 * @see org.springframework.jdbc.core.RowMapper#mapRow(java.sql.ResultSet, int)
-		 */
 		@Override
 		public FormComponent mapRow(ResultSet resultSet, int index) throws SQLException {
 			FormComponent component = new FormComponent();
@@ -280,7 +243,7 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 					"(id, form_id, company_id, name, type, data_size, width, height, mimetype, description, creation_date, change_date) " +
 					"VALUES (" + AgnUtils.repeatString("?", 10, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
-			int update = update(sql,
+			int touchedLines = update(sql,
 					componentId,
 					formId,
 					companyId,
@@ -292,8 +255,8 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 					component.getMimeType(),
 					component.getDescription());
 
-			if (update != 1) {
-				throw new RuntimeException("Illegal insert result");
+			if (touchedLines != 1) {
+				throw new IllegalStateException("Illegal insert result");
 			}
 
 		} else {
@@ -302,7 +265,7 @@ public class FormComponentDaoImpl extends PaginatedBaseDaoImpl implements FormCo
 					"creation_date, change_date) " +
 					"VALUES (" + AgnUtils.repeatString("?", 9, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
-			componentId = insertIntoAutoincrementMysqlTable("id", insertStatement,
+			componentId = insert("id", insertStatement,
 					formId,
 					companyId,
 					component.getName(),

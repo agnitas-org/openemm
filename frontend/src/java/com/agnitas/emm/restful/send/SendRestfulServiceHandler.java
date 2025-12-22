@@ -70,11 +70,11 @@ import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.DateUtil;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.DateUtil;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils.RequestMethod;
@@ -277,8 +277,8 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'email'. Email address expected");
 								}
 							} else if ("user_status".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									userStatus = UserStatus.getUserStatusByID((Integer) entry.getValue());
+								if (entry.getValue() instanceof Integer userStatusCode) {
+									userStatus = UserStatus.getByCode(userStatusCode);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer expected");
 								}

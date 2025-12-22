@@ -27,7 +27,6 @@ public class ImportProfileColumnMappingToColumnMappingConverter implements Conve
         columnMapping.setFileColumn(source.getFileColumn());
         columnMapping.setDatabaseColumn(source.getDatabaseColumn());
         columnMapping.setMandatory(source.isMandatory());
-        columnMapping.setEncrypted(source.isEncrypted());
         columnMapping.setDefaultValue(source.getDefaultValue());
 
         return columnMapping;

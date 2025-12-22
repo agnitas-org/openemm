@@ -10,7 +10,7 @@
 
 package com.agnitas.beans.impl;
 
-import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
+import static com.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 
 import jakarta.mail.internet.AddressException;
 import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.impl.MediatypeImpl;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.ParameterParser;
 import com.agnitas.util.importvalues.MailType;
@@ -102,7 +101,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 	private boolean isEncryptedSend;
 
-	private boolean requestApproval; // GWUA-5738 clearance
+	private int approvalRequester;   // GWUA-6572 admin id
 
 	private String approvedBy;       // GWUA-5889 csv list of the approval recipient ids (approval counter)
 
@@ -512,9 +511,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		setBccRecipients(bcc);
 
         boolean clearance = BooleanUtils.toBoolean(parameters.get("clearance"));
-        setRequestApproval(clearance);
         if (clearance) {
-            setApprovedBy(parameters.get("cleared_by"));
+			setApprovalRequester(NumberUtils.toInt(parameters.get("clearance_requested_by")));
+			setApprovedBy(parameters.get("cleared_by"));
         }
 	}
 
@@ -646,8 +645,9 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append("\"");
 		}
 
-        if (isRequestApproval()) {
+        if (getApprovalRequester() > 0) {
             result.append(", clearance=\"true\"");
+            result.append(", clearance_requested_by=\"%d\"".formatted(approvalRequester));
             if (StringUtils.isNotBlank(getApprovedBy())) {
                 result.append(", cleared_by=\"").append(getApprovedBy().trim()).append("\"");
             }
@@ -699,7 +699,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		try {
 			params = getParam();
 		} catch (Exception e) {
-			logger.error("Error in getting parameters from mailing: " + e);
+			logger.error("Error in getting parameters from mailing: ", e);
 		}
 
 		// now remove followup
@@ -709,7 +709,7 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		try {
 			setParam(paramsWithoutFollowup);
 		} catch (Exception e) {
-			logger.error("Error setting new parameters in mailing: " + e);
+			logger.error("Error setting new parameters in mailing: ", e);
 		}
 	}
 
@@ -776,15 +776,15 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		return this.isEncryptedSend;
 	}
 
-    @Override
-    public boolean isRequestApproval() {
-        return requestApproval;
-    }
+	@Override
+	public int getApprovalRequester() {
+		return approvalRequester;
+	}
 
-    @Override
-    public void setRequestApproval(boolean requestApproval) {
-        this.requestApproval = requestApproval;
-    }
+	@Override
+	public void setApprovalRequester(int approvalRequester) {
+		this.approvalRequester = approvalRequester;
+	}
 
     @Override
     public String getApprovedBy() {

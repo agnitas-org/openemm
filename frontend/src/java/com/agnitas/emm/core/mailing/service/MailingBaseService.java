@@ -20,25 +20,27 @@ import javax.sql.DataSource;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.MailingSendStatus;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.springframework.context.ApplicationContext;
 
 public interface MailingBaseService {
 
     boolean isMailingExists(int mailingId, int companyId);
+
     boolean isMailingExists(int mailingId, int companyId, boolean isTemplate);
+
     boolean checkUndoAvailable(int mailingId);
+
     boolean isTextTemplateExists(Admin admin, int mailingId);
 
     void bulkDelete(Set<Integer> mailingsIds, int companyId);
@@ -48,31 +50,14 @@ public interface MailingBaseService {
     int getWorkflowId(int mailingId, int companyId);
 
     int saveMailingWithUndo(Mailing mailing, int adminId, boolean preserveTrackableLinks);
+
     boolean saveUndoData(int mailingId, int adminId);
+
     void restoreMailingUndo(ApplicationContext ctx, int mailingId, int companyId);
 
     String getMailingName(int mailingId, int companyId);
 
-    /**
-     * Retrieve a subset (see pagination parameters {@code pageNumber} and {@code rowsPerPage}) of a recipients that successfully
-     * received the mailing referenced by {@code mailingId}. Use zero/negative value for {@code rowsPerPage} to retrieve all
-     * the available rows without pagination.
-     *
-     * @param mailingId an identifier of the target mailing
-     * @param companyId an identifier of current user's company
-     * @param filterType recipients to retrieve. Allowed values:
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_ALL}, {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_OPENED},
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_CLICKED}, {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_BOUNCED},
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_UNSUBSCRIBED}.
-     * @param pageNumber a sequential number of a page
-     * @param rowsPerPage a maximal entries count shown at a page
-     * @param sortCriterion column name to sort by
-     * @param sortAscending sort direction
-     * @return a filled {@link com.agnitas.beans.impl.PaginatedListImpl} instance
-     */
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns);
-
-    PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props);
+    PaginatedList<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props);
     
     /**
      * Retrieve a dynamic contents of a mailing referenced by {@code mailingId}.
@@ -123,6 +108,7 @@ public interface MailingBaseService {
      * @return distinct number of recipients for referenced mailing.
      */
     int calculateRecipients(int companyId, int mailingId);
+
 	DataSource getDataSource();
 
     int calculateRecipients(CalculationRecipientsConfig config);
@@ -135,9 +121,6 @@ public interface MailingBaseService {
 	 * @return true if mailing has advertising content type
 	 */
 	boolean isAdvertisingContentType(int companyId, int mailingId);
-
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-	boolean isLimitedRecipientOverview(Admin admin, int mailingId);
 
     /**
      * Check if the given mailing content is blank (resolve all the dyn-tags (if any) and check if mail contains at least
@@ -162,11 +145,12 @@ public interface MailingBaseService {
      *                  Id of the company that sent the mailings
      * @return  List of MailingBase bean objects
      */
-    PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
+    PaginatedList<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin);
     
     Map<Integer, String> getMailingNames(List<Integer> mailingIds, int companyId);
 
 	List<LightweightMailing> getMailingsByType(MailingType type, int companyId);
+
 	List<LightweightMailing> getMailingsByType(MailingType type, int companyId, boolean includeInactive);
     
     MailingSendStatus getMailingSendStatus(int mailingId, int companyId);

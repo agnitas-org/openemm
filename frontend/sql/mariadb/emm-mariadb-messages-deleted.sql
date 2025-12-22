@@ -8,46 +8,10 @@
 
 */
 
--- Exported at 2025.03.03 09:00:02
+-- Exported at 2025.09.29 09:00:02
 
 -- SET DEFINE OFF;
 
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'CMTemplate',
-	'CM template',
-	'CM-Schablone',
-	'Plantilla CM',
-	'Modèle CM',
-	'Template CM',
-	'CM-sjabloon',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'CMTemplates',
-	'CM templates',
-	'CM-Schablonen',
-	'Plantillas CM',
-	'Modèles CM',
-	'Template CM',
-	'CM-sjablonen',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'CalculationProgress',
-	'Calculation in progress. Please wait.',
-	'Die Berechnung wird gerade durchgeführt. Bitte haben Sie etwas Geduld.',
-	'El cálculo se está llevando a cabo en este instante. Por favor, tenga un poco de paciencia.',
-	'Le calcul est en cours. Veuillez patienter.',
-	'Effettuazione del calcolo in corso. Si prega di attendere.',
-	'De berekening wordt nu uitgevoerd. Een ogenblik geduld a.u.b.',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'DeleteSalutationQuestion',
 	'Do you really want to delete this form of salutation?',
@@ -59,7 +23,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	'Você realmente deseja excluir esta forma de saudaçãe?',
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'DetailedMailingListing',
 	'Detailed mailing listing',
@@ -71,7 +35,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.Note',
 	'Note',
@@ -82,8 +46,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:27', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.ai.copyright.notice',
 	'Please note that the AI also generates images that may infringe copyrights, e.g. if you request images with copyright-protected figures or billboard marks. So make sure that the images you publish do not infringe the copyrights of third parties.',
@@ -95,43 +59,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.cleanupTestsBeforeDelivery',
-	'Cleanup admin and test activities ',
-	'Admin- und Testempfänger-Aktivitäten bereinigen',
+	'ENTW.bot.intermediate.page',
+	'Show Bot intermediate page',
+	'Bot Zwischen-Seite anzeigen',
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.cannotReadImportFileWithReason',
-	'Cannot read content of import file: {0}',
-	'Inhalt der Importdatei kann nicht gelesen werden: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.02.2024 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.import.dataWithoutHeader',
-	'Importdata contains data in a column without any header name (column/row): {0}/{1}',
-	'Importdaten enthalten Daten in einer Spalte ohne Überschrift (Spalte/Zeile): {0}/{1}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.error.import.duplicate.propertyname',
 	'Import data contains duplicate propertyname: {0}',
@@ -143,7 +83,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.error.import.empty.propertyname',
 	'Import data contains empty propertyname',
@@ -155,19 +95,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.import.missingMappedFileDataProperty',
-	'Import data file is missing a defined mapped data property: {0}',
-	'In der Importdatendatei fehlt ein definiertes zugeordnete Datenattribut: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.error.numberOfCustomersExceeded',
 	'License limit of {0} recipients was exceeded. Currently there are {1} recipients.',
@@ -179,55 +107,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.07.2024 10:36:51', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.preview.noRecipients',
-	'Preview cannot be created, because there are no recipients for this mailinglist: {0}',
-	'Vorschau kann nicht erzeugt werden, da kein Empfänger für diese Mailingliste vorliegt: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.04.2024 08:49:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.preview.noTestRecipients',
-	'Preview cannot be created, because there are no test recipients for this mailinglist: {0}',
-	'Vorschau kann nicht erzeugt werden, da kein Testempfänger für diese Mailingliste vorliegt: {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.04.2024 08:49:02', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.profiledb.utilizedInExport',
-	'The profilefield ''{0}'' is in use by export profile ''{1}'' (ID: {2})',
-	'Das Profilfeld ''{0}'' Wird von Exportprofil ''{1}'' (ID: {2}) benutzt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.error.profiledb.utilizedInImport',
-	'The profilefield ''{0}'' is in use by import profile ''{1}'' (ID: {2})',
-	'Das Profilfeld ''{0}'' Wird von Importprofil ''{1}'' (ID: {2}) benutzt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.error.target.noCompatibleWithContentBlock.moreThanLimit',
 	'Target group not compatible with content block. Used in <ul>{0}</ul> and {1} more.',
@@ -239,7 +119,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.error.target.noCompatibleWithContentBlock.upToLimit',
 	'Target group not compatible with content block. Used in <ul>{0}</ul>',
@@ -251,43 +131,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.01.2024 12:30:46', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.honeypot.link.confirm',
-	'Follow link',
-	'Link folgen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.honeypot.link.confirm.follow',
-	'Yes, I want to follow this link',
-	'Ja, ich möchte diesem Link folgen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.honeypot.link.confirm.long',
-	'Do you want to follow this link?',
-	'Möchten Sie diesem Link folgen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ENTW.needs.approval',
 	'In order for the mailing to be set for dispatch, it must be approved by an authorised user.',
@@ -298,32 +142,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:12', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'ENTW.recipient.data.retention.notification',
-	'Data in the contact history is available for {0} days. Delivery information  is available for {1} days.',
-	'Daten in der Kontakthistorie sind für {0} Tage verfügbar. Zustellinfos für {1} Tage.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.AHV',
-	'AHV',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:27', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.ALML',
 	'Access limiting mailinglist',
@@ -335,31 +155,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.Advanced',
-	'Advanced',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.Deliveries',
-	'Deliveries',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.NumberOfEmailsTotal',
 	'Number of e-mails (total)',
@@ -371,7 +167,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.NumberOfMailingsTotal',
 	'Number of mailings (total)',
@@ -383,31 +179,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.Preferences',
-	'Preferences',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('12.10.2023 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.PushNotifications',
-	'Push notifications',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.VouchercodesLeft',
 	'Vouchercodes left',
@@ -419,7 +191,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.actions',
 	'Actions',
@@ -431,67 +203,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.active',
-	'Active',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.activityLog',
-	'Activity log',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.addBuildingBlocks',
-	'Add building blocks',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.addCategory',
-	'Add category',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.addNewTile',
-	'Add new tile',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.additional.columns',
 	'Additional columns',
@@ -503,7 +215,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address',
 	'Address',
@@ -515,7 +227,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management',
 	'Address management',
@@ -527,7 +239,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.clear.entries',
 	'Clear entries',
@@ -539,7 +251,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.clearAll.question',
 	'Do you really want to clear all entries?',
@@ -551,7 +263,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.clearRecipientsAndUsers.note',
 	'Please note that recipients and users with matching entries will be completely deleted.',
@@ -563,7 +275,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.clearSelected.question',
 	'Do you really want to clear the selected entries?',
@@ -575,7 +287,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.deleteAllEntries',
 	'Delete all entries',
@@ -587,7 +299,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.address.management.updateAllEntries',
 	'Update all entries',
@@ -599,7 +311,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.addressSearch',
 	'Address search',
@@ -611,7 +323,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.admin.emailChanged.email.body.text',
 	'Dear EMM user / {0},
@@ -630,7 +342,7 @@ Your AGNITAS team.',
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.admin.emailChanged.mail.body.text',
 	'Dear EMM user,
@@ -648,7 +360,7 @@ Your AGNITAS team',
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.admin.emailChanged.mail.subject',
 	'EMM user e-mail changed',
@@ -660,7 +372,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.adminMark.subject',
 	'Admin recipient label for subject',
@@ -672,7 +384,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.adminMark.toAddress',
 	'Admin recipient label for ''To'' address',
@@ -684,7 +396,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.adminTestMark.placement',
 	'Admin/Test recipient label placement',
@@ -696,7 +408,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.adminTestMark.placement.both',
 	'Both',
@@ -708,7 +420,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.adminTestMark.placement.toAdress',
 	'''To'' address',
@@ -720,271 +432,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domain.address',
-	'address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domain.mx.warning',
-	'MX Entry of your domain is incorrect',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domain.save.warning',
-	'SPF Entry or MX Entry of your domain is incorrect',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domain.spf.warning',
-	'SPF Entry of your domain is incorrect',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.DKIM',
-	'DKIM',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.MX',
-	'MX',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.SPF',
-	'SPF',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.edit',
-	'Edit address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.exist',
-	'The domain address with the specified name has already been created. Please use the previously created domain address.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.forward.valid',
-	'Forward address is not valid',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.forwardAddress',
-	'Forward address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.forwardNonFiltered',
-	'Forward non-filtered emails',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.id',
-	'Address Id',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.name',
-	'Address name',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.new',
-	'New address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.not.valid',
-	'Address name is not valid',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.save.sucess',
-	'Address successfully saved',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.address.sendAutoResponder',
-	'Send auto responder email',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.addresses',
-	'Addresses',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.addresses.count',
-	'Number of addresses',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.administration.domains.edit.address',
-	'Edit domain addresses',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.advancedFilter',
-	'Advanced filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.agnTag.copy',
 	'Copy agnTag to clipboard',
@@ -996,127 +444,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.agnTagsManual.info',
-	'Find instructions for use with examples in the <a href="#" data-popup="{0}">manual</a>.',
-	'Hinweise zur Anwendung mit Beispielen finden Sie im <a href="#" data-popup="{0}">Handbuch</a>.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.generation.preview.info',
-	'Here you will be shown a preview of your AI-generated images after they have been generated.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.aspectRatio.landscape',
-	'16:9 Landscape',
-	'16:9 Querformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.aspectRatio.portrait',
-	'9:16 Portrait',
-	'9:16 Hochformat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.aspectRatio.square',
-	'1:1 Square',
-	'1:1 Quadrat',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.describe',
-	'Please describe your desired image',
-	'Bitte beschreiben Sie Ihr gewünschtes Bild',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.image.generation',
-	'AI image generation',
-	'KI Bildgenerierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.images.noAvailable',
-	'To create additional images, please contact your account manager.',
-	'Für die Erstellung weitere Bilder wenden Sie sich an Ihren Kundenbetreuer.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.images.remains',
-	'You can still create {0} images. For more images, please contact your account manager.',
-	'Sie können noch {0} Bilder erstellen. Für weitere Bilder wenden Sie sich an Ihren Kundenbetreuer.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.ai.textGeneration',
-	'AI text generation',
-	'KI Textgenerierung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.amount.foundInPercent',
 	'Amount found (in %)',
@@ -1140,7 +468,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.apply.changes',
 	'Apply changes',
@@ -1152,7 +480,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.approveTemplate',
 	'Approve template',
@@ -1164,43 +492,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.assume',
-	'Assume',
-	'Übernehmen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.attachment.delete.question',
-	'Do you really want to delete the attachment <b>{0}</b>?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.audio',
-	'Audio',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.autoExport.is.used',
 	'This auto-export is in use and cannot be deleted.',
@@ -1212,7 +504,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.autoExports',
 	'Auto-Exports',
@@ -1224,7 +516,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.autoImport.create',
 	'Create Auto Import',
@@ -1236,7 +528,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.autoImport.delete.question',
 	'Do you really want to delete the auto import <b>{0}</b>?',
@@ -1248,7 +540,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.autoImports',
 	'Auto-Imports',
@@ -1260,7 +552,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.automatedClicks.protection',
 	'Protection from automated clicks',
@@ -1272,7 +564,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.backToLogin',
 	'Back to login',
@@ -1284,7 +576,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.buildingBlock.import.not_buildingBlock',
 	'Import data does not contain a building block',
@@ -1296,19 +588,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulk.restore.mailings',
-	'Restore selected mailings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.address',
 	'Delete selected addresses',
@@ -1320,7 +600,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.address.question',
 	'Do you really want to delete all selected addresses?',
@@ -1332,7 +612,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.admin',
 	'Delete selected users',
@@ -1344,7 +624,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.admin.question',
 	'Do you really want to delete all selected users?',
@@ -1356,7 +636,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.archive',
 	'Delete selected archives',
@@ -1368,7 +648,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.archive.question',
 	'Do you really want to delete all selected archives?',
@@ -1380,7 +660,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.attachment',
 	'Delete selected attachments',
@@ -1392,7 +672,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.08.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.attachment.question',
 	'Do you really want to delete all selected attachments?',
@@ -1404,19 +684,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.08.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.delete.audio',
-	'Delete selected audios',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:17:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.autoExport',
 	'Delete selected auto exports',
@@ -1428,7 +696,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.autoExport.question',
 	'Do you really want to delete all selected auto exports?',
@@ -1440,7 +708,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.autoImport',
 	'Delete selected auto imports',
@@ -1452,7 +720,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.autoImport.question',
 	'Do you really want to delete all selected auto imports?',
@@ -1464,7 +732,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.category.question',
 	'Do you really want to delete all selected categories?',
@@ -1476,7 +744,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.client',
 	'Delete selected clients',
@@ -1488,7 +756,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.client.question',
 	'Do you really want to delete all selected clients?',
@@ -1500,7 +768,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.contentSource',
 	'Delete selected content sources',
@@ -1512,7 +780,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.contentSource.question',
 	'Do you really want to delete all selected content sources?',
@@ -1524,7 +792,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.domains',
 	'Delete selected domains',
@@ -1536,7 +804,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.domains.question',
 	'Do you really want to delete all selected domains?',
@@ -1548,7 +816,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.export',
 	'Delete selected export definitions',
@@ -1560,7 +828,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.export.question',
 	'Do you really want to delete all selected export definitions?',
@@ -1572,7 +840,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.grid',
 	'Delete selected grids',
@@ -1584,7 +852,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.grid.question',
 	'Do you really want to delete all selected grids?',
@@ -1596,7 +864,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.importProfile',
 	'Delete selected import profiles',
@@ -1608,7 +876,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.importProfile.question',
 	'Do you really want to delete all selected import profiles?',
@@ -1620,7 +888,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.mailing.param',
 	'Delete selected mailing parameters',
@@ -1632,7 +900,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.mailing.param.question',
 	'Do you really want to delete all selected mailing parameters?',
@@ -1644,7 +912,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.news',
 	'Delete news',
@@ -1656,7 +924,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.news.question',
 	'Do you really want to delete all selected news?',
@@ -1668,7 +936,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.profileField',
 	'Delete selected profile fields',
@@ -1680,7 +948,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.profileField.question',
 	'Do you really want to delete all selected profile fields?',
@@ -1692,19 +960,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.delete.question',
-	'Do you really want to delete all selected items?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.referenceTables',
 	'Delete selected reference tables',
@@ -1716,7 +972,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.referenceTables.question',
 	'Do you really want to delete all selected reference tables?',
@@ -1728,7 +984,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.report',
 	'Delete selected reports',
@@ -1740,7 +996,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.08.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.report.question',
 	'Do you really want to delete all selected reports?',
@@ -1752,7 +1008,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.08.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.salutation',
 	'Delete salutation',
@@ -1764,7 +1020,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.salutation.question',
 	'Do you really want to delete all selected salutations?',
@@ -1776,19 +1032,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.delete.selected',
-	'Delete selected',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.supervisor',
 	'Delete selected supervisors',
@@ -1800,7 +1044,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.supervisor.question',
 	'Do you really want to delete all selected supervisors?',
@@ -1812,7 +1056,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.trackpoint',
 	'Delete trackpoint',
@@ -1824,7 +1068,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.delete.trackpoint.question',
 	'Do you really want to delete all selected trackpoints?',
@@ -1836,31 +1080,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.download.audio.all',
-	'Download all audios',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.download.audio.selected',
-	'Download selected audios',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.lock.client',
 	'Lock selected clients',
@@ -1872,7 +1092,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.lock.client.question',
 	'Do you really want to lock all selected clients?',
@@ -1884,7 +1104,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.recipient.blacklist.delete.question',
 	'Do you really want to delete the selected recipients from the blocklist?',
@@ -1896,19 +1116,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.bulkAction.settings.userGroup.delete',
-	'Do you really want to delete all selected user groups?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.unlock.ipAddress',
 	'Unlock selected IP addresses',
@@ -1920,7 +1128,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.bulkAction.unlock.ipAddress.question',
 	'Do you really want to delete all selected IP addresses?',
@@ -1932,31 +1140,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.button.GenerateNewText',
-	'Generate new text',
-	'Text neu generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.button.workflow.pause',
-	'Pause',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.calendar.large',
 	'Calendar (large)',
@@ -1968,7 +1152,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.calendar.remider.setDate',
 	'Set reminder send date',
@@ -1980,7 +1164,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.calendar.small',
 	'Calendar (small)',
@@ -1992,7 +1176,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.calendar.week',
 	'Calendar (week)',
@@ -2004,31 +1188,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.campaign.delete',
-	'Delete campaign',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.campaign.delete.question',
-	'Do you really want to delete the campaign ‘{0}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.campaign.redesignOnly',
 	'This campaign uses features of the new design and cannot be opened in the current view. Please switch to the new design via the slider at the bottom of the navigation bar.',
@@ -2042,30 +1202,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('10.01.2025 01:03:20', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.canceled.import',
-	'Import was canceled',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.cant.delete.approved.template',
-	'Please note that approved templates cannot be changed.',
-	'Bitte beachten Sie, dass freigegebene Vorlagen nicht geändert werden können.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.changePassword',
 	'Change password',
 	NULL,
@@ -2076,31 +1212,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.choosePreviewSource',
-	'Choose preview source',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.clickedOn',
-	'Clicked on',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.client.activateIndividualLinkTracking',
 	'Activate individual link tracking for all mailings',
@@ -2112,7 +1224,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('26.09.2024 01:02:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.client.delete',
 	'Delete client',
@@ -2124,7 +1236,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.client.delete.question',
 	'Do you really want to delete the client <b>{0}</b>?',
@@ -2136,19 +1248,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.client.id',
-	'Client ID',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.client.lock',
 	'Lock client',
@@ -2160,7 +1260,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.client.lock.question',
 	'Do you really want to lock the client <b>{0}</b>?',
@@ -2172,67 +1272,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.client.name',
-	'Client name',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.configure.and.activate',
-	'Configure and activate',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.05.2023 01:02:43', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.connect.page',
-	'Connect page',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.contactSupport',
-	'Please contact our support team.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.content.settings',
-	'Content settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.contentBlocks.empty',
 	'No content blocks available',
@@ -2244,19 +1284,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.create.pdf.report',
-	'Create PDF Report',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('20.05.2023 01:02:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.createMailing.emc.description',
 	'Create new mailing with graphical display using drag & drop',
@@ -2268,7 +1296,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.createMailing.import.description',
 	'Import mailing template (standard or EMC) into EMM',
@@ -2280,7 +1308,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.createMailing.post.description',
 	'Create new postal sending',
@@ -2292,7 +1320,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.createMailing.sms.description',
 	'Create new SMS sending',
@@ -2304,7 +1332,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('26.08.2024 01:02:17', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.createMailing.standard.description',
 	'Create new mailing via HTML',
@@ -2316,10 +1344,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.createSoapUser.button',
-	'Create new SOAP user',
+	'GWUA.dashboard.button.notReplaceTiles',
+	'No, do not replace tiles',
 	NULL,
 	NULL,
 	NULL,
@@ -2327,11 +1355,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.csrf.error',
-	'Your request was blocked due to a CSRF token validation issue.',
+	'GWUA.dashboard.button.replaceTiles',
+	'Yes, replace tile',
 	NULL,
 	NULL,
 	NULL,
@@ -2339,20 +1367,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.csv.cell.break.error',
-	'File contains break inside the cell by index: {0} at line: {1}.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.02.2024 01:02:26', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dashboard.calendar.basic',
 	'Basic Calendar',
@@ -2364,7 +1380,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dashboard.calendar.planned',
 	'Planned, not sent',
@@ -2376,7 +1392,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dashboard.calendar.showAllMailings',
 	'Show all entries in the dashboard calendar',
@@ -2388,7 +1404,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dashboard.calendar.unplanned',
 	'Unplanned',
@@ -2400,7 +1416,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dashboard.calendar.week',
 	'Weekly Calendar',
@@ -2412,10 +1428,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.edit',
-	'Edit dashboard',
+	'GWUA.dashboard.replaceTile',
+	'Replace tile',
 	NULL,
 	NULL,
 	NULL,
@@ -2423,11 +1439,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.edit.stop',
-	'Stop editing',
+	'GWUA.dashboard.replaceTile.question',
+	'Adding this tile will remove the following tiles: <b>{0}</b><br><br>Do you want to continue?',
 	NULL,
 	NULL,
 	NULL,
@@ -2435,164 +1451,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.empty',
-	'The dashboard is empty, because no tiles were added. To add new tiles, enter the <a href=''#'' data-action=''edit-dashboard'' style=''color:#0071B9''>edit mode</a>.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.layout.change',
-	'Change layout',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.layout.choose',
-	'Choose Layout',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.records.notAvailable',
-	'No records available',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.tile.add',
-	'Add tile',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.tile.addOns',
-	'Add-Ons',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.tile.cantAdd',
-	'Not enough space for this tile. Please rearrange the tiles',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.tile.importsExports',
-	'Imports & Exports',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.tile.planning',
-	'Planning',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.workflow.status.active',
-	'Active',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.workflow.status.finished',
-	'Finished',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.workflow.status.running',
-	'Running',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dashboard.workflows.notAvailable',
-	'No workflows available',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.data.export.finished',
 	'Data export finished',
@@ -2604,7 +1464,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.data.export.process',
 	'Data export is getting processed',
@@ -2616,7 +1476,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.dataType',
 	'Data type',
@@ -2628,19 +1488,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.databaseColumn',
-	'Database column',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.date.based',
 	'Date based',
@@ -2652,19 +1500,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.dateAndTime',
-	'Date & Time',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.datepicker.clear.button',
 	'Clear',
@@ -2676,19 +1512,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.daysWithReactions',
-	'Days with reactions',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.default.Copyright.simple',
 	'The Initial Developer of EMM is AGNITAS AG. Portions created by AGNITAS AG are Copyright © 2000-20${ApplicationMajorVersion} by AGNITAS AG. All Rights Reserved.',
@@ -2700,19 +1524,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.default.manual',
-	'Manual',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('27.07.2023 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.default.showMore',
 	'Show more',
@@ -2724,19 +1536,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.default.testrun.setting',
-	'Default setting for Testrun',
-	'Standardeinstellung für Testlauf',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.default.view.save',
 	'View changes saved',
@@ -2748,7 +1548,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.default.yearly',
 	'Yearly',
@@ -2760,10 +1560,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.deleteFile',
-	'Delete file',
+	'GWUA.deleteUserAndActivityData',
+	'Delete including activity data',
 	NULL,
 	NULL,
 	NULL,
@@ -2771,11 +1571,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.deleteSelectedRows',
-	'Delete selected rows',
+	'GWUA.deleteUserWithoutActivityData',
+	'Delete but keep activity data',
 	NULL,
 	NULL,
 	NULL,
@@ -2783,20 +1583,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.deleted.mailings',
-	'Deleted mailings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.deleted.templates',
 	'Deleted templates',
@@ -2808,7 +1596,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.diskSpaceLeft',
 	'Disk space left',
@@ -2820,31 +1608,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('11.04.2024 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.doi.confirmation',
-	'DOI confirmation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.downloadAsCsv',
-	'Download as CSV',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.edit.campaign',
 	'Edit campaign',
@@ -2856,19 +1620,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.edit.file',
-	'Edit file',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.edit.node',
 	'Edit node',
@@ -2880,7 +1632,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.edit.node.select',
 	'Please select a node to edit',
@@ -2892,10 +1644,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.editView',
-	'Edit view',
+	'GWUA.editContentFor',
+	'Edit content for',
 	NULL,
 	NULL,
 	NULL,
@@ -2903,8 +1655,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:03:40', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.email.DkimKeyMissing.subject',
 	'Missing DKIM key for ''{0}''',
@@ -2916,7 +1668,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('26.09.2024 01:02:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.email.DkimKeyMissing.text',
 	'{0},
@@ -2960,19 +1712,7 @@ Ihr AGNITAS-Team',
 	NULL,
 	1,
 	STR_TO_DATE('26.09.2024 01:02:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.email.enterAddress',
-	'Enter an email address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.emailCreator',
 	'E-Mail-Creator',
@@ -2984,19 +1724,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.empty.content.block',
-	'Content block was not selected',
-	'Inhaltsbaustein wurde nicht ausgewählt',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.02.2022 12:16:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.enableInboxForResponseProcessing',
 	'Enable inbox for response processing',
@@ -3007,20 +1735,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:13', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.entries.removeAll',
-	'Remove all entries',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:27', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.entriesSelected',
 	'Entries selected',
@@ -3032,7 +1748,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.entriesShown',
 	'Entries shown',
@@ -3044,7 +1760,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.approvedTemplate.remove',
 	'An approved template cannot be deleted',
@@ -3056,7 +1772,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.autoExport.manage.disallowed',
 	'You don''t have the required permissions to manage this auto-export.',
@@ -3068,7 +1784,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.error.autoImport.contentSource.required',
+	'Content source selection required. Create at least one content source to use this import type',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('12.09.2025 12:03:40', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.bulkAction.activate',
 	'None of the selected entries were activated.',
@@ -3080,7 +1808,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.bulkAction.deactivate',
 	'None of the selected entries were deactivated.',
@@ -3092,7 +1820,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.capslock.enabled',
 	'Caps Lock is turned on',
@@ -3104,7 +1832,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.client.bulkAction.lock',
 	'None of the selected clients were locked.',
@@ -3116,31 +1844,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.companyDomain.used',
-	'Company domain is used by {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.companyDomain.used.withMore',
-	'Company domain is used by {0} and {1} more objects.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.dateTime.incomplete',
 	'Date required for complete entry',
@@ -3152,7 +1856,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.deleteSelectedEntries',
 	'All selected entries cannot be deleted',
@@ -3164,7 +1868,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.error.exportProfile.mapping.emptyName',
+	'Column name can''t be empty',
+	'Spaltennamen dürfen nicht leer sein',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.grid.markup.multi.notAllowed',
 	'Placeholders of type="MULTI" are only allowed with RSS countent-source.',
@@ -3176,7 +1892,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.grid.markup.multi.several',
 	'Only one placeholder of type="MULTI" may be used.',
@@ -3188,7 +1904,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.grid.markup.valuesAndSelectedCombinedInSelect',
 	'''values'' and ''selected'' attributes can''t be combined in a ''select'' placeholder',
@@ -3200,7 +1916,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.image.name.tooLong',
 	'Name is too long for image: {0}',
@@ -3212,7 +1928,31 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.error.imort.invalid.item.count',
+	'Inconsistent number of columns at line {0}, expected: {1} actual: {2}',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('12.08.2025 01:02:19', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.error.missingEnoughtVouchersToSend',
+	'The mailing cannot be sent due to insufficient available vouchers',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('12.08.2025 01:02:19', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.passwordReset',
 	'If the e-mail address entered matches an address stored with us, a password reset e-mail has been triggered.',
@@ -3224,7 +1964,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('12.12.2022 11:36:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.sms.symbols.prohibited',
 	'The following characters are prohibited for SMS content: {0}',
@@ -3236,7 +1976,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.template.exists',
 	'This template already exists.',
@@ -3248,10 +1988,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.tile.cantRemove',
-	'Tile cannot be removed. One tile needs to be shown.',
+	'GWUA.error.workflow.invalidSplit',
+	'To use split mailing mode please use split mailing icon or auto optimization template',
 	NULL,
 	NULL,
 	NULL,
@@ -3259,20 +1999,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.workflow.autoopt.invalidTime',
-	'Auto-Optimization decision date has to be at least 2 hours after defined time in start icon',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:27:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.workflow.missingDelayBeforeDecision',
 	'If your campaign uses a decision that checks the response of your recipients in a previous mailing of the same campaign, then you need a delay before the decision icon (at least 1 day recommended). Otherwise, the decision would be made immediately after the mail is sent, and your recipients would not have any opportunity to react.',
@@ -3284,31 +2012,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.workflow.moreThenOneStart',
-	'Campaign should not have more then one start icon.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.error.workflow.pause.changedStructure',
-	'Only mailings and stop icons can be changed during pause.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('20.05.2023 01:02:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.error.zip.moreThanOneFileForImport',
 	'The ZIP file contains more than one file to import.',
@@ -3320,19 +2024,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.errorOccurred',
-	'An unexpected error occurred.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.evaluation',
 	'Evaluation',
@@ -3344,7 +2036,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.export.entries.number',
 	'{0} entries were exported.',
@@ -3356,7 +2048,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.export.settigns',
 	'Export settings',
@@ -3368,19 +2060,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.exportDecodedValues',
-	'Export decoded values',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:32:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.exportedData.period',
 	'Time period of exported data',
@@ -3392,7 +2072,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.extended.rules',
 	'Extended rules',
@@ -3404,31 +2084,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.facebook.login',
-	'Login to facebook',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.facebook.table.empty',
-	'No entries available. Please log in to facebook.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.fieldCanBeEmpty',
 	'Field can be empty',
@@ -3440,31 +2096,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.file.delete',
-	'Delete file',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.file.delete.question',
-	'Do you really want to delete the file ‘{0}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.file.settigns',
 	'File settings',
@@ -3476,67 +2108,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.fileColumn',
-	'File column',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.fileSettings',
-	'File settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.files',
-	'Files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.files.delete',
-	'Delete files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.filter.apply',
-	'Apply filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.filterByName',
 	'Filter by name',
@@ -3548,7 +2120,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.filterRecipients',
 	'Filter recipients',
@@ -3560,55 +2132,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.flip.horizontally',
-	'Flip horizontally',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.flip.vertically',
-	'Flip vertically',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.forgotPassword',
-	'Forgot password?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.frequencyCounter.setup',
-	'Frequency counter setup',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.fromXDaysAgo',
 	'From x days ago',
@@ -3620,7 +2144,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.fromXUntilYDaysAgo',
 	'From x until y days ago',
@@ -3632,10 +2156,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.genderSettings',
-	'Gender settings',
+	'GWUA.full.view',
+	'Full views',
 	NULL,
 	NULL,
 	NULL,
@@ -3643,68 +2167,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.generalSettings',
-	'General settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.generateText',
-	'Generate text',
-	'Text generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.generatedText',
-	'Generated text',
-	'Generierter Text',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.get.approval',
-	'Get approval',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.goToPrevPage',
-	'Go to previous page',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.08.2025 01:02:19', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.goToRecipient',
 	'Go to recipient',
@@ -3716,7 +2180,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.grid.delete.question',
 	'Do you really want to delete the grid <b>{0}</b>?',
@@ -3728,10 +2192,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.div.container.type.multi.repetitionLimit',
-	'Maximum number of elements',
+	'GWUA.grid.div.container.type.referenceTablePlaceholders',
+	'Reference table placeholders',
 	NULL,
 	NULL,
 	NULL,
@@ -3739,8 +2203,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('20.09.2025 01:02:30', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.grid.gutterWidth',
 	'Gutter width',
@@ -3752,31 +2216,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.mediapool.aiGeneratedImages',
-	'AI generated images',
-	'KI generierte Bilder',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.grid.mediapool.audio_files',
-	'Audio files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.05.2023 01:02:43', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.grid.numberOfColumns',
 	'Number of columns',
@@ -3788,19 +2228,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.help.center',
-	'Help centre',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.help.reportError',
 	'Report an error or fault',
@@ -3812,10 +2240,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.help.support.issue.type',
-	'Type of issue',
+	'GWUA.honeypot.explaination',
+	'[REPLACE_ME]',
 	NULL,
 	NULL,
 	NULL,
@@ -3823,11 +2251,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.help.support.sent',
-	'Send support request',
+	'GWUA.import.allFilesImported',
+	'Import was successful!',
 	NULL,
 	NULL,
 	NULL,
@@ -3835,68 +2263,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.hideTile',
-	'Hide tile from view',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.description',
-	'Image description',
-	'Bildbeschreibung',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.editor.rotate.clockwise',
-	'Rotate clockwise',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.editor.rotate.counterclockwise',
-	'Rotate counterclockwise',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.image.upload.failed',
-	'Image could not be uploaded, please check your image and try again.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.dismissAndProceed',
 	'Dismiss errors and proceed',
@@ -3908,7 +2276,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.downloadDuplicateRecipients',
 	'Download duplicate recipients',
@@ -3920,7 +2288,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.downloadFixedRecipients',
 	'Download corrected recipients',
@@ -3932,7 +2300,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.downloadInvalidRecipients',
 	'Download invalid recipients',
@@ -3944,7 +2312,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.downloadResult',
 	'Download result',
@@ -3956,7 +2324,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.downloadValidRecipients',
 	'Download valid recipients',
@@ -3968,7 +2336,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.import.error.sameCharForSepatatorAndDecimalSeparator',
+	'The same sign used for separator and decimal separator',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.manual',
 	'Manual import',
@@ -3980,10 +2360,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.import.profile.delete.question',
-	'Do you really want to delete the import profile ‘{0}’?',
+	'GWUA.import.notAllFilesImported',
+	'Some of import files was not imported!',
 	NULL,
 	NULL,
 	NULL,
@@ -3991,8 +2371,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.saveFixedEntries',
 	'Save fixed entries and proceed',
@@ -4004,7 +2384,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.selectMethod',
 	'Select import method',
@@ -4016,7 +2396,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.05.2024 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.import.title.error_edit',
 	'There are errors in your import file. Please fix them and save or dismiss the errors and proceed without importing the erroneous entries.',
@@ -4028,7 +2408,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.importFile.errorAnalysing',
 	'Analysing the import file for potential errors',
@@ -4040,19 +2420,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.importFile.invalidSeparatorUsed',
-	'The file uses a different separator than the one configured in the import profile',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.12.2023 01:02:14', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.importFinished',
 	'Data import finished',
@@ -4064,7 +2432,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.importProcess',
 	'Data import is getting processed',
@@ -4076,10 +2444,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.importProcessSettings',
-	'Import process settings',
+	'GWUA.inbox.preview.canceled',
+	'Running inbox preview canceled',
 	NULL,
 	NULL,
 	NULL,
@@ -4087,20 +2455,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.importen',
-	'Importen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('11.10.2023 00:08:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.includedInHistory',
 	'Included in history',
@@ -4112,7 +2468,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.includingActionBasedMailings',
 	'including action-based mailings',
@@ -4124,7 +2480,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.includingDateBasedMailings',
 	'including date-based mailings',
@@ -4136,7 +2492,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.includingIntervalBasedMailings',
 	'including interval-based mailings',
@@ -4148,7 +2504,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.includingWoldMailingsWithAdminAndTest',
 	'including world mailings (with Admin and Test mailings)',
@@ -4160,7 +2516,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.info.recipient.altg.preselected',
 	'The access limiting target group <b>{0}</b> was automatically selected for the filter.',
@@ -4172,19 +2528,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.interval.dayOfTheMonth',
-	'Day of the month',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.ipAddress.unlock',
 	'Unlock IP address',
@@ -4196,7 +2540,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.ipAddress.unlock.question',
 	'Do you really want to unlock the IP address <b>{0}</b>?',
@@ -4208,55 +2552,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.item.delete.question',
-	'Do you really want to delete the {0} ‘{1}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.lastClickDate',
-	'Last click timestamp',
-	'Letzter Click Timestamp',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.linkExtensions.add',
-	'Add link extensions',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.locked',
-	'Locked',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.logout.info',
 	'<b>You have been logged out successfully.</b></br></br>This login protects confidential and privileged information. If you are not the intended user (or have received access data in error) please notify our support immediately via e-mail to <a href="mailto:{0}">{0}</a>. Any unauthorized use of this access and copying, disclosure or distribution of its data is strictly forbidden.',
@@ -4268,7 +2564,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.MailingUndoQuestion',
 	'Are you sure you want to undo? This action will revert all changes back to the last saved state.',
@@ -4280,7 +2576,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.approvals.granted',
 	'{0} approvals have already been granted.',
@@ -4292,31 +2588,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.approved.message',
-	'Mailing <b>{0}</b> has been approved',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.approved.title',
-	'Mailing approved',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.baseInfo',
 	'Enter base information',
@@ -4328,19 +2600,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.create.first.redesigned',
-	'Your first mailing is waiting for you! Please click on the "New" button and create the first recipient to test your mailings.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.create.standard',
 	'Create standard mailing',
@@ -4352,7 +2612,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.creation.backToMailingTypeSelection',
 	'Go back to mailing type selection',
@@ -4364,7 +2624,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.creation.backToTemplateSelection',
 	'Go back to template selection',
@@ -4376,7 +2636,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.creation.selectTemplate',
 	'Select template',
@@ -4388,19 +2648,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.emc.create',
-	'Create EMC mailing',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('11.04.2024 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.import.not_mailing',
 	'Import data does not contain a mailing',
@@ -4412,7 +2660,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.import.not_template',
 	'Import data does not contain a template',
@@ -4424,7 +2672,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.mailing.info.approval_granted',
+	'The mailing "{0}" has now been approved for sending',
+	'Das Mailing "{0}" wurde nun zum Versand freigegeben',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('21.08.2025 15:07:32', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.minimum.approvals',
 	'Minimum number of mailing approvals',
@@ -4436,31 +2696,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.name',
-	'Mailing name',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.notInUse',
-	'This mailing is currently not in use. There will be no sending',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailing.recipients.notAvailable',
 	'The Recipient overview is available after sending',
@@ -4472,10 +2708,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.selection.restored',
-	'Selection restored',
+	'GWUA.mailing.settings.view',
+	'Mailing settings view',
 	NULL,
 	NULL,
 	NULL,
@@ -4483,44 +2719,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.sms.sender',
-	'SMS sender address',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.sms.template',
-	'SMS version',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mailing.testRun.sent',
-	'Testmailing sent to {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.08.2025 01:02:19', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailingCreation.generation.notAllowed',
 	'Everything needs to be filled in before you are able to generate the mailing.',
@@ -4532,7 +2732,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloop.reply.read',
 	'Read',
@@ -4544,7 +2744,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloop.reply.unread',
 	'Unread',
@@ -4556,7 +2756,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloopReply.bulkDelete',
 	'Delete replies',
@@ -4568,7 +2768,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloopReply.bulkDelete.question',
 	'Do you really want to delete the selected replies?',
@@ -4580,7 +2780,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloopReply.delete',
 	'Delete reply',
@@ -4592,7 +2792,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailloopReply.deleteQuestion',
 	'Do you really want to delete the reply <b>{0}: ''{1}''</b>?',
@@ -4604,7 +2804,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mailoop.deleteDependentReplies',
 	'Do you really want to delete response processing with all dependent replies?',
@@ -4616,55 +2816,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('27.09.2024 01:03:14', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mainTile',
-	'Main tiles can not be hidden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.manageFields',
-	'Manage Fields',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.manageFieldsDescription',
-	'Please assign the columns from the file with the corresponding database columns.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.manageFieldsNotAvailable',
-	'The option to manage fields is available after saving the import profile.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.manageTargetGroups',
 	'Manage target groups',
@@ -4676,7 +2828,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.manageTargetGroupsFor',
 	'Manage target groups for',
@@ -4688,7 +2840,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.manualSelection',
 	'Manual selection',
@@ -4700,31 +2852,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.manualUpload',
-	'Manual upload',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.max',
-	'Max',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.mediapool.element.replace.error',
 	'Mediapool element can be only replaced with the same file type.',
@@ -4738,126 +2866,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('26.11.2024 01:02:55', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.heightPx',
-	'Height (in px)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.overwrite.inactive',
-	'File ''{0}'' cannot be uploaded because the overwrite slider is inactive',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.sizePx',
-	'Size (in px)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.uploadFiles',
-	'Upload files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.uploadInfo',
-	'You can configure the initial settings for your uploaded files here. Please upload files using the upload function.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.mediapool.widthPx',
-	'Width (in px)',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.min',
-	'Min',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.missing.char',
-	'Missing {3} near &quot;{2}&quot; in line {0}, column {1}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.new.item',
-	'New {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.newProfileField',
-	'New profile field',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.newReferenceTable',
 	'New reference table',
 	NULL,
@@ -4868,19 +2876,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.06.2024 01:02:27', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.newSoapUser',
-	'New SOAP user',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.newVoucherCodeTable',
 	'New voucher code table',
@@ -4892,31 +2888,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.news.delete',
-	'Delete news',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.news.delete.question',
-	'Do you really want to delete the news ‘{0}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.noInterestSet',
 	'No interest set',
@@ -4928,7 +2900,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.nothingFoundToUpdate',
 	'Nothing found to update',
@@ -4940,7 +2912,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.notification.delete.question',
 	'Do you really want to delete the category <b>{0}</b>?',
@@ -4952,19 +2924,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.numberOfWords',
-	'Number of words',
-	'Anzahl Worte',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.object',
 	'Object',
@@ -4976,7 +2936,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.obsoleteColumns',
 	'Obsolete columns',
@@ -4988,31 +2948,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('07.02.2025 01:03:05', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.openedOn',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.02.2024 01:03:49', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.optional',
-	'Optional',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.order.statistics',
 	'Order Statistics',
@@ -5024,7 +2960,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.orderBy',
 	'Order by',
@@ -5036,10 +2972,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.otherStatistics',
-	'Other statistics',
+	'GWUA.overwriteAllExistingData',
+	'Overwrite all existing data',
 	NULL,
 	NULL,
 	NULL,
@@ -5047,8 +2983,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:03:40', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.password.reminder.email.subject',
 	'Please update your password',
@@ -5059,8 +2995,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:25', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.password.reminder.email.text',
 	'Hello {0} {1},
@@ -5080,8 +3016,8 @@ Your AGNITAS Team',
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:25', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.passwordChanged',
 	'<b>Your password was changed successfully.</b></br></br>You will now be redirected automatically.</br></br>If you do not get redirected, click <a href="{0}">here</a>.',
@@ -5093,10 +3029,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.permissions.edit',
-	'Edit permissions',
+	'GWUA.predelivery.desktop.dark',
+	'Dark Mode (Desktop)',
 	NULL,
 	NULL,
 	NULL,
@@ -5104,11 +3040,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.planDate',
-	'Plan date',
+	'GWUA.predelivery.mobile.dark',
+	'Dark mode (Mobile)',
 	NULL,
 	NULL,
 	NULL,
@@ -5116,11 +3052,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.post.city',
-	'City',
+	'GWUA.previewInNewWindow',
+	'Open preview in a new window',
 	NULL,
 	NULL,
 	NULL,
@@ -5128,80 +3064,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.post.code',
-	'Postal code',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.post.country',
-	'Country',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.post.default.address',
-	'Default address fields for post',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.post.street',
-	'Street',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.preheader',
-	'Pre-Header',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.preview.testRun.add',
-	'Add to the test run',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('14.05.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('28.07.2025 01:02:11', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.previewOfContentBlock',
 	'Preview of the content block',
@@ -5213,10 +3077,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.prioritization',
-	'Priorisation',
+	'GWUA.processing.cancel',
+	'Cancel processing',
 	NULL,
 	NULL,
 	NULL,
@@ -5224,8 +3088,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('21.12.2023 10:16:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.profileField.stat.evaluate',
 	'Evaluate profile fields',
@@ -5237,10 +3101,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.push.triggers',
-	'Triggers',
+	'GWUA.puppeteer.status.missing',
+	'Missing',
 	NULL,
 	NULL,
 	NULL,
@@ -5248,8 +3112,32 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.puppeteer.status.running',
+	'Running',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.puppeteer.status.stopped',
+	'Stopped',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.quantity',
 	'Quantity',
@@ -5261,55 +3149,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reactionDevices',
-	'Reaction devices',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reactionTimes',
-	'Reaction times',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.receivedOn',
-	'Received on',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.DOI.monthTotal',
-	'Number of DOIs of the month',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.recipient.blacklist.delete.question',
 	'Do you really want to delete the recipient <b>{0}</b> from the blocklist?',
@@ -5321,91 +3161,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.confirmed',
-	'Confirmed',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.confirmedNotActive',
-	'Confirmed, but no longer active (optout/ bounced / blacklisted meanwhile) ',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.endDeviceName',
-	'End device name',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.endDeviceType',
-	'End device type',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.history.mailing.clicks',
-	'Link clicks information for mailing {0}',
-	'Link-Klickinformationen fÃ¼r Mailing {0}',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.notConfirmed',
-	'Not confirmed yet',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.08.2023 01:03:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.notConfirmedAndDeleted',
-	'Not confirmed and deleted after retention period',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.recipient.stat.distribution',
 	'Distribution statistics',
@@ -5417,7 +3173,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.recipient.stat.distribution.preAggregated',
 	'Distribution statistics / Month - Pre-Aggregated',
@@ -5429,31 +3185,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.stat.optOuts.byUser',
-	'By user',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('11.10.2023 00:08:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.recipient.stat.optOuts.wsOther',
-	'WS / Other',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:32:50', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.recipientFilter',
 	'Recipient filter',
@@ -5465,19 +3197,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reenterPassword',
-	'Re-enter password',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.createImport',
 	'Create new import',
@@ -5489,7 +3209,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.deleteEntry.question',
 	'Do you really want to delete the entry <b>{0}</b>?',
@@ -5501,7 +3221,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.deleteUnusedVouchers.question',
 	'Do you really want to delete unused vouchercodes of the table <b>{0}</b>?',
@@ -5513,7 +3233,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.editEntry',
 	'Edit entry',
@@ -5525,7 +3245,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.editExport',
 	'Edit export',
@@ -5537,7 +3257,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.editImport',
 	'Edit import',
@@ -5549,7 +3269,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.emptyTable.question',
 	'Do you really want to delete the content of the table <b>{0}</b>?',
@@ -5561,7 +3281,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.export.delete',
 	'Delete export definition',
@@ -5573,7 +3293,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.export.delete.question',
 	'Do you really want to delete the export definition <b>{0}</b>?',
@@ -5585,7 +3305,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.field.delete',
 	'Delete table field',
@@ -5597,7 +3317,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.field.delete.question',
 	'Do you really want to delete the table field <b>{0}</b>?',
@@ -5609,7 +3329,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.import.addConstantValue',
 	'Add constant value',
@@ -5621,7 +3341,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.import.delete',
 	'Delete import definition',
@@ -5633,7 +3353,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTable.import.delete.question',
 	'Do you really want to delete the import definition <b>{0}</b>?',
@@ -5645,7 +3365,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('06.06.2024 01:02:47', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referenceTableExport',
 	'Reference table export',
@@ -5657,7 +3377,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.referencingObject.BIRT_REPORT',
 	'Report ''{0}''',
@@ -5669,19 +3389,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.06.2024 01:02:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.regenerateText',
-	'Regenerate text',
-	'Text neu generieren',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.removeApproval',
 	'Remove approval',
@@ -5693,79 +3401,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.removeTile',
-	'Remove tile',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.replace.image',
-	'Replace image',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.replyEmail.changed',
-	'Reply email was changed!',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.requestMethod',
-	'Request method',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.requestUrl',
-	'Request URL',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reset',
-	'Reset',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.respondViaEmail',
 	'Respond via email',
@@ -5777,31 +3413,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.response.processing.delete.question',
-	'Do you really want to delete the response processing ‘{0}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:24', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.response.processings.delete',
-	'Delete response processings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.responseAddress',
 	'Response address',
@@ -5813,7 +3425,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.responseInbox',
 	'Response Inbox',
@@ -5825,67 +3437,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.responseProcessing.usedInDomain',
-	'This response processing could not be deleted, because it is still used in domain address "{0}".',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.restfulUsers',
-	'Restful users',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.restore',
-	'Restore',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.resume',
-	'Resume',
-	'Weiter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.reviewSettings',
-	'Review settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.rowsToDisplay',
 	'Rows to display',
@@ -5897,31 +3449,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.save.generatedText',
-	'Please note that by "Save" the generated text is taken over and existing texts can be overwritten.',
-	'Bitte beachten Sie, dass durch "Speichern" der generierte Text übernommen wird und bestehende Texte überschrieben werden können.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.saveView',
-	'Save view',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:02', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.select.profileField',
 	'Select profile field',
@@ -5932,32 +3460,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.selectAdditionalFiles',
-	'Select additional files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.selectCategory',
-	'Select category',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:25', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.selectField',
 	'Select field',
@@ -5969,7 +3473,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.selectMailingType',
 	'Select mailing type',
@@ -5981,19 +3485,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.selected.delete.question',
-	'Do you really want to delete all selected {0}?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.selectedTemplate',
 	'Selected template',
@@ -6005,43 +3497,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.send.to.me',
-	'Send only to me',
-	'Nur an mich senden',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.sendReportTo',
-	'Send report to',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.sendTestMailing',
-	'Send test mailing',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.sender',
 	'Sender',
@@ -6053,43 +3509,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.senderAndReplyEmails.changed',
-	'Sender email and reply email were changed!',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.senderEmail.changed',
-	'Sender email was changed!',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.sendingSettings',
-	'Sending settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.sentMailings',
 	'Sent mailings',
@@ -6101,19 +3521,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.setFilter',
-	'Set filter',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.setPrioritization',
 	'Set priorisation',
@@ -6125,7 +3533,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.settings.address.delete',
 	'Delete addresss',
@@ -6137,7 +3545,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.settings.address.delete.question',
 	'Do you really want to delete the address <b>{0}</b>?',
@@ -6149,7 +3557,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.settings.mailloop.delete.withReplies.question',
 	'Do you really want to delete the response processing <b>{0}</b> with dependent replies?',
@@ -6161,19 +3569,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.10.2024 01:02:59', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.sftp.upload',
-	'SFTP upload',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.showDeleted',
 	'Show deleted',
@@ -6185,7 +3581,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.showMore',
 	'Show more',
@@ -6197,43 +3593,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('15.08.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.showTile',
-	'Show tile in view',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('22.04.2024 14:21:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.soapUsers',
-	'SOAP users',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.soapuser.edit',
-	'Edit SOAP User',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.11.2023 15:18:08', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.split',
 	'Split',
@@ -6271,6 +3631,18 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('10.01.2025 01:03:20', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.split.view',
+	'Split view',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('12.08.2025 01:02:19', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.standardMailing',
 	'Standard Mailing',
 	NULL,
@@ -6281,7 +3653,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.stat.ctr',
 	'Click-through rate',
@@ -6293,43 +3665,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistic.Opt_Ins.detail',
-	'Opt-ins - Detail',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('11.10.2023 00:08:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistic.Opt_Outs.detail',
-	'Opt-outs - Detail',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('12.10.2023 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistic.download.csv',
-	'Download statistics as CSV',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistic.mailing.dynamic.avg.sentOpened',
 	'of sent mailings were opened on average',
@@ -6341,7 +3677,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistic.mailing.performance',
 	'Best performing mailings',
@@ -6353,7 +3689,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.02.2025 01:02:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistic.values.max',
 	'Max. number of values',
@@ -6365,7 +3701,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.anonymShare',
 	'anonymous share',
@@ -6377,7 +3713,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.avgAmount.clicks.perClicker',
 	'Average amount of clicks per clicker',
@@ -6389,7 +3725,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.avgRevenue',
 	'Average amount of clicks per clicker',
@@ -6401,7 +3737,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.bestPerformingMailing',
 	'Best performing mailing (with send date)',
@@ -6413,7 +3749,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.bestPerformingMailingsBy',
 	'Best performing mailings (By amount of clickers, openers, revenue and orders)',
@@ -6425,7 +3761,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.dynamic.report',
 	'Dynamic report',
@@ -6437,19 +3773,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.statistics.email',
-	'Statistics e-mail',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('12.10.2023 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.last.six.months',
 	'Last 6 months',
@@ -6461,7 +3785,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.statistics.worstPerformingMailing',
 	'Worst performing mailing (with send date)',
@@ -6473,10 +3797,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.08.2024 01:03:01', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.supervisor.new',
-	'New supervisor user',
+	'GWUA.systemMessages',
+	'System messages',
 	NULL,
 	NULL,
 	NULL,
@@ -6484,11 +3808,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:46:00', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.supervisor.user',
-	'Supervisor user',
+	'GWUA.systemMessages.headline',
+	'Headline',
 	NULL,
 	NULL,
 	NULL,
@@ -6496,11 +3820,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('19.12.2023 01:03:10', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.switch.to.classic.design',
-	'Switch to classic design',
+	'GWUA.systemMessages.setup',
+	'Setup',
 	NULL,
 	NULL,
 	NULL,
@@ -6508,11 +3832,11 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.switch.to.new.design',
-	'Switch to new design',
+	'GWUA.systemMessages.subline',
+	'Subline',
 	NULL,
 	NULL,
 	NULL,
@@ -6520,8 +3844,116 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('21.07.2023 01:03:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.admin_welcome',
+	'Admin welcome',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.email_changed',
+	'Email address changed',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.mandatory_voucher',
+	'Mandatory voucher',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.password_changed',
+	'Password changed',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.password_expiration',
+	'Password expiration',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.password_reset',
+	'Password reset',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.security_code',
+	'Security code',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.supervisor_security_code',
+	'Supervisor security code',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'GWUA.systemMessages.type.too_large_target_group',
+	'Too large target group',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('28.08.2025 01:02:16', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.table.editColumns',
 	'Edit columns',
@@ -6533,19 +3965,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.table.of',
-	'of',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.table.saveColumns',
 	'Save columns',
@@ -6557,31 +3977,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.table.showMax',
-	'Show max.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.target.favorite.perUser',
-	'Target group favourites per user',
-	'Zielgruppenfavoriten pro Benutzer einstellbar',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('20.05.2023 01:02:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.targetGroup.notEvaluated',
 	'The target group was not evaluated yet.',
@@ -6593,31 +3989,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.targetGroup.scheduleRecipientsDelete',
-	'Schedule automatic deletion of recipients',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('03.04.2024 01:03:17', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.targetingSettings',
-	'Targeting settings',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.technicalContacts',
 	'Technical contacts',
@@ -6629,43 +4001,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.temp.files',
-	'Temporary files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.testDelivery.notPossible',
-	'Delivery not possible.<br/>Mailing uses deleted target groups!',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.testMailingRecipient',
-	'Test mailing recipient',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.12.2023 01:03:11', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.testMark.subject',
 	'Test recipient label for subject',
@@ -6677,7 +4013,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.testMark.toAddress',
 	'Test recipient label for ''To'' address',
@@ -6689,55 +4025,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.textGeneration',
-	'Text Generation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.theme',
-	'Theme',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('12.10.2023 01:02:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.time.until.logout',
-	'Time until automatic log out',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.toggle.all',
-	'Toggle all',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.toggleTruncation',
 	'Toggle truncation',
@@ -6749,103 +4037,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality',
-	'Tonality',
-	'Tonalität',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.committed',
-	'Committed',
-	'Engagiert',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.dynamic',
-	'Dynamic',
-	'Dynamisch',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.factual',
-	'Factual',
-	'Sachlich',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.fun',
-	'Fun',
-	'Lustig',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.modern',
-	'Modern',
-	'Modern',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:14', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.relaxed',
-	'Relaxed',
-	'Locker',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.tonality.serious',
-	'Serious',
-	'Ernst',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.totalSummary',
 	'Total summary',
@@ -6857,19 +4049,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.trackablelinks.includeDeleted',
-	'Show deleted links',
-	'Gelöschte Links anzeigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2023 15:46:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.transfer.method',
 	'Transfer method',
@@ -6881,7 +4061,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.twoFactorAuthentication.description',
 	'Two-factor authentication is an additional security measure for your user access. Proof of identity is provided with two different and independent access keys.<br/><br/>In addition to your password, you need a 6-digit code via an authenticator app.',
@@ -6893,7 +4073,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:33', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.ui.layout',
 	'Layout',
@@ -6931,30 +4111,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('14.11.2024 01:02:18', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.unknown.source',
-	'Unknown source',
-	'Unbekannte Quelle',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.unsubscribed',
-	'Unsubscribed',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.untilXDaysAgo',
 	'Until x days ago',
 	NULL,
@@ -6965,67 +4121,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.upload.forUser',
-	'Upload for user',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.uploadDate',
-	'Upload date',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.01.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.uploadFiles',
-	'Upload files',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.upload_dropzone.extra.title',
-	'Drag & drop additional files here or',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.uploadedOn',
-	'Uploaded on',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('21.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.autoExport',
 	'Unlock streamlined data export capabilities with Auto-Exports, giving you the ability to automate recurring exports by carrying out previously defined exports on a time-controlled basis. Stay informed with regular status reports to provide transparency and control over your data.',
@@ -7037,7 +4133,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.autoImport',
 	'Experience seamless data management with Auto-Import, which allows you to configure recurring imports for an automated workflow on a scheduled basis. Receive regular reports on the status of your auto-import to ensure optimal visibility and control over your data.',
@@ -7049,7 +4145,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.clients',
 	'Customize the settings of your client even more according to your individual wishes with the Clients option. This function allows you to customize various basic settings for your client, from security topics to mailings.',
@@ -7061,7 +4157,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.generic',
 	'Elevate your experience with our extended offering, designed to unlock exclusive, customized features and benefits.',
@@ -7073,7 +4169,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.inboxPreview',
 	'Gain insights into your e-mail?s appearance with the Inbox Preview. Visualize how your e-mails will display across different e-mail clients, including mobile, desktop and browser variations. Leverage this tool to identify areas for improvement and catch errors upfront.',
@@ -7085,7 +4181,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.layoutBuilder',
 	'The Layout Builder offers you a new level of flexibility, control and freedom in building your mailing templates.<br>Simply select your favorite grid, create your own content blocks and share this structured layout for easy drag & drop editing with your team. This way your content team can focus on creating valuable content without worrying about HTML-code.',
@@ -7097,7 +4193,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.mediapool',
 	'The Mediapool serves as a centralized repository for various media assets, encompassing images, fonts, videos and more. Once uploaded these assets can be seamlessly integrated in your mailings, thereby streamlining the content creation process. Uploaded files can also be efficiently categorized for easy retrieval and utilization across various functions. In addition, basic image editing capabilities are available for quick adjustments. ',
@@ -7109,7 +4205,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.description.referenceTables',
 	'The reference tables feature enables you to integrate dynamic data storage with high performance. The flexible data tables can be used to incorporate additional information that is not directly related to the recipient profile and thus easily ensure that certain data does not have to be stored redundantly for each recipient. The data can still be easily assigned to any number of recipients.',
@@ -7121,7 +4217,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.feature.interest',
 	'If you''re interested in this feature, please follow the link “More information” down below.',
@@ -7133,7 +4229,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.autoExport',
 	'Streamline data exports with the additional feature Auto-Export',
@@ -7145,7 +4241,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.autoImport',
 	'Streamline data imports effortlessly with the additional feature Auto-Import',
@@ -7157,7 +4253,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.clients',
 	'Individualize your client via client configuration',
@@ -7169,7 +4265,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.generic',
 	'Feeling like something is missing? Unlock additional features to elevate your experience',
@@ -7181,7 +4277,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.inboxPreview',
 	'Ensure visual unity across a range of e-mail clients with the inbox preview',
@@ -7193,7 +4289,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.layoutBuilder',
 	'Build your own mailing templates with the Layout Builder',
@@ -7205,7 +4301,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.mediapool',
 	'Easily manage and access images and other media with the Mediapool',
@@ -7217,7 +4313,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.upselling.headline.referenceTables',
 	'Refine your data for products, voucher codes and purchases with Reference Tables',
@@ -7229,7 +4325,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('24.05.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.useFileFromUploadPage',
 	'Use file from the upload page',
@@ -7241,43 +4337,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.user.delete.question',
-	'Do you really want to delete the user ''{0}''?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.user.password.reminder',
-	'Update reminder by e-mail',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.02.2024 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:02', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.user.right',
-	'User right',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.10.2023 11:37:48', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:58', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.userForm.import.not_userForm',
 	'Import data does not contain a form',
@@ -7289,55 +4349,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.userform.activate',
-	'Activate form',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.userform.activateAndTest.question',
-	'Only active forms can be tested. Would you like to activate the form now?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('26.01.2024 01:03:18', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.usergroup.delete.question',
-	'Do you really want to delete the usergroup ‘{0}’?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.usergroups.delete',
-	'Delete user groups',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.12.2023 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.valueExceedsLimit',
 	'Value exceeds a limit of {0}',
@@ -7349,19 +4361,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.video',
-	'Video',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.view.message',
 	'View message',
@@ -7373,10 +4373,10 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.voucherCodeStatus',
-	'Status (unassigned / overall)',
+	'GWUA.voucher.abortMailingIfInsufficient',
+	'Abort mailing sending, if voucher codes are insufficient',
 	NULL,
 	NULL,
 	NULL,
@@ -7384,20 +4384,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.01.2024 01:02:38', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.voucherCodeTable',
-	'Voucher code table',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('13.01.2024 01:02:29', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('04.09.2025 01:02:10', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.voucherCodeTables',
 	'Voucher code tables',
@@ -7409,7 +4397,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.warn.template.not_overwritten',
 	'Multiple templates with the same name were found. The template was imported without overwriting existing ones.',
@@ -7421,7 +4409,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.warning.bulkAction.activate',
 	'{0} of the selected entries cannot be activated.',
@@ -7433,7 +4421,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.warning.bulkAction.deactivate',
 	'{0} of the selected entries cannot be deactivated.',
@@ -7445,7 +4433,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.warning.client.bulkAction.lock',
 	'{0} of the selected clients cannot be locked',
@@ -7457,7 +4445,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.07.2024 00:34:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.warning.deleteSelectedEntries',
 	'{0} of the selected entries cannot be deleted',
@@ -7469,7 +4457,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.widget.preview.stub',
 	'Here will be shown html snippet and preview of widget',
@@ -7481,7 +4469,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.widget.smsNumber',
 	'Mobile phone number',
@@ -7493,7 +4481,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.widget.subscribe.type',
 	'Subscribe',
@@ -7505,7 +4493,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.widget.subsctibe.errorMessage',
 	'Error message',
@@ -7517,7 +4505,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.widget.subsctibe.successMessage',
 	'Success message',
@@ -7529,31 +4517,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('14.02.2025 01:03:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.window.popout',
-	'Pop-out this window',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.withoutCsvHeaders',
-	'Without CSV headers',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.12.2023 01:02:25', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.autoOptimization.mailingsCount.question',
 	'How many mailings do you want to test?',
@@ -7565,19 +4529,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('20.08.2024 01:03:07', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.auto_optimization.decision.forbidden',
-	'Please note that in a campaign a "start event" cannot be combined with the "auto-optimization" option.',
-	'Bitte beachten Sie, dass in einer Kampagne ein "Startereignis" nicht mit der Option "Auto-Optimierung" kombiniert werden kann.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('29.05.2024 13:45:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.deactivate.question',
 	'Do you really want to deactivate the campaign <b>{0}</b>?',
@@ -7589,7 +4541,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.error.missingRecipientsLoadInSplitBranches',
 	'Some branches of the split icon do not have recipient load',
@@ -7613,31 +4565,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.05.2024 01:03:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.pause.autoReactivation',
-	'Automatic reactivation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('20.05.2023 01:02:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.pause.timerDescription',
-	'Remaining time until automatic reactivation',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('20.05.2023 01:02:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.anniversaryMail',
 	'Anniversary mail',
@@ -7649,7 +4577,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.birthdayWithCoupon',
 	'Birthday with coupon',
@@ -7661,7 +4589,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.shoppingCartAbandonersLarge',
 	'Shopping cart abandoners with large shopping cart',
@@ -7673,7 +4601,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.shoppingCartAbandonersSmall',
 	'Shopping cart abandoners with small shopping cart',
@@ -7685,7 +4613,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.welcomeTrack',
 	'Welcome track',
@@ -7697,7 +4625,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.sample.welcomeTrackWithIncentive',
 	'Interactive welcome track with incentive',
@@ -7709,7 +4637,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.09.2024 01:02:23', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.workflow.startDate.changed',
 	'Start date was changed',
@@ -7721,55 +4649,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('21.04.2024 01:02:44', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:34', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.status.change',
-	'Change status',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('01.04.2023 01:02:21', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.unpause',
-	'Continue campaign',
-	'Kampagne fortsetzen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.unpause.question',
-	'Do you really want to continue this campaign?',
-	'Möchten Sie diese Kampagne wirklich fortsetzen?',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('10.07.2023 01:02:41', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.workflow.view.status.paused',
-	'Paused',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('30.03.2023 01:02:20', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'GWUA.x.recipientsWillBeChanged',
 	'{0} recipients will be changed/updated',
@@ -7781,19 +4661,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'GWUA.your.message',
-	'Your message',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('16.09.2023 01:02:40', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.Mailing.mailing.new',
 	'Create new mailing',
@@ -7807,18 +4675,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
 	NULL);
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.grid.div.lock',
-	'Allow to mark building block as fixed',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.07.2023 11:28:45', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.import.mode.special_4er_block',
 	'Import block of 4',
 	'Import 4er Block',
@@ -7829,7 +4685,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('12.07.2021 01:02:03', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.mailing.content.type.multi',
 	'Use multiple reference tables in EMC mailing',
@@ -7841,7 +4697,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('26.07.2021 13:40:22', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'UserRight.mailinglists.addresses',
+	'Set addresses on mailinglist',
+	'Adressen an Mailinglisten hinterlegen',
+	'Establecer direcciones en la lista de correo',
+	'Définir des adresses sur la liste de diffusion',
+	'Impostare gli indirizzi sulla mailinglist',
+	'Adressen instellen op mailinglijst',
+	'Definir endereços na lista de discussão',
+	1,
+	STR_TO_DATE('12.12.2023 15:24:53', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.recipient.profileField.html.allowed',
 	'Allow HTML in profile fields and reference tables',
@@ -7853,19 +4721,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'UserRight.recipient.tracking.veto',
-	'Show tracking veto settings',
-	'Tracking-Widerspruch-Einstellungen anzeigen',
-	NULL,
-	'Afficher les réglages d’opposition au tracking',
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.stats.dynamic',
 	'Show dynamic report',
@@ -7877,7 +4733,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.08.2024 01:03:04', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'UserRight.stats.social',
 	'Show social network statistics',
@@ -7889,7 +4745,19 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'UserRight.user.xpress',
+	'no SaaS user',
+	'kein SaaS Benutzer',
+	'ningún usuario de SaaS',
+	'Utilisateur non SaaS',
+	'nessun utente SaaS',
+	'geen SaaS-gebruiker',
+	'nenhum usuário SaaS',
+	1,
+	STR_TO_DATE('17.11.2020 12:39:52', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'ai.images.generation',
 	'Generate image content using AI',
@@ -7900,20 +4768,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'auto.deeptracking',
-	'Activate behavior tracking by default',
-	'Behavior Tracking pauschal aktivieren',
-	NULL,
-	'Activer le suivi des comportements par défaut',
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('24.10.2023 11:05:53', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'calendar.basic',
 	'Basic Calendar',
@@ -7924,8 +4780,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'calendar.weekly',
 	'Weekly Calendar',
@@ -7936,20 +4792,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'company.DeleteRecipients',
-	'Deletion of recipients',
-	'Löschung der Empfänger',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('18.10.2021 13:11:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('29.05.2024 13:49:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'confirm.new.password',
 	'Confirm new password',
@@ -7963,18 +4807,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('19.11.2024 01:02:19', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.alml.mustSelectMailinglist',
-	'ALML users must select a mailinglist',
-	'ALML User müssen eine Mailingliste auswählen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('11.08.2023 11:21:54', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.bulkAction.delete',
 	'None of the selected entries was deleted.',
 	'Keiner der gewählten Einträge konnte gelöscht werden.',
@@ -7984,8 +4816,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.bulkAction.general.activate',
 	'None of the selected entries could be activated. Please open the entries in detail.',
@@ -7996,8 +4828,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.bulkAction.general.deactivate',
 	'None of the selected entries were deactivated. Please open the entries in detail.',
@@ -8008,8 +4840,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:37', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'error.generic',
 	'Error',
@@ -8023,90 +4855,6 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	STR_TO_DATE('05.12.2024 01:02:51', '%d.%m.%Y %H:%i:%s'),
 	STR_TO_DATE('20.01.2025 01:02:09', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.import.noValidDataFound',
-	'All of your import data was invalid. Please check for datastructure, separators and date time formats to fit your import data.',
-	'Alle Ihre Importdaten waren ungültig. Bitte überprüfen Sie, ob die Datenstruktur, Trennzeichen und die Datums-/Uhrzeitformate zu ihren Importdaten passen.',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('19.02.2024 01:02:39', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.activate_plugin',
-	'Plugin could not be activated. Please check if all dependencies are satisfied.',
-	'Plugin konnte nicht aktiviert werden. Bitte prüfen Sie ob alle Abhängigkeiten erfüllt sind.',
-	'No se ha podido activar el plugin ¿Se han cumplido todas las dependencias?',
-	'Le plugin n''a pas pu être activé. Est-ce que toutes les dépendances sont satisfaites ?',
-	'Impossibile attivare il plugin. Tutte le dipendenze sono soddisfatte?',
-	'De plugin kon niet worden geactiveerd. Zijn alle afhankelijkheden vervuld?',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.installer.general',
-	'Error while installing plugin',
-	'Fehler beim Installieren des Plugins',
-	'Error al instalar los plugins',
-	'Erreur lors de l''installation de l''extension',
-	'Errore di installazione del plugin',
-	'Fout tijdens het installeren van de plugin.',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.installer.manifest',
-	'Missing or incorrect plugin manifest.',
-	'Fehlendes oder fehlerhaftes Plugin-Manifest.',
-	'Falta el manifiesto plugin o es erróneo',
-	'Manifeste de plugin erroné ou manquant.',
-	'Manifesto plugin mancante o difettoso.',
-	'Plugin-manifest ontbreekt of foutief.',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.installer.no_plugin_file',
-	'Please select a plugin file.',
-	'Bitte wählen Sie eine Plugin-Datei aus.',
-	'No ha seleccionado ningún archivo plugin.',
-	'Aucun fichier de plugin sélectionné.',
-	'Nessun file di plugin selezionato.',
-	'Geen plugin-bestand geselecteerd.',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.missing_plugin_id',
-	'Missing plugin ID',
-	'Plugin-ID fehlt',
-	'Falta ID Plugin',
-	'ID de plugin manquant',
-	'ID plugin mancante',
-	'Plugin-ID ontbreekt',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'error.pluginmanager.uninstall',
-	'Error while uninstalling',
-	'Fehler beim Deinstallieren',
-	'Error al desinstalar',
-	'Erreur lors de la désinstallation',
-	'Errore di disinstallazione',
-	'Fout tijdens het deïnstalleren',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'fax.quality',
 	'Resolution',
 	'Auflösung',
@@ -8117,7 +4865,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'fax.quality.high',
 	'Fine',
@@ -8129,7 +4877,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'fax.quality.low',
 	'Normal',
@@ -8141,31 +4889,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'import.mode.globus_special',
-	'Special Globus Import Mode',
-	'Spezieller Globus Importmodus',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('31.01.2022 16:51:55', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('01.07.2024 10:44:15', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailSettings',
-	'Mail settings',
-	'Mail Einstellungen',
-	'Ajustes mail',
-	'Paramètres d''e-mail',
-	'Impostazioni mail',
-	'Mailinstellingen',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MediaType.1',
 	'Fax',
@@ -8177,7 +4901,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.MediaType.fax',
 	'Fax',
@@ -8189,7 +4913,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('11.02.2020 15:32:28', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:20', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.deleted',
 	'Deleted mailings',
@@ -8201,19 +4925,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('28.06.2023 11:19:36', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'mailing.send.admin.target.to',
-	'Test run',
-	'Testlauf',
-	'Envío a',
-	'Expédition à',
-	'Invio a',
-	'Verzending aan',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'mailing.type.select',
 	'Select mailing type',
@@ -8224,200 +4936,8 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	NULL,
 	1,
-	STR_TO_DATE('18.02.2025 13:30:19', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:19', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.details',
-	'Details',
-	'Details',
-	'Detalles',
-	'Détails',
-	'Dettagli',
-	'Details',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.information',
-	'Plugin information',
-	'Plugin-Information',
-	'Información plugin',
-	'Informations de plugin',
-	'Informazioni plugin',
-	'Plugin-informatie',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.install',
-	'Install plugin',
-	'Plugin installieren',
-	'Instalar plugin',
-	'Installer le plugin',
-	'Installa plugin',
-	'Plugin installeren',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.installer.installed',
-	'Plugin installed',
-	'Plugin installiert',
-	'Plugin instalado',
-	'Plugin installé',
-	'Plugin installato',
-	'Plugin geïnstalleerd',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.installer.select_file',
-	'Select plugin to install',
-	'Plugin-Datei zum Installieren',
-	'Archivo plugin para instalar',
-	'Sélectionner le plugin à installer',
-	'File di plugin per l’installazione',
-	'Plugin-bestand ter installatie',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.deactivated',
-	'Not activated',
-	'Nicht aktiviert',
-	'No está activado',
-	'N''a pas été activé',
-	'Non attivato',
-	'Niet geactiveerd',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.depending_plugins',
-	'Depending plugins',
-	'Abhängige Plugins',
-	'Plugins dependientes',
-	'Plugins dépendants',
-	'Plugin dipendenti',
-	'Afhankelijke plugins',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.id',
-	'Plugin ID',
-	'Plugin-ID',
-	'ID Plugin',
-	'ID de plugin',
-	'ID plugin',
-	'Plugin-ID',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.name',
-	'Plugin name',
-	'Plugin-Name',
-	'Nombre plugin',
-	'Nom du plugin',
-	'Nome plugin',
-	'Pluginnaam',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.no_depending_plugins',
-	'No depending plugins found',
-	'Keine abhängigen Plugins gefunden',
-	'No se han encontrado plugins dependientes',
-	'Aucun plugin dépendant trouvé',
-	'Nessun plugin dipendente trovato',
-	'Geen afhankelijke plugins gevonden',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.status',
-	'Status',
-	'Status',
-	'Estado',
-	'Statut',
-	'Stato',
-	'Status',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.systemplugin',
-	'System plugin',
-	'System-Plugin',
-	'Plugin de sistema',
-	'Plugin de système',
-	'Plugin di sistema',
-	'Systeem-plugin',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.uninstall',
-	'Uninstall',
-	'Deinstallieren',
-	'Desinstalar',
-	'Désinstaller',
-	'Disinstalla',
-	'Deïnstalleren',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.uninstalled',
-	'Plugin has been removed',
-	'Plugin wurde entfernt',
-	'Se ha eliminado el plugin',
-	'Le plugin a été supprimé',
-	'Il plugin è stato rimosso',
-	'De plugin is verwijderd',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.vendor',
-	'Vendor',
-	'Anbieter',
-	'Proveedores',
-	'Vendeur',
-	'Fornitori',
-	'Verkoper',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'pluginmanager.plugin.version',
-	'Version',
-	'Version',
-	'Versión',
-	'Version',
-	'Versione',
-	'Versie',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:27', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipientsStatistic.malingStat.waitingForConfirm',
 	'Waiting for confirmation',
@@ -8429,7 +4949,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:20', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'recipientsStatistic.tableHeader.waitingForConfirm',
 	'Waiting for confirmation',
@@ -8441,55 +4961,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:20', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'report.openers.invisible',
-	'Openers (invisible)',
-	'Öffner (unsichtbar)',
-	'Apertura (invisible)',
-	'Ouvreurs (invisibles)',
-	'Lettori (invisibili)',
-	'Openers (onzichtbaar)',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.10.2024 01:02:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'report.openers.total',
-	'Openers (total)',
-	'Öffner (gesamt)',
-	'Apertura (total)',
-	'Ouvreurs (au total)',
-	'Lettori (totali)',
-	'Openers (totaal)',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('17.10.2024 01:02:27', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.RestfulUser.Confirm',
-	'Confirm password',
-	'Passwort bestätigen',
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	1,
-	STR_TO_DATE('28.10.2021 17:53:15', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.06.2024 16:45:59', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'settings.pluginmanager',
-	'Plugin Manager',
-	'Plugin-Manager',
-	'Plugin Manager',
-	'Gestionnaire de plugin',
-	'Plugin Manager',
-	'Pluginmanager',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('22.04.2024 01:02:49', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'sso.saml.redirecting',
 	'Redirecting to single-sign-on server...',
@@ -8501,7 +4973,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'sso.saml.redirecting.click',
 	'Click here if you are not directed.',
@@ -8513,19 +4985,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('13.09.2024 01:02:58', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
-INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
-	'statistic.SocialNetworks',
-	'Social Networks',
-	'Soziale Netzwerke',
-	'Redes sociales',
-	'Réseaux sociaux',
-	'Social network',
-	'Sociale netwerken',
-	NULL,
-	1,
-	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('23.12.2024 09:51:03', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:49', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'support.tpye',
 	'Type of issue',
@@ -8537,7 +4997,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('01.07.2024 10:37:39', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'template.fax.background',
 	'Fax Background',
@@ -8549,7 +5009,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('03.03.2025 01:02:20', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('12.09.2025 12:04:00', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'totp.info.content.twoFactor',
 	'Two-factor authentication is an additional security measure for your user access. Proof of identity is provided with two different and independent access keys.<br/><br/>In addition to your password, you need a 6-digit code via an authenticator app. If you are asked to enter a 6-digit code, then you are already registered for 2FA via the TOTP (Time-based One-time Password) procedure.',
@@ -8561,7 +5021,7 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('23.02.2023 11:15:57', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:35', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:48', '%d.%m.%Y %H:%i:%s'));
 INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
 	'userright.premium.recipient.import.encrypted',
 	'Import of encrypted data columns',
@@ -8573,4 +5033,40 @@ INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_
 	NULL,
 	1,
 	STR_TO_DATE('08.05.2018 17:31:37', '%d.%m.%Y %H:%i:%s'),
-	STR_TO_DATE('18.02.2025 13:31:36', '%d.%m.%Y %H:%i:%s'));
+	STR_TO_DATE('23.04.2025 07:19:50', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'webhooks.event.MAILING_DELIVERED.label',
+	'Mailing delivered to recipient',
+	'Mailing an Empfänger zugestellt',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'webhooks.event.MAILING_OPENED.label',
+	'Mailing opened',
+	'Mailing geöffnet',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('06.05.2021 12:22:22', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));
+INSERT INTO messages_tbl (message_key, value_default, value_de, value_es, value_fr, value_it, value_nl, value_pt, deleted, creation_date, change_date) VALUES (
+	'webhooks.event.TEST_MAILING_DELIVERED.label',
+	'Test/Admin mailing delivered to recipient',
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	1,
+	STR_TO_DATE('16.07.2025 01:02:12', '%d.%m.%Y %H:%i:%s'),
+	STR_TO_DATE('29.09.2025 01:02:40', '%d.%m.%Y %H:%i:%s'));

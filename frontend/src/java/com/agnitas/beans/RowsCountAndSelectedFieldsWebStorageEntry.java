@@ -10,7 +10,6 @@
 
 package com.agnitas.beans;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,12 +29,5 @@ public class RowsCountAndSelectedFieldsWebStorageEntry extends SortingWebStorage
         } else {
             this.selectedFields = selectedFields;
         }
-    }
-
-    @Override
-    public RowsCountAndSelectedFieldsWebStorageEntry clone() throws CloneNotSupportedException {
-        RowsCountAndSelectedFieldsWebStorageEntry entry = (RowsCountAndSelectedFieldsWebStorageEntry) super.clone();
-        entry.setSelectedFields(selectedFields.isEmpty() ? Collections.emptyList() : new ArrayList<>(selectedFields));
-        return entry;
     }
 }

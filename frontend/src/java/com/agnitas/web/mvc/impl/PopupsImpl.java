@@ -10,6 +10,13 @@
 
 package com.agnitas.web.mvc.impl;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.util.Const.Mvc.PERMISSION_DENIED_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+import static java.util.Collections.emptyList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +25,8 @@ import java.util.stream.Collectors;
 
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
+import com.agnitas.messages.entity.MessagePopup;
+import com.agnitas.messages.enums.MessageType;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -40,6 +49,10 @@ public class PopupsImpl implements Popups {
         return new PopupsImpl(messages, fieldMessages);
     }
 
+    public static Popups from(MessagePopup message) {
+        return new PopupsImpl(List.of(message), emptyList());
+    }
+
     public static void put(Map<String, Object> map, PopupsImpl popups) {
         if (popups == null) {
             map.remove(POPUPS_MESSAGES_KEY);
@@ -55,28 +68,6 @@ public class PopupsImpl implements Popups {
 
     public PopupsImpl() {
 
-    }
-
-    public enum MessageType {
-        ERROR, WARNING, SUCCESS, INFO
-    }
-
-    public static class MessagePopup {
-        private final MessageType type;
-        private final Message message;
-
-        public MessagePopup(MessageType type, Message message) {
-            this.type = type;
-            this.message = message;
-        }
-
-        public MessageType getType() {
-            return type;
-        }
-
-        public Message getMessage() {
-            return message;
-        }
     }
 
     public static class FieldMessage {
@@ -150,6 +141,31 @@ public class PopupsImpl implements Popups {
     @Override
     public Popups exactWarning(String text) {
         return warning(new Message(text, false));
+    }
+
+    @Override
+    public Popups changesSaved() {
+        return success(CHANGES_SAVED_MSG);
+    }
+
+    @Override
+    public Popups selectionDeleted() {
+        return success(SELECTION_DELETED_MSG);
+    }
+
+    @Override
+    public Popups defaultError() {
+        return alert(ERROR_MSG);
+    }
+
+    @Override
+    public Popups permissionDenied() {
+        return alert(PERMISSION_DENIED_MSG);
+    }
+
+    @Override
+    public Popups nothingSelected() {
+        return alert(NOTHING_SELECTED_MSG);
     }
 
     @Override

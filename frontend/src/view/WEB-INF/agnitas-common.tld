@@ -85,12 +85,6 @@
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.String</type>
         </attribute>
-        <attribute>
-            <name>redesigned</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
     </tag>
 
     <tag>
@@ -198,37 +192,6 @@
             <required>false</required>
             <rtexprvalue>true</rtexprvalue>
             <type>boolean</type>
-        </attribute>
-    </tag>
-
-    <tag>
-        <name>CheckLogon</name>
-        <tag-class>com.agnitas.taglib.CheckLogonTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>page</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
-
-    <tag>
-        <name>Permission</name>
-        <tag-class>com.agnitas.taglib.PermissionTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>token</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <description>HTML Optional Attribute. Setting the value of this attribute to 'true'
-                will ignore exception throwing.</description>
-            <name>ignoreException</name>
-            <required>false</required>
-            <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
 
@@ -418,27 +381,6 @@
 
     <tag>
         <description>
-            Sets bundle to variable named as value of attribute 'var' with value returned from WebStorage bean
-            by key which has to be set to attribute 'key'.
-        </description>
-        <name>webStorage</name>
-        <tag-class>com.agnitas.taglib.WebStorageTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>var</name>
-            <required>true</required>
-            <rtexprvalue>false</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-        <attribute>
-            <name>key</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>com.agnitas.service.WebStorageBundle</type>
-        </attribute>
-    </tag>
-    <tag>
-        <description>
             Sets the absolute path to the variable.
         </description>
         <name>setAbsolutePath</name>
@@ -493,6 +435,28 @@
             <required>false</required>
             <rtexprvalue>true</rtexprvalue>
             <type>java.lang.Boolean</type>
+        </attribute>
+    </tag>
+
+    <tag>
+        <description>
+            Sets bundle to variable named as value of attribute 'var' with value returned from WebStorage bean
+            by key which has to be set to attribute 'key'.
+        </description>
+        <name>webStorage</name>
+        <tag-class>com.agnitas.taglib.WebStorageTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>var</name>
+            <required>true</required>
+            <rtexprvalue>false</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <name>key</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.agnitas.service.WebStorageBundle</type>
         </attribute>
     </tag>
 

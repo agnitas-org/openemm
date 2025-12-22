@@ -12,19 +12,19 @@ package com.agnitas.emm.core.webhooks.jobqueue;
 
 import java.util.List;
 
-import com.agnitas.service.JobWorker;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.messages.service.WebhookBackendDataMessageGeneratorService;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookRegistryEntry;
 import com.agnitas.emm.core.webhooks.registry.service.WebhookRegistrationService;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public final class WebhookBackendDataMessageGeneratorJobWorker extends JobWorker {
+@JobWorker("WebhookBackendDataMessageGenerator")
+public final class WebhookBackendDataMessageGeneratorJobWorker extends JobWorkerBase {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(WebhookBackendDataMessageGeneratorJobWorker.class);
+	private static final Logger LOGGER = LogManager.getLogger(WebhookBackendDataMessageGeneratorJobWorker.class);
 
 	private WebhookBackendDataMessageGeneratorService messageGenerator;
 	

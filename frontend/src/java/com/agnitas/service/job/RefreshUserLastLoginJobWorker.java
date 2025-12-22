@@ -12,7 +12,8 @@ package com.agnitas.service.job;
 
 import javax.sql.DataSource;
 
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -25,7 +26,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *     VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'RefreshUserLastLogin', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.service.job.RefreshUserLastLoginJobWorker', 0);
  */
-public class RefreshUserLastLoginJobWorker extends JobWorker {
+@JobWorker("RefreshUserLastLogin")
+public class RefreshUserLastLoginJobWorker extends JobWorkerBase {
 	@Override
 	public String runJob() {
 		DataSource dataSource = daoLookupFactory.getBeanDataSource();

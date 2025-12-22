@@ -23,6 +23,14 @@ public class Version implements Comparable<Version> {
 	
 	private boolean legacyFormat = false;
 
+	public static Version of(String versionStr) {
+        try {
+            return new Version(versionStr);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 	public Version(int majorVersion, int minorVersion, int microVersion, int hotfixVersion) {
 		this.majorVersion = majorVersion;
 		this.minorVersion = minorVersion;

@@ -12,19 +12,15 @@ package com.agnitas.emm.core.mailing.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
 import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import com.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -51,11 +47,11 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 	}
 
 	@Override
-	public PaginatedListImpl<MailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID) {
+	public PaginatedList<MailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID) {
 		StringBuilder query = new StringBuilder("SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl info");
 		List<Object> params = applyOverviewFilter(filter, companyID, query);
 
-		PaginatedListImpl<MailingParameter> list = selectPaginatedList(query.toString(), "mailing_info_tbl", filter.getSortOrDefault("creation_date"),
+		PaginatedList<MailingParameter> list = selectPaginatedList(query.toString(), "mailing_info_tbl", filter.getSortOrDefault("creation_date"),
 				filter.ascending(), filter.getPage(), filter.getNumberOfRows(), new MailingParameter_RowMapper(), params.toArray());
 
 		if (filter.isUiFiltersSet()) {
@@ -67,15 +63,6 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 	private List<Object> applyOverviewFilter(MailingParamOverviewFilter filter, int companyId, StringBuilder query) {
 		List<Object> params = applyRequiredOverviewFilter(query, companyId);
-
-		// TODO: EMMGUI-714 remove after old design will be removed
-		if (StringUtils.isNotBlank(filter.getParamQuery())) {
-			query.append(" AND (");
-			query.append(getPartialSearchFilter("info.name")).append(" OR ").append(getPartialSearchFilter("info.description"));
-			query.append(")");
-			params.add(filter.getParamQuery());
-			params.add(filter.getParamQuery());
-		}
 
 		if (StringUtils.isNotBlank(filter.getName())) {
 			query.append(getPartialSearchFilterWithAnd("info.name"));
@@ -145,7 +132,7 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				parameter.getCreationAdminID(),
 				parameter.getChangeAdminID()};
 
-	        newId = insertIntoAutoincrementMysqlTable("mailing_info_id", INSERT_MYSQL, values);
+	        newId = insert("mailing_info_id", INSERT_MYSQL, values);
 		}
 		
 		// set the new id to refresh
@@ -212,7 +199,7 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 			if (parametersAfterUpdate.isEmpty()) {
 				try {
-					throw new Exception(String.format("Possible loss of mailing parameters. Had %d parameters when entering method, having none when leaving", parametersBeforeUpdate.size()));
+					throw new IllegalStateException(String.format("Possible loss of mailing parameters. Had %d parameters when entering method, having none when leaving", parametersBeforeUpdate.size()));
 				} catch (Exception e) {
 					logger.fatal("Possible loss of mailing parameters!", e);
 				}
@@ -283,41 +270,7 @@ public class MailingParameterDaoImpl extends PaginatedBaseDaoImpl implements Mai
 
 		return list.get(0);
 	}
-	
-	@Override
-	public String getIntervalParameter(int mailingID) {
-		List<Map<String, Object>> resultInterval = select("SELECT value FROM mailing_info_tbl WHERE mailing_id = ? AND name = ?", mailingID, ReservedMailingParam.INTERVAL.getName());
-		if (!resultInterval.isEmpty()) {
-			return (String) resultInterval.get(0).get("value");
-		}
 
-		return null;
-	}
-	
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void updateNextStartParameter(int mailingID, Date nextStart) {
-		if (nextStart == null) {
-			update("UPDATE mailing_info_tbl SET value = null WHERE mailing_id = ? AND name = ?",
-					mailingID, ReservedMailingParam.NEXT_START.getName());
-		} else {
-			update("UPDATE mailing_info_tbl SET value = ? WHERE mailing_id = ? AND name = ?",
-					new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(nextStart), mailingID, ReservedMailingParam.NEXT_START.getName());
-		}
-	}
-
-	@Override
-	public void insertMailingError(int companyId, int mailingID, String errorText) {
-		MailingParameter parameter = getParameterByNameDefaultNull(ReservedMailingParam.ERROR.getName(), mailingID, companyId);
-
-		if (parameter != null) {
-			parameter.setMailingInfoID(0);
-			parameter.setName(ReservedMailingParam.ERROR.getName());
-			parameter.setValue(errorText);
-			insertParameter(parameter);
-		}
-	}
-	
     private void logDebugStmt(String stmt) {
         if (logger.isDebugEnabled()) {
             logger.debug("stmt:{}", stmt);

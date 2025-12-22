@@ -10,31 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.Target;
-import com.agnitas.dao.BindingEntryDao;
-import com.agnitas.dao.RecipientDao;
-import com.agnitas.dao.TargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.binding.service.event.OnBindingChangedHandler;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
-import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
-import com.agnitas.emm.core.report.bean.PlainBindingEntry;
-import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryImpl;
-import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.BindingEntryImpl;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import com.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
@@ -50,40 +25,48 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao {
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.BindingEntryImpl;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.TargetDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.binding.service.event.OnBindingChangedHandler;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientStatus;
+import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
+import com.agnitas.emm.core.report.bean.PlainBindingEntry;
+import com.agnitas.emm.core.report.bean.impl.CompositeBindingEntryImpl;
+import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+
+public class BindingEntryDaoImpl extends PaginatedBaseDaoImpl implements BindingEntryDao {
 	
 	private final RecipientDao recipientDao;
 	private final TargetDao targetDao;
 	
 	private List<OnBindingChangedHandler> bindingChangedHandlers;
 	
-	public BindingEntryDaoImpl(final RecipientDao recipientDao, TargetDao targetDao) {
+	public BindingEntryDaoImpl(RecipientDao recipientDao, TargetDao targetDao) {
 		this.recipientDao = Objects.requireNonNull(recipientDao, "recipientDao");
         this.targetDao = targetDao;
         this.bindingChangedHandlers = List.of();
 	}
 	
-	public final void setOnBindingChangedHandlers(final List<OnBindingChangedHandler> handlers) {
+	public void setOnBindingChangedHandlers(List<OnBindingChangedHandler> handlers) {
 		this.bindingChangedHandlers = handlers != null ? handlers : List.of();
 	}
 
-	@Override
-	public boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, int companyId) {
-		String sql = "SELECT COUNT(customer_id) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id IN (" + StringUtils.join(mailinglistIds, ", ") + ")";
-		return selectInt(sql) > 0;
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, int companyId) {
-        if (mailinglistIds == null || mailinglistIds.isEmpty()) {
-            return;
-        }
-
-		String sql = "DELETE FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id IN (" + StringUtils.join(mailinglistIds, ", ") + ")";
-		update(sql);
-	}
-	
 	@Override
 	public BindingEntry get(int recipientID, int companyID, int mailinglistID, int mediaType) {
 		try {
@@ -143,13 +126,13 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 	public boolean updateBinding(BindingEntry entry, int companyID) {
 		try {
 			return updateBindings(companyID, entry) > 0;
-		} catch(final Exception e) {
+		} catch (Exception e) {
 			return false;
 		}
 	}
 
 	@Override
-	public int updateBindings(final int companyId, final BindingEntry... bindings) {
+	public int updateBindings(int companyId, BindingEntry... bindings) {
 		return updateBindings(companyId, Arrays.asList(bindings));
 	}
 
@@ -172,7 +155,7 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 			final BindingEntry binding = bindings.get(i);
 
 			if (!UserStatus.existsWithId(binding.getUserStatus())) {
-				throw new IllegalStateException("Invalid binding user status! - " + binding.getUserStatus());
+				throw new IllegalArgumentException("Invalid binding user status! - " + binding.getUserStatus());
 			}
 			
 			final List<Object> objects = new ArrayList<>();
@@ -307,14 +290,11 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean updateStatus(BindingEntry entry, int companyID) {
+		if (companyID <= 0 || !UserStatus.existsWithId(entry.getUserStatus())) {
+			return false;
+		}
+
 		try {
-			if (companyID <= 0) {
-				return false;
-			}
-			
-			// Check for valid UserStatus code
-			UserStatus.getUserStatusByID(entry.getUserStatus());
-			
 			final List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 			
 			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, exit_mailing_id = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP";
@@ -337,7 +317,7 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 			
 			final int touchedLines = update(sql, sqlParameters.toArray());
 			
-			if(touchedLines > 0) {
+			if (touchedLines > 0) {
 				fireBindingUpdated(companyID, entry);
 			}
 			
@@ -437,6 +417,33 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 	}
 
 	@Override
+	public PaginatedList<BindingEntry> getBindings(Integer mailinglistId, int companyID, UserStatus status, String timestamp, int page, int size) {
+		StringBuilder query = new StringBuilder("SELECT * FROM %s WHERE 1 = 1".formatted(getBindingTableName(companyID)));
+		List<Object> params = new ArrayList<>();
+
+		if (mailinglistId != null) {
+			query.append(" AND mailinglist_id = ?");
+			params.add(mailinglistId);
+		}
+
+		if (status != null) {
+			query.append(" AND user_status = ?");
+			params.add(status.getStatusCode());
+		}
+
+		if (StringUtils.isNotBlank(timestamp)) {
+			if (isOracleDB() || isPostgreSQL()) {
+				query.append(" AND TO_CHAR(timestamp, 'YYYY-MM-DD') LIKE ?");
+			} else {
+				query.append(" AND DATE_FORMAT(timestamp, '%Y-%m-%d') LIKE ?");
+			}
+			params.add(timestamp.replace("*", "%"));
+		}
+
+		return selectPaginatedList(query.toString(), page, size, new BindingEntry_RowMapper(this), params.toArray());
+	}
+
+	@Override
 	public List<CompositeBindingEntry> getCompositeBindings(int companyID, int recipientID) {
 		String bindingTable = "customer_" + companyID + "_binding_tbl";
 		String recipientTable = "customer_" + companyID + "_tbl";
@@ -525,7 +532,8 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 	}
 
 	protected static class BindingEntry_RowMapper implements RowMapper<BindingEntry> {
-		private BindingEntryDao bindingEntryDao;
+
+		private final BindingEntryDao bindingEntryDao;
 		
 		public BindingEntry_RowMapper(BindingEntryDao bindingEntryDao) {
 			this.bindingEntryDao = bindingEntryDao;
@@ -689,7 +697,7 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
         String sql = summedStatusesSelectPart(params, mailinglistId, targetId, companyId)
                 + notSummedStatusesSelectPart(params, mailinglistId, targetId, companyId);
 
-        query(sql, rs -> result.put(rs.getString("status"), rs.getInt("COUNT(*)")), params.toArray());
+        query(sql, rs -> result.put(rs.getString("status"), rs.getInt("count")), params.toArray());
         return result;
     }
 
@@ -701,7 +709,7 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 
     private String getRecipientStatusSelect(List<Object> params, SummedRecipientStatus status, int mailinglistId,
 											int targetId, int companyId) {
-        String sql = "SELECT '" + status.getName() + "' AS status, COUNT(*)" +
+        String sql = "SELECT '" + status.getName() + "' AS status, COUNT(*) AS count" +
                 " FROM customer_" + companyId + "_binding_tbl bind";
         sql += getCustomerTblJoinIfNeeded(mailinglistId, targetId, companyId);
         sql += " WHERE " + status.getLikeSql();
@@ -727,7 +735,7 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
     }
 
     private String notSummedStatusesSelectPart(List<Object> params, int mailinglistId, int targetId, int companyId) {
-        String sql = " SELECT * FROM (SELECT bind.user_remark AS status, COUNT(*)" +
+        String sql = " SELECT * FROM (SELECT bind.user_remark AS status, COUNT(*) AS count" +
                 " FROM customer_" + companyId + "_binding_tbl bind";
         sql += getCustomerTblJoinIfNeeded(mailinglistId, targetId, companyId);
         sql += " WHERE " + remarksNotLikeSummedStatuses();
@@ -751,20 +759,16 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
                 .collect(Collectors.joining(" AND "));
     }
 
-	protected void fireBindingCreated(final int companyID, final BindingEntry binding) {
-		try {
-			fireBindingCreated(
-					companyID, 
-					binding.getCustomerID(), 
-					binding.getMailinglistID(), 
-					MediaTypes.getMediaTypeForCode(binding.getMediaType()), 
-					UserStatus.getUserStatusByID(binding.getUserStatus()));
-		} catch(final UnknownUserStatusException e) {
-			logger.error("Unable to notify OnBindingChanged handler", e);
-		}
+	protected void fireBindingCreated(int companyID, BindingEntry binding) {
+		fireBindingCreated(
+				companyID,
+				binding.getCustomerID(),
+				binding.getMailinglistID(),
+				MediaTypes.getMediaTypeForCode(binding.getMediaType()),
+				UserStatus.getByCode(binding.getUserStatus()));
 	}
 	
-	protected void fireBindingCreated(final int companyID, final int recipientID, final int mailinglistID, final MediaTypes mediatype, final UserStatus userStatus) {
+	protected void fireBindingCreated(int companyID, int recipientID, int mailinglistID, MediaTypes mediatype, UserStatus userStatus) {
 		final List<OnBindingChangedHandler> list = List.copyOf(this.bindingChangedHandlers);
 		
 		for(final OnBindingChangedHandler handler : list) {
@@ -772,20 +776,16 @@ public class BindingEntryDaoImpl extends BaseDaoImpl implements BindingEntryDao 
 		}
 	}
 
-	protected void fireBindingUpdated(final int companyID, final BindingEntry binding) {
-		try {
-			fireBindingUpdated(
-					companyID, 
-					binding.getCustomerID(), 
-					binding.getMailinglistID(), 
-					binding.getMediaType() != -1 ? MediaTypes.getMediaTypeForCode(binding.getMediaType()) : null, 
-					UserStatus.getUserStatusByID(binding.getUserStatus()));
-		} catch(final UnknownUserStatusException e) {
-			logger.error("Unable to notify OnBindingChanged handler", e);
-		}
+	protected void fireBindingUpdated(int companyID, BindingEntry binding) {
+		fireBindingUpdated(
+				companyID,
+				binding.getCustomerID(),
+				binding.getMailinglistID(),
+				binding.getMediaType() != -1 ? MediaTypes.getMediaTypeForCode(binding.getMediaType()) : null,
+				UserStatus.getByCode(binding.getUserStatus()));
 	}
 	
-	protected void fireBindingUpdated(final int companyID, final int recipientID, final int mailinglistID, final MediaTypes mediatype, final UserStatus userStatus) {
+	protected void fireBindingUpdated(int companyID, int recipientID, int mailinglistID, MediaTypes mediatype, UserStatus userStatus) {
 		final List<OnBindingChangedHandler> list = List.copyOf(this.bindingChangedHandlers);
 		
 		for(final OnBindingChangedHandler handler : list) {

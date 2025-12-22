@@ -12,12 +12,12 @@ package com.agnitas.emm.core.mailing.cache;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.daocache.AbstractCompanyBasedDaoCache;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.TimeoutLRUMap;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.commons.daocache.AbstractCompanyBasedDaoCache;
+import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCache<MailingContentType> implements MailingContentTypeCache {
 	private MailingDao mailingDao;

@@ -1,98 +1,39 @@
-(function () {
-  var SetFilter = function () {};
+class SetFilter {
 
-  SetFilter.prototype.init = function (params) {
-    this.column = params.colDef.field;
-    this.values = _.sortBy(_.uniq(
-      _.map(params.rowModel.rowsToDisplay, function(row) {
-        return row.data[params.colDef.field]
-      })
-    ));
+  init(params) {
+    this.params = params;
+    this.column = params.column.colId;
+    this.$el = $(`#${this.column}-filter`);
+    this.filterValues = this.$el.val();
+  }
 
-    this.labels = _.extend({}, params.labels);
+  getGui() {
+    return document.createElement('div'); // filters located in separate filter tile
+  }
 
-    this.eGui = document.createElement('div');
-    this.eGui.innerHTML =
-      "<div class=\"ag-filter\">" +
-      "  <div>" +
-      "    <div class=\"ag-filter-body-wrapper\">" +
-               this.buildOptions() +
-      "    </div>" +
-      "    <div class=\"ag-filter-apply-panel\" id=\"applyPanel\">" +
-      "      <a href=\"#\" id=\"clearFilter\" class=\"\">" + t('tables.clearFilter') + "</a>" +
-      "    </div>" +
-      "  </div>" +
-      "</div>";
+  doesFilterPass(params) {
+    if (!this.filterValues.length) {
+      return true;
+    }
+    let val = params.data[this.column];
+    val = val?.name || val;
 
-    this.checkBoxes = $(this.eGui).find('input');
-    this.checkedBoxes = [];
-    this.clearFilter = $(this.eGui).find('#clearFilter');
-    this.checkBoxes.on('change', this.checkBoxesChanged.bind(this));
-    this.clearFilter.on('click', this.filterClear.bind(this));
+    if (val instanceof Array) {
+      return this.filterValues.every(v => val.includes(v));
+    }
 
-    this.filterActive = false;
-    this.filterChangedCallback = params.filterChangedCallback;
-    this.valueGetter = params.valueGetter;
-  };
+    return this.filterValues.includes(val);
+  }
 
-  SetFilter.prototype.buildOptions = function() {
-    var labels = this.labels;
-    return _.map(this.values, function(value) {
-      var valueLabel = labels.hasOwnProperty(value) ? labels[value] : value;
-      return "<div class=\"ag-filter-body\">" +
-      "  <label class=\"\">" +
-      "    <input class=\"\" type=\"checkbox\" value=\"" + value + "\">" +
-      "    " + valueLabel +
-      "  </label>" +
-      "</div>"
-    }).join("\n");
-  };
+  isFilterActive() {
+    return this.filterValues.length > 0;
+  }
 
-  SetFilter.prototype.afterGuiAttached = function () {
-  };
+  getModel() {
+    return {values: this.filterValues};
+  }
 
-  SetFilter.prototype.destroy = function () {
-    this.checkBoxes.off('change', this.checkBoxesChanged.bind(this));
-    this.clearFilter.off('click', this.filterClear.bind(this));
-  };
-
-  SetFilter.prototype.checkBoxesChanged = function () {
-    this.valuesFiltered = _.map(_.filter(this.checkBoxes, { checked: true }), function(checkbox) {
-      return checkbox.value;
-    });
-
-    this.filterActive = this.valuesFiltered.length !== 0;
-    this.filterChangedCallback();
-  };
-
-
-  SetFilter.prototype.filterClear = function () {
-    this.checkBoxes.removeAttr('checked');
-    this.valuesFiltered = [];
-
-    this.filterActive = false;
-    this.filterChangedCallback();
-  };
-
-  SetFilter.prototype.getGui = function () {
-    return this.eGui;
-  };
-
-  SetFilter.prototype.doesFilterPass = function (params) {
-    var value = this.valueGetter(params.node);
-
-    return _.includes(this.valuesFiltered, value)
-  };
-
-  SetFilter.prototype.isFilterActive = function () {
-    return this.filterActive;
-  };
-
-  // this example isn't using getModel() and setModel(),
-  // so safe to just leave these empty. don't do this in your code!!!
-  SetFilter.prototype.getModel = function () {};
-  SetFilter.prototype.setModel = function () {};
-
-
-  AGN.Lib.TableSetFilter = SetFilter;
-})();
+  setModel(model) {
+    this.filterValues = this.$el.val();
+  }
+}

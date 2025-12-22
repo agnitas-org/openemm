@@ -1,24 +1,23 @@
 AGN.Lib.DomInitializer.new('session-timer', function () {
-  var BLOCK_VISIBLE_TIME_MILLISECONDS = 10 * 60 * 1000;
-  var DELAY_TIME_MILLISECONDS = 5 * 1000;
-  var UNAUTHORIZED_STATUS = 401;
-  var NOT_IMPLEMENTED_STATUS = 501;
+  const BLOCK_VISIBLE_TIME_MILLISECONDS = 10 * 60 * 1000;
+  const DELAY_TIME_MILLISECONDS = 5 * 1000;
+  const UNAUTHORIZED_STATUS = 401;
+  const NOT_IMPLEMENTED_STATUS = 501;
 
   /* data transferred from the backend side */
-  var config = this.config;
-  var sessionInfoUrl = this.config.sessionInfoUrl;
-  var creationTimeMs = this.config.creationTime;
-  var lastAccessedTimeMs = this.config.lastAccessedTime;
-  var maxInactiveIntervalS = this.config.maxInactiveInterval;
+  const config = this.config;
+  const creationTimeMs = this.config.creationTime;
+  const lastAccessedTimeMs = this.config.lastAccessedTime;
+  let maxInactiveIntervalS = this.config.maxInactiveInterval;
 
   /* session expired time in milliseconds */
-  var sessionExpiredDateMs;
+  let sessionExpiredDateMs;
 
   /* flags for identification corresponding operations */
-  var isSessionReallyExpired = false;
-  var isFirstChecking = true;
-  var isChecking = false;
-  var timerLoader;
+  let isSessionReallyExpired = false;
+  let isFirstChecking = true;
+  let isChecking = false;
+  let timerLoader;
 
   if (config && creationTimeMs && lastAccessedTimeMs && maxInactiveIntervalS) {
     sessionExpiredDateMs = maxInactiveIntervalS * 1000 + Date.now();
@@ -27,8 +26,8 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
 
   function startTimer() {
     setInterval(function () {
-      var nowMs = Date.now();
-      var timeLeftMs = (sessionExpiredDateMs > nowMs) ? (sessionExpiredDateMs - nowMs) : 0;
+      const nowMs = Date.now();
+      const timeLeftMs = (sessionExpiredDateMs > nowMs) ? (sessionExpiredDateMs - nowMs) : 0;
       if (!timerLoader) {
         timerLoader = new TimerGUI();
       }
@@ -56,7 +55,7 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
    */
   function checkIsReallyExpired() {
     $.ajax({
-      url: sessionInfoUrl,
+      url: AGN.url('/session/info.action'),
       global: false,
       beforeSend: beforeRequest,
       success: successResponse,
@@ -111,58 +110,61 @@ AGN.Lib.DomInitializer.new('session-timer', function () {
    *
    * @constructor
    */
-  var TimerGUI = function() {
-    var self = this;
-    self.timerLayout = $('#session-time-layout');
-    self.timeField = $('#session-time-field');
 
-    self.isSessionExpiredNotification = false;
+  class TimerGUI {
 
-    /* classes necessary for switching icon */
-    self.refreshIconClass = 'icon icon-refresh icon-spin';
-  };
+    constructor() {
+      this.$timerBlock = $('#session-timer-block');
+      this.$timeLabel = $('#session-time-label');
+      this.isSessionExpiredNotification = false;
 
-  TimerGUI.prototype.showTimerBlock = function(timeLeftMs) {
-    var self = this;
-    self.timerLayout.show();
-    self.printTimerText(timeLeftMs);
-  };
-
-  TimerGUI.prototype.showSessionExpired = function() {
-    var self = this;
-
-    self.printTimerText(0);
-
-    if (!self.isSessionExpiredNotification) {
-      $('body').append(AGN.Lib.Template.text('session-expired'));
-      self.isSessionExpiredNotification = true;
+      /* classes necessary for switching icon */
+      this.refreshIconClass = 'icon icon-spinner icon-pulse';
     }
 
-  };
-
-  TimerGUI.prototype.showLoading = function() {
-    var self = this;
-
-    var loadingText = '<i class="' + self.refreshIconClass + '"></i>';
-    self.changeTimeFieldContent(loadingText);
-  };
-
-  TimerGUI.prototype.printTimerText = function(timeMs) {
-    var self = this;
-
-    var timeString = '00:00';
-    if (timeMs > 0) {
-      var time = new Date(timeMs);
-      timeString = time.getMinutes() > 0 ? d3.format('02')(time.getUTCMinutes()) + ':' : '00:';
-      timeString += time.getSeconds() > 0 ? d3.format('02')(time.getUTCSeconds()) : '00';
+    showTimerBlock(timeLeftMs) {
+      this.$timerBlock.removeClass('hidden');
+      this.printTimerText(timeLeftMs);
     }
 
-    self.changeTimeFieldContent(timeString);
-  };
+    showSessionExpired() {
+      this.printTimerText(0);
 
-  TimerGUI.prototype.changeTimeFieldContent = function(content) {
-    this.timeField.html(content);
-  };
+      if (!this.isSessionExpiredNotification) {
+        const $modal = AGN.Lib.Modal.fromTemplate('session-expired');
+        $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logon.action')));
+
+        this.isSessionExpiredNotification = true;
+      }
+    }
+
+    showLoading() {
+      const loadingText = `<i class="${this.refreshIconClass}"></i>`;
+      this.changeTimeFieldContent(loadingText);
+    }
+
+    printTimerText(timeMs) {
+      let timeString = '00:00';
+      if (timeMs > 0) {
+        const time = new Date(timeMs);
+
+        const minutesStr = this.formatTimeComponent(time.getUTCMinutes());
+        const secondsStr = this.formatTimeComponent(time.getUTCSeconds());
+
+        timeString = `${minutesStr}:${secondsStr}`;
+      }
+
+      this.changeTimeFieldContent(timeString);
+    }
+
+    formatTimeComponent(component) {
+      return component > 0 ? (component < 10 ? '0' + component : component) : '00';
+    }
+
+    changeTimeFieldContent(content) {
+      this.$timeLabel.html(content);
+    }
+  }
 
   return false;
 });

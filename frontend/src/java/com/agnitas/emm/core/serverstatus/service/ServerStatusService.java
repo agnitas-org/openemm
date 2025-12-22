@@ -11,23 +11,22 @@
 package com.agnitas.emm.core.serverstatus.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
+import com.agnitas.service.JobDto;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Version;
 import jakarta.servlet.ServletContext;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import com.agnitas.service.JobDto;
 import org.json.JSONArray;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ServerStatusService {
-    
-    boolean checkDatabaseConnection();
     
     String getDbVendor();
     
@@ -37,7 +36,6 @@ public interface ServerStatusService {
     
     List<VersionStatus> getLatestDBVersionsAndErrors();
     
-    Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception;
 	int calcDiskSpaceFreePercentage();
     
     ServerStatus getServerStatus(ServletContext servletContext, Admin admin);
@@ -70,9 +68,7 @@ public interface ServerStatusService {
 
 	boolean isReportStatusOK();
 
-	File downloadConfigFile() throws Exception;
-
-	File getFullTbl(String dbStatement, String tableName) throws Exception;
+	File downloadConfigFile() throws IOException;
 
 	JSONArray getSystemStatus();
 
@@ -91,4 +87,6 @@ public interface ServerStatusService {
 	boolean isLicenseStatusOK();
 
 	boolean isOverallStatusOK();
+
+	File unzipLicenseFile(MultipartFile archiveFile) throws Exception;
 }

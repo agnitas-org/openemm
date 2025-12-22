@@ -14,7 +14,7 @@ import jakarta.xml.bind.JAXBElement;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.GetMailingRequest;

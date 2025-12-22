@@ -22,8 +22,8 @@ import com.agnitas.emm.core.widget.enums.WidgetType;
 import com.agnitas.emm.core.widget.service.WidgetService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 

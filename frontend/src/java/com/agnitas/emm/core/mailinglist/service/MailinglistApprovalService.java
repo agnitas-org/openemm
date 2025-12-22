@@ -16,12 +16,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-
-import com.agnitas.beans.Admin;
+import com.agnitas.service.SimpleServiceResult;
 
 public interface MailinglistApprovalService {
+
+	boolean hasEnabledMailinglistsForAdmin(Admin admin);
 
 	List<Mailinglist> getEnabledMailinglistsForAdmin(Admin admin);
 
@@ -41,18 +43,10 @@ public interface MailinglistApprovalService {
 	boolean setDisabledMailinglistForAdmin(int companyId, int adminId, Collection<Integer> mailinglistIds, Optional<List<UserAction>> userActions);
 
     /**
-     * Disable mailinglist for all admins in collection. <br>
-     * If collection is empty enable mailinglist for all admins. <br>
-     * Works faster if adminIDs is a set.
-     * @param adminIds set of adminIDs ids to disable
-     * @return were batch updates successful
-     */
-	boolean setAdminsDisallowedToUseMailinglist(int companyId, int mailinglistId, Collection<Integer> adminIds);
-
-    /**
      * Get all mailinglist which are not available for the admin.
      */
 	List<Integer> getDisabledMailinglistsForAdmin(int companyId, int adminId);
+
 	List<Integer> getDisabledMailinglists(Admin admin);
 
 	/**
@@ -74,4 +68,7 @@ public interface MailinglistApprovalService {
 	List<Integer> getMailinglistsWithMailinglistApproval(int companyId);
 
     Map<Integer, String> getMailinglistsMap(Admin admin);
+
+	SimpleServiceResult checkMaxCountOfALML(int count, int currentCount, int companyId);
+
 }

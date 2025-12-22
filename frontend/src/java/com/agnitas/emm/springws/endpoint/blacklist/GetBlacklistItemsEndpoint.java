@@ -12,7 +12,7 @@ package com.agnitas.emm.springws.endpoint.blacklist;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.GetBlacklistItemsRequest;

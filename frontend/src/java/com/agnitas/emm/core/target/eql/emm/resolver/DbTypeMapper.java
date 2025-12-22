@@ -10,17 +10,15 @@
 
 package com.agnitas.emm.core.target.eql.emm.resolver;
 
+import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.emm.core.target.eql.codegen.DataType;
-
 public class DbTypeMapper {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(DbTypeMapper.class);
+	private static final Logger logger = LogManager.getLogger(DbTypeMapper.class);
 	
 	public static DataType mapDbType(DbColumnType columnType) {
 		SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(columnType.getTypeName(), columnType.getNumericScale());
@@ -36,20 +34,18 @@ public class DbTypeMapper {
 	 */
 	public static DataType mapDbType(SimpleDataType columnType) {
 		switch(columnType) {
-			case Numeric:
-			case Float:
+			case Numeric, Float:
 				return DataType.NUMERIC;
 				
 			case Characters:
 				return DataType.TEXT;
 	
-			case Date:
-			case DateTime:
+			case Date, DateTime:
 				return DataType.DATE;
 				
 			default:
-				logger.error("Unsupported column type " + columnType);
-				throw new IllegalStateException("Unsupported column type " + columnType);
+				logger.error("Unsupported column type {}", columnType);
+				throw new IllegalArgumentException("Unsupported column type " + columnType);
 		}
 	}
 

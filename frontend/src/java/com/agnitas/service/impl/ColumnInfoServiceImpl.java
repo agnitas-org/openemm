@@ -88,12 +88,12 @@ public class ColumnInfoServiceImpl implements ColumnInfoService {
 	}
 	
 	@Override
-	public Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception {
+	public Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) {
 		return profileFieldDao.getProfileFieldAdminPermissions(companyID, columnName);
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
 		profileFieldDao.storeProfileFieldAdminPermissions(companyID, columnName, editableUsers, readOnlyUsers, notVisibleUsers);
 	}
 }

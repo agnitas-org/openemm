@@ -12,6 +12,7 @@ package com.agnitas.service.impl;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,50 +22,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.beans.AbstractTrackableLink;
 import com.agnitas.beans.BaseTrackableLinkImpl;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.beans.impl.DynamicTagContentImpl;
-import com.agnitas.beans.impl.MailingComponentImpl;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.service.ImportResult;
-import com.agnitas.service.MailingImporter;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
 import com.agnitas.beans.Campaign;
-import com.agnitas.beans.Target;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.Target;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.beans.impl.MailingComponentImpl;
 import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.beans.impl.TrackableLinkImpl;
@@ -73,17 +55,33 @@ import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.UiMessageException;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
+import com.agnitas.service.ImportResult;
+import com.agnitas.service.MailingImporter;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
 import com.agnitas.util.LinkUtils;
-
+import com.agnitas.util.importvalues.MailType;
 import jakarta.annotation.Resource;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 public class MailingImporterImpl extends ActionImporter implements MailingImporter, ApplicationContextAware {
     
@@ -122,30 +120,25 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      * Import simple mailing or grid mailing or templates
      */
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid) throws Exception {
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid) {
 		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid, null);
 	}
     
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) {
 		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid, adminAltgIds);
 	}
 
-    /**
-     * Import simple mailing or template
-     */
-	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
+	protected ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) {
 		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, true, isGrid, adminAltgIds);
 	}
 	
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception {
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) {
         return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, checkIsTemplate, isGrid, null);
     }
 
-    @Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
+	protected ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid, Set<Integer> adminAltgIds) {
 		Map<String, Object[]> warnings = new HashMap<>();
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
@@ -195,15 +188,17 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				} else {
 					mailingService.saveMailingWithNewContent(storedMailing);
 				}
-				
+
 				return ImportResult.builder().setSuccess(true)
 						.setMailingID(importedMailingID)
 						.setIsTemplate(importAsTemplate)
 						.addWarnings(warnings).build();
 			}
+		} catch (UiMessageException ume) {
+			throw ume;
 		} catch (Exception e) {
-			logger.error("Error in mailing import: " + e.getMessage(), e);
-			throw e;
+			logger.error("Error in mailing import: {}", e.getMessage(), e);
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -211,7 +206,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
         return isNotEmpty(adminAltgIds) && CollectionUtils.intersection(targetIds, adminAltgIds).isEmpty();
     }
 
-	protected Map<Integer, Integer> importActions(JsonObject jsonObject, int companyID) throws Exception {
+	protected Map<Integer, Integer> importActions(JsonObject jsonObject, int companyID) {
 		Map<Integer, Integer> result = new HashMap<>();
 
 		if (jsonObject.containsPropertyKey("actions")) {
@@ -226,11 +221,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		return result;
 	}
 
-    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds, boolean overwrite) throws Exception {
+    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds, boolean overwrite) {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
 
-		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
-		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+        String companyToken = companyDao.getCompanyToken(companyID);
 		
 		mailing.setCompanyID(companyID);
 		
@@ -239,7 +233,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailing.getShortname(), false);
 		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-			throw new Exception("Invalid mailing data containing HTML for field: " + "shortname");
+			throw new RuntimeException("Invalid mailing data containing HTML for field: " + "shortname");
 		}
 		
 		mailing.setDescription(StringUtils.defaultString(description, (String) jsonObject.get("description")));
@@ -247,7 +241,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailing.getDescription(), false);
 		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-			throw new Exception("Invalid mailing data containing HTML for field: " + "description");
+			throw new RuntimeException("Invalid mailing data containing HTML for field: " + "description");
 		}
 		
 		mailing.setIsTemplate(importAsTemplate);
@@ -322,7 +316,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				try {
 					HtmlChecker.checkForUnallowedHtmlTags(mailingParameter.getName(), false);
 				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Mailing parameter name contains unallowed HTML tags");
+					throw new RuntimeException("Mailing parameter name contains unallowed HTML tags");
 				}
 				mailingParameter.setValue((String) parameterJsonObject.get("value"));
 				mailingParameter.setDescription((String) parameterJsonObject.get("description"));
@@ -342,7 +336,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				try {
 					HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
 				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Component name contains unallowed HTML tags");
+					throw new RuntimeException("Component name contains unallowed HTML tags");
 				}
 				
 				mailingComponent.setDescription((String) componentJsonObject.get("description"));
@@ -350,7 +344,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				try {
 					HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
 				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Component description contains unallowed HTML tags");
+					throw new RuntimeException("Component description contains unallowed HTML tags");
 				}
 				
 				if (!componentJsonObject.containsPropertyKey("type")) {
@@ -381,13 +375,13 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					try {
 						HtmlChecker.checkForUnallowedHtmlTags(emmBlock, true);
 					} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-						throw new Exception("Component contains unallowed HTML tags");
+						throw new RuntimeException("Component contains unallowed HTML tags");
 					}
 				}
 				if (componentJsonObject.containsPropertyKey("target_id")) {
 					Integer targetID = targetIdMappings.get(componentJsonObject.get("target_id"));
 					if (targetID == null) {
-						throw new Exception("Invalid target_id found for component: " + (String) componentJsonObject.get("name"));
+						throw new RuntimeException("Invalid target_id found for component: " + componentJsonObject.get("name"));
 					}
 					mailingComponent.setTargetID(targetID);
 				}
@@ -397,8 +391,12 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				}
 
 				if (componentJsonObject.containsPropertyKey("bin_block")) {
-					mailingComponent.setBinaryBlock(AgnUtils.decodeZippedBase64((String) componentJsonObject.get("bin_block")), (String) componentJsonObject.get("mimetype"));
-				}
+                    try {
+                        mailingComponent.setBinaryBlock(AgnUtils.decodeZippedBase64((String) componentJsonObject.get("bin_block")), (String) componentJsonObject.get("mimetype"));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 				components.put(mailingComponent.getComponentName(), mailingComponent);
 			}
 			mailing.setComponents(components);
@@ -415,7 +413,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				try {
 					HtmlChecker.checkForNoHtmlTags(dynamicTag.getDynName());
 				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-					throw new Exception("Mailing content name contains unallowed HTML tags");
+					throw new RuntimeException("Mailing content name contains unallowed HTML tags");
 				}
 				
 				if (contentJsonObject.containsPropertyKey("disableLinkExtension")) {
@@ -438,7 +436,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						try {
 							HtmlChecker.checkForUnallowedHtmlTags(contentText, true);
 						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
-							throw new Exception("Mailing content contains unallowed HTML tags");
+							throw new RuntimeException("Mailing content contains unallowed HTML tags");
 						}
 						
 						dynamicTagContent.setDynContent(contentText);
@@ -472,7 +470,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
         if (importAsTemplate) {
             List<Integer> idsWithSameName = mailingDao.getClassicTemplatesByName(mailing.getShortname(), companyID);
             if (!overwrite && isNotEmpty(idsWithSameName)) {
-                throw new RequestErrorException("error.template.import.duplicate");
+                throw new BadRequestException("error.template.import.duplicate");
             }
             if (overwrite) {
                 if (idsWithSameName.size() > 1) {
@@ -487,15 +485,20 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
         return mailingDao.saveMailing(mailing, false);
 	}
 
-	protected <T extends AbstractTrackableLink> List<T> readTrackableLinks(Class<T> clazz, JsonObject jsonObject, int companyID, String companyToken, String rdirDomain, Map<Integer, Integer> actionIdMappings) throws Exception {
+	protected <T extends AbstractTrackableLink> List<T> readTrackableLinks(Class<T> clazz, JsonObject jsonObject, int companyID, String companyToken, String rdirDomain, Map<Integer, Integer> actionIdMappings) {
 		String defaultLinkExtension = configService.getValue(ConfigValue.DefaultLinkExtension, companyID);
 
 		List<T> trackableLinks = new ArrayList<>();
 		for (Object linkObject : (JsonArray) jsonObject.get("links")) {
 			JsonObject linkJsonObject = (JsonObject) linkObject;
-			T trackableLink = clazz.getDeclaredConstructor().newInstance();
+            T trackableLink;
+            try {
+                trackableLink = clazz.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new IllegalStateException("Can't instantiate an object of class: " + clazz.getName(), e);
+            }
 
-			trackableLink.setShortname((String) linkJsonObject.get("name"));
+            trackableLink.setShortname((String) linkJsonObject.get("name"));
 
 			try {
 				HtmlChecker.checkForUnallowedHtmlTags(trackableLink.getShortname(), false);
@@ -605,7 +608,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				String targetSQL = (String) targetJsonObject.get("sql");
 				String targetEQL = (String) targetJsonObject.get("eql");
 				boolean isAccessLimitation = targetJsonObject.containsPropertyKey("access_limiting") && (Boolean) targetJsonObject.get("access_limiting");
-				for (Target existingTarget : targetDao.getTargetByNameAndSQL(companyID, targetName, targetSQL, false, true, true)) {
+				for (Target existingTarget : targetDao.getTargetByNameAndSQL(companyID, targetName, targetSQL, false)) {
 					if(existingTarget.isValid()) {
 						if (AgnUtils.equalsIgnoreLineBreaks(existingTarget.getEQL(), targetEQL) && existingTarget.isAccessLimitation() == isAccessLimitation) {
 							targetID = existingTarget.getId();
@@ -647,7 +650,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		return newTargetExpression.toString();
 	}
 
-	protected void readMediatypes(Mailing mailing, JsonObject jsonObject) throws Exception {
+	protected void readMediatypes(Mailing mailing, JsonObject jsonObject) {
 		final Map<Integer, Mediatype> mediatypes = new HashMap<>();
 		if (jsonObject.containsPropertyKey("mediatypes")) {
 			for (Object mediatypeObject : (JsonArray) jsonObject.get("mediatypes")) {
@@ -656,7 +659,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					final Mediatype mediatype = mediatypeFactory.createMediatypeFromJson(mediatypeJsonObject);
 					mediatypes.put(mediatype.getMediaType().getMediaCode(), mediatype);
 				} catch (@SuppressWarnings("unused") Exception e) {
-					logger.warn("Ignoring unsupported mediatype: " + (String) mediatypeJsonObject.get("type"));
+					logger.warn("Ignoring unsupported mediatype: " + mediatypeJsonObject.get("type"));
 				}
 			}
 		}
@@ -683,7 +686,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = Objects.requireNonNull(applicationContext);
 	}
 	

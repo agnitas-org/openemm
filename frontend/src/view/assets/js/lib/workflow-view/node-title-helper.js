@@ -23,6 +23,20 @@
     return !!name ? name : '';
   }
 
+  NodeTitleHelper.addArchiveName = function (id, name) {
+    addEntityName('archive', id, name);
+  }
+
+  NodeTitleHelper.addMailingName = function (id, name) {
+    addEntityName('mailing', id, name);
+  }
+
+  function addEntityName(type, id, name) {
+    const names = ENTITY_NAMES_BY_TYPE[type] || {};
+    names[id] = name;
+    ENTITY_NAMES_BY_TYPE[type] = names;
+  }
+
   NodeTitleHelper.getWebFormName = function (webFormId) {
     return getEntityNameByType('form', webFormId, "/workflow/ajax/getWebFormNames.action");
   };
@@ -50,37 +64,6 @@
   NodeTitleHelper.getMailinglistName = function (mailinglistId) {
     return getEntityNameByType('mailinglist', mailinglistId, "/workflow/ajax/getMailinglistNames.action");
   };
-
-  function getReactionImage(reaction) {
-    switch (reaction) {
-      case Def.constants.reactionOpened:
-        return "reaction_opened.png";
-      case Def.constants.reactionNotOpened:
-        return "reaction_notopened.png";
-      case Def.constants.reactionClicked:
-        return "reaction_clicked.png";
-      case Def.constants.reactionNotClicked:
-        return "reaction_notclicked.png";
-      case Def.constants.reactionBought:
-        return "reaction_bought.png";
-      case Def.constants.reactionNotBought:
-        return "reaction_notbought.png";
-      case Def.constants.reactionChangeOfProfile:
-        return "reaction_profilechange.png";
-      case Def.constants.reactionWaitingForConfirm:
-        return "reaction_wfc.png";
-      case Def.constants.reactionOptIn:
-        return "reaction_optin.png";
-      case Def.constants.reactionOptOut:
-        return "reaction_optout.png";
-      case Def.constants.reactionClickedLink:
-        return "reaction_clicked.png";
-      case Def.constants.reactionOpenedAndClicked:
-        return "reaction_profilechange.png";
-      case Def.constants.reactionOpenedOrClicked:
-        return "reaction_profilechange.png";
-    }
-  }
 
   function getReactionName(reaction) {
     switch (reaction) {
@@ -275,6 +258,10 @@
   }
 
   NodeTitleHelper.positionTitle = function(node, anchorsInUse) {
+    if (node.type === 'split') {
+      node.positionTitle(Def.BOTTOM);
+      return;
+    }
     if (anchorsInUse[Def.BOTTOM]) {
         if (anchorsInUse[Def.LEFT]) {
             if (anchorsInUse[Def.RIGHT]) {
@@ -368,7 +355,7 @@
 
   var getFollowUpMailingNodeTitle = function(data, node) {
     var baseMailingName, followUpMailingName;
-    var title = node.getTitle();
+    var title = node.title;
 
     baseMailingName = NodeTitleHelper.getMailingName(data.baseMailingId) || '?';
     followUpMailingName = NodeTitleHelper.getMailingName(data.mailingId) || '?';
@@ -388,62 +375,33 @@
     }
   }
 
-  var TITLE_CONFIG = {
-    '*': {
-      overlayImage: {},
-      overlayTitle: '',
-      title: ''
-    },
-    start: {
-      title: getStartNodeTitle,
-      isImageAvailable: function(data) {
-        return Def.constants.startTypeEvent === data.startType && Def.constants.startEventReaction === data.event;
-      },
-      overlayImage: function(data) {
-        if (this.isImageAvailable(data)) {
-          return {visible: true, image: getReactionImage(data.reaction), title: getReactionName(data.reaction)}
-        } else {
-          return {};
-        }
-      },
-    },
-    stop: {
-      title: getStopNodeTitle,
-    },
-    deadline: {
-      title: getDeadlineNodeTitle,
-    },
+  const TITLE_CONFIG = {
+    '*': { overlayTitle: '', title: ''},
+    start: { title: getStartNodeTitle },
+    stop: { title: getStopNodeTitle },
+    deadline: { title: getDeadlineNodeTitle },
     parameter: {
       title: '',
-      overlayTitle: function(data) {
-        return data.value;
-      }
+      overlayTitle: data => data.value
     },
+    split: { title: data => t(`split.ratio.${data.splitType}`) },
     decision: {
       title: getDecisionNodeTitle,
       branches: {
-        title: function () {
-          return {
-            positive: t('workflow.defaults.yes'),
-            negative: t('workflow.defaults.no')
-          };
-        }
+        title: () => ({
+          positive: t('defaults.yes'),
+          negative: t('defaults.no')
+        })
       }
     },
     recipient: {
-      title: function(data, node) {
-        return getRecipientDescription(data.mailinglistId, data.targets, data.targetsOption, !node.isInRecipientsChain());
-      }
+      title: (data, node) => getRecipientDescription(data.mailinglistId, data.targets, data.targetsOption, !node.isInRecipientsChain())
     },
     archive: {
-      title: function(data) {
-        return NodeTitleHelper.getArchiveName(data.campaignId)
-      }
+      title: data => NodeTitleHelper.getArchiveName(data.campaignId)
     },
     form: {
-      title: function(data) {
-        return NodeTitleHelper.getWebFormName(data.userFormId);
-      }
+      title: data => NodeTitleHelper.getWebFormName(data.userFormId)
     },
     mailing: MAILING_TITLE_CONFIG,
     mailing_mediatype_sms: MAILING_TITLE_CONFIG,
@@ -454,14 +412,10 @@
       title: getFollowUpMailingNodeTitle
     },
     import: {
-      title: function(data) {
-        return NodeTitleHelper.getAutoImportName(data.importexportId);
-      }
+      title: data => NodeTitleHelper.getAutoImportName(data.importexportId)
     },
     export: {
-      title: function(data) {
-        return NodeTitleHelper.getAutoExportName(data.importexportId);
-      }
+      title: data => NodeTitleHelper.getAutoExportName(data.importexportId)
     }
   };
 
@@ -469,7 +423,7 @@
     var type = node.getType();
     if (Def.NODE_TYPES_MAILING.includes(type) || Def.NODE_TYPES_IMPORT_EXPORT.includes(type)) {
       //if title exists don't update for mailing and import/export nodes
-      return !!node.getTitle();
+      return !!node.title;
     }
 
     return false;
@@ -487,20 +441,14 @@
     if (!node.isFilled()) {
       //reset all titles items
       node.setTitle('');
-      node.setOverlayImage({});
       node.setOverlayTitle('');
       return;
     }
 
     node.setTitle(generateNodeTitle(node, isNormalWorkflow));
-    node.setOverlayImage(generateOverlayImage(node));
     node.setOverlayTitle(generateOverlayTitle(node));
 
   };
-
-  function generateOverlayImage(node) {
-    return getConfiguration(node.getType(), 'overlayImage', node.getData());
-  }
 
   function generateOverlayTitle(node) {
     return getConfiguration(node.getType(), 'overlayTitle', node.getData());

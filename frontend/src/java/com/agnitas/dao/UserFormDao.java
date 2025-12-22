@@ -15,10 +15,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-
-import com.agnitas.util.Tuple;
-
 import com.agnitas.userform.bean.UserForm;
+import com.agnitas.util.Tuple;
 
 /**
  * interface for user form functions
@@ -38,8 +36,6 @@ public interface UserFormDao {
 	void updateUserForm(int companyId, UserForm form);
 
 	int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive);
-
-	List<UserForm> getByIds(int companyId, Collection<Integer> formIds);
 
     /**
      * Deletes user form identified by form name and company id.

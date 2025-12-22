@@ -13,8 +13,8 @@ package com.agnitas.emm.restful.util.quota;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.restful.util.quota.dao.RestfulQuotaDao;
 import com.agnitas.emm.util.quota.tokenbucket.AbstractLocalBucketManager;
 
@@ -24,20 +24,20 @@ public final class LocalBucketManager extends AbstractLocalBucketManager {
 	private RestfulQuotaDao quotaDao;
 	
 	@Override
-	protected final Optional<String> findBandwidthSettingsForUser(final String username, final int companyId) {
+	protected Optional<String> findBandwidthSettingsForUser(String username, int companyId) {
 		return this.quotaDao.readQuotaSpecs(username, companyId);
 	}
 
 	@Override
-	protected final String findDefaultBandwidthSettings(final int companyId) {
+	protected String findDefaultBandwidthSettings(int companyId) {
 		return configService.getValue(ConfigValue.DefaultRestfulApiCallLimits, companyId);
 	}
 	
-	public final void setConfigService(final ConfigService configService) {
+	public void setConfigService(ConfigService configService) {
 		this.configService = Objects.requireNonNull(configService, "ConfigService is null");
 	}
 	
-	public final void setRestfulQuotaDao(final RestfulQuotaDao dao) {
+	public void setRestfulQuotaDao(RestfulQuotaDao dao) {
 		this.quotaDao = Objects.requireNonNull(dao, "RestfulQuotaDao is null");
 	}
 

@@ -10,47 +10,27 @@
 
 package com.agnitas.emm.core.company.dao.impl;
 
-import com.agnitas.emm.core.company.dao.CompanyTokenDao;
-import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-
-import java.util.List;
 import java.util.Optional;
+
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.company.dao.CompanyTokenDao;
 
 public final class CompanyTokenDaoImpl extends BaseDaoImpl implements CompanyTokenDao {
 
 	@Override
-	public final int getCompanyIdByToken(final String token) throws UnknownCompanyTokenException {
-		final List<Integer> list = select("SELECT company_id FROM company_tbl WHERE company_token=?", IntegerRowMapper.INSTANCE, token);
-
-		// For security reasons we also report a UnknownCompanyTokenException when token is assigned to more than 1 company
-		if(list.size() != 1) {
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format("Found company token '%s' in %d companies", token, list.size()));
-			}
-			
-			throw new UnknownCompanyTokenException(token);
-		}
-		
-		return list.get(0);
+	public Optional<Integer> getCompanyIdByToken(String token) {
+		Integer companyId = selectIntDefaultNull("SELECT company_id FROM company_tbl WHERE company_token = ?", token);
+		return Optional.ofNullable(companyId);
 	}
 
 	@Override
-	public final Optional<String> getCompanyToken(final int companyID) throws UnknownCompanyIdException {
-		final List<String> list = select("SELECT company_token FROM company_tbl WHERE company_id=?", StringRowMapper.INSTANCE, companyID);
-		
-		if(list.isEmpty()) {
-			throw new UnknownCompanyIdException(companyID);
-		}
-		
-		return Optional.ofNullable(list.get(0));
+	public Optional<String> getCompanyToken(int companyID) {
+		String token = selectStringDefaultNull("SELECT company_token FROM company_tbl WHERE company_id = ?", companyID);
+		return Optional.ofNullable(token);
 	}
 
 	@Override
-	public final void assignToken(final int companyID, final String token) {
-		update("UPDATE company_tbl SET company_token=? WHERE company_id=?", token, companyID);
+	public void assignToken(int companyID, String token) {
+		update("UPDATE company_tbl SET company_token = ? WHERE company_id = ?", token, companyID);
 	}
 }

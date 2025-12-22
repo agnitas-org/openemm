@@ -45,7 +45,7 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 			
 	        Object[] values = new Object[] { stat.getJobId(), stat.getMailingId(), stat.getTargetGroupId(), stat.getRevenue() };
 
-	        newId = insertIntoAutoincrementMysqlTable("mailing_stat_tgtgrp_id", insertStatement, values);
+	        newId = insert("mailing_stat_tgtgrp_id", insertStatement, values);
  		}
 		
 		String insStm = "INSERT INTO mailing_statistic_value_tbl (mailing_stat_tgtgrp_id, category_index, stat_value, stat_quotient)"

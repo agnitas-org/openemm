@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.emm.core.recipient.service.RecipientModel;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientModel;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;

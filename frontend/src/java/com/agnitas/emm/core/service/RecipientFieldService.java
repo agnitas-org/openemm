@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.service;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +19,7 @@ import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public interface RecipientFieldService {
 
@@ -65,17 +64,6 @@ public interface RecipientFieldService {
 	        return messageKey;
 	    }
 	}
-	
-	/**
-	 * Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
-	 */
-	List<String> OLD_SOCIAL_MEDIA_FIELDS = Arrays.asList(
-		"facebook_status",
-		"foursquare_status",
-		"google_status",
-		"twitter_status",
-		"xing_status"
-	);
 
 	Set<String> getStandardFieldsNames(int companyId);
 	List<RecipientFieldDescription> getRecipientFields(int companyID);

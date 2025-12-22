@@ -18,8 +18,7 @@ public class ExportColumnMapping {
 	private String dbColumn;
 	private String fileColumn;
 	private String defaultValue;
-	private boolean encrypted;
-	
+
 	public ExportColumnMapping() {
 	}
 	
@@ -27,11 +26,10 @@ public class ExportColumnMapping {
         this.dbColumn = dbColumn;
     }
 	
-	public ExportColumnMapping(String dbColumn, String fileColumn, String defaultValue, boolean encrypted) {
+	public ExportColumnMapping(String dbColumn, String fileColumn, String defaultValue) {
 		this.dbColumn = dbColumn;
 		this.fileColumn = fileColumn;
 		this.defaultValue = defaultValue;
-		this.encrypted = encrypted;
 	}
 	
 	public int getId() {
@@ -66,16 +64,8 @@ public class ExportColumnMapping {
 		this.defaultValue = defaultValue;
 	}
 	
-	public boolean isEncrypted() {
-		return encrypted;
-	}
-	
-	public void setEncrypted(boolean encrypted) {
-		this.encrypted = encrypted;
-	}
-
     @Override
     public int hashCode() {
-        return Objects.hash(id, dbColumn, fileColumn, defaultValue, encrypted);
+        return Objects.hash(id, dbColumn, fileColumn, defaultValue);
     }
 }

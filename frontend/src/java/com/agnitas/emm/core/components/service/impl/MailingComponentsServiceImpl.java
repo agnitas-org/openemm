@@ -10,53 +10,10 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.MailingComponentDao;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.common.exceptions.ZipDownloadException;
-import com.agnitas.emm.common.service.BulkFilesDownloadService;
-import com.agnitas.emm.core.commons.StreamHelper;
-import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
-import com.agnitas.emm.core.components.dto.MailingImageDto;
-import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
-import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
-import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
-import com.agnitas.emm.core.components.exception.AttachmentDownloadException;
-import com.agnitas.emm.core.components.form.AttachmentType;
-import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
-import com.agnitas.emm.core.components.service.MailingComponentsService;
-import com.agnitas.emm.core.components.service.ComponentValidationService;
-import com.agnitas.emm.core.components.util.ComponentsUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.MimeTypeService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.ImageUtils;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.factory.MailingComponentFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.Const;
-import com.agnitas.util.Tuple;
-import com.agnitas.web.forms.PaginationForm;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.ImageUtils.makeMobileDescriptionIfNecessary;
+import static com.agnitas.util.ImageUtils.makeMobileFilenameIfNecessary;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -75,9 +32,51 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static com.agnitas.util.ImageUtils.makeMobileDescriptionIfNecessary;
-import static com.agnitas.util.ImageUtils.makeMobileFilenameIfNecessary;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.factory.MailingComponentFactory;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.exceptions.ZipDownloadException;
+import com.agnitas.emm.common.service.BulkFilesDownloadService;
+import com.agnitas.emm.core.commons.StreamHelper;
+import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.MailingImageDto;
+import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
+import com.agnitas.emm.core.components.exception.AttachmentDownloadException;
+import com.agnitas.emm.core.components.form.AttachmentType;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
+import com.agnitas.emm.core.components.service.ComponentValidationService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
+import com.agnitas.emm.core.components.util.ComponentsUtils;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.MimeTypeService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Const;
+import com.agnitas.util.ImageUtils;
+import com.agnitas.util.Tuple;
+import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 public class MailingComponentsServiceImpl implements MailingComponentsService {
 
@@ -119,13 +118,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 		return mailingComponentDao.getMailingComponents(companyID, mailingId, componentIds);
     }
 
-    @Override
-    public MailingComponent getComponent(int componentId, int companyID) {
-		return mailingComponentDao.getMailingComponent(componentId, companyID);
-    }
-
-    @Override
-	public MailingComponent getComponent(int companyId, int mailingId, int componentId) {
+	private MailingComponent getComponent(int companyId, int mailingId, int componentId) {
 		return mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
     }
 
@@ -166,11 +159,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 			if (attachment.isUsePdfUpload()) {
 				int uploadId = attachment.getUploadId();
 				mimeType = "application/pdf";
-
-				try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-                    sendDataToStream(uploadId, os);
-                    content = os.toByteArray();
-				}
+				content = getUploadData(uploadId);
 			} else {
 				content = attachment.getAttachmentFile().getBytes();
 				mimeType = attachment.getAttachmentFile().getContentType();
@@ -186,7 +175,6 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 				component.setEmmBlock(new String(attachment.getAttachmentFile().getBytes(), StandardCharsets.UTF_8), mimeType);
 			} else {
 				component.setType(MailingComponentType.Attachment);
-
 				component.setBinaryBlock(content, mimeType);
 			}
 
@@ -201,9 +189,9 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 		}
 	}
 
-    protected void sendDataToStream(int uploadId, ByteArrayOutputStream os) throws Exception {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
-    }
+	protected byte[] getUploadData(int uploadId) {
+		throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
+	}
 
     protected String getUploadedFilename(int uploadId) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_LOG_MSG);
@@ -228,8 +216,8 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
     }
 
     @Override
-    public PaginatedListImpl<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter) {
-		PaginatedListImpl<MailingComponent> images = mailingComponentDao.getImagesOverview(companyId, mailingId, filter);
+    public PaginatedList<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter) {
+		PaginatedList<MailingComponent> images = mailingComponentDao.getImagesOverview(companyId, mailingId, filter);
 		return conversionService.convertPaginatedList(images, MailingComponent.class, MailingImageDto.class);
     }
 
@@ -244,7 +232,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 	}
 
 	@Override
-	public PaginatedListImpl<MailingAttachmentDto> getAttachmentsOverview(PaginationForm form, int mailingId, int companyId) {
+	public PaginatedList<MailingAttachmentDto> getAttachmentsOverview(PaginationForm form, int mailingId, int companyId) {
 		List<MailingAttachmentDto> attachments = conversionService.convert(
 				getPreviewHeaderComponents(companyId, mailingId),
 				MailingComponent.class,
@@ -259,7 +247,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 				.limit(form.getNumberOfRows())
 				.collect(Collectors.toList());
 
-		return new PaginatedListImpl<>(sortedAttachments, attachments.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
+		return new PaginatedList<>(sortedAttachments, attachments.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
 	}
 
 	private Comparator<MailingAttachmentDto> getAttachmentsComparator(PaginationForm form) {
@@ -300,14 +288,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
 		return mailingComponentDao.getMailingComponents(mailingId, companyId, componentType, includeContent);
 	}
 
-    @Override
-    public void deleteComponent(int companyId, int mailingId, int componentId) {
-		MailingComponent component = mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
-		deleteComponent(component);
-	}
-
-    @Override
-	public void deleteComponent(MailingComponent component) {
+	private void deleteComponent(MailingComponent component) {
 		if (component != null) {
 			mailingComponentDao.deleteMailingComponent(component);
 		}
@@ -554,12 +535,12 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
     					final String name = FilenameUtils.getName(path);
 
     					if (!entry.isDirectory() && ImageUtils.isValidImageFileExtension(FilenameUtils.getExtension(name))) {
-    						logger.info("uploadImagesBulk(): found image file '" + path + "' in ZIP stream");
+    						logger.info("uploadImagesBulk(): found image file '{}' in ZIP stream", path);
     						countOverall++;
 
     						if (validateFileSize(archiveFilename + "/" + path, entry.getSize())) {
     							byte[] content = StreamHelper.streamToByteArray(zipStream);
-    							if (ImageUtils.isValidImage(content, configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
+    							if (ImageUtils.isValidImage(content)) {
     								importImage(name, content);
     							} else {
     								invalidFiles.add(archiveFilename + "/" + path);
@@ -589,7 +570,7 @@ public class MailingComponentsServiceImpl implements MailingComponentsService {
                 if (validateFileSize(filename, file.getSize())) {
                     byte[] content = file.getBytes();
 
-                    if (ImageUtils.isValidImage(content, configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
+                    if (ImageUtils.isValidImage(content)) {
                         importImage(filename, file.getContentType(), content, link, description, mobileBase);
                         userActions.add(new UserAction("upload mailing component file", String.format("%s(%d), uploaded image `%s`", mailingName, mailingId, filename)));
                     } else {

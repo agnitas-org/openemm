@@ -13,20 +13,20 @@ package com.agnitas.emm.core.mailing.service.impl;
 import java.util.Date;
 import java.util.Objects;
 
-import com.agnitas.dao.MailingDao;
-import com.agnitas.util.DateUtilities;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MailingBackendLog;
 import com.agnitas.dao.DeliveryStatDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.post.TriggerdialogService;
+import com.agnitas.util.DateUtilities;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailingDeliveryStatServiceImpl implements MailingDeliveryStatService {
 
@@ -119,43 +119,39 @@ public class MailingDeliveryStatServiceImpl implements MailingDeliveryStatServic
 	        String statusField = getStatusField(mailingType);
 	
 	        // check generation status first
-	        try {
-	            MaildropEntry maildropGenerationStatus = deliveryStatDao.getFirstMaildropGenerationStatus(companyID, mailingID, statusField);
-	            if (maildropGenerationStatus != null) {
-	                deliveryStatistic.setOptimizeMailGeneration(maildropGenerationStatus.getMailGenerationOptimization());
-	                deliveryStatistic.setScheduledGenerateTime(maildropGenerationStatus.getGenDate());
-	                deliveryStatistic.setScheduledSendTime(maildropGenerationStatus.getSendDate());
-	                final MaildropGenerationStatus aktMdropStatusOrNull = MaildropGenerationStatus.fromCodeOrNull(maildropGenerationStatus.getGenStatus());
-	
-	                if(aktMdropStatusOrNull != null) {
-	                	switch(aktMdropStatusOrNull) {
-	                    case SCHEDULED:
-	                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
-	                        break;
-	                    case NOW:
-	                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
-	                        break;
-	                    case WORKING:
-	                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATING);
-	                        break;
-	                    case FINISHED:
-	                        deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATED);
-	                        break;
-	                    default:
-	                    	throw new Exception("Invalid gen status type");
-	               	
-	                	}
-	                } else {
-	                	throw new Exception("Invalid gen status type");
-	                }
-	            } else {
-	                // mailing not scheduled for sending:
-	                deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_NOT_SENT);
-	            }
-	        } catch (Exception e) {
-	            return deliveryStatistic;
-	        }
-	
+			MaildropEntry maildropGenerationStatus = deliveryStatDao.getFirstMaildropGenerationStatus(companyID, mailingID, statusField);
+			if (maildropGenerationStatus != null) {
+				deliveryStatistic.setOptimizeMailGeneration(maildropGenerationStatus.getMailGenerationOptimization());
+				deliveryStatistic.setScheduledGenerateTime(maildropGenerationStatus.getGenDate());
+				deliveryStatistic.setScheduledSendTime(maildropGenerationStatus.getSendDate());
+				final MaildropGenerationStatus aktMdropStatusOrNull = MaildropGenerationStatus.fromCodeOrNull(maildropGenerationStatus.getGenStatus());
+
+				if(aktMdropStatusOrNull != null) {
+					switch(aktMdropStatusOrNull) {
+					case SCHEDULED:
+						deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
+						break;
+					case NOW:
+						deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_SCHEDULED);
+						break;
+					case WORKING:
+						deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATING);
+						break;
+					case FINISHED:
+						deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_GENERATED);
+						break;
+					default:
+						return deliveryStatistic;
+
+					}
+				} else {
+					return deliveryStatistic;
+				}
+			} else {
+				// mailing not scheduled for sending:
+				deliveryStatistic.setDeliveryStatus(DeliveryStat.STATUS_NOT_SENT);
+			}
+
 	        //----------------------------------------------------------------------
 	        if (!deliveryStatistic.getLastType().equalsIgnoreCase(MaildropStatus.WORLD.getCodeString())) {
 	            int lastWorldMailingStatusID = mailingDao.getStatusidForWorldMailing(deliveryStatistic.getMailingID(), deliveryStatistic.getCompanyID());
@@ -185,7 +181,7 @@ public class MailingDeliveryStatServiceImpl implements MailingDeliveryStatServic
 	
 	                    // loadSendDate
 	                    try {
-	                        deliveryStatistic.setScheduledSendTime(deliveryStatDao.getSendDateFoStatus(statusID));
+	                        deliveryStatistic.setScheduledSendTime(deliveryStatDao.getSendDateByStatusId(statusID));
 	                    } catch (Exception e) {
 	                        return deliveryStatistic;
 	                    }

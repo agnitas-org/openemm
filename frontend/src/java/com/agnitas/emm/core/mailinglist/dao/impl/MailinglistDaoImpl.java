@@ -10,27 +10,8 @@
 
 package com.agnitas.emm.core.mailinglist.dao.impl;
 
-import com.agnitas.beans.Target;
-import com.agnitas.dao.TargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.MailinglistImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,11 +21,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.MailinglistImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.TargetDao;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
+
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
-
-	protected static final Set<String> SORTABLE_FIELDS = new HashSet<>(Arrays.asList("mailinglist_id", "shortname", "description", "creation_date", "change_date"));
-
-	protected static final MailinglistEntryRowMapper MAILING_LIST_ENTRY_ROW_MAPPER = new MailinglistEntryRowMapper();
 
 	protected static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
 
@@ -61,25 +53,13 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public boolean checkMailinglistInUse(int mailinglistId, int companyId) {
-		if (mailinglistId > 0 && companyId > 0) {
-			return selectInt("SELECT COUNT(*) FROM mailing_tbl WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", mailinglistId, companyId) > 0;
-		}
-
-		return false;
-	}
-
-	@Override
 	public Mailinglist getMailinglist(int listID, int companyId) {
 		return getMailinglist(listID, getMailinglistSqlFieldsForSelect(), companyId);
 	}
 
 	protected Mailinglist getMailinglist(int id, String columns, int companyId) {
 		if (id == 0 || companyId == 0) {
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Unable to load mailinglist (mailinglist ID %d, company ID %d)", id, companyId));
-			}
-
+			logger.info("Unable to load mailinglist (mailinglist ID {}, company ID {})", id, companyId);
 			return null;
 		}
 
@@ -209,34 +189,6 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public PaginatedListImpl<MailinglistEntry> getMailinglists(int companyId, int adminId, String sort, String direction, int page, int rownums) {
-		if (!SORTABLE_FIELDS.contains(sort)) {
-			sort = "shortname";
-		}
-
-		final String selectQuery = "SELECT m.mailinglist_id, m.shortname, m.description, m.creation_date, m.change_date FROM mailinglist_tbl m " +
-				"   WHERE m.company_id = ? AND m.deleted = 0";
-		
-		final boolean sortAscending = AgnUtils.sortingDirectionToBoolean(direction, true);
-
-		if (StringUtils.endsWith(sort, "_date")) {
-			final String sortClause = "ORDER BY " + formatDateClause("m." + sort) + " " + (sortAscending ? "ASC" : "DESC");
-
-			return selectPaginatedListWithSortClause(selectQuery, sortClause, sort, sortAscending, page, rownums, MAILING_LIST_ENTRY_ROW_MAPPER, companyId);
-		}
-
-		return selectPaginatedList(selectQuery, "mailinglist_tbl", sort, sortAscending, page, rownums, MAILING_LIST_ENTRY_ROW_MAPPER, companyId);
-	}
-
-	public String formatDateClause(String sortField) {
-		if(isOracleDB()) {
-			return "to_char(" + sortField + ", 'YYYYMMDD')";
-		}
-
-		return "DATE_FORMAT(" + sortField + ", '%Y%m%d')";
-	}
-
-	@Override
 	public int getNumberOfActiveAdminSubscribers(int targetId, int companyId, int id) {
 		Set<String> userTypes = Set.of("'" + UserType.Admin.getTypeCode() + "'");
 		return getActiveSubscribersCount(companyId, targetId, id, userTypes);
@@ -281,7 +233,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public int countSubscribers(final int mailinglistId, final int companyId, final int targetId, final boolean includeWorldRecipients, final boolean includeAdminRecipients, final boolean includeTestRecipients, final Set<Integer> bindingStates) {
+	public int countSubscribers(int mailinglistId, int companyId, int targetId, boolean includeWorldRecipients, boolean includeAdminRecipients, boolean includeTestRecipients, Set<Integer> bindingStates) {
 		// If no status given default to "active"
 		final Set<Integer> filterBindingStates = bindingStates == null || bindingStates.isEmpty()
 				? Set.of(UserStatus.Active.getStatusCode())
@@ -331,57 +283,19 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 			// logging was already done
 			return 0;
 		}
-
-	}
-
-
-	@Override
-	public int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId, int companyId, int id) {
-		Set<String> userTypes = new HashSet<>();
-
-		if (!world) {
-			if (admin || test) {
-				if (admin) {
-					userTypes.add("'" + UserType.Admin.getTypeCode() + "'");
-				}
-				if (test) {
-					userTypes.add("'" + UserType.TestUser.getTypeCode() + "'");
-					userTypes.add("'" + UserType.TestVIP.getTypeCode() + "'");
-				}
-
-				// do not use target-group if pure admin/test-mailing
-				// targetId = 0;		// Disabled by EMM-9121
-			} else {
-				return 0;
-			}
-		}
-
-		String sqlStatement = "SELECT COUNT(*) FROM customer_" + companyId + "_tbl cust, customer_" + companyId + "_binding_tbl bind WHERE" +
-				" bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id AND bind.user_status = " + UserStatus.Active.getStatusCode();
-
-		if (targetId > 0) {
-			Target aTarget = targetDao.getTarget(targetId, companyId);
-			if (aTarget != null) {
-				sqlStatement += " AND (" + aTarget.getTargetSQL() + ")";
-			}
-		}
-
-		if (!userTypes.isEmpty()) {
-			sqlStatement += " AND bind.user_type IN (" + StringUtils.join(userTypes, ", ") + ")";
-		}
-
-		try {
-			return selectInt(sqlStatement, id);
-		} catch (Exception e) {
-			// logging was already done
-			return 0;
-		}
 	}
 
 	@Override
 	public Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID) {
 		Map<Integer, Integer> returnMap = new HashMap<>();
-		List<Map<String,Object>> result = select("SELECT bind.user_status AS status, COUNT(*) AS amount FROM customer_" + companyId + "_tbl cust, customer_" + companyId + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id GROUP BY bind.user_status", mailinglistID);
+		List<Map<String,Object>> result = select("""
+				SELECT bind.user_status AS status, COUNT(*) AS amount
+				FROM customer_%d_tbl cust,
+				     customer_%d_binding_tbl bind
+				WHERE bind.mailinglist_id = ?
+				  AND cust.customer_id = bind.customer_id
+				GROUP BY bind.user_status
+				""".formatted(companyId, companyId), mailinglistID);
 		for (Map<String,Object> row : result) {
 			returnMap.put(((Number) row.get("status")).intValue(), ((Number) row.get("amount")).intValue());
 		}
@@ -405,9 +319,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
     @Override
     public Mailinglist getDeletedMailinglist(int mailinglistId, int companyId) {
         if (mailinglistId == 0 || companyId == 0) {
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Unable to load deleted mailinglist (mailinglist ID %d, company ID %d)", mailinglistId, companyId));
-            }
+			logger.info("Unable to load deleted mailinglist (mailinglist ID {}, company ID {})", mailinglistId, companyId);
             return null;
         }
 
@@ -437,7 +349,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         return StringUtils.join(fields, ", ");
     }
 
-    protected int performInsertForOracle(final int companyId, final Mailinglist mailinglist) {
+    protected int performInsertForOracle(int companyId, Mailinglist mailinglist) {
         final int newID = selectInt("SELECT mailinglist_tbl_seq.NEXTVAL FROM DUAL");
         final int touchedLines = update(
                 "INSERT INTO mailinglist_tbl (mailinglist_id, company_id, shortname, description, creation_date, change_date, sender_email, reply_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -458,9 +370,9 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         return mailinglist.getId();
     }
 
-    protected int performInsertForMySql(final int companyId, final Mailinglist mailinglist) {
+    protected int performInsertForMySql(int companyId, Mailinglist mailinglist) {
         final String insertStatement = "INSERT INTO mailinglist_tbl (company_id, shortname, description, creation_date, change_date, sender_email, reply_email) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        final int newID = insertIntoAutoincrementMysqlTable("mailinglist_id", insertStatement,
+        final int newID = insert("mailinglist_id", insertStatement,
                 companyId,
                 mailinglist.getShortname(),
                 mailinglist.getDescription(),
@@ -472,7 +384,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
         return mailinglist.getId();
     }
 
-    protected int performUpdate(final int companyId, final Mailinglist mailinglist){
+    protected int performUpdate(int companyId, Mailinglist mailinglist){
         //execute update
         final int touchedLines = update(
                 "UPDATE mailinglist_tbl SET shortname = ?, description = ?, change_date = ?, sender_email = ?, reply_email = ? WHERE mailinglist_id = ? AND deleted = 0 AND company_id = ?",
@@ -500,18 +412,4 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		}
 	}
 
-    public static class MailinglistEntryRowMapper implements RowMapper<MailinglistEntry> {
-
-		@Override
-		public MailinglistEntry mapRow(ResultSet resultSet, int i) throws SQLException {
-			MailinglistEntry mailinglistEntry = new MailinglistEntry();
-			mailinglistEntry.setId(resultSet.getInt("mailinglist_id"));
-			mailinglistEntry.setShortname(resultSet.getString("shortname"));
-			mailinglistEntry.setDescription(resultSet.getString("description"));
-			mailinglistEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
-			mailinglistEntry.setChangeDate(resultSet.getTimestamp("change_date"));
-
-			return mailinglistEntry;
-		}
-	}
 }

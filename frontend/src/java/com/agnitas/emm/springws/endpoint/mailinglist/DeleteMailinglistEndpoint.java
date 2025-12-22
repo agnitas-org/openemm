@@ -12,7 +12,7 @@ package com.agnitas.emm.springws.endpoint.mailinglist;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.DeleteMailinglistRequest;
@@ -40,7 +40,7 @@ public class DeleteMailinglistEndpoint extends BaseEndpoint {
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteMailinglistRequest")
-	public @ResponsePayload DeleteMailinglistResponse deleteMailinglist(@RequestPayload DeleteMailinglistRequest request) throws Exception {
+	public @ResponsePayload DeleteMailinglistResponse deleteMailinglist(@RequestPayload DeleteMailinglistRequest request) {
 		final DeleteMailinglistResponse response = new DeleteMailinglistResponse();
 		final boolean result = mailinglistService.deleteMailinglist(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId());
 		

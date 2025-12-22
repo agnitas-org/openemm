@@ -116,8 +116,11 @@ public class MessageDaoImpl extends BaseDaoImpl implements MessageDao {
     @Override
     public int getMessageKeysQuantity(String prefix, boolean isIncludeDeleted) {
         String escapedPrefix = DbUtilities.escapeLikeExpression(prefix, '\\');
-        return selectInt("SELECT count(message_key) FROM messages_tbl WHERE message_key LIKE ? " +
-				(!isIncludeDeleted ? " AND deleted = 0" : "") +
-				" ORDER BY deleted DESC",escapedPrefix + "%");
+        return selectInt("""
+			SELECT count(message_key)
+			FROM messages_tbl
+			WHERE message_key LIKE ?
+			%s
+			""".formatted(!isIncludeDeleted ? " AND deleted = 0" : ""), escapedPrefix + "%");
     }
 }

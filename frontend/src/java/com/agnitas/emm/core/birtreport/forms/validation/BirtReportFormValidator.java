@@ -19,8 +19,8 @@ import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.web.mvc.Popups;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -73,18 +73,12 @@ public class BirtReportFormValidator {
 	}
 
     public boolean isValidToEvaluate(BirtReportForm form, Admin admin, Popups popups) {
-		if (admin.isRedesignedUiUsed()) {
-			if (!isValidCommonSettings(form, popups)) {
-				return false;
-			}
-
-			ReportSettingsType type = birtReportService.getBirtReportSettingsTypeForEvaluation(form.getActiveTab(), admin);
-			return validateBirtReport(type, form, popups, admin);
-		} else {
-			ReportSettingsType activeType = ReportSettingsType.getTypeByCode(form.getActiveTab());
-			return isValidCommonSettings(form, popups)
-					&& validateBirtReport(activeType, form, popups, admin);
+		if (!isValidCommonSettings(form, popups)) {
+			return false;
 		}
+
+		ReportSettingsType type = birtReportService.getBirtReportSettingsTypeForEvaluation(form.getActiveTab(), admin);
+		return validateBirtReport(type, form, popups, admin);
     }
 
     private boolean isValidCommonSettings(BirtReportForm form, Popups popups) {

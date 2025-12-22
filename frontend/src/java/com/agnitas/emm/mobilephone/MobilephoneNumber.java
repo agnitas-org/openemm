@@ -31,7 +31,7 @@ public final class MobilephoneNumber {
 	 * 
 	 * @throws NumberFormatException in phone number is not in valid form
 	 */
-	public MobilephoneNumber(final String number) throws NumberFormatException {
+	public MobilephoneNumber(String number) {
 		this.phoneNumber = normalizeAndCheck(number);
 	}
 	
@@ -45,7 +45,7 @@ public final class MobilephoneNumber {
 	 * 
 	 * @throws NumberFormatException if given phone number is not in valid form
 	 */
-	private static final String normalizeAndCheck(final String s) throws NumberFormatException {
+	private static String normalizeAndCheck(String s) {
 		final String withoutSpaces = s.replace(" ", "");
 		
 		if(PATTERN.matcher(withoutSpaces).matches()) {

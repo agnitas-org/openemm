@@ -11,21 +11,10 @@ const minifyCSS = (srcFiles, destFile) => {
 };
 
 module.exports = {
-  compileCss: () => {
-    return minifyCSS([
-      `${config.assets}/application.css`,
-      `${config.assets}/help.css`
-    ], `${config.assets}`);
+  minifyCss: () => {
+    return minifyCSS(`${config.assets}/application.css`, `${config.assets}`);
   },
-  compileRedesignedCss: () => {
-    return minifyCSS([
-      `${config.assets}/application.redesigned.css`,
-      `${config.assets}/help.css`
-    ], `${config.assets}`);
-  },
-  compileLanding: () => {
-    return minifyCSS([
-      `${config.assets}/landing.css`
-    ], `${config.assets}`);
+  minifyLanding: () => {
+    return minifyCSS(`${config.assets}/landing.css`, `${config.assets}`);
   }
 };

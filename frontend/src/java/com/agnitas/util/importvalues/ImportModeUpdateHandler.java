@@ -19,7 +19,7 @@ import com.agnitas.beans.ImportStatus;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +30,8 @@ import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportModeUpdateHandler implements ImportModeHandler {
-    private static final transient Logger logger = LogManager.getLogger(ImportModeUpdateHandler.class);
+
+    private static final Logger logger = LogManager.getLogger(ImportModeUpdateHandler.class);
     
     private ImportRecipientsDao importRecipientsDao;
 
@@ -63,11 +64,11 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 		// Update customer data
 		if (importProfile.getUpdateAllDuplicates()) {
 			// Update all existing customer identified by keycolumns
-			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumnImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumnImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId);
 			status.setUpdated(updatedEntries);
 		} else {
 			// Update the first existing customer only
-			int updatedEntries = importRecipientsDao.updateFirstExistingCustomersImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateFirstExistingCustomersImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId);
 			status.setUpdated(updatedEntries);
 		}
 	}

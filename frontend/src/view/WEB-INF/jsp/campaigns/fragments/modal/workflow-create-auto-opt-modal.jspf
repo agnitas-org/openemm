@@ -1,0 +1,30 @@
+
+<script id="create-auto-opt-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" data-initializer="own-workflow-expanding-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="mailing.autooptimization"/></h1>
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="auto-opt-mailings-count"><mvc:message code="workflow.autooptimization.mailing.count"/></label>
+                    <select id="auto-opt-mailings-count" name="confirm-choice" class="form-control">
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-confirm-positive>
+                        <i class="icon icon-check"></i>
+                        <span><mvc:message code="button.Apply"/></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

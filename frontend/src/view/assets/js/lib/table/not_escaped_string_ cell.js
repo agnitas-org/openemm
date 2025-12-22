@@ -1,27 +1,41 @@
-(function () {
+(() => {
 
-  var NotEscapedStringCellRenderer = function () {};
+  class NotEscapedStringCellRenderer {
 
-  NotEscapedStringCellRenderer.prototype.init = function (params) {
-    this.gui = AGN.Lib.TableCellWrapper(params.data.show);
+    // gets called once before the renderer is used
+    init(params) {
+      const api = params.api;
+      this.gui = AGN.Lib.TableCellWrapper(
+        api.getGridOption('viewLinkTemplate'),
+        api.getGridOption('viewInModal'),
+        api.getGridOption('isRestoreMode')(),
+        params.data
+      );
 
-    var contentDiv = document.createElement("div");
-    if (params.value) {
-      contentDiv.innerHTML = params.value;
+      const contentDiv = document.createElement("div");
+      if (params.value) {
+        contentDiv.innerHTML = params.value;
+      }
+
+      contentDiv.classList.add("text-truncate-table");
+      this.gui.appendChild(contentDiv);
     }
-    contentDiv.style.cssText =
-      'text-overflow: ellipsis;' +
-      'overflow: hidden;';
-    this.gui.appendChild(contentDiv);
-  };
 
-  NotEscapedStringCellRenderer.prototype.getGui = function () {
-    return this.gui;
-  };
+    // gets called once when grid ready to insert the element
+    getGui() {
+      return this.gui;
+    }
 
-  NotEscapedStringCellRenderer.prototype.refresh = function () {
-    return false;
-  };
+    // gets called whenever the user gets the cell to refresh
+    refresh() {
+      return false;
+    }
+
+    // gets called when the cell is removed from the grid
+    destroy() {
+      // do cleanup, remove event listener from button
+    }
+  }
 
   AGN.Opt.TableCellRenderers['NotEscapedStringCellRenderer'] = NotEscapedStringCellRenderer;
 })();

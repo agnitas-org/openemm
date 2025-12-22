@@ -30,12 +30,7 @@ public interface DynamicTagDao {
 	void markNameAsDeleted(int mailingID, String name);
 	void markNamesAsDeleted(int mailingID, List<String> names);
 
-	void markNameAsUsed(int mailingID, String name);
-	void markNamesAsUsed(int mailingID, List<String> names);
-
 	void deleteDynamicTagsMarkAsDeleted(int retentionTime);
-
-	String getDynamicTagInterestGroup(int companyId, int mailingId, int dynTagId);
 
 	boolean deleteDynamicTagsByCompany(int companyID);
 

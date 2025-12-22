@@ -10,6 +10,7 @@
 
 package com.agnitas.dao.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,14 +20,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
 import com.agnitas.dao.JobQueueDao;
+import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
 import com.agnitas.service.JobDto;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -35,57 +35,64 @@ import org.springframework.jdbc.core.RowMapper;
 public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 
 	@Override
+	public List<JobDto> readUpcomingJobsForExecutionByRunClass() {
+		return select("""
+				SELECT *
+				FROM job_queue_tbl
+				WHERE running <= 0
+				  AND nextStart IS NOT NULL
+				  AND nextStart < CURRENT_TIMESTAMP
+				  AND deleted <= 0
+				  AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0)
+				  AND runClass IS NOT NULL
+				""", new Job_RowMapper());
+	}
+
+	@Override
 	public List<JobDto> readUpcomingJobsForExecution() {
-		try {
-			return select("SELECT * FROM job_queue_tbl WHERE running <= 0 AND nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP AND deleted <= 0 AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0) AND runClass IS NOT NULL", new Job_RowMapper());
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading jobs from database", e);
-		}
+		return select("""
+				SELECT *
+				FROM job_queue_tbl
+				WHERE running <= 0
+				  AND nextStart IS NOT NULL
+				  AND nextStart < CURRENT_TIMESTAMP
+				  AND deleted <= 0
+				  AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0)
+				  AND job_name IS NOT NULL
+				""", new Job_RowMapper());
 	}
 
 	@Override
 	public List<JobDto> getJobsWithLostNextStart() {
-		return select(isOracleDB() ? """
+		return select(isOracleDB() || isPostgreSQL() ? """
 			SELECT * FROM job_queue_tbl
 			WHERE deleted <= 0
 			  AND startAfterError > 0
 			  AND TRIM(interval) IS NOT NULL
-			  AND TRIM(nextStart) IS NULL
+			  AND nextStart IS NULL
 			  AND hostname = ?
 			""" : """
 			SELECT * FROM job_queue_tbl
 			WHERE deleted <= 0
 			  AND startAfterError > 0
 			  AND TRIM(`interval`) != ''
-			  AND TRIM(nextStart) IS NULL
+			  AND nextStart IS NULL
 			  AND hostname = ?
 			""", new Job_RowMapper(), AgnUtils.getHostName());
 	}
 
 	@Override
 	public JobDto getJob(int id) {
-		if (id <= 0) {
-			return null;
-		} else {
-			try {
-				return selectObjectDefaultNull("SELECT * FROM job_queue_tbl WHERE id = ?", new Job_RowMapper(), id);
-			} catch (Exception e) {
-				throw new RuntimeException("Error while reading job from database", e);
-			}
-		}
+		return selectObjectDefaultNull("SELECT * FROM job_queue_tbl WHERE id = ?", new Job_RowMapper(), id);
 	}
 
 	@Override
 	public JobDto getJob(String description) {
 		if (StringUtils.isBlank(description)) {
 			return null;
-		} else {
-			try {
-				return selectObjectDefaultNull("SELECT * FROM job_queue_tbl WHERE description = ?", new Job_RowMapper(), description);
-			} catch (Exception e) {
-				throw new RuntimeException("Error while reading job from database", e);
-			}
 		}
+
+		return selectObjectDefaultNull("SELECT * FROM job_queue_tbl WHERE description = ?", new Job_RowMapper(), description);
 	}
 
 	@Override
@@ -96,18 +103,18 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean initJobStart(final int id, final Date nextStart, final boolean manuallyOverride) {
+	public boolean initJobStart(int id, Date nextStart, boolean manuallyOverride) {
 		if (id < 0) {
 			return false;
-		} else {
-			// Lock this job by setting running flag and setting next start to calculated value
-			int touchedLines = update("UPDATE job_queue_tbl SET running = 1, nextStart = ?, hostname = ?"
-				+ " WHERE running <= 0"
-				+ (manuallyOverride ? "": " AND nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP AND deleted <= 0 AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0)")
-				+ " AND id = ?", nextStart, AgnUtils.getHostName(), id);
-			
-			return touchedLines == 1;
 		}
+
+		// Lock this job by setting running flag and setting next start to calculated value
+		int touchedLines = update("UPDATE job_queue_tbl SET running = 1, nextStart = ?, hostname = ?"
+			+ " WHERE running <= 0"
+			+ (manuallyOverride ? "": " AND nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP AND deleted <= 0 AND (lastResult IS NULL OR lastResult = 'OK' OR startAfterError > 0)")
+			+ " AND id = ?", nextStart, AgnUtils.getHostName(), id);
+
+		return touchedLines == 1;
 	}
 	
 	/**
@@ -118,73 +125,89 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	public boolean updateJob(JobDto job) {
 		if (job == null) {
 			return false;
-		} else {
-			try {
-				// Update Job in DB
-				String lastResult = job.getLastResult();
-				if (lastResult != null && lastResult.length() > 512) {
-					lastResult = lastResult.substring(0, 508) + " ...";
-				}
-				String updateSql;
-				if (isOracleDB()) {
-					updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, interval = ?, nextStart = ?, hostname = ?, runClass = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
-				} else {
-					updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, `interval` = ?, nextStart = ?, hostname = ?, runClass = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
-				}
-				int touchedLines = update(
-					updateSql,
-					job.getDescription(),
-					job.getCreated(),
-					job.getLastStart(),
-					job.isRunning(),
-					lastResult,
-					job.isStartAfterError(),
-					job.getLastDuration(),
-					job.getInterval(),
-					job.getNextStart(),
-					AgnUtils.getHostName(),
-					job.getRunClass(),
-					job.getRunOnlyOnHosts(),
-					job.getEmailOnError(),
-					job.isDeleted(),
-					job.getId());
-				
-				if (touchedLines != 1) {
-					throw new RuntimeException("Invalid touched lines amount");
-				} else {
-					return true;
-				}
-			} catch (Exception e) {
-				logger.error("Error while updating job job status", e);
-				throw new RuntimeException("Error while updating job job status", e);
-			}
 		}
+
+		// Update Job in DB
+		String lastResult = job.getLastResult();
+		if (lastResult != null && lastResult.length() > 512) {
+			lastResult = lastResult.substring(0, 508) + " ...";
+		}
+		String updateSql;
+		if (isOracleDB() || isPostgreSQL()) {
+			updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, interval = ?, nextStart = ?, hostname = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
+		} else {
+			updateSql = "UPDATE job_queue_tbl SET description = ?, created = ?, lastStart = ?, running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", startAfterError = ?, lastDuration = ?, `interval` = ?, nextStart = ?, hostname = ?, runonlyonhosts = ?, emailonerror = ?, deleted = ? WHERE id = ?";
+		}
+		int touchedLines = update(
+				updateSql,
+				job.getDescription(),
+				job.getCreated(),
+				job.getLastStart(),
+				job.isRunning() ? 1 : 0,
+				lastResult,
+				job.isStartAfterError() ? 1 : 0,
+				job.getLastDuration(),
+				job.getInterval(),
+				job.getNextStart(),
+				AgnUtils.getHostName(),
+				job.getRunOnlyOnHosts(),
+				job.getEmailOnError(),
+				job.isDeleted() ? 1 : 0,
+				job.getId()
+		);
+
+		if (touchedLines != 1) {
+			throw new IllegalStateException("Invalid touched lines amount");
+		}
+
+		return true;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteJob(int id) {
-		if (id <= 0) {
-			return false;
-		} else {
-			try {
-				return update("UPDATE job_queue_tbl SET deleted = 1 WHERE deleted <= 0 AND id = ?", id) > 0;
-			} catch (DataAccessException e) {
-				// No Job found
-				return false;
-			} catch (Exception e) {
-				throw new RuntimeException("Error while deleting job from database", e);
-			}
-		}
+	public void resetJobsForCurrentHost() {
+		fixRenamedJobs();
+		fixKilledJobs();
+		fixErroneousJobs();
+		fixMissingNextStartJobs();
 	}
 
-	@Override
-	@DaoUpdateReturnValueCheck
-	public int resetJobsForCurrentHost() {
+	private void fixErroneousJobs() {
 		String hostName = AgnUtils.getHostName();
-		int renamedJobsResetted = update("""
-            UPDATE job_queue_tbl
-            SET lastresult = NULL, nextstart = CURRENT_TIMESTAMP
+		List<JobDto> jobs = select("""
+            SELECT *
+            FROM job_queue_tbl
+            WHERE hostname = ?
+              AND lastresult IS NOT NULL
+              AND lastresult != 'OK'""", new Job_RowMapper(), hostName);
+		for (JobDto job : jobs) {
+			job.setLastResult(null);
+			logger.error("Resetting erroneous job ({}) formerly started by host ({})", job, hostName);
+			updateJob(job);
+		}
+	}
+
+	private void fixKilledJobs() {
+		String hostName = AgnUtils.getHostName();
+		List<JobDto> jobs = select("""
+            SELECT *
+            FROM job_queue_tbl
+            WHERE hostname = ?
+              AND running = 1""", new Job_RowMapper(), hostName);
+		for (JobDto job : jobs) {
+			job.setRunning(false);
+			job.setNextStart(new Date());
+			logger.error("Resetting killed job ({}) formerly started by host ({})", job, hostName);
+			updateJob(job);
+		}
+	}
+
+	// TODO: Remove after all instances have been updated to version 25.04.373 or later
+	private void fixRenamedJobs() {
+		String hostName = AgnUtils.getHostName();
+		List<JobDto> jobs = select("""
+            SELECT *
+            FROM job_queue_tbl
             WHERE hostname = ?
                 AND nextstart IS NULL
                 AND runclass IN (
@@ -202,31 +225,29 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
                 'com.agnitas.util.quartz.RecipientChartPreCalculatorJobWorker',
                 'com.agnitas.util.quartz.RecipientHstCleanerJobWorker',
                 'com.agnitas.util.quartz.WebserviceLoginTrackTableCleanerJobWorker',
-                'com.agnitas.service.RecipientChartJobWorker')""", hostName);
-
-		int killedJobsResetted = update(
-			"UPDATE job_queue_tbl SET running = 0, nextStart = CURRENT_TIMESTAMP WHERE hostname = ? AND running = 1",
-			hostName);
-		int errorneousJobsResetted = update(
-			"UPDATE job_queue_tbl SET lastresult = NULL WHERE hostname = ? AND (lastresult IS NOT NULL AND lastresult != 'OK')",
-			hostName);
-
-		List<JobDto> getJobsWithLostStart = fixMissingNextStart();
-
-		return killedJobsResetted + errorneousJobsResetted + renamedJobsResetted + getJobsWithLostStart.size();
+                'com.agnitas.emm.core.auto_import.worker.AutoImportJobWorker',
+                'com.agnitas.emm.core.autoexport.worker.AutoExportJobWorker',
+                'com.agnitas.service.RecipientChartJobWorker')""", new Job_RowMapper(), hostName);
+		for (JobDto job : jobs) {
+			job.setLastResult(null);
+			job.setNextStart(new Date());
+			logger.error("Resetting renamed job ({}) formerly started by host ({})", job, hostName);
+			updateJob(job);
+		}
 	}
 
-	private List<JobDto> fixMissingNextStart() {
-		List<JobDto> getJobsWithLostStart = getJobsWithLostNextStart();
-		for (JobDto job : getJobsWithLostStart) {
-			try {
-				job.setNextStart(DateUtilities.calculateNextJobStart(job.getInterval()));
-				updateJob(job);
-			} catch (Exception e) {
-				logger.error("Cannot calculate next start for the job {}({})", job.getDescription(), job.getId());
-			}
+	private void fixMissingNextStartJobs() {
+		getJobsWithLostNextStart().forEach(this::tryResetJobNextStart);
+	}
+
+	private void tryResetJobNextStart(JobDto job) {
+		try {
+			job.setNextStart(DateUtilities.calculateNextJobStart(job.getInterval()));
+			logger.error("Resetting job with a missing next start ({}) formerly started by host ({})", job, AgnUtils.getHostName());
+			updateJob(job);
+		} catch (Exception e) {
+			logger.error("Cannot calculate next start for the job {}({})", job.getDescription(), job.getId());
 		}
-		return getJobsWithLostStart;
 	}
 
 	private class Job_RowMapper implements RowMapper<JobDto> {
@@ -235,6 +256,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			JobDto newJob = new JobDto();
 
 			newJob.setId(resultSet.getInt("id"));
+			newJob.setName(resultSet.getString("job_name"));
 			newJob.setDescription(resultSet.getString("description"));
 			newJob.setCreated(resultSet.getTimestamp("created"));
 			newJob.setLastStart(resultSet.getTimestamp("lastStart"));
@@ -252,9 +274,6 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			newJob.setAcknowledged(resultSet.getInt("acknowledged") > 0);
 
 			// Read parameters for this job
-			if (logger.isDebugEnabled()) {
-				logger.debug("stmt:" + "SELECT * FROM job_queue_parameter_tbl WHERE job_id = ?");
-			}
 			List<Map<String, Object>> result = select("SELECT * FROM job_queue_parameter_tbl WHERE job_id = ?", newJob.getId());
 			
 			Map<String, String> parameters = new HashMap<>();
@@ -269,37 +288,55 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 
 	@Override
 	public List<JobDto> selectErroneousJobs() {
-		try {
-			if (isOracleDB()) {
-				return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < CURRENT_TIMESTAMP - 0.05) OR interval IS NULL OR runClass IS NULL)", new Job_RowMapper());
-			} else {
-				return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR `interval` IS NULL OR runClass IS NULL)", new Job_RowMapper());
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading erroneous jobs from database", e);
+		if (isOracleDB() || isPostgreSQL()) {
+			return select("""
+					SELECT *
+					FROM job_queue_tbl
+					WHERE deleted <= 0
+					  AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < %s) OR
+					       interval IS NULL OR runClass IS NULL OR job_name IS NULL)
+					""".formatted(isOracleDB() ? "CURRENT_TIMESTAMP - 0.05" : "CURRENT_TIMESTAMP - (INTERVAL '0.05 MINUTE' * 24 * 60)"),
+					new Job_RowMapper());
 		}
+
+		return select("""
+                SELECT *
+                FROM job_queue_tbl
+                WHERE deleted <= 0
+                  AND ((lastResult IS NULL OR lastResult != 'OK') OR
+                       (nextStart IS NULL OR nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR
+                       `interval` IS NULL OR runClass IS NULL OR job_name IS NULL)
+                """, new Job_RowMapper());
 	}
 	
 	@Override
 	public List<JobDto> selectCriticalErroneousJobs() {
-		try {
-			if (isOracleDB()) {
-				return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND criticality > 3 AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < CURRENT_TIMESTAMP - 0.05) OR interval IS NULL OR runClass IS NULL)", new Job_RowMapper());
-			} else {
-				return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND criticality > 3 AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR `interval` IS NULL OR runClass IS NULL)", new Job_RowMapper());
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading erroneous jobs from database", e);
+		if (isOracleDB() || isPostgreSQL()) {
+			return select("""
+					SELECT *
+					FROM job_queue_tbl
+					WHERE deleted <= 0
+					  AND criticality > 3
+					  AND ((lastResult IS NULL OR lastResult != 'OK') OR (nextStart IS NULL OR nextStart < %s) OR
+					       interval IS NULL OR runClass IS NULL OR job_name IS NULL)
+					""".formatted(isOracleDB() ? "CURRENT_TIMESTAMP - 0.05" : "CURRENT_TIMESTAMP - (INTERVAL '0.05 MINUTE' * 24 * 60)"),
+					new Job_RowMapper());
 		}
+
+		return select("""
+                SELECT *
+                FROM job_queue_tbl
+                WHERE deleted <= 0
+                  AND criticality > 3
+                  AND ((lastResult IS NULL OR lastResult != 'OK') OR
+                       (nextStart IS NULL OR nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR
+                       `interval` IS NULL OR runClass IS NULL OR job_name IS NULL)
+                """, new Job_RowMapper());
 	}
 
 	@Override
 	public List<JobDto> getAllActiveJobs() {
-		try {
-			return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 ORDER BY id", new Job_RowMapper());
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading not deleted jobs from database", e);
-		}
+		return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 ORDER BY id", new Job_RowMapper());
 	}
 
 	@Override
@@ -350,44 +387,40 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	
 	@Override
 	public List<JobDto> getHangingJobs(Date timeLimit) {
-		try {
-			return select("SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND running > 0 AND lastStart < ? ORDER BY id", new Job_RowMapper(), timeLimit);
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading hanging jobs from database", e);
-		}
+		return select("""
+				SELECT *
+				FROM job_queue_tbl
+				WHERE deleted <= 0
+				  AND running > 0
+				  AND lastStart < ?
+				ORDER BY id
+				""", new Job_RowMapper(), timeLimit);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname) {
-		try {
-			// Watchout: OracleDB counts in bytes of texts not in chars
-			if (result != null && result.getBytes("UTF-8").length > 512) {
-				result = result.substring(0, 450) + " ...";
-			}
-			update("INSERT INTO job_queue_result_tbl (job_id, time, result, duration, hostname) VALUES (?, ?, ?, ?, ?)", job_id, time, result, durationInSeconds, hostname);
-		} catch (Exception e) {
-			throw new RuntimeException("Error while writing JobResult", e);
+	public void writeJobResult(int jobId, Date time, String result, int durationInSeconds, String hostname) {
+		// Watchout: OracleDB counts in bytes of texts not in chars
+		if (result != null && result.getBytes(StandardCharsets.UTF_8).length > 512) {
+			result = result.substring(0, 450) + " ...";
 		}
+		update("INSERT INTO job_queue_result_tbl (job_id, time, result, duration, hostname) VALUES (?, ?, ?, ?, ?)", jobId, time, result, durationInSeconds, hostname);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public List<Map<String, Object>> getLastJobResults(int job_id) {
-		try {
-			if (isOracleDB()) {
-				return select("SELECT * FROM (SELECT time, result, duration, hostname FROM job_queue_result_tbl WHERE job_id = ? ORDER BY time DESC) WHERE rownum <= 10", job_id);
-			} else {
-				return select("SELECT time, result, duration, hostname FROM job_queue_result_tbl WHERE job_id = ? ORDER BY time DESC LIMIT 10", job_id);
-			}
-		} catch (Exception e) {
-			throw new RuntimeException("Error while writing JobResult", e);
-		}
+	public List<Map<String, Object>> getLastJobResults(int jobId) {
+		return select(addRowLimit("""
+				SELECT time, result, duration, hostname
+				FROM job_queue_result_tbl
+				WHERE job_id = ?
+				ORDER BY time DESC
+				""", 10), jobId);
 	}
 	
 	/**
 	 * Update Job Status in DB
-	 * Do not update the fields "description", "created", "lastStart", "deleted", "nextstart", "interval", "hostname", "runClass", "runonlyonhosts", "startAfterError" and "emailonerror",
+	 * Do not update the fields "description", "created", "lastStart", "deleted", "nextstart", "interval", "hostname", "runClass", "job_name", "runonlyonhosts", "startAfterError" and "emailonerror",
 	 * because these could be managed via db (manually) for the next job executions and should not be changed by signaling the end of a running job
 	 */
 	@Override
@@ -404,16 +437,16 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 					}
 					int touchedLines = update(
 						"UPDATE job_queue_tbl SET running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", lastDuration = ? WHERE id = ?",
-						job.isRunning(),
+						job.isRunning() ? 1 : 0,
 						lastResult,
 						job.getLastDuration(),
 						job.getId());
 					
 					if (touchedLines != 1) {
-						throw new RuntimeException("Invalid touched lines amount");
-					} else {
-						return true;
+						throw new IllegalStateException("Invalid touched lines amount");
 					}
+
+					return true;
 				} catch (Exception e) {
 					logger.error("Error while updating job job status", e);
 					// DO NOT throw any Exception here
@@ -421,9 +454,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 					try {
 						Thread.sleep(1000 * 60);
 					} catch (InterruptedException e1) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("InterruptedException: " + e1.getMessage());
-						}
+						logger.debug("InterruptedException: {}", e1.getMessage());
 					}
 				}
 			}
@@ -442,4 +473,5 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			update("INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value) VALUES (?, ?, ?)", jobID, parameterName, parameterValue);
 		}
 	}
+
 }

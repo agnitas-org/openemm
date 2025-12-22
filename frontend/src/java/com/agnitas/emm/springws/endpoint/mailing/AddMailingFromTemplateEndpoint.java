@@ -12,33 +12,32 @@ package com.agnitas.emm.springws.endpoint.mailing;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.AddMailingFromTemplateRequest;
 import com.agnitas.emm.springws.jaxb.AddMailingFromTemplateResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-
 @Endpoint
 public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 	
-	private static final Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
-
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
 	private final SecurityContextAccess securityContextAccess;
 	
-	public AddMailingFromTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, ThumbnailService thumbnailService, SecurityContextAccess securityContextAccess) {
+	public AddMailingFromTemplateEndpoint(
+			@Qualifier("MailingService") MailingService mailingService,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess
+	) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
@@ -55,18 +54,16 @@ public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 		model.setDescription(request.getDescription());
 		model.setAutoUpdate(request.isAutoUpdate());
 		model.setPlannedDate(request.getPlannedDate());
+		model.setPreHeader(request.getPreHeader());
 
 		final int mailingID = mailingService.addMailingFromTemplate(model);
 		
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, mailingID);
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", mailingID), e);
-		}
-		
+		thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, mailingID);
+
 		final AddMailingFromTemplateResponse response = new AddMailingFromTemplateResponse();
 		response.setMailingID(mailingID);
 		
 		return response;
 	}
+
 }

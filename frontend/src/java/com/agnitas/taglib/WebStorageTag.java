@@ -8,7 +8,6 @@
 
 */
 
-
 package com.agnitas.taglib;
 
 import com.agnitas.beans.WebStorageEntry;
@@ -17,10 +16,7 @@ import com.agnitas.service.WebStorageBundle;
 import org.apache.taglibs.standard.tag.common.core.SetSupport;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-// TODO: check usage and rempve when EMMGUI-714 will be finished and old design will be removed
 public class WebStorageTag extends SetSupport {
-
-    private static final long serialVersionUID = 7998564739091137943L;
 
     private WebStorage webStorage;
     private WebStorageBundle<? extends WebStorageEntry> key;
@@ -59,4 +55,5 @@ public class WebStorageTag extends SetSupport {
     protected String evalProperty() {
         return null;
     }
+
 }

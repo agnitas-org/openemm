@@ -1,0 +1,47 @@
+
+<c:choose>
+    <c:when test="${empty form.tags}">
+        <div id="content-blocks-tab" class="tile-body d-block">
+            <div class="notification-simple">
+                <i class="icon icon-info-circle"></i>
+                <mvc:message code="mailing.content.empty"/>
+            </div>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div id="content-blocks-tab" class="tile-body">
+            <div id="dyn-tag-list">
+                <select id="mobile-dyn-tags-list" class="form-control has-arrows select-dropdown--long mobile-visible"
+                        data-result-template="dyntag-option-template"
+                        data-action="switch-dyn-tag">
+                    <c:forEach items="${form.tags}" var="dynTag" varStatus="status">
+                        <option value="${dynTag.value.id}" data-id="${dynTag.value.id}">
+                            ${dynTag.key}
+                        </option>
+                    </c:forEach>
+                </select>
+
+                <div class="search-container mobile-hidden">
+                    <input type="text" class="form-control" data-action="search-content-blocks" placeholder="<mvc:message code='default.filter.name'/>">
+                </div>
+
+                <div id="dyn-tags-container" class="list-group mobile-hidden js-scrollable">
+                    <div class="p-2" data-blocks-not-found-msg style="display: none">
+                        <div class="notification-simple">
+                            <i class="icon icon-info-circle"></i>
+                            <span><mvc:message code="noResultsFound" /></span>
+                        </div>
+                    </div>
+
+                    <%-- Loads/Updates by JS --%>
+                </div>
+            </div>
+            <div id="dyn-tag-settings">
+                <%-- populated with js. see content-editor-template.jspf --%>
+            </div>
+        </div>
+    </c:otherwise>
+</c:choose>
+
+<%@ include file="dyn-tag-templates.jspf" %>
+<%@ include file="content-editor-template.jspf" %>

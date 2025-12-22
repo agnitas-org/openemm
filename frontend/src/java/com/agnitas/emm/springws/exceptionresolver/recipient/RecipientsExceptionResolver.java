@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.springws.exceptionresolver.recipient;
 
-import org.agnitas.emm.core.recipient.service.impl.RecipientWrongRequestException;
-import org.agnitas.emm.core.recipient.service.impl.RecipientsSizeLimitExceededExeption;
+import com.agnitas.emm.core.recipient.exception.RecipientWrongRequestException;
+import com.agnitas.emm.core.recipient.exception.RecipientsSizeLimitExceededExeption;
 import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 

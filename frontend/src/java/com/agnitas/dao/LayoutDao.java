@@ -13,9 +13,9 @@ package com.agnitas.dao;
 import java.util.Map;
 
 public interface LayoutDao {
+
 	void saveLayoutData(int companyID, String itemName, byte[] data);
 
 	Map<String, Map<Integer, byte[]>> getLayoutData();
 
-    void updateItemImage(String itemName, byte[] newLogo, int companyId);
 }

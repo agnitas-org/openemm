@@ -19,19 +19,22 @@ import java.util.Objects;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import com.agnitas.emm.core.mailing.forms.SaveMailStatusSettingsForm;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.UserActivityUtil;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.XssCheckAware;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import com.agnitas.service.UserActivityLogService;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -58,7 +61,8 @@ public class MailingAjaxController implements XssCheckAware {
     private final TargetService targetService;
     private final TrackableLinkService trackableLinkService;
     
-    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService, MailingBaseService mailingBaseService, TargetService targetService, TrackableLinkService trackableLinkService) {
+    public MailingAjaxController(@Qualifier("MailingService") MailingService mailingService, UserActivityLogService userActivityLogService,
+                                 MailingBaseService mailingBaseService, TargetService targetService, TrackableLinkService trackableLinkService) {
         this.mailingService = Objects.requireNonNull(mailingService, "Mailing service is null");
         this.userActivityLogService = userActivityLogService;
         this.mailingBaseService = mailingBaseService;
@@ -67,7 +71,8 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/listActionBasedForMailinglist.action", produces = "application/json")
-    public final ResponseEntity<String> listAllActionBasedMailingsForMailinglist(final Admin admin, @RequestParam(value = "mailinglist") final int mailinglistID) {
+    @RequiredPermission("mailing.show")
+    public ResponseEntity<String> listAllActionBasedMailingsForMailinglist(Admin admin, @RequestParam(value = "mailinglist") int mailinglistID) {
         try {
             final List<LightweightMailingWithMailingList> list = mailingService.listAllActionBasedMailingsForMailinglist(admin.getCompanyID(), mailinglistID);
 
@@ -86,7 +91,7 @@ public class MailingAjaxController implements XssCheckAware {
             root.put("mailings", mailings);
 
             return ResponseEntity.ok(root.toString());
-        } catch (final Exception e) {
+        } catch (Exception e) {
             LOGGER.error(String.format("Error listing action based mailings for mailing list %d", mailinglistID), e);
 
             final JSONObject json = new JSONObject();
@@ -97,6 +102,7 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     @PostMapping("{mailingId:\\d+}/lock.action")
+    @RequiredPermission("mailing.content.show")
     public ResponseEntity<BooleanResponseDto> tryToLock(Admin admin, @PathVariable int mailingId) {
         try {
             // Start or prolong locking unless other admin is holding it.
@@ -107,6 +113,7 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     @PostMapping("/{mailingId:\\d+}/setStatusOnError.action")
+    @RequiredPermission("mailing.send.world")
     public ResponseEntity<BooleanResponseDto> setStatusOnErrorOnly(Admin admin, @PathVariable int mailingId, SaveMailStatusSettingsForm form) {
         boolean isUpdated = false;
 
@@ -131,25 +138,18 @@ public class MailingAjaxController implements XssCheckAware {
     }
 
     protected void writeUserActivityLog(Admin admin, String action, String description) {
-        writeUserActivityLog(admin, action, description, LOGGER);
+        UserActivityUtil.log(userActivityLogService, admin, action, description, LOGGER);
     }
 
-    protected void writeUserActivityLog(Admin admin, String action, String description, Logger callerLog) {
-        if (userActivityLogService != null) {
-            userActivityLogService.writeUserActivityLog(admin, action, description, callerLog);
-        } else {
-            callerLog.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-            callerLog.info("Userlog: " + admin.getUsername() + " " + action + " " + description);
-        }
-    }
-
-    @PostMapping("{mailingId:\\d+}/isAdvertisingContentType.action")
+    @GetMapping("{mailingId:\\d+}/isAdvertisingContentType.action")
+    @RequiredPermission("mailing.show")
     public ResponseEntity<BooleanResponseDto> isAdvertisingContentType(@PathVariable int mailingId, Admin admin) {
         return ResponseEntity.ok(
                 new BooleanResponseDto(mailingBaseService.isAdvertisingContentType(admin.getCompanyID(), mailingId)));
     }
 
     @PostMapping("{mailingId:\\d+}/calculateRecipients.action")
+    @AlwaysAllowed
     public ResponseEntity<Map<String, Object>> calculateRecipients(@PathVariable int mailingId, Admin admin,
                                                                    @ModelAttribute("settingsForm") MailingSettingsForm form,
                                                                    @RequestParam boolean changeMailing, @RequestParam boolean isWmSplit) {
@@ -184,13 +184,15 @@ public class MailingAjaxController implements XssCheckAware {
         config.setMailingListId(form.getMailinglistId());
         config.setTargetGroupIds(form.getTargetGroupIds());
         config.setChangeMailing(changeMailing);
-        config.setSplitId(targetService.getTargetListSplitId(form.getSplitBase(), form.getSplitPart(), isWmSplit));
+        config.setSplitId(targetService.getTargetListSplitId(form.getSplitSettings().getSplitBase(), form.getSplitSettings().getSplitPart(), isWmSplit));
         config.setConjunction(form.getTargetMode() != Mailing.TARGET_MODE_OR);
         return config;
     }
 
     @GetMapping(value = "/{mailingId:\\d+}/links.action", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequiredPermission("mailing.show")
     public @ResponseBody Map<String, Object> getMailingLinks(@PathVariable int mailingId, Admin admin) {
         return trackableLinkService.getMailingLinksJson(mailingId, admin.getCompanyID()).toMap();
     }
+
 }

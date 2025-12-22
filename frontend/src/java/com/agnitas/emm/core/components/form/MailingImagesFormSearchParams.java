@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.components.form;
 
+import java.util.List;
+
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.web.forms.FormSearchParams;
-
-import java.util.List;
 
 public class MailingImagesFormSearchParams implements FormSearchParams<MailingImagesOverviewFilter> {
 
@@ -38,11 +38,4 @@ public class MailingImagesFormSearchParams implements FormSearchParams<MailingIm
         form.setMobile(isMobile);
     }
 
-    @Override
-    public void resetParams() {
-        fileName = null;
-        uploadDate = new DateRange();
-        mimetypes = null;
-        isMobile = null;
-    }
 }

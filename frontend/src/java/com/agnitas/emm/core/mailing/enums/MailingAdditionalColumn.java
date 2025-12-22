@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.mailing.enums;
 
 public enum MailingAdditionalColumn {
+
     CREATION_DATE("default.creationDate", "creation_date"),
     TEMPLATE("Template", "template_name"),
     SUBJECT("mailing.Subject", "subject"),
@@ -19,7 +20,8 @@ public enum MailingAdditionalColumn {
     RECIPIENTS_COUNT("Recipients", "recipients_count"),
     CHANGE_DATE("default.changeDate", "change_date"),
     ARCHIVE("mailing.archive", "archives"),
-    PLAN_DATE("mailing.plan.date", "plan_date");
+    PLAN_DATE("mailing.plan.date", "plan_date"),
+    ATTACHMENTS("mailing.Attachments", "attachments_count");
 
     public final String messageKey;
     public final String sortColumn;

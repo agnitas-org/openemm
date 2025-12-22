@@ -16,24 +16,27 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
+import com.agnitas.beans.BeanLookupFactory;
+import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.JobQueueDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.dao.impl.DaoLookupFactory;
+import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.serverstatus.forms.JobQueueOverviewFilter;
+import com.agnitas.service.exceptions.JobNotFoundException;
+import com.agnitas.service.exceptions.JobQueueException;
+import com.agnitas.service.exceptions.JobWorkerNotFoundException;
+import com.agnitas.service.impl.ServiceLookupFactory;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
+import com.agnitas.util.quartz.JobWorkersRegistry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-
-import com.agnitas.beans.BeanLookupFactory;
-import com.agnitas.dao.ConfigTableDao;
-import com.agnitas.dao.impl.DaoLookupFactory;
-import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
-import com.agnitas.service.impl.ServiceLookupFactory;
 
 public class JobQueueService implements ApplicationContextAware {
 
@@ -42,58 +45,42 @@ public class JobQueueService implements ApplicationContextAware {
 	private static final String WORKER_ERROR_SUBJECT = "JobWorker error";
 	private static final String MISSING_NEXT_START_MAIL_TEXT = "ERROR: Missing value for field nextstart in table job_queue_tbl for JobWorker %s";
 
-	private JobQueueDao jobQueueDao;
-	private ConfigTableDao configDao;
-	private BirtReportDao birtReportDao;
+	private final JobQueueDao jobQueueDao;
+	private final ConfigTableDao configDao;
+	private final BirtReportDao birtReportDao;
+	private final BeanLookupFactory beanLookupFactory;
+	private final DaoLookupFactory daoLookupFactory;
+	private final ServiceLookupFactory serviceLookupFactory;
+	private final MailNotificationService mailNotificationService;
+	private final ConfigService configService;
+	private final JobWorkersRegistry jobWorkersRegistry;
+
+	private final List<JobWorkerBase> queuedJobWorkers = new ArrayList<>();
+	private final List<JobDto> queuedJobsTodo = new ArrayList<>();
+
 	private ApplicationContext applicationContext;
-	private BeanLookupFactory beanLookupFactory;
-	private DaoLookupFactory daoLookupFactory;
-	private ServiceLookupFactory serviceLookupFactory;
-	private MailNotificationService mailNotificationService;
-	private ConfigService configService;
-	
 	private Date lastCheckAndRunJobTime = null;
 
-	private List<JobWorker> queuedJobWorkers = new ArrayList<>();
-	private List<JobDto> queuedJobsTodo = new ArrayList<>();
+	@Autowired
+    public JobQueueService(JobQueueDao jobQueueDao, ConfigTableDao configDao, BirtReportDao birtReportDao, BeanLookupFactory beanLookupFactory,
+						   DaoLookupFactory daoLookupFactory, ServiceLookupFactory serviceLookupFactory, MailNotificationService mailNotificationService,
+						   ConfigService configService, JobWorkersRegistry jobWorkersRegistry) {
+        this.jobQueueDao = jobQueueDao;
+        this.configDao = configDao;
+        this.birtReportDao = birtReportDao;
+        this.beanLookupFactory = beanLookupFactory;
+        this.daoLookupFactory = daoLookupFactory;
+        this.serviceLookupFactory = serviceLookupFactory;
+        this.mailNotificationService = mailNotificationService;
+        this.configService = configService;
+        this.jobWorkersRegistry = jobWorkersRegistry;
+    }
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    @Override
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-	
-	public void setJobQueueDao(JobQueueDao jobQueueDao) {
-		this.jobQueueDao = jobQueueDao;
-	}
-
-	public void setConfigTableDao(ConfigTableDao configDao) {
-		this.configDao = configDao;
-	}
-	
-	public void setBirtReportDao(BirtReportDao birtReportDao) {
-		this.birtReportDao = birtReportDao;
-	}
-
-	public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
-		this.beanLookupFactory = beanLookupFactory;
-	}
-
-	public void setDaoLookupFactory(DaoLookupFactory daoLookupFactory) {
-		this.daoLookupFactory = daoLookupFactory;
-	}
-
-	public void setServiceLookupFactory(ServiceLookupFactory serviceLookupFactory) {
-		this.serviceLookupFactory = serviceLookupFactory;
-	}
-
-	public void setMailNotificationService(MailNotificationService mailNotificationService) {
-		this.mailNotificationService = mailNotificationService;
-	}
-	
 	public synchronized void checkAndRunJobs() {
 		logger.info("Looking for queued jobs to execute");
 		
@@ -101,12 +88,12 @@ public class JobQueueService implements ApplicationContextAware {
 			alertOnHangingJobs();
 			alertLostNextStartJobs();
 			
-			List<JobDto> upcomingQueuedJobs = jobQueueDao.readUpcomingJobsForExecution();
+			List<JobDto> upcomingQueuedJobs = configService.getBooleanValue(ConfigValue.Development.UseJobWorkerAnnotation)
+					? jobQueueDao.readUpcomingJobsForExecution()
+					: jobQueueDao.readUpcomingJobsForExecutionByRunClass();
 			
-			if (logger.isInfoEnabled()) {
-				logger.info("Found " + upcomingQueuedJobs.size() + " queued job(s)");
-			}
-			
+			logger.info("Found {} queued job(s)", upcomingQueuedJobs.size());
+
 			for (JobDto queuedJob : upcomingQueuedJobs) {
 				if (!containsJob(queuedJobsTodo, queuedJob)
 					&& (StringUtils.isBlank(queuedJob.getRunOnlyOnHosts())
@@ -120,14 +107,12 @@ public class JobQueueService implements ApplicationContextAware {
 			
 			lastCheckAndRunJobTime = new Date();
 		} else {
-			if (logger.isInfoEnabled()) {
-				logger.info("Job queue is inactive for this host");
-			}
-			
+			logger.info("Job queue is inactive for this host");
+
 			queuedJobsTodo.clear();
 			
 			if (checkShutdownNode()) {
-				for (JobWorker worker : queuedJobWorkers) {
+				for (JobWorkerBase worker : queuedJobWorkers) {
 					worker.setStopSign();
 				}
 			}
@@ -205,14 +190,12 @@ public class JobQueueService implements ApplicationContextAware {
 					jobToStart.setRunning(true);
 					
 					try {
-						JobWorker worker = createJobWorker(jobToStart);
+						JobWorkerBase worker = createJobWorker(jobToStart);
 						
 						queuedJobWorkers.add(worker);
 						Thread newThread = new Thread(worker);
 						newThread.start();
-						if (logger.isDebugEnabled()) {
-							logger.debug("Created worker for queued job #" + jobToStart.getId());
-						}
+						logger.debug("Created worker for queued job #{}", jobToStart.getId());
 					} catch (Exception e) {
 						logger.error("Cannot create worker for queued job #" + jobToStart.getId(), e);
 						jobToStart.setRunning(false);
@@ -234,7 +217,7 @@ public class JobQueueService implements ApplicationContextAware {
 		} else {
 			queuedJobsTodo.clear();
 			
-			for (JobWorker worker : queuedJobWorkers) {
+			for (JobWorkerBase worker : queuedJobWorkers) {
 				worker.setStopSign();
 			}
 		}
@@ -243,7 +226,7 @@ public class JobQueueService implements ApplicationContextAware {
 	private void logWaitingJobWorkers() {
 		List<String> runningJobWorkerNames = new ArrayList<>();
 		try {
-			for (JobWorker queuedJobWorker : queuedJobWorkers) {
+			for (JobWorkerBase queuedJobWorker : queuedJobWorkers) {
 				if (queuedJobWorker == null) {
 					logger.error("List 'queuedJobWorker' contains 'null' value");
 					runningJobWorkerNames.add("<null>");
@@ -278,30 +261,31 @@ public class JobQueueService implements ApplicationContextAware {
 		} catch (Exception e) {
 			logger.error("Cannot create names list 'waitingJobWorkerNames': " + e.getMessage(), e);
 		}
-		
-//		logger.warn(queuedJobsTodo.size() + " JobWorker are waiting, because already running " + queuedJobWorkers.size() + " JobWorker\n"
-//				+ "JobWorker running: " + StringUtils.join(runningJobWorkerNames, ", ") + "\n"
-//				+ "JobWorker waiting: " + StringUtils.join(waitingJobWorkerNames, ", "));
 	}
 
 	public List<JobDto> getRunningJobsOnThisServer() {
 		List<JobDto> runningJobs = new ArrayList<>();
-		for (JobWorker queuedJobWorker : queuedJobWorkers) {
+		for (JobWorkerBase queuedJobWorker : queuedJobWorkers) {
 			runningJobs.add(queuedJobWorker.getJob());
 		}
 		return runningJobs;
 	}
 
 	public List<JobDto> getWaitingJobsOnThisServer() {
-		List<JobDto> waitingJobs = new ArrayList<>();
-		for (JobDto waitingJob : queuedJobsTodo) {
-			waitingJobs.add(waitingJob);
-		}
-		return waitingJobs;
+        return List.copyOf(queuedJobsTodo);
 	}
 
-	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
-		JobWorker worker = (JobWorker) Class.forName(jobToStart.getRunClass()).getConstructor().newInstance();
+	private JobWorkerBase createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
+		JobWorkerBase worker;
+		if (configService.getBooleanValue(ConfigValue.Development.UseJobWorkerAnnotation)) {
+			worker = jobWorkersRegistry.findWorker(jobToStart.getName())
+					.orElseThrow(() -> new JobWorkerNotFoundException(jobToStart.getName()))
+					.getConstructor()
+					.newInstance();
+		} else {
+			worker = (JobWorkerBase) Class.forName(jobToStart.getRunClass()).getConstructor().newInstance();
+		}
+
 		worker.setJob(jobToStart);
 		worker.setJobQueueService(this);
 		worker.setApplicationContext(applicationContext);
@@ -313,15 +297,15 @@ public class JobQueueService implements ApplicationContextAware {
 		worker.setConfigService(configService);
 		return worker;
 	}
-	
-	public synchronized void showJobEnd(JobWorker worker) {
+
+	public synchronized void showJobEnd(JobWorkerBase worker) {
 		if (queuedJobWorkers.contains(null)) {
 			logger.error("List 'queuedJobWorkers' contains null before removal of ended job");
 			queuedJobWorkers.remove(null);
 		}
 		
 		if (!queuedJobWorkers.remove(worker)) {
-			logger.error("Cannot remove " + worker.getJobDescription() + " from 'queuedJobWorkers', maybe it was started manually");
+			logger.error("Cannot remove {} from 'queuedJobWorkers', maybe it was started manually", worker.getJobDescription());
 		}
 
 		if (queuedJobWorkers.contains(null)) {
@@ -333,7 +317,7 @@ public class JobQueueService implements ApplicationContextAware {
 	}
 
 	public boolean setStopSignForJob(int jobID) {
-		for (JobWorker jobWorker : queuedJobWorkers) {
+		for (JobWorkerBase jobWorker : queuedJobWorkers) {
 			if (jobWorker.getJob().getId() == jobID) {
 				jobWorker.setStopSign();
 				return true;
@@ -347,7 +331,7 @@ public class JobQueueService implements ApplicationContextAware {
 		try {
 			boolean isActive = configDao.getJobqueueHostStatus(AgnUtils.getHostName()) > 0;
 			if (logger.isDebugEnabled()) {
-				logger.debug("Jobqueue of " + AgnUtils.getHostName() + " is " + (isActive ? "active" : "inactive"));
+				logger.debug("Jobqueue of {} is {}", AgnUtils.getHostName(), isActive ? "active" : "inactive");
 			}
 			return isActive;
 		} catch (Exception e) {
@@ -361,7 +345,7 @@ public class JobQueueService implements ApplicationContextAware {
 		try {
 			boolean shutdownNow = configDao.getJobqueueHostStatus(AgnUtils.getHostName()) < 0;
 			if (logger.isDebugEnabled()) {
-				logger.debug("Jobqueue of " + AgnUtils.getHostName() + " is" + (shutdownNow ? "" : " NOT") + " requested to shutdown");
+				logger.debug("Jobqueue of {} is{} requested to shutdown", AgnUtils.getHostName(), shutdownNow ? "" : " NOT");
 			}
 			return shutdownNow;
 		} catch (Exception e) {
@@ -370,51 +354,51 @@ public class JobQueueService implements ApplicationContextAware {
 		}
 	}
 	
-	public void startSpecificJobQueueJob(String description) throws Exception {
+	public void startSpecificJobQueueJob(String description) {
 		if (!checkActiveNode()) {
-			throw new Exception("This JobQueueNode is currently not active");
-		} else {
-			JobDto jobToStart = jobQueueDao.getJob(description);
-			
-			if (jobToStart == null) {
-				throw new Exception("Job not found: " + description);
-			} else if (StringUtils.isNotBlank(jobToStart.getRunOnlyOnHosts())
-				&& !Arrays.asList(jobToStart.getRunOnlyOnHosts().split(";|,")).contains(AgnUtils.getHostName())) {
-				throw new Exception("The Job " + description + " is not allowed to be run on this host: " + AgnUtils.getHostName());
-			} else {
-				try {
-					jobToStart.setNextStart(DateUtilities.calculateNextJobStart(jobToStart.getInterval()));
-					// update in db will be done by worker
-				} catch (Exception e) {
-					jobToStart.setNextStart(null);
-					jobToStart.setLastResult("Cannot calculate next start!");
-					jobQueueDao.updateJob(jobToStart);
-					throw new Exception("Cannot calculate next start!");
-				}
-				
-				if (jobQueueDao.initJobStart(jobToStart.getId(), jobToStart.getNextStart(), true)) {
-					jobToStart.setRunning(true);
-					
-					try {
-						JobWorker worker = createJobWorker(jobToStart);
-						
-						Thread newThread = new Thread(worker);
-						newThread.start();
-						if (logger.isDebugEnabled()) {
-							logger.debug("Created worker for job #" + jobToStart.getId());
-						}
-					} catch (Exception e) {
-						logger.error("Cannot create worker for job #" + jobToStart.getId(), e);
-						jobToStart.setRunning(false);
-						jobToStart.setNextStart(null);
-						jobToStart.setLastResult("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
-						jobQueueDao.updateJob(jobToStart);
-						throw new Exception("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
-					}
-				} else {
-					throw new Exception("Cannot start Job: " + description + " (already running?)");
-				}
-			}
+			throw new IllegalStateException("This JobQueueNode is currently not active");
+		}
+
+		JobDto jobToStart = jobQueueDao.getJob(description);
+
+		if (jobToStart == null) {
+			throw new JobNotFoundException(description);
+		}
+
+		if (StringUtils.isNotBlank(jobToStart.getRunOnlyOnHosts())
+			&& !Arrays.asList(jobToStart.getRunOnlyOnHosts().split(";|,")).contains(AgnUtils.getHostName())) {
+			throw new JobQueueException("The Job " + description + " is not allowed to be run on this host: " + AgnUtils.getHostName());
+		}
+
+		try {
+			jobToStart.setNextStart(DateUtilities.calculateNextJobStart(jobToStart.getInterval()));
+			// update in db will be done by worker
+		} catch (Exception e) {
+			jobToStart.setNextStart(null);
+			jobToStart.setLastResult("Cannot calculate next start!");
+			jobQueueDao.updateJob(jobToStart);
+			throw new JobQueueException("Cannot calculate next start! Interval: " + jobToStart.getInterval());
+		}
+
+		if (!jobQueueDao.initJobStart(jobToStart.getId(), jobToStart.getNextStart(), true)) {
+			throw new JobQueueException("Cannot start Job: %s (already running?)".formatted(description));
+		}
+
+		jobToStart.setRunning(true);
+
+		try {
+			JobWorkerBase worker = createJobWorker(jobToStart);
+
+			Thread newThread = new Thread(worker);
+			newThread.start();
+			logger.debug("Created worker for job #{}", jobToStart.getId());
+		} catch (Exception e) {
+			logger.error("Cannot create worker for job #%d".formatted(jobToStart.getId()), e);
+			jobToStart.setRunning(false);
+			jobToStart.setNextStart(null);
+			jobToStart.setLastResult("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
+			jobQueueDao.updateJob(jobToStart);
+			throw new JobQueueException("Cannot create worker: " + e.getClass().getSimpleName() + ": " + e.getMessage() + "\n" + AgnUtils.getStackTraceString(e));
 		}
 	}
 

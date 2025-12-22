@@ -1,0 +1,9 @@
+Changelist of jodit's files
+1) jodit.min.js
+Changed regex of <body> tag detection with 'editHTMLDocumentMode' to clear markers
+Added trim for the whitespaces before </body> in clearMarkers
+Fixed list style change (GWUA-6603)
+Fixed node insertion into empty body with <br> in static safeInsertNode(range, node) {...} (GWUA-6697)
+Added return of the image object in insertImage(url, styles = null, defaultWidth = null) {...} (GWUA-6770)
+Fixed auto wrap of <li> tags without parent <ul> tags when 'enter' option is set to 'br' (GWUA-6794)
+Fixed adding of several <div> tags when increasing indent when 'enter' option is set to 'br' (GWUA-6697)

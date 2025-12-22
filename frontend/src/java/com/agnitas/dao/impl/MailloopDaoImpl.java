@@ -10,26 +10,26 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.emm.core.bounce.util.BounceUtils;
-import com.agnitas.beans.Mailloop;
-import com.agnitas.beans.MailloopEntry;
-import com.agnitas.beans.impl.MailloopEntryImpl;
-import com.agnitas.beans.impl.MailloopImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.dao.MailloopDao;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+
+import com.agnitas.beans.Mailloop;
+import com.agnitas.beans.MailloopEntry;
+import com.agnitas.beans.impl.MailloopEntryImpl;
+import com.agnitas.beans.impl.MailloopImpl;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.MailloopDao;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.emm.core.bounce.util.BounceUtils;
+import com.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao {
 	
@@ -38,26 +38,13 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
     private static final String SHORTNAME_COL = "shortname";
 
     @Override
-	public PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(int companyId, String sortColumn, String direction, int pageNumber, int pageSize) {
-		String selectStatement = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ?";
-
-		return selectPaginatedList(selectStatement,"mailloop_tbl",
-				StringUtils.defaultIfEmpty(sortColumn, SHORTNAME_COL),
-				AgnUtils.sortingDirectionToBoolean(direction, true),
-				pageNumber,
-				pageSize,
-				new MailloopEntry_RowMapper(),
-				companyId);
-	}
-
-    @Override
-   	public PaginatedListImpl<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter) {
+   	public PaginatedList<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter) {
         StringBuilder sql = new StringBuilder("SELECT rid, description, shortname, ")
                 .append(getFilterAddressOverviewQuery(filter.getCompanyDomain())).append(" filter_address")
                 .append(" FROM mailloop_tbl ");
         List<Object> params = applyOverviewFilter(filter, sql);
 
-		PaginatedListImpl<BounceFilterDto> list = selectPaginatedList(sql.toString(), "mailloop_tbl",
+		PaginatedList<BounceFilterDto> list = selectPaginatedList(sql.toString(), "mailloop_tbl",
 				filter.getSortOrDefault(SHORTNAME_COL), filter.ascending(), filter.getPage(),
 				filter.getNumberOfRows(), new BounceFilterDtoRowMapper(), params.toArray());
 
@@ -115,13 +102,6 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
 	}
 
 	@Override
-	public List<Mailloop> getMailloops(int companyId) {
-		return select("SELECT rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, "
-				+ "subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token  FROM mailloop_tbl WHERE company_id = ?",
-				new Mailloop_RowMapper(), companyId);
-	}
-	
-	@Override
 	@DaoUpdateReturnValueCheck
 	public int saveMailloop(Mailloop mailloop) {
 		if (mailloop == null || mailloop.getCompanyID() == 0) {
@@ -157,11 +137,11 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
 					// Set the new ID
 					mailloop.setId(newId);
 				} else {
-					throw new RuntimeException("Illegal insert result");
+					throw new IllegalStateException("Illegal insert result");
 				}
 			} else {
 				String insertSql = "INSERT INTO mailloop_tbl (company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, subscribe_enable, mailinglist_id, form_id, creation_date, autoresponder_mailing_id, security_token) VALUES (" + AgnUtils.repeatString("?", 14, ", ") + ")";
-				int newId = insertIntoAutoincrementMysqlTable("rid", insertSql,
+				int newId = insert("rid", insertSql,
 						mailloop.getCompanyID(),
 						mailloop.getDescription(),
 						mailloop.getShortname(),
@@ -198,13 +178,12 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
 					mailloop.getCompanyID());
 			
 			if (touchedLines != 1) {
-				throw new RuntimeException("Illegal update result");
+				throw new IllegalStateException("Illegal update result");
 			}
         }
 		
 		return mailloop.getId();
 	}
-	
 
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -215,19 +194,19 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
 	
 	@Override
 	public boolean deleteMailloopByCompany(int companyId) {
+		update("DELETE FROM mailloop_log_tbl WHERE company_id = ?", companyId);
 		update("DELETE FROM mailloop_tbl WHERE company_id = ?", companyId);
 		return selectInt("SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ?", companyId) == 0;
 	}
 
-	protected class MailloopEntry_RowMapper implements RowMapper<MailloopEntry> {
+	private static class MailloopEntry_RowMapper implements RowMapper<MailloopEntry> {
 		@Override
 		public MailloopEntry mapRow(ResultSet resultSet, int row) throws SQLException {
 			int id = resultSet.getInt("rid");
 			String description = resultSet.getString(DESCRIPTION_COL);
 			String shortname = resultSet.getString(SHORTNAME_COL);
 			String filterEmail = resultSet.getString(FILTER_ADDRESS_COL);
-			MailloopEntry readMailloopEntry = new MailloopEntryImpl(id, description, shortname, filterEmail);
-			return readMailloopEntry;
+            return new MailloopEntryImpl(id, description, shortname, filterEmail);
 		}
 	}
 
@@ -243,7 +222,7 @@ public class MailloopDaoImpl extends PaginatedBaseDaoImpl implements MailloopDao
    		}
    	}
 
-	protected class Mailloop_RowMapper implements RowMapper<Mailloop> {
+	private static class Mailloop_RowMapper implements RowMapper<Mailloop> {
 		@Override
 		public Mailloop mapRow(ResultSet resultSet, int row) throws SQLException {
 			Mailloop readMailloop = new MailloopImpl();

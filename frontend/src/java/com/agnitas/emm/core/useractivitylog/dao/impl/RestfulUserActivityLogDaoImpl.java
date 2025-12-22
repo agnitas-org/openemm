@@ -13,18 +13,14 @@ package com.agnitas.emm.core.useractivitylog.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.util.DateUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -43,41 +39,23 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
     }
 
     @Override
-    public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
-        if (StringUtils.isBlank(sortColumn)) {
-            sortColumn = "timestamp";
-        }
-
-        boolean sortDirectionAscending = "asc".equalsIgnoreCase(sortDirection) || "ascending".equalsIgnoreCase(sortDirection);
-
-        SqlPreparedStatementManager sqlPreparedStatementManager =
-                prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to, description);
-
-        return selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(), "restful_usage_log_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new RestfulUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
-    }
-
-    @Override
-    public PaginatedListImpl<RestfulUserActivityAction> getUserActivityEntriesRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    public PaginatedList<RestfulUserActivityAction> getUserActivityEntries(RestfulUserActivityLogFilter filter) {
         StringBuilder query = new StringBuilder();
-        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
+        List<Object> params = buildOverviewSelectQuery(query, filter);
 
-        PaginatedListImpl<RestfulUserActivityAction> list = selectPaginatedList(query.toString(), "restful_usage_log_tbl",
+        PaginatedList<RestfulUserActivityAction> list = selectPaginatedList(query.toString(), "restful_usage_log_tbl",
                 filter, new RestfulUserActionRowMapper(), params.toArray());
 
         if (filter.isUiFiltersSet()) {
-            list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins, filter.getCompanyId()));
+            list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
         }
 
         return list;
     }
 
-    private List<Object> buildOverviewSelectQuery(StringBuilder query, RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    private List<Object> buildOverviewSelectQuery(StringBuilder query, RestfulUserActivityLogFilter filter) {
         query.append("SELECT timestamp, username, endpoint, description, request_method, supervisor_name FROM restful_usage_log_tbl");
-        List<Object> params = applyFilter(filter, query);
-
-        //  If set, any of the visible admins must match
-        addVisibleAdminsCondition(query, visibleAdmins);
-        return params;
+        return applyFilter(filter, query);
     }
 
     private List<Object> applyFilter(RestfulUserActivityLogFilter filter, StringBuilder query) {
@@ -108,67 +86,27 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
         return params;
     }
 
-    private int getTotalUnfilteredCountForOverview(List<AdminEntry> visibleAdmins, int companyId) {
+    private int getTotalUnfilteredCountForOverview(Integer companyId) {
         StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM restful_usage_log_tbl");
         List<Object> params = applyRequiredOverviewFilter(query, companyId);
 
-        addVisibleAdminsCondition(query, visibleAdmins);
         return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
     }
 
-    private void addVisibleAdminsCondition(StringBuilder query, List<AdminEntry> admins) {
-        if (CollectionUtils.isNotEmpty(admins)) {
-            String visibleAdminsCondition = buildVisibleAdminsCondition(admins);
-            if (!visibleAdminsCondition.isBlank()) {
-                query.append(" AND ").append(visibleAdminsCondition);
-            }
+    private List<Object> applyRequiredOverviewFilter(StringBuilder query, Integer companyId) {
+        if (companyId == null) {
+            query.append(" WHERE 1 = 1");
+            return new ArrayList<>();
         }
-    }
 
-    private List<Object> applyRequiredOverviewFilter(StringBuilder query, int companyId) {
-        query.append(" WHERE company_id = ?");
-        return new ArrayList<>(List.of(companyId));
+        query.append(" WHERE (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?))");
+        return new ArrayList<>(List.of(companyId, companyId));
     }
 
     @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String description) {
-        SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT timestamp, username, endpoint, description, request_method, supervisor_name FROM restful_usage_log_tbl");
-        sqlPreparedStatementManager.addWhereClause("timestamp >= ?", from);
-        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", DateUtilities.addDaysToDate(to, 1));
-
-        //  If set, any of the visible admins must match
-        if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
-            List<String> visibleAdminNameList = new ArrayList<>();
-            for (AdminEntry visibleAdmin : visibleAdmins) {
-                if (visibleAdmin != null) {
-                    visibleAdminNameList.add(visibleAdmin.getUsername());
-                }
-            }
-            if (!visibleAdminNameList.isEmpty()) {
-                sqlPreparedStatementManager.addWhereClause(makeBulkInClauseForString("username", visibleAdminNameList));
-            }
-        }
-
-        // If set, the selected admin must match
-        if (StringUtils.isNotBlank(selectedAdmin) && !"0".equals(selectedAdmin)) {
-            sqlPreparedStatementManager.addWhereClause("username = ?", selectedAdmin);
-        }
-
-        if (StringUtils.isNotBlank(description)) {
-            if (isOracleDB()) {
-                sqlPreparedStatementManager.addWhereClause("description LIKE ('%' || ? || '%')", description);
-            } else {
-                sqlPreparedStatementManager.addWhereClause("description LIKE CONCAT('%', ?, '%')", description);
-            }
-        }
-
-        return sqlPreparedStatementManager;
-    }
-
-    @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(RestfulUserActivityLogFilter filter) {
         StringBuilder query = new StringBuilder();
-        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
+        List<Object> params = buildOverviewSelectQuery(query, filter);
 
         return new SqlPreparedStatementManager(query.toString(), params.toArray());
     }
@@ -189,4 +127,10 @@ public class RestfulUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl im
             return userAction;
         }
     }
+
+    @Override
+    protected String getTableName() {
+        return "restful_usage_log_tbl";
+    }
+
 }

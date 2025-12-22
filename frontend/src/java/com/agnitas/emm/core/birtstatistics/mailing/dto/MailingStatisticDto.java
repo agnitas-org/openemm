@@ -30,8 +30,6 @@ public class MailingStatisticDto {
     private boolean topLevelDomain;
     private int maxDomains;
     private Date mailingStartDate;
-    private int sector;
-    private boolean allowBenchmark;
     private int linkId;
     private int optimizationId;
 
@@ -141,22 +139,6 @@ public class MailingStatisticDto {
 
     public void setMailingStartDate(Date mailingStartDate) {
         this.mailingStartDate = mailingStartDate;
-    }
-
-    public int getSector() {
-        return sector;
-    }
-
-    public void setSector(int sector) {
-        this.sector = sector;
-    }
-
-    public boolean isAllowBenchmark() {
-        return allowBenchmark;
-    }
-
-    public void setAllowBenchmark(boolean allowBenchmark) {
-        this.allowBenchmark = allowBenchmark;
     }
     
     public void setLinkId(int linkId) {

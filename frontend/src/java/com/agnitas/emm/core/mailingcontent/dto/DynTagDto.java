@@ -13,8 +13,6 @@ package com.agnitas.emm.core.mailingcontent.dto;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.commons.lang3.StringUtils;
-
 public class DynTagDto {
 
     private int id;
@@ -23,9 +21,7 @@ public class DynTagDto {
     private int templateId;
     private String interestGroup;
     private String name;
-    private String previewText;
     private List<DynContentDto> contentBlocks;
-    private List<String> targetGroupNames;
 
     public int getId() {
         return id;
@@ -81,22 +77,6 @@ public class DynTagDto {
 
     public void setTemplateId(int templateId) {
         this.templateId = templateId;
-    }
-
-    public String getTargetGroupNamesStr() {
-        return StringUtils.join(targetGroupNames, "; ");
-    }
-
-    public void setTargetGroupNames(List<String> targetGroupNames) {
-        this.targetGroupNames = targetGroupNames;
-    }
-
-    public String getPreviewText() {
-        return previewText;
-    }
-
-    public void setPreviewText(String previewText) {
-        this.previewText = previewText;
     }
 
     @Override

@@ -10,32 +10,6 @@
 
 package com.agnitas.emm.core.workflow.dao.impl;
 
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.recipient.dao.impl.HistoryUpdateType;
-import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
-import com.agnitas.emm.core.workflow.beans.WorkflowReaction;
-import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionStep;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepInstance;
-import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepInstanceImpl;
-import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
-import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.Deadline;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.beans.impl.CompanyStatus;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -46,7 +20,32 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
+
+import com.agnitas.beans.CompaniesConstraints;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.recipient.dao.impl.HistoryUpdateType;
+import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
+import com.agnitas.emm.core.workflow.beans.WorkflowReaction;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionStep;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepDeclaration;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionStepInstance;
+import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepInstanceImpl;
+import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
+import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.Deadline;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Transactional;
 
 public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReactionDao {
 
@@ -57,8 +56,14 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
 
     private WorkflowReactionDao selfRef; // for @Transactional invocations within the class
 
-    @Override
-    public boolean exists(int reactionId, int companyId) {
+    /**
+     * Check if there's a reaction having such an identifier.
+     *
+     * @param reactionId an identifier of the reaction to check.
+     * @param companyId an identifier of a company that owns referenced reaction.
+     * @return whether ({@code true}) or not ({@code false}) the referenced reaction exists.
+     */
+    protected boolean exists(int reactionId, int companyId) {
         String sqlGetCount = "SELECT COUNT(*) FROM workflow_reaction_tbl WHERE company_id = ? AND reaction_id = ?";
         return selectInt(sqlGetCount, companyId, reactionId) > 0;
     }
@@ -166,7 +171,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
         } else {
             String insertStatement = "INSERT INTO workflow_reaction_tbl (workflow_id, company_id, mailinglist_id, trigger_mailing_id, trigger_link_id, " +
                 "active, once, start_date, admin_timezone, reaction_type, profile_column, rules_sql) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            newId = insertIntoAutoincrementMysqlTable("reaction_id", insertStatement, params.toArray());
+            newId = insert("reaction_id", insertStatement, params.toArray());
         }
 
         reaction.setReactionId(newId);
@@ -241,7 +246,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
                 reactionId,
                 step.getStepId(),
                 step.getPreviousStepId()
-        }).collect(Collectors.toList());
+        }).toList();
 
         batchupdate("UPDATE workflow_reaction_decl_tbl SET mailing_id = ?, target_id = ? " +
                 "WHERE company_id = ? AND reaction_id = ? AND step_id = ? AND previous_step_id = ?", params);
@@ -256,8 +261,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
         }
     }
 
-    @Override
-    public void activateReaction(int reactionId, int companyId) {
+    private void activateReaction(int reactionId, int companyId) {
         update("UPDATE workflow_reaction_tbl SET active = 1 WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
     }
 
@@ -643,7 +647,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
         return select(sqlGetRecipients, IntegerRowMapper.INSTANCE, step.getCompanyId(), step.getReactionId(), step.getCaseId(), step.getStepId());
     }
 
-    protected void setTriggerStepRecipients(int caseId, int reactionId, int companyId, List<Integer> recipients, Date reactionDate) {
+    private void setTriggerStepRecipients(int caseId, int reactionId, int companyId, List<Integer> recipients, Date reactionDate) {
         String sqlClearLog = "DELETE FROM workflow_reaction_out_tbl WHERE company_id = ? AND reaction_id = ? AND case_id = ? AND step_id = 0";
         update(sqlClearLog, companyId, reactionId, caseId);
 
@@ -659,7 +663,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
         }
     }
 
-    protected void createNewCase(WorkflowReaction reaction, int newCaseId, Date reactionDate) {
+    private void createNewCase(WorkflowReaction reaction, int newCaseId, Date reactionDate) {
         List<WorkflowReactionStepInstance> instances = getNewStepInstances(reaction, newCaseId, reactionDate);
 
         if (instances.size() > 0) {
@@ -708,7 +712,7 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
     
     @Override
     public boolean isLinkUsedInActiveWorkflow(TrackableLink link) {
-        String query = "SELECT " + (isOracleDB() ? "1 FROM DUAL WHERE" : "") +
+        String query = "SELECT 1 " + (isOracleDB() ? "FROM DUAL" : "") + " WHERE " +
                 " EXISTS (SELECT 1 FROM dyn_target_tbl t, workflow_reaction_tbl wr" +
                 "    WHERE (t.target_id IN (" +
                 "        SELECT wd.entity_id FROM workflow_tbl w JOIN workflow_dependency_tbl wd ON w.workflow_id = wd.workflow_id" +
@@ -723,11 +727,11 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
                 WorkflowDependencyType.TARGET_GROUP_CONDITION.getId(), link.getId()) == 1;
     }
 
-    public void setRecipientProfileHistoryService(final RecipientProfileHistoryService service) {
+    public void setRecipientProfileHistoryService(RecipientProfileHistoryService service) {
         this.recipientProfileHistoryService = service;
     }
 
-    public final void setSelfRef(final WorkflowReactionDao dao) {
+    public void setSelfRef(WorkflowReactionDao dao) {
     	this.selfRef = Objects.requireNonNull(dao, "Self reference is null");
     }
 
@@ -773,9 +777,10 @@ public class WorkflowReactionDaoImpl extends BaseDaoImpl implements WorkflowReac
     }
 
     private static class NewStepInstanceFromDeclarationRowMapper implements RowMapper<WorkflowReactionStepInstance> {
-        private Date reactionDate;
-        private TimeZone timezone;
-        private int caseId;
+
+        private final Date reactionDate;
+        private final TimeZone timezone;
+        private final int caseId;
 
         public NewStepInstanceFromDeclarationRowMapper(Date reactionDate, TimeZone timezone, int caseId) {
             this.reactionDate = reactionDate;

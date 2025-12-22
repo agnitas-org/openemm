@@ -1,132 +1,78 @@
-(function() {
-  var DateFilter = function() {};
+class DateRangeFilter {
 
-  DateFilter.prototype.init = function (params) {
-    this.eGui = document.createElement('div');
-    this.eGui.innerHTML =
-        "<div class=\"ag-filter\">" +
-        "  <div>" +
-        "    <div class=\"ag-filter-body-wrapper\">" +
-        "      <div class=\"ag-filter-body\">" +
-        "        <label class=\"\">" + t('tables.from') + "</label>" +
-        "        <input class=\"ag-filter-filter form-control js-datepicker js-datepicker-right\" id=\"filterBegin\" type=\"text\" placeholder=\"\">" +
-        "      </div>" +
-        "      <div class=\"ag-filter-body\">" +
-        "        <label class=\"\">" + t('tables.till') + "</label>" +
-        "        <input class=\"ag-filter-filter form-control js-datepicker js-datepicker-right\" id=\"filterEnd\" type=\"text\" placeholder=\"\">" +
-        "      </div>" +
-        "    </div>" +
-        "    <div class=\"ag-filter-apply-panel\" id=\"applyPanel\">" +
-        "      <a href=\"#\" id=\"clearFilter\" class=\"\">" + t('tables.clearFilter') + "</a>" +
-        "    </div>" +
-        "  </div>" +
-        "</div>";
+  init(params) {
+    this.params = params;
+    this.column = params.column.colId;
+    this.$fromDate = this.#getDateRangeFilter(params, 'from');
+    this.$toDate = this.#getDateRangeFilter(params, 'to');
+  }
 
-    this.filterBegin = $(this.eGui).find('#filterBegin');
-    this.filterEnd = $(this.eGui).find('#filterEnd');
-    this.beginDate = undefined;
-    this.endDate = undefined;
-    this.clearFilter = $(this.eGui).find('#clearFilter');
+  #getDateRangeFilter(params, suffix) {
+    let $filter = $(`${params.colDef[`filter${_.capitalize(suffix)}Input`]}`);
+    if (!$filter.length) {
+      $filter = $(`#${params.column.colId}-${suffix}-filter`)
+    }
+    return $filter;
+  }
 
-    this.filterBegin.on('change', this.filterBeginChanged.bind(this));
-    this.filterEnd.on('change', this.filterEndChanged.bind(this));
-    this.clearFilter.on('click', this.filterClear.bind(this));
-    AGN.Lib.CoreInitializer.run('pickadate', $(this.eGui));
+  #getIsoVal($dateInput) {
+    return $dateInput.datepicker('getDate')?.toISOString();
+  }
 
-    this.filterActive = false;
-    this.filterChangedCallback = params.filterChangedCallback;
-    this.valueGetter = params.valueGetter;
-  };
+  isFilterActive() {
+    return this.fromDate || this.toDate;
+  }
 
-  DateFilter.prototype.afterGuiAttached = function() {};
-
-  DateFilter.prototype.destroy = function() {
-    this.filterBegin.off('change', this.filterBeginChanged.bind(this));
-    this.filterEnd.off('change', this.filterEndChanged.bind(this));
-    this.clearFilter.off('click', this.filterClear.bind(this))
-  };
-
-  DateFilter.prototype.filterBeginChanged = function () {
-    var apiMax = this.filterEnd.data('pickadate');
-    apiMax.set('min', this.filterBegin.val());
-
-    this.beginDate = this.filterBegin.data('pickadate').get('select').pick;
-
-    this.filterActive = (this.beginDate || this.endDate);
-    this.filterChangedCallback();
-  };
-
-  DateFilter.prototype.filterEndChanged = function () {
-    var apiMin = this.filterBegin.data('pickadate');
-    apiMin.set('max', this.filterEnd.val());
-
-    this.endDate = this.filterEnd.data('pickadate').get('select').pick;
-
-    this.filterActive = (this.beginDate || this.endDate);
-    this.filterChangedCallback();
-  };
-
-  DateFilter.prototype.filterClear = function () {
-    var apiMin, apiMax;
-    
-    this.filterEnd.val(undefined);
-    this.filterBegin.val(undefined);
-    this.beginDate = undefined;
-    this.endDate = undefined;
-
-    apiMax = this.filterEnd.data('pickadate');
-    apiMax.set('min', false);
-    apiMin = this.filterBegin.data('pickadate');
-    apiMin.set('max', false);
-
-    this.filterActive = false;
-    this.filterChangedCallback();
-  };
-
-  DateFilter.prototype.getGui = function () {
-    return this.eGui;
-  };
-
-  DateFilter.prototype.doesFilterPass = function (params) {
-    var date = this.valueGetter(params.node);
-
-    if (!this.beginDate && !this.endDate) { 
+  doesFilterPass(params) {
+    if (!this.fromDate && !this.toDate) {
       return true;
     }
 
+    const date = this.#getDate(params);
     if (!date) {
       return false;
     }
 
-    if (this.beginDate && this.endDate) {
-      return date >= this.beginDate && date <= this.endDate
+    if (this.fromDate && this.toDate) {
+      return date >= this.fromDate && date <= this.toDate
+    }
+    if (this.fromDate) {
+      return date >= this.fromDate
+    }
+    if (this.toDate) {
+      return date <= this.toDate
+    }
+  }
+
+  #getDate(params) {
+    const value = params.data[this.column];
+    if (typeof value === 'number' && value > 0) {
+      return new Date(value);
     }
 
-    if (this.beginDate) {
-      return date >= this.beginDate
+    return value?.date;
+  }
+
+  getModel() {
+    return {
+      fromDate: this.fromDate,
+      toDate: this.toDate
+    };
+  }
+
+  setModel(model) {
+    if (this.$fromDate?.length) {
+      const fromDateIso = this.#getIsoVal(this.$fromDate);
+      this.fromDate = fromDateIso ? new Date(fromDateIso) : null;
     }
-
-    if (this.endDate) {
-      return date <= this.endDate
+    if (this.$toDate?.length) {
+      const toDateIso = this.#getIsoVal(this.$toDate);
+      this.toDate = toDateIso ? new Date(toDateIso) : null;
+      this.toDate?.setDate(this.toDate?.getDate() + 1);
     }
-  };
+  }
 
-  DateFilter.prototype.parseDate = function(date) {
-    if (!date) {
-      return;
-    }
-    return moment(date, t('date.format').toUpperCase()).valueOf();
-  };
-
-  DateFilter.prototype.isFilterActive = function () {
-    return this.filterActive;
-  };
-
-  // this example isn't using getModel() and setModel(),
-  // so safe to just leave these empty. don't do this in your code!!!
-  DateFilter.prototype.getModel = function() {};
-  DateFilter.prototype.setModel = function() {};
-
-
-  AGN.Lib.TableDateFilter = DateFilter;
-})();
+  getGui() {
+    return document.createElement('div'); // filters located in separate filter tile
+  }
+}

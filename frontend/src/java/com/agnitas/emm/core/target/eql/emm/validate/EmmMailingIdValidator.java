@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.eql.emm.validate;
 
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.MailingDao;

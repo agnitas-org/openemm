@@ -18,7 +18,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.recipient.exception.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
@@ -29,8 +30,7 @@ import com.agnitas.emm.core.webhooks.settings.common.WebhookSettings;
 import com.agnitas.emm.core.webhooks.settings.service.WebhookSettingsService;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,12 +39,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
-@PermissionMapping("webhooks")
+@RequiredPermission("webhooks.admin")
 public final class WebhookAdministrationController implements XssCheckAware {
 
-	public static final String WEBHOOK_ATTRIBUTE_NAME = "WEBHOOKS";
-	public static final String EVENT_TYPE_ATTRIBUTE_NAME = "WEBHOOK_EVENT_TYPE";
-	public static final String PROFILEFIELDS_ATTRIBUTE_NAME = "PROFILE_FIELDS";
 	private static final String REDIRECT_TO_LIST = "redirect:/webhooks/list.action";
 
 	private final WebhookConfigService webhookConfigService;
@@ -74,6 +71,7 @@ public final class WebhookAdministrationController implements XssCheckAware {
 	}
 	
 	@PostMapping("/webhooks/enableInterface.action")
+	@RequiredPermission("webhooks.enable")
 	public String enableInterface(Admin admin, Model model, @ModelAttribute("enableInterfaceForm") WebhookEnableForm form) throws RecipientProfileHistoryException {
 		// TODO Check permission and update settings
 		profileHistoryService.enableProfileFieldHistory(admin.getCompanyID());
@@ -83,14 +81,14 @@ public final class WebhookAdministrationController implements XssCheckAware {
 	}
 
 	@GetMapping("/webhooks/{eventTypeName:[A-Z_]+}/view.action")
-	public String view(final Admin admin, @ModelAttribute("webhookConfigForm") final WebhookConfigurationForm configForm, @PathVariable final String eventTypeName, final Model model) throws ProfileFieldListException {
+	public String view(Admin admin, @ModelAttribute("webhookConfigForm") WebhookConfigurationForm configForm, @PathVariable String eventTypeName, Model model) {
 		try {
 			final WebhookEventType eventType = webhookEventTypeFromString(eventTypeName);
 	
 			populateConfigureWebhookData(admin.getCompanyID(), eventType, configForm);
 			
 			return doView(admin.getCompanyID(), eventType, model);
-		} catch(final UnknownEventTypeException e) {
+		} catch (UnknownEventTypeException e) {
 			// Viewing error messages for unknown event type makes less sense here. Navigate to webhook list.
 			return REDIRECT_TO_LIST;
 		}
@@ -102,15 +100,15 @@ public final class WebhookAdministrationController implements XssCheckAware {
 		configForm.fillFrom(settings);
 	}
 
-	private String doView(final int companyId, final WebhookEventType eventType, final Model model) {
-		model.addAttribute(EVENT_TYPE_ATTRIBUTE_NAME, eventType);
-		model.addAttribute(PROFILEFIELDS_ATTRIBUTE_NAME, recipientFieldService.getRecipientFields(companyId));
-		
+	private String doView(int companyId, WebhookEventType eventType, Model model) {
+		model.addAttribute("WEBHOOK_EVENT_TYPE", eventType);
+		model.addAttribute("PROFILE_FIELDS", recipientFieldService.getRecipientFields(companyId));
 		return "webhook_view";
 	}
 	
 	@PostMapping("/webhooks/{eventTypeName:[A-Z_]+}/save.action")
-	public String updateWebhookSettings(final Admin admin, @ModelAttribute("webhookConfigForm") final WebhookConfigurationForm configForm, @PathVariable final String eventTypeName, final Model model, final Popups popups) throws ProfileFieldListException {
+	public String updateWebhookSettings(@ModelAttribute("webhookConfigForm") WebhookConfigurationForm configForm,
+										@PathVariable String eventTypeName, Admin admin, Model model, Popups popups) {
 		try {
 			final WebhookEventType eventType = webhookEventTypeFromString(eventTypeName);
 	
@@ -118,28 +116,21 @@ public final class WebhookAdministrationController implements XssCheckAware {
                 final Set<String> includedProfileFields = configForm.getIncludedProfileFields();
 				this.webhookSettingsService.updateWebhookSettings(admin.getCompanyID(), eventType, configForm.getUrl(), includedProfileFields);
 			
-				popups.success("default.changes_saved");
+				popups.changesSaved();
 				
 				return REDIRECT_TO_LIST;
-			} catch(final WebhookRegistrationException e) {
+			} catch (WebhookRegistrationException e) {
 				popups.alert("error.webhooks.general");
-
 				return doView(admin.getCompanyID(), eventType, model);
-			} catch(final WebhookUrlException e) {
+			} catch (WebhookUrlException e) {
 				WebhookUrlExceptionsToPopups.exceptionToPopup(e, popups);
-
-				return isUiRedesign(admin) ? MESSAGES_VIEW : doView(admin.getCompanyID(), eventType, model);
+				return MESSAGES_VIEW;
 			}
-		} catch(final UnknownEventTypeException e) {
+		} catch (UnknownEventTypeException e) {
 			popups.alert("error.webhooks.general");
-			
 			return REDIRECT_TO_LIST;
 		}
 	}
-
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
 
 	private void includeWebhookConfigurationData(Admin admin, Model model) {
 		final List<WebhookSettings> registeredWebhooks = this.webhookSettingsService.listWebhookSettings(admin.getCompanyID());
@@ -147,7 +138,7 @@ public final class WebhookAdministrationController implements XssCheckAware {
 				.map(WebhookListItem::from)
 				.collect(Collectors.toList());
 
-		model.addAttribute(WEBHOOK_ATTRIBUTE_NAME,  listItems);
+		model.addAttribute("WEBHOOKS",  listItems);
 	}
 	
 	private static WebhookEventType webhookEventTypeFromString(final String name) throws UnknownEventTypeException {

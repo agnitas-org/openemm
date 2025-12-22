@@ -14,6 +14,7 @@ import com.agnitas.beans.ColumnMapping;
 import org.apache.commons.lang3.StringUtils;
 
 public class ColumnMappingImpl implements ColumnMapping {
+
 	protected int id;
 
     protected int profileId;
@@ -23,8 +24,6 @@ public class ColumnMappingImpl implements ColumnMapping {
     protected String databaseColumn;
 
     protected boolean mandatory = false;
-
-    protected boolean encrypted = false;
 
     protected String defaultValue;
     
@@ -80,16 +79,6 @@ public class ColumnMappingImpl implements ColumnMapping {
     @Override
 	public void setMandatory(boolean mandatory) {
         this.mandatory = mandatory;
-    }
-
-    @Override
-	public boolean isEncrypted() {
-        return encrypted;
-    }
-
-    @Override
-	public void setEncrypted(boolean encrypted) {
-        this.encrypted = encrypted;
     }
 
     @Override
@@ -153,11 +142,7 @@ public class ColumnMappingImpl implements ColumnMapping {
     	if (mandatory) {
     		result.append(", mandatory = ").append(mandatory);
     	}
-    	
-    	if (encrypted) {
-    		result.append(", encrypted = ").append(encrypted);
-    	}
-    	
+
 		return result.toString();
     }
 }

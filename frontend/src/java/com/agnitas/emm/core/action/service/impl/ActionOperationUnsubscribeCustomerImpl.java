@@ -19,8 +19,7 @@ import java.util.stream.Collectors;
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.MailingDao;
@@ -36,14 +35,13 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperation {
 
-	/** The logger. */
     private static final Logger LOGGER = LogManager.getLogger(ActionOperationUnsubscribeCustomerImpl.class);
 
     private RecipientService recipientService;
     private MailingDao mailingDao;
 
     @Override
-    public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) throws Exception {
+    public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) {
         // GWUA-4782: Expand unsubscribe action
         return newExecute(operation, params, errors);
     }
@@ -53,7 +51,7 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
         return ActionOperationType.UNSUBSCRIBE_CUSTOMER;
     }
 
-    private boolean newExecute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) throws UnknownUserStatusException {
+    private boolean newExecute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) {
         ActionOperationUnsubscribeCustomerParameters op = (ActionOperationUnsubscribeCustomerParameters) operation;
         int companyId = op.getCompanyId();
         int mailingId = getMailingIdFromParams(params);
@@ -68,7 +66,7 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
 
     private boolean unsubscribeRecipientFromMailingLists(Set<Integer> mailinglistIds, EmmActionOperationErrors errors,
                                                          int exitMailingId, int recipientId, int companyId,
-                                                         Map<String, Object> params) throws UnknownUserStatusException {
+                                                         Map<String, Object> params) {
         List<BindingEntry> bindings = getBindingsToUnsubscribe(mailinglistIds, companyId, recipientId);
         if (bindings.isEmpty()) {
             return true;
@@ -81,8 +79,8 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
         return tryUpdateBindings(bindings, companyId, errors);
     }
 
-    private boolean unsubscribe(BindingEntry binding, int exitMailingId, Map<String, Object> params) throws UnknownUserStatusException {
-        switch (UserStatus.getUserStatusByID(binding.getUserStatus())) {
+    private boolean unsubscribe(BindingEntry binding, int exitMailingId, Map<String, Object> params) {
+        switch (UserStatus.getByCode(binding.getUserStatus())) {
             case Active, Bounce, Suspend:
                 if (!UserType.TestVIP.getTypeCode().equals(binding.getUserType())
                         && !UserType.WorldVIP.getTypeCode().equals(binding.getUserType())) {

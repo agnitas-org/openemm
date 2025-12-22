@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.agnitas.messages.I18nString;
-import com.agnitas.util.ParsingException;
 import cz.vutbr.web.css.CSSException;
 import cz.vutbr.web.css.CSSFactory;
 import cz.vutbr.web.css.Declaration;
@@ -72,10 +71,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class HtmlUtils {
+
+    private HtmlUtils() {
+
+    }
+
     private static final Logger logger = LogManager.getLogger(HtmlUtils.class);
 
-    private static final ConfigFileTagProvider configFileTagProvider = getConfigFileTagProvider();
-    
     private static final Set<String> STANDALONE_NODE_NAMES = new CaseInsensitiveSet(Arrays.asList(
             "area",
             "base",
@@ -92,6 +94,8 @@ public class HtmlUtils {
             "isindex"
     ));
 
+    private static ConfigFileTagProvider configFileTagProvider;
+
     /**
      * Parse an entire HTML document or a document fragment. Use lowercase translation for names of tags and attributes.
      * @param document a HTML code to parse.
@@ -104,17 +108,21 @@ public class HtmlUtils {
         props.setUseCdataForScriptAndStyle(false);
         props.setTranslateSpecialEntities(false);
         props.setDeserializeEntities(true);
-        HtmlCleaner cleaner = new HtmlCleaner(configFileTagProvider, props);
+        HtmlCleaner cleaner = new HtmlCleaner(getConfigFileTagProvider(), props);
         TagNode node = cleaner.clean(IOUtils.toInputStream(document, encoding), encoding);
         return new DomSerializer(props, false).createDOM(node);
     }
 
     private static ConfigFileTagProvider getConfigFileTagProvider() {
-        try {
-            return new ConfigFileTagProvider(ResourceUtils.getFile("classpath:html-cleaner/tag-ruleset.xml"));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+        if (configFileTagProvider == null) {
+            try {
+                configFileTagProvider = new ConfigFileTagProvider(ResourceUtils.getFile("classpath:html-cleaner/tag-ruleset.xml"));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
+
+        return configFileTagProvider;
     }
 
     /**
@@ -157,9 +165,7 @@ public class HtmlUtils {
 
         if (styles != null) {
             for (RuleBlock<?> ruleBlock : styles) {
-                if (ruleBlock instanceof RuleMedia) {
-                    RuleMedia block = (RuleMedia) ruleBlock;
-
+                if (ruleBlock instanceof RuleMedia block) {
                     for (RuleSet set : block) {
                         set.forEach(HtmlUtils::resolveUris);
                     }
@@ -212,8 +218,8 @@ public class HtmlUtils {
      */
     private static void resolveUris(Declaration declaration) {
         for (Term<?> term : declaration) {
-            if (term instanceof TermURI) {
-                resolveUri((TermURI) term);
+            if (term instanceof TermURI termURI) {
+                resolveUri(termURI);
             }
         }
     }
@@ -314,15 +320,13 @@ public class HtmlUtils {
                     sb.append(operator.value());
                 }
                 sb.append(term);
-            } else if (term instanceof TermFunction) {
-                TermFunction termFunction = (TermFunction) term;
+            } else if (term instanceof TermFunction termFunction) {
                 if ("agn".equals(termFunction.getFunctionName())) {
                     TermIdent termIdent = (TermIdent) termFunction.get(0);
                     termIdent.setValue(AgnTagUtils.decodeInnerAgnTag(termIdent.getValue()));
                     sb.append(termIdent);
                 }
-            } else if (term instanceof TermURI) {
-                TermURI termUri = (TermURI) term;
+            } else if (term instanceof TermURI termUri) {
                 if (AgnTagUtils.containsAnyEncodedInnerAgnTag(termUri.getValue())) {
                     termUri.setValue(AgnTagUtils.decodeInnerAgnTags(termUri.getValue()));
                 }
@@ -407,7 +411,7 @@ public class HtmlUtils {
                                     URL remoteResource = new URL(address);
                                     appendStyleTag(builder, CssUtils.stripEmbeddableStyles(remoteResource, options.getMediaType(), options.isPrettyPrint()), options);
                                 } catch (MalformedURLException e) {
-                                    logger.error("Unable to resolve a URL: " + address);
+                                    logger.error("Unable to resolve a URL: {}", address);
                                 }
 
                                 // Don't append a link tag

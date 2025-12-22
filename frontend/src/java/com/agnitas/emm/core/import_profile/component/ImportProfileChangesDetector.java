@@ -105,14 +105,10 @@ public class ImportProfileChangesDetector {
     }
 
     private String getDateFormatChangesLog(ImportProfile oldImport, ImportProfile newImport) {
-        try {
-            String newDateFormat = DateFormat.getDateFormatById(newImport.getDateFormat()).getValue();
-            String oldDateFormat = DateFormat.getDateFormatById(oldImport.getDateFormat()).getValue();
+        String newDateFormat = DateFormat.getDateFormatById(newImport.getDateFormat()).getValue();
+        String oldDateFormat = DateFormat.getDateFormatById(oldImport.getDateFormat()).getValue();
 
-            return addChangedFieldLog("Date format", newDateFormat, oldDateFormat);
-        } catch (Exception e) {
-            return "";
-        }
+        return addChangedFieldLog("Date format", newDateFormat, oldDateFormat);
     }
 
     private String getImportModeChangesLog(ImportProfile oldImport, ImportProfile newImport) {
@@ -151,7 +147,7 @@ public class ImportProfileChangesDetector {
         if (actionId == 0) {
             return NONE;
         } else {
-	        List<EmmAction> emmActions = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING);
+	        List<EmmAction> emmActions = emmActionDao.getActiveEmmActionsByOperationType(companyId, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING);
 	        EmmAction emmAction = emmActions.stream()
 	                .filter(action -> action.getId() == actionId)
 	                .findFirst()

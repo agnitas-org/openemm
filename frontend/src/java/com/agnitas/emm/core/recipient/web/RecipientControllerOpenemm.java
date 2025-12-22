@@ -1,11 +1,14 @@
 package com.agnitas.emm.core.recipient.web;
 
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.core.delivery.service.DeliveryService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipient.forms.RecipientsFormSearchParams;
 import com.agnitas.emm.core.recipient.service.RecipientLogService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
@@ -13,13 +16,9 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConvert
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.DataSourceService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 
 @Controller
 @RequestMapping("/recipient")
-@PermissionMapping("recipient")
 @SessionAttributes(types = RecipientsFormSearchParams.class)
 public class RecipientControllerOpenemm extends RecipientController {
 

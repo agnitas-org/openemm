@@ -12,10 +12,11 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.binding.service.BindingModel;
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.emm.core.binding.service.BindingService;
+import com.agnitas.emm.springws.jaxb.extended.SetSubscriberBindingWithActionRequest;
+import com.agnitas.emm.springws.jaxb.extended.SetSubscriberBindingWithActionResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.emm.core.binding.service.BindingModel;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,13 +27,9 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.binding.service.BindingService;
-import com.agnitas.emm.springws.jaxb.extended.SetSubscriberBindingWithActionRequest;
-import com.agnitas.emm.springws.jaxb.extended.SetSubscriberBindingWithActionResponse;
-
 @Endpoint
 public class SetSubscriberBindingWithActionEndpoint extends BaseEndpoint {
-	/** The logger. */
+
 	private static final Logger logger = LogManager.getLogger(SetSubscriberBindingWithActionEndpoint.class);
 
 	private final BindingService bindingService;
@@ -45,12 +42,10 @@ public class SetSubscriberBindingWithActionEndpoint extends BaseEndpoint {
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "SetSubscriberBindingWithActionRequest")
-	public @ResponsePayload SetSubscriberBindingWithActionResponse setSubscriberBindingWithAction(@RequestPayload SetSubscriberBindingWithActionRequest request) throws Exception {
-		if (logger.isInfoEnabled()) {
-			logger.info( "Entered SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
-			logger.info( "Parsing binding model");
-		}
-		
+	public @ResponsePayload SetSubscriberBindingWithActionResponse setSubscriberBindingWithAction(@RequestPayload SetSubscriberBindingWithActionRequest request) {
+		logger.info("Entered SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
+		logger.info("Parsing binding model");
+
 		final BindingModel model = new BindingModel();
 		model.setCustomerId(request.getCustomerID());
 		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
@@ -64,17 +59,13 @@ public class SetSubscriberBindingWithActionEndpoint extends BaseEndpoint {
 		
 		boolean runActionAsynchronous = BooleanUtils.toBooleanDefaultIfNull(request.isRunActionAsynchronous(), false);
 
-		if (logger.isInfoEnabled()) {
-			logger.info( "Calling binding service layer");
-		}
-		
+		logger.info("Calling binding service layer");
+
 		final SetSubscriberBindingWithActionResponse response = new SetSubscriberBindingWithActionResponse();
 		response.setValue(bindingService.setBindingWithActionId(model, runActionAsynchronous));
 		
-		if (logger.isInfoEnabled()) {
-			logger.info( "Leaving SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
-		}
-		
+		logger.info("Leaving SetSubscriberBindingWithActionEndpoint.setSubscriberBindingWithAction()");
+
 		return response;
 	}
 }

@@ -10,11 +10,11 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.LicenseDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-
-import java.io.ByteArrayOutputStream;
 import java.util.Date;
+
+import com.agnitas.dao.LicenseDao;
+import com.agnitas.dao.impl.mapper.BlobRowMapper;
+import com.agnitas.emm.core.commons.util.ConfigService;
 
 public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
@@ -24,10 +24,8 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 	}
 
 	@Override
-	public byte[] getLicenseData() throws Exception {
-		ByteArrayOutputStream interimStream = new ByteArrayOutputStream();
-		writeBlobInStream("SELECT data FROM license_tbl WHERE name = ?", interimStream, "LicenseData");
-		return interimStream.toByteArray();
+	public byte[] getLicenseData() {
+		return selectObjectDefaultNull("SELECT data FROM license_tbl WHERE name = ?", BlobRowMapper.INSTANCE, "LicenseData");
 	}
 
 	@Override
@@ -86,24 +84,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 
 	@Override
 	public byte[] getLicenseSignatureData() {
-		try {
-			ByteArrayOutputStream interimStream = new ByteArrayOutputStream();
-			writeBlobInStream("SELECT data FROM license_tbl WHERE name = ?", interimStream, "LicenseSignature");
-			return interimStream.toByteArray();
-		} catch (Exception e) {
-			logger.error("Error reading license data", e);
-			
-			return null;
-		}
-	}
-
-	@Override
-	public int getHighestAccessLimitingMailinglistsPerCompany() {
-		if (ConfigService.getInstance().isDisabledMailingListsSupported()) {
-			return selectIntWithDefaultValue("SELECT MAX(amount) FROM (SELECT company_id, COUNT(DISTINCT mailinglist_id) as amount FROM disabled_mailinglist_tbl GROUP BY company_id) subsel", 0);
-		} else {
-			return 0;
-		}
+		return selectObjectDefaultNull("SELECT data FROM license_tbl WHERE name = ?", BlobRowMapper.INSTANCE, "LicenseSignature");
 	}
 
 	@Override
@@ -125,16 +106,7 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 	}
 
 	@Override
-	public int getNumberOfAccessLimitingTargetgroups(int companyID) {
-		if (ConfigService.getInstance().isAccessLimitingTargetgroupsSupported()) {
-			return selectIntWithDefaultValue("SELECT COUNT(*) FROM disabled_mailinglist_tbl WHERE dyn_target_tbl WHERE is_access_limiting = 1 AND company_id = ?", 0, companyID);
-		} else {
-			return 0;
-		}
-	}
-
-	@Override
 	public int getNumberOfCompanyReferenceTables(int companyID) {
-		return selectInt("SELECT count(*) FROM reference_tbl WHERE company_id = ? AND deleted = 0", companyID);
+		return selectInt("SELECT COUNT(*) FROM reference_tbl WHERE company_id = ? AND deleted = 0", companyID);
 	}
 }

@@ -1,230 +1,291 @@
-// /*doc
-// ---
-// title: Select Directive
-// name: select-directive
-// parent: directives
-// ---
-//
-// All selects are automatically decorated with select2. When setting the `js-select` class on a select tag a search field will be enabled if there are at least 10 options present.
-//
-// ```htmlexample
-// <div class="form-group">
-//   <div class="col-sm-4">
-//     <label class="form-label">
-//       Select
-//     </label>
-//   </div>
-//   <div class="col-sm-8">
-//     <select class="form-control">
-//       <option>An Option</option>
-//     </select>
-//   </div>
-// </div>
-// <div class="form-group">
-//   <div class="col-sm-4">
-//     <label class="form-label">
-//       Select with Search
-//     </label>
-//   </div>
-//   <div class="col-sm-8">
-//     <select class="form-control js-select">
-//       <option value="1">Option 1</option>
-//       <option value="2">Option 2</option>
-//       <option value="3">Option 3</option>
-//       <option value="4">Option 4</option>
-//       <option value="5">Option 5</option>
-//       <option value="6">Option 6</option>
-//       <option value="7">Option 7</option>
-//       <option value="8">Option 8</option>
-//       <option value="9">Option 9</option>
-//       <option value="10">Option 10</option>
-//     </select>
-//   </div>
-// </div>
-// ```
-//
-// For multi-selects you can also use `data-url` attributes on `<option>` elements in order to turn selected items into links:
-//
-// ```htmlexample
-// <div class="form-group">
-//   <div class="col-sm-4">
-//     <label class="form-label">
-//       Select with Links
-//     </label>
-//   </div>
-//   <div class="col-sm-8">
-//     <select class="form-control js-select" multiple="multiple">
-//       <option value="1" data-url="https://www.google.com?q=alaska">Alaska</option>
-//       <option value="2" data-url="https://www.google.com?q=hawaii">Hawaii</option>
-//       <option value="3" data-url="https://www.google.com?q=california">California</option>
-//       <option value="4" data-url="https://www.google.com?q=nevada">Nevada</option>
-//       <option value="5" data-url="https://www.google.com?q=oregon">Oregon</option>
-//     </select>
-//   </div>
-// </div>
-// ```
-//
-// */
+;(() => {
 
-;(function(){
-  var Popover = AGN.Lib.Popover,
-      Template = AGN.Lib.Template,
-      Page = AGN.Lib.Page;
+  const Template = AGN.Lib.Template;
+  const CoreInitializer = AGN.Lib.CoreInitializer;
 
-  AGN.Lib.CoreInitializer.new('select', ['template'], function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
+  const SCROLLBAR_DATA_KEY = 'agn:select-scrollbar';
 
-    _.each($scope.all('select'), function(el) {
-      var $el = $(el);
-      var resultTemplateId = $el.data('result-template');
+  CoreInitializer.new('select', ['template'], function($scope = $(document)) {
+    _.each($scope.all('select'), el=> {
+      const $el = $(el);
 
       if ($el.data('select2')) {
         $el.select2('destroy');
       }
 
-      var options = {
+      let options = {
         placeholder: $el.attr('placeholder'),
-        minimumResultsForSearch: 10
+        minimumResultsForSearch: 10,
+        showSearchIcon: true,
+        width: '100%',
+        searchInputPlaceholder: t('tables.searchOoo'),
+        dropdownCssClass: ':all:',
+        selectionCssClass: ':all:',
+        dropdownParent: getDropdownParent($el),
+        preventPlaceholderClear: false // custom option
       };
 
-      if ( !$el.hasClass('js-select') && !$el.hasClass('js-select-tags')) {
-        options.minimumResultsForSearch = -1;
-      }
-
-      if ( $el.hasClass('js-select-tags') ) {
-        options.inlineTags = true;
-      }
-
-      if ( $el.is('[data-sort]') ) {
+      if ($el.is('[data-sort]') ) {
         if ($el.data('sort') === 'alphabetic') {
-          options.sortResults = function (results, container, query) {
-            return results.sort(function(a, b) {
-              if ($(a.element).is('[data-fix-position]')) {
+          options.sorter = function (data) {
+            data.sort((a, b) => {
+              if ($(a.element).is('[data-no-sort]')) {
                 return -1;
-              } else if ($(b.element).is('[data-fix-position]')) {
+              } else if ($(b.element).is('[data-no-sort]')) {
                 return 1;
               }
 
               return a.text.toLowerCase().localeCompare(b.text.toLowerCase());
             });
+
+            return data;
           }
         }
       }
 
-      if ( $el.prop('multiple') ) {
-        var selectionTemplateId = $el.data('selection-template');
-
-        options.minimumResultsForSearch = 1;
-
-        if (selectionTemplateId) {
-          var createSelection = Template.prepare(selectionTemplateId);
-
-          options.formatSelection = function(data) {
-            return createSelection({
-              element: data.element[0],
-              isLocked: data.locked,
-              isDisabled: data.disabled,
-              text: data.text,
-              value: data.id
-            });
-          };
-        } else {
-          options.formatSelection = function(state) {
-            if (state.element && state.element.length === 1) {
-              var url = $(state.element).data('url');
-              if (url) {
-                return $('<a></a>', {
-                  href: url,
-                  text: state.text,
-                  click: function() { Page.reload(url); }
-                });
-              }
-            }
-            return state.text;
-          };
-        }
+      if ($el.prop('multiple')) {
+        options.matcher = multiSelectMatcher;
       }
 
-      if (resultTemplateId) {
-        var createResult = Template.prepare(resultTemplateId);
+      const resultTemplateId = $el.data('result-template');
 
-        options.formatResult = function(data) {
-          return createResult({
-            element: data.element[0],
-            isLocked: data.locked,
-            isDisabled: data.disabled,
-            text: data.text,
-            value: data.id
-          });
-        };
-      } else if ($el.hasClass('js-option-popovers')) {
-        options.formatResult = function(data, $label, query, escapeMarkup) {
-          var text = '<span style="white-space: nowrap;">' + escapeMarkup(data.text) + '</span>';
+      options.templateResult = function(data) {
+        if (data.loading) {
+          return data.text;
+        }
 
-          Popover.new($label, {
-            trigger: 'hover',
-            delay: {
-              show: 300,
-              hide: 100
-            },
-            html: true,
-            template: '<div class="popover popover-wide" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
-            content: text
-          });
+        if ($(data.element).hasClass('hidden')) {
+          return null;
+        }
 
-          return text;
-        };
+        if (!resultTemplateId) {
+          return data.text;
+        }
 
-        $el.on('select2-close', function() {
-          // Hide and remove abandoned popovers (stuck in shown state when trigger element has been removed)
-          Popover.validate();
+        return Template.dom(resultTemplateId, {
+          element: data.element,
+          isDisabled: data.disabled,
+          text: data.text,
+          title: data.title,
+          value: data.id
         });
-      }
-
-      var currentFormatSelection = options.formatSelection;
-      options.formatSelection = function(data) {
-        var text = data.text;
-        if (text) {
-          data.text = text.trim();
-        }
-        if(currentFormatSelection instanceof Function) {
-          return currentFormatSelection.apply(this, arguments);
-        }
-        return $.fn.select2.defaults.formatSelection.apply(this, arguments);
       };
 
-      $el.select2(options);
-      // focusing by label is now handled in listener/label-events
+      const customSelectionTemplate = $el.data('selection-template');
+      options.templateSelection = function(data) {
+        return Template.dom(customSelectionTemplate || 'select2-result', {
+          element: Array.isArray(data.element) ? data.element[0] : data.element,
+          isDisabled: data.disabled,
+          text: data.text,
+          title: data.title,
+          value: data.id
+        });
+      };
 
-      var $exclusiveOption = $el.find('option[data-exclusive]');
-      if ($exclusiveOption.length > 0){
-        $el.on('select2-selecting', function (e) {
-          var $chosenExclusiveOption = $el.find("option[value='"+e.val+"'][data-exclusive]");
+      if ( $el.hasClass('dynamic-tags') ) {
+        $el.find('option').prop('selected', true);
+        options.tags = true;
+        options.preventPlaceholderClear = true;
+      }
 
-          if ($chosenExclusiveOption.exists()){
-            var needUpdate = false;
-            $el.find('option:selected').not($chosenExclusiveOption).each(function (){
-              needUpdate = true;
-              $(this).removeAttr("selected");
+      if ( $el.is('[data-select-options]') ) {
+        const additionalOptions = AGN.Lib.Helpers.objFromString($el.data('select-options'));
+        options = _.extend(options, additionalOptions);
+      }
+      
+      if (options.alignDropdownRight) {
+        $(options.dropdownParent).addClass('align-dropdown-right-container');
+      }
+
+      if (options.tags && !options.tokenSeparators) {
+        options.tokenSeparators = [',', ' ', ';'];
+      }
+
+      if ( $el.is('[data-select-tree]') ) {
+        adaptOptionsForTree($el);
+        $el.select2ToTree(options);
+      } else {
+        $el.select2(options);
+      }
+
+      if ($el.is('[data-show-create-btn]') || options.tags) {
+        const $btn = addCreateBtn($el);
+        if (options.tags) {
+          AGN.Lib.Tooltip.createTip($btn, t('defaults.add'));
+
+          if (options.selectOnClose) {
+            $el.on('select2:unselect', () => {
+              $el.find('option:not(:selected)').remove();
             });
-            if (needUpdate) {
-              $el.trigger('change');
-            }
           } else {
-            needUpdate = false;
-            $el.find('option:selected[data-exclusive]').each(function (){
-              needUpdate = true;
-              $(this).removeAttr("selected");
+            $btn.on('click', () => {
+              const value = $el.data('select2').selection.$search.val();
+              AGN.Lib.Select.get($el).selectOption(value);
             });
-            if (needUpdate) {
-              $el.trigger('change');
-            }
           }
-        })
+        }
+      }
+
+      if ($el.hasClass('has-arrows')) {
+        new SelectWithArrows($el);
+      }
+
+      $el.on('select2:open', e => {
+        // fix of page scrolling prevention when select2 is opened
+        const evt = "scroll.select2";
+        $(e.target).parents().off(evt);
+        $(window).off(evt);
+
+        // this is a hack to display scrollbar rails when open dropdown
+        window.setTimeout(() => {
+          const $options = $el.data('select2').$dropdown.find('.select2-results__options');
+          $el.data(SCROLLBAR_DATA_KEY, new AGN.Lib.Scrollbar($options, {wheelSpeed: 0.2}));
+          CoreInitializer.run('tooltip', $options);
+        }, 20);
+      });
+
+      $el.on('select2:closing', e => $el.data(SCROLLBAR_DATA_KEY)?.destroy());
+
+      $el.on('change.select2', e => CoreInitializer.run(['truncated-text-popover', 'tooltip'], $el.next('.select2')));
+
+      const $exclusiveOptions = $el.find('option[data-exclusive]');
+      if ($exclusiveOptions.exists()) {
+        const exclusiveOptionsCallback = () => {
+          const $selectedExclusiveOption = $exclusiveOptions.filter(':selected');
+          const $options = $el.find('option');
+          $options.prop('disabled', false);
+
+          if ($selectedExclusiveOption.exists()) {
+            $el.find('option').not($selectedExclusiveOption).prop('disabled', true);
+          } else if ($options.filter(':selected').exists()) {
+            $exclusiveOptions.prop('disabled', true);
+          }
+        };
+
+        exclusiveOptionsCallback();
+        $el.on('select2:select', exclusiveOptionsCallback);
+        $el.on('select2:unselect', exclusiveOptionsCallback);
       }
     });
   });
 
+  // for parent option [data-cup='parent'] will be set. for option that have parents [data-cup='${parentValue}'] will be set
+  // this is adapter for select2totree.js
+  function adaptOptionsForTree($select) {
+    const $options = $select.find('option');
+    const parents = $options
+      .map(function () {
+        return String($(this).data('parent') || '');
+      })
+      .get();
+
+    $options.each(function () {
+      const $el = $(this);
+
+      if ($el.val() && parents.includes($el.val())) {
+        $el.attr("data-pup", 'parent');
+      } else {
+        if ($el.data('parent')) {
+          $el.attr("data-pup", $el.data('parent'));
+        }
+      }
+    });
+  }
+
+  function multiSelectMatcher(params, data) {
+    if (data.selected) {
+      return null; // hide already selected options
+    }
+    if ($.trim(params.term) === '') {
+      return data; // if the search term is empty, show all non-selected options
+    }
+    // perform search
+    const searchText = params.term.toLowerCase();
+    const optionText = data.text.toLowerCase();
+    return optionText.includes(searchText) ? data : null;
+  }
+
+  function addCreateBtn($el) {
+    const $btn = getCreateBtn$($el.data('show-create-btn'));
+    $el.next('.select2-container')
+      .find('.select2-search')
+      .addClass('flex-grow-1')
+      .wrap($('<div class="d-flex gap-1"></div>'))
+      .parent()
+      .append($btn);
+
+    return $btn;
+  }
+
+  function getCreateBtn$(attrs) {
+    return $(`
+        <button type="button" class="btn btn-icon btn-primary" ${attrs}>
+          <i class="icon icon-plus"></i>
+        </button>
+    `);
+  }
+
+  function getDropdownParent($el) {
+    if ( $el.closest('.modal').exists() ) {
+      return $el.closest('.modal');
+    }
+    if ($el.closest('.dropdown-menu').exists() ) {
+      return $el.closest('.dropdown-menu');
+    }
+    return 'body';
+  }
+
+  class SelectWithArrows {
+
+    constructor($select) {
+      this.$select = $select;
+      this.#createPrevBtn();
+      this.#createNextBtn();
+      this.$select.next('.select2').find('.selection').prepend(this.$prevBtn).append(this.$nextBtn);
+      this.$select.on('change', () => this.toggleArrows());
+      this.toggleArrows();
+      this.$select.data('selectWithArrows', this);
+    }
+
+    toggleArrows() {
+      const selectedIndex = this.$select.prop("selectedIndex");
+      this.$prevBtn.prop("disabled", selectedIndex === 0);
+      this.$nextBtn.prop("disabled", selectedIndex === this.$select.find("option").length - 1);
+    }
+
+    #createPrevBtn() {
+      this.$prevBtn = this.#createArrowBtn(true);
+      this.$prevBtn.on("click", () => this.#stepBack());
+    }
+
+    #createNextBtn() {
+      this.$nextBtn = this.#createArrowBtn(false);
+      this.$nextBtn.on("click", () => this.#stepForward());
+    }
+
+    #createArrowBtn(prev) {
+      return $(`
+         <button class="btn btn-outline-primary btn-icon btn-select-control">
+           <i class="icon icon-caret-${prev ? 'left' : 'right'}"></i>
+         </button>
+       `);
+    }
+
+    #stepForward() {
+      this.#step(false);
+    }
+
+    #stepBack() {
+      this.#step(true);
+    }
+
+    #step(back) {
+      const $arrowBtn = back ? this.$prevBtn : this.$nextBtn;
+      if ($arrowBtn.prop("disabled")) {
+        return;
+      }
+      this.$select.prop("selectedIndex", this.$select.prop("selectedIndex") + (back ? -1 : 1)).trigger('change');
+      this.toggleArrows();
+    }
+  }
 })();

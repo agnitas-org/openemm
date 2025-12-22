@@ -16,7 +16,6 @@ import com.agnitas.beans.Admin;
 import com.agnitas.web.perm.annotations.Anonymous;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import com.agnitas.util.AgnUtils;
 import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,9 +27,8 @@ public class SessionController {
 
 	@Anonymous
     @RequestMapping("/info.action")
-    public ResponseEntity<Map<String, Object>> info(HttpServletRequest request) {
-        Admin sessionAdmin = AgnUtils.getAdmin(request);
-        if (sessionAdmin == null) {
+    public ResponseEntity<Map<String, Object>> info(HttpServletRequest request, Admin admin) {
+        if (admin == null) {
             return ResponseEntity.ok(null);
         }
 

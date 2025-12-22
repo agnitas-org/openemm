@@ -39,8 +39,8 @@ import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.KeywordList;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -165,8 +165,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         return recipientFieldService.getRecipientField(companyId, fieldName) == null;
     }
 
-    @Override
-    public boolean hasNotAllowedNumberOfEntries(int companyId) {
+    protected boolean hasNotAllowedNumberOfEntries(int companyId) {
         int numberOfEntries = recipientFieldService.countCustomerEntries(companyId);
 
         return numberOfEntries > configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId);

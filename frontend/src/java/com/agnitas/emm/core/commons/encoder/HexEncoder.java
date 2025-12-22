@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.commons.encoder;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -25,8 +26,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class HexEncoder implements ByteArrayToStringEncoder {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(HexEncoder.class);
+	private static final Logger logger = LogManager.getLogger(HexEncoder.class);
 	
 	/**
 	 * Converts a String to a hex String.
@@ -38,10 +38,8 @@ public class HexEncoder implements ByteArrayToStringEncoder {
 	public static String toHexString(String str) {
 		if (StringUtils.isEmpty(str))
 			return "";
-		
-		byte[] bytes = str.getBytes(Charset.forName("UTF-8"));
 
-		return toHexString(bytes);
+        return toHexString(str.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	/**

@@ -1,82 +1,119 @@
-<%@ taglib prefix="s" uri="http://www.springframework.org/tags/form" %>
-<script id="image-editor-modal" type="text/x-mustache-template">
-    <div class="modal modal-adaptive">
-        <div class="modal-dialog">
-            <div class="modal-content" data-controller="image-editor">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h4>
-                </div>
-                <c:url var="actionUrl" value="/mailing/${mailingId}/images/:id:/edit.action" />
-                {{ var action = '${actionUrl}'.replace(':id:', imageId); }}
-                <%--  !!!WARN!!! : NOT CHANGE TO <mvc:form> cuz it cause an error with url build --%>
-                <s:form id="l-editor-form" action="{{- action}}" data-form="static" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="imgBase64" id="editor-result"/>
-                    <div class="modal-body">
-                        <div id="l-img-editor" data-initializer="img-editor-init">
-                            <ul id="l-img-editor-tools">
-                                <li><label><mvc:message code="default.image.width"/></label></li>
-                                <li>
-                                    <input id="l-editor-img-width" value="" class="form-control"
-                                           data-action="changeSize"
-                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                                           onfocus="$(this).select()">
-                                </li>
-                                <li><label><mvc:message code="grid.mediapool.image.sizes.height"/></label></li>
-                                <li>
-                                    <input id="l-editor-img-height" value="" class="form-control"
-                                           data-action="changeSize"
-                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                                           onfocus="$(this).select()">
-                                </li>
-                                <li><label><mvc:message code="image.editor.inpercent"/></label></li>
-                                <li>
-                                    <input id="l-editor-img-percent" value="" class="form-control"
-                                           data-action="pcChangeSize"
-                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
-                                           onfocus="$(this).select()">
-                                </li>
-                                <li>
-                                    <div>
-                                        <button type="button" class="btn" id="editor-lock-btn"
-                                                data-tooltip="<mvc:message code="image.editor.keep.proportions"/>"
-                                                data-action="blockSizes">
-                                            <i class="icon icon-lock"></i>
-                                        </button>
-                                        <button type="button" class="btn"
-                                                data-tooltip="<mvc:message code="image.editor.rotate"/>"
-                                                data-action="rotateImage">
-                                            <i class="icon icon-rotate-right"></i>
-                                        </button>
-                                        <button type="button" id="editor-crop-btn" class="btn"
-                                                data-tooltip="<mvc:message code="image.editor.crop"/>"
-                                                data-action="cropImage">
-                                            <i class="icon icon-crop"></i>
-                                        </button>
-                                    </div>
-                                </li>
-                            </ul>
-                            <div id="canvas-editor-area">
-                                <canvas id="editor-canvas"></canvas>
-                                <img class="hidden" id="editor-img" src="{{= src }}" data-content-type="{{= contentType }}"/>
-                            </div>
+
+<div id="image-editor-modal" class="modal modal-adaptive mobile-hidden" tabindex="-1">
+    <div class="modal-dialog">
+
+        <c:url var="actionUrl" value="/mailing/${mailingId}/images/:id:/edit.action" />
+        {{ var action = '${actionUrl}'.replace(':id:', id); }}
+
+        <%--  !!!WARN!!! : NOT CHANGE TO <mvc:form> cuz it cause an error with url build --%>
+        <s:form cssClass="modal-content" action="{{- action}}" enctype="multipart/form-data"
+                data-form="static" data-controller="img-editor" data-initializer="img-editor" data-disable-controls="save">
+
+            <div class="modal-header">
+                <h1 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
+                    <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                </button>
+            </div>
+            <div class="modal-body pb-0">
+                <div>
+                    <div class="mb-3">
+                        <label class="form-label" for="filename"><mvc:message code="settings.FileName"/></label>
+                        <input id="filename" class="form-control" value="{{- name }}" readonly/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="link"><mvc:message code="grid.mediapool.column.link"/></label>
+                        <input id="link" class="form-control" placeholder="https://" value="{{- link}}" readonly/>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-5">
+                            <label class="form-label" for="img-width"><mvc:message code="default.image.width"/></label>
+                            <input id="img-width"
+                                   type="number"
+                                   value=""
+                                   class="form-control"
+                                   data-action="change-size"
+                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                   onfocus="$(this).select()">
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label" for="img-height"><mvc:message code="grid.mediapool.image.sizes.height"/></label>
+                            <input id="img-height"
+                                   type="number"
+                                   value=""
+                                   class="form-control"
+                                   data-action="change-size"
+                                   onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                   onfocus="$(this).select()">
+                        </div>
+                        <div class="col-2">
+                            <label class="form-label">&nbsp;</label>
+                            <input type="checkbox" class="btn-check" id="btn-lock-proportions" autocomplete="off" data-action="lock-proportions">
+                            <label class="btn btn-icon btn-secondary" for="btn-lock-proportions" data-tooltip='<mvc:message code="image.editor.keep.proportions"/>'>
+                                <i class="icon icon-lock"></i>
+                            </label>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-regular" data-action="saveCrop">
-                            <i class="icon icon-crop"></i><span class="text"><mvc:message code="image.editor.crop"/></span>
-                        </button>
-                        <button type="button" class="btn btn-regular" data-dismiss="modal">
-                            <i class="icon icon-times"></i><span class="text"><mvc:message code="button.Cancel"/></span>
-                        </button>
-                        <button type="button" class="btn btn-primary btn-regular" data-form-submit="">
-                            <i class="icon icon-save"></i><span class="text"><mvc:message code="button.Save"/></span>
-                        </button>
+                    <div class="mb-3">
+                        <label class="form-label" for="img-percent"><mvc:message code="default.Size"/>&nbsp;<mvc:message code="image.editor.inpercent"/></label>
+                        <input id="img-percent"
+                               type="number"
+                               value=""
+                               class="form-control"
+                               data-action="change-size-via-percentage"
+                               onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                               onfocus="$(this).select()">
                     </div>
-                </s:form>
+                </div>
+
+                <div class="mb-3 bordered-box">
+                    <div id="canvas-editor-area" class="p-3 h-100">
+                        <div style="position: relative;">
+                            <canvas id="editor-canvas"></canvas>
+                        </div>
+                        <img class="hidden" id="editor-img" src="{{= src }}"/>
+                    </div>
+                </div>
+
+                <div class="mb-3 d-flex flex-column gap-3">
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="resize">
+                        <i class="icon icon-expand"></i>
+                        <mvc:message code="grid.resize"/>
+                    </button>
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="crop">
+                        <i class="icon icon-crop-alt"></i>
+                        <mvc:message code="image.editor.crop"/>
+                    </button>
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="rotate-clockwise">
+                        <i class="icon icon-redo-alt"></i>
+                        <mvc:message code="mediapool.image.rotate.clockwise"/>
+                    </button>
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="rotate-counterclockwise">
+                        <i class="icon icon-undo-alt"></i>
+                        <mvc:message code="mediapool.image.rotate.counterclockwise"/>
+                    </button>
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="flip-horizontally">
+                        <i class="icon icon-grip-vertical"></i>
+                        <mvc:message code="mediapool.image.flip.horizontal"/>
+                    </button>
+                    <button type="button" class="btn btn-secondary justify-content-start" data-action="flip-vertically">
+                        <i class="icon icon-grip-horizontal"></i>
+                        <mvc:message code="mediapool.image.flip.vertical"/>
+                    </button>
+                </div>
             </div>
-        </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-form-reset data-action="reset">
+                    <i class="icon icon-sync-alt"></i>
+                    <mvc:message code="button.Reset"/>
+                </button>
+                <button type="button" class="btn btn-primary" data-action="save" data-controls-group="save">
+                    <i class="icon icon-save"></i>
+                    <mvc:message code="button.Save"/>
+                </button>
+            </div>
+        </s:form>
     </div>
-</script>
+</div>

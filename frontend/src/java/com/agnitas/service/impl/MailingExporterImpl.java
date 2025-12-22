@@ -16,15 +16,20 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.agnitas.beans.AbstractTrackableLink;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.Target;
@@ -33,21 +38,15 @@ import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.json.JsonWriter;
-import jakarta.annotation.Resource;
-import com.agnitas.beans.AbstractTrackableLink;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import com.agnitas.json.JsonWriter;
 import com.agnitas.preview.TagSyntaxChecker;
 import com.agnitas.service.MailingExporter;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.importvalues.MailType;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,40 +74,35 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	protected CampaignDao campaignDao;
 	
 	@Override
-	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying) throws Exception {
+	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying) {
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
 
         // mailingDao.getMailing returns an empty mailing object if the mailingid does not exist yet
 		if (mailing == null || mailing.getId() == 0) {
-			throw new Exception("Mailing for export cannot be found. CompanyID: " + companyID + ", MailingID: " + mailingID);
+			throw new IllegalArgumentException("Mailing for export cannot be found. CompanyID: " + companyID + ", MailingID: " + mailingID);
 		}
 		
 		Set<Integer> targetIDs = new HashSet<>();
 		Set<Integer> actionIDs = new HashSet<>();
 		
-		try (JsonWriter writer = new JsonWriter(output, "UTF-8")) {
+		try (JsonWriter writer = new JsonWriter(output)) {
 			writer.openJsonObject();
 
 			if (isForCopying) {
 				writeJsonObjectAttribute(writer, "forCopying", true);
 			}
-			
+
 			exportMailingData(companyID, mailing, targetIDs, actionIDs, writer, exportUnusedImages);
 			
 			writer.closeJsonObject();
 		} catch (Exception e) {
 			logger.error("Error in mailing export: " + e.getMessage(), e);
-			throw e;
+			throw new RuntimeException(e);
 		}
 	}
 	
 	protected void exportMailingData(int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception {
-		if (mailing == null) {
-			throw new IllegalArgumentException("Mailing for export is not defined");
-		}
-		
-		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
-		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+        String companyToken = companyDao.getCompanyToken(companyID);
 		
 		Set<String> usedImageComponentNames = new HashSet<>();
 		
@@ -335,7 +329,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
         exportActions(writer, companyID, actionIDs);
 	}
 
-	protected void exportLinks(JsonWriter writer, Collection<? extends AbstractTrackableLink> trackableLinks, String companyToken, int companyID, Set<Integer> actionIDs) throws Exception {
+	protected void exportLinks(JsonWriter writer, Collection<? extends AbstractTrackableLink> trackableLinks, String companyToken, int companyID, Set<Integer> actionIDs) {
 		writer.openJsonObjectProperty("links");
 		writer.openJsonArray();
 		for (AbstractTrackableLink trackableLink : trackableLinks) {
@@ -390,7 +384,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		writer.closeJsonArray();
 	}
 
-    protected void exportTargets(JsonWriter writer, int companyId, Set<Integer> targetIds) throws Exception {
+    protected void exportTargets(JsonWriter writer, int companyId, Set<Integer> targetIds) {
         if (targetIds.isEmpty()) {
             return;
         }
@@ -408,7 +402,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
         writer.closeJsonArray();
     }
 
-    private void writeTarget(JsonWriter writer, Target target) throws Exception {
+    private void writeTarget(JsonWriter writer, Target target) {
         writer.openJsonObject();
         writeJsonObjectAttribute(writer, "id", target.getId());
         writeJsonObjectAttributeWhenNotNullOrBlank(writer, "name", target.getTargetName());

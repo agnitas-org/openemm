@@ -20,8 +20,7 @@ import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 
 public final class WebhookBackendDataMessageGeneratorServiceImpl implements WebhookBackendDataMessageGeneratorService {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(WebhookBackendDataMessageGeneratorServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(WebhookBackendDataMessageGeneratorServiceImpl.class);
 	
 	private Map<WebhookEventType, WebhookBackendDataMessageGenerator> generatorMap;
 
@@ -36,9 +35,7 @@ public final class WebhookBackendDataMessageGeneratorServiceImpl implements Webh
 		if(generator != null) {
 			generator.generateWebhookMessages(companyId);
 		} else {
-			if(LOGGER.isInfoEnabled()) {
-				LOGGER.info(String.format("No webhook message generator for event type %s. Backend data remains in table.", eventType));
-			}
+			LOGGER.info("No webhook message generator for event type {}. Backend data remains in table.", eventType);
 		}
 	}
 	

@@ -1,15 +1,5 @@
 AGN.Lib.Controller.new('mailing-upload-attachment', function() {
 
-  this.addDomInitializer('mailing-upload-attachment', function() {
-    resetFields();
-  });
-
-  this.addAction({
-    'change': 'use-pdf'
-  }, function(){
-    updateFields($(this.elem).prop('checked'));
-  });
-
   this.addAction({
     'change': 'change-attachment-file'
   }, function(){
@@ -22,20 +12,16 @@ AGN.Lib.Controller.new('mailing-upload-attachment', function() {
     updateFilename(true);
   });
 
-  function resetFields() {
-    $('#attachment').val('');
-    $('#attachmentName').val('');
-    $('#backgroundAttachment').val('');
-    $('#targetId').select2('val', 0)
-    AGN.Lib.Select.get($('#type')).selectFirstValue();
-  }
+  this.addAction({change: 'use-pdf'}, function(){
+    updateFilename(this.el.is(':checked'));
+  });
 
   function updateFilename(useUploadActivated) {
-    var attachmentName = '';
+    let attachmentName = '';
     if (useUploadActivated) {
-      attachmentName = $('#pdfUploadId').select2('val');
+      attachmentName = AGN.Lib.Select.get($('#pdfUploadId')).getSelectedText();
     } else {
-      var files = $('#attachment').prop('files');
+      const files = $('#attachmentFile').prop('files');
 
       if (files && files.length) {
         attachmentName = files[0].name;
@@ -43,10 +29,5 @@ AGN.Lib.Controller.new('mailing-upload-attachment', function() {
     }
 
     $('#attachmentName').val(attachmentName);
-  }
-
-  function updateFields(useUploadActivated) {
-    resetFields();
-    updateFilename(useUploadActivated)
   }
 });

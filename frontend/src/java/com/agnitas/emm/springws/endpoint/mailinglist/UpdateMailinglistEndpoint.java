@@ -12,8 +12,8 @@ package com.agnitas.emm.springws.endpoint.mailinglist;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistException;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.UpdateMailinglistRequest;
@@ -57,8 +57,7 @@ public class UpdateMailinglistEndpoint extends BaseEndpoint {
         if(resultID == 0) {
             throw new MailinglistNotExistException(request.getMailingListId(), this.securityContextAccess.getWebserviceUserCompanyId());
         }
-        
-        final UpdateMailinglistResponse response = new UpdateMailinglistResponse();
-        return response;
+
+        return new UpdateMailinglistResponse();
     }
 }

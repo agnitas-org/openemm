@@ -19,10 +19,10 @@ import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
-import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.util.ByteBuilder;
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
@@ -106,8 +106,10 @@ public class V5ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 			int	mailingID = uid.getMailingID ();
 			int	customerID = uid.getCustomerID ();
 			int	urlID = uid.getUrlID ();
+			int	position = uid.getPosition ();
 			long	bitfield = uid.getBitField ();
 			long	senddate = uid.getSendDate ();
+			char	statusField = uid.getStatusField ();
 		
 			mp.packMapHeader (
 				(licenceID > 0 ? 1 : 0) +
@@ -115,8 +117,10 @@ public class V5ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 				(mailingID > 0 ? 1 : 0) +
 				(customerID > 0 ? 1 : 0) +
 				(urlID > 0 ? 1 : 0) +
+				(urlID > 0 && position > 1 ? 1 : 0) +
 				(bitfield != 0 ? 1 : 0) +
-				(senddate > 0 ? 1 : 0)
+				(senddate > 0 ? 1 : 0) +
+				(statusField != '\0' ? 1 : 0)
 			);
 			if (companyID > 0) {
 				mp.packString ("_c").packInt (companyID);
@@ -136,8 +140,14 @@ public class V5ExtensibleUIDStringBuilderImpl implements ExtensibleUIDStringBuil
 			if (senddate > 0) {
 				mp.packString ("_s").packLong (senddate);
 			}
+			if (statusField != '\0') {
+				mp.packString ("_f").packString (Character.toString (statusField));
+			}
 			if (urlID > 0) {
 				mp.packString ("_u").packInt (urlID);
+				if (position > 1) {
+					mp.packString ("_x").packInt (position);
+				}
 			}
 			return mp.toByteArray ();
 		}

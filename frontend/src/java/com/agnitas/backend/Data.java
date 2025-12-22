@@ -41,6 +41,7 @@ import com.agnitas.backend.dao.TagDAO;
 import com.agnitas.backend.dao.TitleDAO;
 import com.agnitas.backend.dao.UrlDAO;
 import com.agnitas.backend.exceptions.CancelException;
+import com.agnitas.backend.exceptions.ItemException;
 import com.agnitas.emm.common.FollowUpType;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.UserStatus;
@@ -135,8 +136,13 @@ public class Data {
 	/**
 	 * for database access of large chunks, limit single statement
 	 */
-	protected long limitBlockOperations = 0;
-	protected long limitBlockOperationsMax = 0;
+	private long limitBlockOperations = 0;
+	private long limitBlockOperationsMax = 0;
+	/*
+	 * for buffering output writing
+	 */
+	private int conditionalFlushSize = 0;
+	private int outputBlockSize = 0;
 	/**
 	 * if set, test VIP are still addressed, even if there are explicit test recipients selected
 	 */
@@ -393,6 +399,7 @@ public class Data {
 	 */
 	public List<URL> URLlist = null;
 	private Map<String, URL> URLTable = null;
+	protected Map<String, Hashtag> hashtagCache = null;
 	/**
 	 * information about URL extensions
 	 */
@@ -499,6 +506,10 @@ public class Data {
 	protected boolean dkimActive = false;
 	protected List <DkimDAO.DKIM> dkimAvailable = null;
 	/**
+	 * optional grid data
+	 */
+	private Grid grid = null;
+	/**
 	 * database id
 	 */
 	protected String dbID = null;
@@ -522,6 +533,10 @@ public class Data {
 		emm = syscfg.get ("licence", LICENCE_UNSPEC) > 0;
 		String[]	dbids = dbcfg.ids ();
 		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : (emm ? "emm" : "openemm");
+	}
+	
+	public static boolean isDirectory (String directory) {
+		return (new File (directory)).isDirectory ();
 	}
 
 	/**
@@ -562,7 +577,11 @@ public class Data {
 			if (islog(Log.DEBUG)) {
 				logSettings();
 			}
-			mailing.setWorkStatus(MailingStatus.IN_GENERATION, null);
+			if (maildropStatus.isWorldMailing ()) {
+				mailing.setWorkStatus(MailingStatus.IN_GENERATION);
+			} else if (maildropStatus.isAdminMailing () || maildropStatus.isTestMailing ()) {
+				mailing.setWorkStatus(MailingStatus.IN_GENERATION, MailingStatus.EDIT, MailingStatus.NEW, MailingStatus.READY);
+			}
 		}
 	}
 
@@ -696,6 +715,8 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tlicenceID = " + licenceID);
 		logging(Log.DEBUG, "init", "\tlimitBlockOperations = " + limitBlockOperations);
 		logging(Log.DEBUG, "init", "\tlimitBlockOperationsMax = " + limitBlockOperationsMax);
+		logging(Log.DEBUG, "init", "\tconditionalFlushSize = " + conditionalFlushSize);
+		logging(Log.DEBUG, "init", "\toutputBlockSize = " + outputBlockSize);
 		logging(Log.DEBUG, "init", "\tenforceTestVIP = " + enforceTestVIP);
 		logging(Log.DEBUG, "init", "\tbounceBleed = " + bounceBleed);
 		logging(Log.DEBUG, "init", "\tbounceBleedDuration = " + bounceBleedDuration);
@@ -824,6 +845,8 @@ public class Data {
 		licenceID = syscfg.get ("licence", licenceID);
 		limitBlockOperations = cfg.cget("limit_block_operations", limitBlockOperations);
 		limitBlockOperationsMax = cfg.cget("limit_block_operations_max", limitBlockOperationsMax);
+		conditionalFlushSize = cfg.cget("conditional_flush_size", conditionalFlushSize);
+		outputBlockSize = cfg.cget("output_block_size", outputBlockSize);
 		dbTempTablespace = cfg.cget("db_temp_tablespace");
 		dbHasTablespaces = dbcfg.findInRecord("tablespaces", dbHasTablespaces);
 		
@@ -1250,6 +1273,17 @@ public class Data {
 	public List<Media> media() {
 		return media;
 	}
+	
+	protected Hashtag findHashtag (String expression) {
+		return hashtagCache != null ? hashtagCache.get (expression) : null;
+	}
+	
+	protected void storeHashtag (String expression, Hashtag hashtag) {
+		if (hashtagCache == null) {
+			hashtagCache = new HashMap <> ();
+		}
+		hashtagCache.put (expression, hashtag);
+	}
 
 	private void retrieveURLsForMeasurement() throws Exception {
 		UrlDAO	urlDao = new UrlDAO (company.id (), mailing.id ());
@@ -1390,6 +1424,12 @@ public class Data {
 		}
 		if ((temp = company.info("limit-block-operations-max", mailing.id())) != null) {
 			limitBlockOperationsMax = Str.atoi(temp, 0);
+		}
+		if ((temp = company.info("conditional-flush-size", mailing.id())) != null) {
+			conditionalFlushSize = Str.atoi(temp, 0);
+		}
+		if ((temp = company.info("output-block-size", mailing.id())) != null) {
+			outputBlockSize = Str.atoi(temp, 0);
 		}
 		if ((temp = company.info ("enforce-test-vip", mailing.id ())) != null) {
 			enforceTestVIP = Str.atob (temp, false);
@@ -2211,7 +2251,7 @@ public class Data {
 	public void updateGenerateionStateForCancel () {
 		updateGenerationState(4);
 	}
-
+	
 	/**
 	 * Called when main generation starts
 	 */
@@ -3142,6 +3182,12 @@ public class Data {
 	public long limitBlockOperationsMax() {
 		return limitBlockOperationsMax;
 	}
+	public int conditionalFlushSize() {
+		return conditionalFlushSize;
+	}
+	public int outputBlockSize() {
+		return outputBlockSize;
+	}
 
 	public long limitBlockChunks() {
 		if (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing()) {
@@ -3212,7 +3258,7 @@ public class Data {
 	 *
 	 * @param predef the hashset to store field name to
 	 */
-	private void setStandardFields(Set<String> predef, Map<String, EMMTag> tags) {
+	private void setStandardFields(Set<String> predef, Map<String, EMMTag> tags) throws ItemException {
 		collectMediatypes(predef);
 		predef.add(RecipientStandardField.DoNotTrack.getColumnName());
 		targetExpression.requestFields(predef);
@@ -3258,14 +3304,18 @@ public class Data {
 		}
 		if (URLlist != null) {
 			for (URL url : URLlist) {
-				StringOps.findColumnsInHashtags(url.getUrl()).stream().forEach((e) -> {
-					Column c = columnByName(e);
+				if (url.getStaticValue ()) {
+					List <Hashtag>	hashtags = Hashtag.parse (this, url.getUrl ());
+					
+					hashtags.stream ().filter (h -> h.isColumn ()).forEach (h -> {
+						Column c = columnByName(h.column ());
 
-					if (c != null) {
-						url.addColumn(c);
-					}
-				});
-				url.requestFields(this, predef);
+						if (c != null) {
+							url.addColumn(c);
+						}
+					});
+					url.requestFields(this, predef);
+				}
 			}
 		}
 		predef.stream()
@@ -3289,7 +3339,7 @@ public class Data {
 	 *
 	 * @param use already used column names
 	 */
-	public void setUsedFieldsInLayout(BlockCollection allBlocks, Map<String, EMMTag> tags) {
+	public void setUsedFieldsInLayout(BlockCollection allBlocks, Map<String, EMMTag> tags) throws ItemException {
 		int sanity = 0;
 		Set<String> predef;
 		Set<String> use = allBlocks.getUsedColumns();
@@ -3443,6 +3493,14 @@ public class Data {
 			r.setIdIndex(c.getName(), index);
 		}
 	}
+	
+	public String gridContentByName (String name, int type) {
+		if (grid == null) {
+			grid = new Grid (this);
+		}
+		return grid.get (name, type);
+	}
+		
 
 	/**
 	 * create a RFC compatible Date: line

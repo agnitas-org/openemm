@@ -10,18 +10,25 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientStandardField;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileRecipientFields;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.beans.impl.ProfileRecipientFieldsImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.emm.common.UserStatus;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.service.ImportException;
 import com.agnitas.service.ProfileImportException.ReasonCode;
 import com.agnitas.util.AgnUtils;
@@ -33,19 +40,7 @@ import com.agnitas.util.importvalues.NullValuesAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements ImportRecipientsDao {
-
-    public static final String MYSQL_COMPARE_DATE_FORMAT = "%Y-%m-%d %H:%i:%s";
-    public static final String JAVA_COMPARE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    public static final int MAX_WRITE_PROGRESS = 90;
-    public static final int MAX_WRITE_PROGRESS_HALF = MAX_WRITE_PROGRESS / 2;
 
     @Override
 	public boolean isKeyColumnIndexed( int companyId, List<String> keyColumns) {
@@ -67,7 +62,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 			logger.error("Import table " + tempTableName + " already existed. Dropped it to continue.");
 			DbUtilities.dropTable(getDataSource(), tempTableName);
 		}
-		if (isOracleDB()) {
+		if (isOracleDB() || isPostgreSQL()) {
 			String tablespacePart = "";
 			if (DbUtilities.checkOracleTablespaceExists(getDataSource(), "data_temp")) {
 				tablespacePart = " TABLESPACE data_temp";
@@ -132,6 +127,18 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 				+ " errorfield VARCHAR2(50),"
 				+ " errorfixed INTEGER DEFAULT 0"
 				+ ")" + tablespacePart);
+		} else if (isPostgreSQL()) {
+			String tablespacePart = "";
+			if (DbUtilities.checkOracleTablespaceExists(getDataSource(), "data_temp")) {
+				tablespacePart = " TABLESPACE data_temp";
+			}
+
+			execute("CREATE TABLE " + tempTableName + "("
+					+ " csvindex INTEGER,"
+					+ " reason VARCHAR(50),"
+					+ " errorfield VARCHAR(50),"
+					+ " errorfixed INTEGER DEFAULT 0"
+					+ ")" + tablespacePart);
 		} else {
 			execute("CREATE TABLE " + tempTableName + "("
 				+ " csvindex INTEGER,"
@@ -146,7 +153,16 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		execute("CREATE INDEX tmperr_" + datasourceID + "_rsn_idx ON " + tempTableName + " (reason)");
 		
 		for (String column : csvColumns) {
-			execute("ALTER TABLE " + tempTableName + " ADD " + column + " " + (isOracleDB() ? "CLOB" : "LONGTEXT"));
+			String columnType;
+			if (isOracleDB()) {
+				columnType = "CLOB";
+			} else if (isPostgreSQL()) {
+				columnType = "TEXT";
+			} else {
+				columnType = "LONGTEXT";
+			}
+
+			execute("ALTER TABLE " + tempTableName + " ADD " + column + " " + columnType);
 		}
 		
 		return tempTableName;
@@ -186,7 +202,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 			for (String keyColumn : keyColumns) {
 				keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
 			}
-			String updateStatement = "UPDATE " + destinationTableName + " dst SET dst." + duplicateSignColumn + " = COALESCE((SELECT MIN(src." + duplicateSignColumn + ") FROM " + sourceTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + "), 0)";
+			String updateStatement = "UPDATE " + destinationTableName + " dst SET " + duplicateSignColumn + " = COALESCE((SELECT MIN(src." + duplicateSignColumn + ") FROM " + sourceTableName + " src WHERE " + StringUtils.join(keycolumnParts, " AND ") + "), 0)";
 			retryableUpdate(companyID, updateStatement);
 			return select("SELECT COUNT(*) FROM " + destinationTableName + " WHERE " + duplicateSignColumn + " > 0", Integer.class);
 		} else {
@@ -213,7 +229,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	}
 
 	@Override
-	public int insertNewCustomers(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> columnsToInsert, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId) {
+	public int insertNewCustomers(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> columnsToInsert, String duplicateIndexColumn, int datasourceId, int defaultMailType) {
 		String additionalColumns = "";
 		String additionalValues = "";
 		if (!columnsToInsert.contains("mailtype")) {
@@ -254,7 +270,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	 * Only update the first customer with the suitable customer_id
 	 */
 	@Override
-	public int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) {
+	public int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId) {
 		if (keyColumns == null || keyColumns.isEmpty()) {
 			throw new IllegalArgumentException("Missing keycolumns");
 		}
@@ -269,7 +285,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		
 		if (!updateColumns.isEmpty()) {
 			if (nullValuesAction == NullValuesAction.OVERWRITE.getIntValue()) {
-				if (isOracleDB()) {
+				if (isOracleDB() || isPostgreSQL()) {
 					// Oracle supports multi-column updates like "UPDATE table SET (a, b, c) = (SELECT a, b, c FROM othertable ...)",
 					// which are more performant than "UPDATE table SET a = (SELECT ...), b = (SELECT ...), c = (SELECT ...)"
 					String updateAllAtOnce = "UPDATE " + destinationTableName + " dst"
@@ -330,7 +346,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	 * Update all customers with the suitable keycolumn value combination
 	 */
 	@Override
-	public int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) {
+	public int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId) {
 		if (keyColumns == null || keyColumns.isEmpty()) {
 			throw new IllegalArgumentException("Missing keycolumns");
 		}
@@ -345,7 +361,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		
 		if (!updateColumns.isEmpty()) {
 			if (nullValuesAction == NullValuesAction.OVERWRITE.getIntValue()) {
-				if (isOracleDB()) {
+				if (isOracleDB() || isPostgreSQL()) {
 					List<String> keycolumnParts = new ArrayList<>();
 					for (String keyColumn : keyColumns) {
 						keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
@@ -457,7 +473,21 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 				mediatype == null ? MediaTypes.EMAIL.getMediaCode() : mediatype.getMediaCode());
 	}
 
-    @Override
+	@Override
+	public int updateLatestDataSourceId(int dataSourceId, String temporaryImportTableName, List<String> keyColumns, int companyId) {
+		List<String> keycolumnParts = new ArrayList<>();
+		for (String keyColumn : keyColumns) {
+			keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
+		}
+
+		String query = "UPDATE customer_" + companyId + "_tbl SET latest_datasource_id = ? WHERE customer_id IN ("
+				+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE "
+				+ StringUtils.join(keycolumnParts, " AND ") + ")";
+
+		return retryableUpdate(companyId, query, dataSourceId);
+	}
+
+	@Override
 	@DaoUpdateReturnValueCheck
     public int importInBlackList(String temporaryImportTableName, final int companyID) {
         String updateBlacklist = "INSERT INTO cust" + companyID + "_ban_tbl (email) (SELECT DISTINCT email FROM " + temporaryImportTableName + " temp WHERE email IS NOT NULL"
@@ -532,9 +562,6 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 					case InvalidNumber:
 						resultMap.put(ImportErrorType.NUMERIC_ERROR, count);
 						break;
-					case InvalidEncryption:
-						resultMap.put(ImportErrorType.ENCRYPTION_ERROR, count);
-						break;
 					case ValueTooLarge:
 						resultMap.put(ImportErrorType.VALUE_TOO_LARGE_ERROR, count);
 						break;
@@ -581,7 +608,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	}
 	
     @Override
-    public PaginatedListImpl<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize) {
+    public PaginatedList<Map<String, Object>> getInvalidRecipientList(String temporaryErrorTableName, List<String> columns, String sort, String direction, int page, int rownums, int previousFullListSize) {
         int totalRows = selectInt("SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE errorfixed = 0");
         if (previousFullListSize == 0 || previousFullListSize != totalRows) {
             page = 1;
@@ -592,7 +619,9 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
         String sqlStatement;
         if (isOracleDB()) {
             sqlStatement = "SELECT * FROM (SELECT tmp.*, ROWNUM r FROM " + temporaryErrorTableName + " tmp WHERE errorfixed = 0) WHERE r BETWEEN " + (offset + 1) + " AND " + (offset + rownums);
-        } else {
+        } else if (isPostgreSQL()) {
+			sqlStatement = "SELECT * FROM " + temporaryErrorTableName + " WHERE errorfixed = 0 LIMIT " + rownums + " OFFSET " + offset;
+		} else {
             sqlStatement = "SELECT * FROM " + temporaryErrorTableName + " WHERE errorfixed = 0 LIMIT " + offset + " , " + rownums;
         }
 
@@ -648,7 +677,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
             resultList.add(newBean);
         }
 
-        return new PaginatedListImpl<>(resultList, totalRows, rownums, page, sort, direction);
+        return new PaginatedList<>(resultList, totalRows, rownums, page, sort, direction);
     }
 
 	@Override
@@ -683,7 +712,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	}
 
 	@Override
-	public int removeNewCustomersWithInvalidNullValues(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> columnsToInsert, String duplicateIndexColumn, List<ColumnMapping> columnMappingForDefaultValues) {
+	public int removeNewCustomersWithInvalidNullValues(int companyID, String tempTableName, String destinationTableName) {
 		String notNullableDestinationColumnsPart = "";
 		for (Entry<String, DbColumnType> entry : DbUtilities.getColumnDataTypes(getDataSource(), destinationTableName).entrySet()) {
 			if (!entry.getValue().isNullable()
@@ -832,7 +861,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 						Map<UserStatus, Integer> userstatusMap = new HashMap<>();
 						List<Map<String, Object>> result = select("SELECT user_status, COUNT(*) AS amount FROM customer_" + companyID + "_binding_tbl WHERE mailinglist_id = ? AND mediatype = ? AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_tbl WHERE datasource_id = ? OR latest_datasource_id = ?) GROUP BY user_status", mailinglistID, mediaType.getMediaCode(), datasourceID, datasourceID);
 						for (Map<String, Object> row : result) {
-							userstatusMap.put(UserStatus.findByCode(((Number) row.get("user_status")).intValue()), ((Number) row.get("amount")).intValue());
+							userstatusMap.put(UserStatus.getByCode(((Number) row.get("user_status")).intValue()), ((Number) row.get("amount")).intValue());
 						}
 						mediatypeMap.put(mediaType, userstatusMap);
 					}

@@ -33,27 +33,26 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.birtreport.dto.FilterType;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl;
+import com.agnitas.emm.core.mediatypes.factory.MediatypeFactoryImpl;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
 import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
-import com.agnitas.util.LongRunningSelectResultCacheDao;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import com.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl;
-import com.agnitas.emm.core.mediatypes.factory.MediatypeFactoryImpl;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.LongRunningSelectResultCacheDao;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -120,7 +119,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 				try {
 					executeEmbedded("DROP TABLE " + tableNameToDelete);
 				} catch (Exception e) {
-					logger.error("Cannot drop embedded table " + tableNameToDelete);
+					logger.error("Cannot drop embedded table: {}", tableNameToDelete);
 				}
 			}
 			
@@ -256,14 +255,14 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	protected JavaMailService getJavaMailService() {
 		return BIRTDataSetHelper.getInstance().getJavaMailService(getDataSource());
 	}
-	
-	
+
 	protected class DateFormats {
-		private boolean hourScale;
-		private String sqlFormatDate;
-		private SimpleDateFormat formater;
-		private String startDate;
-		private String stopDate;
+
+		private final boolean hourScale;
+		private final String sqlFormatDate;
+		private final SimpleDateFormat formater;
+		private final String startDate;
+		private final String stopDate;
 		private long period;
 		
 		public DateFormats(String startDate, String stopDate, Boolean hourScale) {
@@ -434,21 +433,15 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     }
     
     protected String getMailingSubject(int companyId, int mailingId) {
-		try {
-			MediatypesDaoImpl mediatypesDao = new MediatypesDaoImpl();
-			mediatypesDao.setDataSource(getDataSource());
-			mediatypesDao.setConfigService(getConfigService());
-			mediatypesDao.setMediatypeFactory(new MediatypeFactoryImpl());
-			Map<Integer, Mediatype> mediaTypeMap = mediatypesDao.loadMediatypes(mailingId, companyId);
-			Mediatype mediatype = mediaTypeMap.get(MediaTypes.EMAIL.getMediaCode());
-			if (mediatype != null) {
-				MediatypeEmail emailMediaType = (MediatypeEmail) mediatype;
-				return StringUtils.trimToEmpty(emailMediaType.getSubject());
-			}
-			
-		} catch (MediatypesDaoException e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+		MediatypesDaoImpl mediatypesDao = new MediatypesDaoImpl();
+		mediatypesDao.setDataSource(getDataSource());
+		mediatypesDao.setConfigService(getConfigService());
+		mediatypesDao.setMediatypeFactory(new MediatypeFactoryImpl());
+		Map<Integer, Mediatype> mediaTypeMap = mediatypesDao.loadMediatypes(mailingId, companyId);
+		if (mediaTypeMap.get(MediaTypes.EMAIL.getMediaCode()) instanceof MediatypeEmail emailMediaType) {
+			return StringUtils.trimToEmpty(emailMediaType.getSubject());
 		}
+
 		return "";
 	}
 	
@@ -514,11 +507,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return select(query, Integer.class, companyID) != 0;
 	}
 	
-	public boolean isMailingTrackingDataAvailable(int mailingID, int companyID) throws Exception {
+	public boolean isMailingTrackingDataAvailable(int mailingID, int companyID) {
 		return isMailingTrackingActivated(companyID) && isTrackingExists(mailingID, companyID);
 	}
 	
-	public boolean isTrackingExists(int mailingID, int companyID) throws Exception {
+	public boolean isTrackingExists(int mailingID, int companyID) {
 		StringBuilder queryBuilder = new StringBuilder();
 		if (getMailingType(mailingID) == MailingType.INTERVAL) {
 			queryBuilder
@@ -534,7 +527,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return select(queryBuilder.toString(), Integer.class, mailingID) > 0;
 	}
 	
-	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, int companyID) throws Exception {
+	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, int companyID) {
 		List<Integer> mailings = getAutoOptimizationMailings(optimizationId, companyID).stream().filter(id -> id != 0).collect(Collectors.toList());
 		for (int mailingId: mailings) {
 			if (!isTrackingExists(mailingId, companyID)) {
@@ -557,6 +550,10 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		if (isOracleDB()) {
 			sql = "SELECT (sysdate - senddate) mail_age, mailing_id FROM maildrop_status_tbl " + "WHERE company_id = ? AND mailing_id IN (" + mailingIds
 					+ ") ORDER BY DECODE(status_field, " + "'W', 1, 'R', 2, 'D', 2, 'E', 3, 'C', 3, 'T', 4, 'A', 4, 5), status_id DESC";
+		} else if (isPostgreSQL()) {
+			sql = "SELECT EXTRACT(DAY FROM CURRENT_TIMESTAMP - senddate) AS mail_age, mailing_id FROM maildrop_status_tbl " + "WHERE company_id = ? AND mailing_id IN ("
+					+ mailingIds + ") ORDER BY  CASE status_field WHEN 'W' "
+					+ "THEN 1 WHEN 'R' THEN 2 WHEN 'D' THEN 2 WHEN 'E' THEN 3 WHEN 'C' THEN 3 WHEN 'T' THEN 4 WHEN 'A' " + "THEN 4 ELSE 5 END, status_id DESC";
 		} else {
 			sql = "SELECT TIMESTAMPDIFF(DAY, senddate, CURRENT_TIMESTAMP) mail_age, mailing_id FROM maildrop_status_tbl " + "WHERE company_id = ? AND mailing_id IN ("
 					+ mailingIds + ") ORDER BY  CASE status_field WHEN 'W' "
@@ -633,18 +630,14 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         return ids;
     }
 	
-    protected MailingType getMailingType(int mailingId) throws Exception {
-    	if (mailingId <= 0) {
-    		throw new RuntimeException("Invalid mailing id");
-    	}
-
-		return MailingType.fromCode(select("SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId));
+    protected MailingType getMailingType(int mailingId) {
+		return MailingType.getByCode(select("SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId));
     }
 	
     protected int getNumberSentMailings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
     	Date startDate = null;
     	Date endDate = null;
-    	boolean useTargetGroup = (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1"));
+    	boolean useTargetGroup = (StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1"));
     	
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
         	startDate = parseStatisticDate(startDateString);
@@ -784,13 +777,25 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     }
 	
     public String getAccountName(String accountId) {
-        String accountName = select("SELECT shortname FROM company_tbl WHERE company_id = ?", String.class, accountId);
+		String accountName;
+		try {
+			accountName = select("SELECT shortname FROM company_tbl WHERE company_id = ?", String.class, Integer.parseInt(accountId));
+		} catch (NumberFormatException nfe) {
+			accountName = "";
+		}
+
         accountName = accountName == null ? "" : accountName.trim();
         return accountName;
     }
 	
     public String getReportName(String reportId) {
-        String reportName = select("SELECT shortname FROM birtreport_tbl WHERE report_id = ?", String.class, reportId);
+		String reportName;
+		try {
+			reportName = select("SELECT shortname FROM birtreport_tbl WHERE report_id = ?", String.class, Integer.parseInt(reportId));
+		} catch (NumberFormatException nfe) {
+			reportName = "";
+		}
+
         reportName = reportName == null ? "" : reportName.trim();
         return reportName;
     }
@@ -874,9 +879,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			Integer value = getEmbeddedJdbcTemplate().queryForObject(statement, Integer.class, parameter);
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Empty result, using default value: " + defaultValue);
-			}
+			logger.debug("Empty result, using default value: {}", defaultValue);
 			return defaultValue;
 		} catch (DataAccessException e) {
 			logSqlError(e, "EMBEDDED: " + statement, parameter);
@@ -934,7 +937,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			logSqlStatement("EMBEDDED: " + statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			int[] touchedLines = getEmbeddedJdbcTemplate().batchUpdate(statement, values);
 			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + Arrays.toString(touchedLines));
+				logger.debug("lines changed by update: {}", Arrays.toString(touchedLines));
 			}
 			return touchedLines;
 		} catch (RuntimeException e) {

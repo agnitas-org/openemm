@@ -13,6 +13,25 @@ package com.agnitas.backend;
 public enum AgnTag {
 
     DB("agnDB"),
+    DB_MD5("agnDBMD5"),
+    UID("agnUID"),
+    REDIRECT("agnREDIRECT"),
+    AGE("agnAGE"),
+    DAYS_UNTIL("agnDAYS_UNTIL"),
+    ITEM("agnITEM"),
+    NULL("agnNULL"),
+    NUM_FORMAT("agnNUMFORMAT"),
+    MULTI_AFTER("agnMULTIAFTER"),
+    MULTI_BEFORE("agnMULTIBEFORE"),
+    PROFILE("agnPROFILE"),
+    PREHEADER("agnPREHEADER"),
+    PUBID("agnPUBID"),
+    UNSUBSCRIBE("agnUNSUBSCRIBE"),
+    VOUCHER("agnVOUCHER"),
+    BARCODE("agnBARCODE"),
+    CLEARANCE("agnCLEARANCE"),
+    QRCODE("agnQRCODE"),
+    ONEPIXEL("agnONEPIXEL"),
     IMAGE("agnIMAGE"),
     EMAIL("agnEMAIL"),
     SUBSCRIBER_COUNT("agnSUBSCRIBERCOUNT"),
@@ -20,16 +39,18 @@ public enum AgnTag {
     SYS_INFO("agnSYSINFO"),
     DYN("agnDYN"),
     DVALUE("agnDVALUE"),
+    PUBVIEW("agnPUBVIEW"),
     TITLE("agnTITLE"),
     TITLE_FULL("agnTITLEFULL"),
     TITLE_FIRST("agnTITLEFIRST"),
     IMG_LINK("agnIMGLINK"),
+    TXT_IMG("agnTXTIMG"),
+    DYN_IMG("agnDYNIMAGE"),
     SWYN("agnSWYN"),
     SEND_DATE("agnSENDDATE"),
     FORM("agnFORM"),
     FULLVIEW("agnFULLVIEW"),
-    WEBVIEW("agnWEBVIEW"),
-    GRID_PH("gridPH");
+    WEBVIEW("agnWEBVIEW");
 
     private final String name;
 

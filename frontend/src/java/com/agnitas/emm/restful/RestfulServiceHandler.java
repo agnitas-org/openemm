@@ -15,9 +15,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.function.Function;
 
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.json.JsonArray;
+import com.agnitas.json.JsonObject;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.Tuple;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
@@ -83,4 +88,46 @@ public interface RestfulServiceHandler {
 		}
 		activityLogDao.writeUserActivityLog(request.getRequestURI(), description, request.getMethod(), host, admin);
 	}
+
+	default <T> JsonObject toPaginatedJson(PaginatedList<T> list, Function<T, JsonObject> function) {
+		JsonObject jsonObject = new JsonObject();
+
+		JsonArray dataArray = new JsonArray();
+		list.getList().stream()
+				.map(function)
+				.forEach(dataArray::add);
+
+		jsonObject.add("page", list.getPageNumber());
+		jsonObject.add("size", list.getPageSize());
+		jsonObject.add("totalCount", list.getFullListSize());
+		jsonObject.add("data", dataArray);
+
+		return jsonObject;
+	}
+
+	default Tuple<Integer, Integer> parsePaginationParams(HttpServletRequest request) throws RestfulClientException {
+		int page = 1;
+		int size = 50;
+
+		String pageParam = request.getParameter("page");
+		if (pageParam != null) {
+			if (!AgnUtils.isNumber(pageParam)) {
+				throw new RestfulClientException("Invalid parameter 'page': '%s'".formatted(pageParam));
+			}
+
+			page = Integer.parseInt(pageParam);
+		}
+
+		String sizeParam = request.getParameter("size");
+		if (sizeParam != null) {
+			if (!AgnUtils.isNumber(sizeParam)) {
+				throw new RestfulClientException("Invalid parameter 'size': '%s'".formatted(sizeParam));
+			}
+
+			size = Integer.parseInt(sizeParam);
+		}
+
+		return Tuple.of(page, size);
+	}
+
 }

@@ -23,18 +23,19 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHost;
 
 public class NetworkUtil {
 	
@@ -45,7 +46,7 @@ public class NetworkUtil {
 		public final String host;
 		public final int port;
 		
-		public ProxySettings(final String host, final int port) {
+		public ProxySettings(String host, int port) {
 			this.host = Objects.requireNonNull(host, "host is null");
 			this.port = port;
 		}
@@ -82,7 +83,7 @@ public class NetworkUtil {
 			}
 
 			try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-				int httpReturnCode = response.getStatusLine().getStatusCode();
+				int httpReturnCode = response.getCode();
 
 				if (httpReturnCode == 200) {
 					HttpEntity entity = response.getEntity();
@@ -104,13 +105,13 @@ public class NetworkUtil {
 		RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
 		NetworkUtil.setHttpClientProxyFromSystem(requestConfigBuilder, url);
 
-        return HttpClients
+		return HttpClients
 				.custom()
-				.setDefaultRequestConfig(requestConfigBuilder.setConnectTimeout(timeout).build())
+				.setDefaultRequestConfig(requestConfigBuilder.setConnectionRequestTimeout(timeout, TimeUnit.MILLISECONDS).build())
 				.build();
 	}
 
-	public static void setHttpClientProxyFromSystem(final RequestConfig.Builder configBuilder, final String url) {
+	public static void setHttpClientProxyFromSystem(RequestConfig.Builder configBuilder, String url) {
 		Proxy proxyToUse = getProxyFromSystem(url);
 		if (proxyToUse != null && proxyToUse != Proxy.NO_PROXY) {
 			configBuilder.setProxy(new HttpHost(((InetSocketAddress) proxyToUse.address()).getAddress().getHostAddress(), ((InetSocketAddress) proxyToUse.address()).getPort()));
@@ -130,10 +131,13 @@ public class NetworkUtil {
 		return netUrl.getHost();
 	}
 
-	public static void setHttpClientProxyFromSystem(HttpRequestBase request, String url) {
+	public static void setHttpClientProxyFromSystem(HttpUriRequestBase request, String url) {
 		Proxy proxyToUse = getProxyFromSystem(url);
 		if (proxyToUse != null && proxyToUse != Proxy.NO_PROXY) {
-			request.setConfig(RequestConfig.custom().setProxy(new HttpHost(((InetSocketAddress) proxyToUse.address()).getAddress().getHostAddress(), ((InetSocketAddress) proxyToUse.address()).getPort(), "http")).build());
+			InetSocketAddress address = ((InetSocketAddress) proxyToUse.address());
+			request.setConfig(RequestConfig.custom()
+					.setProxy(new HttpHost("http", address.getAddress().getHostAddress(), address.getPort()))
+					.build());
 		}
 	}
 	

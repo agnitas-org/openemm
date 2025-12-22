@@ -8,10 +8,8 @@
 
 */
 
--- fills entity_type, entity_id, entity_execution column according to old 'type' and 'autoimport_id' columns
+-- fills entity_type, entity_id, entity_execution column according to old 'type' column
 UPDATE recipients_report_tbl SET entity_type = 1 WHERE type = 'IMPORT_REPORT';
 UPDATE recipients_report_tbl SET entity_type = 2 WHERE type = 'EXPORT_REPORT';
-UPDATE recipients_report_tbl SET entity_execution = 2, entity_id = autoimport_id WHERE entity_type = 1 AND autoimport_id > 0;
-UPDATE recipients_report_tbl SET entity_execution = 1 WHERE entity_type = 1 AND autoimport_id <= 0;
 
 COMMIT;

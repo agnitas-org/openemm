@@ -10,41 +10,39 @@
 
 package com.agnitas.util;
 
+import com.agnitas.dao.ImportRecipientsDao;
+import com.agnitas.dao.JobQueueDao;
+import com.agnitas.emm.core.auto_import.dao.AutoImportDao;
+import com.agnitas.emm.core.autoexport.dao.AutoExportDao;
+import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
-
-import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.dao.JobQueueDao;
-import org.agnitas.emm.core.autoexport.dao.AutoExportDao;
-import org.agnitas.emm.core.autoimport.dao.AutoImportDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
-
 public class ResetJobQueueContextListener implements ServletContextListener {
-	private static final transient Logger logger = LogManager.getLogger(ResetJobQueueContextListener.class);
+
+	private static final Logger logger = LogManager.getLogger(ResetJobQueueContextListener.class);
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
-        try {
+		String hostName = AgnUtils.getHostName();
+		try {
             ServletContext servletContext = event.getServletContext();
 			WebApplicationContext springContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
 			
             JobQueueDao jobQueueDao = (JobQueueDao) springContext.getBean("JobQueueDao");
-            int resettedJobs = jobQueueDao.resetJobsForCurrentHost();
-            if (resettedJobs > 0) {
-    			logger.error("Resetting " + resettedJobs + " hanging jobs on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
-    		}
+
+			jobQueueDao.resetJobsForCurrentHost();
 
             if (springContext.containsBean("AutoImportDao")) {
             	AutoImportDao autoImportDao = (AutoImportDao) springContext.getBean("AutoImportDao");
 	            int resettedAutoImports = autoImportDao.resetAutoImportsForCurrentHost();
 	            if (resettedAutoImports > 0) {
-	    			logger.error("Resetting " + resettedAutoImports + " hanging AutoImports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
+	    			logger.error("Resetting {} hanging AutoImports on startup formerly started by current host ({})", resettedAutoImports, hostName);
 	    		}
             }
 
@@ -52,7 +50,7 @@ public class ResetJobQueueContextListener implements ServletContextListener {
             	AutoExportDao autoExportDao = (AutoExportDao) springContext.getBean("AutoExportDao");
 	            int resettedAutoExports = autoExportDao.resetAutoExportsForCurrentHost();
 	            if (resettedAutoExports > 0) {
-	    			logger.error("Resetting " + resettedAutoExports + " hanging AutoExports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
+	    			logger.error("Resetting {} hanging AutoExports on startup formerly started by current host ({})", resettedAutoExports, hostName);
 	    		}
             }
 
@@ -60,23 +58,23 @@ public class ResetJobQueueContextListener implements ServletContextListener {
             	BirtReportDao birtReportDao = (BirtReportDao) springContext.getBean("BirtReportDao");
 	            int resettedReports = birtReportDao.resetBirtReportsForCurrentHost();
 	            if (resettedReports > 0) {
-	    			logger.error("Resetting " + resettedReports + " hanging BirtReports on startup formerly started by current host (" + AgnUtils.getHostName() + ")");
+	    			logger.error("Resetting {} hanging BirtReports on startup formerly started by current host ({})", resettedReports, hostName);
 	    		}
             }
 		} catch (Exception e) {
-			logger.error("ResetJobQueueContextListener init: " + e.getMessage(), e);
+			logger.error("ResetJobQueueContextListener init: {}", e.getMessage(), e);
 		}
         
         try {
             ServletContext servletContext = event.getServletContext();
 			WebApplicationContext springContext = WebApplicationContextUtils.getWebApplicationContext(servletContext);
 			ImportRecipientsDao importRecipientsDao = (ImportRecipientsDao) springContext.getBean("ImportRecipientsDao");
-            int droppedTables = importRecipientsDao.dropLeftoverTables(AgnUtils.getHostName());
+            int droppedTables = importRecipientsDao.dropLeftoverTables(hostName);
             if (droppedTables > 0) {
-    			logger.error("Dropped " + droppedTables + " leftover import data tables on startup of current host (" + AgnUtils.getHostName() + ")");
+    			logger.error("Dropped {} leftover import data tables on startup of current host ({})", droppedTables, hostName);
     		}
 		} catch (Exception e) {
-			logger.error("DropLeftoverTables at init: " + e.getMessage(), e);
+			logger.error("DropLeftoverTables at init: {}", e.getMessage(), e);
 		}
 	}
     

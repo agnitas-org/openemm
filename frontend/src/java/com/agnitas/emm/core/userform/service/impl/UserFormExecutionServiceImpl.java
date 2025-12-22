@@ -10,53 +10,50 @@
 
 package com.agnitas.emm.core.userform.service.impl;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.Constants;
-import com.agnitas.exception.FormNotFoundException;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
+import com.agnitas.emm.core.velocity.Constants;
+import com.agnitas.exception.FormNotFoundException;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.LinkUtils;
-
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 public final class UserFormExecutionServiceImpl implements UserFormExecutionService, ApplicationContextAware {
 	
@@ -78,7 +75,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	private ApplicationContext applicationContext;
 
 	@Override
-	public UserFormExecutionResult executeForm(int companyID, String formName, HttpServletRequest request, CaseInsensitiveMap<String, Object> params, boolean useSession) throws Exception {
+	public UserFormExecutionResult executeForm(int companyID, String formName, HttpServletRequest request, CaseInsensitiveMap<String, Object> params, boolean useSession) throws BlacklistedDeviceException {
 		populateRequestParametersAsVelocityParameters(request, params);
 
 		int deviceID = deviceService.getDeviceId(request.getHeader("User-Agent"));
@@ -107,7 +104,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		} catch(Exception e) {
 			logger.error(String.format("Showing error form due to exception (company %d, form: %s)", companyID, formName), e);
 			
-			return doExecuteErrorForm(userForm, actionOperationErrors, params, request);
+			return doExecuteErrorForm(userForm, actionOperationErrors, params);
 		}
 	}
 
@@ -257,7 +254,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		}
 	}
 	
-	private UserForm loadUserForm(final String formName, final int companyID) throws Exception {
+	private UserForm loadUserForm(String formName, int companyID) {
 		final UserForm userForm = userFormDao.getUserFormByName(formName, companyID);
 
 		// Show "form not found" page if form is actually not found or if it's inactive.
@@ -292,7 +289,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		request.setAttribute("mobileDevice", String.valueOf(mobileID));
 	}
 	
-	private UserFormExecutionResult doExecuteForm(final UserForm userForm, final EmmActionOperationErrors actionOperationErrors, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) throws Exception {
+	private UserFormExecutionResult doExecuteForm(UserForm userForm, EmmActionOperationErrors actionOperationErrors, CaseInsensitiveMap<String, Object> params, HttpServletRequest request) {
 		String responseContent = userForm.evaluateForm(applicationContext, params, actionOperationErrors);
 		String responseMimeType = determineSuccessResponseMimeType(userForm, params);
 
@@ -309,7 +306,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return new UserFormExecutionResult(userForm.getId(), responseContent, responseMimeType);
 	}
 	
-	private UserFormExecutionResult doExecuteErrorForm(final UserForm userForm, final EmmActionOperationErrors actionOperationErrors, final CaseInsensitiveMap<String, Object> params, final HttpServletRequest request) throws Exception {
+	private UserFormExecutionResult doExecuteErrorForm(UserForm userForm, EmmActionOperationErrors actionOperationErrors, CaseInsensitiveMap<String, Object> params) {
 		String responseContent = userForm.evaluateErrorForm(applicationContext, params, actionOperationErrors);
 		String responseMimeType = userForm.getErrorMimetype();
 
@@ -333,7 +330,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	 * 
 	 * @param content form content
 	 */
-	protected String addRedirectLinks(String content, String uidString, UserForm userForm) throws Exception {
+	protected String addRedirectLinks(String content, String uidString, UserForm userForm) {
 		// create the redirect link for each trackable link or use extensions on direct link
 		Map<String, TrackableUserFormLink> trackableLinks = trackableLinkDao.getUserFormTrackableLinks(userForm.getId(), userForm.getCompanyID());
 		for (TrackableUserFormLink link : trackableLinks.values()) {
@@ -356,7 +353,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		return content;
 	}
 	
-	private String createDirectLinkWithOptionalExtensions(String uidString, TrackableUserFormLink trackableUserFormLink) throws UnsupportedEncodingException {
+	private String createDirectLinkWithOptionalExtensions(String uidString, TrackableUserFormLink trackableUserFormLink) {
 		String linkString = trackableUserFormLink.getFullUrl();
 		CaseInsensitiveMap<String, Object> cachedRecipientData = null;
 		for (LinkProperty linkProperty : trackableUserFormLink.getProperties()) {
@@ -372,7 +369,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
                     propertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
-				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), "UTF-8");
+				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), StandardCharsets.UTF_8);
 			}
 		}
 		return linkString;
@@ -395,8 +392,6 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	/**
 	 * For user form that requires error handling adds the error messages (including velocity errors) to response context.
 	 *
-	 * @param userForm
-	 * @param params
 	 * @param responseContent html content to be sent in response (could be changed inside the method).
 	 * @return responseContent
 	 */
@@ -415,7 +410,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext ctxt) throws BeansException {
+	public void setApplicationContext(ApplicationContext ctxt) {
 		this.applicationContext = ctxt;
 	}
 

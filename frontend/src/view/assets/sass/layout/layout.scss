@@ -1,0 +1,103 @@
+
+.grid {
+  grid-template-rows: unset;
+  grid-auto-rows: min-content;
+}
+
+.row:blank {
+  display: none !important;
+}
+
+#page-wrapper {
+  display: grid;
+  grid-template-columns: minmax($min-sidebar-width + 2, min-content) 1fr;
+  grid-template-rows: $header-height 1fr;
+  grid-template-areas:
+          'sidebar header'
+          'sidebar main-view';
+
+  height: 100dvh;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+}
+
+#main-view {
+  @include flex-column;
+  grid-area: main-view;
+  overflow: hidden;
+
+  @include mobile {
+    @include hide-scroll;
+  }
+}
+
+#navbar_wrapper {
+  padding: $tiles-spacer $tiles-spacer 0 $tiles-spacer;
+  @include left-hand {
+    @include flipHorizontally;
+  }
+}
+
+.tiles-container {
+  display: flex;
+  padding: $tiles-spacer;
+  flex-grow: 1;
+  min-height: 0;
+  gap: $tiles-spacer;
+
+  > .tile, > .tiles-block {
+    flex: 1;
+
+    @include mobile {
+      flex: 0 0 min-content !important;
+    }
+  }
+
+  > .tile, .tiles-block > .tile {
+    @include left-hand {
+      > .tile-header {
+        z-index: 1; // hack to display bootstrap dropdown over the tiles
+      }
+
+      > * {
+        @include flipHorizontally;
+      }
+    }
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+    @include hide-scroll;
+  }
+}
+
+.tiles-block {
+  display: flex;
+  gap: $tiles-spacer;
+  overflow: hidden;
+
+  @include mobile {
+    flex-direction: column !important;
+
+    > .tile, .tiles-block {
+      flex: 0 0 min-content !important;
+    }
+  }
+}
+
+.filter-overview {
+  @extend .tiles-container;
+
+  #table-tile {
+    flex: 3;
+  }
+
+  #filter-tile {
+    @include mobile {
+      order: -1;
+    }
+  }
+}

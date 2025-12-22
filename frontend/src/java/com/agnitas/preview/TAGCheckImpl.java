@@ -22,10 +22,9 @@ import com.agnitas.backend.BlockData;
 import com.agnitas.backend.Data;
 import com.agnitas.backend.EMMTag;
 import com.agnitas.backend.exceptions.EMMTagException;
+import com.agnitas.messages.I18nString;
 import com.agnitas.util.Log;
 import org.apache.commons.lang3.StringUtils;
-
-import com.agnitas.messages.I18nString;
 
 public class TAGCheckImpl implements TAGCheck {
 	static class Seen {
@@ -106,8 +105,8 @@ public class TAGCheckImpl implements TAGCheck {
 				s.status = true;
 			} catch (EMMTagException e) {
 				data.logging(Log.ERROR, "tc", "Failed to check \"" + tag + "\": " + e.toString(), e);
-				if(StringUtils.isBlank(e.getMessageKey())) {
-					s.report = e.getMessage();
+				if (StringUtils.isBlank(e.getMessageKey())) {
+					s.report = tag + ": " + StringUtils.defaultIfBlank(e.getMessage(), e.message());
 				} else {
 					s.report = tag + ": " + I18nString.getLocaleString(e.getMessageKey(), locale, (Object[]) e.getMessageArgs());
 				}

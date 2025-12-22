@@ -15,7 +15,7 @@ import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import org.json.JSONObject;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 
 import java.util.Date;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 public interface DashboardService {
 
-    PaginatedListImpl<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums);
+    PaginatedList<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums);
 
     List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums);
 

@@ -60,65 +60,61 @@ import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.mapper.Mapper;
 import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
-import jakarta.annotation.Resource;
 import com.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.util.CsvWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RecipientReportServiceImpl implements RecipientReportService {
 
     public static final String TXT_REPORT_FOOTER = "The data is stored on servers in Germany";
-    
-    @Resource
-    private BindingEntryDao bindingEntryDao;
 
-    @Resource
-    private BindingEntryHistoryDao bindingEntryHistoryDao;
+    protected final RecipientHistoryReportDao historyDao;
+    protected final TableGenerator txtTableGenerator;
+    private final BindingEntryDao bindingEntryDao;
+    private final BindingEntryHistoryDao bindingEntryHistoryDao;
+    private final RecipientProfileHistoryDao recipientProfileHistoryDao;
+    private final RecipientDao recipientDao;
+    private final ConfigService configService;
+    private final CollectionConverter<RecipientBindingHistory, RecipientHistory> recipientHistoryConverter;
+    private final Mapper<RecipientEntity> recipientEntityMapper;
+    private final RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
+    private final RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter;
+    private final RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter;
+    private final RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter;
+    private final RecipientEntityDtoConverter recipientEntityDtoConverter;
+    private final RecipientEntityDtoPrinter recipientEntityDtoPrinter;
 
-    @Resource
-    private RecipientProfileHistoryDao recipientProfileHistoryDao;
-
-    @Resource
-    private RecipientDao recipientDao;
-
-    @Resource
-    private ConfigService configService;
-
-    @Resource
-    private CollectionConverter<RecipientBindingHistory, RecipientHistory> recipientHistoryConverter;
-
-    @Resource
-    private Mapper<RecipientEntity> recipientEntityMapper;
-
-    @Resource
-    protected RecipientHistoryReportDao historyDao;
-
-    @Resource(name = "txtTableGenerator")
-    protected TableGenerator txtTableGenerator;
-    
-    @Resource
-    private RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter;
-
-    @Resource
-    private RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter;
-
-    @Resource
-    private RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter;
-
-    @Resource
-    private RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter;
-
-    @Resource
-    private RecipientEntityDtoConverter recipientEntityDtoConverter;
-
-    @Resource
-    private RecipientEntityDtoPrinter recipientEntityDtoPrinter;
+    public RecipientReportServiceImpl(BindingEntryDao bindingEntryDao, BindingEntryHistoryDao bindingEntryHistoryDao,
+                                      RecipientProfileHistoryDao recipientProfileHistoryDao, RecipientDao recipientDao,
+                                      ConfigService configService, CollectionConverter<RecipientBindingHistory, RecipientHistory> recipientHistoryConverter,
+                                      Mapper<RecipientEntity> recipientEntityMapper, RecipientHistoryReportDao historyDao,
+                                      @Qualifier("txtTableGenerator") TableGenerator txtTableGenerator, RecipientStatusHistoryDtoConverter recipientStatusHistoryConverter,
+                                      RecipientMailingHistoryDtoConverter recipientMailingHistoryDtoConverter,
+                                      RecipientRetargetingHistoryDtoConverter recipientRetargetingHistoryDtoConverter, RecipientDeviceHistoryDtoConverter recipientDeviceHistoryDtoConverter,
+                                      RecipientEntityDtoConverter recipientEntityDtoConverter, RecipientEntityDtoPrinter recipientEntityDtoPrinter) {
+        this.bindingEntryDao = bindingEntryDao;
+        this.bindingEntryHistoryDao = bindingEntryHistoryDao;
+        this.recipientProfileHistoryDao = recipientProfileHistoryDao;
+        this.recipientDao = recipientDao;
+        this.configService = configService;
+        this.recipientHistoryConverter = recipientHistoryConverter;
+        this.recipientEntityMapper = recipientEntityMapper;
+        this.historyDao = historyDao;
+        this.txtTableGenerator = txtTableGenerator;
+        this.recipientStatusHistoryConverter = recipientStatusHistoryConverter;
+        this.recipientMailingHistoryDtoConverter = recipientMailingHistoryDtoConverter;
+        this.recipientRetargetingHistoryDtoConverter = recipientRetargetingHistoryDtoConverter;
+        this.recipientDeviceHistoryDtoConverter = recipientDeviceHistoryDtoConverter;
+        this.recipientEntityDtoConverter = recipientEntityDtoConverter;
+        this.recipientEntityDtoPrinter = recipientEntityDtoPrinter;
+    }
 
     @Override
     public String getRecipientTxtReport(int recipientId, int companyId, Locale locale) {

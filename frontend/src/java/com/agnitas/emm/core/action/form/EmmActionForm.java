@@ -16,9 +16,7 @@ public class EmmActionForm {
     private String shortname;
     private String description;
     private int type;
-    private boolean active; // TODO: EMMGUI-714 remove after remove of old design
     private boolean advertising;
-
     private String modulesSchema;
 
     public int getId() {
@@ -51,14 +49,6 @@ public class EmmActionForm {
 
     public void setType(int type) {
         this.type = type;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
     }
 
     public String getModulesSchema() {

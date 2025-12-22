@@ -17,7 +17,7 @@ import com.agnitas.util.SqlPreparedStatementManager;
 import com.agnitas.beans.Admin;
 
 public interface RecipientQueryBuilder {
-	SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) throws Exception;
+	SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad);
 	
-    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad) throws Exception;
+    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad);
 }

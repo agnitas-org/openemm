@@ -1,27 +1,26 @@
 package com.agnitas.emm.core.preview.web;
 
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.dao.MailingComponentDao;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.preview.TAGCheckFactory;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
+import com.agnitas.preview.TAGCheckFactory;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.WebStorage;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/mailing/preview")
-@PermissionMapping("mailing.preview")
+@RequiredPermission("mailing.show")
 public class MailingPreviewControllerOpenemm extends MailingPreviewController {
 
 

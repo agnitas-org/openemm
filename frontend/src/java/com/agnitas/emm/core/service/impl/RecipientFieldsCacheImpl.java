@@ -12,8 +12,8 @@ package com.agnitas.emm.core.service.impl;
 
 import java.util.List;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.TimeoutLRUMap;
 
 import com.agnitas.emm.core.service.RecipientFieldDescription;

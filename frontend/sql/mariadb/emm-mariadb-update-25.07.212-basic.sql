@@ -8,11 +8,11 @@
 
 */
 
-INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WebhookMessageDelivery', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookMessageSenderJobWorker', 0, 5);
+INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, job_name, criticality)
+VALUES ('WebhookMessageDelivery', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookMessageSenderJobWorker', 0, 'WebhookMessageDelivery', 5);
 
-INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
-VALUES ('WebhookBackendDataMessageGenerator', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookBackendDataMessageGeneratorJobWorker', 0, 5);
+INSERT IGNORE INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, job_name, criticality)
+VALUES ('WebhookBackendDataMessageGenerator', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '****', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.webhooks.jobqueue.WebhookBackendDataMessageGeneratorJobWorker', 0, 'WebhookBackendDataMessageGenerator', 5);
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 VALUES ('25.07.212', CURRENT_USER, CURRENT_TIMESTAMP);

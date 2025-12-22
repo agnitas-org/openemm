@@ -10,18 +10,18 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.beans.impl.MailingBackendLog;
-import com.agnitas.dao.DeliveryStatDao;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.beans.impl.MailingBackendLog;
+import com.agnitas.dao.DeliveryStatDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import org.springframework.jdbc.core.RowMapper;
 
 public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao {
 
@@ -41,24 +41,15 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 	}
 
 	@Override
-	public Date getSendDateFoStatus(int statusId) {
-		if (isOracleDB()) {
-			return selectWithDefaultValue("SELECT senddate FROM maildrop_status_tbl WHERE status_id = ? AND ROWNUM < 2", Date.class, null, statusId);
-		} else {
-			return selectWithDefaultValue("SELECT senddate FROM maildrop_status_tbl WHERE status_id = ? LIMIT 1", Date.class, null, statusId);
-		}
+	public Date getSendDateByStatusId(int statusId) {
+		String query = addRowLimit("SELECT senddate FROM maildrop_status_tbl WHERE status_id = ?", 1);
+		return selectWithDefaultValue(query, Date.class, null, statusId);
 	}
 
 	@Override
 	public MaildropEntry getLastMaildropStatus(int mailingId) {
-		String query;
-		if (isOracleDB()) {
-			query = "SELECT * FROM (SELECT status_field, status_id, genstatus FROM maildrop_status_tbl WHERE mailing_id = ? ORDER BY genchange DESC) WHERE rownum = 1";
-		} else {
-			query = "SELECT status_field, status_id, genstatus FROM maildrop_status_tbl WHERE mailing_id = ? ORDER BY genchange DESC LIMIT 1";
-		}
-
-		return selectObjectDefaultNull(query, new MailingDropMapper(), mailingId);
+		String query = "SELECT status_field, status_id, genstatus FROM maildrop_status_tbl WHERE mailing_id = ? ORDER BY genchange DESC";
+		return selectObjectDefaultNull(addRowLimit(query, 1), new MailingDropMapper(), mailingId);
 	}
 
 	@Override
@@ -66,6 +57,8 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 		String query;
 		if (isOracleDB()) {
 			query = "SELECT * FROM (SELECT current_mails, total_mails, timestamp, creation_date FROM mailing_backend_log_tbl WHERE status_id = ? ORDER BY creation_date DESC) WHERE rownum = 1";
+		} else if (isPostgreSQL()) {
+			query = "SELECT current_mails, total_mails, timestamp, creation_date FROM mailing_backend_log_tbl WHERE status_id = ? ORDER BY creation_date DESC LIMIT 1";
 		} else {
 			query = "SELECT current_mails, total_mails, `timestamp`, creation_date FROM mailing_backend_log_tbl WHERE status_id = ? ORDER BY creation_date DESC LIMIT 1";
 		}
@@ -74,10 +67,15 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
     
     @Override
 	public MailingBackendLog getLastWorldMailingBackendLog(int mailingId) {
-        String sql = isOracleDB()
-                ? "SELECT * FROM (SELECT current_mails, total_mails, timestamp, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC) WHERE rownum = 1"
-                : "SELECT current_mails, total_mails, `timestamp`, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC LIMIT 1";
-		return selectObjectDefaultNull(sql, new MailingBackendLogRowMapper(), mailingId);
+		String query;
+		if (isOracleDB()) {
+			query = "SELECT * FROM (SELECT current_mails, total_mails, timestamp, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC) WHERE rownum = 1";
+		} else if (isPostgreSQL()) {
+			query = "SELECT current_mails, total_mails, timestamp, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC LIMIT 1";
+		} else {
+			query = "SELECT current_mails, total_mails, `timestamp`, creation_date FROM world_mailing_backend_log_tbl WHERE mailing_id = ? ORDER BY creation_date DESC LIMIT 1";
+		}
+		return selectObjectDefaultNull(query, new MailingBackendLogRowMapper(), mailingId);
 	}
 
 	@Override

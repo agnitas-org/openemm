@@ -18,16 +18,16 @@ import java.util.Map;
 
 import com.agnitas.emm.core.JavaMailAttachment;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.export.exception.ExportException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.impl.ServiceLookupFactory;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.FileDownload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,9 +35,9 @@ public class BirtReportExecutor implements Runnable {
 
 	private static final Logger logger = LogManager.getLogger(BirtReportExecutor.class);
 
-	private ServiceLookupFactory serviceLookupFactory;
-	private BirtReport birtReport;
-	private Map<String, String> urlsMap;
+	private final ServiceLookupFactory serviceLookupFactory;
+	private final BirtReport birtReport;
+	private final Map<String, String> urlsMap;
 	
 	public BirtReportExecutor(ServiceLookupFactory serviceLookupFactory, BirtReport birtReport, Map<String, String> urlsMap) {
 		this.serviceLookupFactory = serviceLookupFactory;
@@ -54,11 +54,12 @@ public class BirtReportExecutor implements Runnable {
 		updateNextStart();
 		
 		if(!serviceLookupFactory.getBeanBirtReportService().announceStart(this.birtReport)) {
-			logger.info(String.format(
-					"Cannot start BIRT report job '%s' (id %d) on host '%s'. Maybe the report is running on some other host at the moment.", 
+			logger.info(
+					"Cannot start BIRT report job '{}' (id {}) on host '{}'. Maybe the report is running on some other host at the moment.",
 					birtReport.getShortname(),
 					birtReport.getId(),
-					AgnUtils.getHostName()));
+					AgnUtils.getHostName()
+			);
 			return;
 		}
 

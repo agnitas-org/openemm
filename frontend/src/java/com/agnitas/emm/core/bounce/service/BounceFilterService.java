@@ -10,32 +10,31 @@
 
 package com.agnitas.emm.core.bounce.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedFilterEmailException;
+import com.agnitas.emm.core.bounce.service.impl.BlacklistedForwardEmailException;
+import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.service.ServiceResult;
+
 public interface BounceFilterService {
 
-    int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
+    int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew)
+            throws BlacklistedFilterEmailException, EmailInUseException, BlacklistedForwardEmailException;
 
-    // TODO: EMMGUI-714: Remove when deleting old design
-    PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int page, int rownums);
+    PaginatedList<BounceFilterDto> overview(BounceFilterListForm filter);
 
-    PaginatedListImpl<BounceFilterDto> overview(BounceFilterListForm filter);
-
-	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
+	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew)
+            throws BlacklistedFilterEmailException, EmailInUseException, BlacklistedForwardEmailException;
 
     BounceFilterDto getBounceFilter(int companyId, int filterId);
-
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-    boolean deleteBounceFilter(int filterId, int companyId);
 
     ServiceResult<UserAction> delete(Set<Integer> ids, int companyId);
 

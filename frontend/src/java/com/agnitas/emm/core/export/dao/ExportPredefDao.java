@@ -12,9 +12,8 @@ package com.agnitas.emm.core.export.dao;
 
 import java.util.List;
 
-import com.agnitas.beans.ExportPredef;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ExportPredef;
 
 public interface ExportPredefDao {
 
@@ -54,17 +53,6 @@ public interface ExportPredefDao {
     boolean delete(ExportPredef src);
 
     /**
-     * Deletes an export definition by ID and company id
-     *
-     * @param id
-     *          The ID of export definition to delete.
-     * @param companyID
-     *          The companyID of the definition.
-     * @return true on success.
-     */
-    boolean delete(int id, int companyID);
-    
-    /**
      * Delete all export definitions for given companyID
      * 
      * @return true on success
@@ -98,4 +86,11 @@ public interface ExportPredefDao {
 	List<Integer> getAllExportIds(Admin admin);
 
 	List<Integer> getExportsContainingProfileField(int companyID, String profileFieldName);
+
+    List<ExportPredef> findAllByReferenceTable(int tableId, int companyId);
+
+    List<ExportPredef> findAllByByReferenceTableColumn(int tableId, String columnName, int companyId);
+
+    void renameReferenceTableColumn(String oldName, String newName, List<Integer> exportProfilesIds);
+
 }

@@ -14,59 +14,48 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.agnitas.emm.core.logon.service.ClientHostIdService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.util.WebUtils;
 
-import com.agnitas.emm.core.logon.service.ClientHostIdService;
-
 public final class ClientHostIdServiceImpl implements ClientHostIdService {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(ClientHostIdServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(ClientHostIdServiceImpl.class);
 	
 	private ConfigService configService;
 
 	@Override
-	public final String createHostId() { // TODO: This method cannot be unit-tested. Move generator code behind interface
+	public String createHostId() { // TODO: This method cannot be unit-tested. Move generator code behind interface
 									// (see security code generator)
-		if (LOGGER.isInfoEnabled()) {
-			LOGGER.info("Creating new UUID for host identification");
-		}
+		LOGGER.info("Creating new UUID for host identification");
 
 		final UUID uuid0 = UUID.randomUUID();
 		final UUID uuid1 = UUID.randomUUID();
 
-		return String.format("%s-%s", uuid0.toString(), uuid1.toString());
+		return String.format("%s-%s", uuid0, uuid1);
 	}
 
 	@Override
-	public final Optional<String> getClientHostId(final HttpServletRequest request) {
+	public Optional<String> getClientHostId(HttpServletRequest request) {
         final Cookie cookie = WebUtils.getCookie(request, configService.getHostAuthenticationHostIdCookieName());
 
         if (cookie == null) {
-            if (LOGGER.isInfoEnabled()) {
-            	LOGGER.info("No host ID cookie found for host " + request.getRemoteHost() + " (" + request.getRemoteAddr() + ")");
-            }
-
+			LOGGER.info("No host ID cookie found for host {} ({})", request.getRemoteHost(), request.getRemoteAddr());
             return Optional.empty();
         }
 
-        if (LOGGER.isInfoEnabled()) {
-        	LOGGER.info("Found host ID '" + cookie.getValue() + "' found for host " + request.getRemoteHost() + " (" + request.getRemoteAddr() + ")");
-        }
-
+		LOGGER.info("Found host ID '{}' found for host {} ({})", cookie.getValue(), request.getRemoteHost(), request.getRemoteAddr());
         return Optional.of(cookie.getValue());
 	}
 
 	@Override
-	public final void createAndPublishHostAuthenticationCookie(final String hostId, final int companyId, final HttpServletResponse response) {
+	public void createAndPublishHostAuthenticationCookie(String hostId, int companyId, HttpServletResponse response) {
         final Cookie cookie = new Cookie(configService.getHostAuthenticationHostIdCookieName(), hostId);
         final boolean useSecureCookie = configService.getBooleanValue(ConfigValue.HostauthenticationCookiesHttpsOnly);
 
@@ -78,11 +67,11 @@ public final class ClientHostIdServiceImpl implements ClientHostIdService {
         response.addCookie(cookie);
 	}
 
-	private static final int daysToSeconds(final int days) {
+	private static int daysToSeconds(int days) {
 		return days * 86400;
 	}
 	
-	public final void setConfigService(final ConfigService service) {
+	public void setConfigService(ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "Config service is null");
 	}
 }

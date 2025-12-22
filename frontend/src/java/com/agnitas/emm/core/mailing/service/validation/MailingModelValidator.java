@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service.validation;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.validator.BaseValidator;
 
 public class MailingModelValidator extends BaseValidator {

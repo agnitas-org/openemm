@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
@@ -27,7 +28,6 @@ import com.agnitas.emm.core.webhooks.messages.dao.WebhookMessageQueueDao;
 import com.agnitas.emm.core.webhooks.profilefields.service.WebhookProfileFieldContentService;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookNotRegisteredException;
 import com.agnitas.emm.core.webhooks.registry.service.WebhookRegistrationService;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
@@ -52,7 +52,7 @@ public final class WebhookMessageEnqueueServiceImpl implements WebhookMessageEnq
 	private final WebhookMessageQueueDao messageQueueDao;
 
 	private final RecipientProfileHistoryService recipientProfileHistoryService;
-
+	
 	public WebhookMessageEnqueueServiceImpl(ConfigService configService, WebhookRegistrationService registrationService,
 											WebhookProfileFieldContentService profileFieldService,
 											WebhookMessageQueueDao messageQueueDao,

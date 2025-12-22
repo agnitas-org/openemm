@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.core.recipientsreport;
 
-import com.agnitas.exception.RequestErrorException;
-import com.agnitas.messages.Message;
-
 import java.util.Set;
 
-public class RecipientReportDownloadException extends RequestErrorException {
+import com.agnitas.exception.UiMessageException;
+import com.agnitas.messages.Message;
+
+public class RecipientReportDownloadException extends UiMessageException {
+
     private static final long serialVersionUID = 8577348802287994101L;
 
 	public RecipientReportDownloadException(Set<Message> errors) {

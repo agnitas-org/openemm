@@ -10,20 +10,24 @@
 
 package com.agnitas.emm.wsmanager.dao.impl;
 
-import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroup;
-import com.agnitas.emm.wsmanager.dao.WebservicePermissionGroupDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
 import java.util.List;
 
-public final class WebservicePermissionGroupDaoImpl extends BaseDaoImpl implements WebservicePermissionGroupDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.wsmanager.bean.WebservicePermissionGroup;
+import com.agnitas.emm.wsmanager.dao.WebservicePermissionGroupDao;
+import org.springframework.jdbc.core.RowMapper;
 
-	@Override
-	public final List<WebservicePermissionGroup> listAllPermissionGroups() {
-		final String sql = "SELECT * FROM webservice_perm_group_tbl";
-		
-		return select(sql, new WebservicePermissionGroupRowMapper());
-		
-	}
+public class WebservicePermissionGroupDaoImpl extends BaseDaoImpl implements WebservicePermissionGroupDao {
+
+    private static final RowMapper<WebservicePermissionGroup> ROW_MAPPER = (rs, rowNum) ->
+            new WebservicePermissionGroup(
+                    rs.getInt("id"),
+                    rs.getString("name")
+            );
+
+    @Override
+    public List<WebservicePermissionGroup> listAllPermissionGroups() {
+        return select("SELECT * FROM webservice_perm_group_tbl", ROW_MAPPER);
+    }
 
 }

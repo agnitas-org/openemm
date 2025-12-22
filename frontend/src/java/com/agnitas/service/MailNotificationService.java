@@ -10,14 +10,14 @@
 
 package com.agnitas.service;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.MailNotificationBufferDao;
 import com.agnitas.emm.core.JavaMailService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailNotificationService {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailNotificationService.class);
+
+	private static final Logger logger = LogManager.getLogger(MailNotificationService.class);
 	
 	private static final int RETENTION_TIME_MINUTES = 30;
 	
@@ -42,7 +42,7 @@ public class MailNotificationService {
 			if (javaMailService.sendEmail(companyID, toAddresses, mailSubject, textMailBody, htmlMailBody)) {
 				return true;
 			} else {
-				logger.error("Cannot send notification mail: " + mailSubject);
+				logger.error("Cannot send notification mail: {}", mailSubject);
 				throw new Exception("Cannot send notification mail");
 			}
 		} else {

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -23,6 +24,7 @@ import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
 import com.agnitas.emm.restful.RestfulAuthentificationException;
+import com.agnitas.service.MailingContentService;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.web.perm.annotations.Anonymous;
@@ -53,15 +55,25 @@ public class MakeController {
 
     private final LogonService logonService;
     private final RecipientFieldService fieldService;
-    private final MailingService mailingService;
     private final MailinglistApprovalService mailinglistApprovalService;
+    private final MailingService mailingService;
+    private final EmmActionService actionService;
+    private final MailingContentService mailingContentService;
 
-    public MakeController(LogonService logonService, RecipientFieldService fieldService, MailingService mailingService,
-                          MailinglistApprovalService mailinglistApprovalService) {
+    public MakeController(
+            LogonService logonService,
+            RecipientFieldService fieldService,
+            MailinglistApprovalService mailinglistApprovalService,
+            MailingService mailingService,
+            EmmActionService actionService,
+            MailingContentService mailingContentService
+    ) {
         this.logonService = logonService;
         this.fieldService = fieldService;
-        this.mailingService = mailingService;
         this.mailinglistApprovalService = mailinglistApprovalService;
+        this.mailingService = mailingService;
+        this.actionService = actionService;
+        this.mailingContentService = mailingContentService;
     }
 
     @ExceptionHandler(RestfulAuthentificationException.class)
@@ -93,15 +105,36 @@ public class MakeController {
                 .toList();
     }
 
-    @GetMapping("/mailingsToSend.action")
-    public List<Map<String, Object>> getMailingsToSend(HttpServletRequest req) {
-        return mailingService.getLightweightMailings(authenticateAdmin(req))
+    @GetMapping("/triggers.action")
+    public List<Map<String, Object>> getTriggers(HttpServletRequest req) {
+        int companyID = authenticateAdmin(req).getCompanyID();
+        return actionService.getEmmNotFormActionsMap(companyID)
+                .entrySet()
                 .stream()
-                .map(m -> Map.<String, Object>of("label", m.getShortname(), "value", m.getMailingID()))
+                .map(e -> Map.<String, Object>of("label", e.getValue(), "value", e.getKey()))
                 .toList();
     }
 
-    private Admin authenticateAdmin(HttpServletRequest req) throws RestfulAuthentificationException {
+    @GetMapping("/templates.action")
+    public List<Map<String, Object>> getMailingTemplateNames(HttpServletRequest req) {
+        Admin admin = authenticateAdmin(req);
+        return mailingService.getTemplateNames(admin).entrySet()
+                .stream()
+                .map(e -> Map.<String, Object>of("label", e.getValue(), "value", e.getKey()))
+                .toList();
+    }
+
+    @GetMapping("/content-targets/names.action")
+    public List<Map<String, Object>> getTargetNamesForContent(HttpServletRequest req) {
+        Admin admin = authenticateAdmin(req);
+        return mailingContentService.getNamesOfAvailableTargetsForContent(admin)
+                .entrySet()
+                .stream()
+                .map(e -> Map.<String, Object>of("label", e.getValue(), "value", e.getKey()))
+                .toList();
+    }
+
+    private Admin authenticateAdmin(HttpServletRequest req) {
         try {
             String username = HttpUtils.getBasicAuthenticationUsername(req);
             String password = HttpUtils.getBasicAuthenticationPassword(req);

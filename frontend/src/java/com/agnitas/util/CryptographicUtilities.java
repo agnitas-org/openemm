@@ -28,7 +28,6 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -38,7 +37,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
@@ -155,8 +153,7 @@ public class CryptographicUtilities {
 		    publicKeyPEM = publicKeyPEM.replace("-----END PUBLIC KEY-----", "");
 		    byte[] publicKeyData = Base64.getDecoder().decode(publicKeyPEM);
 		    KeyFactory kf = KeyFactory.getInstance("RSA");
-		    RSAPublicKey pubKey = (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(publicKeyData));
-		    return pubKey;
+            return kf.generatePublic(new X509EncodedKeySpec(publicKeyData));
 		} catch (Exception e) {
 			throw new Exception("Cannot read public key", e);
 		}
@@ -176,8 +173,7 @@ public class CryptographicUtilities {
 		    byte[] privateKeyData = Base64.getDecoder().decode(privateKeyPEM);
 		    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyData);
 	        KeyFactory kf = KeyFactory.getInstance("RSA");
-	        PrivateKey privKey = kf.generatePrivate(keySpec);
-	        return privKey;
+            return kf.generatePrivate(keySpec);
 		} catch (Exception e) {
 			throw new Exception("Cannot read private key", e);
 		}
@@ -296,15 +292,15 @@ public class CryptographicUtilities {
 		}
 	}
 
-	public static boolean verifyData(byte[] data, PublicKey publicKey, byte[] signatureData) throws Exception {
+	public static boolean verifyData(byte[] data, PublicKey publicKey, byte[] signatureData) {
 		return verifyData(data, publicKey, signatureData, DEFAULT_SIGNATURE_METHOD);
 	}
 
-	public static boolean verifyData(byte[] data, PublicKey publicKey, byte[] signatureData, String signatureMethod) throws Exception {
+	public static boolean verifyData(byte[] data, PublicKey publicKey, byte[] signatureData, String signatureMethod) {
 		Security.addProvider(new BouncyCastleProvider());
 		
 		if (publicKey == null) {
-			throw new Exception("Cannot verify signature. PublicKey is missing");
+			throw new IllegalArgumentException("Cannot verify signature. PublicKey is missing");
 		}
 
 		try {
@@ -313,7 +309,7 @@ public class CryptographicUtilities {
 			signature.update(data);
 			return signature.verify(signatureData);
 		} catch (Exception e) {
-			throw new Exception("Cannot verify signature", e);
+			throw new RuntimeException("Cannot verify signature", e);
 		}
 	}
 

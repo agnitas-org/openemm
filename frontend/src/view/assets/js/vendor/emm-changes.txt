@@ -1,68 +1,44 @@
-1) jquery-select2-3.5.2.js
-- added option-related tooltip support: selected option's title attribute (if available) or value (text) is assigned to input's title attribute on selection event.
-- restored clickability within selected entries.
-- enabled re-triggering of killed events (e.g. mouseup and mousedown) but with ".sortable" suffix (to restore "sortable" widget functionality within select2 results).
-- added hierarchy mode support (when 'js-tree-select' class assigned), provided proper highlighting and selection for sub and super-items.
-- made document.body as Element prototype to prevent wkhtmltopdf errors
-- added the ability to display selected tags in one line. -> GWUA-5250
-
-2) ace/worker-html.js
+1) ace/worker-html.js
 - removed error emit for 'almost-standards-doctype'. [EMMGUI-600]
 - fixed false negative validation result (unexpected case sensitivity) [EMMGUI-600]
 
-3) bootstrap-tooltip-3.4.1.js
-- changed an order of statements to make sure that placement function is able to get an actual balloon's dimensions
-
-4) query-builder.js
+2) query-builder.js
 - added localization for builder.
 
-5) c3.js
-- added fix in method c3_chart_internal_fn.getYDomain(...). c3 sets wrong padding in rotated charts.
-- fixed tick culling algorithm to prevent titles cutting and provide more uniform titles distribution.
-
-6) toastr.custom.js
+3) toastr.custom.js
 - deeply customized before initial commit
 - replaced 'notification-top-right' with 'notification-below-header' container style in order to provide custom positioning
 
-7) bootstrap-modal-3.4.1.js
-- added a click event handler to a backdrop so a click outside a <div class="modal"></div> also hides a dialog.
-
-8) ace.js
+4) ace.js
 - introduced custom implementation of trim method which does not rely on regular expressions. [GWUA-3583]
 
-9) query-builder.js
+5) query-builder.js
 - update QB version from 2.3.2 to 2.5.2
 - added localization according to changes made in previous version
 
-10) query-builder.default.min.scss
+6) query-builder.default.min.scss
 - updated QB styles version from 2.3.2 to 2.5.2
 
-11) dropzone.js
+7) dropzone.js
 - removed statement that applies extra CSS styles to <input type="file">
 - exposed Dropzone as window.Dropzone
 
-12) jquery-ui-1.14.1.js
+8) jquery-ui-1.14.1.js
 - fixed "items are not correctly calculated using css transformations on container element" (https://bugs.jqueryui.com/ticket/15263);
 - added support of function value for "cursorAt" option of droppable widget;
 
-13) jquery-dirty-0.8.3.js
+9) jquery-dirty-0.8.3.js
 - added statuses property to Dirty.prototype
 - added support of adding custom methods
 - added support of extending dirty lib
 - added functionality for destroy of existing Dirty instance
 
-14) bootstrap-dropdown-3.4.1.js
-- e.preventDropdownClose check in clearMenus to be able to keep the dropdown open
-
-15) bootstrap-popover-3.4.1.js
-- changed jQuery fn tooltip namespace to bsTooltip
-
-16) ace.js
+10) ace.js
 - changed adding 'style' element from head of 'head' element to end [GWUA-5036]
 
-17) jquery-dirty-0.8.3.js-extended
+11) jquery-dirty-0.8.3.js-extended
 - changed the detection of "dirty" input fields that use the "select2" library [GWUA-5421]
 
-18) perfect-scrollbar-1.5.5.js
+12) perfect-scrollbar-1.5.5.js
 - added fire custom events on rail clicks [EMMGUI-863]
 - fixed infitity scroll after (avoid scroll after last item) [EMMGUI-739] (https://github.com/mdbootstrap/perfect-scrollbar/issues/51)

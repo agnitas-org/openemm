@@ -10,8 +10,22 @@
 
 package com.agnitas.emm.core.admin.web;
 
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.form.AdminListForm;
@@ -22,33 +36,26 @@ import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
+import com.agnitas.emm.core.commons.password.PasswordCheckHandler;
+import com.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
+import com.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.logon.service.LogonService;
-import com.agnitas.emm.core.logon.web.LogonController;
 import com.agnitas.service.CSVService;
 import com.agnitas.service.PdfService;
-import com.agnitas.service.ServiceResult;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.util.HttpUtils;
+import com.agnitas.util.Tuple;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.lowagie.text.DocumentException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.company.service.CompanyService;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
-import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
-import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.HttpUtils;
-import com.agnitas.util.Tuple;
-import com.agnitas.web.forms.FormSearchParams;
-import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,21 +76,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
 public class RestfulUserController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(RestfulUserController.class);
@@ -103,8 +95,6 @@ public class RestfulUserController implements XssCheckAware {
     private final CSVService csvService;
     private final PdfService pdfService;
     private final ConversionService conversionService;
-
-    protected static final String FUTURE_TASK = "GET_ADMIN_LIST";
 
     public RestfulUserController(ConfigService configService,
                                  AdminService adminService,
@@ -134,19 +124,14 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public Pollable<ModelAndView> list(final Admin admin, final AdminListForm form,
-                                       final Model model, final HttpSession session,
-                                       @RequestParam(value = FormSearchParams.RESET_PARAM_NAME, required = false) boolean resetSearchParams,
-                                       @RequestParam(value = FormSearchParams.RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
-                                       @RequestParam(required = false) boolean restoreSort,
+    @RequiredPermission("restfulUser.show")
+    public Pollable<ModelAndView> list(Admin admin, AdminListForm form, Model model, HttpSession session,
+                                       @RequestParam(required = false) Boolean restoreSort,
                                        @ModelAttribute AdminListFormSearchParams adminListSearchParams) {
         FormUtils.syncPaginationData(webStorage, WebStorage.ADMIN_OVERVIEW, form, restoreSort);
-        if (resetSearchParams) {
-            FormUtils.resetSearchParams(adminListSearchParams, form);
-        } else {
-            FormUtils.syncSearchParams(adminListSearchParams, form, restoreSearchParams || isUiRedesign(admin));
-        }
-        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<>());
+        adminListSearchParams.restoreParams(form);
+
+        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedList<>());
         int companyID = admin.getCompanyID();
 
         PollingUid pollingUid = PollingUid.builder(session.getId(), "restful" + ADMIN_ENTRIES_KEY)
@@ -167,20 +152,22 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @GetMapping("/search.action")
+    @RequiredPermission("restfulUser.show")
     public String search(AdminListForm form, @ModelAttribute AdminListFormSearchParams searchParams, RedirectAttributes model) {
-        FormUtils.syncSearchParams(searchParams, form, false);
+        searchParams.storeParams(form);
         model.addFlashAttribute("adminListForm", form);
 
         return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
     @RequestMapping("/{adminID}/view.action")
-    public String view(final Admin admin, final AdminForm form, final Popups popups, final Model model) {
+    @RequiredPermission("restfulUser.show")
+    public String view(Admin admin, AdminForm form, Popups popups, Model model) {
         final int adminIdToEdit = form.getAdminID();
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups);
         }
         if (adminToEdit.getGroups() == null || adminToEdit.getGroups().isEmpty()) {
             popups.alert("error.admin.invalidGroup");
@@ -188,53 +175,35 @@ public class RestfulUserController implements XssCheckAware {
 
         initializeForm(form, adminToEdit);
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("loadAdmin: admin {} loaded", form.getAdminID());
-        }
+        LOGGER.info("loadAdmin: admin {} loaded", form.getAdminID());
 
         userActivityLogService.writeUserActivityLog(admin, "view user", adminToEdit.getUsername());
 
         loadDataForViewPage(admin, adminToEdit, model);
         model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
+        model.addAttribute("isRestfulUser", true);
 
-        if (isUiRedesign(admin)) {
-            model.addAttribute("isRestfulUser", true);
-            return "user_view";
-        }
-        return "settings_restfuluser_view";
-    }
-
-    private boolean isUiRedesign(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
-    @RequestMapping("/{adminID}/welcome.action")
-    public String sendWelcome(final Admin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
-    	String clientIp = request.getRemoteAddr();
-    	final int adminIdToEdit = form.getAdminID();
-    	final int companyID = admin.getCompanyID();
-    	final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
-    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonController.PASSWORD_RESET_LINK_PATTERN);
-    	popups.success("admin.password.sent");
-    	return MESSAGES_VIEW;
+        return "user_view";
     }
 
     @RequestMapping("/{adminID}/rights/view.action")
-    public String viewRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
+    @RequiredPermission("restfulUser.show")
+    public String viewRights(Admin admin, AdminRightsForm form, Popups popups, Model model) {
         final int adminIdToEdit = form.getAdminID();
         final int companyID = admin.getCompanyID();
         final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups);
         }
 
         prepareRightsViewPageData(admin, form, model, adminToEdit);
 
-        return isUiRedesign(admin) ? "user_permissions" : "settings_restfuluser_permissions";
+        return "user_permissions";
     }
 
     @PostMapping(value = "/{adminID}/save.action")
-    public String save(final Admin admin, final AdminForm form, final Popups popups) {
+    @RequiredPermission("restfulUser.change")
+    public String save(Admin admin, AdminForm form, Popups popups) {
         if (!AdminFormValidator.validate(form, popups)) {
         	popups.alert("error.admin.save");
         	return redirectToView(form.getAdminID());
@@ -245,31 +214,20 @@ public class RestfulUserController implements XssCheckAware {
             if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
                 saveAdminAndGetView(form, admin, popups);
                 logonService.updateSessionsLanguagesAttributes(admin);
-                // Show "changes saved"
-                popups.success(CHANGES_SAVED_MSG);
             }
             return redirectToView(form.getAdminID());
         }
     }
 
     @PostMapping(value = "/{adminID}/rights/save.action")
-    public String saveRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
+    @RequiredPermission("restfulUser.change")
+    public String saveRights(Admin admin, AdminRightsForm form, Popups popups) {
         try {
-            final boolean isSuccess = saveAdminRightsAndWriteToActivityLog(admin, form, popups);
-
-            if (isSuccess) {
-                popups.success(CHANGES_SAVED_MSG);
+            if (saveAdminRightsAndWriteToActivityLog(admin, form, popups)) {
+                popups.changesSaved();
             }
 
-            if (admin.isRedesignedUiUsed()) {
-                return "redirect:/restfulUser/" + form.getAdminID() + "/rights/view.action";
-            } else {
-                final int adminIdToEdit = form.getAdminID();
-                final int companyID = admin.getCompanyID();
-                final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
-                prepareRightsViewPageData(admin, form, model, adminToEdit);
-                return "settings_restfuluser_permissions";
-            }
+            return "redirect:/restfulUser/" + form.getAdminID() + "/rights/view.action";
         } catch (Exception e) {
             LOGGER.error("Exception saving rights", e);
             popups.alert("error.admin.save", e);
@@ -282,19 +240,19 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/create.action")
-    public String create(final Admin admin, AdminForm form, final Model model) {
+    @RequiredPermission("restfulUser.new")
+    public String create(Admin admin, @ModelAttribute AdminForm form, Model model) {
         model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
-        if (isUiRedesign(admin)) {
-            model.addAttribute("isRestfulUser", true);
-        }
+        model.addAttribute("isRestfulUser", true);
 
         loadDataForViewPage(admin, null, model);
 
-        return "settings_restfuluser_view";
+        return "user_view";
     }
 
     @PostMapping(value = "/saveNew.action")
-    public String saveNew(final Admin admin, final AdminForm form, final Popups popups) {
+    @RequiredPermission("restfulUser.new")
+    public String saveNew(Admin admin, AdminForm form, Popups popups) {
         final int maximumNumberOfRestfulUsers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfRestfulUsers, admin.getCompanyID());
         if (maximumNumberOfRestfulUsers >= 0 && maximumNumberOfRestfulUsers <= adminService.getNumberOfRestfulUsers(admin.getCompanyID())) {
             popups.alert("error.numberOfRestfulUsersExceeded", maximumNumberOfRestfulUsers);
@@ -328,7 +286,8 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/list/export/csv.action")
-    public Object exportCsv(final Admin admin, final AdminListForm form, final Popups popups) throws Exception {
+    @RequiredPermission("restfulUser.show")
+    public Object exportCsv(Admin admin, AdminListForm form, Popups popups) throws Exception {
         byte[] csvData = csvService.getUserCSV(getRestfulUserListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
 
         if (csvData == null) {
@@ -348,11 +307,10 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     @RequestMapping("/list/export/pdf.action")
-    public ResponseEntity<InputStreamResource> exportPdf(final Admin admin, final AdminListForm form)
-            throws IOException, DocumentException {
-
-        byte[] pdfFileBytes = pdfService
-                .writeUsersToPdfAndGetByteArray(getRestfulUserListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
+    @RequiredPermission("restfulUser.show")
+    public ResponseEntity<InputStreamResource> exportPdf(Admin admin, AdminListForm form) {
+        List<AdminEntry> admins = getRestfulUserListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList();
+        byte[] pdfFileBytes = pdfService.writeUsersToPdfAndGetByteArray(admins);
 
         String description = "Page: " + form.getPage()
                 + ", sort: " + form.getSort()
@@ -367,63 +325,17 @@ public class RestfulUserController implements XssCheckAware {
                 .body(new InputStreamResource(new ByteArrayInputStream(pdfFileBytes)));
     }
 
-    @RequestMapping("/{adminID}/confirmDelete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String confirmDelete(final Admin admin, final AdminForm form, final Popups popups) {
-        final int adminIdToDelete = form.getAdminID();
-        final int companyID = admin.getCompanyID();
-        final ServiceResult<Admin> deleteConfirmSR = adminService.isPossibleToDeleteAdmin(adminIdToDelete, companyID);
-        if (deleteConfirmSR.isSuccess()) {
-            form.setUsername(deleteConfirmSR.getResult().getUsername());
-            return "settings_restfuluser_delete_ajax";
-        }
-
-        if (deleteConfirmSR.getResult() == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST + "?restoreSort=true");
-        }
-
-        popups.addPopups(deleteConfirmSR);
-        return MESSAGES_VIEW;
-    }
-
-    @RequestMapping("/{adminID}/delete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String delete(final Admin admin, final AdminForm form, final Popups popups,
-                         final HttpServletResponse response, final HttpSession session,
-                         RedirectAttributes redirectAttributes) {
-        final ServiceResult<Admin> result = adminService.delete(admin, form.getAdminID());
-
-        if (result.isSuccess()) {
-            final Admin deletedAdmin = result.getResult();
-
-            userActivityLogService.writeUserActivityLog(admin, "delete user", deletedAdmin.getUsername() + " (" + deletedAdmin.getAdminID() + ")", LOGGER);
-
-            if (admin.getAdminID() == deletedAdmin.getAdminID()) {
-                session.invalidate();
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return "redirect:/logonOld.action";
-            }
-
-            popups.success("default.selection.deleted");
-        } else {
-            popups.alert("Error");
-        }
-
-        redirectAttributes.addAttribute(FormSearchParams.RESTORE_PARAM_NAME, true);
-        return REDIRECT_TO_LIST + "?restoreSort=true";
-    }
-
     @ModelAttribute
     public AdminListFormSearchParams getAdminFormSearchParams(){
         return new AdminListFormSearchParams();
     }
 
-    private boolean adminUsernameChangedToExisting(final AdminForm aForm) {
+    private boolean adminUsernameChangedToExisting(AdminForm aForm) {
         final Admin currentAdmin = adminService.getAdmin(aForm.getAdminID(), aForm.getCompanyID());
         return !StringUtils.equals(currentAdmin.getUsername(), aForm.getUsername()) && adminService.adminExists(aForm.getUsername());
     }
 
-    private boolean checkPassword(final AdminForm form, final Popups popups) {
+    private boolean checkPassword(AdminForm form, Popups popups) {
         Admin admin = adminService.getAdmin(form.getAdminID(), form.getCompanyID());
         PasswordCheckHandler handler = new SpringPasswordCheckHandler(popups, "password");
         if (admin != null && admin.getAdminID() != 0) {
@@ -435,11 +347,11 @@ public class RestfulUserController implements XssCheckAware {
         }
     }
 
-    private PaginatedListImpl<AdminEntry> getRestfulUserListFromAdminListForm(Admin admin, AdminListForm form) {
+    private PaginatedList<AdminEntry> getRestfulUserListFromAdminListForm(Admin admin, AdminListForm form) {
         return getRestfulUserListFromAdminListForm(admin, form, form.getNumberOfRows());
     }
 
-    private PaginatedListImpl<AdminEntry> getRestfulUserListFromAdminListForm(Admin admin, AdminListForm form, int numberOfRows) {
+    private PaginatedList<AdminEntry> getRestfulUserListFromAdminListForm(Admin admin, AdminListForm form, int numberOfRows) {
         return adminService.getRestfulUserList(admin.getCompanyID(),
                 form.getSearchFirstName(),
                 form.getSearchLastName(),
@@ -502,12 +414,12 @@ public class RestfulUserController implements XssCheckAware {
 			}
 		}
 
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         return redirectToView(savedAdmin.getAdminID());
     }
 
-    protected void loadDataForViewPage(final Admin admin, final Admin adminToEdit, final Model model){
+    protected void loadDataForViewPage(Admin admin, Admin adminToEdit, Model model) {
         model.addAttribute("adminGroups", adminGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), admin, adminToEdit));
         model.addAttribute("layouts", adminService.getEmmLayoutsBase(admin));
         model.addAttribute("availableTimeZones", TimeZone.getAvailableIDs());
@@ -552,9 +464,8 @@ public class RestfulUserController implements XssCheckAware {
     }
 
     private boolean saveAdminRightsAndWriteToActivityLog(Admin admin, AdminRightsForm aForm, Popups popups) {
-        Set<String> userRights = isUiRedesign(admin) ? aForm.getGrantedPermissions() : aForm.getUserRights();
         Tuple<List<String>, List<String>> changes = adminService.saveAdminPermissions(admin.getCompanyID(),
-                aForm.getAdminID(), userRights, admin.getAdminID());
+                aForm.getAdminID(), aForm.getGrantedPermissions(), admin.getAdminID());
 
         if (changes == null) {
             popups.alert("error.admin.change.permission");
@@ -577,16 +488,16 @@ public class RestfulUserController implements XssCheckAware {
         return true;
     }
 
-    private void updateCurrentAdmin(final Admin currentAdmin, final Admin savedAdmin) {
+    private void updateCurrentAdmin(Admin currentAdmin, Admin savedAdmin) {
         currentAdmin.setAdminLang(savedAdmin.getAdminLang());
         currentAdmin.setAdminCountry(savedAdmin.getAdminCountry());
         currentAdmin.setAdminTimezone(savedAdmin.getAdminTimezone());
     }
 
-    protected String prepareErrorPageForNotLoadedAdmin(final int adminId, final int companyID, final Popups popups,
-                                                       final String viewName) {
-        popups.alert("Error");
+    protected String prepareErrorPageForNotLoadedAdmin(int adminId, int companyID, Popups popups) {
+        popups.defaultError();
         LOGGER.warn("Could not load admin by admin id: {}, company id: {}.", adminId, companyID);
-        return viewName;
+        return "redirect:/restfulUser/list.action?restoreSort=true";
     }
+
 }

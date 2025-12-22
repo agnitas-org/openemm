@@ -15,8 +15,9 @@ import java.util.List;
 import java.util.Objects;
 
 import com.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.MailingEditableCheck;
@@ -33,13 +34,10 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-
 @Endpoint
 public class DeleteContentBlockEndpoint extends BaseEndpoint {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(DeleteContentBlockEndpoint.class);
+	private static final Logger LOGGER = LogManager.getLogger(DeleteContentBlockEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final DynamicTagContentService dynamicTagContentService;
@@ -47,7 +45,13 @@ public class DeleteContentBlockEndpoint extends BaseEndpoint {
 	private final SecurityContextAccess securityContextAccess;
 	private final UserActivityLogAccess userActivityLogAccess;
 
-	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+	public DeleteContentBlockEndpoint(
+			DynamicTagContentService dynamicTagContentService,
+			MailingEditableCheck mailingEditableCheck,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess,
+			UserActivityLogAccess userActivityLogAccess
+	) {
 		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService, "dynamicTagContentService");
 		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
@@ -60,12 +64,10 @@ public class DeleteContentBlockEndpoint extends BaseEndpoint {
 		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		this.mailingEditableCheck.requireMailingForContentBlockEditable(request.getContentID(), companyID);
-		
 
 		final ContentModel model = new ContentModel();
 		model.setCompanyId(companyID);
 		model.setContentId(request.getContentID());
-		
 
 		final DeleteContentBlockResponse response = new DeleteContentBlockResponse();
 		final List<UserAction> userActions = new ArrayList<>();
@@ -75,8 +77,8 @@ public class DeleteContentBlockEndpoint extends BaseEndpoint {
 		try {
 			final DynamicTagContent currentContent = this.dynamicTagContentService.getContent(model);
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, currentContent.getMailingID());
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing containing content block", request.getContentID()), e);
+		} catch (Exception e) {
+			LOGGER.error("Error updating thumbnail of mailing containing content block {}", request.getContentID(), e);
 		}
 
 		return response;

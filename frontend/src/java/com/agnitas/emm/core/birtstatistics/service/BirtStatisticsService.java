@@ -30,13 +30,11 @@ import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
-import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.commons.dto.DateTimeRange;
-import com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm;
 import com.agnitas.emm.core.userform.form.WebFormStatFrom;
 import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.logging.log4j.Logger;
 
 public interface BirtStatisticsService {
@@ -47,8 +45,6 @@ public interface BirtStatisticsService {
 	 * @param domainStatistic Domain statistic data
 	 */
 	String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse);
-
-    String getProfileFieldEvalStatUrl(Admin admin, String sessionId, ProfileFieldStatForm form);
 
 	/**
 	 * Generates birt URL for monthly statistic
@@ -70,8 +66,6 @@ public interface BirtStatisticsService {
 	 */
 	Map<String, String> getReportStatisticsUrlMap(List<BirtReportSettings> reportSettings, Date currentDate, BirtReport report, int companyId, Integer accountId);
 
-	String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess, final int companyID);
-
     String getRecipientStatisticUrlWithoutFormat(Admin admin, String sessionId, RecipientStatisticDto recipientStatistic);
 
     String getMailingStatisticUrl(Admin admin, String sessionId, MailingStatisticDto mailingStatistic);
@@ -88,13 +82,7 @@ public interface BirtStatisticsService {
 
 	File getBirtStatisticsTmpFile(String birtUrl);
 
-	// TODO: EMMGUI-714: Check usages and remove when removing old design
-	String getRecipientStatusStatisticUrl(Admin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto);
-
 	String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto);
-
-	// TODO: EMMGUI-714: remove when old design will be removed
-	String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId);
 
     boolean isWorldMailing(Mailing mailing);
 

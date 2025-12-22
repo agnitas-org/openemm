@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.birtstatistics.monthly.web;
 
-
 import java.util.Calendar;
 
 import com.agnitas.beans.Admin;
@@ -20,7 +19,7 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/statistics/monthly")
-@PermissionMapping("monthly.statistics")
 public class MonthlyStatisticController implements XssCheckAware {
 	
 	private static final Logger logger = LogManager.getLogger(MonthlyStatisticController.class);
@@ -53,6 +51,7 @@ public class MonthlyStatisticController implements XssCheckAware {
 	}
 	
 	@RequestMapping("/view.action")
+	@RequiredPermission("stats.month")
 	public String view(Admin admin, MonthlyStatisticForm form, HttpSession session, Model model) {
 		Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));
 
@@ -77,4 +76,5 @@ public class MonthlyStatisticController implements XssCheckAware {
 		
 		return "stats_birt_month_stat";
 	}
+
 }

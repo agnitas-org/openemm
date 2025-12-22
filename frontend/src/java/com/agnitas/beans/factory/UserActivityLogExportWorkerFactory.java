@@ -11,11 +11,8 @@
 package com.agnitas.beans.factory;
 
 import com.agnitas.service.ActivityLogExportWorker;
-import com.agnitas.service.UserActivityLogExportWorker;
 
 public interface UserActivityLogExportWorkerFactory {
 
-    // TODO: EMMGUI-714 remove when removing old design
-    UserActivityLogExportWorker.Builder getBuilderInstance();
-    ActivityLogExportWorker.Builder getBuilderInstanceRedesigned();
+    ActivityLogExportWorker.Builder getBuilderInstance();
 }

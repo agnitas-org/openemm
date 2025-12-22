@@ -20,7 +20,7 @@ public enum AddressManagementCategory {
     VOUCHER_CODE_TABLES("settings.table.voucher"),
     REPORTS("Reports"),
     USERS("UserActivitylog.Users"),
-    TECHNICAL_CONTACTS("company.contact.technical");
+    CLIENTS("settings.CompanyAdmin");
 
     private final String messageKey;
 

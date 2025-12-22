@@ -11,20 +11,21 @@
 package com.agnitas.emm.core.target.web;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.factory.TargetFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
@@ -33,8 +34,6 @@ import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
 import com.agnitas.emm.core.target.exception.TargetGroupNotCompatibleWithContentBlockException;
 import com.agnitas.emm.core.target.exception.TargetGroupTooLargeException;
-import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import com.agnitas.emm.core.target.form.TargetDependentsListForm;
 import com.agnitas.emm.core.target.form.TargetEditForm;
 import com.agnitas.emm.core.target.form.validator.TargetEditFormValidator;
 import com.agnitas.emm.core.target.service.TargetCopyService;
@@ -44,8 +43,8 @@ import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
 import com.agnitas.emm.core.target.web.util.FormHelper;
 import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
-import com.agnitas.exception.DetailedRequestErrorException;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.DetailedUiMessageException;
+import com.agnitas.exception.UiMessageException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.GridServiceWrapper;
@@ -56,12 +55,9 @@ import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.forms.PaginationForm;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.ui.Model;
@@ -70,7 +66,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class QueryBuilderTargetController implements XssCheckAware {
@@ -78,12 +73,11 @@ public class QueryBuilderTargetController implements XssCheckAware {
     private static final Logger logger = LogManager.getLogger(QueryBuilderTargetController.class);
 
     private static final String TARGET_SAVING_ERROR_KEY = "error.target.saving";
-    private static final String CHANGES_SAVED_MSG_KEY = "default.changes_saved";
     private static final String MESSAGES_VIEW = "messages";
 
+    protected final TargetService targetService;
     private final ConfigService configService;
     private final MailinglistApprovalService mailinglistApprovalService;
-    protected final TargetService targetService;
     private final RecipientService recipientService;
     private final EditorContentSynchronizer editorContentSynchronizer;
     private final EqlFacade eqlFacade;
@@ -116,13 +110,13 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{targetId:\\d+}/view.action")
+    @RequiredPermission("targets.show")
     public String view(@PathVariable int targetId, Admin admin, Model model, @ModelAttribute("targetEditForm") TargetEditForm form,
                        Popups popups, HttpServletRequest request) {
         WorkflowUtils.updateForwardParameters(request);
 
         if (targetId > 0 && form.getPreviousViewFormat() == null) {
-            boolean exists = fillFormIfTargetExists(admin, form);
-            if (!exists) {
+            if (!fillFormIfTargetExists(admin, form)) {
                 logger.warn("Target group does not exists. Company ID: {} Target ID: {}", admin.getCompanyID(), form.getTargetId());
                 return "redirect:/target/list.action?restoreSort=true";
             }
@@ -133,12 +127,12 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{targetId:\\d+}/save.action")
+    @RequiredPermission("targets.change")
     public String save(Admin admin,
                        @ModelAttribute("targetEditForm") TargetEditForm form,
                        @RequestParam(required = false) boolean showStatistic,
                        Popups popups, RedirectAttributes redirectAttributes,
-                       HttpSession session)
-            throws UnknownTargetGroupIdException {
+                       HttpSession session) {
 
         int mailinglistId = form.getMailinglistId();
         int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
@@ -157,11 +151,6 @@ public class QueryBuilderTargetController implements XssCheckAware {
         analyzeComplexity(admin.getCompanyID(), targetId, popups);
 
         if (showStatistic) {
-            if (!admin.isRedesignedUiUsed()) {
-                redirectAttributes.addFlashAttribute("showStatistic", true);
-                redirectAttributes.addFlashAttribute("statisticUrl", getReportUrl(admin, RequestContextHolder.getRequestAttributes().getSessionId(), targetId, mailinglistId));
-            }
-
             redirectAttributes.addAttribute("mailinglistId", mailinglistId);
         }
 
@@ -169,7 +158,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
             redirectAttributes.addAttribute("viewFormat", previousFormat);
         }
 
-        popups.success(CHANGES_SAVED_MSG_KEY);
+        popups.changesSaved();
 
         if (redirectRequired) {
             WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectAttributes, session, targetId);
@@ -190,7 +179,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     private boolean isPreparedForSave(Admin admin, TargetEditForm form, Popups popups, boolean redirectRequired) {
         try {
             return doSavingPreparations(admin, form, popups);
-        } catch (DetailedRequestErrorException ex) {
+        } catch (DetailedUiMessageException ex) {
             if (!redirectRequired) {
                 throw ex;
             }
@@ -200,6 +189,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/create.action")
+    @RequiredPermission("targets.change")
     public String create(Admin admin, Model model, TargetEditForm form,
                          HttpServletRequest req, Popups popups) {
         WorkflowUtils.updateForwardParameters(req);
@@ -212,14 +202,15 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{targetId:\\d+}/lock.action")
-    public String lock(@PathVariable int targetId, Admin admin, Popups popups) throws UnknownTargetGroupIdException {
+    @RequiredPermission("targets.change")
+    public String lock(@PathVariable int targetId, Admin admin, Popups popups) {
         if (targetService.lockTargetGroup(admin.getCompanyID(), targetId)) {
             final Target target = targetService.getTargetGroup(targetId, admin.getCompanyID());
             String logAction = "do lock target group";
             String logDescription = target.getTargetName() + " (" + targetId + ")";
             userActivityLogService.writeUserActivityLog(admin, logAction, logDescription, logger);
 
-            popups.success(CHANGES_SAVED_MSG_KEY);
+            popups.changesSaved();
         } else {
             popups.alert("error.target.not_saved");
         }
@@ -228,14 +219,15 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{targetId:\\d+}/unlock.action")
-    public String unlock(@PathVariable int targetId, Admin admin, Popups popups) throws UnknownTargetGroupIdException {
+    @RequiredPermission("targets.change")
+    public String unlock(@PathVariable int targetId, Admin admin, Popups popups) {
         if (targetService.unlockTargetGroup(admin.getCompanyID(), targetId)) {
             final Target target = targetService.getTargetGroup(targetId, admin.getCompanyID());
             String logAction = "do unlock target group";
             String logDescription = target.getTargetName() + " (" + targetId + ")";
             userActivityLogService.writeUserActivityLog(admin, logAction, logDescription, logger);
 
-            popups.success(CHANGES_SAVED_MSG_KEY);
+            popups.changesSaved();
         } else {
             popups.alert("error.target.not_saved");
         }
@@ -244,6 +236,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{targetId:\\d+}/copy.action")
+    @RequiredPermission("targets.change")
     public final String copy(Admin admin, TargetEditForm form, Popups popups) throws Exception {
         int companyId = admin.getCompanyID();
         Target copiedTarget = form.getTargetId() != 0
@@ -277,6 +270,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     }
 
     @GetMapping("/{targetId:\\d+}/stats.action")
+    @RequiredPermission("targets.show")
     public String stats(@PathVariable int targetId, Admin admin, Model model, PaginationForm dependentsFilter) {
         loadEvaluateAttrs(model, targetId, 0, admin);
         loadDependentsAttrs(model, dependentsFilter, targetId, admin.getCompanyID());
@@ -285,13 +279,15 @@ public class QueryBuilderTargetController implements XssCheckAware {
         return "target_stats";
     }
 
-    @GetMapping("/{targetId:\\d+}/dependentsRedesigned.action")
+    @GetMapping("/{targetId:\\d+}/dependents.action")
+    @RequiredPermission("targets.show")
     public String dependents(@PathVariable int targetId, Admin admin, PaginationForm filter, Model model) {
         loadDependentsAttrs(model, filter, targetId, admin.getCompanyID());
         return "target_dependents";
     }
 
     @GetMapping("/{targetId:\\d+}/evaluate.action")
+    @RequiredPermission("targets.change")
     public String evaluate(@PathVariable int targetId, @RequestParam int mailinglistId, Admin admin, Model model) {
         loadEvaluateAttrs(model, targetId, mailinglistId, admin);
         model.addAttribute("mailinglistId", mailinglistId);
@@ -305,51 +301,13 @@ public class QueryBuilderTargetController implements XssCheckAware {
 
     public void loadDependentsAttrs(Model model, PaginationForm filter, int targetId, int companyId) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.TARGET_DEPENDENTS_OVERVIEW, filter);
-        PaginatedListImpl<Dependent<TargetGroupDependentType>> dependents = targetService.getDependents(targetId, companyId, filter);
+        PaginatedList<Dependent<TargetGroupDependentType>> dependents = targetService.getDependents(targetId, companyId, filter);
         List<Integer> mailingIds = dependents.getList().stream()
             .filter(dependent -> TargetGroupDependentType.MAILING == dependent.getType() || TargetGroupDependentType.MAILING_CONTENT == dependent.getType())
             .map(Dependent::getId)
             .toList();
         model.addAttribute("dependents", dependents)
              .addAttribute("mailingGridTemplateMap", gridService.getGridTemplateIdsByMailingIds(companyId, mailingIds));
-    }
-
-    @RequestMapping("/{targetId:\\d+}/dependents.action")
-    public String dependents(@PathVariable int targetId, Admin admin, @ModelAttribute("dependentsForm") TargetDependentsListForm form, Model model) {
-        final int companyId = admin.getCompanyID();
-
-        if (admin.isRedesignedUiUsed()) {
-            FormUtils.syncNumberOfRows(webStorage, WebStorage.TARGET_DEPENDENTS_OVERVIEW, form);
-        } else {
-            webStorage.access(WebStorage.TARGET_DEPENDENTS_OVERVIEW, entry -> {
-                if (form.getNumberOfRows() > 0) {
-                    entry.setRowsCount(form.getNumberOfRows());
-                    if (form.getFilterTypes() == null) {
-                        entry.setFilterTypes(null);
-                    } else {
-                        entry.setFilterTypes(Arrays.asList(form.getFilterTypes()));
-                    }
-                } else {
-                    form.setNumberOfRows(entry.getRowsCount());
-                    form.setFilterTypes(entry.getFilterTypes().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
-                }
-            });
-
-            model.addAttribute("targetShortname", targetService.getTargetName(form.getTargetId(), companyId));
-            model.addAttribute("hidden", targetService.isHidden(targetId, admin.getCompanyID()));
-        }
-
-        PaginatedListImpl<Dependent<TargetGroupDependentType>> dependents = targetService.getDependents(companyId, form.getTargetId(), form.getFilterTypesSet(), form.getPage(), form.getNumberOfRows(), form.getSort(), form.getOrder());
-        model.addAttribute("dependents", dependents);
-
-        List<Integer> mailingIds = dependents.getList().stream()
-                .filter(dependent -> TargetGroupDependentType.MAILING == dependent.getType() || TargetGroupDependentType.MAILING_CONTENT == dependent.getType())
-                .map(Dependent::getId)
-                .toList();
-
-        model.addAttribute("mailingGridTemplateMap", gridService.getGridTemplateIdsByMailingIds(companyId, mailingIds));
-
-        return "target_dependents_list";
     }
 
     private String viewQB(Admin admin, Model model, TargetEditForm form, Popups popups) {
@@ -379,7 +337,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         setupCommonViewPageParams(admin, form.getTargetId(), form.getEql(), model);
         model.addAttribute("mailTrackingAvailable", mailTrackingAvailable);
 
-        return admin.isRedesignedUiUsed() ? "target_settings" : "target_view";
+        return "target_settings";
     }
 
     private String viewEQL(Admin admin, Model model, TargetEditForm form, Popups popups) {
@@ -398,7 +356,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         }
 
         setupCommonViewPageParams(admin, form.getTargetId(), form.getEql(), model);
-        return admin.isRedesignedUiUsed() ? "target_settings" : "target_view";
+        return "target_settings";
     }
 
     private TargetComplexityGrade getComplexityGrade(String eql, int companyId) {
@@ -408,45 +366,30 @@ public class QueryBuilderTargetController implements XssCheckAware {
         return TargetUtils.getComplexityGrade(complexityIndex, recipientsCount);
     }
 
-    private String getReportUrl(Admin admin, String sessionId, int targetId, int mailinglistIs) {
-        RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
-        statisticDto.setTargetId(targetId);
-        statisticDto.setMailinglistId(mailinglistIs);
-        statisticDto.setFormat("html");
-
-        return birtStatisticsService.getRecipientStatusStatisticUrl(admin, sessionId, statisticDto);
-    }
-
     protected void setupCommonViewPageParams(Admin admin, int targetId, String eql, Model model) {
         boolean isLocked = targetService.isLocked(admin.getCompanyID(), targetId) || targetService.isEqlContainsInvisibleFields(eql, admin.getCompanyID(), admin.getAdminID());
 
-        if (!admin.isRedesignedUiUsed()) {
-            model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
-        }
         model.addAttribute("complexityGrade", getComplexityGrade(eql, admin.getCompanyID()));
         model.addAttribute("isValid", targetService.isValid(admin.getCompanyID(), targetId));
         model.addAttribute("hidden", targetService.isHidden(targetId, admin.getCompanyID()));
         model.addAttribute("isLocked", isLocked);
-        if (admin.isRedesignedUiUsed()) {
-            AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-        }
+        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
     }
 
     private boolean fillFormIfTargetExists(Admin admin, TargetEditForm form) {
-        try {
-            Target target = targetService.getTargetGroup(form.getTargetId(), admin.getCompanyID(), admin.getAdminID());
-            form.setTargetId(target.getId());
-            form.setShortname(target.getTargetName());
-            form.setDescription(target.getTargetDescription());
-            form.setEql(target.getEQL());
-            form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
-            form.setAccessLimitation(target.isAccessLimitation());
-            form.setFavorite(target.isFavorite());
-            return true;
-        } catch (UnknownTargetGroupIdException e) {
-            logger.warn(String.format("Unknown target group ID %d", form.getTargetId()), e);
+        Target target = targetService.getTargetGroupOrNull(form.getTargetId(), admin.getCompanyID(), admin.getAdminID());
+        if (target == null) {
             return false;
         }
+
+        form.setTargetId(target.getId());
+        form.setShortname(target.getTargetName());
+        form.setDescription(target.getTargetDescription());
+        form.setEql(target.getEQL());
+        form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
+        form.setAccessLimitation(target.isAccessLimitation());
+        form.setFavorite(target.isFavorite());
+        return true;
     }
 
     private TargetgroupViewFormat trySynchronizeForView(Admin admin, TargetEditForm form, Popups popups, TargetgroupViewFormat defaultFormat) {
@@ -480,7 +423,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         }
     }
 
-    private int trySave(Admin admin, TargetEditForm form, Popups popups) throws UnknownTargetGroupIdException {
+    private int trySave(Admin admin, TargetEditForm form, Popups popups) {
         int companyId = admin.getCompanyID();
         // Load target group or create new one
         final Target oldTarget;
@@ -543,13 +486,12 @@ public class QueryBuilderTargetController implements XssCheckAware {
         	} else {
         		popups.alert("error.target.content.incompatible.limit", references);
         	}
-        } catch (RequestErrorException e) {
+        } catch (UiMessageException e) {
             throw e;
         } catch (TargetGroupTooLargeException e) {
             popups.alert("error.target.too_large");
         } catch (Exception e) {
-            logger.warn("There was an error Saving the target group. ", e);
-
+            logger.warn("There was an error Saving the target group.", e);
             popups.alert(TARGET_SAVING_ERROR_KEY);
         }
         return 0;
@@ -605,4 +547,5 @@ public class QueryBuilderTargetController implements XssCheckAware {
                 && configService.allowHtmlInReferenceAndProfileFields(admin.getCompanyID())
                 && (List.of("eql", "queryBuilderRules").contains(param) || param.matches("targetgroup-querybuilder_rule_\\d+_value_\\d+"));
     }
+
 }

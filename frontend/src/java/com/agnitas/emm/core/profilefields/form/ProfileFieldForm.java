@@ -10,15 +10,15 @@
 
 package com.agnitas.emm.core.profilefields.form;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 public class ProfileFieldForm extends PaginationForm {
-    private boolean fieldVisible = true; // EMMGUI-714 remove after old design will be removed
+
     private ProfileFieldMode fieldMode = ProfileFieldMode.Editable;
     private int fieldSort = 1000;
     private boolean line;
@@ -40,14 +40,6 @@ public class ProfileFieldForm extends PaginationForm {
     private String filterDescription;
     private DbColumnType.SimpleDataType filterType;
     private ProfileFieldMode filterMode;
-
-    public boolean isFieldVisible() {
-        return fieldVisible;
-    }
-
-    public void setFieldVisible(boolean fieldVisible) {
-        this.fieldVisible = fieldVisible;
-    }
 
     public int getFieldSort() {
         return fieldSort;

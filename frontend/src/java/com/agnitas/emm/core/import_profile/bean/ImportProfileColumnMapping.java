@@ -16,7 +16,6 @@ public class ImportProfileColumnMapping {
     private String fileColumn;
     private String databaseColumn;
     private boolean mandatory;
-    private boolean encrypted;
     private String defaultValue;
 
     public int getId() {
@@ -49,14 +48,6 @@ public class ImportProfileColumnMapping {
 
     public void setMandatory(boolean mandatory) {
         this.mandatory = mandatory;
-    }
-
-    public boolean isEncrypted() {
-        return encrypted;
-    }
-
-    public void setEncrypted(boolean encrypted) {
-        this.encrypted = encrypted;
     }
 
     public String getDefaultValue() {

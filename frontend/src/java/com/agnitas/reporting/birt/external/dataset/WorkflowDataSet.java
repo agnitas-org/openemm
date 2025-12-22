@@ -32,7 +32,6 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -212,7 +211,7 @@ public class WorkflowDataSet extends TotalOptimizationDataSet {
 
     private List<Integer> getWorkflowMailingsIds(int workflowId, int companyId) {
         String sqlGetSchema = "SELECT workflow_schema FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
-        String schema = selectObjectDefaultNull(sqlGetSchema, StringRowMapper.INSTANCE, workflowId, companyId);
+        String schema = selectStringDefaultNull(sqlGetSchema, workflowId, companyId);
 
         if (StringUtils.isBlank(schema)) {
             return Collections.emptyList();

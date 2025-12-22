@@ -15,7 +15,9 @@ import java.util.List;
 import com.agnitas.beans.ImportProcessAction;
 
 public interface ImportProcessActionDao {
+
 	List<ImportProcessAction> getAvailableImportProcessActions(int companyID);
-	ImportProcessAction getImportProcessAction(int importProcessActionID);
+
 	void executeImportProcessAction(int companyId, int importProcessActionID, String temporaryTableName, List<Integer> mailinglistIDs) throws Exception;
+
 }

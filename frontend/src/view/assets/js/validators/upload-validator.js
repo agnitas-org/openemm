@@ -1,14 +1,14 @@
 AGN.Lib.Validator.new('upload-file/form', {
-  valid: function (uploadForm, options) {
-    var isSuccessfully = true;
-    var $upload = $('[data-initializer="upload"]');
+  valid: function (uploadForm, options, isFieldsValid) {
+    let isSuccessfully = true;
+    const $form = uploadForm.get$();
 
-    if ($upload.exists() && $upload.data('upload-selection').length < 1) {
-      AGN.Lib.Messages(t('defaults.error'), t('error.upload.file'), 'alert');
+    if ($form.data('upload-selection').length < 1) {
+      AGN.Lib.Messages.alert('error.upload.file');
       isSuccessfully = false;
     }
 
-    return isSuccessfully && !this.errors(uploadForm, options).length;
+    return isFieldsValid && isSuccessfully && !this.errors(uploadForm, options).length;
   },
 
   errors: function (uploadForm, options) {
@@ -25,7 +25,7 @@ AGN.Lib.Validator.new('upload-file/form', {
       maxLength: 99
     }, {
       field: $('#phone'),
-      minLength: {val: 3, msgKey: REQUIRED_MSG_KEY},
+      minLength: {val: 1, msgKey: REQUIRED_MSG_KEY},
       maxLength: 99,
     }, {
       field: $('#email'),

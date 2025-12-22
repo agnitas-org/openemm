@@ -12,14 +12,20 @@ package com.agnitas.emm.core.useractivitylog.service;
 
 import static java.text.MessageFormat.format;
 
-import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.dao.SoapUserActivityLogDao;
@@ -28,139 +34,152 @@ import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.DateUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Service;
 
-/**
- * Implementation of {@link UserActivityLogService}.
- * This implementation accesses the activity data in database.
- */
+@Service("UserActivityLogService")
 public class DbUserActivityLogServiceImpl implements UserActivityLogService {
-	
+
 	private final UserActivityLogDao generalUserActivityLogDao;
 	private final RestfulUserActivityLogDao restfulUserActivityLogDao;
 	private final SoapUserActivityLogDao soapUserActivityLogDao;
+	private final AdminService adminService;
+	private final WebserviceUserService webserviceUserService;
 
-	public DbUserActivityLogServiceImpl(UserActivityLogDao generalUserActivityLogDao, RestfulUserActivityLogDao restfulUserActivityLogDao, SoapUserActivityLogDao soapUserActivityLogDao) {
+	public DbUserActivityLogServiceImpl(UserActivityLogDao generalUserActivityLogDao, RestfulUserActivityLogDao restfulUserActivityLogDao,
+                                        SoapUserActivityLogDao soapUserActivityLogDao, AdminService adminService,
+										WebserviceUserService webserviceUserService) {
 		this.generalUserActivityLogDao = generalUserActivityLogDao;
 		this.restfulUserActivityLogDao = restfulUserActivityLogDao;
 		this.soapUserActivityLogDao = soapUserActivityLogDao;
+        this.adminService = adminService;
+        this.webserviceUserService = webserviceUserService;
+    }
+
+	@Override
+	public void deleteSoapActivity(Set<String> usernames) {
+		soapUserActivityLogDao.deleteByUsernames(usernames);
 	}
 
 	@Override
-	public PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate,
-																		  String description, int pageNumber, int pageSize, String sortColumn,
-																		  String sortDirection, List<AdminEntry> visibleAdmins) {
-		return generalUserActivityLogDao.getUserActivityEntries(
-				visibleAdmins,
-				username,
-				action,
-				DateUtilities.toDate(fromDate, admin.getZoneId()),
-				DateUtilities.toDate(toDate, admin.getZoneId()),
-				description,
-				sortColumn,
-				sortDirection,
-				pageNumber,
-				pageSize
-		);
+	public void deleteActivity(List<Admin> admins) {
+		Map<Boolean, List<Admin>> adminsMap = admins.stream()
+				.collect(Collectors.partitioningBy(Admin::isRestful));
+
+        Map<Integer, Set<String>> restfulUsernames = groupUsernamesByCompany(adminsMap.get(true));
+        Map<Integer, Set<String>> guiUsernames = groupUsernamesByCompany(adminsMap.get(false));
+
+        restfulUsernames.forEach((companyId, usernames) ->
+                restfulUserActivityLogDao.deleteByUsernames(usernames, companyId));
+
+        guiUsernames.forEach((companyId, usernames) ->
+                generalUserActivityLogDao.deleteByUsernames(usernames, companyId));
+	}
+
+	private Map<Integer, Set<String>> groupUsernamesByCompany(List<Admin> admins) {
+		return admins.stream().
+				collect(Collectors.groupingBy(
+						Admin::getCompanyID,
+						Collectors.mapping(Admin::getUsername, Collectors.toSet()))
+				);
 	}
 
 	@Override
-	public PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilterRedesigned(UserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) {
-		final List<AdminEntry> visibleAdmins = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
-		return generalUserActivityLogDao.getUserActivityEntries(
-				visibleAdmins,
-				filter.getUsername(),
-				filter.getAction(),
-				filter.getTimestamp().getFrom(),
-				filter.getTimestamp().getTo(),
-				filter.getDescription(),
-				filter.getSort(),
-				filter.getDir(),
-				filter.getPage(),
-				filter.getNumberOfRows()
-		);
+	public Set<String> getAvailableUsernames(Admin admin, UserType userType) {
+		boolean masterLogAllowed = admin.permissionAllowed(Permission.MASTERLOG_SHOW);
+		boolean adminLogAllowed = admin.permissionAllowed(Permission.ADMINLOG_SHOW);
+
+		if (!masterLogAllowed && !adminLogAllowed) {
+			return Collections.emptySet();
+		}
+
+		Integer companyId = masterLogAllowed ? null : admin.getCompanyID();
+
+		List<String> usernames;
+
+		switch (userType) {
+			case GUI -> {
+				usernames = generalUserActivityLogDao.getDistinctUsernames(companyId);
+				usernames.addAll(adminService.getGuiUsernames(companyId));
+			}
+			case REST -> {
+				usernames = restfulUserActivityLogDao.getDistinctUsernames(companyId);
+				usernames.addAll(adminService.getRestfulUsernames(companyId));
+			}
+			case SOAP -> {
+				usernames = soapUserActivityLogDao.getDistinctUsernames(companyId);
+				usernames.addAll(webserviceUserService.getUsernames(companyId));
+			}
+			default -> usernames = Collections.emptyList();
+		}
+
+		return usernames.stream()
+				.filter(StringUtils::isNotBlank)
+				.collect(Collectors.toSet());
 	}
 
 	@Override
-	public PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilterRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) {
+	public PaginatedList<LoggedUserAction> getUserActivityLogByFilter(UserActivityLogFilter filter, Admin admin) {
+		addRequiredFilterRestrictions(filter, admin);
+
+		if (StringUtils.isBlank(filter.getSort())) {
+			filter.setSort("logtime");
+		}
+
+		return generalUserActivityLogDao.getUserActivityEntries(filter);
+	}
+
+	@Override
+	public PaginatedList<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(RestfulUserActivityLogFilter filter, Admin admin) {
+		addRequiredFilterRestrictions(filter, admin);
+
 		if (StringUtils.isBlank(filter.getSort())) {
 			filter.setSort("timestamp");
 		}
 
-		final List<AdminEntry> visibleAdmins = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
-		return restfulUserActivityLogDao.getUserActivityEntriesRedesigned(filter, visibleAdmins);
+		return restfulUserActivityLogDao.getUserActivityEntries(filter);
 	}
 
 	@Override
-	public PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate,
-																						  String description, int pageNumber, int pageSize, String sortColumn,
-																						  String sortDirection, List<AdminEntry> visibleAdmins) {
-		Date from = DateUtilities.toDate(fromDate, admin.getZoneId());
-		Date to = DateUtilities.toDate(toDate, admin.getZoneId());
-		return restfulUserActivityLogDao.getUserActivityEntries(visibleAdmins, username, from, to, description, sortColumn, sortDirection, pageNumber, pageSize);
-	}
+	public PaginatedList<SoapUserActivityAction> getSoapUserActivityLogByFilter(SoapUserActivityLogFilter filter, Admin admin) {
+		addRequiredFilterRestrictions(filter, admin);
 
-	@Override
-	public PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate,
-																					int pageNumber, int pageSize, String sortColumn, String sortDirection,
-																					List<AdminEntry> visibleAdmins) {
-		Date from = DateUtilities.toDate(fromDate, admin.getZoneId());
-		Date to = DateUtilities.toDate(toDate, admin.getZoneId());
-
-		return soapUserActivityLogDao.getUserActivityEntries(visibleAdmins, username, from, to, sortColumn, sortDirection, pageNumber, pageSize);
-	}
-
-	@Override
-	public PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilterRedesigned(SoapUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin) {
 		if (StringUtils.isBlank(filter.getSort())) {
 			filter.setSort("timestamp");
 		}
 
-		final List<AdminEntry> visibleAdmins = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
-		return soapUserActivityLogDao.getUserActivityEntries(filter, visibleAdmins);
+		return soapUserActivityLogDao.getUserActivityEntries(filter);
 	}
 
 	@Override
-	public SqlPreparedStatementManager prepareSqlStatementForDownload(List<AdminEntry> visibleAdmins, String selectedAdmin,
-																	  int selectedAction, Date from, Date to, String description,
-																	  UserType userType) {
+	public SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, UserType userType, Admin admin) {
+		addRequiredFilterRestrictions(filter, admin);
+
 		if (UserType.REST.equals(userType)) {
-			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to, description);
+			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((RestfulUserActivityLogFilter) filter));
 		}
 
 		if (UserType.SOAP.equals(userType)) {
-			return soapUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to);
+			return soapUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((SoapUserActivityLogFilter) filter));
 		}
 
-		return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, selectedAction, from, to, description);
+        return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving((UserActivityLogFilter) filter);
 	}
 
-	@Override
-	public SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, List<AdminEntry> visibleAdmins, UserType userType, Admin admin) {
-		if (UserType.REST.equals(userType)) {
-			return restfulUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((RestfulUserActivityLogFilter) filter), visibleAdmins);
+	private void addRequiredFilterRestrictions(UserActivityLogFilterBase filter, Admin admin) {
+		if (admin.permissionAllowed(Permission.MASTERLOG_SHOW)) {
+			return;
 		}
 
-		if (UserType.SOAP.equals(userType)) {
-			return soapUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(((SoapUserActivityLogFilter) filter), visibleAdmins);
-		}
+		filter.setCompanyId(admin.getCompanyID());
 
-		UserActivityLogFilter ualFilter = (UserActivityLogFilter) filter;
-		return generalUserActivityLogDao.prepareSqlStatementForEntriesRetrieving(
-				visibleAdmins,
-				ualFilter.getUsername(),
-				ualFilter.getAction(),
-				ualFilter.getTimestamp().getFrom(),
-				ualFilter.getTimestamp().getTo(),
-				ualFilter.getDescription()
-		);
+		if (!admin.permissionAllowed(Permission.ADMINLOG_SHOW)) {
+			filter.setUsername(admin.getUsername());
+		}
 	}
 
 	@Override
@@ -192,4 +211,5 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 		}
 		writeUserActivityLog(admin, action.getAction(), action.getDescription(), callerLog);
 	}
+
 }

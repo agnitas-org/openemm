@@ -34,10 +34,8 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 						newId, job.getStatus(), job.getMailingId(), job.getTargetGroups(), job.getRecipientsType(), job.getStatusDescription());
         } else {
         	String insertStatement = "INSERT INTO mailing_statistic_job_tbl (job_status, mailing_id, target_groups, recipients_type, change_date, job_status_descr) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)";
-
-	        Object[] values = new Object[] { job.getStatus(), job.getMailingId(), job.getTargetGroups(), job.getRecipientsType(), job.getStatusDescription() };
-
-	        newId = insertIntoAutoincrementMysqlTable("mailing_stat_job_id", insertStatement, values);
+            newId = insert("mailing_stat_job_id", insertStatement, job.getStatus(), job.getMailingId(),
+					job.getTargetGroups(), job.getRecipientsType(), job.getStatusDescription());
 		}
 		return newId;
 	}
@@ -56,26 +54,36 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 	}
 
 	@Override
-	public List<MailingStatJobDescriptor> findMailingStatJobs(int mailingId,
-			int recipientsType, String targetGroups, int maxAgeSeconds) {
-		
+	public List<MailingStatJobDescriptor> findMailingStatJobs(int mailingId, int recipientsType, String targetGroups, int maxAgeSeconds) {
 		if (isOracleDB()) {
 			String tgComd = (targetGroups == null || targetGroups.isEmpty()) ? "(target_groups like ? or target_groups is null)" : "target_groups like ?";
 			return select("SELECT * FROM mailing_statistic_job_tbl WHERE mailing_id = ? AND " + tgComd +
 					" AND recipients_type = ? AND creation_date > CURRENT_TIMESTAMP - ?/24/60/60 ORDER BY creation_date DESC",
 					new MailingStatJobRowMapper(), mailingId, targetGroups, recipientsType, maxAgeSeconds);
-		} else {
-			return select("SELECT * FROM mailing_statistic_job_tbl WHERE mailing_id = ? AND target_groups = ?" +
-				" AND recipients_type = ? AND creation_date > (NOW() - INTERVAL ? SECOND) ORDER BY creation_date DESC",
+		}
+
+		if (isPostgreSQL()) {
+			return select("""
+							SELECT *
+							FROM mailing_statistic_job_tbl
+							WHERE mailing_id = ?
+							  AND target_groups = ?
+							  AND recipients_type = ?
+							  AND creation_date > NOW() - (? * INTERVAL '1 second')
+							ORDER BY creation_date DESC
+							""",
 					new MailingStatJobRowMapper(), mailingId, targetGroups, recipientsType, maxAgeSeconds);
 		}
+
+		return select("SELECT * FROM mailing_statistic_job_tbl WHERE mailing_id = ? AND target_groups = ?" +
+			" AND recipients_type = ? AND creation_date > (NOW() - INTERVAL ? SECOND) ORDER BY creation_date DESC",
+				new MailingStatJobRowMapper(), mailingId, targetGroups, recipientsType, maxAgeSeconds);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public final void removeExpiredMailingStatJobs(final ZonedDateTime threshold) {
+	public void removeExpiredMailingStatJobs(ZonedDateTime threshold) {
 		final Date thresholdDate = Date.from(threshold.toInstant());
-		
 		update("DELETE FROM mailing_statistic_job_tbl WHERE creation_date < ?", thresholdDate);
 	}
 

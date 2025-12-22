@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Objects;
 
 import com.agnitas.emm.core.components.service.MailingSendService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;

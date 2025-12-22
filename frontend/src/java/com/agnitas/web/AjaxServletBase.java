@@ -10,29 +10,26 @@
 
 package com.agnitas.web;
 
+import java.io.IOException;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.AgnUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import java.io.IOException;
 
 public abstract class AjaxServletBase extends HttpServlet {
 
 	private static final long serialVersionUID = -2027880269232397616L;
 
 	private static final Logger logger = LogManager.getLogger(AjaxServletBase.class);
-
-    public static final String CONTENT_TYPE_JSON = "application/json";
-    public static final String ENCODING = "UTF-8";
 
     private ApplicationContext applicationContext;
     private UserActivityLogService userActivityLogService;
@@ -117,10 +114,6 @@ public abstract class AjaxServletBase extends HttpServlet {
             logger.error("Error writing ActivityLog: " + e.getMessage(), e);
             logger.info("Userlog: " + admin.getUsername() + " " + action + " " +  description);
         }
-    }
-
-    protected void writeUserActivityLog(Admin admin, String action, int description)  {
-        writeUserActivityLog(admin, action, Integer.toString(description));
     }
 
     protected ApplicationContext getApplicationContext() {

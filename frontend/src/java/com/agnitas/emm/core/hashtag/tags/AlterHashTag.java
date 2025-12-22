@@ -15,16 +15,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.agnitas.dao.TagDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.TimeoutLRUMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.TagDao;
 import com.agnitas.emm.core.hashtag.HashTag;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.exception.HashTagException;
+import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 /**
  * Should not be longer used.
@@ -35,9 +33,7 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
  */
 @Deprecated
 public class AlterHashTag implements HashTag { // TODO Derive from AbstractColonHashTag instead of implementing HashTag
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AlterHashTag.class);
-	
+
 	private static final Pattern HASHTAG_PARAMETER_PATTERN = Pattern.compile("^\\s*(\\w+)\\s*=\\s*\'([^\']*)\'\\s*(?:,(.*))?$");
 	
 	private TagDao tagDao;

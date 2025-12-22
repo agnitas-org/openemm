@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.servicemail.impl;
 
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.velocity.Constants;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,8 +27,7 @@ import com.agnitas.emm.core.servicemail.UnknownCustomerIdException;
  */
 public class SendServiceMailServiceImpl implements SendServiceMailService {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(SendServiceMailServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(SendServiceMailServiceImpl.class);
 
 	/** Service dealing with EMM actions. */
 	private EmmActionService emmActionService;

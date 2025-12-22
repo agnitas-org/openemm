@@ -11,7 +11,6 @@
 package com.agnitas.service;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,27 +20,36 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Target;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.web.mvc.Popups;
 
 public interface MailingContentService {
+
     boolean isGenerationAvailable(Mailing mailing);
+
     void generateTextContent(Mailing mailing);
+
     String generateDynName(String sourceName, Set<String> namesInUse);
 
     void saveDynTags(int mailingId, List<DynTagDto> dynTags, Admin admin, Popups popups);
 
-    // TODO: EMMGUI-714: remove when old design will be removed
-    ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, Admin admin, Popups popups) throws Exception;
     DynTagDto getDynTag(int companyId, int dynNameId);
-	void buildDependencies(int mailingID, int companyID) throws Exception;
+
+    /**
+     * Load and save the new mailing with a new dynamic tag to let any adjustments happen that may be needed.
+     *
+     * @param dynamicTag Dynamic tag to save
+     * @param companyID id of the company
+     * @return false if provided name not exists in mailing templates, true otherwise
+     */
+    boolean saveDynTag(DynamicTag dynamicTag, int companyID) throws Exception;
+
 	List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(Target target);
 
     Set<String> findDynNamesUsedInContent(String content, List<DynamicTag> dynTags);
 
-    Map<String, DynTagDto> loadDynTags(Mailing mailing, Locale locale);
+    Map<String, DynTagDto> loadDynTags(Mailing mailing);
 
-    Map<Integer, String> getMailingContentNames(int mailingId, Admin admin);
+    Map<Integer, String> getMailingContentNames(int mailingId, int companyId);
 
     Map<Integer, String> getNamesOfAvailableTargetsForContent(Admin admin);
 }

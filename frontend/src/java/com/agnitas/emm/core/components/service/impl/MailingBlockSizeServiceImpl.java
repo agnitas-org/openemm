@@ -12,8 +12,8 @@ package com.agnitas.emm.core.components.service.impl;
 
 import com.agnitas.emm.core.components.service.MailingBlockSizeService;
 import com.agnitas.emm.core.mailing.enums.BlocksizeSteppingOption;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Tuple;
 import org.apache.logging.log4j.LogManager;

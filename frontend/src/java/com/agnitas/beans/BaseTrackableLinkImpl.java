@@ -10,20 +10,15 @@
 
 package com.agnitas.beans;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.util.AgnUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.commons.text.StringEscapeUtils;
 
 public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
-
-	private static final Logger logger = LogManager.getLogger(BaseTrackableLinkImpl.class);
 
 	protected int id;
 	protected String shortname;
@@ -137,12 +132,9 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
      *
      * Caution:
      * This is used by JSP-Files
-     *
-     * @return
-     * @throws UnsupportedEncodingException
      */
     @Override
-	public String createDirectLinkWithOptionalExtensionsWithoutUserData() throws UnsupportedEncodingException {
+	public String createDirectLinkWithOptionalExtensionsWithoutUserData() {
 		String linkString = getFullUrl();
 		for (LinkProperty linkProperty : getProperties()) {
 			if (linkProperty.getPropertyType() == LinkProperty.PropertyType.LinkExtension) {
@@ -152,7 +144,7 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
                     propertyValue = AgnUtils.replaceHashTags(propertyValue);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
-				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");
+				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, StandardCharsets.UTF_8);
 			}
 		}
 		return linkString;
@@ -172,13 +164,8 @@ public abstract class BaseTrackableLinkImpl implements BaseTrackableLink {
 	
 	@Override
 	public String getFullUrlWithExtensions() {
-    	try {
-			String directLink = createDirectLinkWithOptionalExtensionsWithoutUserData();
-			return StringEscapeUtils.escapeHtml4(directLink);
-		} catch (UnsupportedEncodingException e) {
-			logger.warn("Error creation directory link with optional extension without user data, cause: " + e.getMessage());
-			return "";
-		}
+		String directLink = createDirectLinkWithOptionalExtensionsWithoutUserData();
+		return StringEscapeUtils.escapeHtml4(directLink);
 	}
 
 	@Override

@@ -15,21 +15,28 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.dao.SoapUserActivityLogDao;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.util.DateUtilities;
 import com.agnitas.util.SqlPreparedStatementManager;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl implements SoapUserActivityLogDao {
+
+    @Override
+    public void deleteByUsernames(Set<String> usernames) {
+        if (usernames.isEmpty()) {
+            return;
+        }
+
+        update("DELETE FROM " + getTableName() + " WHERE "
+                + makeBulkInClauseForString("username", usernames));
+    }
 
     @Override
     public void writeWebServiceUsage(ZonedDateTime timestamp, String endpoint, int companyID, String user, String clientIp) {
@@ -38,46 +45,27 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
     }
 
     @Override
-    public PaginatedListImpl<SoapUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
-        if (StringUtils.isBlank(sortColumn)) {
-            sortColumn = "timestamp";
-        }
-
-        boolean sortDirectionAscending = "asc".equalsIgnoreCase(sortDirection) || "ascending".equalsIgnoreCase(sortDirection);
-
-        SqlPreparedStatementManager sqlPreparedStatementManager
-                = prepareSqlStatementForEntriesRetrieving(visibleAdmins, selectedAdmin, from, to);
-
-        return selectPaginatedList(sqlPreparedStatementManager.getPreparedSqlString(), "webservice_usage_log_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new SoapUserActionRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
-    }
-
-    @Override
-    public PaginatedListImpl<SoapUserActivityAction> getUserActivityEntries(SoapUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    public PaginatedList<SoapUserActivityAction> getUserActivityEntries(SoapUserActivityLogFilter filter) {
         StringBuilder query = new StringBuilder();
-        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
+        List<Object> params = buildOverviewSelectQuery(query, filter);
 
-        PaginatedListImpl<SoapUserActivityAction> list = selectPaginatedList(query.toString(), "webservice_usage_log_tbl",
+        PaginatedList<SoapUserActivityAction> list = selectPaginatedList(query.toString(), "webservice_usage_log_tbl",
                 filter, new SoapUserActionRowMapper(), params.toArray());
 
         if (filter.isUiFiltersSet()) {
-            list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(visibleAdmins));
+            list.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(filter.getCompanyId()));
         }
 
         return list;
     }
 
-    private List<Object> buildOverviewSelectQuery(StringBuilder query, SoapUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    private List<Object> buildOverviewSelectQuery(StringBuilder query, SoapUserActivityLogFilter filter) {
         query.append("SELECT timestamp, username, endpoint, client_ip FROM webservice_usage_log_tbl");
-        List<Object> params = applyFilter(filter, query);
-
-        //  If set, any of the visible admins must match
-        addVisibleAdminsCondition(query, visibleAdmins);
-        return params;
+        return applyFilter(filter, query);
     }
 
     private List<Object> applyFilter(SoapUserActivityLogFilter filter, StringBuilder query) {
-        query.append(" WHERE 1 = 1");
-        List<Object> params = new ArrayList<>();
+        List<Object> params = applyRequiredOverviewFilter(query, filter.getCompanyId());
 
         query.append(getDateRangeFilterWithAnd("timestamp", filter.getTimestamp(), params));
 
@@ -94,54 +82,28 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
         return params;
     }
 
-    private void addVisibleAdminsCondition(StringBuilder query, List<AdminEntry> admins) {
-        if (CollectionUtils.isNotEmpty(admins)) {
-            String visibleAdminsCondition = buildVisibleAdminsCondition(admins);
-            if (!visibleAdminsCondition.isBlank()) {
-                query.append(" AND ").append(visibleAdminsCondition);
-            }
-        }
-    }
-
-    private int getTotalUnfilteredCountForOverview(List<AdminEntry> visibleAdmins) {
-        StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM webservice_usage_log_tbl WHERE 1 = 1");
-        addVisibleAdminsCondition(query, visibleAdmins);
-        return selectIntWithDefaultValue(query.toString(), 0);
+    private int getTotalUnfilteredCountForOverview(Integer companyId) {
+        StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM webservice_usage_log_tbl");
+        List<Object> params = applyRequiredOverviewFilter(query, companyId);
+        return selectIntWithDefaultValue(query.toString(), 0, params.toArray());
     }
 
     @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to) {
-        SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT timestamp, username, endpoint, client_ip FROM webservice_usage_log_tbl");
-        sqlPreparedStatementManager.addWhereClause("timestamp >= ?", from);
-        sqlPreparedStatementManager.addWhereClause("timestamp <= ?", DateUtilities.addDaysToDate(to, 1));
-
-        //  If set, any of the visible admins must match
-        if (visibleAdmins != null && !visibleAdmins.isEmpty()) {
-            List<String> visibleAdminNameList = new ArrayList<>();
-            for (AdminEntry visibleAdmin : visibleAdmins) {
-                if (visibleAdmin != null) {
-                    visibleAdminNameList.add(visibleAdmin.getUsername());
-                }
-            }
-            if (!visibleAdminNameList.isEmpty()) {
-                sqlPreparedStatementManager.addWhereClause(makeBulkInClauseForString("username", visibleAdminNameList));
-            }
-        }
-
-        // If set, the selected admin must match
-        if (StringUtils.isNotBlank(selectedAdmin) && !"0".equals(selectedAdmin)) {
-            sqlPreparedStatementManager.addWhereClause("username = ?", selectedAdmin);
-        }
-
-        return sqlPreparedStatementManager;
-    }
-
-    @Override
-    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(SoapUserActivityLogFilter filter, List<AdminEntry> visibleAdmins) {
+    public SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(SoapUserActivityLogFilter filter) {
         StringBuilder query = new StringBuilder();
-        List<Object> params = buildOverviewSelectQuery(query, filter, visibleAdmins);
+        List<Object> params = buildOverviewSelectQuery(query, filter);
 
         return new SqlPreparedStatementManager(query.toString(), params.toArray());
+    }
+
+    private List<Object> applyRequiredOverviewFilter(StringBuilder query, Integer companyId) {
+        if (companyId == null) {
+            query.append(" WHERE 1 = 1");
+            return new ArrayList<>();
+        }
+
+        query.append(" WHERE (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?))");
+        return new ArrayList<>(List.of(companyId, companyId));
     }
 
     private static final class SoapUserActionRowMapper implements RowMapper<SoapUserActivityAction> {
@@ -158,4 +120,10 @@ public class SoapUserActivityLogDaoImpl extends UserActivityLogDaoBaseImpl imple
             return userAction;
         }
     }
+
+    @Override
+    protected String getTableName() {
+        return "webservice_usage_log_tbl";
+    }
+
 }

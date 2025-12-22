@@ -10,24 +10,6 @@
 
 package com.agnitas.emm.core.workflow.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.reminder.beans.Reminder;
-import com.agnitas.emm.core.reminder.beans.impl.ReminderImpl;
-import com.agnitas.emm.core.reminder.dao.impl.ReminderBaseDaoImpl;
-import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
-import com.agnitas.emm.core.workflow.beans.WorkflowReminder;
-import com.agnitas.emm.core.workflow.beans.WorkflowReminderRecipient;
-import com.agnitas.emm.core.workflow.dao.WorkflowStartStopReminderDao;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbUtilities;
-import com.agnitas.util.SafeString;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -42,7 +24,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
+
+import com.agnitas.beans.CompaniesConstraints;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.reminder.beans.Reminder;
+import com.agnitas.emm.core.reminder.beans.impl.ReminderImpl;
+import com.agnitas.emm.core.reminder.dao.impl.ReminderBaseDaoImpl;
+import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowReminder;
+import com.agnitas.emm.core.workflow.beans.WorkflowReminderRecipient;
+import com.agnitas.emm.core.workflow.dao.WorkflowStartStopReminderDao;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.SafeString;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implements WorkflowStartStopReminderDao {
 	
@@ -130,9 +129,9 @@ public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implem
         List<Object[]> sqlParameters = reminders.stream()
                 .filter(Reminder::isSent)
                 .map(r -> new Object[]{r.getId(), r.getCompanyId(), r.getRecipientEmail()})
-                .collect(Collectors.toList());
+                .toList();
 
-        if (sqlParameters.size() > 0) {
+        if (!sqlParameters.isEmpty()) {
             String sqlSetNotified = "UPDATE workflow_reminder_recp_tbl SET notified = 1 " +
                     "WHERE reminder_id = ? AND company_id = ? AND email = ?";
 
@@ -185,7 +184,7 @@ public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implem
             String sqlInsert = "INSERT INTO workflow_reminder_tbl (company_id, workflow_id, sender_admin_id, type, message, send_date) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
 
-            reminderId = insertIntoAutoincrementMysqlTable("reminder_id", sqlInsert, companyId, workflowId, reminder.getSenderAdminId(), reminder.getType().getId(), reminder.getMessage(), reminder.getDate());
+            reminderId = insert("reminder_id", sqlInsert, companyId, workflowId, reminder.getSenderAdminId(), reminder.getType().getId(), reminder.getMessage(), reminder.getDate());
         }
 
         insertRecipients(companyId, reminderId, reminder.getRecipients());
@@ -198,7 +197,7 @@ public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implem
         List<Object[]> sqlParameters = resolveAdmins(companyId, recipients)
                 .stream()
                 .map(r -> new Object[]{companyId, reminderId, r.getAddress(), r.getAdminId()})
-                .collect(Collectors.toList());
+                .toList();
 
         batchupdate(sqlInsert, sqlParameters);
     }
@@ -221,7 +220,7 @@ public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implem
             }
         }
 
-        if (ids.size() > 0) {
+        if (!ids.isEmpty()) {
             Map<Integer, String> map = resolveAdminAddresses(companyId, ids);
 
             for (int adminId : ids) {
@@ -235,7 +234,7 @@ public class WorkflowStartStopReminderDaoImpl extends ReminderBaseDaoImpl implem
             }
         }
 
-        if (addresses.size() > 0) {
+        if (!addresses.isEmpty()) {
             Map<String, Integer> map = resolveAdminIds(companyId, addresses);
 
             for (String address : addresses) {

@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
@@ -45,14 +45,12 @@ public interface TrackableLinkDao {
 	 * 
 	 * @see ClickTrackingService#trackLinkClick(ExtensibleUID, String, DeviceClass, int, int)
 	 */
-	boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
+	boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID, int position);
 	
 	List<LinkProperty> getLinkProperties(TrackableLink link);
 
 	boolean deleteRdirUrlsByMailing(int mailingID);
 
-	void storeLinkProperties(int linkId, List<LinkProperty> properties);
-    
     List<TrackableLink> getTrackableLinks(int companyID, int mailingID);
 
     Map<String, TrackableLink> getTrackableLinksMap(int mailingId, int companyId, boolean includeDeleted);

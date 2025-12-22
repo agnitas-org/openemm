@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,7 +29,7 @@ import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +53,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/statistics/mailing/comparison")
-@PermissionMapping("mailing.comparison.statistics")
+@RequiredPermission("stats.mailing")
 @SessionAttributes(types = MailingComparisonSearchParams.class)
 public class MailingComparisonStatisticController implements XssCheckAware {
     
@@ -88,9 +86,7 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     public String list(@RequestParam(required = false) Boolean restoreSort, Admin admin, Model model, MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, Popups popups) {
         try {
             FormUtils.syncPaginationData(webStorage, WebStorage.MAILING_COMPARISON_OVERVIEW, filter, restoreSort);
-            if (admin.isRedesignedUiUsed()) {
-                FormUtils.syncSearchParams(searchParams, filter, true);
-            }
+            searchParams.restoreParams(filter);
 
             model.addAttribute("mailings", mailingBaseService.getMailingsForComparison(filter, admin));
             model.addAttribute("selectionMax", MAX_MAILINGS_SELECTED);
@@ -104,7 +100,7 @@ public class MailingComparisonStatisticController implements XssCheckAware {
 
     @GetMapping("/search.action")
     public String search(MailingComparisonFilter filter, MailingComparisonSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
+        searchParams.storeParams(filter);
         ra.addFlashAttribute("mailingComparisonFilter", filter);
         return REDIRECT_TO_OVERVIEW;
     }
@@ -117,7 +113,7 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     @PostMapping("/compare.action")
     public String compare(Admin admin, @ModelAttribute("form") MailingComparisonForm form, HttpSession session, Model model, Popups popups) {
         if (!validate(form, popups)) {
-            return admin.isRedesignedUiUsed() ? REDIRECT_TO_OVERVIEW : MESSAGES_VIEW;
+            return REDIRECT_TO_OVERVIEW;
         }
     
         MailingComparisonDto comparisonDto = conversionService.convert(form, MailingComparisonDto.class);
@@ -159,4 +155,5 @@ public class MailingComparisonStatisticController implements XssCheckAware {
         
         return !popups.hasAlertPopups();
     }
+
 }

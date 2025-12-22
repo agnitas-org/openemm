@@ -10,15 +10,13 @@
 
 package com.agnitas.emm.core.components.service;
 
+import java.util.List;
+
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
-
-import java.util.List;
 
 public interface MailingDependencyService {
 
     List<Dependent<MailingDependentType>> load(int companyId, int mailingId, List<MailingDependentType> types);
 
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-    List<MailingDependentType> detectActiveFilters(String[] selectedFilters, MailingDependentType ... types);
 }

@@ -12,19 +12,18 @@ package com.agnitas.emm.core.commons.uid.parser.impl;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.uid.parser.exception.MailingNotFoundParseException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.uid.parser.impl.BaseExtensibleUIDParser;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.RdirMailingData;
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.emm.core.commons.uid.daocache.impl.RdirMailingDataDaoCache;
+import com.agnitas.emm.core.commons.uid.parser.exception.MailingNotFoundParseException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of UID parser for UID version 2 using SHA-512.
@@ -96,7 +95,8 @@ public class V2Sha512ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
                 companyID,
                 (int) (base64Encoder.decodeLong(correctedParts[CUSTOMER_ID_GROUP]) ^ timestamp1),
                 mailingID,
-                (int) (base64Encoder.decodeLong(correctedParts[URL_ID_GROUP]) ^ timestamp2 ^ companyID)
+                (int) (base64Encoder.decodeLong(correctedParts[URL_ID_GROUP]) ^ timestamp2 ^ companyID),
+		1
         );
     }
 

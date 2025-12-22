@@ -8,6 +8,11 @@
 
             this.form.find("select").each(function(_, el) {
                 var $el = $(el);
+
+                if ($el.is('[data-dirty-ignore]')) {
+                    return;
+                }
+
                 var thisIsDirty = d.isSelectFieldDirty($el);
 
                 $el.data(d.statuses.dataIsDirty, thisIsDirty);
@@ -19,6 +24,10 @@
                 var isRadioOrCheckbox = d.isRadioOrCheckbox(el);
                 var isFile = d.isFileInput(el);
                 var $el = $(el);
+
+                if ($el.is('[data-dirty-ignore]')) {
+                    return;
+                }
 
                 var thisIsDirty;
                 if (isRadioOrCheckbox) {

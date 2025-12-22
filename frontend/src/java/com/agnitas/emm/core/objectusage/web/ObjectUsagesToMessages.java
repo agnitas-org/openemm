@@ -15,7 +15,7 @@ import java.util.Locale;
 
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 
@@ -89,12 +89,12 @@ public final class ObjectUsagesToMessages {
 	 * 
 	 * @return HTML code for list
 	 */
-	private static final String itemsToHtmlList(final ObjectUsages usages, final Locale locale) {
+	private static String itemsToHtmlList(ObjectUsages usages, Locale locale) {
 		final StringBuffer buffer = new StringBuffer("<ul>");
 		
 		int count = 0;
 		
-		for(final ObjectUserType userType : ObjectUserType.values()) {
+		for(final ObjectUsageType userType : ObjectUsageType.values()) {
 			for(final ObjectUsage usage : usages.getUsagesByUserType(userType)) {
 				count++;
 				

@@ -19,16 +19,16 @@ import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
-import com.agnitas.beans.impl.CampaignImpl;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.beans.MailingBase;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.impl.CampaignImpl;
 import com.agnitas.beans.impl.MailingBaseImpl;
 import com.agnitas.beans.impl.MailinglistImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.dao.CampaignDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -54,7 +54,7 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 	}
 
 	@Override
-	public PaginatedListImpl<MailingBase> getCampaignMailings(int campaignID, PaginationForm form, Admin admin) {
+	public PaginatedList<MailingBase> getCampaignMailings(int campaignID, PaginationForm form, Admin admin) {
         List<Object> params = new ArrayList<>();
         params.add(MaildropStatus.WORLD.getCodeString());
         params.add(admin.getCompanyID());
@@ -98,7 +98,7 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 		if(!SORTABLE_FIELDS.contains(sort)) {
 			sort = "shortname";
 		}
-		String orderString = "LOWER(" + sort + ") " + (order == 2 ? "DESC" : "ASC");
+		String orderString = (sort.equalsIgnoreCase("campaign_id") ? sort : "LOWER(" + sort + ")") + " " + (order == 2 ? "DESC" : "ASC");
 		String sqlStatement = "SELECT campaign_id, shortname, description FROM campaign_tbl WHERE company_id = ? ORDER BY " + orderString;
 		List<Map<String, Object>> tmpList = select(sqlStatement, companyID);
 
@@ -116,25 +116,9 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 	}
 
 	@Override
-	public PaginatedListImpl<Campaign> getOverview(int companyId, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) {
+	public PaginatedList<Campaign> getOverview(int companyId, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) {
 		String query = "SELECT campaign_id, shortname, description, company_id FROM campaign_tbl WHERE company_id = ?";
 		return selectPaginatedList(query, "campaign_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new CampaignRowMapper(), companyId);
-	}
-
-	@Override
-	public List<Map<String, Object>> getMailingNames(Campaign campaign, String mailingSelection) {
-		try {
-			List<Map<String, Object>> list;
-			if (mailingSelection != null) {
-				list = select("SELECT mailing_id, shortname, description FROM mailing_tbl WHERE company_id = ? AND mailing_id IN (" + mailingSelection + ") ORDER BY mailing_id DESC", campaign.getCompanyID());
-			} else {
-				list = select("SELECT mailing_id, shortname, description FROM mailing_tbl WHERE company_id = ? AND campaign_id = ? AND deleted = 0 AND is_template = 0 ORDER BY mailing_id DESC", campaign.getCompanyID(), campaign.getId());
-			}
-		
-			return list;
-		} catch (Exception e) {
-			return null;
-		}
 	}
 
 	@Override
@@ -149,7 +133,7 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 				update("INSERT INTO campaign_tbl (campaign_id, company_id, shortname,  description ) VALUES (?, ?, ?, ? )", newID, campaign.getCompanyID(), campaign.getShortname(), campaign.getDescription());
 				campaign.setId(newID);
 			} else {
-				int newID = insertIntoAutoincrementMysqlTable("campaign_id", "INSERT INTO campaign_tbl (company_id, shortname,  description ) VALUES (?, ?, ? )", campaign.getCompanyID(), campaign.getShortname(), campaign.getDescription());
+				int newID = insert("campaign_id", "INSERT INTO campaign_tbl (company_id, shortname,  description ) VALUES (?, ?, ? )", campaign.getCompanyID(), campaign.getShortname(), campaign.getDescription());
 				campaign.setId(newID);
 			}
 		} else {
@@ -163,8 +147,7 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 	@DaoUpdateReturnValueCheck
 	public boolean delete(Campaign campaign) {
 		String deleteQuery = "DELETE FROM campaign_tbl WHERE campaign_id = ? AND company_id = ?";
-		int numberofRows = update(deleteQuery, campaign.getId(), campaign.getCompanyID());
-		return numberofRows > 0;
+        return update(deleteQuery, campaign.getId(), campaign.getCompanyID()) > 0;
 	}
 	
 	@Override
@@ -210,4 +193,5 @@ public class CampaignDaoImpl extends PaginatedBaseDaoImpl implements CampaignDao
 		return select("SELECT campaign_id FROM campaign_tbl WHERE company_id = ? AND (LOWER(shortname) LIKE '%sample%' OR LOWER(shortname) LIKE '%example%' OR LOWER(shortname) LIKE '%muster%' OR LOWER(shortname) LIKE '%beispiel%')",
 			IntegerRowMapper.INSTANCE, companyID);
 	}
+
 }

@@ -10,7 +10,6 @@
 
 package com.agnitas.backend;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
@@ -253,14 +252,12 @@ public class Mailing {
 		return exists() ? mailing.workStatus() : null;
 	}
 
-	public void setWorkStatus(MailingStatus newWorkStatus, MailingStatus oldWorkStatus) {
-		if (exists () && data.maildropStatus.isWorldMailing()) {
+	public void setWorkStatus(MailingStatus newWorkStatus, MailingStatus ... oldWorkStatuses) {
+		if (exists ()) {
 			String currentWorkStatus = workStatus();
 			try {
-				if (mailing.workStatus(data.dbase, newWorkStatus, oldWorkStatus)) {
+				if (mailing.workStatus(data.dbase, newWorkStatus, oldWorkStatuses)) {
 					data.logging(Log.INFO, "workstatus", "Updated working status from " + currentWorkStatus + " to " + newWorkStatus.getDbKey ());
-				} else {
-					data.logging(Log.WARNING, "workstatus", "Failed to update working status from " + currentWorkStatus + " to " + newWorkStatus.getDbKey ());
 				}
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "workstatus", "Failed to update working status from " + currentWorkStatus + " to " + newWorkStatus.getDbKey () + " due to " + e.toString(), e);
@@ -619,7 +616,7 @@ public class Mailing {
 		if (path != null) {
 			String companyPath = path + data.company.id();
 			try {
-				if ((new File(companyPath)).isDirectory()) {
+				if (Data.isDirectory (companyPath)) {
 					return companyPath;
 				}
 			} catch (Exception e) {
@@ -705,7 +702,7 @@ public class Mailing {
 			if (key.endsWith("dir") && (key.length() > 3)) {
 				String	directory = cfg.cget (key);
 				
-				if (isDirectory (directory)) {
+				if (Data.isDirectory (directory)) {
 					outputDirectories.put(key.substring(0, key.length() - 3), directory);
 				}
 			}
@@ -719,15 +716,12 @@ public class Mailing {
 	private String spool (String directory, String alternate) {
 		String	path = Str.makePath (spoolDirectory, directory);
 
-		if ((alternate != null) && (! isDirectory (path))) {
+		if ((alternate != null) && (! Data.isDirectory (path))) {
 			path = spool (alternate);
 		}
 		return path;
 	}
 	private String spool (String directory) {
 		return spool (directory, null);
-	}
-	private boolean isDirectory (String directory) {
-		return (new File (directory)).isDirectory ();
 	}
 }

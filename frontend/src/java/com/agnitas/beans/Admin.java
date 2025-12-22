@@ -8,7 +8,6 @@
 
 */
 
-
 package com.agnitas.beans;
 
 import java.text.SimpleDateFormat;
@@ -23,10 +22,10 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.enums.UiLayoutType;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.CollectionUtils;
 
 public interface Admin {
+
     String getStatEmail();
     void setStatEmail(String statEmail);
 
@@ -160,12 +159,6 @@ public interface Admin {
      * @return true if Admin has the given permission, false otherwise.
      */
     boolean permissionAllowed(Permission... permissions);
-
-    boolean isRedesignedUiUsed();
-
-    boolean isUpdatedUxUsed();
-    boolean isUpdatedUxUsed(HttpServletRequest req);
-    boolean isUxUpdateRollback();
 
     Locale getLocale();
 

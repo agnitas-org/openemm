@@ -13,10 +13,9 @@ package com.agnitas.emm.core.logon.service;
 import java.util.Date;
 import java.util.Set;
 
-import com.agnitas.beans.EmmLayoutBase;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.service.ServiceResult;
@@ -27,9 +26,9 @@ import com.agnitas.service.SimpleServiceResult;
  */
 public interface LogonService {
 
-	public static final String DEFAULT_HELP_LANGUAGE = "en";
-	public static final int TOKEN_EXPIRATION_MINUTES = 30;
-	public static final int TOKEN_EXPIRATION_DAYS = 3;
+	String DEFAULT_HELP_LANGUAGE = "en";
+	int TOKEN_EXPIRATION_MINUTES = 30;
+	int TOKEN_EXPIRATION_DAYS = 3;
 	
 	/**
 	 * Returns {@link Admin} for given user name and password. A {@link LogonFailedException}
@@ -72,9 +71,8 @@ public interface LogonService {
 
     ServiceResult<Admin> resetPassword(String username, String token, String password, String clientIp);
     
-    String getPasswordResetLink(String linkPattern, String username, String token);
-    
-    SimpleServiceResult sendWelcomeMail(Admin admin, String clientIp, String linkPattern);
+    void sendWelcomeMail(Admin admin, String clientIp, String linkPattern);
+
 	void sendWelcomeMail(Set<Integer> ids, String clientIp, int companyID, String passwordResetLinkPattern);
 
 	boolean existsPasswordResetTokenHash(String username, String token);
@@ -86,4 +84,7 @@ public interface LogonService {
 	void updateSessionsLanguagesAttributes(Admin admin);
 
 	String getLoginUsername(Admin admin);
+
+	String getLoginIframeUrl();
+
 }

@@ -10,19 +10,19 @@
 
 package com.agnitas.emm.core.webhooks.messages.dao;
 
-import com.agnitas.emm.core.webhooks.common.WebhookEventType;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.ZonedDateTimeRowMapper;
-
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-public final class WebhookBackendDataProcessTimestampDaoImpl extends BaseDaoImpl implements WebhookBackendDataProcessTimestampDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.ZonedDateTimeRowMapper;
+import com.agnitas.emm.core.webhooks.common.WebhookEventType;
+
+public class WebhookBackendDataProcessTimestampDaoImpl extends BaseDaoImpl implements WebhookBackendDataProcessTimestampDao {
 
 	@Override
-	public final Optional<ZonedDateTime> findTimestampOfLastRun(final int companyID, final WebhookEventType eventType) {
+	public Optional<ZonedDateTime> findTimestampOfLastRun(int companyID, WebhookEventType eventType) {
 		final String sql = "SELECT timestamp FROM webhook_process_timestamp_tbl WHERE company_ref=? AND process_type=?";
 		
 		final List<ZonedDateTime> list = select(sql, ZonedDateTimeRowMapper.INSTANCE, companyID, eventType.getEventCode());
@@ -33,7 +33,7 @@ public final class WebhookBackendDataProcessTimestampDaoImpl extends BaseDaoImpl
 	}
 
 	@Override
-	public void updateTimestampOfLastRun(final int companyID, final WebhookEventType eventType, final ZonedDateTime timestamp) {
+	public void updateTimestampOfLastRun(int companyID, WebhookEventType eventType, ZonedDateTime timestamp) {
 		final Date date = Date.from(timestamp.toInstant());
 		
 		if(!tryUpdateTimestamp(companyID, eventType, date)) {
@@ -41,26 +41,25 @@ public final class WebhookBackendDataProcessTimestampDaoImpl extends BaseDaoImpl
 		}
 	}
 	
-	private final boolean tryUpdateTimestamp(final int companyID, final WebhookEventType eventType, final Date timestamp) {
+	private boolean tryUpdateTimestamp(int companyID, WebhookEventType eventType, Date timestamp) {
 		final String sql = "UPDATE webhook_process_timestamp_tbl SET timestamp=? WHERE company_ref=? AND process_type=?";
-		
 		return update(sql, timestamp, companyID, eventType.getEventCode()) > 0;
 	}
 
-	private final void tryInsertTimestamp(final int companyID, final WebhookEventType eventType, final Date timestamp) {
+	private void tryInsertTimestamp(int companyID, WebhookEventType eventType, Date timestamp) {
 		final String sql = "INSERT INTO webhook_process_timestamp_tbl (company_ref, process_type, timestamp) VALUES (?,?,?)";
-		
 		update(sql, companyID, eventType.getEventCode(), timestamp);
 	}
 
 	@Override
-	public boolean deleteDataByCompany(final int companyID) {
+	public boolean deleteDataByCompany(int companyID) {
 		int touchedLines = update("DELETE FROM webhook_process_timestamp_tbl WHERE company_ref = ?", companyID);
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		int remaining = selectInt("SELECT COUNT(*) FROM webhook_process_timestamp_tbl WHERE company_ref = ?", companyID);
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_process_timestamp_tbl WHERE company_ref = ?", companyID);
+		return remaining == 0;
 	}
+
 }

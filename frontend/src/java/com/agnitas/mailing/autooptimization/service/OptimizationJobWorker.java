@@ -12,14 +12,21 @@ package com.agnitas.mailing.autooptimization.service;
 
 import java.util.List;
 
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 
 /**
+ * This worker is responsible for processing the "Auto-Optimization" decision icon in the workflow (e.g. A/B test).
+ * It evaluates the performance of available mailings by chosen decision criteria,
+ * selects the best-performing one and sends it to the remaining recipients.
+ * This ensures that the most effective email version is used to improve effectiveness.
+ * <p>
  * Example Insert in DB:
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.mailing.autooptimization.service.OptimizationJobWorker', 1);
  */
-public class OptimizationJobWorker extends JobWorker {
+@JobWorker("AutoOptimization")
+public class OptimizationJobWorker extends JobWorkerBase {
 		
 	@Override
 	public String runJob() throws Exception {

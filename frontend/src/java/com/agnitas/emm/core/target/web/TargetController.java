@@ -10,53 +10,45 @@
 
 package com.agnitas.emm.core.target.web;
 
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
 import com.agnitas.emm.core.target.form.TargetForm;
 import com.agnitas.emm.core.target.form.TargetListFormSearchParams;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.util.GuiConstants;
 import com.agnitas.web.forms.BulkActionForm;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
@@ -94,21 +86,12 @@ public class TargetController implements XssCheckAware {
         binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
     }
 
-    @ModelAttribute
-    public TargetListFormSearchParams getSearchParams() {
-        return new TargetListFormSearchParams();
-    }
-
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute TargetForm targetForm, @ModelAttribute TargetListFormSearchParams searchParams,
+    @RequiredPermission("targets.show")
+    public String list(@ModelAttribute TargetForm targetForm, TargetListFormSearchParams searchParams,
                        @RequestParam(required = false) Boolean restoreSort, Admin admin, Model model) {
-        if (admin.isRedesignedUiUsed()) {
-            FormUtils.syncSearchParams(searchParams, targetForm, true);
-            FormUtils.syncPaginationData(webStorage, WebStorage.TARGET_OVERVIEW, targetForm, restoreSort);
-        } else {
-            FormUtils.updateSortingState(webStorage, WebStorage.TARGET_OVERVIEW, targetForm, restoreSort);
-            prepareListParameters(targetForm, admin);
-        }
+        searchParams.restoreParams(targetForm);
+        FormUtils.syncPaginationData(webStorage, WebStorage.TARGET_OVERVIEW, targetForm, restoreSort);
 
         addListModelAttrs(targetForm, admin, model);
         return "targets_list";
@@ -123,95 +106,76 @@ public class TargetController implements XssCheckAware {
     }
 
     @GetMapping("/search.action")
-    public String search(@ModelAttribute TargetForm form, @ModelAttribute TargetListFormSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, form, false);
+    @RequiredPermission("targets.show")
+    public String search(@ModelAttribute TargetForm form, TargetListFormSearchParams searchParams, RedirectAttributes ra) {
+        searchParams.storeParams(form);
         ra.addFlashAttribute("targetForm", form);
         return TARGETS_LIST_REDIRECT;
     }
 
     @PostMapping("/restore.action")
+    @RequiredPermission("targets.delete")
     public String restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
         validateSelectedIds(bulkIds);
 
         targetService.restore(bulkIds, admin);
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         return TARGETS_LIST_REDIRECT + "&showDeleted=true";
     }
 
     private void validateSelectedIds(Collection<Integer> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            throw new RequestErrorException("bulkAction.nothing.target");
+            throw new BadRequestException("bulkAction.nothing.target");
         }
     }
 
     @RequestMapping("/confirm/bulk/delete.action")
+    @RequiredPermission("targets.delete")
     public String confirmBulkDelete(@ModelAttribute("form") BulkActionForm form, Popups popups, Admin admin, Model model) {
         validateSelectedIds(form.getBulkIds());
 
-        if (admin.isRedesignedUiUsed()) {
-            ServiceResult<List<String>> result = targetService.getTargetNamesForDeletion(form.getBulkIds(), admin);
-            popups.addPopups(result);
+        ServiceResult<List<String>> result = targetService.getTargetNamesForDeletion(form.getBulkIds(), admin);
+        popups.addPopups(result);
 
-            if (!result.isSuccess()) {
-                return MESSAGES_VIEW;
-            }
-
-            model.addAttribute("names", result.getResult());
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
         }
+
+        model.addAttribute("names", result.getResult());
 
         return "targets_bulk_delete_confirm";
     }
 
     @PostMapping("/bulk/delete.action")
+    @RequiredPermission("targets.delete")
     public String bulkDelete(@ModelAttribute("form") BulkActionForm form, Admin admin, Popups popups) {
-        if (admin.isRedesignedUiUsed()) {
-            List<Integer> ids = targetService.bulkDeleteRedesigned(new HashSet<>(form.getBulkIds()), admin);
-            if (CollectionUtils.isNotEmpty(ids)) {
-                popups.success(SELECTION_DELETED_MSG);
-                userActivityLogService.writeUserActivityLog(
-                        admin,
-                        "delete target group",
-                        "deleted targets with following ids: " + StringUtils.join(ids, ", ")
-                );
-            }
-        } else {
-            Map<Integer, String> targetNamesMap = getTargetNamesToDelete(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
-            Set<Integer> targetsToDelete = targetNamesMap.keySet();
-
-            if (!targetNamesMap.isEmpty()) {
-                ServiceResult<List<Integer>> deletionResult = targetService.bulkDelete(targetsToDelete, admin);
-
-                if (deletionResult.isSuccess()) {
-                    popups.success(SELECTION_DELETED_MSG);
-                } else {
-                    popups.addPopups(deletionResult);
-                }
-
-                for (Integer deletedTarget : deletionResult.getResult()) {
-                    userActivityLogService.writeUserActivityLog(admin,
-                            "delete target group",
-                            String.format("%s (%d)", targetNamesMap.get(deletedTarget), deletedTarget));
-                }
-            }
+        List<Integer> ids = targetService.bulkDelete(new HashSet<>(form.getBulkIds()), admin);
+        if (CollectionUtils.isNotEmpty(ids)) {
+            popups.selectionDeleted();
+            userActivityLogService.writeUserActivityLog(
+                    admin,
+                    "delete target group",
+                    "deleted targets with following ids: " + StringUtils.join(ids, ", ")
+            );
         }
 
         return TARGETS_LIST_REDIRECT;
     }
 
     @RequestMapping("{id:\\d+}/confirm/delete.action")
-    public String confirmDelete(@PathVariable int id, Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, Popups popups, Model model) {
-        final int companyId = admin.getCompanyID();
-        try {
-            final Target targetGroup = targetService.getTargetGroup(id, companyId);
-            simpleActionForm.setId(targetGroup.getId());
-            simpleActionForm.setShortname(targetGroup.getTargetName());
-
-            loadDependentBirtReports(id, popups, admin, model);
-        } catch (UnknownTargetGroupIdException e) {
+    @RequiredPermission("targets.delete")
+    public String confirmDelete(@PathVariable int id, Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, Popups popups) {
+        Target targetGroup = targetService.getTargetGroupOrNull(id, admin.getCompanyID());
+        if (targetGroup == null) {
             popups.alert(TARGET_DELETE_ERROR_MSG);
             return MESSAGES_VIEW;
         }
+
+        simpleActionForm.setId(targetGroup.getId());
+        simpleActionForm.setShortname(targetGroup.getTargetName());
+
+        loadDependentBirtReports(id, popups, admin);
 
         final SimpleServiceResult canBeDeletedResult = targetService.canBeDeleted(id, admin);
         if (canBeDeletedResult.isSuccess()) {
@@ -222,9 +186,9 @@ public class TargetController implements XssCheckAware {
     }
 
     @PostMapping("/delete.action")
+    @RequiredPermission("targets.delete")
     public String delete(Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, Popups popups) {
-        final boolean success = deleteTarget(simpleActionForm.getId(), admin, popups);
-        if (success) {
+        if (deleteTarget(simpleActionForm.getId(), admin, popups)) {
             return TARGETS_LIST_REDIRECT;
         }
 
@@ -232,11 +196,12 @@ public class TargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{id:\\d+}/confirm/delete/recipients.action")
+    @RequiredPermission("recipient.delete")
     public String confirmDeleteRecipients(Model model, @PathVariable int id, Admin admin, Popups popups) {
         final Optional<Integer> numOfRecipientsOpt = targetService.getNumberOfRecipients(id, admin.getCompanyID());
         if (numOfRecipientsOpt.isEmpty()) {
             logger.warn("It is not possible to delete recipients for target with id: {}", id);
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return MESSAGES_VIEW;
         }
         model.addAttribute("numberOfRecipients", numOfRecipientsOpt.get());
@@ -245,44 +210,47 @@ public class TargetController implements XssCheckAware {
     }
 
     @PostMapping("/{id:\\d+}/delete/recipients.action")
+    @RequiredPermission("recipient.delete")
     public String deleteRecipients(Admin admin, @PathVariable int id, Popups popups) {
         final boolean deletedSuccessfully = targetService.deleteRecipients(id, admin.getCompanyID());
 
         if (!deletedSuccessfully) {
             logger.warn("Could not delete recipients for target with id: {}", id);
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return MESSAGES_VIEW;
         }
 
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         userActivityLogService.writeUserActivityLog(admin, "edit target group",
                 "All recipients deleted from target group with id=" + id);
         return TARGETS_LIST_REDIRECT;
     }
 
-    @RequestMapping("/{id:\\d+}/addToFavorites.action")
+    @PostMapping("/{id:\\d+}/addToFavorites.action")
+    @RequiredPermission("targets.show")
     public ResponseEntity<Object> addToFavorites(@PathVariable int id, Admin admin) {
         try {
             targetService.addToFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             logger.error(String.format("Can't add target group [id = %d] to favorites. %s", id, e.getMessage()), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    @RequestMapping("/{id:\\d+}/removeFromFavorites.action")
+    @PostMapping("/{id:\\d+}/removeFromFavorites.action")
+    @RequiredPermission("targets.show")
     public ResponseEntity<Object> removeFromFavorites(@PathVariable int id, Admin admin) {
         try {
             targetService.removeFromFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             logger.error(String.format("Can't remove target group [id = %d] from favorites. %s.", id, e.getMessage()), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    private PaginatedListImpl<TargetLight> getPaginatedTargetGroupsOverview(TargetForm form, Admin admin) {
+    private PaginatedList<TargetLight> getPaginatedTargetGroupsOverview(TargetForm form, Admin admin) {
         return targetService.getTargetLightsPaginated(
                 getOverviewTargetLightsOptionsBuilder(admin, form).build(),
                 form.getSearchComplexity()
@@ -293,17 +261,11 @@ public class TargetController implements XssCheckAware {
         return TargetLightsOptions.builder()
                 .setAdminId(admin.getAdminID())
                 .setCompanyId(admin.getCompanyID())
-                .setWorldDelivery(form.isShowWorldDelivery())
-                .setAdminTestDelivery(form.isShowTestAndAdminDelivery())
                 .setDeliveryOption(form.getSearchDeliveryOption())
-                .setSearchName(form.isSearchNameChecked())
-                .setSearchDescription(form.isSearchDescriptionChecked())
-                .setSearchText(form.getSearchQueryText())
                 .setSearchName(form.getSearchName())
                 .setSearchDescription(form.getSearchDescription())
                 .setCreationDate(form.getSearchCreationDate())
                 .setChangeDate(form.getSearchChangeDate())
-                .setRedesignedUiUsed(admin.isRedesignedUiUsed())
                 .setDeleted(form.isShowDeleted())
                 .setPageNumber(form.getPage())
                 .setPageSize(form.getNumberOfRows())
@@ -311,52 +273,14 @@ public class TargetController implements XssCheckAware {
                 .setSorting(form.getSort());
     }
 
-    // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private void prepareListParameters(TargetForm form, Admin admin) {
-        synchronized (WebStorage.TARGET_OVERVIEW) {
-            final boolean isBundlePresented = webStorage.isPresented(WebStorage.TARGET_OVERVIEW);
-            webStorage.access(WebStorage.TARGET_OVERVIEW, storage -> {
-                if (form.getNumberOfRows() > 0) {
-                    storage.setRowsCount(form.getNumberOfRows());
-                    storage.setShowWorldDelivery(form.isShowWorldDelivery());
-                    storage.setShowTestAndAdminDelivery(form.isShowTestAndAdminDelivery());
-                } else {
-                    form.setNumberOfRows(storage.getRowsCount());
-                    form.setShowWorldDelivery(storage.isShowWorldDelivery());
-                    if (!isBundlePresented && admin.permissionAllowed(Permission.MAILING_SEND_ADMIN_TARGET)) {
-                        storage.setShowTestAndAdminDelivery(true);
-                    }
-                    form.setShowTestAndAdminDelivery(storage.isShowTestAndAdminDelivery());
-                }
-            });
-        }
-    }
-
-    private Map<Integer, String> getTargetNamesToDelete(Set<Integer> bulkIds, int companyId) {
-        final Map<Integer, String> targetsToDelete = new HashMap<>();
-        for (int id : bulkIds) {
-            String name = targetService.getTargetName(id, companyId);
-            if (name != null) {
-                targetsToDelete.put(id, name);
-            }
-        }
-        return targetsToDelete;
-    }
-
-    private void loadDependentBirtReports(int targetId, Popups popups, Admin admin, Model model) {
+    private void loadDependentBirtReports(int targetId, Popups popups, Admin admin) {
         final List<LightweightBirtReport> affectedReports = birtReportDao.getLightweightBirtReportsBySelectedTarget(admin.getCompanyID(), targetId);
         if (CollectionUtils.isNotEmpty(affectedReports)) {
-            if (admin.isRedesignedUiUsed()) {
-                List<ObjectUsage> usages = affectedReports.stream()
-                        .map(r -> new ObjectUsage(ObjectUserType.BIRT_REPORT, r.getId(), r.getShortname()))
-                        .toList();
+            List<ObjectUsage> usages = affectedReports.stream()
+                    .map(r -> new ObjectUsage(ObjectUsageType.BIRT_REPORT, r.getId(), r.getShortname()))
+                    .toList();
 
-                popups.warning(new ObjectUsages(usages).toMessage("warning.target.delete.affectedBirtReports", admin.getLocale()));
-            } else {
-                model.addAttribute("affectedReports", affectedReports);
-                model.addAttribute("affectedReportsMessageKey", "warning.target.delete.affectedBirtReports");
-                model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_WARNING);
-            }
+            popups.warning(new ObjectUsages(usages).toMessage("warning.target.delete.affectedBirtReports", admin.getLocale()));
         }
     }
 
@@ -374,11 +298,12 @@ public class TargetController implements XssCheckAware {
         if (deletionResult.isSuccess()) {
             userActivityLogService.writeUserActivityLog(admin, "delete target group", String.format("%s (%d)", name, targetId));
 
-            popups.success(SELECTION_DELETED_MSG);
+            popups.selectionDeleted();
             return true;
         }
 
         popups.addPopups(deletionResult);
         return false;
     }
+
 }

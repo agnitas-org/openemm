@@ -25,10 +25,8 @@ import com.agnitas.emm.mobilephone.dao.MobilephoneNumberWhitelistDao;
  */
 public final class MobilephoneNumberWhitelistImpl implements MobilephoneNumberWhitelist {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(MobilephoneNumberWhitelistImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(MobilephoneNumberWhitelistImpl.class);
 
-	/** DAO for accessing whitelist data. */
 	private MobilephoneNumberWhitelistDao whitelistDao;
 	
 	@Override
@@ -61,5 +59,4 @@ public final class MobilephoneNumberWhitelistImpl implements MobilephoneNumberWh
 	public final void setMobilephoneNumberWhitelistDao(final MobilephoneNumberWhitelistDao dao) {
 		this.whitelistDao = Objects.requireNonNull(dao, "Whitelist DAO is null");
 	}
-
 }

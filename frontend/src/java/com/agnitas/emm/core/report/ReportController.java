@@ -14,13 +14,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.emm.core.report.services.RecipientReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -33,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/report")
-@PermissionMapping("report")
 public class ReportController implements XssCheckAware {
 
     private static final String RECIPIENT_REPORT_RIGHTOFACCESS = "recipient.report.rightOfAccess";
@@ -46,19 +44,18 @@ public class ReportController implements XssCheckAware {
         this.recipientService = recipientService;
     }
 
-    @PermissionMapping("recipients")
     @GetMapping(value = "/recipients.action")
+    @AlwaysAllowed
     public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") int recipientId, Admin admin) {
         String report = recipientReportService.getRecipientTxtReport(recipientId, admin.getCompanyID(), admin.getLocale());
 
         byte[] byteResource = report.getBytes(StandardCharsets.UTF_8);
-        ByteArrayResource resource = new ByteArrayResource(byteResource);
         String email = recipientService.getEmail(recipientId, admin.getCompanyID());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + makeReportFileName(email, admin.getLocale()))
                 .contentLength(byteResource.length)
                 .contentType(MediaType.TEXT_PLAIN)
-                .body(resource);
+                .body(new ByteArrayResource(byteResource));
     }
 
     private String makeReportFileName(String recipientEmail, Locale locale) {
@@ -68,4 +65,5 @@ public class ReportController implements XssCheckAware {
         recipientEmail = recipientEmail.replace("@", "at");
         return prefix + "_" + recipientEmail + RecipientReportUtils.TXT_EXTENSION;
     }
+
 }

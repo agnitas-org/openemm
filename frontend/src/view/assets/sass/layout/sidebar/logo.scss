@@ -1,0 +1,39 @@
+.sidebar__block--logo {
+  height: $header-height;
+
+  @include wide-sidebar {
+    align-items: flex-start;
+  }
+}
+
+.sidebar__logo-img {
+  @include size($sidebar-icon-size);
+  border-radius: $border-radius-sm;
+  background-color: $white;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+}
+
+.sidebar__logo-title {
+  display: none;
+  @include font($font-size-base);
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+
+  @include wide-sidebar {
+    display: initial;
+  }
+}
+
+.sidebar__logo-link {
+  @include flex-row($gap-x-sm);
+  align-items: center;
+
+  @include wide-sidebar {
+    width: 100%;
+  }
+}

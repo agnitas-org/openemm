@@ -10,25 +10,23 @@
 
 package com.agnitas.startuplistener.dao;
 
-import com.agnitas.startuplistener.common.JobState;
-import com.agnitas.startuplistener.common.StartupJobEntry;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
 import java.util.List;
 
-public final class StartupJobEntryDaoImpl extends BaseDaoImpl implements StartupJobEntryDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.startuplistener.common.JobState;
+import com.agnitas.startuplistener.common.StartupJobEntry;
+
+public class StartupJobEntryDaoImpl extends BaseDaoImpl implements StartupJobEntryDao {
 
 	@Override
-	public final List<StartupJobEntry> listActiveAndPendingJobs() {
-		final String sql = "SELECT * FROM startup_job_tbl WHERE enabled = 1 AND state = ?";
-		
+	public List<StartupJobEntry> listActiveAndPendingJobs() {
+		String sql = "SELECT * FROM startup_job_tbl WHERE enabled = 1 AND state = ?";
 		return select(sql, new StartupJobEntryRowMapper(), JobState.PENDING.getCode());
 	}
 
 	@Override
-	public final void updateJobState(final int id, final JobState newState) {
-		final String sql = "UPDATE startup_job_tbl SET state = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?";
-		
+	public void updateJobState(int id, JobState newState) {
+		String sql = "UPDATE startup_job_tbl SET state = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?";
 		update(sql, newState.getCode(), id);
 	}
 

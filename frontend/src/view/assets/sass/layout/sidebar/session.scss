@@ -1,0 +1,30 @@
+.sidebar__block--session {
+  position: relative;
+  order: 1;
+
+  @include wide-sidebar {
+    order: initial;
+  }
+}
+
+.sidebar__session-time {
+  @include font($font-size-sm, $font-weight-semibold, 1);
+  min-width: $min-sidebar-width;
+  display: inline-block;
+  text-align: center;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+
+  @include wide-sidebar {
+    font-size: $font-size-base;
+  }
+}
+
+.sidebar__session-label {
+  display: none;
+  @include wide-sidebar {
+    display: initial;
+  }
+}

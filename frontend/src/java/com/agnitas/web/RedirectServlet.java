@@ -17,32 +17,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.agnitas.beans.Recipient;
-import com.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.emm.core.commons.exceptions.HttpMethodNotAllowedException;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.Constants;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.PunycodeCodec;
-import com.agnitas.util.TimeoutLRUMap;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-
 import com.agnitas.beans.Company;
+import com.agnitas.beans.Recipient;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
@@ -54,27 +32,47 @@ import com.agnitas.emm.core.commons.intelliad.IntelliAdTrackingData;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdTrackingStringParser;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID.NamedUidBit;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import com.agnitas.emm.core.deeptracking.web.DeepTrackingCookieUtil;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.cache.SnowflakeMailingCache;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.AccessDataService;
+import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.trackablelinks.common.DeepTrackingMode;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.honeypot.service.HoneypotLinkService;
 import com.agnitas.rdir.processing.SubstituteLinkRdirPostProcessor;
 import com.agnitas.rdir.processing.SubstituteLinkResult;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DeepTrackingToken;
+import com.agnitas.util.PunycodeCodec;
+import com.agnitas.util.TimeoutLRUMap;
 import com.agnitas.util.backend.Decrypt;
 import com.agnitas.web.cookies.SameSiteCookiePolicy;
+import com.agnitas.web.exception.HttpMethodNotAllowedException;
 import com.agnitas.web.util.RequestUtils;
-
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 public class RedirectServlet extends HttpServlet {
 	/** Serial version UID. */
@@ -499,7 +497,8 @@ public class RedirectServlet extends HttpServlet {
 				deepTrackingToken.getCompanyID(),
 				deepTrackingToken.getCustomerID(),
 				deepTrackingToken.getMailingID(),
-				deepTrackingToken.getLinkID()
+				deepTrackingToken.getLinkID(),
+				1
 		);
 
 		return uid;

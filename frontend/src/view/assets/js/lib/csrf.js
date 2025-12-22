@@ -1,56 +1,102 @@
-(function () {
+/*doc
+---
+title: CSRF
+name: csrf
+category: Javascripts - CSRF
+---
 
-    function readActualToken() {
-        if (isProtectionEnabled()) {
-            return AGN.Lib.Storage.readCookie(window.csrfCookieName);
-        }
+For various manipulations related to the csrf token, you can use `AGN.Lib.CSRF`.
 
-        return '';
+Below are some methods you can call:
+
+method                               |description                                                                                 |
+-------------------------------------|--------------------------------------------------------------------------------------------|
+`readActualToken()`                  |Returns actual token from cookies                                                           |
+`getHeaderName()`                    |Returns name of request header                                                              |
+`getCookieName()`                    |Returns name of cookie                                                                      |
+`getParameterName()`                 |Returns name of request parameter                                                           |
+`isProtectionEnabled()`              |Returns `true` if protection enabled                                                        |
+`setTokenToReqHeader(jqxhr, reqType)`|Set actual token value to the request header                                                |
+`updateTokenInDOM($scope)`           |Updates the CSRF related inputs inside the DOM to actual value. `$scope` can be a plain text|
+
+*/
+
+(() => {
+
+  class CSRF {
+
+    static HEADER_NAME = '';
+    static COOKIE_NAME = '';
+    static PARAM_NAME = '';
+
+    static getParameterName() {
+      return this.PARAM_NAME;
     }
 
-    function getParameterName() {
-       return window.csrfParameterName;
+    static getCookieName() {
+      return this.COOKIE_NAME;
     }
 
-    function isProtectionEnabled() {
-        return window.csrfHeaderName && getParameterName() && window.csrfCookieName;
+    static getHeaderName() {
+      return this.HEADER_NAME;
     }
 
-    function setTokenToReqHeader(jqxhr, reqType) {
-        if (isProtectionEnabled() && reqType !== 'GET') {
-            const csrfToken = readActualToken();
-            jqxhr.setRequestHeader(window.csrfHeaderName, csrfToken);
-        }
+    static setHeaderName(headerName) {
+      this.HEADER_NAME = headerName;
     }
 
-    function updateTokenInDOM($scope, needsHtmlInResult) {
-        if (!isProtectionEnabled()) {
-            return $scope;
-        }
-
-        if (!$scope) {
-            $scope = $(document);
-        } else if (!($scope instanceof $)) {
-            $scope = $('<div>').append($scope);
-        }
-
-        const csrfToken = readActualToken();
-        const $tokenInputs = $scope.find('input[name="' + window.csrfParameterName + '"]');
-
-        _.each($tokenInputs, function (input) {
-            $(input).val(csrfToken);
-        });
-
-        if (needsHtmlInResult) {
-            return $scope.html();
-        }
+    static setParamName(paramName) {
+      this.PARAM_NAME = paramName;
     }
 
-    AGN.Lib.CSRF = {
-        readActualToken: readActualToken,
-        isProtectionEnabled: isProtectionEnabled,
-        setTokenToReqHeader: setTokenToReqHeader,
-        getParameterName: getParameterName,
-        updateTokenInDOM: updateTokenInDOM
-    };
+    static setCookieName(cookieName) {
+      this.COOKIE_NAME = cookieName;
+    }
+
+    static isProtectionEnabled() {
+      return this.getHeaderName() && this.getParameterName() && this.getCookieName();
+    }
+
+    static readActualToken() {
+      if (CSRF.isProtectionEnabled()) {
+        return AGN.Lib.Storage.readCookie(this.getCookieName());
+      }
+
+      return '';
+    }
+
+    static setTokenToReqHeader(jqxhr, reqType) {
+      if (reqType !== 'GET') {
+        jqxhr.setRequestHeader(this.getHeaderName(), this.readActualToken());
+      }
+    }
+
+    static updateTokenInDOM($scope = $(document)) {
+      if (!this.isProtectionEnabled()) {
+        return $scope;
+      }
+
+      const isPlainText = !($scope instanceof $);
+      if (isPlainText) {
+        $scope = $('<div>').append($scope);
+      }
+
+      const csrfToken = this.readActualToken();
+      const $tokenInputs = $scope.find(`input[name="${this.getParameterName()}"]`);
+
+      _.each($tokenInputs, input => {
+        if (isPlainText) {
+          $(input).attr('value', csrfToken);
+        } else {
+          $(input).val(csrfToken);
+        }
+      });
+
+      if (isPlainText) {
+        return $scope.html();
+      }
+    }
+  }
+
+  AGN.Lib.CSRF = CSRF;
 })();

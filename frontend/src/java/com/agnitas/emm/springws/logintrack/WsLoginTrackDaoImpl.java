@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.springws.logintrack;
 
-import org.agnitas.emm.core.logintracking.dao.AbstractLoginTrackDaoImpl;
+import com.agnitas.emm.core.loginmanager.dao.impl.AbstractLoginTrackDaoImpl;
 
 /**
  * Implementation of {@link AbstractLoginTrackDaoImpl} for tracking webservice logins.

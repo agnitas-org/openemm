@@ -17,9 +17,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.DateUtil;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.DateUtil;
+import com.agnitas.emm.core.serverstatus.PuppeteerStatus;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
@@ -53,6 +54,7 @@ public class ServerStatus {
     private boolean dbConnectStatus;
     private int diskSpaceFreePercentage;
     private List<VersionStatus> dbVersionStatuses;
+    private PuppeteerStatus puppeteerStatus;
 
     public String getLicenseName() {
         return licenseName;
@@ -158,6 +160,10 @@ public class ServerStatus {
         return diskSpaceFreePercentage;
     }
 
+    public PuppeteerStatus getPuppeteerStatus() {
+        return puppeteerStatus;
+    }
+
     public static ServerStatus.StatusBuilder builder(String version, String installPath, Locale locale, final ConfigService configService) {
         return new ServerStatus.StatusBuilder(version, installPath, locale, configService);
     }
@@ -184,6 +190,7 @@ public class ServerStatus {
         private String dbVersion;
         private boolean dbConnectStatus;
         private int diskSpaceFreePercentage;
+        private PuppeteerStatus puppeteerStatus;
         private final ConfigService configService;
     
         public StatusBuilder(String version, String installPath, Locale locale, final ConfigService configService) {
@@ -234,6 +241,11 @@ public class ServerStatus {
             return this;
         }
 
+        public ServerStatus.StatusBuilder puppeteerStatus(PuppeteerStatus puppeteerStatus) {
+            this.puppeteerStatus = puppeteerStatus;
+            return this;
+        }
+
         public ServerStatus build() {
             Date now = new Date();
             ServerStatus serverStatus = new ServerStatus();
@@ -280,6 +292,7 @@ public class ServerStatus {
             
             serverStatus.dbVersionStatuses = dbVersionStatuses;
             serverStatus.diskSpaceFreePercentage = diskSpaceFreePercentage;
+            serverStatus.puppeteerStatus = puppeteerStatus;
             return serverStatus;
         }
     }

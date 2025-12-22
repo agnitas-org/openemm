@@ -26,6 +26,7 @@ import com.agnitas.beans.ExportColumnMapping;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.autoexport.beans.AutoExport;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
@@ -37,9 +38,8 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.importvalues.Separator;
 import com.agnitas.util.importvalues.TextRecognitionChar;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 
 public class RecipientExportReporter {

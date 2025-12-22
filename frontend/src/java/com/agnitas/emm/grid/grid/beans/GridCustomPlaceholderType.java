@@ -16,11 +16,15 @@ import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAUL
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_LINK_HREF;
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_TEXT;
 
+import java.util.Optional;
+import java.util.stream.Stream;
+
 /**
  * Represents a type of custom (user-defined) placeholder (see {@link com.agnitas.emm.grid.grid.beans.GridDivMarkupSpanType#Placeholder}).
  * Attention: these types are persisted in the database as numbers so never change an assigned id values!
  */
 public enum GridCustomPlaceholderType {
+
     Label(0, PLACEHOLDER_DEFAULT_CONTENT_TEXT),
     Text(1, PLACEHOLDER_DEFAULT_CONTENT_BIG_TEXT),
     Image(2, PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC),
@@ -39,13 +43,15 @@ public enum GridCustomPlaceholderType {
         this.stub = stub;
     }
     
-    public static GridCustomPlaceholderType getPlaceholderTypeFromId(int id) throws Exception {
-    	for (GridCustomPlaceholderType value : GridCustomPlaceholderType.values()) {
-    		if (value.getId() == id) {
-    			return value;
-    		}
-    	}
-    	throw new Exception("Invalid PlaceholderType id: " + id);
+    public static GridCustomPlaceholderType getPlaceholderTypeFromId(int id) {
+        return findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid PlaceholderType id: " + id));
+    }
+
+    public static Optional<GridCustomPlaceholderType> findById(int id) {
+        return Stream.of(GridCustomPlaceholderType.values())
+                .filter(t -> t.getId() == id)
+                .findAny();
     }
 
     public static GridCustomPlaceholderType getById(int id) {
@@ -67,13 +73,13 @@ public enum GridCustomPlaceholderType {
     	return null;
     }
     
-    public static GridCustomPlaceholderType getPlaceholderTypeByName(String name) throws Exception {
+    public static GridCustomPlaceholderType getPlaceholderTypeByName(String name) {
     	for (GridCustomPlaceholderType value : GridCustomPlaceholderType.values()) {
     		if (value.name().equalsIgnoreCase(name)) {
     			return value;
     		}
     	}
-    	throw new Exception("Invalid PlaceholderType name: " + name);
+    	throw new IllegalArgumentException("Invalid PlaceholderType name: " + name);
     }
 
     public int getId() {

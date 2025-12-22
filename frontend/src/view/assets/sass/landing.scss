@@ -1,0 +1,29 @@
+
+/*
+Simplified css for landing pages used in:
+  - form not found:   form-not-found.jsp
+  - mailing approved: mailing-approved.jsp
+*/
+
+$assets-path: '';
+@import "custom-bootstrap-variables";
+@import "custom-font-awesome-variables";
+@import "../../WEB-INF/node_modules/bootstrap/scss/bootstrap";
+@import 'vendor/font-awesome/v5.15.4/fontawesome';
+@import 'vendor/font-awesome/v5.15.4/solid';
+
+@import "boot/variables";
+@import "boot/mixins/_.scss";
+
+@import "base/fonts";
+@import "base/base";
+@import "base/css-variables";
+@import "base/utilities";
+
+@import "layout/systempage";
+
+@import "modules/badge/_.scss";
+@import "modules/button/_.scss";
+@import "modules/tile";
+@import "modules/notification";
+@import "modules/icon/_.scss";

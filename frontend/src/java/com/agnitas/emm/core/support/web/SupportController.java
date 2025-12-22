@@ -20,18 +20,17 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.web.UserFormSupportForm;
-import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
 import com.agnitas.web.perm.annotations.Anonymous;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import jakarta.servlet.http.HttpSession;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,8 +46,7 @@ public class SupportController implements XssCheckAware {
     private final String formNotFoundUrlParameterTemplate;
 
     public SupportController(JavaMailService javaMailService, ConfigService configService,
-                             String formNotFoundEmailTemplate,
-                             String formNotFoundUrlParameterTemplate) {
+                             String formNotFoundEmailTemplate, String formNotFoundUrlParameterTemplate) {
         this.javaMailService = javaMailService;
         this.configService = configService;
         this.formNotFoundEmailTemplate = formNotFoundEmailTemplate;
@@ -56,20 +54,17 @@ public class SupportController implements XssCheckAware {
     }
 
     @GetMapping("/help-center.action")
-    public String helpCenter(@RequestParam(name = "helpKey", required = false) String helpKey, Model model) {
+    @AlwaysAllowed
+    public String helpCenter(@RequestParam(name = "helpKey", required = false) String helpKey, Model model,
+                             HttpSession session, Admin admin) {
         model.addAttribute("helpKey", helpKey);
-        addHelpCenterAttrs(model);
+        addHelpCenterAttrs(model, session, admin);
+
         return "help_center";
     }
 
-    protected void addHelpCenterAttrs(Model model) {
+    protected void addHelpCenterAttrs(Model model, HttpSession session, Admin admin) {
         // empty for OpenEMM
-    }
-
-    @PostMapping("/sendMessage.action")
-    public ResponseEntity<DataResponseDto<String>> sendSupportMessage(@RequestParam String content, Admin admin, Popups popups) {
-        String answer = RandomStringUtils.randomAlphabetic(5, 250);
-        return ResponseEntity.ok(new DataResponseDto<>(answer, popups, true));
     }
 
     @Anonymous
@@ -123,4 +118,5 @@ public class SupportController implements XssCheckAware {
     private boolean isParamValueEmpty(Map<String, List<String>> params, String paramName) {
         return StringUtils.isBlank(params.getOrDefault(paramName, Collections.singletonList("")).get(0));
     }
+
 }

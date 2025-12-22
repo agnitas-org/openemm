@@ -1,0 +1,77 @@
+
+<script id="mailing-data-transfer-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" data-initializer="mailing-data-transfer-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="workflow.settings.overtake.title"/></h1>
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <mvc:message code="workflow.mailing.transferQuestion"/>
+                    
+                    <div class="d-flex flex-column gap-2 mt-3">
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_PLANNED_DATE)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_PLANNED_DATE }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="mailing.plan.date"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_MAILING_LIST)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_MAILING_LIST }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="mailinglist"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_TARGET_GROUPS)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_TARGET_GROUPS }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="Targetgroups"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_ARCHIVE)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_ARCHIVE }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="mailing.archive"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_LIST_SPLIT)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_LIST_SPLIT }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="mailing.listsplit"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.includes(Def.MAILING_PARAM_SEND_DATE)) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" data-mailing-param="{{= Def.MAILING_PARAM_SEND_DATE }}"/>
+                                <label class="form-label form-check-label"><mvc:message code="mailing.SendingTime"/></label>
+                            </div>
+                        {{ } }}
+                        {{ if (paramsToAsk.length > 1) { }}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="transferAllSettings"/>
+                                <label class="form-label form-check-label"><mvc:message code="workflow.mailing.transfer.allSettings"/></label>
+                            </div>
+                        {{ } }}
+                    </div>
+
+                    <div class="notification-simple notification-simple--info mt-3">
+                        <mvc:message code="workflow.mailing.transfer.notice"/>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger js-confirm-negative">
+                        <mvc:message code="default.No"/>
+                    </button>
+                    <button type="button" class="btn btn-primary" data-action="transfer-mailing-data">
+                        <mvc:message code="workflow.mailing.transfer"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

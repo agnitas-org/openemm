@@ -154,6 +154,13 @@ public interface ExtensibleUID {
 	int getUrlID();
 	
 	/**
+	 * Returns the position for this URL in the related content block, starting by 1
+	 * 
+	 * @return position
+	 */
+	int getPosition();
+	
+	/**
 	 * Returns the license ID.
 	 *
 	 * @return license ID
@@ -180,4 +187,18 @@ public interface ExtensibleUID {
 	 * @return the instance of the ExtensibleUID for daisy chaining
 	 */
 	ExtensibleUID setSendDate (long sendDate);
+	
+	/**
+	 * Returns the maildrop_status_tbl.status_field from sent mailing
+	 * 
+	 * @return the status field or '\0', if not set
+	 */
+	char getStatusField ();
+	
+	/**
+	 * Update UID seting a status field
+	 * 
+	 * @return the instance of the ExtensibleUID for daisy chaining
+	 */
+	ExtensibleUID setStatusField (char statusField);
 }

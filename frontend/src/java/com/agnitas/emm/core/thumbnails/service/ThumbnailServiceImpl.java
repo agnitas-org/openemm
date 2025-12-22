@@ -23,28 +23,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-
 import javax.imageio.ImageIO;
 
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.impl.MailingComponentImpl;
+import com.agnitas.dao.MailingComponentDao;
+import com.agnitas.emm.core.thumbnails.exception.ThumbnailCreationException;
 import com.agnitas.util.AgnUtils;
+import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.ServletContextAware;
 
-import com.agnitas.dao.MailingComponentDao;
-
-import jakarta.servlet.ServletContext;
-
 /**
  * Implementation of {@link ThumbnailService}.
  */
-public final class ThumbnailServiceImpl implements ThumbnailService, ServletContextAware {
+public class ThumbnailServiceImpl implements ThumbnailService, ServletContextAware {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(ThumbnailServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(ThumbnailServiceImpl.class);
 
 	/** Image type of thumbnail. */
 	public static final String THUMBNAIL_IMAGE_TYPE = "png";
@@ -58,7 +55,16 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	private MailingComponentDao componentDao;
 	
 	private ServletContext servletContext;
-	
+
+	@Override
+	public void tryUpdateMailingThumbnailByWebservice(int companyID, int mailingID) {
+		try {
+			this.updateMailingThumbnailByWebservice(companyID, mailingID);
+		} catch (Exception e) {
+			LOGGER.error("Thumbnail creation failed", e);
+		}
+	}
+
 	/**
 	 * The current implementation replaces the the mailing thumbnail by
 	 * a dummy thumbnail.
@@ -68,7 +74,7 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * with a valid EMM user. Both is not available in webservice context.
 	 */
 	@Override
-	public void updateMailingThumbnailByWebservice(final int companyID, final int mailingID) throws Exception {
+	public void updateMailingThumbnailByWebservice(int companyID, int mailingID) {
 		final MailingComponent mailingComponent = readOrCreateThumbnailComponent(companyID, mailingID);
 		updateThumbnailData(mailingComponent);
 		
@@ -83,7 +89,7 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * 
 	 * @return mailing component for thumbnails
 	 */
-	private final MailingComponent readOrCreateThumbnailComponent(final int companyID, final int mailingID) {
+	private MailingComponent readOrCreateThumbnailComponent(int companyID, int mailingID) {
 		final List<MailingComponent> list = this.componentDao.getMailingComponentsByType(companyID, mailingID, List.of(MailingComponentType.ThumbnailImage));
 		
 		return list.isEmpty()
@@ -99,7 +105,7 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * 
 	 * @return empty mailing component for storing thumbnail
 	 */
-	private final MailingComponent createEmptyComponent(final int companyID, final int mailingID) {
+	private MailingComponent createEmptyComponent(int companyID, int mailingID) {
 		final MailingComponent mailingComponent = new MailingComponentImpl();
 		mailingComponent.setCompanyID(companyID);
 		mailingComponent.setComponentName("THUMBNAIL.png");
@@ -117,23 +123,28 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * 
 	 * @throws IOException on errors creating thumbnail
 	 */
-	private final void updateThumbnailData(final MailingComponent mailingComponent) throws IOException {
-		assert mailingComponent.getType() == MailingComponentType.ThumbnailImage;	// Ensured by this service
-		
-		final Dimension maxThumbailSize = readMaxThumbnailSize(mailingComponent.getCompanyID());
-		
-		final byte[] imageData = thumbnailDataAsArray(maxThumbailSize);
-		mailingComponent.setBinaryBlock(imageData, THUMBNAIL_MIMETYPE);
+	private void updateThumbnailData(MailingComponent mailingComponent) {
+		if (mailingComponent.getType() != MailingComponentType.ThumbnailImage) {
+			throw new IllegalArgumentException(
+                    "Invalid component type: expected ThumbnailImage but got %s".formatted(mailingComponent.getType())
+			);
+		}
+
+		try {
+			byte[] imageData = thumbnailDataAsArray();
+			mailingComponent.setBinaryBlock(imageData, THUMBNAIL_MIMETYPE);
+		} catch (IOException e) {
+			throw new ThumbnailCreationException(
+					"Thumbnail creation failed for mailing (%d)".formatted(mailingComponent.getMailingID()), e
+			);
+		}
 	}
 
 	/**
 	 * Reads the maximum thumbnail size from config service.
-	 * 
-	 * @param companyID company ID
-	 * 
 	 * @return maximum thumbnail size as configured
 	 */
-	private final Dimension readMaxThumbnailSize(final int companyID) {
+	private Dimension readMaxThumbnailSize() {
 		return new Dimension(
 				ThumbnailService.MAILING_THUMBNAIL_WIDTH,
 				ThumbnailService.MAILING_THUMBNAIL_HEIGHT);
@@ -141,20 +152,19 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	
 	/**
 	 * Returns thumbnails as byte array.
-	 * 
-	 * @param maxThumbnailSize maximum thumbnail size
-	 * 
+	 *
 	 * @return thumbnail as byte array
 	 * 
 	 * @throws IOException on errors creating the thumbnail
 	 */
-	private final byte[] thumbnailDataAsArray(final Dimension maxThumbnailSize) throws IOException {
+	private byte[] thumbnailDataAsArray() throws IOException {
+		Dimension maxThumbnailSize = readMaxThumbnailSize();
+
 		final BufferedImage thumbnailImage = createThumbnailImage(maxThumbnailSize);
 		final BufferedImage scaledImage = scaleAndCropImage(thumbnailImage, maxThumbnailSize);
 		
-		try(final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 			ImageIO.write(scaledImage, THUMBNAIL_IMAGE_TYPE, out);
-			
 			return out.toByteArray();
 		}
 	}
@@ -165,9 +175,8 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * @param maxThumbnailSize maximum thumbnail size
 	 * 
 	 * @return thumbnail image
-	 * @throws IOException
 	 */
-	private final BufferedImage createThumbnailImage(final Dimension maxThumbnailSize) throws IOException {
+	private BufferedImage createThumbnailImage(Dimension maxThumbnailSize) throws IOException {
 		File imageFile = null;
 		try {
 			imageFile = new File(servletContext.getRealPath("images/webservice-dummy-thumbnail.png"));
@@ -187,7 +196,7 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 			if (imageFile == null) {
 				LOGGER.error("Cannot find file by context: images/webservice-dummy-thumbnail.png");
 			} else {
-				LOGGER.error(String.format("File '%s for dummy thumbnail not fond", imageFile.getAbsolutePath()));
+				LOGGER.error("File '{}' for dummy thumbnail not found", imageFile.getAbsolutePath());
 			}
 			
 			try {
@@ -227,7 +236,7 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * 
 	 * @return scaled and cropped copy of source image
 	 */
-	private final BufferedImage scaleAndCropImage(final BufferedImage sourceImage, final Dimension maxThumbnailSize) {
+	private BufferedImage scaleAndCropImage(BufferedImage sourceImage, Dimension maxThumbnailSize) {
 		final int sourceWidth = sourceImage.getWidth();
 		
 		if(sourceWidth == 0) {
@@ -256,12 +265,12 @@ public final class ThumbnailServiceImpl implements ThumbnailService, ServletCont
 	 * 
 	 * @param dao DAO accessing mailing component data
 	 */
-	public final void setMailingComponentDao(final MailingComponentDao dao) {
+	public void setMailingComponentDao(MailingComponentDao dao) {
 		this.componentDao = Objects.requireNonNull(dao, "mailingComponentDao is null");
 	}
 
 	@Override
-	public final void setServletContext(final ServletContext servletContext) {
+	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = Objects.requireNonNull(servletContext, "servletContext is null");
 	}
 

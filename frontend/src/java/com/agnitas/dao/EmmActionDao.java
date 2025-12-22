@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.emm.core.action.bean.EmmAction;
-
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 
 /**
@@ -79,6 +78,7 @@ public interface EmmActionDao {
      * @return List of emm actions or empty list
      */
     List<EmmAction> getEmmActions(int companyID);
+
     List<EmmAction> getEmmActions(int companyID, boolean includeDeleted);
 
     List<EmmAction> getEmmActionsByName(int companyID, String shortName);
@@ -127,33 +127,9 @@ public interface EmmActionDao {
      */
     List<EmmAction> getEmmNotLinkActions( int companyID, boolean includeInactive);
 
-    /**
-     * Loads numbers of usage in forms for emm actions of certain company
-     *
-     * @param companyID
-     *              The id of the company that uses the actions
-     * @return HashMap object
-     */
-    Map<Integer, Integer> loadUsed( int companyID);
-
     List<String> getActionUserFormNames(int actionId, int companyId);
 
-    /**
-     *  Loads list of emm actions with sorting
-     * @return List of emm actions
-     */
-    List<EmmAction> getActionList(int companyID, String sortBy, boolean order);
-
-    /**
-     *  Loads list of emm actions with sorting
-     * @return List of emm actions
-     */
-    List<EmmAction> getActionList(int companyID, String sortBy, boolean order, Boolean activenessFilter);
-
-    List<EmmAction> getEmmActionsByOperationType(int companyID, boolean includeInactive, ActionOperationType... actionTypes);
-
-    // TODO: EMMGUI-714 remove after remove of old design
-    Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, int companyId);
+    List<EmmAction> getActiveEmmActionsByOperationType(int companyID, ActionOperationType... actionTypes);
 
     void setActiveness(Collection<Integer> actionIds, boolean active, int companyId);
 

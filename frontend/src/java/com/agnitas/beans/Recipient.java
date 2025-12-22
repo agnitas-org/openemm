@@ -303,10 +303,8 @@ public interface Recipient {
      * customerID must be set to a valid id.
      * 
      * @return <code>true</code> on success
-     * 
-     * @throws Exception on errors updating data
      */
-	boolean updateInDbWithException() throws Exception;
+	boolean updateInDbWithException();
 
 	Map<Integer, Map<Integer, BindingEntry>> getAllMailingLists();
 

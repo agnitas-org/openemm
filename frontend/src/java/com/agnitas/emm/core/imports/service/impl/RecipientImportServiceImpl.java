@@ -13,11 +13,15 @@ package com.agnitas.emm.core.imports.service.impl;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.imports.service.RecipientImportService;
@@ -28,9 +32,6 @@ import com.agnitas.emm.data.JsonDataProvider;
 import com.agnitas.emm.data.OdsDataProvider;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.ColumnMapping;
-import com.agnitas.beans.ImportProfile;
-import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.service.impl.CSVColumnState;
 import com.agnitas.util.CsvColInfo;
 import com.agnitas.util.CsvDataBreakInsideCellException;
@@ -105,7 +106,7 @@ public class RecipientImportServiceImpl implements RecipientImportService {
                         int columnId;
                         try {
                             columnId = Integer.parseInt(columnMapping.getFileColumn().substring(7));
-                        } catch (@SuppressWarnings("unused") Exception e) {
+                        } catch (Exception e) {
                             return ServiceResult.error(Message.of("error.import.mapping.column.invalid", columnMapping.getFileColumn()));
                         }
                         propertyNamesExpected = Math.max(propertyNamesExpected, columnId);
@@ -151,12 +152,18 @@ public class RecipientImportServiceImpl implements RecipientImportService {
                 for (int idx = 0; (idx < columns.length) && (idx < dataPropertyNames.size()); idx++) {
                     if (columns[idx].getImportedColumn()) {
                         String propertyName = null;
-                        for (ColumnMapping columnMapping : profile.getColumnMapping()) {
-                            if (columns[idx].getColName().equals(columnMapping.getDatabaseColumn())) {
-                                propertyName = columnMapping.getFileColumn();
-                                break;
+
+                        if (profile.isAutoMapping()) {
+                            propertyName = columns[idx].getColName().toUpperCase();
+                        } else {
+                            for (ColumnMapping columnMapping : profile.getColumnMapping()) {
+                                if (columns[idx].getColName().equals(columnMapping.getDatabaseColumn())) {
+                                    propertyName = columnMapping.getFileColumn();
+                                    break;
+                                }
                             }
                         }
+
                         Object dataValueObject = dataItem.get(propertyName);
                         String value;
                         if (dataValueObject == null) {
@@ -175,13 +182,11 @@ public class RecipientImportServiceImpl implements RecipientImportService {
             }
         }
 
-        // Add headers
-        final LinkedList<String> headersList = new LinkedList<>();
-        for (CSVColumnState column : columns) {
-            if (column.getImportedColumn()) {
-                headersList.add(column.getColName());
-            }
-        }
+        List<String> headersList = Arrays.stream(columns)
+                .filter(CSVColumnState::getImportedColumn)
+                .map(CSVColumnState::getColName)
+                .toList();
+
         previewParsedContent.add(0, headersList);
 
         return ServiceResult.success(previewParsedContent);
@@ -228,7 +233,7 @@ public class RecipientImportServiceImpl implements RecipientImportService {
                         true,
                         null);
             default:
-                throw new IllegalStateException("Invalid import datatype: %s".formatted(importProfile.getDatatype()));
+                throw new UnsupportedOperationException("Invalid import datatype: %s".formatted(importProfile.getDatatype()));
         }
     }
 

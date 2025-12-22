@@ -10,47 +10,33 @@
 
 package com.agnitas.emm.core;
 
-import com.agnitas.beans.Admin;
+import java.util.Enumeration;
+
+import com.agnitas.util.AgnUtils;
 import com.agnitas.web.perm.annotations.Anonymous;
 import jakarta.servlet.http.HttpServletRequest;
-import com.agnitas.util.AgnUtils;
 import org.apache.jasper.runtime.JspRuntimeLibrary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Enumeration;
 
 @Controller
+@Anonymous
 public class ErrorController {
 
     private static final Logger logger = LogManager.getLogger(ErrorController.class);
 
     @RequestMapping("/error.action")
-    @Anonymous
-    public String show(Admin admin, @RequestParam(value = "allowRedesigned", required = false) boolean allowRedesigned) {
-        if (allowRedesigned && admin != null && admin.isRedesignedUiUsed()) {
-            return "forward:/errorRedesigned.action";
-        }
-
-        return "error";
-    }
-
-    @RequestMapping("/csrf/error.action")
-    @Anonymous
-    public String csrfError() {
-        return "csrf_error";
-    }
-
-    @RequestMapping("/errorRedesigned.action")
-    @Anonymous
-    public String showRedesigned(HttpServletRequest req, Model model) {
+    public String show(HttpServletRequest req) {
         Throwable exception = JspRuntimeLibrary.getThrowable(req);
         logger.error(getErrorLog(exception, req), exception);
         return "error_page";
+    }
+
+    @RequestMapping("/csrf/error.action")
+    public String csrfError() {
+        return "csrf_error";
     }
 
     private String getErrorLog(Throwable exception, HttpServletRequest req) {

@@ -13,20 +13,19 @@ package com.agnitas.service;
 public class ProfileImportException extends Exception {
 	private static final long serialVersionUID = -6519878605641730345L;
 
-	public static enum ReasonCode {
+	public enum ReasonCode {
 		MissingMandatory("error.mandatory.missing"),
 		InvalidEmail("error.email.invalid"),
 		InvalidMailtype("error.mailtype.invalid"),
 		InvalidGender("error.gender.invalid.short"),
 		InvalidDate("error.date.invalid"),
 		InvalidNumber("error.number.invalid"),
-		InvalidEncryption("error.encryption.invalid"),
 		ValueTooLarge("error.value.toolarge"),
 		NumberTooLarge("error.value.numbertoolarge"),
 		Unknown("error.value.unknownReason"),
 		NotAllowedHtmlContent("error.string.html.notAllowed");
 		
-		private String messageKey;
+		private final String messageKey;
 		
 		ReasonCode(String messageKey) {
 			this.messageKey = messageKey;

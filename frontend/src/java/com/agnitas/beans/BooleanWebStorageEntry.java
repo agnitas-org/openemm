@@ -8,12 +8,10 @@
 
 */
 
-
 package com.agnitas.beans;
 
-import org.apache.commons.lang3.BooleanUtils;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.BooleanUtils;
 
 public class BooleanWebStorageEntry implements WebStorageEntry {
 
@@ -46,8 +44,9 @@ public class BooleanWebStorageEntry implements WebStorageEntry {
 
     @Override
     public WebStorageEntry clone() {
-        final BooleanWebStorageEntry clone = new BooleanWebStorageEntry();
+        BooleanWebStorageEntry clone = new BooleanWebStorageEntry();
         clone.setValue(getValue());
         return clone;
     }
+
 }

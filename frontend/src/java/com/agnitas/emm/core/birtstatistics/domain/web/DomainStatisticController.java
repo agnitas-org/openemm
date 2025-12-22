@@ -18,7 +18,7 @@ import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping(value = "/statistics/domain")
-@PermissionMapping("domain.statistics")
 public class DomainStatisticController implements XssCheckAware {
 	
 	private static final Logger logger = LogManager.getLogger(DomainStatisticController.class);
@@ -57,6 +56,7 @@ public class DomainStatisticController implements XssCheckAware {
 	}
 	
 	@RequestMapping("/view.action")
+	@RequiredPermission("stats.domains")
 	public String view(Admin admin, DomainStatisticForm form, HttpSession session, Model model) {
 		model.addAttribute(TARGET_LIST, targetService.getTargetLights(admin));
 		model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));

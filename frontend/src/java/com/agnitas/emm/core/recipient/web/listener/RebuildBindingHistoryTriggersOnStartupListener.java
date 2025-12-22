@@ -20,8 +20,8 @@ import jakarta.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
 import com.agnitas.beans.impl.CompanyStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -28,9 +28,6 @@ public class WorkflowFormToWorkflowConverter implements Converter<WorkflowForm, 
         workflow.setShortname(workflowForm.getShortname());
         workflow.setDescription(workflowForm.getDescription());
         workflow.setStatus(Workflow.WorkflowStatus.valueOf(workflowForm.getStatus().name()));
-        workflow.setEditorPositionTop(workflowForm.getEditorPositionTop());
-        workflow.setEditorPositionLeft(workflowForm.getEditorPositionLeft());
-        workflow.setInner(workflowForm.isInner());
         workflow.setGeneralStartDate(workflowForm.getGeneralStartDate());
         workflow.setGeneralEndDate(workflowForm.getGeneralEndDate());
         workflow.setEndType(workflowForm.getEndType());

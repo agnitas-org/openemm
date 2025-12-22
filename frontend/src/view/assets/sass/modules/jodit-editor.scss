@@ -1,0 +1,70 @@
+.jodit-container {
+  min-height: 100% !important;
+}
+
+.jodit-toolbar-button__icon i {
+  color: var(--jd-color-icon);
+}
+
+.jodit-emoji {
+  width: 303px;
+  @include flex-column($gap-sm);
+  overflow: hidden;
+  height: 100%;
+}
+
+.jodit-emoji__header {
+  padding: $gap-x-sm;
+}
+
+.jodit-emoji__body {
+  @include flex-column($gap-sm);
+  overflow-y: auto;
+}
+
+.jodit-emoji__group-name {
+  margin-bottom: $gap-x-sm;
+}
+
+.jodit-emoji__group-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 36px);
+}
+
+.jodit-emoji__symbol {
+  font-size: 1.8em;
+  text-align: center;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
+}
+
+.jodit-popup:has(.jodit-ui-block__link-type) {
+  width: 648px;
+  max-width: 80vw;
+
+  .jodit-ui-input {
+    width: 100%;
+  }
+}
+
+.jodit-popup__content:has(.jodit-emoji) {
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+}
+
+.jodit-dialog_theme_dark, .jodit-popup.jodit_theme_dark {
+  .jodit-ui-input__input {
+    background: var(--jd-dark-background-darknes);
+  }
+}
+
+.jodit-ui-input__wrapper:has(.form-control-feedback-message) {
+  flex-direction: column;
+
+  .form-control-feedback-message {
+    width: 100%;
+  }
+}

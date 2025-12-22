@@ -64,7 +64,7 @@
 			<AppenderRef ref="APPLICATIONERRORLOGFILE" />
 		</Root>
 		
-		<Logger name="org.agnitas.emm.core.velocity" level="warn">
+		<Logger name="com.agnitas.emm.core.velocity" level="warn">
 			<AppenderRef ref="VELOCITY_SECURITY_LOGFILE" />
 			<AppenderRef ref="APPLICATIONLOGFILE" />
 		</Logger>

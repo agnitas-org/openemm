@@ -18,9 +18,6 @@ public interface OptimizationStatDao {
 
     int getOpened(int mailingId, int companyId, String recipientsType);
 
-    int getBounces(int mailingID, int companyID);
-
-    int getOptOuts(int mailingID, int companyID);
-
     double getRevenue(int mailingID, int companyID);
+
 }

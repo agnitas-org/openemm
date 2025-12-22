@@ -40,7 +40,7 @@ To change this and specify a specific container you need to set the `data-field-
   <div class="d-flex flex-column gap-2" data-field="toggle-vis">
     <div>
       <label class="form-label">Control via Select</label>
-      <select name="hideTargetViaSelect" data-field-vis="" class="form-control js-select">
+      <select name="hideTargetViaSelect" data-field-vis="" class="form-control">
         <option value="1" data-field-vis-hide="#exampleSelectTarget" selected>
           Hide Target
         </option>
@@ -134,7 +134,7 @@ To change this and specify a specific container you need to set the `data-field-
     }
 
     #toggleFields($el) {
-      if ($el.is(':disabled') && !$el.is('[data-field-vis-nondisabled]')) {
+      if (this._skipDisabled($el)) {
         return;
       }
 
@@ -189,6 +189,11 @@ To change this and specify a specific container you need to set the `data-field-
           AGN.Lib.CoreInitializer.run('select', $el.parents('select'));
         }
       });
+    }
+
+    _skipDisabled($el) {
+      $el = $el.is('option') ? $el.closest('select') : $el;
+      return $el.is(':disabled') && !$el.is('[data-field-vis-nondisabled]');
     }
   }
 

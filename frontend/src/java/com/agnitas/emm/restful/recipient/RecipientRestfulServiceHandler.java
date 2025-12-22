@@ -29,53 +29,33 @@ import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.beans.DatasourceDescription;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.Recipient;
+import com.agnitas.beans.RecipientMailing;
 import com.agnitas.beans.impl.BindingEntryImpl;
 import com.agnitas.beans.impl.DatasourceDescriptionImpl;
 import com.agnitas.beans.impl.ImportProfileImpl;
 import com.agnitas.beans.impl.ImportStatusImpl;
 import com.agnitas.beans.impl.RecipientImpl;
 import com.agnitas.beans.impl.ViciousFormDataException;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
-import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
-import com.agnitas.service.ProfileImportWorker;
-import com.agnitas.service.ProfileImportWorkerFactory;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbColumnType.SimpleDataType;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import com.agnitas.util.ImportUtils.ImportErrorType;
-import com.agnitas.util.importvalues.Charset;
-import com.agnitas.util.importvalues.CheckForDuplicates;
-import com.agnitas.util.importvalues.DateFormat;
-import com.agnitas.util.importvalues.Gender;
-import com.agnitas.util.importvalues.ImportMode;
-import com.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.RecipientMailing;
-import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.BindingEntryDao;
-import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.mailing.service.FullviewService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.exception.SubscriberLimitExceededException;
+import com.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
@@ -95,18 +75,36 @@ import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.json.JsonWriter;
-
+import com.agnitas.service.ProfileImportWorker;
+import com.agnitas.service.ProfileImportWorkerFactory;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.ImportUtils.ImportErrorType;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.util.importvalues.CheckForDuplicates;
+import com.agnitas.util.importvalues.DateFormat;
+import com.agnitas.util.importvalues.Gender;
+import com.agnitas.util.importvalues.ImportMode;
+import com.agnitas.util.importvalues.MailType;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This restful service is available at:
  * https://<system.url>/restful/recipient
  */
 public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(RecipientRestfulServiceHandler.class);
+
+	private static final Logger logger = LogManager.getLogger(RecipientRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "recipient";
 	
@@ -466,7 +464,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		if (StringUtils.isNotBlank(request.getParameter("status"))) {
 			try {
 				if (AgnUtils.isNumber(request.getParameter("status"))) {
-					newUserStatus = UserStatus.getUserStatusByID(Integer.parseInt(request.getParameter("status")));
+					newUserStatus = UserStatus.getByCode(Integer.parseInt(request.getParameter("status")));
 				} else {
 					newUserStatus = UserStatus.getUserStatusByName(request.getParameter("status"));
 				}
@@ -535,8 +533,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						throw new RestfulClientException("Expected JSON item type 'JsonObject_Close' was: " + readJsonToken);
 					}
 
-					Recipient recipient = new RecipientImpl();
-					((RecipientImpl) recipient).setRecipientDao(recipientDao);
+					RecipientImpl recipient = new RecipientImpl();
+					recipient.setRecipientDao(recipientDao);
 					recipient.setCompanyID(admin.getCompanyID());
 					
 					List<String> hiddenColumns = RecipientStandardField.getImportChangeNotAllowedColumns(admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
@@ -753,7 +751,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		if (StringUtils.isNotBlank(request.getParameter("status"))) {
 			try {
 				if (AgnUtils.isNumber(request.getParameter("status"))) {
-					newUserStatus = UserStatus.getUserStatusByID(Integer.parseInt(request.getParameter("status")));
+					newUserStatus = UserStatus.getByCode(Integer.parseInt(request.getParameter("status")));
 				} else {
 					newUserStatus = UserStatus.getUserStatusByName(request.getParameter("status"));
 				}

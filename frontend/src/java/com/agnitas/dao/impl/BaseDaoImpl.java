@@ -13,11 +13,9 @@ package com.agnitas.dao.impl;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,9 +37,10 @@ import javax.sql.DataSource;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.commons.dto.DateRange;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.exception.NonUniqueResultException;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
@@ -153,6 +152,15 @@ public abstract class BaseDaoImpl {
 		
 		return "oracle".equalsIgnoreCase(getDbVendorName());
 	}
+
+	public final boolean isPostgreSQL() {
+		/*
+		 * Keep this method final to avoid problems with
+		 * overriding in subclasses!
+		 */
+
+		return "postgresql".equalsIgnoreCase(getDbVendorName());
+	}
 	
 	protected final boolean isMariaDB() {
 		/*
@@ -167,6 +175,8 @@ public abstract class BaseDaoImpl {
 		if (dbVendor == null) {
 			if (DbUtilities.checkDbVendorIsOracle(getDataSource())) {
 				dbVendor = "oracle";
+			} else if (DbUtilities.checkDbVendorIsPostgreSQL(getDataSource())) {
+				dbVendor = "postgresql";
 			} else if (DbUtilities.checkDbVendorIsMariaDB(getDataSource())) {
 				dbVendor = "mariadb";
 			} else {
@@ -184,9 +194,9 @@ public abstract class BaseDaoImpl {
 	protected void logSqlStatement(String statement, Object... parameter) {
 		if (logger.isDebugEnabled()) {
 			if (parameter != null && parameter.length > 0) {
-				logger.debug(MessageFormat.format("SQL: {0}\nParameter: {1}", statement, getParameterStringList(parameter)));
+				logger.debug("SQL: {}\nParameter: {}", statement, getParameterStringList(parameter));
 			} else {
-				logger.debug(MessageFormat.format("SQL: {0}", statement));
+				logger.debug("SQL: {}", statement);
 			}
 		}
 	}
@@ -352,14 +362,6 @@ public abstract class BaseDaoImpl {
 		return map;
 	}
 
-	protected String selectStringDefaultNull(String statement, Object ... parameters) {
-		return selectObjectDefaultNull(statement, StringRowMapper.INSTANCE, parameters);
-	}
-
-	protected Integer selectIntDefaultNull(String statement, Object ... parameters) {
-		return selectObjectDefaultNull(statement, IntegerRowMapper.INSTANCE, parameters);
-	}
-
 	/**
 	 * Logs the statement and parameter in debug-level, executes select for an object and logs error.
 	 * If the searched entry does not exist, then null is returned as default value.
@@ -374,8 +376,16 @@ public abstract class BaseDaoImpl {
 		} else if (list.isEmpty()) {
 			return null;
 		} else {
-			throw new RuntimeException("Found invalid number of items: " + list.size());
+			throw new NonUniqueResultException(list.size());
 		}
+	}
+
+	protected String selectStringDefaultNull(String statement, Object ... parameters) {
+		return selectObjectDefaultNull(statement, StringRowMapper.INSTANCE, parameters);
+	}
+
+	protected Integer selectIntDefaultNull(String statement, Object ... parameters) {
+		return selectObjectDefaultNull(statement, IntegerRowMapper.INSTANCE, parameters);
 	}
 	
 	/**
@@ -413,9 +423,7 @@ public abstract class BaseDaoImpl {
 
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
-			}
+			logger.debug("Empty result, using default value: {}", defaultValue);
 			return defaultValue;
 		} catch (RuntimeException e) {
 			logSqlError(e, statement, parameter);
@@ -440,9 +448,7 @@ public abstract class BaseDaoImpl {
 			
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
-			}
+			logger.debug("Empty result, using default value: {}", defaultValue);
 			return defaultValue;
 		} catch (RuntimeException e) {
 			logSqlError(e, statement, parameter);
@@ -462,9 +468,7 @@ public abstract class BaseDaoImpl {
 			logSqlStatement(statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (EmptyResultDataAccessException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
-			}
+			logger.debug("Empty result, using default value: {}", defaultValue);
 			return defaultValue;
 		} catch (RuntimeException e) {
 			logSqlError(e, statement, parameter);
@@ -483,9 +487,7 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(statement, parameter);
 			int touchedLines = getJdbcTemplate().update(statement, parameter);
-			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("lines changed by update: {0}", touchedLines));
-			}
+			logger.debug("lines changed by update: {}", touchedLines);
 			return touchedLines;
 		} catch (RuntimeException e) {
 			logSqlError(e, statement, parameter);
@@ -528,7 +530,7 @@ public abstract class BaseDaoImpl {
 					return;
 				} catch (QueryTimeoutException qe) {
 					if (tryCount < maxNumberOfAttempts) {
-						logger.warn(MessageFormat.format("Execute statement reached timeout of {0} seconds. Attempt {1} of maximum {2}.\n{3}", timeoutSeconds, tryCount, maxNumberOfAttempts, statement));
+						logger.warn("Execute statement reached timeout of {} seconds. Attempt {} of maximum {}.\n{}", timeoutSeconds, tryCount, maxNumberOfAttempts, statement);
 					} else {
 						String errorText = "Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\n" + statement;
 						logger.error(errorText);
@@ -576,9 +578,8 @@ public abstract class BaseDaoImpl {
 				}
 				return ps;
 			}, keys);
-			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("lines changed by update: {0}", touchedLines));
-			}
+
+			logger.debug("lines changed by update: {}", touchedLines);
 			return touchedLines;
 		} catch (RuntimeException e) {
 			logSqlError(e, statement, parameter);
@@ -587,7 +588,7 @@ public abstract class BaseDaoImpl {
 	}
 
 	protected void checkMaximumDataSize(long datasize) {
-		if (!isOracleDB() && getMysqlMaxPacketSize() < datasize) {
+		if (!isOracleDB() && !isPostgreSQL() && getMysqlMaxPacketSize() < datasize) {
 			// If MariaDB/MySQL's MaxPacketSize is to low for uploading this blob
 			throw new IllegalArgumentException("Data is to big for storage in your database. Please rise db configuration value 'max_allowed_packet'. Current value: " + getMysqlMaxPacketSize() + " bytes Datasize: " + datasize + " bytes");
 		}
@@ -706,32 +707,6 @@ public abstract class BaseDaoImpl {
 	}
 
 	/**
-	 * Write the data of a blob into an outputstream.
-	 * The selectBlobStatement must return a single column of type Blob.
-	 * 
-	 */
-	protected void writeBlobInStream(String selectBlobStatement, OutputStream outputStream, Object... parameter) throws Exception {
-		try {
-			if (outputStream == null) {
-				throw new IllegalArgumentException("outputStream is null");
-			}
-
-			validateStatement(selectBlobStatement);
-			validateParameters(parameter);
-			logSqlStatement(selectBlobStatement, parameter);
-			Blob blob = getJdbcTemplate().queryForObject(selectBlobStatement, Blob.class, parameter);
-			if (blob != null) {
-				try (InputStream inputStream = blob.getBinaryStream()) {
-					IOUtils.copy(inputStream, outputStream);
-				}
-			}
-		} catch (RuntimeException e) {
-			logSqlError(e, selectBlobStatement, parameter);
-			throw e;
-		}
-	}
-
-	/**
 	 * Method to update multiple data entries at once.<br />
 	 * Logs the statement and parameter in debug-level, executes update and logs error.<br />
 	 * Watch out: Oracle returns value -2 (= Statement.SUCCESS_NO_INFO) per line for success with no "lines touched" info<br />
@@ -743,7 +718,7 @@ public abstract class BaseDaoImpl {
 			logSqlStatement(statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			int[] touchedLines = getJdbcTemplate().batchUpdate(statement, values);
 			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("lines changed by update: {0}", Arrays.toString(touchedLines)));
+				logger.debug("lines changed by update: {}", Arrays.toString(touchedLines));
 			}
 			return touchedLines;
 		} catch (RuntimeException e) {
@@ -756,19 +731,24 @@ public abstract class BaseDaoImpl {
 		}
 	}
 	
-	protected int[] batchInsertIntoAutoincrementMysqlTable(String insertStatement, List<Object[]> listOfValueArrays) throws Exception {
+	protected int[] batchInsertWithAutoincrement(String insertStatement, List<Object[]> listOfValueArrays) throws Exception {
 		try {
 			validateStatement(insertStatement);
 			logSqlStatement(insertStatement, "BatchInsertParameterList(Size: " + listOfValueArrays.size() + ")");
 			
 			List<Integer> generatedKeys = new ArrayList<>();
+			boolean isPostgreSQL = isPostgreSQL();
 
 			try (final Connection connection = getDataSource().getConnection()) {
 				try (final PreparedStatement preparedStatement = connection.prepareStatement(insertStatement, Statement.RETURN_GENERATED_KEYS)) {
 					for (Object[] valueArray : listOfValueArrays) {
 						int parameterIndex = 1;
 						for (Object value : valueArray) {
-							preparedStatement.setObject(parameterIndex++, value);
+							if (isPostgreSQL && value instanceof Date dateValue) {
+								preparedStatement.setObject(parameterIndex++, dateValue, Types.TIMESTAMP);
+							} else {
+								preparedStatement.setObject(parameterIndex++, value);
+							}
 						}
 						preparedStatement.addBatch();
 					}
@@ -782,7 +762,7 @@ public abstract class BaseDaoImpl {
 				}
 			}
 			if (logger.isDebugEnabled()) {
-				logger.debug(MessageFormat.format("keys inserted by batch insert: {0}", StringUtils.join(generatedKeys, ", ")));
+				logger.debug("keys inserted by batch insert: {}", StringUtils.join(generatedKeys, ", "));
 			}
 			return generatedKeys.stream().mapToInt(i->i).toArray();
 		} catch (RuntimeException e) {
@@ -791,7 +771,7 @@ public abstract class BaseDaoImpl {
 		}
 	}
 	
-	protected int[] batchInsertIntoAutoincrementMysqlTable(String autoincrementColumn, String insertStatement, List<Object[]> parametersList) {
+	protected int[] batchInsertWithAutoincrement(String autoincrementColumn, String insertStatement, List<Object[]> parametersList) {
 		try {
 			validateStatement(insertStatement);
 			logSqlStatement(insertStatement, "BatchInsertParameterList(Size: " + parametersList.size() + ")");
@@ -823,7 +803,7 @@ public abstract class BaseDaoImpl {
 						insertParameterTypes[i] = Types.BLOB;
 					}
 				} else {
-					throw new RuntimeException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
+					throw new IllegalArgumentException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
 				}
 			}
 			
@@ -844,7 +824,7 @@ public abstract class BaseDaoImpl {
 			batchSqlUpdate.flush();
 			
 			if (touchedLines != parametersList.size()) {
-				throw new RuntimeException("Illegal insert result");
+				throw new IllegalStateException("Illegal insert result");
 			}
 			
 			return generatedKeys;
@@ -863,13 +843,13 @@ public abstract class BaseDaoImpl {
 	}
 
 	/**
-	 * This method makes an insert into a mysql table with an autoincrement column.
+	 * This method makes an insert into a table with an autoincrement column.
 	 * Logs the statement and parameter in debug-level, executes insert and logs error.
 	 * 
 	 * @return inserted id
 	 */
 	@DaoUpdateReturnValueCheck
-	protected int insertIntoAutoincrementMysqlTable(String autoincrementColumn, String insertStatement, Object... parameter) {
+	protected int insert(String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
 			validateStatement(insertStatement);
 			validateParameters(parameter);
@@ -901,7 +881,7 @@ public abstract class BaseDaoImpl {
 						insertParameterTypes[i] = Types.BLOB;
 					}
 				} else {
-					throw new RuntimeException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
+					throw new IllegalArgumentException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
 				}
 			}
 
@@ -915,7 +895,7 @@ public abstract class BaseDaoImpl {
 			int autoincrementedValue = generatedKeyHolder.getKey().intValue();
 
 			if (touchedLines != 1) {
-				throw new RuntimeException("Illegal insert result");
+				throw new IllegalStateException("Illegal insert result");
 			}
 
 			return autoincrementedValue;
@@ -926,13 +906,13 @@ public abstract class BaseDaoImpl {
 	}
 
 	/**
-	 * This method makes multiple inserts into a mysql table with an autoincrement column.
+	 * This method makes multiple inserts into a table with an autoincrement column.
 	 * Logs the statement and parameter in debug-level, executes insert and logs error.
 	 * 
 	 * @return number of touched lines in db
 	 */
 	@DaoUpdateReturnValueCheck
-	protected int insertMultipleIntoAutoincrementMysqlTable(String autoincrementColumn, String insertStatement, Object... parameter) {
+	protected int insertMultiple(String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
 			validateStatement(insertStatement);
 			validateParameters(parameter);
@@ -964,7 +944,7 @@ public abstract class BaseDaoImpl {
 						insertParameterTypes[i] = Types.BLOB;
 					}
 				} else {
-					throw new RuntimeException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
+					throw new IllegalArgumentException("Invalid parameter type for insert in autoincrement table (Value: \"" + parameter[i] + "\", " + parameter[i].getClass().getSimpleName() + ")");
 				}
 			}
 
@@ -993,6 +973,8 @@ public abstract class BaseDaoImpl {
 
 			if (isOracleDB()) {
 				sqlCheckIndices = "SELECT COUNT(*) FROM user_indexes WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "')";
+			} else if (isPostgreSQL()) {
+				sqlCheckIndices = "SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public' AND LOWER(indexname) IN ('%s')".formatted(StringUtils.join(indicesToCheck, "','"));
 			} else {
 				sqlCheckIndices = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE LOWER(index_name) IN ('" + StringUtils.join(indicesToCheck, "','") + "') AND table_schema = (SELECT DATABASE())";
 			}
@@ -1011,11 +993,19 @@ public abstract class BaseDaoImpl {
 	protected String makeBulkNotInClauseForInteger(final String columnName, Collection<Integer> values) {
 		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, "", false);
 	}
-	
+
+	protected String makeBulkInClauseForInteger(String columnName, Integer ... values) {
+		if (values.length == 0) {
+			throw new IllegalArgumentException("Number of values must not be empty!");
+		}
+
+		return makeBulkInClauseForInteger(columnName, Arrays.stream(values).toList());
+	}
+
 	protected String makeBulkInClauseForInteger(final String columnName, Collection<Integer> values) {
 		return makeBulkInClauseWithDelimiter(columnName, values, "");
 	}
-	
+
 	private <T> String makeBulkInClauseWithDelimiter(String columnName, Collection<T> values, String delimiter) {
 		return DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), columnName, values, delimiter, true);
 	}
@@ -1082,9 +1072,9 @@ public abstract class BaseDaoImpl {
 		if (parameter != null) {
 			for (Object parameterObject : parameter) {
 				if (parameterObject != null && parameterObject.getClass().isArray()) {
-					throw new RuntimeException("Invalid usage of array as sql parameter");
+					throw new IllegalArgumentException("Invalid usage of array as sql parameter");
 				} else if (parameterObject != null && parameterObject.getClass().isEnum()) {
-					throw new RuntimeException("Invalid usage of enum as sql parameter");
+					throw new IllegalArgumentException("Invalid usage of enum as sql parameter");
 				}
 			}
 		}
@@ -1131,6 +1121,10 @@ public abstract class BaseDaoImpl {
 		return AgnUtils.findUniqueCloneName(nameList, prefix);
 	}
 
+	protected String getFullTextSearchMatchFilter(String searchIn) {
+		return DbUtilities.getFullTextSearchPart(searchIn, getDataSource()) + (isPostgreSQL() ? "" : " > 0");
+	}
+
 	protected String getPartialSearchFilterWithAnd(String searchIn) {
 		return getPartialSearchFilterWithAnd(searchIn, null, null);
 	}
@@ -1156,9 +1150,16 @@ public abstract class BaseDaoImpl {
 		if (params != null) {
 			params.add(DbUtilities.normalizeSqlLikeSearchPlaceholders(text));
 		}
-		String filter = isOracleDB()
-				? "LOWER(" + searchIn + ") LIKE ('%' || LOWER(?) || '%')"
-				: searchIn + " LIKE CONCAT('%', ?, '%')";
+
+		String filter;
+		if (isOracleDB()) {
+			filter = "LOWER(" + searchIn + ") LIKE ('%' || LOWER(?) || '%')";
+		} else if (isPostgreSQL()) {
+			filter = "LOWER(" + searchIn + ") LIKE CONCAT('%', LOWER(?), '%')";
+		} else {
+			filter = searchIn + " LIKE CONCAT('%', ?, '%')";
+		}
+
 		return (prependAnd ? " AND " : " ") + filter;
 	}
 
@@ -1206,4 +1207,5 @@ public abstract class BaseDaoImpl {
 
 		return query + " LIMIT " + rowsCount;
 	}
+
 }

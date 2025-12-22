@@ -1,52 +1,51 @@
-(function(){
+(() => {
 
-  var Action;
+  class Action {
+    constructor(events, action, $scope) {
+      const self = this;
 
-  Action = function(events, action, $scope) {
-    var self = this;
+      action = _.bind(action, this);
 
-    action = _.bind(action, this);
+      if ($scope && $scope.exists()) {
+        $scope = $scope.first();
+      } else {
+        $scope = $(document);
+      }
 
-    if ($scope && $scope.exists()) {
-      $scope = $scope.first();
-    } else {
-      $scope = $(document);
+      _.each(events, (selector, trigger) => {
+        $scope.on(trigger, selector, function(e, data) {
+          self.event = e;
+          self.trigger = trigger;
+          self.el = $(this);
+          self.data = data;
+          action(self.el, self.event, self.data, self.trigger);
+
+          const $target = $(self.event.target);
+          if ($target.is("a") || $target.parent("a").length === 1) {
+            self.event.preventDefault();
+          }
+        })
+      });
     }
 
-    _.each(events, function(selector, trigger) {
-      $scope.on(trigger, selector, function(e, data) {
-        self.event = e;
-        self.trigger = trigger;
-        self.el = $(this);
-        self.data = data;
-        action();
+    static new(events, action, $scope) {
+      new Action(events, action, $scope);
+    }
 
-        var $target = $(self.event.target);
-        if ($target.is("a") || $target.parent("a").length === 1) {
-          self.event.preventDefault();
-        }
-      })
-    })
-  };
+    static translate(events) {
+      const cevents = {};
 
-  Action.new = function(events, action, $scope) {
-    new Action(events, action, $scope);
-  };
+      _.each(events, function(triggers, e) {
+        triggers = triggers.split(/,\s?/);
+        triggers = _.map(triggers, t => `[data-action="${t}"]`)
+          .join(', ');
 
-  Action.translate = function(events) {
-    var cevents = {};
+        cevents[e] = triggers;
+      });
 
-    _.each(events, function(triggers, e) {
-      triggers = triggers.split(/,\s?/);
-      triggers = _.map(triggers, function(t) {
-        return '[data-action="' + t + '"]';
-      }).join(', ');
-
-      cevents[e] = triggers;
-    });
-
-    return cevents;
-  };
+      return cevents;
+    }
+  }
 
   AGN.Lib.Action = Action;
 

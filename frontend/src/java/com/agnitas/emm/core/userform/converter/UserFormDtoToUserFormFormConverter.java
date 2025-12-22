@@ -24,12 +24,8 @@ public class UserFormDtoToUserFormFormConverter implements Converter<UserFormDto
 		form.setFormId(dto.getId());
 		form.setFormName(dto.getName());
 		form.setDescription(dto.getDescription());
-		
-		form.setActive(dto.isActive());
-		
 		form.setSuccessSettings(dto.getSuccessSettings());
 		form.setErrorSettings(dto.getErrorSettings());
-		
 		return form;
 	}
 }

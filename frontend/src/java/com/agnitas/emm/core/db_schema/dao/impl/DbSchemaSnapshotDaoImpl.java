@@ -42,6 +42,10 @@ public class DbSchemaSnapshotDaoImpl extends BaseDaoImpl implements DbSchemaSnap
 
     @Override
     public String getVendorName() {
+        if (isPostgreSQL()) {
+            return "postgresql";
+        }
+
         return isOracleDB() ? "oracle" : "mariadb";
     }
 
@@ -53,6 +57,8 @@ public class DbSchemaSnapshotDaoImpl extends BaseDaoImpl implements DbSchemaSnap
                     SELECT table_name FROM all_tables
                     WHERE owner = (SELECT USER FROM dual) AND table_name NOT LIKE 'DR$%'
                     """;
+        } else if (isPostgreSQL()) {
+            query = "SELECT table_name FROM information_schema.TABLES WHERE table_schema = CURRENT_SCHEMA()";
         } else {
             query = "SELECT table_name FROM information_schema.TABLES WHERE table_schema = (SELECT SCHEMA())";
         }
@@ -68,6 +74,12 @@ public class DbSchemaSnapshotDaoImpl extends BaseDaoImpl implements DbSchemaSnap
                     SELECT column_name, data_type, data_length AS length
                     FROM all_tab_columns
                     WHERE owner = (SELECT USER FROM dual) AND table_name = UPPER(?)
+                    """;
+        } else if (isPostgreSQL()) {
+            query = """
+                    SELECT column_name, data_type, character_maximum_length AS length
+                    FROM information_schema.COLUMNS
+                    WHERE table_schema = CURRENT_SCHEMA() AND table_name = ?
                     """;
         } else {
             query = """

@@ -14,9 +14,6 @@ import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoO
 import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
 import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -34,12 +31,16 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.MaildropDeleteException;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TargetDao;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.components.service.MailingTriggerService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.service.CopyMailingService;
 import com.agnitas.emm.core.mailing.service.MailingParameterService;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.mailing.autooptimization.beans.CampaignStatEntry;
@@ -49,15 +50,9 @@ import com.agnitas.mailing.autooptimization.dao.OptimizationDao;
 import com.agnitas.mailing.autooptimization.service.OptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.mailing.autooptimization.service.OptimizationStatService;
-import com.agnitas.beans.impl.MaildropDeleteException;
-import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import com.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class OptimizationServiceImpl implements OptimizationService {
 	
@@ -73,10 +68,11 @@ public class OptimizationServiceImpl implements OptimizationService {
 	private final OptimizationStatService optimizationStatService;
 	private final MailingParameterService mailingParameterService;
 	private final CopyMailingService copyMailingService;
+	private final MailingTriggerService mailingTriggerService;
 
 	public OptimizationServiceImpl(OptimizationDao optimizationDao, TargetDao targetDao, MailingDao mailingDao,
-								   OptimizationCommonService optimizationCommonService, OptimizationStatService optimizationStatService,
-								   MailingParameterService mailingParameterService, CopyMailingService copyMailingService) {
+                                   OptimizationCommonService optimizationCommonService, OptimizationStatService optimizationStatService,
+                                   MailingParameterService mailingParameterService, CopyMailingService copyMailingService, MailingTriggerService mailingTriggerService) {
 		this.optimizationDao = optimizationDao;
 		this.targetDao = targetDao;
 		this.mailingDao = mailingDao;
@@ -84,7 +80,8 @@ public class OptimizationServiceImpl implements OptimizationService {
 		this.optimizationStatService = optimizationStatService;
 		this.mailingParameterService = mailingParameterService;
 		this.copyMailingService = copyMailingService;
-	}
+        this.mailingTriggerService = mailingTriggerService;
+    }
 	
 	/*
 	 * (non-Javadoc)
@@ -160,7 +157,7 @@ public class OptimizationServiceImpl implements OptimizationService {
 	}
 
 	private boolean sendFinalMailing(Mailing mailing, boolean testRun, int blockSize, int stepping) {
-		logger.debug( "sendFinalMailing(" + (testRun ? "test run" : "") + "), mailing ID " + mailing.getId() + ", hashCode(this) = " + hashCode());
+		logger.debug("sendFinalMailing(" + (testRun ? "test run" : "") + "), mailing ID " + mailing.getId() + ", hashCode(this) = " + hashCode());
 
 		MaildropEntry drop = new MaildropEntryImpl();
 
@@ -187,40 +184,41 @@ public class OptimizationServiceImpl implements OptimizationService {
 
 		if (testRun) {
 			return true;
-		} else {
-			return mailing.triggerMailing(drop.getId());
 		}
+
+		return mailingTriggerService.triggerMailing(drop.getId(), mailing.getMailingType());
 	}
 
-	@Override
-	public boolean finishOptimization(Optimization optimization ) throws Exception {
-		logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", hashCode(this) = " + this.hashCode());
+	/**
+	 * chooses the mailing with best open- or clickrate , clones it and sends it to the remaining recipients
+	 */
+	private boolean finishOptimization(Optimization optimization) {
+		logger.debug("finishOptimization(), optimization ID {}, hashCode(this) = {}", optimization.getId(), this.hashCode());
 
 		boolean result = true;
 		Target splitPart = null;
-		
+
 		int status = getState(optimization);
 		optimization.setStatus(status);
-		
+
 		if (optimization.getStatus() == AutoOptimizationStatus.TEST_SEND.getCode()) {
-			logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", status = STATUS_TEST_SEND, hashCode(this) = " + this.hashCode());
+			logger.debug("finishOptimization(), optimization ID {}, status = STATUS_TEST_SEND, hashCode(this) = {}", optimization.getId(), this.hashCode());
 			optimization.setStatus(AutoOptimizationStatus.EVAL_IN_PROGRESS.getCode());
 
 			save(optimization);
 
 			int bestMailing = calculateBestMailing(optimization);
-			logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", bestMailing = " + bestMailing + ", hashCode(this) = " + this.hashCode());
+			logger.debug("finishOptimization(), optimization ID {}, bestMailing = {}, hashCode(this) = {}", optimization.getId(), bestMailing, this.hashCode());
 
 			if (bestMailing != 0) {
-				
 				optimization.setResultMailingID(bestMailing);
 
 				Mailing orgMailing = mailingDao.getMailing(bestMailing, optimization.getCompanyID());
 				
 				// Read mailing parameters
-				List<MailingParameter> orgMailingParameters = mailingParameterService.getMailingParameters(optimization.getCompanyID(), bestMailing);
+				List<MailingParameter> mailingParameters = mailingParameterService.getMailingParameters(optimization.getCompanyID(), bestMailing);
 				
-				int copiedMailingID = copyMailingService.copyMailing(orgMailing.getCompanyID(), orgMailing.getId(), orgMailing.getCompanyID(), orgMailing.getShortname(), orgMailing.getDescription());
+				int copiedMailingID = copyMailing(orgMailing);
 				Mailing mailing = mailingDao.getMailing(copiedMailingID, orgMailing.getCompanyID());
 
 				mailing.setCampaignID(orgMailing.getCampaignID());
@@ -250,9 +248,9 @@ public class OptimizationServiceImpl implements OptimizationService {
 				mailing.setMailTemplateID(bestMailing);
 				
 				// Create clone copy of mailing parameters
-				if (orgMailingParameters != null) {
+				if (mailingParameters != null) {
 					List<MailingParameter> copiedMailingParameters = new ArrayList<>();
-					for (MailingParameter templateMailingParameter : orgMailingParameters) {
+					for (MailingParameter templateMailingParameter : mailingParameters) {
 						MailingParameter copiedMailingParameter = new MailingParameter();
 						
 						copiedMailingParameter.setName(templateMailingParameter.getName());
@@ -283,23 +281,31 @@ public class OptimizationServiceImpl implements OptimizationService {
 				} else {
 					result = false;
 				}
-				logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", final mailing = " + mailing.getId() + ", send result = " + result + ", hashCode(this) = " + this.hashCode());
-
+				logger.debug("finishOptimization(), optimization ID {}, final mailing = {}, send result = {}, hashCode(this) = {}", optimization.getId(), mailing.getId(), result, this.hashCode());
 			}
 			if (result) {
 				optimization.setStatus(AutoOptimizationStatus.FINISHED.getCode());
-				logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", state transition to STATUS_FINISHED, hashCode(this) = " + this.hashCode());
+				logger.debug("finishOptimization(), optimization ID {}, state transition to STATUS_FINISHED, hashCode(this) = {}", optimization.getId(), this.hashCode());
 			} else {
 				optimization.setStatus(AutoOptimizationStatus.TEST_SEND.getCode());
-				logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", state transition to TEST_SEND, hashCode(this) = " + this.hashCode());
+				logger.debug("finishOptimization(), optimization ID {}, state transition to TEST_SEND, hashCode(this) = {}", optimization.getId(), this.hashCode());
 			}
 			save(optimization);
 		}
 		return result;
 	}
+
+	protected int copyMailing(Mailing mailing) {
+		return copyMailingService.copyMailing(
+				mailing.getCompanyID(),
+				mailing.getId(),
+				mailing.getCompanyID(),
+				mailing.getShortname(),
+				mailing.getDescription()
+		);
+	}
 	
-	@Override
-	public int calculateBestMailing(Optimization optimization) {
+	protected int calculateBestMailing(Optimization optimization) {
 		Hashtable<Integer , CampaignStatEntry> stats = optimizationStatService.getStat(optimization);
 
 		if(MapUtils.isEmpty(stats)) {
@@ -354,13 +360,9 @@ public class OptimizationServiceImpl implements OptimizationService {
 		}
 	}
 
-	@Override
-	public void finishOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
-		if( logger.isDebugEnabled()) {
-			logger.debug( "finishOptimizations(), hashCode(this) = " + this.hashCode());
-		}
+	private void finishOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
+		logger.debug("finishOptimizations(), hashCode(this) = {}", this.hashCode());
 
-		StringBuffer result = new StringBuffer("time: "+ System.currentTimeMillis() + " ");
 		Set<Integer> checkedOptimizations = new HashSet<>();
 
 		// date has been reached ...
@@ -369,7 +371,7 @@ public class OptimizationServiceImpl implements OptimizationService {
 			
 			if (logger.isDebugEnabled()) {
 				for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-					logger.debug( "  optimization (date): " + entry.getKey() + ", company ID: " + entry.getValue() + ", hashCode(this) = " + this.hashCode());
+					logger.debug("optimization (date): {}, company ID: {}, hashCode(this) = {}", entry.getKey(), entry.getValue(), this.hashCode());
 				}
 			}
 
@@ -388,16 +390,14 @@ public class OptimizationServiceImpl implements OptimizationService {
 			}
 		} catch (Exception e) {
 			logger.error("finishOptimizations", e);
-
-			result.append(e.getMessage());
 		}
 		
 		// threshold has been reached
 		List<Optimization> dueOnThresholdOptimizations = getDueOnThresholdOptimizations(includedCompanyIds, excludedCompanyIds);
 
-		if( logger.isDebugEnabled()) {
-			for( Optimization optimization : dueOnThresholdOptimizations) {
-				logger.debug( "  optimization (threshold): " + optimization.getId() + ", company ID: " + optimization.getCompanyID() + ", hashCode(this) = " + this.hashCode());
+		if (logger.isDebugEnabled()) {
+			for (Optimization optimization : dueOnThresholdOptimizations) {
+				logger.debug("optimization (threshold): {}, company ID: {}, hashCode(this) = {}", optimization.getId(), optimization.getCompanyID(), this.hashCode());
 			}
 		}
 
@@ -411,17 +411,13 @@ public class OptimizationServiceImpl implements OptimizationService {
 			}
 		}
 		
-		if( logger.isDebugEnabled()) {
-			logger.debug( "finishOptimizations() #DONE#, hashCode(this) = " + this.hashCode());
-		}
+		logger.debug("finishOptimizations() #DONE#, hashCode(this) = {}", this.hashCode());
 	}
 
-	
 	/**
 	 * get all the optimizations where the threshold has been reached
 	 */
-	@Override
-	public List<Optimization> getDueOnThresholdOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
+	private List<Optimization> getDueOnThresholdOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
 		logger.debug( "getDueOnThresholdOptimizations(), hashCode(this) = " + this.hashCode());
 		List<Optimization> optimizationCandidates = optimizationDao.getDueOnThresholdOptimizationCandidates(includedCompanyIds, excludedCompanyIds);
 		List<Optimization> thresholdReachedOptimizations = new ArrayList<>();
@@ -494,38 +490,22 @@ public class OptimizationServiceImpl implements OptimizationService {
 		return optimizationDao.getAutoOptimizations(admin.getCompanyID(), start, end);
 	}
 
-	@Override
-	public JSONArray getOptimizationsAsJson(Admin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter) {
-		JSONArray result = new JSONArray();
-
-		if (startDate.isAfter(endDate)) {
-		    return result;
-        }
-
-        ZoneId zoneId = admin.getZoneId();
-		Date start = DateUtilities.toDate(startDate, zoneId);
-		Date end = DateUtilities.toDate(endDate.plusDays(1).atStartOfDay().minusNanos(1), zoneId);
-
-		List<Optimization> optimizations = optimizationDao.getOptimizationsForCalendar(admin.getCompanyID(), start, end);
-
-		for (Optimization optimization : optimizations) {
-            JSONObject object = new JSONObject();
-
-            object.put("id", optimization.getId());
-            object.put("shortname", optimization.getShortname());
-            object.put("campaignID", optimization.getCampaignID());
-            object.put("workflowId", optimization.getWorkflowId());
-            object.put("autoOptimizationStatus", optimization.getAutoOptimizationStatus());
-            object.put("sendDate", DateUtilities.format(optimization.getSendDate(), zoneId, formatter));
-
-            result.put(object);
-        }
-
-		return result;
-	}
-
-	@Override
-	public int getState(Optimization optimization) {
+	/**
+	 * Get the state from the optimization.
+	 *
+	 * Optimization.STATUS_NOT_STARTED :
+	 * The test mailings are not scheduled, or the test mailings are scheduled and have not been created yet
+	 *
+	 * Optimization.STATUS_EVAL_IN_PROGRESS:
+	 * The statistics for test mailings is generating ...
+	 *
+	 * Optimization.STATUS_TEST_SEND
+	 * The test mailings started to generate or have been send
+	 *
+	 * Optimization.STATUS_FINISHED
+	 * The optimization process is done
+	 */
+	private int getState(Optimization optimization) {
 		
 		// The state STATUS_FINISHED is the only state which is directly written to the database
 		Optimization optimizationFromDB = optimizationDao.get(optimization.getId(), optimization.getCompanyID());

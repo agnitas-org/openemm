@@ -12,12 +12,14 @@ package com.agnitas.mailing.preview.service;
 
 import java.util.Objects;
 
+import com.agnitas.beans.Mailing;
 import com.agnitas.preview.Page;
 import com.agnitas.preview.Preview;
 import com.agnitas.preview.PreviewFactory;
 import com.agnitas.util.SafeString;
-public final class MailingPreviewServiceImpl implements MailingPreviewService {
-	
+
+public class MailingPreviewServiceImpl implements MailingPreviewService {
+
 	private PreviewFactory previewFactory;
 	
 	@Override
@@ -28,7 +30,12 @@ public final class MailingPreviewServiceImpl implements MailingPreviewService {
 		
 		return page;
 	}
-	
+
+	@Override
+	public Page renderPreview(Mailing mailing, MailingPreviewOptions previewOptions) {
+		throw new UnsupportedOperationException();
+	}
+
 	@Override
 	public String renderHtmlPreview(int mailingID, int customerID) {
 		return renderHtmlPreview(mailingID, customerID, HtmlPreviewOptions.createDefault());
@@ -62,7 +69,7 @@ public final class MailingPreviewServiceImpl implements MailingPreviewService {
 		this.previewFactory = Objects.requireNonNull(factory,"Preview factory is null");
 	}
 
-	private final String postProcessHtmlPreview(String preview, final HtmlPreviewOptions options) {
+	private String postProcessHtmlPreview(String preview, HtmlPreviewOptions options) {
 		if(options.isRemoveHtmlTags()) {
 			preview = SafeString.removeHTMLTags(preview);
 		}

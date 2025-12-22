@@ -1,1453 +1,821 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "src/view/WEB-INF/tiles-config_3_0.dtd">
 <tiles-definitions>
-	<definition name="base" template="/WEB-INF/jsp/template.jsp">
-		<put-attribute name="head-tag" value="head_tag_default" type="definition"/>
-		<put-attribute name="newresource" value="/WEB-INF/jsp/newresource.jsp" type="template"/>
-		<put-attribute name="itemactions" value="/WEB-INF/jsp/itemactions.jsp" type="template"/>
-		<put-attribute name="tabsmenu" value="/WEB-INF/jsp/tabsmenu.jsp" type="template"/>
-		<put-attribute name="header" value="/WEB-INF/jsp/header-tiles.jsp" type="template"/>
-		<put-attribute name="usermessage" value="/WEB-INF/jsp/usermessage-tiles.jsp" type="template"/>
-		<put-attribute name="sidemenu" value="/WEB-INF/jsp/sidemenu-tiles.jsp" type="template"/>
-		<put-attribute name="topmenu" value="/WEB-INF/jsp/topmenu-tiles.jsp" type="template"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
-		<put-attribute name="footer_matomo" value="/WEB-INF/jsp/additional.jsp" type="template"/>
-	</definition>
-
-	<definition name="base_ajax" template="/WEB-INF/jsp/ajax-response-template.jsp">
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
-	</definition>
-
-	<definition name="base_without_navigation" template="/WEB-INF/jsp/template-without-navigation.jsp">
-		<put-attribute name="page-setup" value="" type="string"/>
-		<put-attribute name="head-tag" value="head_tag_default" type="definition"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="messages" extends="base_ajax">
-		<put-attribute name="page-setup" value="" type="string"/>
-		<put-attribute name="body" value="" type="string"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="head_tag_base" template="/WEB-INF/jsp/head-tag.jsp"/>
-
-	<definition name="head_tag_default" extends="head_tag_base">
-		<put-attribute name="head-extra-links" value="" type="string"/>
-		<put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/head-extra-meta-tags.jsp" type="template"/>
-	</definition>
-
-	<definition name="permission_denied_head_tag" extends="head_tag_base">
-		<put-attribute name="head-extra-links" value="/WEB-INF/jsp/permissionDenied-extra-links.jsp" type="template"/>
-		<put-attribute name="head-extra-meta-tags" value="" type="string"/>
-	</definition>
-
-	<definition name="permission_denied" extends="base">
-		<put-attribute name="head-tag" value="permission_denied_head_tag" type="definition"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/permissionDenied.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/permissionDenied-setup.jsp" type="template" />
-	</definition>
-
-	<definition name="error" template="/WEB-INF/jsp/error.jsp"/>
-	<definition name="csrf_error" template="/WEB-INF/jsp/csrf-error.jsp"/>
-	<definition name="js_translations" template="/WEB-INF/jsp/translations.js.jsp"/>
-
-	<definition name="logon" template="/WEB-INF/jsp/logon/logon.jsp"/>
-	<definition name="logon_complete" template="/WEB-INF/jsp/logon/logon-complete.jsp"/>
-	<definition name="logged_out" template="/WEB-INF/jsp/logon/logged-out.jsp"/>
-	<definition name="logout" template="/WEB-INF/jsp/logon/logout.jsp"/>
-	<definition name="logon_db_failure" template="/WEB-INF/jsp/logon/db-failure.jsp"/>
-	<definition name="logon_host_authentication" template="/WEB-INF/jsp/logon/host-authentication.jsp"/>
-	<definition name="logon_offline" template="/WEB-INF/jsp/logon/logon-offline.jsp"/>
-
-	<definition name="logon_password_base" template="/WEB-INF/jsp/logon/password/template.jsp">
-		<put-attribute name="body" value="" type="string"/>
-	</definition>
-
-	<definition name="logon_password_change" extends="logon_password_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/logon/password/password-change.jsp" type="template"/>
-	</definition>
-
-	<definition name="logon_password_changed" extends="logon_password_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/logon/password/password-changed.jsp" type="template"/>
-	</definition>
-
-	<definition name="logon_password_expired_locked" extends="logon_password_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/logon/password/password-expired-locked.jsp" type="template"/>
-	</definition>
-
-	<definition name="logon_password_reset_request" extends="logon_password_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/logon/password/password-reset-request.jsp" type="template"/>
-	</definition>
-
-	<definition name="logon_password_reset" extends="logon_password_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/logon/password/password-reset.jsp" type="template"/>
-	</definition>
-
-	<definition name="dashboard_base" extends="base">
-		<put-attribute name="newresource" value="/WEB-INF/jsp/newresource-dashboard.jsp" type="template"/>
-	</definition>
-
-	<definition name="user_selfservice" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/user_selfservice.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/user_selfservice-setup.jsp" type="template"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="dashboard_view" extends="dashboard_base">
-		<put-attribute name="body" value="/WEB-INF/jsp/dashboard/dashboard.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/dashboard/dashboard-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="reportlayout_view" extends="base">
-		<put-attribute name="body" value="/reportlayout/reportlayout-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/reportlayout/reportlayout-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="reportlayout_delete" extends="base">
-		<put-attribute name="body" value="/reportlayout/reportlayout-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/reportlayout/reportlayout-delete-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="reportlayout_list" extends="base">
-		<put-attribute name="body" value="/reportlayout/reportlayout-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/reportlayout/reportlayout-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="archive_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/archive-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/campaign/archive-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="archive_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/archive-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/campaign/archive-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="archive_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/campaign/archive-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="datasource_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/datasource/datasource-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/datasource/datasource-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_admin_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/admin-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/admin-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_admin_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/admin-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/admin-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_admin_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/settings-admin-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-admin-delete-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_admin_rights" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/user-permissions.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-admin-rights-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_restfuluser_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_restfuluser_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_restfuluser_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-delete-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_restfuluser_permissions" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/admin/user-permissions.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/admin/settings-restfuluser-permissions-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="salutation_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/salutation/salutation-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/salutation/salutation-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="salutation_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/salutation/salutation-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/salutation/salutation-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="salutation_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/salutation/salutation-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="settings_blacklist_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/blacklist/blacklist-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/blacklist/blacklist-delete-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_blacklist_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/blacklist/blacklist-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/blacklist/blacklist-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_profile_field_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/profile_field/profile-field-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/profile_field/profile-field-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_profile_field_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/profile_field/profile-field-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/profile_field/profile-field-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_profile_field_dependents_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/profile_field/profile-field-dependents.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/profile_field/profile-field-dependents-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_profile_field_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/profile_field/settings-profile-field-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="settings_usergroup_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/usergroup/settings-usergroup-list.jsp" type="template" />
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/usergroup/settings-usergroup-list-setup.jsp" type="template" />
-	</definition>
-
-	<definition name="settings_usergroup_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/usergroup/settings-usergroup-view.jsp" type="template" />
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/usergroup/settings-usergroup-view-setup.jsp" type="template" />
-	</definition>
-
-	<definition name="settings_usergroup_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/usergroup/settings-usergroup-delete.jsp" type="template" />
-		<put-attribute name="page-setup" value="" type="string" />
-	</definition>
-
-	<definition name="recipient_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_mailings" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-mailings-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-mailings-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_history" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-history.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-history-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition extends="base_ajax" name="security_settings">
-		<put-attribute name="body" type="template" value="/WEB-INF/jsp/mailing/mailing-security-settings.jsp"/>
-		<put-attribute name="page-setup" type="string" value=""/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_reports" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-report-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_report_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-report-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-report-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_delivery_info" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-delivery-history.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_successful_delivery_info" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-successful-delivery-history.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-    <definition name="recipient_mailing_licks_history" extends="base_ajax">
-   		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-mailing-clicks-modal.jsp" type="template"/>
-   		<put-attribute name="page-setup" value="" type="string"/>
-   	</definition>
-
-	<definition name="target_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/target-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/targets/target-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="target_dependents_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/target-dependents-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/targets/target-dependents-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="targets_list" extends="base">
-		<put-attribute name="body" type="template" value="/WEB-INF/jsp/targets/targets-list.jsp"/>
-		<put-attribute name="page-setup" type="template" value="/WEB-INF/jsp/targets/targets-list-setup.jsp"/>
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" type="template" value="/WEB-INF/jsp/messages-transitional.jsp"/>
-	</definition>
-
-	<definition name="targets_bulk_delete_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/targets-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="targets_delete_recipients_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/targets-delete-recipients.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="targets_create_mailinglist_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/targets-create-mailinglist.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="targets_delete_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/targets/targets-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="useractivitylog_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/useractivitylog/useractivitylog-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/useractivitylog/useractivitylog-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="restful_useractivitylog_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/useractivitylog/restful-useractivitylog-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/useractivitylog/restful-useractivitylog-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="soap_useractivitylog_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/useractivitylog/soap-useractivitylog-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/useractivitylog/soap-useractivitylog-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_mailing_comp_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/mailing_comp/stats-mailing-comparison-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing_comp/stats-mailing-comparison-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_mailing_comp_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/mailing_comp/stats-mailing-comparison-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing_comp/stats-mailing-comparison-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_birt_recipient_stat" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/recipient/birt-recipient-stat-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_birt_domain_stat" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/birt-domain-stat.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/birt-domain-stat-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="profile_field_evaluation_stat" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/profile-field/profile-field-evaluation-stat.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/profile-field/profile-field-evaluation-stat-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_birt_month_stat" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/birt-month-stats.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/birt-month-stats-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_birt_month_stat" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/birt-month-stats.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/birt-month-stats-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/overview/mailing-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/overview/mailing-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_settings_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/settings/mailing-settings-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/settings/mailing-settings-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_templates" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-templates.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/mailing-templates-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_import" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/import/mailing-import.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/import/mailing-import-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="template_import" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/import/template-import.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/import/template-import-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="import_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/importtemplate/import-template.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/importtemplate/import-template-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_undo" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-undo.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_content_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/content/mailing-content-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/content/mailing-content-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="generate_text_question_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/content/mailing-text-generation-question.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_bulk_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/overview/mailing-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_actions" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-actions.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/mailing-actions-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_attachments" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-attachments.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/mailing-attachments-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_attachments_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-attachments-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_send" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_delivery_settings" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-delivery-settings.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/send-mailing/mailing-delivery-settings-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="date_based_delivery_settings" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/date-based-delivery-settings.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/send-mailing/date-based-delivery-settings-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_delivery_status_box" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/delivery-status-box.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_cancel_generation_question_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-cancel-generation-question.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_resume_generation_question_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-resume-generation-question.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_resume_generation_by_copy_question_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-resume-generation-by-copy-question.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_send_confirm_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send-confirm.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="date_based_activation_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-datebased-activate-confirm.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="action_based_activation_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-actionbased-activate-confirm.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_deactivation_confirm" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-confirm-deactivation.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_preview_select" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/mailing-preview-select.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/preview/mailing-preview-select-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_preview_errors" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-errors.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="base_mailing_preview" extends="base_ajax">
-		<put-attribute name="page-setup" value="" type="string"/>
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.0" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.1" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-html.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.2" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-fax.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.3" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.4" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.5" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-sms.jsp" type="template"/>
-	</definition>
-
-	<definition name="preview.6" extends="base_mailing_preview">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-html.jsp" type="template"/>
-	</definition>
-
-	<definition name="action_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/actions/action-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="action_bulk_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/actions/action-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<!-- Import/Export edit field content page -->
-	<definition name="recipient_bulk_change" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-bulk-change.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-bulk-change-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="import_wizard_profile_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/import-profile/profile-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/import-profile/profile-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="import_wizard_profile_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/import-profile/profile-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="import_wizard_profile_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/import-profile/profile-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/import-profile/profile-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="import_wizard_profile_columns_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/import-profile/columns/profile-columns-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/import-profile/columns/profile-columns-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_start" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/start-import.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/start-import-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_method_choose" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/method-choose.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/method-choose-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_edit_error" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/edit-error.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/edit-error-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_preview" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/preview.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/preview-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_result" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/result.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/result-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_loading" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/loading.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/loading-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_progress" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient-import/progress.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient-import/progress-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="export_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/export/export-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="export_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/export/export-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string" />
-	</definition>
-
-	<definition name="export_result" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/export/export-result.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-result-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="export_progress" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/export/export-progress.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-progress-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_create_start" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/create/mailing-create-start.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/create/mailing-create-start-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="ecs_view" extends="base">
-		<put-attribute name="head-tag" value="ecs_head_tag" type="definition"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/ecs/ecs-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/ecs/ecs-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="ecs_preview" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/ecs/ecs-preview.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="ecs_head_tag" extends="head_tag_base">
-		<put-attribute name="head-extra-links" value="/WEB-INF/jsp/ecs/head-extra-links.jsp" type="template"/>
-		<put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/ecs/head-extra-meta-tags.jsp" type="template"/>
-	</definition>
-
-    <definition name="common_upselling" extends="base">
-   		<put-attribute name="body" value="/WEB-INF/jsp/common-upselling.jsp" type="template"/>
-   		<put-attribute name="page-setup" value="/WEB-INF/jsp/common-upselling-setup.jsp" type="template"/>
-
-   		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-   		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-   	</definition>
-
-	<!-- BOUNCE FILTER-->
-	<definition name="bounce_filter_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/bouncefilter/bouncefilter-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/bouncefilter/bouncefilter-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="bounce_filter_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/bouncefilter/bouncefilter-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/bouncefilter/bouncefilter-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="bounce_filter_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/bouncefilter/bouncefilter-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="export_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/export/export-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_file_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-file-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-file-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_mode_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mode-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mode-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_verify_missing_fields_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-verify-missing-fields-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-verify-missing-fields-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_mapping_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mapping-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mapping-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_preScan_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-preScan-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-preScan-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_verify_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-verify-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-verify-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_progress" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-progress.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-progress-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_result" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-result.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="recipient_import_wizard_mailinglists_step" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mailinglists-step.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/import/wizard/import-wizard-mailinglists-step-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_predelivery_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/mailing-predelivery-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_predelivery_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/mailing-predelivery-upselling-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_predelivery_results_new" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-predelivery-results-new.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="userform_userform_stats" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-userform-stats.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-userform-stats-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_trackablelink_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-trackablelink-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-trackablelink-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_trackablelink_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-trackablelink-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-trackablelink-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_trackablelink_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_trackablelink_bulk_clear_extensions" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/trackablelinks/bulk-clear-extensions.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_trackablelink_bulk_actions" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/trackablelinks/bulk-actions.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_trackablelink_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_images_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/images/mailing-images.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/images/mailing-images-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_images_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/images/mailing-images-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailing_images_bulk_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/images/mailing-images-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-
-	<definition name="form_components" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-components.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-components-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="formcomponents_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-components-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_delete_ajax_new" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_import" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-import.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-import-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_bulk_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/userform/userform-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/userform/userform-view-setup.jsp" type="template"/>
-		<put-attribute name="head-tag" value="userform_head_tag" type="definition"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="userform_head_tag" extends="head_tag_base">
-		<put-attribute name="head-extra-links" value="/WEB-INF/jsp/userform/userform-view-extra-links.jsp" type="template"/>
-		<put-attribute name="head-extra-meta-tags" value="" type="string"/>
-	</definition>
-
-	<!--MAILING LIST-->
-	<definition name="mailinglist_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailinglists/mailinglist-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailinglist_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailinglists/mailinglist-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailinglist_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailinglist_bulk_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglists-bulk-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailinglist_recipients_delete_settings" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-recipients-delete-settings.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="mailinglist_recipients_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailinglists/mailinglist-recipients-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="actions_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/actions/actions-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/actions/actions-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="actions_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/actions/actions-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/actions/actions-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="actions_view_forms" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/actions/actions-view-forms.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/actions/actions-view-forms-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_mailing_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing-separate-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing-separate-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="stats_mailing_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing-separate-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/stats/birt/mailing/stats-mailing-separate-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="upload_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/upload/upload-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/upload/upload-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="upload_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/upload/upload-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/upload/upload-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="upload_confirm_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/upload/upload-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/upload/upload-view-setup.jsp" type="template"/>
-
-	</definition>
-
-	<definition name="workflow_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/workflow/workflow-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="workflow_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-setup.jsp" type="template"/>
-		<put-attribute name="head-tag" value="workflow_head_tag" type="definition"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="workflow_view_only_elements" template="/WEB-INF/jsp/workflow/workflow-view-only-elements.jsp">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-view-only-elements.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/workflow/workflow-view-only-elements-setup.jsp" type="template"/>
-		<put-attribute name="head-tag" value="workflow_only_elements_head_tag" type="definition"/>
-	</definition>
-
-	<definition name="workflow_head_tag" extends="head_tag_base">
-		<put-attribute name="head-extra-links" value="/WEB-INF/jsp/workflow/workflow-head-extra-links.jsp" type="template"/>
-		<put-attribute name="head-extra-meta-tags" value="" type="string"/>
-	</definition>
-
-	<definition name="workflow_only_elements_head_tag" template="/WEB-INF/jsp/workflow/workflow-only-elements-head-tag.jsp">
-		<put-attribute name="head-extra-links" value="/WEB-INF/jsp/workflow/workflow-head-extra-links.jsp" type="template"/>
-		<put-attribute name="head-extra-meta-tags" value="" type="string"/>
-	</definition>
-
-	<definition name="workflow_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="workflow_bulkDeleteConfirm_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeleteConfirm.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="workflow_bulkDeactivateConfirm_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/workflow/workflow-bulkDeactivateConfirm.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="calendar_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/calendar/calendar-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/calendar/calendar-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="calendar_unsent_mailings_list_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/calendar/calendar-unsent-mailings-list.jsp" type="template"/>
-		<!-- No setup page -->
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="calendar_planned_mailings_list_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/calendar/calendar-planned-mailings-list.jsp" type="template"/>
-		<!-- No setup page -->
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="auto_import_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/autoimport/auto-import-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/autoimport/auto-import-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="auto_export_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/autoexport/auto-export-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/autoexport/auto-export-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="general_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/general-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/general-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="grid_template_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/grid/template/template-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/grid/template/template-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="mediapool_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/grid/mediapool/mediapool-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/grid/mediapool/mediapool-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="manage_tables_upselling" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/manage_tables/manage-tables-upselling.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/manage_tables/manage-tables-upselling-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="webserviceuser_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/webserviceuser/webserviceuser-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/webserviceuser/webserviceuser-list-setup.jsp" type="template"/>
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="webserviceuser_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/webserviceuser/webserviceuser-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/webserviceuser/webserviceuser-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="server_status_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/serverstatus/serverstatus-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/serverstatus/serverstatus-view-setup.jsp" type="template" />
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-	
-	<definition name="server_status_external_view" template="/WEB-INF/jsp/settings/serverstatus/serverstatus-external-view.jsp"/>
-
-	<definition name="server_job_queue_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/serverstatus/server-jobqueue-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/serverstatus/server-jobqueue-view-setup.jsp" type="template"/>
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="server_log_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/serverstatus/server-log-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/serverstatus/server-log-view-setup.jsp" type="template"/>
-
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="wysiwyg_agn_tags_dialog" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/wysiwyg/agn-tags-dialog.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="wysiwyg_agn_tags_window" extends="base_without_navigation" >
-		<put-attribute name="body" value="/WEB-INF/jsp/wysiwyg/image-browser.jsp" type="template" />
-	</definition>
-
-	<definition name="domains_entry_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domains-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/domains/domains-list-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="domains_entry_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domain-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/domains/domain-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="domain_address_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domain-address-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/settings/domains/domain-address-view-setup.jsp" type="template"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="domain_address_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domain-address-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<definition name="domain_delete_ajax" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/settings/domains/domain-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
-		<put-attribute name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="template"/>
-	</definition>
-
-	<!--Birt report-->
-	<definition name="birtreport_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/birtreport/birtreport-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/birtreport/birtreport-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="birtreport_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/birtreport/birtreport-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/birtreport/birtreport-view-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="birtreport_download" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/birtreport/birtreport-download.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/birtreport/birtreport-download-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="birtreport_delete" extends="base_ajax">
-		<put-attribute name="body" value="/WEB-INF/jsp/birtreport/birtreport-delete.jsp" type="template"/>
-		<put-attribute name="page-setup" value="" type="string"/>
-	</definition>
-
-	<definition name="mailing_recipients_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list-setup.jsp" type="template"/>
-	</definition>
-
-	<!-- Webhook administration -->
-	<definition name="webhooks_disabled" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhooks-disabled.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhooks-disabled-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="webhooks_list" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhooks-list.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhooks-list-setup.jsp" type="template"/>
-	</definition>
-
-	<definition name="webhook_view" extends="base">
-		<put-attribute name="body" value="/WEB-INF/jsp/webhooks/webhook-view.jsp" type="template"/>
-		<put-attribute name="page-setup" value="/WEB-INF/jsp/webhooks/webhook-view-setup.jsp" type="template"/>
-	</definition>
+
+    <definition name="js_translations" template="/WEB-INF/jsp/page-template/translations.js.jsp"/>
+
+    <definition name="error_page" template="/WEB-INF/jsp/page-template/error.jsp"/>
+    <definition name="csrf_error" template="/WEB-INF/jsp/page-template/csrf-error.jsp"/>
+
+    <definition name="login_db_failure" template="/WEB-INF/jsp/login/db-failure.jsp"/>
+    <definition name="login_offline" template="/WEB-INF/jsp/login/login-offline.jsp"/>
+
+    <definition name="login_base" template="/WEB-INF/jsp/login/template.jsp">
+        <put-attribute name="formContent" value="" type="string"/>
+        <put-attribute name="extra-body" value="" type="string"/>
+        <put-attribute name="autoRedirectToLogin" value="" type="string"/>
+    </definition>
+
+    <definition name="login" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/login.jsp" type="template"/>
+    </definition>
+
+    <definition name="login_password_reset_request" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/password/password-reset-request.jsp" type="template"/>
+    </definition>
+
+    <definition name="login_password_reset" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/password/password-reset.jsp" type="template"/>
+    </definition>
+
+    <definition name="login_password_expired_locked" extends="login_base">
+        <put-attribute name="formContent" value="" type="string"/>
+    </definition>
+
+    <definition name="login_password_changed" extends="login_base">
+        <put-attribute name="autoRedirectToLogin" value="true" type="string"/>
+    </definition>
+
+    <definition name="login_password_change" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/password/password-change.jsp" type="template"/>
+    </definition>
+
+    <definition name="login_host_authentication" extends="login_base">
+        <put-attribute name="formContent" value="/WEB-INF/jsp/login/host-authentication.jsp" type="template"/>
+    </definition>
+
+    <definition name="login_complete" template="/WEB-INF/jsp/login/login-complete.jsp"/>
+
+    <definition name="honeypot_confirm" template="/WEB-INF/jsp/honeypot/honeypot-confirm.jsp" />
+
+    <definition name="base" template="/WEB-INF/jsp/page-template/template.jsp">
+        <put-attribute name="head-tag" value="head_tag_default" type="definition"/>
+        <put-attribute name="newresource" value="/WEB-INF/jsp/page-template/new-resource.jsp" type="template"/>
+        <put-attribute name="itemactions" value="/WEB-INF/jsp/page-template/item-actions.jsp" type="template"/>
+        <put-attribute name="tabsmenu" value="/WEB-INF/jsp/page-template/tabsmenu.jsp" type="template"/>
+        <put-attribute name="header" value="/WEB-INF/jsp/page-template/header-tiles.jsp" type="template"/>
+        <put-attribute name="sidemenu" value="/WEB-INF/jsp/page-template/sidemenu-nav.jsp" type="template"/>
+        <put-attribute name="messages" value="/WEB-INF/jsp/page-template/messages.jsp" type="template"/>
+        <put-attribute name="footer_matomo" value="/WEB-INF/jsp/page-template/additional.jsp" type="template"/>
+    </definition>
+
+    <definition name="base_ajax" template="/WEB-INF/jsp/page-template/ajax-response-template.jsp">
+        <put-attribute name="messages" value="/WEB-INF/jsp/page-template/messages.jsp" type="template"/>
+    </definition>
+
+    <definition name="head_tag_base" template="/WEB-INF/jsp/page-template/head-tag.jsp"/>
+
+    <definition name="head_tag_default" extends="head_tag_base">
+        <put-attribute name="head-pre-links"   value="" type="string"/>
+        <put-attribute name="head-extra-links" value="" type="string"/>
+        <put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/page-template/head-extra-meta-tags.jsp" type="template"/>
+    </definition>
+
+    <definition name="head_tag_wysiwyg" extends="head_tag_base">
+        <put-attribute name="head-extra-links"   value="" type="string"/>
+        <put-attribute name="head-pre-links" value="/WEB-INF/jsp/wysiwyg/wysiwyg-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/page-template/head-extra-meta-tags.jsp" type="template"/>
+    </definition>
+
+    <definition name="base_without_navigation" template="/WEB-INF/jsp/page-template/template-without-navigation.jsp">
+        <put-attribute name="head-tag" value="head_tag_default" type="definition"/>
+    </definition>
+
+    <definition name="messages" extends="base_ajax">
+        <put-attribute name="body" value="" type="string"/>
+    </definition>
+
+    <definition name="permission_denied" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/permission-denied/permissionDenied.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/permission-denied/permissionDenied-setup.jsp" type="template" />
+    </definition>
+
+    <definition name="help_center" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/page-template/help-center/help-center-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="dashboard_grid" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/dashboard/dashboard-grid.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/dashboard/dashboard-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="dashboard_calendar" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/dashboard/dashboard-calendar.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/dashboard/dashboard-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="calendar_unsent_list" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/dashboard/dashboard-calendar-unsent-list.jsp" type="template"/>
+    </definition>
+
+    <definition name="delete_modal" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/common/modal/delete-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="useractivitylog_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/activity-log/useractivitylog-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/activity-log/useractivitylog-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="restful_useractivitylog_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/activity-log/restful-useractivitylog-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/activity-log/restful-useractivitylog-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="soap_useractivitylog_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/activity-log/soap-useractivitylog-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/activity-log/soap-useractivitylog-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="bounce_filter_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/response-processing/response-processing-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/response-processing/response-processing-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="bounce_filter_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/response-processing/response-processing-view.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_usergroup_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user-group/user-group-list.jsp" type="template" />
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user-group/user-group-list-setup.jsp" type="template" />
+    </definition>
+
+    <definition name="settings_usergroup_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user-group/user-group-view.jsp" type="template" />
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user-group/user-group-view-setup.jsp" type="template" />
+    </definition>
+
+    <definition name="settings_admin_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/admin-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/admin-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="webserviceuser_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/soap/soap-user-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/soap/soap-user-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="webserviceuser_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/soap/soap-user-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/soap/soap-user-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="user_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/user-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/user-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="user_delete_modal" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/user-delete-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="user_permissions" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/user-permissions.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/user-permissions-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_restfuluser_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/user/restfuluser-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/user/restfuluser-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/recipient-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/recipient-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_history" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/history/recipient-history.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/history/recipient-history-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_mailings" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/history/recipient-mailings.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/history/recipient-mailings-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_successful_delivery_info" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/history/recipient-successful-delivery-history-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_mailing_clicks_history" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/history/recipient-mailing-clicks-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_delivery_info" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/history/recipient-delivery-history-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="import_wizard_profile_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/import-profile/profile-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/import-profile/profile-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="import_wizard_profile_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/import-profile/profile-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/import-profile/profile-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglist-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailinglist/mailinglist-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_delete" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglist-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_bulk_delete" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglists-bulk-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglist-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailinglist/mailinglist-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_recipients_delete_settings" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglist-recipients-delete-settings.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailinglist_recipients_delete" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailinglist/mailinglist-recipients-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="export_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/export/export-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="export_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/export/export-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/export/export-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="export_progress" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/export/export-progress.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_profile_field_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/profile-field/profile-field-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/profile-field/profile-field-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_profile_field_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/profile-field/profile-field-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/profile-field/profile-field-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/overview/mailing-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/overview/mailing-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_actions" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/overview/mailing-actions.jsp" type="template"/>
+    </definition>
+
+    <definition name="import_modal" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/common/modal/import-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="import_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import-templates/import-templates.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import-templates/import-templates-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="actions_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/actions/actions-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/actions/actions-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_blacklist_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/blacklist/blacklist-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/recipient/blacklist/blacklist-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="settings_blacklist_delete_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/recipient/blacklist/blacklist-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="userform_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/userform-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/pages-and-forms/userform/userform-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="form_components" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/userform-components.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/pages-and-forms/userform/userform-components-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="userform_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/userform-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/pages-and-forms/userform/userform-view-setup.jsp" type="template"/>
+        <put-attribute name="head-tag" value="userform_head_tag" type="definition"/>
+    </definition>
+
+    <definition name="userform_head_tag" extends="head_tag_base">
+        <put-attribute name="head-extra-links" value="/WEB-INF/jsp/pages-and-forms/userform/userform-view-extra-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="" type="string"/>
+        <put-attribute name="head-pre-links" value="/WEB-INF/jsp/wysiwyg/wysiwyg-links.jsp" type="template"/>
+    </definition>
+
+    <definition name="userform_trackablelink_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/trackablelink/userform-trackablelink-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/pages-and-forms/userform/trackablelink/userform-trackablelink-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="userform_trackablelink_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/trackablelink/userform-trackablelink-view.jsp" type="template"/>
+    </definition>
+
+    <definition name="userform_userform_stats" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/pages-and-forms/userform/trackablelink/userform-userform-stats.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/pages-and-forms/userform/trackablelink/userform-userform-stats-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="form_not_found" template="/WEB-INF/jsp/pages-and-forms/userform/form-not-found.jsp"/>
+
+    <definition name="targets_list" extends="base">
+        <put-attribute name="body" type="template" value="/WEB-INF/jsp/targets/targets-list.jsp"/>
+        <put-attribute name="page-setup" type="template" value="/WEB-INF/jsp/targets/targets-list-setup.jsp"/>
+    </definition>
+
+    <definition name="targets_delete_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/targets-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="targets_bulk_delete_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/targets-bulk-delete.jsp" type="template"/>
+    </definition>
+
+    <definition name="workflow_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/campaigns/workflow-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/campaigns/workflow-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="workflow_head_tag" extends="head_tag_base">
+        <put-attribute name="head-extra-links" value="/WEB-INF/jsp/campaigns/workflow-head-extra-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="" type="string"/>
+        <put-attribute name="head-pre-links" value="" type="string"/>
+    </definition>
+
+    <definition name="workflow_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/campaigns/workflow-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/campaigns/workflow-view-setup.jsp" type="template"/>
+        <put-attribute name="head-tag" value="workflow_head_tag" type="definition"/>
+    </definition>
+
+    <definition name="workflow_only_elements_head_tag" template="/WEB-INF/jsp/campaigns/workflow-only-elements-head-tag.jsp">
+        <put-attribute name="head-extra-links" value="/WEB-INF/jsp/campaigns/workflow-head-extra-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="" type="string"/>
+    </definition>
+
+    <definition name="workflow_view_only_elements" template="/WEB-INF/jsp/campaigns/workflow-view-only-elements.jsp">
+        <put-attribute name="body" value="/WEB-INF/jsp/campaigns/workflow-view-only-elements.jsp" type="template"/>
+        <put-attribute name="page-setup" value="" type="template"/>
+        <put-attribute name="head-tag" value="workflow_only_elements_head_tag" type="definition"/>
+    </definition>
+
+    <definition name="mailing_templates" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-templates-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_settings" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/settings/mailing-settings.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/settings/mailing-settings-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_trackablelink_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/links/mailing-trackablelink-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/links/mailing-trackablelink-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_base_settings" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/settings/mailing-base-settings.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_trackablelink_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/links/mailing-trackablelink-view.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_trackablelink_bulk_actions" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/common/trackablelink/trackablelink-bulk-actions.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_trackablelink_bulk_clear_extensions" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/links/mailing-trackablelink-bulk-clear-extensions.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_send" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-send.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/send/mailing-send-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_delivery_status_box" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/delivery-status-box.jsp" type="template"/>
+    </definition>
+
+    <definition name="date_based_activation_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-datebased-activate-confirm.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_send_confirm_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-send-confirm.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_deactivation_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-confirm-deactivation.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_cancel_generation_question_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-cancel-generation-question.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_resume_generation_by_copy_question_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-resume-generation-by-copy-question.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_resume_generation_question_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-resume-generation-question.jsp" type="template"/>
+    </definition>
+
+    <definition name="action_based_activation_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/send/mailing-actionbased-activate-confirm.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_mailing_comp_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/mailing-comparison/mailing-comparison-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/mailing-comparison/mailing-comparison-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_mailing_comp_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/mailing-comparison/mailing-comparison-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/mailing-comparison/mailing-comparison-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_birt_recipient_stat" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/recipient/recipient-stat.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/recipient/recipient-stat-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="archive_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/archive/archive-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/archive/archive-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="archive_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/archive/archive-view.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_preview" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/mailing-preview.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/preview/mailing-preview-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.0" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.1" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-html.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.3" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.4" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-text.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.5" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-sms.jsp" type="template"/>
+    </definition>
+
+    <definition name="preview.6" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-html.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_preview_errors" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/preview/preview-errors.jsp" type="template"/>
+    </definition>
+
+    <definition name="salutation_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/salutation/salutation-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/salutation/salutation-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="salutation_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/salutation/salutation-view.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_mailing_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/mailing-separate/stats-mailing-separate-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/mailing-separate/stats-mailing-separate-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="server_status_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/server-status/serverstatus-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/server-status/serverstatus-view-setup.jsp" type="template" />
+    </definition>
+
+    <definition name="server_status_db_schema_overwrite" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/server-status/serverstatus-db-schema-overwrite.jsp" type="template"/>
+    </definition>
+
+    <definition name="server_status_db_schema_diff" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/server-status/serverstatus-db-schema-diff.jsp" type="template"/>
+    </definition>
+
+    <definition name="server_log_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/server-status/server-log-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/server-status/server-log-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="server_job_queue_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/server-status/server-jobqueue-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/server-status/server-jobqueue-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="datasource_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/datasource/datasource-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/datasource/datasource-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_reports" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/logs/recipient-report-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/logs/recipient-report-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_report_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/logs/recipient-report-view-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="actions_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/actions/actions-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/actions/actions-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="birtreport_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/report/birtreport-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/report/birtreport-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="birtreport_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/report/birtreport-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/report/birtreport-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_birt_domain_stat" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/domain/domain-stat.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/domain/domain-stat-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="profile_field_evaluation_stat" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/profile-field/profile-field-evaluation-stat.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/profile-field/profile-field-evaluation-stat-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_birt_month_stat" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/statistics/monthly/month-stats.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/statistics/monthly/month-stats-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_content" extends="base">
+        <put-attribute name="head-tag" value="head_tag_wysiwyg" type="definition" />
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/content/mailing-content.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/content/mailing-content-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="generate_text_question_ajax" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/content/mailing-text-generation-confirm-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_images_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/images/mailing-images.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/images/mailing-images-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_attachments" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/attachment/mailing-attachments.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/attachment/mailing-attachments-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="stats_mailing_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/stat/mailing-stat-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/stat/mailing-stat-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="ecs_head_tag" extends="head_tag_base">
+        <put-attribute name="head-extra-links" value="/WEB-INF/jsp/mailing/heatmap/head-extra-links.jsp" type="template"/>
+        <put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/mailing/heatmap/head-extra-meta-tags.jsp" type="template"/>
+        <put-attribute name="head-pre-links" value="" type="string" />
+    </definition>
+
+    <definition name="ecs_view" extends="base">
+        <put-attribute name="head-tag" value="ecs_head_tag" type="definition"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/heatmap/ecs-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/heatmap/ecs-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="ecs_preview" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/heatmap/ecs-preview.jsp" type="template"/>
+    </definition>
+
+    <definition name="evaluation_finished" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/common/modal/evaluation-finished-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="wysiwyg_agn_tags_modal" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/wysiwyg/agn-tags-dialog.jsp" type="template"/>
+    </definition>
+
+    <definition name="wysiwyg_image_browser_window" extends="base_without_navigation" >
+        <put-attribute name="body" value="/WEB-INF/jsp/wysiwyg/image-browser.jsp" type="template" />
+    </definition>
+
+    <definition name="target_settings" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/target-settings.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/targets/target-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="target_stats" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/target-stats.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/targets/target-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="target_dependents" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/target-dependents.jsp" type="template"/>
+    </definition>
+
+    <definition name="target_evaluate" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/target-evaluate.jsp" type="template"/>
+    </definition>
+
+    <definition name="targets_delete_recipients_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/targets/targets-delete-recipients.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_undo" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/mailing-undo.jsp" type="template"/>
+    </definition>
+
+    <definition name="server_status_external_view" template="/WEB-INF/jsp/administration/server-status/serverstatus-external-view.jsp"/>
+
+    <definition name="mailing_recipients_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/mailing/recipients/mailing-recipients-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="user_selfservice" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/self-service/user_selfservice.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/self-service/user_selfservice-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_method_choose" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/method-choose.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/method-choose-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_start" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/manual/start-import.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/manual/start-import-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_preview" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/manual/preview.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/manual/preview-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_edit_error" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/manual/edit-error.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/manual/edit-error-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_result" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/manual/result.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/manual/result-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_progress" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/manual/progress.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_bulk_change" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/edit-field-content/recipient-bulk-change.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/edit-field-content/recipient-bulk-change-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_bulk_change_apply_confirm" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/edit-field-content/recipient-bulk-change-apply-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="common_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/common-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="auto_export_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/auto-export-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="auto_import_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/auto-import-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_predelivery_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/mailing-predelivery-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="mediapool_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/mediapool-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="manage_tables_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/manage-tables-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="grid_template_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/template-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="clients_upselling" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/upselling/clients-upselling.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_file_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-file-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mode_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-mode-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mapping_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-mapping-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_verify_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-verify-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_verify_missing_fields_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-verify-missing-fields-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_preScan_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-preScan-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_mailinglists_step" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-mailinglists-step.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-step-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_progress" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-progress.jsp" type="template"/>
+    </definition>
+
+    <definition name="recipient_import_wizard_result" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-result.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/import/wizard/import-wizard-result-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="address_management_view" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/administration/address-management/address-management-view.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/administration/address-management/address-management-view-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="mailing_creation_modal" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/mailing/create/mailing-creation-modal.jsp" type="template"/>
+    </definition>
+
+    <definition name="widget_create" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/widget/widget-create.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/widget/widget-create-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="widget_subscribe" template="/WEB-INF/jsp/widget/widget-subscribe.jsp"/>
+
+    <definition name="webhooks_list" extends="base">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/webhooks/webhooks-list.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/data-management/webhooks/webhooks-list-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="webhook_view" extends="base_ajax">
+        <put-attribute name="body" value="/WEB-INF/jsp/data-management/webhooks/webhook-view.jsp" type="template"/>
+    </definition>
 
 </tiles-definitions>

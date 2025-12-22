@@ -1,28 +1,22 @@
-(function(){
+(() => {
 
-  var Tile = AGN.Lib.Tile,
-      Tab  = AGN.Lib.Tab,
-      Form  = AGN.Lib.Form;
+  const Form = AGN.Lib.Form;
 
-  $(document).on('click', '[data-toggle-tab]', function(e) {
-    var $this = $(this),
-        $tileTrigger = Tile.trigger($this),
-        toggleMethod = $this.data('toggle-tab-method') || 'show';
-
+  $(document).on('click', '[data-toggle-tab]', function (e) {
+    const $this = $(this);
 
     if ($this.is('[data-form-submit]')) {
-      var $form = Form.getWrapper($this);
+      const $form = Form.getWrapper($this);
       if ($form.exists() && !Form.get($form).valid()) {
         e.preventDefault();
         return false;
       }
     }
 
-    Tile.show($tileTrigger);
-    Tab[toggleMethod]($this);
+    AGN.Lib.Tab.show($this);
+    AGN.Lib.Scrollbar.get($this)?.update();
 
     e.preventDefault();
     return false;
   });
-
 })();

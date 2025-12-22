@@ -10,6 +10,11 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
@@ -17,17 +22,9 @@ import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.components.service.MailingDependencyService;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service("MailingDependencyService")
 public class MailingDependencyServiceImpl implements MailingDependencyService {
@@ -41,17 +38,6 @@ public class MailingDependencyServiceImpl implements MailingDependencyService {
         this.bounceFilterService = bounceFilterService;
         this.workflowService = workflowService;
         this.actionService = actionService;
-    }
-
-    @Override
-    public List<MailingDependentType> detectActiveFilters(String[] selectedFilters, MailingDependentType... types) {
-        if (ArrayUtils.isEmpty(selectedFilters)) {
-            return Arrays.asList(types);
-        }
-
-        return Stream.of(types)
-                .filter(t -> ArrayUtils.contains(selectedFilters, t.name()))
-                .collect(Collectors.toList());
     }
 
     @Override

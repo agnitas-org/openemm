@@ -25,26 +25,22 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
 import com.agnitas.mailing.autooptimization.beans.Optimization;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.beans.impl.OptimizationImpl;
 import com.agnitas.mailing.autooptimization.dao.OptimizationDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
-/**
- * Implementation of {@link Optimization}.
- *
- */
 public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao {
 
-	private static final String [] tableColumns = new String[] {
+	private static final String [] TABLE_COLUMNS = new String[] {
 			"optimization_id",
 			"company_id",
 			"campaign_id",
@@ -109,7 +105,7 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 
 	@Override
 	public Optimization get(int optimizationID, int companyID) {
-	   String query = "SELECT " + StringUtils.join(tableColumns, ", ") + " FROM auto_optimization_tbl" +
+	   String query = "SELECT " + StringUtils.join(TABLE_COLUMNS, ", ") + " FROM auto_optimization_tbl" +
 			   " WHERE optimization_id = ? AND company_id = ? AND (deleted = 0 OR deleted IS NULL)";
 		return selectObject(query, new OptimizationRowMapper(), optimizationID, companyID);
 	}
@@ -154,7 +150,7 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 
 		sqlQueryBuilder
 				.append("SELECT ")
-				.append(thresholdQuery ? StringUtils.join(tableColumns, ", ") : "ao.optimization_id, ao.company_id")
+				.append(thresholdQuery ? StringUtils.join(TABLE_COLUMNS, ", ") : "ao.optimization_id, ao.company_id")
 				.append(" FROM auto_optimization_tbl ao")
 				.append(" WHERE ao.status IN (?, ?)")
 				.append(" AND (deleted = 0 OR deleted IS NULL)");
@@ -189,11 +185,11 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 
 	@Override
 	public int getFinalMailingId(int companyId, int workflowId) {
-		String sql = "" +
-				"SELECT MAX(final_mailing_id) " +
-				"FROM auto_optimization_tbl " +
-				"WHERE company_id = ? " +
-				"      AND workflow_id = ? ";
+		String sql = """
+                SELECT MAX(final_mailing_id)
+                FROM auto_optimization_tbl
+                WHERE company_id = ? AND workflow_id = ?
+                """.stripIndent();
 		return selectInt(sql, companyId, workflowId);
 	}
 
@@ -231,7 +227,7 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 	            String sequenceQuery = "SELECT auto_optimization_tbl_seq.nextval FROM DUAL";
 	            newOptimizationId = selectInt(sequenceQuery);
 
-	            String insertQuery = "INSERT INTO auto_optimization_tbl (" + StringUtils.join(tableColumns, ", ") + ") VALUES ( "+ AgnUtils.repeatString("?", tableColumns.length, ", ") + " )";
+	            String insertQuery = "INSERT INTO auto_optimization_tbl (" + StringUtils.join(TABLE_COLUMNS, ", ") + ") VALUES ( "+ AgnUtils.repeatString("?", TABLE_COLUMNS.length, ", ") + " )";
 
                 update(insertQuery,
                         newOptimizationId,
@@ -302,7 +298,7 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
                 String insertStatement = "INSERT INTO auto_optimization_tbl (" + StringUtils.join(columnNames, ", ") + ")"
                 	+ " VALUES ( " + AgnUtils.repeatString("?", columnNames.length, ", ") + ")";
 
-				newOptimizationId = insertIntoAutoincrementMysqlTable("optimization_id", insertStatement, columnValues);
+				newOptimizationId = insert("optimization_id", insertStatement, columnValues);
             }
 			optimization.setId(newOptimizationId);
 
@@ -350,8 +346,8 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
             );
 
             if (rowsAffected == 0) {
-            	logger.warn( "Auto-optimization ID " + optimization + " could no tbe updated");
-                throw new RuntimeException("Could not update Optimization with ID = " + optimization);
+            	logger.warn("Auto-optimization ID {} could no tbe updated", optimization);
+                throw new IllegalStateException("Could not update Optimization with ID = " + optimization);
             }
 
             return optimization.getId();
@@ -361,23 +357,21 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean delete(Optimization optimization) {
-		String deleteQuery = "update auto_optimization_tbl set deleted = 1 where optimization_id = ?";
-		int rownums = update(deleteQuery, optimization.getId());
-		return rownums > 0;
+		String deleteQuery = "UPDATE auto_optimization_tbl SET deleted = 1 WHERE optimization_id = ?";
+        return update(deleteQuery, optimization.getId()) > 0;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteByCompanyID(int companyID) {
-		String deleteQuery = "delete from auto_optimization_tbl where company_id = ?";
-		return update(deleteQuery, companyID);
+        return update("DELETE FROM auto_optimization_tbl WHERE company_id = ?", companyID);
 	}
 
 	@Override
 	public List<Optimization> listWorkflowManaged(int workflowId, int companyID) {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 
-		sqlQueryBuilder.append("SELECT ").append(StringUtils.join(tableColumns, ", "))
+		sqlQueryBuilder.append("SELECT ").append(StringUtils.join(TABLE_COLUMNS, ", "))
 				.append(" FROM auto_optimization_tbl")
 				.append(" WHERE (deleted = 0 OR deleted IS NULL) AND company_id = ? AND workflow_id = ?");
 
@@ -386,23 +380,7 @@ public class OptimizationDaoImpl extends BaseDaoImpl implements OptimizationDao 
 
 	@Override
 	public int countByCompanyID(int companyID) {
-		String query = "select count(*) from auto_optimization_tbl where company_id = ?";
-		return selectInt(query, companyID);
-	}
-
-	@Override
-	public List<Optimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate) {
-		String querySb = "SELECT ao.campaign_id," +
-				" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname," +
-				" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id" +
-				" FROM auto_optimization_tbl ao" +
-				" WHERE ao.company_id = ?" +
-				" AND (ao.deleted = 0 OR ao.deleted IS NULL)" +
-				" AND ao.result_senddate IS NOT NULL" +
-				" AND ao.result_senddate >= ?" +
-				" AND ao.result_senddate <= ?" +
-				" ORDER BY ao.result_senddate";
-		return select(querySb, new MinimizedOptimizationRowMapper(), companyId, startDate, endDate);
+        return selectInt("SELECT COUNT(*) FROM auto_optimization_tbl WHERE company_id = ?", companyID);
 	}
 
 	@Override

@@ -14,7 +14,7 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -482,40 +482,44 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     private int createRecipientsStatisticTempTable() throws Exception {
         int tempTableId = getNextTmpID();
 
-        String createTableSQL = "CREATE TABLE " + getTempReportTableName(tempTableId)
-                + " (mailinglist_id INTEGER,"
-                + " mailinglist_group_id INTEGER,"
-                + " mailinglist_name VARCHAR(200),"
-                + " category_name VARCHAR(200),"
-                + " category_index INTEGER,"
-                + " targetgroup_id INTEGER,"
-                + " targetgroup_name VARCHAR(200),"
-                + " targetgroup_index INTEGER,"
-                + " count_doi_not_confirmed INTEGER,"
-                + " count_doi_not_confirmed_deleted INTEGER,"
-                + " count_doi_confirmed INTEGER,"
-                + " count_doi_confirmed_not_active INTEGER,"
-                + " count_doi_total INTEGER,"
-                + " count_type_text INTEGER,"
-                + " count_type_html INTEGER,"
-                + " count_type_offline_html INTEGER,"
-                + " count_active INTEGER,"
-                + " count_active_for_period INTEGER,"
-                + " count_waiting_for_confirm INTEGER,"
-                + " count_blacklisted INTEGER,"
-                + " count_optout INTEGER,"
-                + " count_bounced INTEGER,"
-                + " count_gender_male INTEGER,"
-                + " count_gender_female INTEGER,"
-                + " count_gender_unknown INTEGER,"
-                + " count_recipient INTEGER,"
-                + " count_target_group INTEGER,"
-                + " count_active_as_of INTEGER,"
-                + " count_blacklisted_as_of INTEGER,"
-                + " count_optout_as_of INTEGER,"
-                + " count_bounced_as_of INTEGER,"
-                + " count_waiting_for_confirm_as_of INTEGER,"
-                + " count_recipient_as_of INTEGER)";
+        String createTableSQL = """
+                CREATE TABLE %s
+                (
+                    mailinglist_id                  INTEGER,
+                    mailinglist_group_id            INTEGER,
+                    mailinglist_name                VARCHAR(200),
+                    category_name                   VARCHAR(200),
+                    category_index                  INTEGER,
+                    targetgroup_id                  INTEGER,
+                    targetgroup_name                VARCHAR(200),
+                    targetgroup_index               INTEGER,
+                    count_doi_not_confirmed         INTEGER,
+                    count_doi_not_confirmed_deleted INTEGER,
+                    count_doi_confirmed             INTEGER,
+                    count_doi_confirmed_not_active  INTEGER,
+                    count_doi_total                 INTEGER,
+                    count_type_text                 INTEGER,
+                    count_type_html                 INTEGER,
+                    count_type_offline_html         INTEGER,
+                    count_active                    INTEGER,
+                    count_active_for_period         INTEGER,
+                    count_waiting_for_confirm       INTEGER,
+                    count_blacklisted               INTEGER,
+                    count_optout                    INTEGER,
+                    count_bounced                   INTEGER,
+                    count_gender_male               INTEGER,
+                    count_gender_female             INTEGER,
+                    count_gender_unknown            INTEGER,
+                    count_recipient                 INTEGER,
+                    count_target_group              INTEGER,
+                    count_active_as_of              INTEGER,
+                    count_blacklisted_as_of         INTEGER,
+                    count_optout_as_of              INTEGER,
+                    count_bounced_as_of             INTEGER,
+                    count_waiting_for_confirm_as_of INTEGER,
+                    count_recipient_as_of           INTEGER
+                )
+                """.formatted(getTempReportTableName(tempTableId));
 
         executeEmbedded(createTableSQL);
 
@@ -952,8 +956,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                         blacklistedCount += amount;
                         break;
 
-                    case AdminOut:
-                    case UserOut:
+                    case AdminOut, UserOut:
                         optoutCount += amount;
                         break;
 
@@ -989,8 +992,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                             blacklistedCount += amount;
                             break;
 
-                        case AdminOut:
-                        case UserOut:
+                        case AdminOut, UserOut:
                             optoutCount += amount;
                             break;
 
@@ -1025,8 +1027,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                     format.parse(startDate);
                     format.parse(stopDate);
                     break;
-                case DATE_CONSTRAINT_LESS_THAN_START:
-                case DATE_CONSTRAINT_GREATER_THAN_START:
+                case DATE_CONSTRAINT_LESS_THAN_START, DATE_CONSTRAINT_GREATER_THAN_START:
                     format.parse(startDate);
                     break;
                 case DATE_CONSTRAINT_LESS_THAN_STOP:
@@ -1054,6 +1055,19 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
                 default:
                     throw new Exception("Can not create DateConstraint");
             }
+        } else if (isPostgreSQL()) {
+            return switch (constraintType) {
+                case DATE_CONSTRAINT_BETWEEN ->
+                        " AND %s BETWEEN TO_DATE('%s', 'YYYY-MM-DD') AND TO_DATE('%s', 'YYYY-MM-DD') + INTERVAL '1 DAY' "
+                                .formatted(fieldName, startDate, stopDate);
+                case DATE_CONSTRAINT_LESS_THAN_START ->
+                        " AND %s < TO_DATE('%s', 'YYYY-MM-DD') + INTERVAL '1 DAY'".formatted(fieldName, startDate);
+                case DATE_CONSTRAINT_GREATER_THAN_START ->
+                        " AND %s > TO_DATE('%s', 'YYYY-MM-DD') + INTERVAL '1 DAY'".formatted(fieldName, startDate);
+                case DATE_CONSTRAINT_LESS_THAN_STOP ->
+                        " AND %s < TO_DATE('%s', 'YYYY-MM-DD') + INTERVAL '1 DAY'".formatted(fieldName, stopDate);
+                default -> throw new Exception("Can not create DateConstraint");
+            };
         } else {
             switch (constraintType) {
                 case DATE_CONSTRAINT_BETWEEN:

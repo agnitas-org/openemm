@@ -1,55 +1,50 @@
-// /*doc
-// ---
-// title: Ajax
-// name: ajax-directives
-// category: Javascripts - Ajax
-// ---
-//
-// The `data-ajax` attribute enables ajax mode for a link (an `a` element)
-// so `AGN.Lib.Page.reload` is going to be used to perform a request (see `href` attribute):
-//
-// ```htmlexample
-// <a href="index.html" class="btn btn-regular btn-primary" data-ajax="">Go to index.html</a>
-// ```
-//
-// A `.js-ajax` css class can be used instead:
-//
-// ```htmlexample
-// <a href="index.html" class="btn btn-regular btn-primary js-ajax">Go to index.html</a>
-// ```
-//
-// By default a `GET` HTTP method is used. But you can specify an HTTP method to use as a value of the `data-ajax` attribute:
-//
-// ```htmlexample
-// <a href="index.html" class="btn btn-regular btn-primary" data-ajax="POST">Go to index.html</a>
-// ```
-// */
+/*doc
+---
+title: Ajax
+name: ajax-directives
+category: Javascripts - Ajax
+---
 
-(function(){
+The `data-ajax` attribute enables ajax mode for a link (an `a` element)
+so `AGN.Lib.Page.reload` is going to be used to perform a request (see `href` attribute):
 
-  var Loader = AGN.Lib.Loader,
-      Template  = AGN.Lib.Template,
-      Page   = AGN.Lib.Page,
-      CSRF = AGN.Lib.CSRF;
+```htmlexample
+<a href="index.html" class="btn btn-primary" data-ajax="">Go to index.html</a>
+```
 
-  var AjaxLoader = {
-    initialize: function(options) {
+A `.js-ajax` css class can be used instead:
+
+```htmlexample
+<a href="index.html" class="btn btn-primary js-ajax">Go to index.html</a>
+```
+
+By default a `GET` HTTP method is used. But you can specify an HTTP method to use as a value of the `data-ajax` attribute:
+
+```htmlexample
+<a href="index.html" class="btn btn-primary" data-ajax="POST">Go to index.html</a>
+```
+*/
+
+(() => {
+
+  const Loader = AGN.Lib.Loader,
+    Page = AGN.Lib.Page,
+    CSRF = AGN.Lib.CSRF;
+
+  const AjaxLoader = {
+    initialize: function (options) {
       if (options.loader === true || options.loader === undefined) {
         options.loader = {
-          show: function() {
-            Loader.show();
-          },
-          hide: function() {
-            Loader.hide();
-          }
+          show: () => Loader.show(),
+          hide: () => Loader.hide()
         };
       }
     },
 
-    show: function(options) {
-      var loader = options.loader;
+    show: function (options) {
+      const loader = options.loader;
 
-      if (loader && loader.show) {
+      if (loader?.show) {
         try {
           loader.show();
         } catch (e) {
@@ -58,10 +53,10 @@
       }
     },
 
-    hide: function(options) {
-      var loader = options.loader;
+    hide: function (options) {
+      const loader = options.loader;
 
-      if (loader && loader.hide) {
+      if (loader?.hide) {
         try {
           loader.hide();
         } catch (e) {
@@ -77,7 +72,9 @@
 
   $(document).ajaxSend(function(e, jqxhr, options) {
     AjaxLoader.show(options);
-    CSRF.setTokenToReqHeader(jqxhr, options.type);
+    if (CSRF.isProtectionEnabled()) {
+      CSRF.setTokenToReqHeader(jqxhr, options.type);
+    }
   });
 
   $(document).ajaxComplete(function(e, jqxhr, options) {
@@ -99,10 +96,8 @@
       return;
     }
 
-    var errorMessage;
-
-    if (jqxhr.status == 401) {
-      var event = $.Event('ajax:unauthorized');
+    if (jqxhr.status === 401) {
+      const event = $.Event('ajax:unauthorized');
 
       // Chiefly for retaining unsaved changes.
       $(document).trigger(event);
@@ -111,73 +106,64 @@
         // Preserve existing behavior unless different one required (defined via options.statusCode['401'])
         Page.render(jqxhr.responseText);
       }
-    } else if(jqxhr.status == 403) {
+    } else if(jqxhr.status === 403) {
       if (jqxhr.responseText) {
-        if (/<\s*\/\s*body\s*>/i.test(jqxhr.responseText)) {
-          var parser = new DOMParser();
-          var csrfBody = parser.parseFromString(jqxhr.responseText, 'text/html').querySelector('#csrf-error-page');
+        const $resp = $(jqxhr.responseText);
+        const $csrfErrorMessage = $resp.filter('#csrf-error-message');
 
-          if ($(csrfBody).length) {
-            var csrfErrorMessage = Template.text('csrf-error', {
-              headline: t('messages.permission.denied.title'),
-              content: t('messages.error.csrf'),
-              reload: t('messages.error.reload')
-            });
+        if ($csrfErrorMessage.exists()) {
+          AGN.Lib.Modal.create(_.template($csrfErrorMessage.html())({}), {})
+          return;
+        }
 
-            $('body').append(csrfErrorMessage);
-            return;
-          }
+        if ($resp.all('script[data-message]').exists()) {
+          Page.render(jqxhr.responseText);
+          return;
         }
       }
-      errorMessage = Template.text('permission-denied', {
-          title: t('messages.permission.denied.title'),
-          text: t('messages.permission.denied.text'),
-          btn: t('defaults.ok')
-        });
-
-      $('body').append(errorMessage);
+      AGN.Lib.Modal.fromTemplate('permission-denied', {
+        title: t('messages.permission.denied.title'),
+        text: t('messages.permission.denied.text'),
+        btn: t('defaults.ok')
+      });
     } else {
-      var isDefault = true;
+      let isDefault = true;
 
       if (jqxhr.responseText) {
         try {
-          var $resp = $(jqxhr.responseText);
-          var $errorMessage = $resp.filter('#error-message');
-          var $errorPage = $resp.filter('#error-page');
-          var $scriptMessages = $resp.all('[data-message]');
-
-          if ($errorPage.exists()) {
-            // error page from redesigned ui. classic error should be shown
-          } else if ($errorMessage.exists()) {
-            if($errorMessage.is('script[type="text/x-mustache-template"]')) {
-              $('body').append(_.template($errorMessage.html()));
-            } else {
-              $('body').append($errorMessage);
-            }
-            isDefault = false;
-          } else if ($scriptMessages.exists()) {
-            Page.render(jqxhr.responseText);
+          const json = JSON.parse(jqxhr.responseText);
+          if (json.popups) {
+            AGN.Lib.JsonMessages(json.popups, true);
             isDefault = false;
           }
         } catch (e) {
-          console.debug(e);
+          isDefault = true;
+        }
+
+        if (isDefault) {
+          try {
+            if ($(jqxhr.responseText).all('script[data-message]').exists()) {
+              Page.render(jqxhr.responseText);
+              isDefault = false;
+            }
+          } catch (e) {
+            isDefault = true;
+          }
         }
       }
 
       if (isDefault) {
-        errorMessage = Template.text('error', {
+        AGN.Lib.Modal.fromTemplate('error', {
           headline: t('messages.error.headline'),
           text: t('messages.error.text'),
           reload: t('messages.error.reload')
         });
-
-        $('body').append(errorMessage);
       }
     }
   });
 
-  $(document).on('click', 'a[data-ajax], a.js-ajax', function(e) {
-    var $e = $(this);
+  $(document).on('click', 'a[data-ajax]', function(e) {
+    const $e = $(this);
     e.preventDefault();
     Page.reload($e.attr('href'), true, $e.data('ajax'));
   });

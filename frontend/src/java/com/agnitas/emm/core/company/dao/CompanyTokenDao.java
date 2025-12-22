@@ -12,14 +12,11 @@ package com.agnitas.emm.core.company.dao;
 
 import java.util.Optional;
 
-import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-
 public interface CompanyTokenDao {
 
-	int getCompanyIdByToken(final String token) throws UnknownCompanyTokenException;
+	Optional<Integer> getCompanyIdByToken(String token);
 
-	Optional<String> getCompanyToken(int companyID) throws UnknownCompanyIdException;
+	Optional<String> getCompanyToken(int companyID);
 
 	void assignToken(final int companyID, final String token);
 	

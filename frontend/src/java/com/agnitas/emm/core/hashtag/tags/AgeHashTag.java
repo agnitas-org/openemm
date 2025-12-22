@@ -23,7 +23,7 @@ import java.util.Objects;
 
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

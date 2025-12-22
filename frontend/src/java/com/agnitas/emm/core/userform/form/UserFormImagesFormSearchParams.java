@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.userform.form;
 
+import java.util.List;
+
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.web.forms.FormSearchParams;
-
-import java.util.List;
 
 public class UserFormImagesFormSearchParams implements FormSearchParams<UserFormImagesOverviewFilter> {
 
@@ -56,17 +56,4 @@ public class UserFormImagesFormSearchParams implements FormSearchParams<UserForm
         form.setMimetypes(mimetypes);
     }
 
-    @Override
-    public void resetParams() {
-        fileName = null;
-        description = null;
-        fileSizeMin = null;
-        fileSizeMax = null;
-        heightMin = null;
-        heightMax = null;
-        widthMin = null;
-        widthMax = null;
-        uploadDate = new DateRange();
-        mimetypes = null;
-    }
 }

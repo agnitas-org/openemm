@@ -40,7 +40,7 @@ public class EmmActionValidationServiceImpl implements EmmActionValidationServic
     }
 
     @Override
-    public SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) throws Exception {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) {
         ActionOperationValidator validatorByType = getValidatorByType(operation.getClass());
         if (validatorByType == null) {
             return new SimpleServiceResult(true);

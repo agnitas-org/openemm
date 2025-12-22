@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.springws;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,8 +20,8 @@ import org.apache.logging.log4j.Logger;
  * This wrapper class allows the configuration values for DefaultWsdl11Definition to be set via db (configservice)
  */
 public class WsDefinitionWrapper extends org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(WsDefinitionWrapper.class);
+
+	private static final Logger logger = LogManager.getLogger(WsDefinitionWrapper.class);
 	
 	public WsDefinitionWrapper(ConfigService configService) {
 		String webservicesUrl = configService.getValue(Webservices.WebservicesUrl);

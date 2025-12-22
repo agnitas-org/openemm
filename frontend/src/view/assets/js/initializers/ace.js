@@ -20,10 +20,7 @@ Class           | Used for
 ```
 */
 
-AGN.Lib.CoreInitializer.new('ace', function($scope) {
-  if (!$scope) {
-    $scope = $(document);
-  }
+AGN.Lib.CoreInitializer.new('ace', ['form'], ($scope = $(document)) => {
 
   _.each($scope.find('.js-editor, .js-editor-text, .js-editor-eql, .js-editor-css'), function(textArea) {
     AGN.Lib.Editor.get($(textArea));

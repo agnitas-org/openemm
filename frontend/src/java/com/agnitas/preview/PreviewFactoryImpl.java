@@ -10,8 +10,8 @@
 
 package com.agnitas.preview;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class PreviewFactoryImpl implements PreviewFactory {
 	private static PreviewFactory instance;

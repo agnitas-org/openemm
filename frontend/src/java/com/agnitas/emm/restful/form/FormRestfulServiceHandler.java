@@ -18,12 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 
-import com.agnitas.service.UserFormExporter;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import org.apache.commons.lang3.StringUtils;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -44,14 +39,17 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+import com.agnitas.service.UserFormExporter;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
-
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This restful service is available at:
@@ -305,8 +303,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	private void fillUserformObject(Admin admin, UserForm userForm, JsonObject jsonObject) throws Exception {
-		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
-		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+        String companyToken = companyTokenService.getCompanyToken(admin.getCompanyID()).orElse(null);
 		
 		for (Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("formname".equals(entry.getKey()) || "name".equals(entry.getKey())) {

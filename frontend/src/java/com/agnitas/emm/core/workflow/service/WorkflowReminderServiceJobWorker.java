@@ -10,11 +10,22 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import com.agnitas.service.JobWorker;
-
 import com.agnitas.emm.core.reminder.service.ReminderService;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 
-public class WorkflowReminderServiceJobWorker extends JobWorker {
+/**
+ * This worker is responsible for processing scheduled workflow reminders configured in start and stop icons.
+ * <p>
+ * Its primary role is to monitor and trigger these reminders at the
+ * configured time, ensuring that EMM users receive email notifications about workflow events.
+ * <p>
+ * Example Insert in DB:
+ * INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted, criticality)
+ * VALUES ('WorkflowReminderService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 1, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.workflow.service.ComWorkflowReminderServiceJobWorker', 0, 5);
+ */
+@JobWorker("WorkflowReminderService")
+public class WorkflowReminderServiceJobWorker extends JobWorkerBase {
 
     @Override
     public String runJob() {

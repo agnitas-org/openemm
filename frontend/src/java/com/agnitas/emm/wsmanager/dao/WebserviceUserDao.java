@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.wsmanager.dao;
 
+import java.util.List;
+
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
 import com.agnitas.emm.wsmanager.common.WebserviceUserCredential;
@@ -80,14 +82,20 @@ public interface WebserviceUserDao {
 	 *
 	 * @throws WebserviceUserDaoException on any errors accessing user data
 	 */
-	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(int companyID, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
-	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserMasterList(String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
+	PaginatedList<WebserviceUserListItem> getWebserviceUserList(int companyID, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
 
-	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(WebserviceUserOverviewFilter filter) throws WebserviceUserDaoException;
+	PaginatedList<WebserviceUserListItem> getWebserviceUserMasterList(String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
+
+	PaginatedList<WebserviceUserListItem> getWebserviceUserList(WebserviceUserOverviewFilter filter) throws WebserviceUserDaoException;
 
 	int getNumberOfWebserviceUsers(int companyID);
 
 	void saveGrantedPermissionsAndGroups(WebserviceUser user);
 
 	boolean deleteWebserviceUser(String username);
+
+	List<String> getUsernames();
+
+	List<String> getUsernames(int companyId);
+
 }

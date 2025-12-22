@@ -13,10 +13,11 @@ package com.agnitas.emm.core.useractivitylog.web;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
+import com.agnitas.util.UserActivityLogActions;
 
 public class UserActivityLogSearchParams extends UserActivityLogSearchParamsBase {
 
-    private int action;
+    private UserActivityLogActions action;
     private String description;
 
     public UserActivityLogSearchParams(DateRange timestamp) {
@@ -41,10 +42,4 @@ public class UserActivityLogSearchParams extends UserActivityLogSearchParamsBase
         ualFilter.setDescription(this.description);
     }
 
-    @Override
-    public void resetParams() {
-        super.resetParams();
-        this.action = 0;
-        this.description = null;
-    }
 }

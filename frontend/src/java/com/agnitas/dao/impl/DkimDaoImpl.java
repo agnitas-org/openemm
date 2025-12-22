@@ -10,24 +10,37 @@
 
 package com.agnitas.dao.impl;
 
+import java.util.Date;
+import java.util.List;
+
 import com.agnitas.beans.impl.DkimKeyEntry;
 import com.agnitas.dao.DkimDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
 
 /**
  * DAO handler for DKIM-Objects
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class DkimDaoImpl extends BaseDaoImpl implements DkimDao {
+
+	private static final RowMapper<DkimKeyEntry> DKIMKEYENTRY_ROWMAPPER = (resultSet, i) -> {
+		DkimKeyEntry dkimKeyEntry = new DkimKeyEntry();
+		dkimKeyEntry.setDkimID(resultSet.getBigDecimal("dkim_id").intValue());
+		dkimKeyEntry.setCompanyID(resultSet.getBigDecimal("company_id").intValue());
+		dkimKeyEntry.setDomain(resultSet.getString("domain"));
+		dkimKeyEntry.setSelector(resultSet.getString("selector"));
+		dkimKeyEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
+		dkimKeyEntry.setChangeDate(resultSet.getTimestamp("timestamp"));
+		dkimKeyEntry.setValidStartDate(resultSet.getTimestamp("valid_start"));
+		dkimKeyEntry.setValidEndDate(resultSet.getTimestamp("valid_end"));
+		dkimKeyEntry.setDomainKey(resultSet.getString("domain_key"));
+		dkimKeyEntry.setDomainKeyEncrypted(resultSet.getString("domain_key_encrypted"));
+		return dkimKeyEntry;
+	};
 
 	private ConfigService configService;
 
@@ -36,34 +49,37 @@ public class DkimDaoImpl extends BaseDaoImpl implements DkimDao {
 	}
 
 	@Override
-	public boolean existsDkimKeyForDomain(int companyID, String domainname) {
-		if (companyID <= 0 || StringUtils.isEmpty(domainname)) {
+	public boolean existsDkimKeyForDomain(int companyID, String domainName) {
+		if (companyID <= 0 || StringUtils.isEmpty(domainName)) {
 			return false;
-		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
-			return false;
-		} else {
-			if (selectInt("SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, domainname) > 0) {
-				return true;
-			} else {
-				String mainDomainName = getDomainOfSubDomain(domainname);
-				return selectInt("SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, mainDomainName) > 0;
-			}
 		}
+		if (isDkimKeyTblNotExists()) {
+			return false;
+		}
+		if (selectInt("SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, domainName) > 0) {
+			return true;
+		}
+		String mainDomainName = getDomainOfSubDomain(domainName);
+		return selectInt("SELECT COUNT(*) FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP)", companyID, mainDomainName) > 0;
 	}
-	
+
+	private boolean isDkimKeyTblNotExists() {
+		return !DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl");
+	}
+
 	@Override
 	public boolean deleteDkimKeyByCompany(int companyID) {
 		if (companyID <= 0) {
 			return false;
-		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
+		}
+		if (isDkimKeyTblNotExists()) {
 			return false;
-		} else {
-			try {
-				update("DELETE from dkim_key_tbl WHERE company_id = ?", companyID);
-				return true;
-			} catch (Exception e) {
-				return false;
-			}
+		}
+		try {
+			update("DELETE from dkim_key_tbl WHERE company_id = ?", companyID);
+			return true;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 	
@@ -71,50 +87,44 @@ public class DkimDaoImpl extends BaseDaoImpl implements DkimDao {
         String[] domainParts = domainName.split("\\.");
 		if (domainParts.length >= 2) {
 			return domainParts[domainParts.length - 2] + "." + domainParts[domainParts.length - 1];
-		} else {
-			return domainName;
 		}
+		return domainName;
     }
 
 	@Override
-	public DkimKeyEntry getDkimKeyForDomain(int companyID, String domainname, boolean allowNonMatchingFallback) {
-		if (companyID <= 0 || StringUtils.isEmpty(domainname)) {
+	public DkimKeyEntry getDkimKeyForDomain(int companyID, String domainName, boolean allowNonMatchingFallback) {
+		if (companyID <= 0 || StringUtils.isEmpty(domainName)) {
 			return null;
-		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
+		}
+		if (isDkimKeyTblNotExists()) {
 			return null;
-		} else {
-			List<DkimKeyEntry> resultExactDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, domainname);
-			if (resultExactDomain.size() > 0) {
-				return resultExactDomain.get(0);
-			} else {
-				String mainDomainName = getDomainOfSubDomain(domainname);
-				List<DkimKeyEntry> resultMainDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, mainDomainName);
-				if (resultMainDomain.size() > 0) {
-					return resultMainDomain.get(0);
-				} else {
-					List<DkimKeyEntry> resultMasterDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 1 AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), mainDomainName);
-					if (resultMasterDomain.size() > 0) {
-						return resultMasterDomain.get(0);
-					}
-					
-					if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimLocalActivation, companyID)) {
-						List<DkimKeyEntry> resultLocal = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID);
-						if (resultLocal.size() > 0) {
-							return resultLocal.get(0);
-						}
-					}
-					
-					if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimGlobalActivation, companyID)) {
-						List<DkimKeyEntry> resultGlobal = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 0 AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper());
-						if (resultGlobal.size() > 0) {
-							return resultGlobal.get(0);
-						}
-					}
-					
-					return null;
-				}
+		}
+		List<DkimKeyEntry> resultExactDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", DKIMKEYENTRY_ROWMAPPER, companyID, domainName);
+		if (!resultExactDomain.isEmpty()) {
+			return resultExactDomain.get(0);
+		}
+		String mainDomainName = getDomainOfSubDomain(domainName);
+		List<DkimKeyEntry> resultMainDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", DKIMKEYENTRY_ROWMAPPER, companyID, mainDomainName);
+		if (!resultMainDomain.isEmpty()) {
+			return resultMainDomain.get(0);
+		}
+		List<DkimKeyEntry> resultMasterDomain = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 1 AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", DKIMKEYENTRY_ROWMAPPER, mainDomainName);
+		if (!resultMasterDomain.isEmpty()) {
+			return resultMasterDomain.get(0);
+		}
+		if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimLocalActivation, companyID)) {
+			List<DkimKeyEntry> resultLocal = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", DKIMKEYENTRY_ROWMAPPER, companyID);
+			if (!resultLocal.isEmpty()) {
+				return resultLocal.get(0);
 			}
 		}
+		if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimGlobalActivation, companyID)) {
+			List<DkimKeyEntry> resultGlobal = select("SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 0 AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", DKIMKEYENTRY_ROWMAPPER);
+			if (!resultGlobal.isEmpty()) {
+				return resultGlobal.get(0);
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -136,7 +146,7 @@ public class DkimDaoImpl extends BaseDaoImpl implements DkimDao {
 					dkimKeyEntry.getDomainKey(),
 					dkimKeyEntry.getDomainKeyEncrypted());
 		} else {
-			int newDkimId = insertIntoAutoincrementMysqlTable("domain_id",
+			int newDkimId = insert("dkim_id",
 					"INSERT INTO dkim_key_tbl " +
 							"(creation_date, company_id, valid_start, valid_end, domain, selector, domain_key, domain_key_encrypted)" +
 							" VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -149,26 +159,6 @@ public class DkimDaoImpl extends BaseDaoImpl implements DkimDao {
 					dkimKeyEntry.getDomainKey(),
 					dkimKeyEntry.getDomainKeyEncrypted());
 			dkimKeyEntry.setDkimID(newDkimId);
-		}
-	}
-
-    protected class DkimKeyEntry_RowMapper implements RowMapper<DkimKeyEntry> {
-		@Override
-		public DkimKeyEntry mapRow(ResultSet resultSet, int row) throws SQLException {
-			DkimKeyEntry dkimKeyEntry = new DkimKeyEntry();
-
-			dkimKeyEntry.setDkimID(resultSet.getBigDecimal("dkim_id").intValue());
-			dkimKeyEntry.setCompanyID(resultSet.getBigDecimal("company_id").intValue());
-			dkimKeyEntry.setDomain(resultSet.getString("domain"));
-			dkimKeyEntry.setSelector(resultSet.getString("selector"));
-			dkimKeyEntry.setCreationDate(resultSet.getTimestamp("creation_date"));
-			dkimKeyEntry.setChangeDate(resultSet.getTimestamp("timestamp"));
-			dkimKeyEntry.setValidStartDate(resultSet.getTimestamp("valid_start"));
-			dkimKeyEntry.setValidEndDate(resultSet.getTimestamp("valid_end"));
-			dkimKeyEntry.setDomainKey(resultSet.getString("domain_key"));
-			dkimKeyEntry.setDomainKeyEncrypted(resultSet.getString("domain_key_encrypted"));
-
-			return dkimKeyEntry;
 		}
 	}
 }

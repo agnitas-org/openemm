@@ -13,9 +13,11 @@ package com.agnitas.emm.common;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.agnitas.exception.UnknownUserStatusException;
+import com.agnitas.exception.InvalidUserStatusException;
 
 public enum UserStatus {
 
@@ -23,9 +25,9 @@ public enum UserStatus {
 	Bounce(2, "bounce", "recipient.MailingState2"),
 	AdminOut(3, "opt_out", "recipient.OptOutAdmin"),	// Same webhook identifier as UserOut. Distinguished in webhook messge by a separate flag
 	UserOut(4, "opt_out", "recipient.OptOutUser"),	// Same webhook identifier as AdminOut. Distinguished in webhook messge by a separate flag
-	WaitForConfirm(5, "wait_for_confirm", "recipient.MailingState5"),
+	WaitForConfirm(5, "wait_for_confirm", "recipient.MailingState5"), // Sometimes also referred as status "pending"
 	Blacklisted(6, "blacklisted", "recipient.MailingState6"),
-	Suspend(7, "suspended", "recipient.MailingState7"); // Sometimes also referred to as status "supended" or "pending"
+	Suspend(7, "suspended", "recipient.MailingState7"); // Sometimes also referred to as status "supended"
 	
 	/*
 	 *  Status 7 is used for single test delivery, when
@@ -34,8 +36,7 @@ public enum UserStatus {
 	 *    doesn't have a binding on the mailinglist of the mailing
 	 */
 	
-	private int statusCode;
-	
+	private final int statusCode;
 	/** Identifier used in webhook messages. */
 	private final String webhookIdentifier;
 	private final String messageKey;
@@ -54,25 +55,19 @@ public enum UserStatus {
 		return messageKey;
 	}
 
-	public static UserStatus getUserStatusByID(int id) throws UnknownUserStatusException {
-		for (UserStatus userStatus : UserStatus.values()) {
-			if (userStatus.statusCode == id) {
-				return userStatus;
-			}
-		}
-		throw new UnknownUserStatusException(id);
+	public static Optional<UserStatus> findByCode(int code) {
+		return Stream.of(UserStatus.values())
+				.filter(s -> s.statusCode == code)
+				.findFirst();
 	}
 
-	public static UserStatus findByCode(int code) {
-        try {
-            return getUserStatusByID(code);
-        } catch (UnknownUserStatusException e) {
-            return null;
-        }
+	public static UserStatus getByCode(int code) {
+		return findByCode(code)
+				.orElseThrow(() -> new InvalidUserStatusException(code));
     }
 
 	public static boolean existsWithId(int id) {
-        return findByCode(id) != null;
+        return findByCode(id).isPresent();
     }
 	
 	public static UserStatus getUserStatusByName(String name) {

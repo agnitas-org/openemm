@@ -3,15 +3,15 @@
                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                      xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/validation/mapping http://xmlns.jcp.org/xml/ns/validation/mapping/validation-mapping-2.0.xsd"
                      version="2.0">
-    <bean class="org.agnitas.emm.core.mailinglist.service.MailinglistModel">
+    <bean class="com.agnitas.emm.core.mailinglist.bean.MailinglistModel">
         <field name="companyId">
             <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$UpdateGroup</value>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$GetGroup</value>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$CompanyGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$GetGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$CompanyGroup</value>
                 </groups>
             </constraint>
         </field>
@@ -19,8 +19,8 @@
             <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{shortname}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$UpdateGroup</value>
                 </groups>
             </constraint>
         </field>
@@ -28,21 +28,21 @@
             <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{mailinglist.id}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$UpdateGroup</value>
-                    <value>org.agnitas.emm.core.mailinglist.service.MailinglistModel$GetGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.mailinglist.bean.MailinglistModel$GetGroup</value>
                 </groups>
             </constraint>
         </field>
     </bean>
     
-    <bean class="org.agnitas.emm.core.recipient.service.RecipientModel">
+    <bean class="com.agnitas.emm.core.recipient.service.RecipientModel">
         <field name="companyId">
             <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{company.id}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$DeleteGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$DeleteGroup</value>
                 </groups>
             </constraint>
         </field>
@@ -50,8 +50,8 @@
             <constraint annotation="jakarta.validation.constraints.Positive">
                 <message>err.isPositive{customer.id}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$DeleteGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$DeleteGroup</value>
                 </groups>
             </constraint>
         </field>
@@ -59,22 +59,22 @@
             <constraint annotation="jakarta.validation.constraints.NotNull">
                 <message>err.required{gender}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
             <constraint annotation="jakarta.validation.constraints.Min">
                 <message>err.intRange{gender}{0}{5}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
                 </groups>
                 <element name="value">0</element>
             </constraint>
             <constraint annotation="jakarta.validation.constraints.Max">
                 <message>err.intRange{gender}{0}{5}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
                 </groups>
                 <element name="value">5</element>
             </constraint>
@@ -83,14 +83,14 @@
             <constraint annotation="jakarta.validation.constraints.NotBlank">
                 <message>err.required{email}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
             <constraint annotation="jakarta.validation.constraints.Email">
                 <message>err.isEmail{email}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
                 </groups>
             </constraint>
         </getter>
@@ -98,22 +98,22 @@
             <constraint annotation="jakarta.validation.constraints.NotNull">
                 <message>err.required{mailtype}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
                 </groups>
             </constraint>
             <constraint annotation="jakarta.validation.constraints.Min">
                 <message>err.intRange{mailtype}{0}{2}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
                 </groups>
                 <element name="value">0</element>
             </constraint>
             <constraint annotation="jakarta.validation.constraints.Max">
                 <message>err.intRange{mailtype}{0}{2}</message>
                 <groups>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
-                    <value>org.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$AddGroup</value>
+                    <value>com.agnitas.emm.core.recipient.service.RecipientModel$UpdateGroup</value>
                 </groups>
                 <element name="value">2</element>
             </constraint>

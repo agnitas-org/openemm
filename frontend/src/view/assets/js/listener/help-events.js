@@ -1,10 +1,4 @@
-(function(){
-
-  var Help = AGN.Lib.Help;
-
-  $(document).on('click', '[data-help]', function(e) {
-    Help.show($(this));
-    e.preventDefault();
-  });
-
-})();
+AGN.Lib.Action.new({click: '[data-help]'}, function () {
+  AGN.Lib.Help.show(this.el);
+  this.event.preventDefault();
+});

@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
-import com.agnitas.exception.DetailedRequestErrorException;
+import com.agnitas.exception.DetailedUiMessageException;
 import com.agnitas.messages.Message;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +54,7 @@ public class TargetEditFormValidator {
     }
 
     public void throwEqlValidationException(String eql, EqlSyntaxError error) {
-        throw new DetailedRequestErrorException(
+        throw new DetailedUiMessageException(
                 getPositionDetails(error),
                 getEqlErrorMsg(eql, error)
         );

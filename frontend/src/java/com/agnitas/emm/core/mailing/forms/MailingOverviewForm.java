@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -29,10 +29,6 @@ public class MailingOverviewForm extends PaginationForm {
     private boolean numberOfRowsChanged;
     private boolean forTemplates;
     private boolean inEditColumnsMode;
-    private boolean searchInName = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchInContent = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchInDescription = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String filterSendDateBegin;
     private String filterSendDateEnd;
     private String filterCreationDateBegin;
@@ -67,38 +63,6 @@ public class MailingOverviewForm extends PaginationForm {
 
     public void setForTemplates(boolean forTemplates) {
         this.forTemplates = forTemplates;
-    }
-
-    public boolean isSearchInName() {
-        return searchInName;
-    }
-
-    public void setSearchInName(boolean searchInName) {
-        this.searchInName = searchInName;
-    }
-
-    public boolean isSearchInContent() {
-        return searchInContent;
-    }
-
-    public void setSearchInContent(boolean searchInContent) {
-        this.searchInContent = searchInContent;
-    }
-
-    public boolean isSearchInDescription() {
-        return searchInDescription;
-    }
-
-    public void setSearchInDescription(boolean searchInDescription) {
-        this.searchInDescription = searchInDescription;
-    }
-
-    public String getSearchQueryText() {
-        return searchQueryText;
-    }
-
-    public void setSearchQueryText(String searchQueryText) {
-        this.searchQueryText = searchQueryText;
     }
 
     public String getFilterSendDateBegin() {
@@ -267,13 +231,9 @@ public class MailingOverviewForm extends PaginationForm {
         map.put("page", getPage());
         map.put("forTemplates", forTemplates);
         map.put("inEditColumnsMode", inEditColumnsMode);
-        map.put("searchInName", searchInName);
-        map.put("searchInContent", searchInContent);
-        map.put("searchInDescription", searchInDescription);
         map.put("mailingTypes", mailingTypes);
         map.put("mediaTypes", mediaTypes);
         map.put("selectedFields", selectedFields);
-        map.put("searchQueryText", searchQueryText);
         map.put("filterSendDateBegin", filterSendDateBegin);
         map.put("filterSendDateEnd", filterSendDateEnd);
         map.put("filterCreationDateBegin", filterCreationDateBegin);
@@ -296,13 +256,9 @@ public class MailingOverviewForm extends PaginationForm {
         return ArrayUtils.addAll(Arrays.asList(
                 forTemplates,
                 inEditColumnsMode,
-                searchInName,
-                searchInContent,
-                searchInDescription,
                 mailingTypes,
                 mediaTypes,
                 selectedFields,
-                searchQueryText,
                 filterSendDateBegin,
                 filterSendDateEnd,
                 filterCreationDateBegin,

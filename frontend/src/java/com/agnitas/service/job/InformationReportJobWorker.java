@@ -16,16 +16,17 @@ import java.util.List;
 import java.util.Locale;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.services.RecipientReportService;
-import com.agnitas.beans.impl.CompanyStatus;
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DataEncryptor;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.FtpHelper;
 import com.agnitas.util.RemoteFileHelper;
 import com.agnitas.util.SFtpHelper;
+import com.agnitas.util.quartz.JobWorker;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +41,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    (SELECT MAX(id) + 1, 'InformationReport', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.InformationReportJobWorker', 0 FROM job_queue_tbl);
  */
-public class InformationReportJobWorker extends JobWorker {
+@JobWorker("InformationReport")
+public class InformationReportJobWorker extends JobWorkerBase {
 
 	private static final Logger logger = LogManager.getLogger(InformationReportJobWorker.class);
 

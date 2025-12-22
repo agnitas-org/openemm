@@ -1,0 +1,110 @@
+.sidebar__block--nav {
+  --sidebar-nav-scrollbar-width: 5px;
+
+  flex: 1 1 auto;
+  @include hide-scroll;
+  position: relative;
+
+  @include perfect-scrollbar($blue-var, var(--sidebar-nav-scrollbar-width), 0);
+
+  @include wide-sidebar {
+    --sidebar-nav-scrollbar-width: 8px;
+    margin-inline: calc(-1 * var(--sidebar-inline-padding-wide));
+    padding-inline: var(--sidebar-inline-padding-wide);
+  }
+}
+
+.sidebar__list {
+  @include flex-column($sidebar-spacer);
+}
+
+.sidebar__item {
+  --sidebar-item-border-color: transparent;
+  @include font($font-size-lg, $font-weight-normal, 27px);
+  flex: none;
+
+  &:hover {
+    --sidebar-item-border-color: #{$white};
+  }
+}
+
+.sidebar__link {
+  @include flex-column($gap-x-sm);
+  align-items: center;
+
+  @include sidebar-colors();
+  border: 1px solid var(--sidebar-item-border-color);
+  border-radius: $border-radius-sm;
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+
+  &.active {
+    @include sidebar-colors-inverse();
+  }
+
+  @include wide-sidebar {
+    padding: $gap-x-sm;
+
+    .sidebar__icon {
+      @include size(auto);
+    }
+  }
+}
+
+.sidebar__link-text {
+  display: none;
+
+  white-space: nowrap;
+  text-align: center;
+  @include font($font-size-base);
+
+  @include wide-sidebar {
+    display: initial;
+  }
+}
+
+.sidebar__submenu {
+  display: none;
+
+  &.open {
+    @include flex-column($sidebar-spacer / 2);
+    position: fixed;
+    @include sidebar-tooltip;
+    padding: $sidebar-spacer;
+  }
+
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
+  }
+}
+
+.sidebar__submenu-title {
+  white-space: nowrap;
+  line-height: 30px;
+}
+
+.sidebar__submenu-list {
+  @include flex-column($sidebar-spacer / 2);
+  @include font($font-size-base, $font-weight-normal);
+}
+
+.sidebar__submenu-link {
+  display: block;
+  border-radius: $border-radius;
+  border: $border-transparent;
+  padding: $sidebar-spacer / 2;
+  white-space: nowrap;
+
+  &.active {
+    @include sidebar-colors-inverse;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:hover {
+    border-color: $white;
+  }
+}

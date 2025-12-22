@@ -13,9 +13,8 @@ package com.agnitas.emm.core.workflow.beans;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.beans.IntEnum;
+import org.apache.commons.lang3.StringUtils;
 
 public class Workflow {
 
@@ -24,9 +23,6 @@ public class Workflow {
 	private String shortname;
 	private String description;
 	private WorkflowStatus status = WorkflowStatus.STATUS_OPEN;
-    private int editorPositionTop;
-    private int editorPositionLeft;
-	private boolean inner;
     private Date generalStartDate;
     private Date generalEndDate;
     private WorkflowStop.WorkflowEndType endType;
@@ -73,30 +69,6 @@ public class Workflow {
 
 	public void setStatus(WorkflowStatus status) {
 		this.status = status;
-	}
-
-    public int getEditorPositionTop() {
-        return editorPositionTop;
-    }
-
-    public void setEditorPositionTop(int editorPositionTop) {
-        this.editorPositionTop = editorPositionTop;
-    }
-
-    public int getEditorPositionLeft() {
-        return editorPositionLeft;
-    }
-
-    public void setEditorPositionLeft(int editorPositionLeft) {
-        this.editorPositionLeft = editorPositionLeft;
-    }
-
-	public boolean isInner() {
-		return inner;
-	}
-
-	public void setInner(boolean inner) {
-		this.inner = inner;
 	}
 
     public Date getGeneralStartDate() {

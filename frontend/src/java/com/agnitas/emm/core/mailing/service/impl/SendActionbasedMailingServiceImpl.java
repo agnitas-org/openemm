@@ -15,17 +15,17 @@ import java.util.Hashtable;
 import java.util.function.Supplier;
 
 import com.agnitas.backend.Mailgun;
-import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.backend.MailgunFactory;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
 import com.agnitas.emm.core.mailing.service.ActionbasedMailingNotActivatedException;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of {@link SendActionbasedMailingService} interface.
@@ -46,8 +46,7 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 	 * - implement better error detection and exception handling for sending mailing
 	 */
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(SendActionbasedMailingServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(SendActionbasedMailingServiceImpl.class);
 
 	private MaildropStatusDao maildropStatusDao;
 
@@ -110,7 +109,7 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 
 			final Mailgun mailgun = mailgunFactory.newMailgun();
 			if (mailgun == null) {
-				logger.error("Mailgun could not be created: " + mailingId);
+				logger.error("Mailgun could not be created: {}", mailingId);
 				throw new SendActionbasedMailingException("Unable to create Mailgun");
 			}
 
@@ -120,17 +119,20 @@ public class SendActionbasedMailingServiceImpl implements SendActionbasedMailing
 			return mailgun;
 		}
 
-		private MaildropEntry getMaildropEntry() throws Exception {
+		private MaildropEntry getMaildropEntry() throws ActionbasedMailingNotActivatedException {
 			final MaildropEntry entry = maildropSupplier.get();
 
 			if (entry == null) {
-				logger.warn("Event-mail for MailingID " + mailingId + " is not activated");
+				logger.warn("Event-mail for MailingID {} is not activated", mailingId);
 				throw new ActionbasedMailingNotActivatedException(mailingId);
-			} else if (entry.getId() == 0) {
-				throw new Exception("maildropStatusID is 0");
+			}
+
+			if (entry.getId() == 0) {
+				throw new IllegalArgumentException("maildropStatusID is 0");
 			}
 
 			return entry;
 		}
 	}
+
 }

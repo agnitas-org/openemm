@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.import_profile.dao;
 
+import java.util.List;
+
 import com.agnitas.beans.ColumnMapping;
 import com.agnitas.beans.ImportProfile;
-
-import java.util.List;
 
 
 public interface ImportProfileDao {
@@ -46,15 +46,6 @@ public interface ImportProfileDao {
 	ImportProfile getImportProfileById(int id);
 
     /**
-     * Loads an import profile identified by shortname.
-     *
-     * @param shortname
-     *          The shortname of import profile.
-     * @return The ImportProfile or null on failure.
-     */
-	ImportProfile getImportProfileByShortname(String shortname);
-
-    /**
      * Loads list of import profiles identified by company id where deleted != 1.
      *
      * @param companyId
@@ -71,9 +62,10 @@ public interface ImportProfileDao {
      * @return The list of ImportProfiles or empty list.
      */
 	List<ImportProfile> getAllImportProfilesByCompanyId( int companyId);
-	List<ImportProfile> findAllByEmailPart(String email, int companyID);
-	List<ImportProfile> findAllByEmailPart(String email);
 
+	List<ImportProfile> findAllByEmailPart(String email, int companyID);
+
+	List<ImportProfile> findAllByEmailPart(String email);
 
 	/**
      * Deletes import profile by ID with column and gender mappings.
@@ -98,4 +90,5 @@ public interface ImportProfileDao {
 	List<Integer> getImportsContainingProfileField(int companyID, String profileFieldName);
 
     void updateEmails(String emailForError, String emailForReport, int id);
+
 }

@@ -10,14 +10,6 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.mailing.bean.MailingParameter;
-import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
-import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
-import com.agnitas.emm.core.mailing.service.MailingParameterService;
-import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +17,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
+import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
+import com.agnitas.emm.core.mailing.service.MailingParameterService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 public class MailingParameterServiceImpl implements MailingParameterService {
 	
@@ -49,7 +50,7 @@ public class MailingParameterServiceImpl implements MailingParameterService {
 	}
 
 	@Override
-	public PaginatedListImpl<MailingParameter> getOverview(MailingParamOverviewFilter filter, int companyID) {
+	public PaginatedList<MailingParameter> getOverview(MailingParamOverviewFilter filter, int companyID) {
 		return mailingParameterDao.getParameters(filter, companyID);
 	}
 
@@ -88,8 +89,7 @@ public class MailingParameterServiceImpl implements MailingParameterService {
 		return false;
     }
 
-    @Override
-    public boolean deleteParameter(int mailingInfoID, final Admin admin) {
+    private boolean deleteParameter(int mailingInfoID) {
         if (mailingInfoID > 0) {
 			return this.mailingParameterDao.deleteParameter(mailingInfoID);
         }
@@ -126,11 +126,11 @@ public class MailingParameterServiceImpl implements MailingParameterService {
 				.map(id -> getParameter(id, admin))
 				.filter(Objects::nonNull)
 				.map(MailingParameter::getName)
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	@Override
-	public void delete(Set<Integer> ids, Admin admin) {
-		ids.forEach(id -> deleteParameter(id, admin));
+	public void delete(Set<Integer> ids) {
+		ids.forEach(this::deleteParameter);
 	}
 }

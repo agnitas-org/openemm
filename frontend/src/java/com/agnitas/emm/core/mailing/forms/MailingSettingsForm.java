@@ -14,6 +14,7 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -36,8 +37,6 @@ public class MailingSettingsForm {
     private int mailinglistId;
     private String planDate;
     private String shortname;
-    private String splitBase;
-    private String splitPart;
     private String description;
     private String targetExpression;
     private boolean archived;
@@ -49,6 +48,8 @@ public class MailingSettingsForm {
     private MailingContentType mailingContentType;
     private List<MailingParameter> params = new ArrayList<>();
     protected Map<Integer, MediatypeForm> mediatypes = new HashMap<>();
+    private MailingSettingsViewType viewType;
+    private SplitSettings splitSettings = new SplitSettings();
 
     public int getParentId() {
         return parentId;
@@ -114,20 +115,12 @@ public class MailingSettingsForm {
         this.shortname = shortname;
     }
 
-    public String getSplitBase() {
-        return splitBase;
+    public SplitSettings getSplitSettings() {
+        return splitSettings;
     }
 
-    public void setSplitBase(String splitBase) {
-        this.splitBase = splitBase;
-    }
-
-    public String getSplitPart() {
-        return splitPart;
-    }
-
-    public void setSplitPart(String splitPart) {
-        this.splitPart = splitPart;
+    public void setSplitSettings(SplitSettings splitSettings) {
+        this.splitSettings = splitSettings;
     }
 
     public String getDescription() {
@@ -202,6 +195,14 @@ public class MailingSettingsForm {
         this.mediatypes = mediatypes;
     }
 
+    public MailingSettingsViewType getViewType() {
+        return viewType;
+    }
+
+    public void setViewType(MailingSettingsViewType viewType) {
+        this.viewType = viewType;
+    }
+
     public EmailMediatypeForm getEmailMediatype() {
         return (EmailMediatypeForm) mediatypes.computeIfAbsent(MediaTypes.EMAIL.getMediaCode(), mt -> {
             EmailMediatypeForm form = new EmailMediatypeForm();
@@ -233,8 +234,7 @@ public class MailingSettingsForm {
 
     public void clearTargetsData() {
         setTargetGroupIds(Collections.emptyList());
-        setSplitBase(null);
-        setSplitPart(null);
+        splitSettings.clear();
     }
 
     public boolean isMediaTypeActive(MediaTypes mediaType) {

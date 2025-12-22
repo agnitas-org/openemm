@@ -13,18 +13,15 @@ package com.agnitas.mailing.autooptimization.service;
 import java.util.Map;
 
 import com.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.mailing.MailingAllReadySentException;
+import com.agnitas.emm.core.mailing.exception.MailingAlreadySentException;
 
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.mailing.autooptimization.beans.Optimization;
 
 public interface OptimizationScheduleService {
 
-	void scheduleOptimization(Optimization optimization) throws MailingAllReadySentException, OptimizationIsFinishedException, MaildropDeleteException;
-
     void scheduleOptimization(Optimization optimization, Map<Integer, MailingSendingProperties> properties)
-            throws MailingAllReadySentException,
-            OptimizationIsFinishedException, MaildropDeleteException;
+            throws MailingAlreadySentException, OptimizationIsFinishedException, MaildropDeleteException;
 
     void unscheduleOptimization(Optimization optimization) throws MaildropDeleteException;
 }

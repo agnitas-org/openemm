@@ -10,24 +10,24 @@
 
 package com.agnitas.emm.core.components.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.FormComponent;
-import com.agnitas.emm.core.components.dto.FormComponentDto;
-import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
-import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.component.service.ComponentModel;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.components.dto.FormComponentDto;
+import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.emm.core.components.entity.ComponentModel;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ComponentService {
 
@@ -40,8 +40,6 @@ public interface ComponentService {
 	void updateComponent(ComponentModel model);
 
 	void deleteComponent(ComponentModel model);
-
-	boolean deleteFormComponent(int formID, int companyID, String componentName);
 
 	/**
 	 * Gets the form component by name.
@@ -57,16 +55,13 @@ public interface ComponentService {
 
     int addMailingComponent(MailingComponent mailingComponent);
 
-	PaginatedListImpl<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId);
+	PaginatedList<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId);
 
 	Map<String, byte[]> getImageComponentsData(UserFormImagesOverviewFilter filter, Set<Integer> ids, int companyId, int formId);
 
 	File getComponentArchive(String zipName, Map<String, byte[]> formComponentsData);
 
 	SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions);
-
-	// TODO: EMMGUI-714: Check usages and remove when removing old design
-	SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting);
 
 	ServiceResult<List<FormUploadComponentDto>> readComponentsFromZipFile(MultipartFile zipFile);
 

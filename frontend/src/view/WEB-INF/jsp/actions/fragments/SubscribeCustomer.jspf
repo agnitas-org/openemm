@@ -1,0 +1,39 @@
+<script id="module-SubscribeCustomer" type="text/x-mustache-template">
+    {{ const readonlyAttr = readonly ? 'readonly' : '' }}
+    
+    <div class="tile-body vstack gap-3" data-module-content="{{- index}}">
+        <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="SubscribeCustomer"/>
+        <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
+
+        <div class="form-check form-switch">
+            <input type="checkbox" name="modules[].doubleCheck" id="module_{{- index}}_doubleCheck" class="form-check-input" role="switch" {{ doubleCheck ? print('checked') : ''}} {{- readonlyAttr }}/>
+            <label class="form-label form-check-label" for="module_{{- index}}_doubleCheck">
+                <mvc:message code="import.doublechecking"/>
+            </label>
+        </div>
+
+        <div class="hidden" data-show-by-checkbox="#module_{{- index}}_doubleCheck">
+            <label class="form-label" for="module_{{- index}}.keyColumn"><mvc:message code="import.keycolumn"/></label>
+
+            {{ var columnNameToSelect = !!keyColumn ? keyColumn.replace('#', '').toLowerCase() : ''; }}
+
+            <select class="form-control" name="modules[].keyColumn" id="module_{{- index}}.keyColumn" {{- readonlyAttr }}>
+                {{ if (readonly) { }}
+                    <option value="{{- columnNameToSelect }}">{{- ${emm:toJson(HIDDEN_PROFILE_FIELDS)}[columnNameToSelect] }}</option>
+                {{ } else { }}
+                    <c:forEach items="${columnInfo}" var="columnPair">
+                        {{ var selectedSign = ('${columnPair.key}' == columnNameToSelect) ? 'selected' : ''; }}
+                        <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
+                    </c:forEach>
+                {{ } }}
+            </select>
+        </div>
+
+        <div class="form-check form-switch">
+            <input type="checkbox" name="modules[].doubleOptIn" id="module_{{- index}}.doubleOptIn" class="form-check-input" role="switch" {{ doubleOptIn ? print('checked') : ''}} {{- readonlyAttr }}/>
+            <label class="form-label form-check-label" for="module_{{- index}}.doubleOptIn">
+                <mvc:message code="action.UseDblOptIn"/>
+            </label>
+        </div>
+    </div>
+</script>

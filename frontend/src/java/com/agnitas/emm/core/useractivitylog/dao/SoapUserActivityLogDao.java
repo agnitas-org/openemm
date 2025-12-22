@@ -11,25 +11,24 @@
 package com.agnitas.emm.core.useractivitylog.dao;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.util.SqlPreparedStatementManager;
 
 public interface SoapUserActivityLogDao extends UserActivityLogDaoBase {
 
     void writeWebServiceUsage(ZonedDateTime timestamp, String endpoint, int companyID, String user, String clientIp);
 
-    // TODO: EMMGUI-714: Remove when removing old design
-    PaginatedListImpl<SoapUserActivityAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to, String sortColumn, String sortDirection, int pageNumber, int pageSize);
-    PaginatedListImpl<SoapUserActivityAction> getUserActivityEntries(SoapUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
+    PaginatedList<SoapUserActivityAction> getUserActivityEntries(SoapUserActivityLogFilter filter);
 
-    // TODO: EMMGUI-714 remove when removing old design
-    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, Date from, Date to);
-    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(SoapUserActivityLogFilter filter, List<AdminEntry> visibleAdmins);
+    SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(SoapUserActivityLogFilter filter);
+
+    List<String> getDistinctUsernames(Integer companyId);
+
+    void deleteByUsernames(Set<String> usernames);
 
 }

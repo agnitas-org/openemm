@@ -1,0 +1,125 @@
+@mixin wide-sidebar() {
+  .sidebar--wide & {
+    @include desktop {
+      @content;
+    }
+  }
+}
+
+@mixin sidebar-colors() {
+  background-color: var(--sidebar-bg);
+  color: $white;
+}
+
+@mixin sidebar-colors-inverse() {
+  background-color: $white;
+  color: var(--sidebar-bg);
+}
+
+.sidebar {
+  --sidebar-bg: #{$dark-blue};
+  --sidebar-border-color: var(--sidebar-bg);
+  --sidebar-inline-padding-wide: #{$gap-sm};
+
+  grid-area: sidebar;
+
+  @include flex-column;
+  @include sidebar-colors;
+  position: relative;
+
+  border-right: 1px solid var(--sidebar-border-color);
+
+  &--wide {
+    @include desktop {
+      padding-inline: var(--sidebar-inline-padding-wide);
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .sidebar {
+    --sidebar-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .sidebar {
+    --sidebar-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .sidebar {
+    --sidebar-bg: #{$body-bg-var};
+    --sidebar-border-color: #{$white};
+  }
+}
+
+.sidebar__block {
+  @include flex-column($sidebar-spacer);
+  align-items: center;
+  flex-shrink: 0;
+  padding-block: $sidebar-spacer;
+}
+
+.sidebar__actions {
+  display: contents;
+
+  @include wide-sidebar {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.sidebar__action {
+  @include flex-row($sidebar-spacer);
+  align-items: center;
+
+  &:hover {
+    outline: 1px solid;
+    outline-offset: -1px;
+    border-radius: $border-radius-sm;
+  }
+}
+
+.sidebar__icon {
+  @include flex-center;
+  flex: none;
+
+  @include size($sidebar-icon-size);
+  border-radius: $border-radius-sm;
+
+  i {
+    font-size: $font-size-base;
+  }
+
+  @include left-hand {
+    @include flipHorizontally;
+  }
+}
+
+.sidebar__news-counter {
+  font-size: $font-size-x-sm;
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  z-index: 1001;
+}
+
+.sidebar__block--expand {
+  @include mobile {
+    display: none;
+  }
+
+  @include wide-sidebar {
+    display: none;
+  }
+}
+
+.sidebar__block--collapse {
+  display: none;
+  @include wide-sidebar {
+    display: flex;
+  }
+}

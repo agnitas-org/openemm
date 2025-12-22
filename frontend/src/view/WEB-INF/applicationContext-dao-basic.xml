@@ -15,7 +15,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:component-scan base-package="org.agnitas, com.agnitas">
+	<context:component-scan base-package="com.agnitas">
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
@@ -94,11 +94,12 @@
 	</bean>
 	
 	<bean id="ConfigTableDao" class="com.agnitas.dao.impl.ConfigTableDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
+		<constructor-arg ref="dataSource" />
+		<constructor-arg ref="JavaMailService" />
+		<constructor-arg ref="ConfigService" />
 	</bean>
 	
-	<bean id="CompanyInfoDao" class="org.agnitas.emm.core.commons.util.CompanyInfoDao">
+	<bean id="CompanyInfoDao" class="com.agnitas.emm.core.commons.util.CompanyInfoDao">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -290,7 +291,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Login Track-->
-	<bean id="GuiLoginTrackDao" class="org.agnitas.emm.core.logintracking.dao.GuiLoginTrackDaoImpl">
+	<bean id="GuiLoginTrackDao" class="com.agnitas.emm.core.loginmanager.dao.impl.GuiLoginTrackDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>

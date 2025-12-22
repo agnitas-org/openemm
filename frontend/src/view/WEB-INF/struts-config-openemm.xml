@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "src/view/WEB-INF/struts-config_1_1.dtd">
-<struts-config>
-	<!-- ========== Form Bean Definitions =================================== -->
-	<form-beans type="org.apache.struts.action.ActionFormBean">
-	</form-beans>
-
-</struts-config>

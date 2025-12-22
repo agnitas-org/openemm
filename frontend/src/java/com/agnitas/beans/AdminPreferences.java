@@ -10,24 +10,13 @@
 
 package com.agnitas.beans;
 
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
+
 public interface AdminPreferences {
-
-    int DASHBOARD_MAILINGS_LIST = 0;
-    int DASHBOARD_MAILINGS_PREVIEW = 1;
-
-    int MAILING_SETTINGS_EXPANDED = 0;
-    int MAILING_SETTINGS_COLLAPSED = 1;
-
-    int LIVE_PREVIEW_RIGHT = 0;
-    int LIVE_PREVIEW_BOTTOM = 1;
-    int LIVE_PREVIEW_DEACTIVATE = 2;
 
     int STATISTIC_LOADTYPE_ON_CLICK = 0;
     int STATISTIC_LOADTYPE_IMMEDIATELY = 1;
     
-    int MAILING_CONTENT_HTML_EDITOR = 1;
-    int MAILING_CONTENT_HTML_CODE = 0;
-
     /**
      * Getter for the preferred dashboard mailing view type
      */
@@ -93,4 +82,8 @@ public interface AdminPreferences {
      * @param mailingContentView the new value of mailingContentViewType
      */
     void setMailingContentView(int mailingContentView);
+
+    MailingSettingsViewType getMailingSettingsViewType();
+
+    void setMailingSettingsViewType(MailingSettingsViewType mailingSettingsViewType);
 }

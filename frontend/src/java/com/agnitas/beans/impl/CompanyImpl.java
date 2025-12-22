@@ -11,12 +11,13 @@
 package com.agnitas.beans.impl;
 
 import java.util.Date;
-
-import com.agnitas.beans.impl.CompanyStatus;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.agnitas.beans.Company;
 
 public class CompanyImpl implements Company {
+
 	private int companyID;
 	private int creatorID;
 	private String shortname;
@@ -40,6 +41,7 @@ public class CompanyImpl implements Company {
 	private int sector;
 	private int business;
 	private int parentCompanyId;
+	private Set<String> systemMessageEmails = new HashSet<>();
 	private String contactTech;
 	private String listHelpUrl;
 
@@ -287,7 +289,17 @@ public class CompanyImpl implements Company {
 	public void setContactTech(String contactTech) {
 		this.contactTech = contactTech;
 	}
-	
+
+	@Override
+	public Set<String> getSystemMessageEmails() {
+		return systemMessageEmails;
+	}
+
+	@Override
+	public void setSystemMessageEmails(Set<String> emails) {
+		this.systemMessageEmails = emails;
+	}
+
 	@Override
 	public String getListHelpUrl() {
 		return listHelpUrl;

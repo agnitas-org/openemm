@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateTimeValue;
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateValue;
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDoubleValue;
+import static com.agnitas.emm.core.recipient.utils.RecipientUtils.formatRecipientDateTimeValue;
+import static com.agnitas.emm.core.recipient.utils.RecipientUtils.formatRecipientDateValue;
+import static com.agnitas.emm.core.recipient.utils.RecipientUtils.formatRecipientDoubleValue;
 
 import java.util.Date;
 import java.util.Map;

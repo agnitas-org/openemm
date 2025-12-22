@@ -14,16 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.Recipient;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationIdentifyCustomerParameters;
@@ -31,11 +24,17 @@ import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.service.RecipientFieldService;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 	

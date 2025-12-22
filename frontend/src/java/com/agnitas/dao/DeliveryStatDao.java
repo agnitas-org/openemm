@@ -24,7 +24,7 @@ public interface DeliveryStatDao {
 
 	Date getSendEndTime(int maildropId);
 
-	Date getSendDateFoStatus(int statusId);
+	Date getSendDateByStatusId(int statusId);
 
 	MaildropEntry getLastMaildropStatus(int mailingId);
 

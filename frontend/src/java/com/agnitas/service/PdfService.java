@@ -11,27 +11,25 @@
 package com.agnitas.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.preview.service.PreviewSettings;
-import com.lowagie.text.DocumentException;
 import com.agnitas.beans.AdminEntry;
+import com.agnitas.emm.core.preview.service.PreviewSettings;
 
 public interface PdfService {
 
-    byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users) throws DocumentException, IOException;
+    byte[] writeUsersToPdfAndGetByteArray(List<AdminEntry> users);
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting) throws IOException, DocumentException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String customCss, String windowStatusForWaiting);
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey) throws IOException, DocumentException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey);
 
     @Deprecated
-    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting) throws IOException, DocumentException;
+    File generatePDF(Admin admin, String url, boolean landscape, String title, String footerMsgKey, String windowStatusForWaiting);
 
-    File generatePDF(Admin admin, PreviewSettings previewSettings, boolean landscape, String title, String footerMsgKey) throws Exception;
+    File generatePDF(Admin admin, PreviewSettings previewSettings, boolean landscape, String title, String footerMsgKey);
 
 }

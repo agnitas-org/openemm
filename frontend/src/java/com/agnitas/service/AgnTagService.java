@@ -11,9 +11,11 @@
 package com.agnitas.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import com.agnitas.backend.AgnTag;
 import com.agnitas.beans.TagDetails;
 import com.agnitas.util.DynTagException;
 
@@ -47,6 +49,12 @@ public interface AgnTagService {
      * @return a list of found agn-tags (except dynamic tags) filtered by {@code predicate}.
      */
     List<TagDetails> collectTags(String content, Predicate<TagDetails> predicate);
+
+    Map<String, TagDetails> collectAgnTags(String content);
+
+    List<TagDetails> collectTags(String content, AgnTag ... tags);
+
+    List<TagDetails> collectTags(String content, List<AgnTag> tags);
 
     /**
      * A shortcut for {@link #resolveTags(String, boolean, AgnTagResolver)} with {@code recursive = true}.

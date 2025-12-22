@@ -12,16 +12,19 @@ package com.agnitas.emm.core.useractivitylog.forms;
 
 import java.util.Map;
 
+import com.agnitas.util.UserActivityLogActions;
+import org.apache.commons.lang3.StringUtils;
+
 public class UserActivityLogFilter extends UserActivityLogFilterBase {
 
-    private int action;
+    private UserActivityLogActions action;
     private String description;
 
-    public int getAction() {
+    public UserActivityLogActions getAction() {
         return action;
     }
 
-    public void setAction(int action) {
+    public void setAction(UserActivityLogActions action) {
         this.action = action;
     }
 
@@ -41,4 +44,10 @@ public class UserActivityLogFilter extends UserActivityLogFilterBase {
 
         return map;
     }
+
+    @Override
+    public boolean isUiFiltersSet() {
+        return super.isUiFiltersSet() || action != null || StringUtils.isNotBlank(description);
+    }
+
 }

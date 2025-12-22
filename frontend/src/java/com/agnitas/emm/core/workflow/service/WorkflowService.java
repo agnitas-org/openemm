@@ -18,14 +18,18 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.Campaign;
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -38,11 +42,6 @@ import com.agnitas.emm.core.workflow.dao.WorkflowDao;
 import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
 import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.json.JSONArray;
 
 public interface WorkflowService {
@@ -98,8 +97,6 @@ public interface WorkflowService {
      */
     boolean validateDependency(int companyId, int workflowId, WorkflowDependency dependency);
 
-	void deleteWorkflow(int workflowId, int companyId);
-
     List<Workflow> getWorkflowsOverview(Admin admin);
 
     List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin);
@@ -122,8 +119,6 @@ public interface WorkflowService {
 
 	List<AdminEntry> getAdmins(int companyId);
 
-    List<UserForm> getAllUserForms(int companyId);
-
     Mailing getMailing(int mailingId, int companyId);
 
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);
@@ -142,20 +137,13 @@ public interface WorkflowService {
 
     Date getMaxPossibleDate(WorkflowIcon icon, List<WorkflowIcon> icons);
 
-    Date getMaxPossibleDate(List<List<WorkflowNode>> chains);
-
     Collection<Integer> bulkDelete(Set<Integer> workflowIds, int companyId);
-
-    // TODO: EMMGUI-714 remove after remove of old design
-    Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId);
 
 	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 
     List<Workflow> getWorkflowsToUnpause(CompaniesConstraints constraints);
-
-    List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, int companyId);
 
     /**
      * Collect workflow-driven settings provided by different workflow icons and set to {@code mailing} object.
@@ -177,7 +165,7 @@ public interface WorkflowService {
 
     List<WorkflowFollowupMailing> getFollowupMailingIcon(List<WorkflowIcon> workflowIcons);
 
-    boolean isAdditionalRuleDefined(int companyId, int mailingId, int workflowId);
+    boolean isAdditionalRuleDefined(int companyId, int workflowId);
 
     /**
      * Check whether customers should have a binding status {@link com.agnitas.beans.BindingEntry#USER_STATUS_ACTIVE} to

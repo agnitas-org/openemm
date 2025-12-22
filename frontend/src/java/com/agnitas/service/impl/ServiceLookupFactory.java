@@ -10,24 +10,23 @@
 
 package com.agnitas.service.impl;
 
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
-import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.service.UserActivityLogService;
-
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.company.service.CompanyService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.DeviceService;
 import com.agnitas.emm.core.reminder.service.ReminderService;
+import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
+import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.mailing.autooptimization.service.OptimizationService;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 
 public abstract class ServiceLookupFactory {
 	abstract public BirtReportService getBeanBirtReportService();

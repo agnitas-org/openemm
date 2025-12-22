@@ -10,18 +10,17 @@
 
 package com.agnitas.emm.core.mailing.dao;
 
-import com.agnitas.beans.IntEnum;
-import com.agnitas.emm.core.mailing.bean.MailingParameter;
-import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
-import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
+import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
+
 public interface MailingParameterDao {
 
+    // TODO check usage and remove after GWUA-6458 has been successfully tested and old values removed from mailing_info_tbl
     enum ReservedMailingParam {
         INTERVAL("interval"),
         ERROR("error"),
@@ -43,39 +42,11 @@ public interface MailingParameterDao {
         }
     }
 
-    enum IntervalType implements IntEnum {
-        None(0),
-        Weekly(1),
-        TwoWeekly(2),
-        Monthly(3),
-    	Weekdaily(4),
-    	Short(5);
-
-        private int id;
-
-        public static IntervalType fromId(int id) {
-            return IntEnum.fromId(IntervalType.class, id);
-        }
-
-        public static IntervalType fromId(int id, boolean safe) {
-            return IntEnum.fromId(IntervalType.class, id, safe);
-        }
-
-        IntervalType(int id) {
-            this.id = id;
-        }
-
-        @Override
-        public int getId() {
-            return id;
-        }
-    }
-
     List<MailingParameter> getAllParameters(int companyID);
 
     List<MailingParameter> getMailingParameters(int companyID, int mailingID);
 
-    PaginatedListImpl<MailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID);
+    PaginatedList<MailingParameter> getParameters(MailingParamOverviewFilter filter, int companyID);
 
     MailingParameter getParameter(int mailingInfoID);
 
@@ -100,10 +71,4 @@ public interface MailingParameterDao {
      * @throws MailingParameterNotFoundException if the mailing parameter was not found
      */
     MailingParameter getParameterByName(String parameterName, int mailingId, int companyId) throws MailingParameterNotFoundException;
-
-    String getIntervalParameter(int mailingID);
-
-    void updateNextStartParameter(int mailingID, Date nextStart);
-
-    void insertMailingError(int companyId, int mailingID, String errorText);
 }

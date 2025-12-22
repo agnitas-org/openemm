@@ -13,23 +13,23 @@ package com.agnitas.beans;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.messages.Message;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.emm.core.action.bean.EmmAction;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.preview.AgnTagError;
-import org.springframework.context.ApplicationContext;
-
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.messages.Message;
+import com.agnitas.preview.AgnTagError;
+import com.agnitas.util.DynTagException;
+import com.agnitas.web.mvc.Popups;
+import org.springframework.context.ApplicationContext;
 
 public interface Mailing extends MailingBase {
+
     int TARGET_MODE_OR = 0;
     int TARGET_MODE_AND = 1;
 
@@ -48,7 +48,7 @@ public interface Mailing extends MailingBase {
      * @deprecated use {@link com.agnitas.service.AgnTagService#getDynTags(String, com.agnitas.service.AgnDynTagGroupResolver)}.
      */
     @Deprecated
-    Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws Exception;
+    Vector<String> findDynTagsInTemplates(String aTemplate, ApplicationContext con) throws DynTagException;
 
     MailingComponent getTemplate(String id);
     
@@ -76,30 +76,11 @@ public interface Mailing extends MailingBase {
 
     boolean isIsTemplate();
 
-    List<String> cleanupDynTags(Vector<String> keepTags);
-
-    void cleanupTrackableLinks(Vector<String> keepLinks);
-
-    void cleanupMailingComponents(Vector<String> keepComps);
-
     boolean parseTargetExpression(String tExp);
 
-    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, String rdirDomain) throws Exception;
-    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin, String rdirDomain) throws Exception;
+    Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext con, String rdirDomain);
 
-    /**
-     * search for links
-     *
-     * @return Vector of links.
-     */
-    Vector<String> scanForLinks(ApplicationContext con) throws Exception;
-
-    /**
-     * Sends mailing.
-     * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
-     */
-    @Deprecated
-    boolean triggerMailing(int maildropStatusId);
+    Vector<String> scanForLinks(ApplicationContext con);
 
     /**
      * Setter for property asciiTemplate.
@@ -167,8 +148,8 @@ public interface Mailing extends MailingBase {
      * Search for all dependency
      */
     boolean buildDependencies(boolean scanDynTags, ApplicationContext con) throws Exception;
-    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin) throws Exception;
-    boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception;
+    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Locale locale) throws Exception;
+    boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Locale locale) throws Exception;
     boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con) throws Exception;
 
     Set<MaildropEntry> getMaildropStatus();
@@ -204,7 +185,7 @@ public interface Mailing extends MailingBase {
 
     void updateTargetExpression();
 
-    List<String> replaceAndGetMeasuredSeparatelyLinks(List<String> links, ApplicationContext context) throws Exception;
+    List<String> replaceAndGetMeasuredSeparatelyLinks(List<String> links, ApplicationContext context);
 
     boolean hasComplexTargetExpression();
 

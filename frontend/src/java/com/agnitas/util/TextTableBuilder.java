@@ -18,9 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -59,35 +56,6 @@ public class TextTableBuilder {
 		
 		for (String columnName : columnNames) {
 			addColumn(columnName);
-		}
-	}
-	
-	public TextTableBuilder(List<Map<String, Object>> data, boolean oneLinePerDataRow) throws Exception {
-		this();
-		
-		SortedSet<String> newColumnNames = new TreeSet<>();
-		for (Map<String, Object> lineOfData : data) {
-			for (String key : lineOfData.keySet()) {
-				newColumnNames.add(key);
-			}
-		}
-		for (String column : newColumnNames) {
-			addColumn(column);
-		}
-		
-		for (Map<String, Object> lineOfData : data) {
-			startNewLine();
-			for (String key : newColumnNames) {
-				Object dataValue = lineOfData.get(key);
-				String dataValueString = "";
-				if (dataValue != null) {
-					dataValueString = dataValue.toString();
-					if (oneLinePerDataRow) {
-						dataValueString = dataValueString.replace("\n\r", "\n").replace("\r", "\n").replace("\n", " ").replace("\t", " ");
-					}
-				}
-				addValueToCurrentLine(dataValueString);
-			}
 		}
 	}
 	
@@ -154,10 +122,10 @@ public class TextTableBuilder {
 		if (columnIndex < 0 || columnIndex >= columnNames.get(0).size()) {
 			throw new Exception("Ungultige Spalten-Indexangabe: " + columnIndex);
 		}
-		
+
 		columnRightAligned.set(columnIndex, alignRight);
 	}
-	
+
 	public void startNewLine() {
 		startNewLine(null);
 	}
@@ -174,15 +142,17 @@ public class TextTableBuilder {
 		}
 	}
 	
-	public void addValueToCurrentLine(int value) throws Exception {
+	public void addValueToCurrentLine(int value) {
 		addValueToCurrentLine(Integer.toString(value));
 	}
-	
-	public void addValueToCurrentLine(String value) throws Exception {
+
+	public void addValueToCurrentLine(String value) {
 		if (currentLineIndex == -1) {
-			throw new Exception("Keine Zeile zum Erweitern angelegt");
-		} else if (content.get(currentLineIndex).size() <= currentColumnIndex) {
-			throw new Exception("Versuch in eine Spalte zu Schreiben die noch nicht angelegt wurde");
+			throw new IllegalStateException("No line has been created to extend");
+		}
+
+		if (content.get(currentLineIndex).size() <= currentColumnIndex) {
+			throw new IllegalStateException("Attempt to write to a column that has not been created yet");
 		}
 		
 		if (value == null) {
@@ -204,7 +174,7 @@ public class TextTableBuilder {
 			columnRightAligned.set(columnIndex, isNumeric);
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		List<StringBuilder> columnNamesLines = new ArrayList<>();

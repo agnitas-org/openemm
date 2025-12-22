@@ -16,5 +16,5 @@ import com.agnitas.service.ImportResult;
 
 public interface MailingImportService {
 
-    ImportResult importMailing(ImportForm form, Admin admin) throws Exception;
+    ImportResult importMailing(ImportForm form, Admin admin);
 }

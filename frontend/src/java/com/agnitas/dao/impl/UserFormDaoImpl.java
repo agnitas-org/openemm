@@ -10,29 +10,27 @@
 
 package com.agnitas.dao.impl;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.UserFormDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.TrackableUserFormLinkImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao {
 
@@ -76,20 +74,16 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	public UserForm getUserFormByName(String name, int companyID) {
 		if (name == null || companyID == 0) {
 			return null;
-		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date FROM userform_tbl WHERE formname = ? AND company_id = ? AND deleted = 0";
-
-			List<UserForm> userFormList = select(sql, new UserForm_RowMapper(), name, companyID);
-			if (userFormList == null || userFormList.isEmpty()) {
-				return null;
-			} else if (userFormList.size() > 1) {
-				throw new IllegalStateException("Invalid number of UserForm items found by name " + name);
-			} else {
-				UserForm form = userFormList.get(0);
-				form.setTrackableLinks(trackableLinkDao.getUserFormTrackableLinks(form.getId(), companyID));
-				return form;
-			}
 		}
+
+		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date FROM userform_tbl WHERE formname = ? AND company_id = ? AND deleted = 0";
+
+		UserForm userForm = selectObjectDefaultNull(sql, new UserForm_RowMapper(), name, companyID);
+		if (userForm != null) {
+			userForm.setTrackableLinks(trackableLinkDao.getUserFormTrackableLinks(userForm.getId(), companyID));
+		}
+
+		return userForm;
 	}
 
 	@Override
@@ -118,7 +112,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			}
 		} else {
 			if (isFormNameInUse(userForm.getFormName(), userForm.getId(), userForm.getCompanyID())) {
-				throw new RuntimeException("name of userform is already in use");
+				throw new IllegalArgumentException("name of userform is already in use");
 			}
 
 			userForm.setCreationDate(new Date());
@@ -129,7 +123,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				String sql = "INSERT INTO userform_tbl (form_id, company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, creation_date, change_date) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 				update(sql, userForm.getId(), userForm.getCompanyID(), userForm.getFormName(), userForm.getDescription(), userForm.getSuccessTemplate(), userForm.getErrorTemplate(), userForm.getSuccessMimetype(), userForm.getErrorMimetype(), userForm.getStartActionID(), userForm.getEndActionID(), userForm.getSuccessUrl(), userForm.getErrorUrl(), userForm.isSuccessUseUrl() ? 1 : 0, userForm.isErrorUseUrl() ? 1 : 0, userForm.isActive() ? 1 : 0, userForm.getCreationDate(), userForm.getChangeDate());
 			} else {
-				int targetID = insertIntoAutoincrementMysqlTable("form_id", "INSERT INTO userform_tbl (company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, creation_date, change_date) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				int targetID = insert("form_id", "INSERT INTO userform_tbl (company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, creation_date, change_date) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 					userForm.getCompanyID(),
 					userForm.getFormName(),
 					userForm.getDescription(),
@@ -210,7 +204,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					userForm.getCreationDate(), userForm.getChangeDate()
 			);
 		} else {
-			userFormId = insertIntoAutoincrementMysqlTable("form_id",
+			userFormId = insert("form_id",
 					"INSERT INTO userform_tbl ("
 							+ "company_id, "
 							+ "formname, "
@@ -278,19 +272,6 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				+ makeBulkInClauseForInteger("form_id", formIds);
 
     	return update(query, BooleanUtils.toInteger(isActive), companyId);
-	}
-
-	@Override
-	public List<UserForm> getByIds(int companyId, Collection<Integer> formIds) {
-		if (CollectionUtils.isEmpty(formIds) || companyId <= 0) {
-			return Collections.emptyList();
-		}
-
-		String statement = "SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id" +
-				" FROM userform_tbl" +
-				String.format(" WHERE company_id = ? AND deleted = 0 AND form_id IN (%s)", StringUtils.join(formIds, ','));
-
-		return select(statement, new UserForm_Light_RowMapper(), companyId);
 	}
 
 	@Override

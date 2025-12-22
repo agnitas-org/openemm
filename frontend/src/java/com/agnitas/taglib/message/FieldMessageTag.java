@@ -10,6 +10,7 @@
 
 package com.agnitas.taglib.message;
 
+import com.agnitas.messages.enums.MessageType;
 import com.agnitas.web.mvc.impl.PopupsImpl;
 import jakarta.servlet.jsp.PageContext;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,7 +27,7 @@ public interface FieldMessageTag {
             return Collections.emptyList();
         }
 
-        PopupsImpl.MessageType messageType = PopupsImpl.MessageType.valueOf(type);
+        MessageType messageType = MessageType.valueOf(type);
         return fieldMessages.stream()
                 .filter(fm -> messageType.equals(fm.getType()))
                 .collect(Collectors.toList());

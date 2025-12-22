@@ -13,7 +13,6 @@ package com.agnitas.emm.core.trackablelinks.dao;
 import java.util.List;
 import java.util.Map;
 
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
@@ -28,9 +27,6 @@ public interface FormTrackableLinkDao {
 	@DaoUpdateReturnValueCheck
 	int saveUserFormTrackableLink(int userFormId, int companyId, TrackableUserFormLink trackableLink);
 
-	@DaoUpdateReturnValueCheck
-	void storeUserFormTrackableLinkProperties(TrackableUserFormLink link);
-
 	TrackableUserFormLink getUserFormTrackableLink(int linkID);
 
 	TrackableUserFormLink getUserFormTrackableLink(int companyId, int formId, int linkId);
@@ -40,9 +36,6 @@ public interface FormTrackableLinkDao {
 	Map<String, TrackableUserFormLink> getUserFormTrackableLinks(int formID, int companyID);
 
 	List<TrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID);
-
-	@DaoUpdateReturnValueCheck
-	boolean deleteUserFormTrackableLink(int linkID, int companyID);
 
 	/**
 	 * Logs a click for trackable link in rdir_log_userform_tbl

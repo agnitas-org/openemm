@@ -46,11 +46,8 @@ public class DashboardWebStorageEntry implements WebStorageEntry {
     }
 
     @Override
-    public DashboardWebStorageEntry clone() throws CloneNotSupportedException {
-        DashboardWebStorageEntry entry = (DashboardWebStorageEntry) super.clone();
-        entry.setMode(mode);
-        entry.setShowUnsentList(showUnsentList);
-        entry.setShowUnsentPlanned(showUnsentPlanned);
-        return entry;
+    public WebStorageEntry clone() {
+        throw new UnsupportedOperationException();
     }
+
 }

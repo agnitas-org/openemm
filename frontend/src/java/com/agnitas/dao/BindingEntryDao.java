@@ -16,18 +16,14 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.BindingEntry;
-import com.agnitas.emm.common.UserStatus;
-
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 
 public interface BindingEntryDao {
-
-	boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, int companyId);
-
-    void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, int companyId);
 
     /**
 	 * Loads a binding from database. Uses recipientID, mailinglistID and
@@ -175,6 +171,8 @@ public interface BindingEntryDao {
      * @return Binding entity
      */
 	List<BindingEntry> getBindings(int companyId, int recipientID);
+
+	PaginatedList<BindingEntry> getBindings(Integer mailinglistId, int companyID, UserStatus status, String timestamp, int page, int size);
 
 	List<CompositeBindingEntry> getCompositeBindings(int companyID, int recipientID);
 

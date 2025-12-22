@@ -13,7 +13,6 @@ package com.agnitas.emm.core.components.web;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -26,34 +25,33 @@ import java.util.Set;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
 import com.agnitas.emm.core.components.form.FormUploadComponentsForm;
-import com.agnitas.emm.core.components.form.FormZipUploadComponentsForm;
 import com.agnitas.emm.core.components.service.ComponentService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.UserFormImagesFormSearchParams;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.emm.core.userform.util.WebFormUtils;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.UiMessageException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils;
 import com.agnitas.util.ImageUtils;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HttpUtils;
-import com.agnitas.util.MvcUtils;
-import com.agnitas.web.forms.FormUtils;
-import com.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,11 +74,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/webform")
-@PermissionMapping("userform.components")
+@RequiredPermission("mailing.components.change")
 @SessionAttributes(types = UserFormImagesFormSearchParams.class)
 public class UserFormComponentController implements XssCheckAware {
 
@@ -107,18 +104,11 @@ public class UserFormComponentController implements XssCheckAware {
 		binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
 	}
 
-	@ModelAttribute
-	public UserFormImagesFormSearchParams getSearchParams() {
-		return new UserFormImagesFormSearchParams();
-	}
-
 	@RequestMapping("/{formId:\\d+}/components/list.action")
-	public String list(@PathVariable int formId, @ModelAttribute("form") UserFormImagesOverviewFilter filter, @ModelAttribute UserFormImagesFormSearchParams searchParams,
-					   @RequestParam(required = false) boolean restoreSort, Admin admin, Model model) {
-		if (admin.isRedesignedUiUsed()) {
-			FormUtils.syncSearchParams(searchParams, filter, true);
-		}
-		FormUtils.syncPaginationData(webStorage, WebStorage.USERFORM_IMAGES_OVERVIEW, filter, restoreSort);
+	public String list(@PathVariable int formId, @ModelAttribute("form") UserFormImagesOverviewFilter filter, UserFormImagesFormSearchParams searchParams,
+					   @RequestParam(required = false) Boolean restoreSort, Admin admin, Model model) {
+        searchParams.restoreParams(filter);
+        FormUtils.syncPaginationData(webStorage, WebStorage.USERFORM_IMAGES_OVERVIEW, filter, restoreSort);
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
 		String userFormInfo = StringUtils.join(Arrays.asList(userForm.getName(), StringUtils.trimToNull(userForm.getDescription())), " | ");
 
@@ -136,58 +126,27 @@ public class UserFormComponentController implements XssCheckAware {
 	}
 
 	@GetMapping("/{formId:\\d+}/components/search.action")
-	public String search(@PathVariable int formId, @ModelAttribute UserFormImagesOverviewFilter filter, @ModelAttribute UserFormImagesFormSearchParams searchParams, RedirectAttributes model) {
-		FormUtils.syncSearchParams(searchParams, filter, false);
-		return redirectToComponentList(formId);
+	public String search(@PathVariable int formId, @ModelAttribute UserFormImagesOverviewFilter filter, UserFormImagesFormSearchParams searchParams) {
+        searchParams.storeParams(filter);
+        return redirectToComponentList(formId);
 	}
 
-	@GetMapping("/{formId:\\d+}/components/{id:\\d+}/confirmDelete.action")
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String confirmDelete(Admin admin, @PathVariable int formId, @PathVariable int id,
-								SimpleActionForm form, Model model, Popups popups) {
-		List<String> names = componentService.getComponentFileNames(Set.of(id), formId, admin.getCompanyID());
-		if (CollectionUtils.isEmpty(names)) {
-			popups.alert("bulkAction.nothing.userform");
-			return MESSAGES_VIEW;
-		}
-
-		model.addAttribute("formId", formId);
-		form.setShortname(names.get(0));
-		return "formcomponents_delete_ajax";
-	}
-
-	@RequestMapping(value = "/{formId:\\d+}/components/delete.action",  method = {RequestMethod.POST, RequestMethod.DELETE})
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String delete(Admin admin, @PathVariable int formId, SimpleActionForm form, Popups popups) {
-		boolean deleted = componentService.deleteFormComponent(formId, admin.getCompanyID(), form.getShortname());
-		if (deleted) {
-			popups.success("default.selection.deleted");
-			return redirectToComponentList(formId);
-		}
-
-		popups.alert("changes_not_saved");
-		return MESSAGES_VIEW;
-	}
-
-	@GetMapping(value = "/{formId:\\d+}/components/deleteRedesigned.action")
-	@PermissionMapping("delete")
-	public String confirmDeleteRedesigned(@PathVariable int formId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
+	@GetMapping(value = "/{formId:\\d+}/components/delete.action")
+	public String confirmDelete(@PathVariable int formId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
-			throw new RequestErrorException(NOTHING_SELECTED_MSG);
+			throw new BadRequestException(NOTHING_SELECTED_MSG);
 		}
 
-		List<String> items = componentService.getComponentFileNames(bulkIds, formId, admin.getCompanyID());
-		MvcUtils.addDeleteAttrs(model, items,
+        MvcUtils.addDeleteAttrs(model, componentService.getComponentFileNames(bulkIds, formId, admin.getCompanyID()),
                 "mailing.Graphics_Component.delete", "image.delete.question",
                 "bulkAction.delete.image", "bulkAction.delete.image.question");
 		return DELETE_VIEW;
 	}
 
-	@RequestMapping(value = "/{formId:\\d+}/components/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-	@PermissionMapping("delete")
-	public String deleteRedesigned(@PathVariable int formId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+	@RequestMapping(value = "/{formId:\\d+}/components/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	public String delete(@PathVariable int formId, @RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
 		componentService.delete(bulkIds, formId, admin);
-		popups.success(SELECTION_DELETED_MSG);
+		popups.selectionDeleted();
 		return redirectToComponentList(formId);
 	}
 
@@ -196,12 +155,11 @@ public class UserFormComponentController implements XssCheckAware {
     }
 
 	@GetMapping(value = "/{formId:\\d+}/components/all/download.action")
-	@PermissionMapping("download")
 	public Object allDownload(Admin admin, @PathVariable int formId, UserFormImagesOverviewFilter filter, Popups popups) {
 		int companyId = admin.getCompanyID();
 		Map<String, byte[]> component = componentService.getImageComponentsData(filter, null, companyId, formId);
 		if (MapUtils.isEmpty(component)) {
-			popups.alert(NOTHING_SELECTED_MSG);
+			popups.nothingSelected();
 			return redirectToComponentList(formId);
 		}
 
@@ -209,10 +167,9 @@ public class UserFormComponentController implements XssCheckAware {
 	}
 
 	@GetMapping(value = "/{formId:\\d+}/components/bulk/download.action")
-	@PermissionMapping("download")
 	public Object bulkDownload(@PathVariable int formId, @RequestParam(required = false) Set<Integer> bulkIds, UserFormImagesOverviewFilter filter, Admin admin, Popups popups) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
-			popups.alert(NOTHING_SELECTED_MSG);
+			popups.nothingSelected();
 			return redirectToComponentList(formId);
 		}
 
@@ -250,7 +207,7 @@ public class UserFormComponentController implements XssCheckAware {
 			SimpleServiceResult result = componentService.saveFormComponents(admin, formId, formComponents, userActions);
 
 			if (result.isSuccess()) {
-				popups.success("default.changes_saved");
+				popups.changesSaved();
 				result.getWarningMessages().forEach(popups::warning);
 
 				userActions.forEach(action -> writeUserActivityLog(admin, action));
@@ -260,9 +217,9 @@ public class UserFormComponentController implements XssCheckAware {
 
 			return redirectToComponentList(formId);
 		} catch (Exception e) {
-			logger.error("Upload user form coponents failed!", e);
+			logger.error("Upload user form components failed!", e);
 		}
-		popups.alert("Error");
+		popups.defaultError();
 		return MESSAGES_VIEW;
 	}
 
@@ -272,7 +229,7 @@ public class UserFormComponentController implements XssCheckAware {
 			if (StringUtils.endsWithIgnoreCase(component.getFileName(), ".zip")) {
 				ServiceResult<List<FormUploadComponentDto>> componentReadResult = componentService.readComponentsFromZipFile(component.getFile());
 				if (!componentReadResult.isSuccess()) {
-					throw new RequestErrorException(new HashSet<>(componentReadResult.getErrorMessages()));
+					throw new UiMessageException(new HashSet<>(componentReadResult.getErrorMessages()));
 				}
 
 				List<FormUploadComponentDto> zipComponents = componentReadResult.getResult();
@@ -284,30 +241,6 @@ public class UserFormComponentController implements XssCheckAware {
 		}
 
 		return components;
-	}
-
-	@PostMapping(value = "/{formId:\\d+}/components/uploadZip.action")
-	@PermissionMapping("upload")
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String uploadZip(Admin admin, @PathVariable int formId, FormZipUploadComponentsForm form, Popups popups) {
-		if (!checkIfFileExists(form.getZipFile(), popups)) {
-			return MESSAGES_VIEW;
-		}
-
-		List<UserAction> userActions = new ArrayList<>();
-
-		SimpleServiceResult result = componentService.saveComponentsFromZipFile(admin, formId, form.getZipFile(), userActions, form.isOverwriteExisting());
-
-		if (result.isSuccess()) {
-			popups.success("default.changes_saved");
-			result.getWarningMessages().forEach(popups::warning);
-
-			userActions.forEach(action -> writeUserActivityLog(admin, action));
-		} else {
-			result.getErrorMessages().forEach(popups::alert);
-		}
-
-		return redirectToComponentList(formId);
 	}
 
 	private boolean validate(List<FormUploadComponentDto> components, Popups popups) {
@@ -337,14 +270,10 @@ public class UserFormComponentController implements XssCheckAware {
 
 		model.addAttribute("imageSrcPatternNoCache", WebFormUtils.getImageSrcPattern(redirectDomain, licenceId, admin.getCompanyID(), formId, true));
 		model.addAttribute("imageSrcPattern", WebFormUtils.getImageSrcPattern(redirectDomain, licenceId, admin.getCompanyID(), formId, false));
-		if (!admin.isRedesignedUiUsed()) {
-			model.addAttribute("imageThumbnailPattern", WebFormUtils.getImageThumbnailPattern(redirectDomain, licenceId, admin.getCompanyID(), formId));
-		}
-
-		WebFormUtils.getImageSrcPattern(redirectDomain, licenceId, admin.getCompanyID(), formId, true);
 	}
 
 	private void writeUserActivityLog(Admin admin, UserAction userAction) {
 		userActivityLogService.writeUserActivityLog(admin, userAction, logger);
 	}
+
 }

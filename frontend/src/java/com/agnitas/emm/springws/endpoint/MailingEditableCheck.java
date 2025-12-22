@@ -14,9 +14,9 @@ import java.util.Objects;
 
 import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.component.service.ComponentModel;
+import com.agnitas.emm.core.components.entity.ComponentModel;
 import com.agnitas.emm.core.components.service.ComponentService;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;

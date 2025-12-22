@@ -4,6 +4,9 @@ import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.auto_import.service.AutoImportService;
+import com.agnitas.emm.core.autoexport.service.AutoExportService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -16,10 +19,6 @@ import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
 import com.agnitas.emm.core.workflow.service.WorkflowValidationService;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.UserActivityLogService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/workflow")
-@PermissionMapping("workflow")
 public class WorkflowControllerOpenemm extends WorkflowController {
 
     public WorkflowControllerOpenemm(WorkflowService workflowService, WorkflowValidationService validationService,

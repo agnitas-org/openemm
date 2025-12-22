@@ -15,7 +15,7 @@ public enum EmmActionType {
 	Form(1),
 	All(9);
 	
-	private int actionTypeCode;
+	private final int actionTypeCode;
 	
 	EmmActionType(int actionTypeCode) {
 		this.actionTypeCode = actionTypeCode;
@@ -25,21 +25,21 @@ public enum EmmActionType {
 		return actionTypeCode;
 	}
 	
-	public static EmmActionType getEmmActionTypeByID(int id) throws Exception {
+	public static EmmActionType getEmmActionTypeByID(int id) {
 		for (EmmActionType actionType : EmmActionType.values()) {
 			if (actionType.actionTypeCode == id) {
 				return actionType;
 			}
 		}
-		throw new Exception("Invalid actionType: " + id);
+		throw new IllegalArgumentException("Invalid actionType: " + id);
 	}
 	
-	public static EmmActionType getEmmActionTypeByName(String name) throws Exception {
+	public static EmmActionType getEmmActionTypeByName(String name) {
 		for (EmmActionType actionType : EmmActionType.values()) {
 			if (actionType.name().equalsIgnoreCase(name)) {
 				return actionType;
 			}
 		}
-		throw new Exception("Invalid actionType: " + name);
+		throw new IllegalArgumentException("Invalid actionType: " + name);
 	}
 }

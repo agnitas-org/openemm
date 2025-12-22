@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.backend.exceptions.ItemException;
+
 /**
  * Keep track of URL extension for links to be extended during
  * mailing generation, if the link should not be meassured
@@ -27,10 +29,15 @@ public class URLExtension {
 		private String value;
 		private List<String> columns;
 
-		public URLEntry(Data data, String nKey, String nValue) {
+		public URLEntry(Data data, String nKey, String nValue, boolean staticValue) throws ItemException {
 			key = nKey;
 			value = nValue;
-			columns = StringOps.findColumnsInHashtags(value);
+			columns = null;
+			if (staticValue) {
+				List <Hashtag>	hashtags = Hashtag.parse (data, value);
+					
+				columns = hashtags.stream ().filter (h -> h.isColumn ()).map (h -> h.column ()).toList ();
+			}
 		}
 
 		public String getKey() {
@@ -42,17 +49,22 @@ public class URLExtension {
 		}
 
 		public void collectColumns(Set<String> collection) {
-			columns.stream().forEach((c) -> collection.add(c));
+			if (columns != null) {
+				columns.stream().forEach((c) -> collection.add(c));
+			}
 		}
 	
 		public String getStaticValueColumns (Data data) {
-			return columns
-				.stream ()
-				.map ((f) -> data.columnByName (f))
-				.filter ((c) -> c != null)
-				.map ((c) -> c.getQname ())
-				.reduce ((s, e) -> s + "," + e)
-				.orElse (null);
+			if (columns != null) {
+				return columns
+					.stream ()
+					.map ((f) -> data.columnByName (f))
+					.filter ((c) -> c != null)
+					.map ((c) -> c.getQname ())
+					.reduce ((s, e) -> s + "," + e)
+					.orElse (null);
+			}
+			return null;
 		}
 	}
 
@@ -78,9 +90,10 @@ public class URLExtension {
 	 * @param key   the key of the key/value pair to be added ..
 	 * @param value .. and the value
 	 */
-	public void add(long urlID, String key, String value) {
+	public void add(URL url, String key, String value) throws ItemException {
+		long urlID = url.getId ();
 		List<URLEntry> e = entries.get(urlID);
-		URLEntry entry = new URLEntry(data, key, value);
+		URLEntry entry = new URLEntry(data, key, value, url.getStaticValue ());
 
 		if (e == null) {
 			e = new ArrayList<>();

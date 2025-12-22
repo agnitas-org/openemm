@@ -1,6 +1,8 @@
 AGN.Lib.DomInitializer.new('logon-complete', function($form) {
-  var form = AGN.Lib.Form.get($form);
-  var data = {};
+
+  const form = AGN.Lib.Form.get($form);
+  const data = {};
+
   window.adminId = this.config.adminId;
 
   if (this.config) {
@@ -8,7 +10,7 @@ AGN.Lib.DomInitializer.new('logon-complete', function($form) {
       // We don't need all the JS code to fail in case a some entry is invalid.
       try {
         // Read requested bundles from local storage to send them to server.
-        var bundle = AGN.Lib.Storage.get('web-storage#' + name);
+        const bundle = AGN.Lib.Storage.get(`web-storage#${name}`);
         if (bundle != null) {
           data[name] = bundle;
         }
@@ -17,8 +19,7 @@ AGN.Lib.DomInitializer.new('logon-complete', function($form) {
       }
     });
 
-    var settings = AGN.Lib.Storage.get('login-page') || {};
-    settings.isFrameShown = !!this.config.isFrameShown;
+    const settings = AGN.Lib.Storage.get('login-page') || {};
     AGN.Lib.Storage.set('login-page', settings);
   }
 

@@ -198,7 +198,7 @@ public class StringUtil {
 	 * 
 	 * @throws IllegalArgumentException if the given String contains characters that cannot be converted
 	 */
-	public static Object makeEqlMatchingPattern(String string) throws IllegalArgumentException {
+	public static Object makeEqlMatchingPattern(String string) {
 		String remnant = string;
 		final StringBuffer buffer = new StringBuffer();
 		int index;

@@ -28,9 +28,7 @@ public class RecipientImportWizardStepsInterceptor implements HandlerInterceptor
         String methodName = ((HandlerMethod) handler).getMethod().getName();
 
         Object importWizardSteps = request.getSession(false).getAttribute("importWizardSteps");
-        if (importWizardSteps instanceof ImportWizardSteps) {
-            ImportWizardSteps steps = (ImportWizardSteps) importWizardSteps;
-
+        if (importWizardSteps instanceof ImportWizardSteps steps) {
             if (steps.isImportRunning() || Step.fromControllerMethodName(methodName).ordinal() > steps.getCurrentStep().ordinal()) {
                 throw new NotAllowedImportWizardStepException();                 
             }

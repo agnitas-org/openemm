@@ -88,6 +88,7 @@ public class XMLWriter {
 	private int depth;
 	private boolean indentNext;
 	private long outputSize;
+	private IOException error;
 
 	/**
 	 * Constructor
@@ -103,6 +104,7 @@ public class XMLWriter {
 		depth = 0;
 		indentNext = true;
 		outputSize = 0L;
+		error = null;
 	}
 
 	/**
@@ -112,8 +114,11 @@ public class XMLWriter {
 	 *
 	 * @param bytes the minimum amount of bytes to be collected before flushing the stream
 	 */
-	public void setConditionalFlush(int bytes) {
+	public void conditionalFlush(int bytes) {
 		conditionalFlush = bytes;
+	}
+	public int conditionalFlush() {
+		return conditionalFlush;
 	}
 
 	/**
@@ -122,55 +127,11 @@ public class XMLWriter {
 	 *
 	 * @param bytes the size of the output block size
 	 */
-	public void setOutputBlockSize(int bytes) {
+	public void outputBlockSize(int bytes) {
 		outputBlockSize = bytes;
 	}
-
-	/**
-	 * Write the currently buffered output to the output
-	 * stream and encode it to the target character set
-	 * (which is currently hardcoded UTF-8), if the limit
-	 * (minSize) is reached.
-	 *
-	 * @param minSize the minimum size of the buffered output to continue the flush
-	 * @throws IOException
-	 */
-	public void flush(int minSize) throws IOException {
-		if (buf.length() > minSize) {
-			for (int written = 0; written < buf.length(); ) {
-				int chunk = buf.length() - written;
-
-				if (chunk > outputBlockSize) {
-					chunk = outputBlockSize;
-				}
-				out.write(buf.substring(written, written + chunk).getBytes(StandardCharsets.UTF_8));
-				out.flush();
-				written += chunk;
-				outputSize += chunk;
-			}
-			buf.setLength(0);
-		}
-	}
-
-	/**
-	 * Write all collected buffered output to the
-	 * output stream
-	 *
-	 * @throws IOException
-	 */
-	public void flush() throws IOException {
-		flush(0);
-	}
-
-	/**
-	 * Writes all collected buffered output to the
-	 * output stream, if the size of conditional
-	 * flushing is reached
-	 *
-	 * @throws IOException
-	 */
-	public void cflush() throws IOException {
-		flush(conditionalFlush);
+	public int outputBlockSize() {
+		return outputBlockSize;
 	}
 
 	/**
@@ -189,10 +150,10 @@ public class XMLWriter {
 	 * more than once
 	 */
 	public void start() {
-		buf.setLength(0);
-		buf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		truncate ();
+		append ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 	}
-
+	
 	/**
 	 * End a document, closes all open nodes and
 	 * forces to write out all buffered data
@@ -203,8 +164,8 @@ public class XMLWriter {
 		while (entity != null) {
 			close();
 		}
-		buf.append('\n');
-		flush();
+		append ("\n");
+		flush (0);
 	}
 
 	/**
@@ -217,23 +178,20 @@ public class XMLWriter {
 	 */
 	public void vopen(boolean simple, String name, String[] vars, String[] vals) {
 		indent();
-		buf.append("<");
-		buf.append(name);
+		append ("<", name);
 		if (vars != null) {
 			for (int n = 0; n < vars.length; ++n) {
 				String val = (vals != null) && (n < vals.length) ? vals[n] : "";
 
-				buf.append(" ");
-				buf.append(vars[n]);
-				buf.append("=\"");
-				escape(val);
-				buf.append("\"");
+				append (" ", vars[n], "=\"");
+				escape (val);
+				append ("\"");
 			}
 		}
 		if (simple) {
-			buf.append("/>");
+			append ("/>");
 		} else {
-			buf.append(">");
+			append (">");
 			entity = new Entity(name, entity);
 			++depth;
 		}
@@ -335,9 +293,7 @@ public class XMLWriter {
 			match = (name == null) || entity.name.equals(name);
 			--depth;
 			indent();
-			buf.append("</");
-			buf.append(entity.name);
-			buf.append(">");
+			append ("</", entity.name, ">");
 			entity = entity.parent;
 		}
 	}
@@ -480,24 +436,24 @@ public class XMLWriter {
 	 */
 	public void comment(String s) {
 		indent();
-		buf.append("<!-- ");
+		append ("<!-- ");
 		escape(s);
-		buf.append(" -->");
+		append (" -->");
 	}
 
 	/**
 	 * Add an empty line to the output
 	 */
 	public void empty() {
-		buf.append('\n');
+		append ("\n");
 		indentNext = true;
 	}
 
 	private void indent() {
 		if (indentNext) {
-			buf.append('\n');
+			append ("\n");
 			for (int n = 0; n < depth; ++n) {
-				buf.append("  ");
+				append ("  ");
 			}
 		} else {
 			indentNext = true;
@@ -515,23 +471,23 @@ public class XMLWriter {
 				int pos = m.start();
 
 				if (pos > last) {
-					buf.append(s, last, pos);
+					append (s, last, pos);
 				}
 				switch (s.charAt(pos)) {
 					case '<':
-						buf.append("&lt;");
+						append ("&lt;");
 						break;
 					case '>':
-						buf.append("&gt;");
+						append ("&gt;");
 						break;
 					case '&':
-						buf.append("&amp;");
+						append ("&amp;");
 						break;
 					case '\'':
-						buf.append("&apos;");
+						append ("&apos;");
 						break;
 					case '"':
-						buf.append("&quot;");
+						append ("&quot;");
 						break;
 					default:
 						break;
@@ -539,27 +495,27 @@ public class XMLWriter {
 				last = pos + 1;
 			}
 			if (last == 0) {
-				buf.append(s);
+				append (s);
 			} else if (last < s.length()) {
-				buf.append(s.substring(last));
+				append (s, last);
 			}
 		}
 	}
 
 	private static final String code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
 	private void encode(byte[] cont) {
 		int len;
 		int limit;
 		int count;
 		int i0, i1, i2;
+		char[] chunk = new char[4];
 
 		len = cont != null ? cont.length : 0;
 		limit = ((len + 2) / 3) * 3;
 		count = 0;
 		for (int n = 0; n < limit; n += 3) {
 			if (count == 0) {
-				buf.append('\n');
+				append ("\n");
 			}
 			if (cont == null) {
 				throw new RuntimeException("Unexpected empty cont");
@@ -575,23 +531,84 @@ public class XMLWriter {
 			} else {
 				i1 = i2 = 0;
 			}
-			buf.append(code.charAt(i0 >>> 2));
-			buf.append(code.charAt(((i0 & 0x3) << 4) | (i1 >>> 4)));
+			chunk[0] = code.charAt (i0 >>> 2);
+			chunk[1] = code.charAt (((i0 & 0x3) << 4) | (i1 >>> 4));
 			if (n + 1 < len) {
-				buf.append(code.charAt(((i1 & 0xf) << 2) | (i2 >>> 6)));
+				chunk[2] = code.charAt (((i1 & 0xf) << 2) | (i2 >>> 6));
 				if (n + 2 < len) {
-					buf.append(code.charAt(i2 & 0x3f));
+					chunk[3] = code.charAt (i2 & 0x3f);
 				} else {
-					buf.append("=");
+					chunk[3] = '=';
 				}
 			} else {
-				buf.append("==");
+				chunk[2] = chunk[3] = '=';
 			}
+			append (String.valueOf (chunk));
 			count += 4;
 			if (count >= 76) {
 				count = 0;
 			}
 		}
-		buf.append('\n');
+		append ("\n");
+	}
+	
+	/**
+	 * Write the currently buffered output to the output
+	 * stream and encode it to the target character set
+	 * (which is currently hardcoded UTF-8), if the limit
+	 * (minSize) is reached.
+	 *
+	 * @param minSize the minimum size of the buffered output to continue the flush
+	 * @throws IOException
+	 */
+	private void flush(int minSize) throws IOException {
+		if ((error == null) && (buf.length () > minSize)) {
+			try {
+				for (int written = 0; written < buf.length(); ) {
+					int chunk = buf.length() - written;
+
+					if (chunk > outputBlockSize) {
+						chunk = outputBlockSize;
+					}
+					out.write(buf.substring(written, written + chunk).getBytes(StandardCharsets.UTF_8));
+					out.flush();
+					written += chunk;
+					outputSize += chunk;
+				}
+			} catch (IOException e) {
+				error = e;
+			}
+			truncate ();
+		}
+		if (error != null) {
+			throw error;
+		}
+	}
+
+	private void truncate () {
+		buf.setLength (0);
+	}
+
+	private void append (String ... chunks) {
+		if (error == null) {
+			for (int n = 0; n < chunks.length; ++n) {
+				if (conditionalFlush > 0) {
+					try {
+						flush (conditionalFlush);
+					} catch (IOException e) {
+						break;
+					}
+				}
+				buf.append (chunks[n]);
+			}
+		}
+	}
+
+	private void append (String chunk, int start, int end) {
+		append (chunk.substring (start, end));
+	}
+	
+	private void append (String chunk, int start) {
+		append (chunk.substring (start));
 	}
 }

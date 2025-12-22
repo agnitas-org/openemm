@@ -15,24 +15,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 
 public interface MailinglistDao {
-	/**
-	 * Check if there is at least one mailing that uses the mailing list referenced by {@code mailinglistId}.
-	 *
-	 * @param mailinglistId The id of the mailing list to check.
-	 * @param companyId The id of a company that owns the mailing list.
-	 * @return {@code true} if the mailing list is in use of {@code false} otherwise.
-	 */
-	boolean checkMailinglistInUse(int mailinglistId, int companyId);
-	
+
 	@DaoUpdateReturnValueCheck
 	int updateMailinglist(int companyId, Mailinglist list);
-	
 	
 	@DaoUpdateReturnValueCheck
 	int createMailinglist(int companyId, Mailinglist list);
@@ -80,25 +68,12 @@ public interface MailinglistDao {
 	 */
 	int saveMailinglist(Mailinglist list);
 
-	/**
-	 * Get numbers of recipients related to given mailing list.
-	 * 
-	 * @param admin Include admin recipients.
-	 * @param test Include test recipients.
-	 * @param world Include normal recipients.
-	 * @param targetId Id of target group.
-	 * @param companyId The company id for recipients.
-	 * @param id
-	 * @return number of active recipients for mailing list.
-	 */
-	int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId,
-									 int companyId, int id);
-
 	int countSubscribers(final int mailinglistId, final int companyId, final int targetId, final boolean includeWorldRecipients, final boolean includeAdminRecipients, final boolean includeTestRecipients, final Set<Integer> bindingStates);
 
+	int getNumberOfActiveTestSubscribers(int targetId, int companyId, int id);
 
-		int getNumberOfActiveTestSubscribers(int targetId, int companyId, int id);
 	int getNumberOfActiveAdminSubscribers(int targetId, int companyId, int id);
+
 	int getNumberOfActiveWorldSubscribers(int targetId, int companyId, int id);
 
 	/**
@@ -123,8 +98,6 @@ public interface MailinglistDao {
 
     List<Integer> getMailinglistIds(int companyId);
 
-    PaginatedListImpl<MailinglistEntry> getMailinglists(int companyId, int adminId, String sort, String direction, int page, int rownums);
-
 	boolean deleteAllMailinglist(int companyId);
 
 	List<Mailinglist> getMailingListsNames(int companyId);
@@ -136,4 +109,5 @@ public interface MailinglistDao {
     Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);
 
 	List<Mailinglist> getMailinglists(int companyId, int adminID);
+
 }

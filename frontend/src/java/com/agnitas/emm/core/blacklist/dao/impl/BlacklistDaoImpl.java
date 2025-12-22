@@ -19,17 +19,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
-import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import com.agnitas.beans.BlackListEntry;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.impl.BlackListEntryImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.UserStatus;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.core.blacklist.dao.BlacklistDao;
+import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
@@ -42,7 +42,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 	
-	private static final String[] SUPPORTED_COLUMNS = new String[]{"email", "reason", "timestamp"};
+	private static final String[] SUPPORTED_COLUMNS = {"email", "reason", "timestamp"};
 
 	protected static String getCustomerBanTableName(int companyId) {
 		return "cust" + companyId + "_ban_tbl";
@@ -98,7 +98,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 				blacklist.add(email.toLowerCase());
 			}
 		} catch (Exception e) {
-			logger.error("loadBlacklist: " + e);
+			logger.error("loadBlacklist: {}", e.getMessage(), e);
 			throw e;
 		}
 		return blacklist;
@@ -122,7 +122,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 	}
 
 	@Override
-	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID) {
+	public PaginatedList<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID) {
 		String sort = getSortableColumn(filter.getSort());
 
 		// Only alphanumeric values may be sorted with upper or lower, which always returns a string value, for keeping the order of numeric values
@@ -175,19 +175,17 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 			blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID)
 					+ whereClause
 					+ sortClause
-					+ " LIMIT ?, ?";
+					+ " LIMIT ? OFFSET ?";
 		}
 
-        List<BlackListEntry> blacklistElements = null;
+		ArrayList<Object> paramsCopy = new ArrayList<>(params);
         if (isOracleDB()) {
-			ArrayList<Object> paramsCopy = new ArrayList<>(params);
 			paramsCopy.addAll(List.of(offset + 1, offset + rownums));
-			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
 		} else {
-			ArrayList<Object> paramsCopy = new ArrayList<>(params);
-			paramsCopy.addAll(List.of(offset, rownums));
-			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
+			paramsCopy.addAll(List.of(rownums, offset));
         }
+
+		List<BlackListEntry> blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), paramsCopy.toArray());
 
 		// Workaround: if you are on a page higher than 1 and the result of the
 		// blacklist-search would be on page 1
@@ -199,7 +197,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 			blacklistElements = select(blackListQuery, new BlackListEntry_RowMapper(), params.toArray());
 		}
 
-		PaginatedListImpl<BlackListEntry> paginatedList = new PaginatedListImpl<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
+		PaginatedList<BlackListEntry> paginatedList = new PaginatedList<>(blacklistElements, totalRows, rownums, page, sort, filter.getOrder());
 		if (filter.isUiFiltersSet()) {
 			paginatedList.setNotFilteredFullListSize(selectInt("SELECT COUNT(*) FROM " + getCustomerBanTableName(companyID)));
 		}
@@ -212,13 +210,6 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 		List<Object> params = new ArrayList<>();
 
 		if (StringUtils.isNotBlank(filter.getEmail())) {
-			/*
-			 * TODO Bugfix for Mantis ID 798
-			 * The following statement uses the "lowercase" function of the Database
-			 * this is not very efficient. But for now, there are some values in the DB which
-			 * are not lowercase. Therfore, as soon as all emails are lowercase remove the
-			 * statements for better performance.
-			 */
 			whereClause.append(getPartialSearchFilter("email"));
 			params.add(replaceWildCardCharacters(filter.getEmail()));
 		} else {
@@ -240,7 +231,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 		return exist(email, getCustomerBanTableName(companyID));
 	}
 
-    protected boolean exist(String email, String tableName) {
+    private boolean exist(String email, String tableName) {
         try {
             String sql = "SELECT COUNT(email) FROM " + tableName + " WHERE email = ?";
             int resultCount = selectInt(sql, AgnUtils.normalizeEmail(email));
@@ -275,41 +266,43 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 
 	@Override
 	public List<Mailinglist> getMailinglistsWithBlacklistedBindings(Set<String> emails, int companyId) {
-		String query = "SELECT DISTINCT m.mailinglist_id, m.company_id, m.shortname, m.description FROM mailinglist_tbl m, customer_" + companyId + "_tbl c, customer_" + companyId + "_binding_tbl b" +
-			" WHERE c.email IN (" + AgnUtils.csvQMark(emails.size()) + ") AND b.customer_id = c.customer_id AND b.user_status = ? AND b.mailinglist_id = m.mailinglist_id AND m.deleted = 0 AND m.company_id = ?";
+        return select("""
+			SELECT DISTINCT m.mailinglist_id, m.company_id, m.shortname, m.description
+			FROM mailinglist_tbl m, customer_%d_tbl c, customer_%d_binding_tbl b
+			WHERE (%s)
+			  AND b.customer_id = c.customer_id
+			  AND b.user_status = ?
+			  AND b.mailinglist_id = m.mailinglist_id
+			  AND m.deleted = 0 AND m.company_id = ?
+			""".formatted(companyId, companyId, getBlacklistedBindingsFilter(emails)),
+			MAILINGLIST_ROW_MAPPER, UserStatus.Blacklisted.getStatusCode(), companyId);
+	}
 
-		List<Object> params = new ArrayList<>(emails);
-		params.addAll(List.of(UserStatus.Blacklisted.getStatusCode(), companyId));
-
-        return select(query, MAILINGLIST_ROW_MAPPER, params.toArray());
+	private static String getBlacklistedBindingsFilter(Set<String> emails) {
+		return StringUtils.join(
+			emails.stream()
+				.map(email -> "c.email " + (email.contains("%") ? "LIKE '" : "= '") + email + "'")
+				.toArray(String[]::new),
+			" OR "
+		);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateBlacklistedBindings( int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus) {
-		if (mailinglistIds.size() == 0) {
-			if (logger.isInfoEnabled()) {
-				logger.info("List of mailinglist IDs is empty - doing nothing");
-			}
-
-			return;
-		}
-		
-		String update =
-			"UPDATE customer_" + companyId + "_binding_tbl" +
-			" SET user_status = ?, timestamp = CURRENT_TIMESTAMP" +
-			" WHERE customer_id IN (SELECT customer_id FROM customer_" + companyId + "_tbl WHERE email = ?)" +
-			" AND user_status = ? AND mailinglist_id = ?";
-		
-		for (int mailinglistId : mailinglistIds) {
-			if (logger.isDebugEnabled()) {
-				logger.debug( email + ": updating user status for mailinglist " + mailinglistId);
-			}
-			
-			update(update, userStatus.getStatusCode(), email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
-		}
+	public void updateBlacklistedBindings(int companyId, String email, Set<Integer> mailinglistIds, UserStatus userStatus) {
+		mailinglistIds.stream()
+			.filter(mailinglistId -> mailinglistId > 0)
+			.forEach(mailinglistId -> {
+				logger.debug("{}: updating user status for mailinglist {}", email, mailinglistId);
+				update("""
+						UPDATE customer_%d_binding_tbl
+						  SET user_status = ?, timestamp = CURRENT_TIMESTAMP
+						WHERE customer_id IN (SELECT customer_id FROM customer_%d_tbl WHERE email like ?)
+						  AND user_status = ? AND mailinglist_id = ?""".formatted(companyId, companyId),
+					userStatus.getStatusCode(), email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
+			});
 	}
-	
+
 	/**
 	 * Email address blacklist check, but only for the companies custxxx_ban_tbl
 	 */
@@ -325,7 +318,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 
 			return selectInt(sql, AgnUtils.normalizeEmail(email)) > 0;
 		} catch (Exception e) {
-			logger.error("Error checking blacklist for email '" + email + "'", e);
+			logger.error("Error checking blacklist for email '{}'", email, e);
 
 			// For safety, assume email is blacklisted in case of an error
 			return true;
@@ -351,7 +344,7 @@ public class BlacklistDaoImpl extends BaseDaoImpl implements BlacklistDao {
 		}
 	}
 
-	public static class BlackListEntry_RowMapper implements RowMapper<BlackListEntry> {
+	protected static class BlackListEntry_RowMapper implements RowMapper<BlackListEntry> {
 		@Override
 		public BlackListEntry mapRow(ResultSet rs, int row) throws SQLException {
 			String email = rs.getString("email");

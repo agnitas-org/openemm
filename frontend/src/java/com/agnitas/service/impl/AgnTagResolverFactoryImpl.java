@@ -25,25 +25,24 @@ import com.agnitas.beans.TagDefinition;
 import com.agnitas.beans.TagDetails;
 import com.agnitas.beans.Title;
 import com.agnitas.beans.factory.RecipientFactory;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TagDao;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.dao.TitleDao;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.service.AgnTagResolver;
+import com.agnitas.service.AgnTagResolverFactory;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.dao.CompanyDao;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.TitleDao;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.service.AgnTagResolver;
-import com.agnitas.service.AgnTagResolverFactory;
 
 public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     private static final String DEFAULT_LANGUAGE = "de";
@@ -236,7 +235,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
         }
 
         private String resolveAgnForm(String formName) {
-    		final Optional<String> companyTokenOpt = readCompanyToken();
+            final Optional<String> companyTokenOpt = companyTokenService.getCompanyToken(this.companyId);
 
     		return companyTokenOpt.isPresent()
     				? String.format(
@@ -249,14 +248,6 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     						getRedirectDomain(),
     						companyId,
     						formName);
-        }
-        
-        private final Optional<String> readCompanyToken() {
-        	try {
-        		return companyTokenService.getCompanyToken(this.companyId);
-        	} catch(final UnknownCompanyIdException e) {
-        		return Optional.empty();
-        	}
         }
 
         /**

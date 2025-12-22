@@ -14,12 +14,12 @@ public enum MailingContentType {
 	advertising,
 	transaction;
 	
-	public static MailingContentType getFromString(String mailingContentTypeString) throws Exception {
+	public static MailingContentType getFromString(String mailingContentTypeString) {
 		for (MailingContentType value : MailingContentType.values()) {
 			if (value.name().equalsIgnoreCase(mailingContentTypeString)) {
 				return value;
 			}
 		}
-		throw new Exception("Invalid MailingContentType: " + mailingContentTypeString);
+		throw new IllegalArgumentException("Invalid MailingContentType: " + mailingContentTypeString);
 	}
 }

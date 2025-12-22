@@ -1,124 +1,185 @@
-.l-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  z-index: 1001;
+.header {
+  @include flex-row($gap);
+  justify-content: space-between;
+  min-width: 0;
+  align-items: center;
+  position: relative;
 
-  padding: 0 20px 0 70px;
+  padding-inline: $header-spacer;
 
-  background-color: $c-blue-27;
-
-  .menu-is-active & {
-    padding-left: 240px;
+  @include mobile {
+    padding-left: $header-spacer;
+    padding-right: $header-spacer / 2;
+    justify-content: unset;
+    gap: $gap-sm;
   }
 
-  @include clearfix();
-  @include transition(padding 0.35s);
+  @include left-hand {
+    z-index: 1; // hack to display bootstrap dropdown over the tiles
+  }
 
-  .header-menu {
-    float: left;
-    display: inline-block;
-    border-right: 1px solid rgba(255,255,255,0.3);
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
+  }
 
-    .menu-is-active & {
-      display: none;
-      width: 0;
+  > .breadcrumbs {
+    @include left-hand {
+      flex-direction: row-reverse;
+
+      .icon-caret-right {
+        @include flipHorizontally;
+      }
+    }
+  }
+
+  .loader {
+    @include desktop {
+      @include center-absolute;
     }
 
-    @media (min-width:$screen-md-min) {
-      display: none;
-    }
-
-    li {
-      width: 60px;
-      height: 60px;
-      display: block;
-    }
-
-    a {
-      color: $c-white;
-      padding: 20px;
-      display: block;
-
-      &:hover {
-        i {
-          @include rotate(90deg);
-        }
+    @include left-hand {
+      > * {
+        @include flipHorizontally;
       }
     }
 
+    @include mobile {
+      @include size(30px);
+      font-size: $font-size-lg;
+      span {
+        display: none;
+      }
+
+      margin-left: auto;
+    }
+  }
+
+  &:has(.loader:not(.hidden)) .header__actions {
+    margin: unset;
+  }
+
+  .switch {
+    background-color: $dark-blue;
+    color: $white;
+    padding: 0;
+    border-radius: $border-radius-sm;
+    border-width: 0;
+
     i {
-      font-size: $fs-xxlarge;
-      line-height: $fs-xxlarge;
-      @include transition-transform(0.8s);
+      margin: 0 !important;
+    }
+
+    &:hover {
+      background-color: darken($dark-blue, 10%);
+      border-color: darken($primary, 12%);
     }
   }
-
-  .header-nav {
-    display: inline-block;
-    white-space: nowrap;
-    margin-left: 20px;
-    padding: 18px 0;
-
-    .headline {
-      font-size: $fs-xxlarge;
-      line-height: 24px;
-    }
-
-    > li:last-child .headline {
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-  }
-
-  .header-actions {
-    position: absolute;
-    right: 0;
-    top: 0;
-    margin-right: 20px;
-    background-color: $c-blue-27;
-    padding-left: 20px;
-
-    > li {
-      float: left;
-    }
-
-    > li + li {
-      margin-left: 10px;
-    }
-
-    .btn {
-      margin-top: 20px;
-    }
-
-    .btn-regular {
-      margin-top: 15px;
-    }
-
-    .btn-large {
-      margin-top: 10px;
-    }
-  }
-
 }
 
-body.wide-sidebar .l-header {
-  padding-left: 245px;
-}
+.header__actions {
+  @include flex-row($header-spacer);
+  align-items: center;
 
-body.dark-theme .l-header {
-  background-color: $c-dt-header-background;
-  .header-actions {
-    background-color: $c-dt-header-background;
+  @include mobile {
+    margin-left: auto;
   }
 
-  .header-nav {
-    h1,
-    a:not(.btn),
-    li {
-      color: $c-dt-header-text;
+  @include left-hand {
+    flex-direction: row-reverse;
+  }
+
+  .btn {
+    padding: $gap-x-sm - 2 8px;
+    gap: $gap-x-sm;
+    border-radius: $border-radius-sm;
+    border-width: 2px;
+
+    @include button-variant(
+            $background: $dark-blue,
+            $border: transparent,
+            $color: $white
+    );
+
+    span {
+      @extend .text-truncate;
     }
+
+    @include mobile {
+      @include size(30px);
+
+      &.btn::after {
+        display: none; // hide bootstrap arrow
+      }
+
+      span {
+        display: none;
+      }
+
+      .icon {
+        font-size: $font-size-lg;
+      }
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .header .switch {
+    border-width: 2px;
+    border-color: $primary;
+    i {
+      margin: -1px !important;
+    }
+  }
+
+  .header__actions .btn {
+    @include button-variant(
+            $background: $body-bg-dark,
+            $border: $blue,
+            $color: $white
+    );
+  }
+}
+
+@include color-mode(light-contrast) {
+  .header .switch {
+    border-width: 1px;
+    border-color: $con-dark-blue;
+    background-color: transparent;
+    i {
+      margin: -1px !important;
+    }
+  }
+  .header__actions .btn {
+    @include button-variant(
+            $background: $con-dark-blue,
+            $border: transparent,
+            $color: $white
+    );
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .header .switch {
+    border-width: 1px;
+    border-color: $white;
+    background-color: transparent;
+    i {
+      margin: -1px !important;
+    }
+  }
+  .header__actions .btn {
+    @include button-variant(
+            $background: $white,
+            $border: transparent,
+            $color: $con-dark-blue
+    );
+  }
+}
+
+#new-resource {
+  body.edit-mode & {
+    display: none;
   }
 }

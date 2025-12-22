@@ -43,7 +43,7 @@ public class ComponentDAO {
 		String reduceClause = null;
 
 		if ((componentTypes != null) && (componentTypes.length > 0)) {
-			reduceClause = " AND comptype ";
+			reduceClause = "AND comptype ";
 			if (componentTypes.length > 1) {
 				reduceClause += "IN (" + Arrays.stream(componentTypes).map(e -> Integer.toString(e.getCode())).reduce((s, e) -> s + "," + e).orElse(null) + ")";
 			} else {
@@ -133,6 +133,10 @@ public class ComponentDAO {
 						tmp.isParseable = true;
 						tmp.isAttachment = true;
 						tmp.isPrecoded = true;
+						break;
+					case 8:
+						// ignore known, but unsed in this context type thumbnails
+						tmp = null;
 						break;
 					default:
 						dbase.logging(Log.WARNING, "component", "Invalid comptype " + tmp.comptype + " found");

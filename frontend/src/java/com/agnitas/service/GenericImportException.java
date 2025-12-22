@@ -13,17 +13,16 @@ package com.agnitas.service;
 public class GenericImportException extends Exception {
 	private static final long serialVersionUID = -6519878605641730345L;
 
-	public static enum ReasonCode {
+	public enum ReasonCode {
 		MissingMandatory("error.mandatory.missing"),
 		InvalidDate("error.date.invalid"),
 		InvalidNumber("error.number.invalid"),
-		InvalidEncryption("error.encryption.invalid"),
 		ValueTooLarge("error.value.toolarge"),
 		NumberTooLarge("error.value.numbertoolarge"),
 		InvalidFormat("error.format.invalid"),
 		Unknown("error.value.unknownReason");
 		
-		private String messageKey;
+		private final String messageKey;
 		
 		ReasonCode(String messageKey) {
 			this.messageKey = messageKey;

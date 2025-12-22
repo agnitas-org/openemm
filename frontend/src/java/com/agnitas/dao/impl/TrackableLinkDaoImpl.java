@@ -10,29 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.TrackableLinkListItem;
-import com.agnitas.beans.impl.TrackableLinkImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.TrackableLinkDao;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
-import com.agnitas.web.exception.ClearLinkExtensionsException;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.TrackableLinkListItemRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -47,6 +24,29 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.TrackableLinkListItem;
+import com.agnitas.beans.impl.TrackableLinkImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.TrackableLinkListItemRowMapper;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDao {
 	
@@ -67,7 +67,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 					: "SELECT * FROM rdir_url_tbl WHERE url_id = ? AND company_id = ? AND deleted <= 0";
 			
 			final List<TrackableLink> linkList = select(sql, new TrackableLink_RowMapper(), linkID, companyID);
-			if (linkList == null || linkList.size() < 1) {
+			if (linkList == null || linkList.isEmpty()) {
 				return null;
 			} else {
 				TrackableLink link = linkList.get(0);
@@ -90,7 +90,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			//keep SELECT * because "usage" is a reserved word on mariaDB
 			String sql = "SELECT * FROM rdir_url_tbl WHERE full_url = ? AND company_id = ? AND mailing_id = ? AND deleted <= 0";
 			List<TrackableLink> linkList = select(sql, new TrackableLink_RowMapper(), url, companyID, mailingID);
-			if (linkList == null || linkList.size() < 1) {
+			if (linkList == null || linkList.isEmpty()) {
 				return null;
 			} else {
 				TrackableLink link = linkList.get(0);
@@ -130,12 +130,8 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			for (Map<String, Object> linkParamWithUrlID : allLinkParamsResult) {
 				int linkID = ((Number) linkParamWithUrlID.get("url_id")).intValue();
 				
-				PropertyType type;
-				try {
-					type = PropertyType.parseString((String) linkParamWithUrlID.get("param_type"));
-				} catch (Exception e) {
-					throw new RuntimeException("Error when reading link properties param_type", e);
-				}
+				PropertyType type = PropertyType.parseString((String) linkParamWithUrlID.get("param_type"));
+
 				String paramKey = (String) linkParamWithUrlID.get("param_key");
 				String paramValue = (String) linkParamWithUrlID.get("param_value");
 				LinkProperty linkProperty = new LinkProperty(type, paramKey, paramValue);
@@ -175,11 +171,10 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		if (link.getId() != 0) {
 			int existingLinkCount = selectInt("SELECT COUNT(url_id) FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? AND url_id = ?", link.getCompanyID(), link.getMailingID(), link.getId());
 			// if link exist in db - update it, else we set it's id=0 that means link not saved
-			String usage = isOracleDB() ? "usage" : "`usage`";
 			if (existingLinkCount > 0) {
 				validateLinkShortname(link.getShortname());
 
-				String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + usage + " = ?, deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, admin_link = ?, extend_url = ?, static_value=?, measured_separately = ?, create_substitute_link=? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
+				String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + getUsageColName() + " = ?, deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, admin_link = ?, extend_url = ?, static_value=?, measured_separately = ?, create_substitute_link=? WHERE company_id = ? AND mailing_id = ? AND url_id = ?";
 				int linkId = link.getId();
 				update(sql,
 						link.getActionID(),
@@ -232,10 +227,10 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 							link.isCreateSubstituteLinkForAgnDynMulti() ? 1 : 0
 							);
 					if (touchedLines != 1) {
-						logger.error("Invalid update result in TrackableLinkDaoImpl.saveTrackableLink: " + touchedLines);
+						logger.error("Invalid update result in TrackableLinkDaoImpl.saveTrackableLink: {}", touchedLines);
 					}
 				} else {
-					String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)";
+					String insertStatement = "INSERT INTO rdir_url_tbl (company_id, mailing_id, action_id, " + getUsageColName() + ", deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)";
 
 					Object[] paramsWithNext = new Object[13];
 					paramsWithNext[0] = link.getCompanyID();
@@ -252,7 +247,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 					paramsWithNext[11] = link.isMeasureSeparately() ? 1 : 0;
 					paramsWithNext[12] = link.isCreateSubstituteLinkForAgnDynMulti() ? 1 : 0;
 
-					int linkID = insertIntoAutoincrementMysqlTable("url_id", insertStatement, paramsWithNext);
+					int linkID = insert("url_id", insertStatement, paramsWithNext);
 					link.setId(linkID);
 				}
 			}
@@ -272,11 +267,6 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		if (removeUnusedLinks) {
 			deleteTrackableLinksExceptIds(companyID, mailingId, trackableLinkIdsInUse);
 		}
-	}
-
-	@DaoUpdateReturnValueCheck
-	public boolean deleteTrackableLink(int linkID, int companyID) {
-		return update("UPDATE rdir_url_tbl SET deleted = 1 WHERE url_id = ? AND company_id = ?", linkID, companyID) > 0;
 	}
 
 	@Override
@@ -302,14 +292,12 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		}
 
 		int rows = update(sqlSetDeleted, companyID, mailingID);
-		if (logger.isDebugEnabled()) {
-			logger.debug("TrackableLinkDaoImpl - removeUnusedTrackableLinks touched rows: " + rows);
-		}
+		logger.debug("TrackableLinkDaoImpl - removeUnusedTrackableLinks touched rows: {}", rows);
 	}
 
 	/**
 	 * Do not use this method directly for click tracking!
-	 * 
+	 * <p>
 	 * Use {@link ClickTrackingService#trackLinkClick(ExtensibleUID, String, DeviceClass, int, int)} instead. This
 	 * method respects the tracking settings of the customer.
 	 * 
@@ -317,17 +305,17 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
+	public boolean logClickInDB(TrackableLink link, int customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID, int position) {
 		String sql = "INSERT INTO rdirlog_" + link.getCompanyID() + "_tbl "
-				+ "(customer_id, url_id, company_id, timestamp, ip_adr, mailing_id, device_class_id, device_id, client_id) "
-				+ "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)";
+				+ "(customer_id, url_id, company_id, timestamp, ip_adr, mailing_id, device_class_id, device_id, client_id, position) "
+				+ "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?)";
 		try {
         	if (customerID == 0) {
         		// Fallback for anonymous recipients
         		remoteAddr = null;
         	}
         	
-			update(sql, customerID, link.getId(), link.getCompanyID(), remoteAddr, link.getMailingID(), deviceClass.getId(), deviceID, clientID);
+			update(sql, customerID, link.getId(), link.getCompanyID(), remoteAddr, link.getMailingID(), deviceClass.getId(), deviceID, clientID, position);
 
 			// Update customer entry
 			if (configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, link.getCompanyID())) {
@@ -363,9 +351,8 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		update(sqlClicks, mailingID, mailingID);
     }
 
-	@Override
 	@DaoUpdateReturnValueCheck
-	public void storeLinkProperties(int linkId, List<LinkProperty> properties) {
+	private void storeLinkProperties(int linkId, List<LinkProperty> properties) {
 		update("DELETE FROM rdir_url_param_tbl WHERE url_id = ?", linkId);
 		if (CollectionUtils.isNotEmpty(properties)) {
 			String insertSql = "INSERT INTO rdir_url_param_tbl (url_id, param_type, param_key, param_value) VALUES (?, ?, ?, ?)";
@@ -431,20 +418,15 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	private static class TrackableLinkProperty_RowMapper implements RowMapper<LinkProperty> {
 		@Override
 		public LinkProperty mapRow(ResultSet resultSet, int row) throws SQLException {
-			PropertyType type;
-			try {
-				type = PropertyType.parseString(resultSet.getString("param_type"));
-			} catch (Exception e) {
-				throw new SQLException("Error when reading properties param_type", e);
-			}
+			PropertyType type = PropertyType.parseString(resultSet.getString("param_type"));
 			return new LinkProperty(type, resultSet.getString("param_key"), resultSet.getString("param_value"));
 		}
 	}
 	/**
 	 * Try to reactivate links marked as &quot;deleted&quot;.
-	 * 
+	 * <p>
 	 * When no link with given full URLL was found, this method return false, which means, that there is no non-deleted link with that URL after returning from that method.
-	 * 
+	 * <p>
 	 * When this method return true, that there is a non-deleted link with given URL. The link given as parameter get the ID of the link found in DB. If there are more than one link with matching URL,
 	 * the highest URL is used.
 	 * 
@@ -464,12 +446,12 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			int existingLinkID = selectInt("SELECT MAX(url_id) AS max_url_id FROM rdir_url_tbl WHERE company_id = ? AND mailing_id = ? AND full_url = ?", link.getCompanyID(), link.getMailingID(), link.getFullUrl());
 			if (existingLinkID <= 0) {
 				if (logger.isDebugEnabled()) {
-					logger.debug("No deleted link found to reactivate for mailing " + link.getMailingID() + " with URL " + link.getFullUrl());
+					logger.debug("No deleted link found to reactivate for mailing {} with URL {}", link.getMailingID(), link.getFullUrl());
 				}
 				return false;
 			} else {
 				if (logger.isDebugEnabled()) {
-					logger.debug("Found a deleted link to reactivate for mailing " + link.getMailingID() + " with URL " + link.getFullUrl() + ". Reactivating link ID " + existingLinkID);
+					logger.debug("Found a deleted link to reactivate for mailing {} with URL {}. Reactivating link ID {}", link.getMailingID(), link.getFullUrl(), existingLinkID);
 				}
 
 				update("UPDATE rdir_url_tbl SET deleted = 0, measured_separately = 0 WHERE company_id = ? AND mailing_id = ? AND url_id = ?", link.getCompanyID(), link.getMailingID(), existingLinkID);
@@ -478,7 +460,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 				return true;
 			}
 		} catch (Exception e) {
-			logger.error("Error reactivating link " + link.getFullUrl() + ". Creating new record.", e);
+			logger.error("Error reactivating link {}. Creating new record.", link.getFullUrl(), e);
 			return false;
 		}
 	}
@@ -522,7 +504,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
                     getBulkClearExtensionsSqlQuery(bulkIds),
                     getBulkClearExtensionsSqlParams(mailingId, companyId, bulkIds));
         } catch (Exception e) {
-            logger.error("Error deleting link extensions for mailing " + mailingId, e);
+            logger.error("Error deleting link extensions for mailing {}", mailingId, e);
             throw new ClearLinkExtensionsException("Can't clear trackablelink extensions of links: " + bulkIds, e);
         }
     }
@@ -600,8 +582,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			return;
 		}
 
-		String usage = isOracleDB() ? "usage" : "`usage`";
-		String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + usage + " = ?, " +
+		String sql = "UPDATE rdir_url_tbl SET action_id = ?, " + getUsageColName() + " = ?, " +
 				"deep_tracking = ?, shortname = ?, full_url = ?, original_url = ?, alt_text = ?, " +
 				"admin_link = ?, extend_url = ?, static_value= ?, measured_separately = ?, create_substitute_link = ? WHERE company_id = ? AND url_id = ? AND mailing_id = ?";
 
@@ -689,12 +670,12 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
 			batchupdate(sql, paramsList);
 		} else {
-			String insertStatement = "INSERT INTO rdir_url_tbl (company_id, action_id, `usage`, deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link, deleted, mailing_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)";
+			String insertStatement = "INSERT INTO rdir_url_tbl (company_id, action_id, " + getUsageColName() + ", deep_tracking, shortname, full_url, alt_text, admin_link, extend_url, from_mailing, static_value, measured_separately, create_substitute_link, deleted, mailing_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)";
 
 			for (TrackableLink link: linksForInsertion) {
 				validateLinkShortname(link.getShortname());
 
-				Object[] paramsWithNext = new Object[] {
+				Object[] paramsWithNext = {
 						companyId,
 						link.getActionID(),
 						link.getUsage(),
@@ -710,7 +691,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 						link.isDeleted() ? 1 : 0,
 						link.getMailingID()
 				};
-				int linkID = insertIntoAutoincrementMysqlTable("url_id", insertStatement, paramsWithNext);
+				int linkID = insert("url_id", insertStatement, paramsWithNext);
 				link.setId(linkID);
 			}
 		}
@@ -733,7 +714,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 
 	private void validateLinkShortname(String name) {
 		if (name != null && name.length() > 1000) {
-			throw new RuntimeException("Value for rdir_url_tbl.shortname is to long (Maximum: 1000, Current: " + name.length() + ")");
+			throw new IllegalArgumentException("Value for rdir_url_tbl.shortname is to long (Maximum: 1000, Current: " + name.length() + ")");
 		}
 	}
 
@@ -763,14 +744,14 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 			
 			return linksForReActivation;
 		} catch (Exception e) {
-			logger.warn("Could not reactivate links for mailing ID " + mailingId + ", company ID " + companyId);
+			logger.warn("Could not reactivate links for mailing ID {}, company ID {}", mailingId, companyId);
 		}
 		
 		return new HashMap<>();
 	}
 
 	private static class LinksMapCallback implements RowCallbackHandler {
-		private Map<String, Integer> linkUrlMap;
+		private final Map<String, Integer> linkUrlMap;
 
 		public LinksMapCallback(Map<String, Integer> linkUrlMap) {
 			this.linkUrlMap = Objects.requireNonNull(linkUrlMap);
@@ -783,7 +764,7 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 	}
 	
 	private static class LinkUrlMapCallback implements RowCallbackHandler {
-		private Map<Integer, String> linksMap;
+		private final Map<Integer, String> linksMap;
 
 		public LinkUrlMapCallback(Map<Integer, String> linksMap) {
 			this.linksMap = Objects.requireNonNull(linksMap);
@@ -818,5 +799,9 @@ public class TrackableLinkDaoImpl extends BaseDaoImpl implements TrackableLinkDa
 		this.update(sql, link.getId(), link.getCompanyID());
 		
 		link.setDeleted(false);
+	}
+
+	private String getUsageColName() {
+		return isOracleDB() || isPostgreSQL() ? "usage" : "`usage`";
 	}
 }

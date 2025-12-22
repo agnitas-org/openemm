@@ -16,9 +16,9 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.LightProfileField;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.LightProfileField;
 import com.agnitas.util.DbColumnType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
@@ -27,6 +27,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
  */
 @Deprecated
 public interface ProfileFieldDao {
+
 	int MAX_SORT_INDEX = 1000;
 
     ProfileField getProfileField(int companyID, String column, int adminId);
@@ -54,8 +55,6 @@ public interface ProfileFieldDao {
 
 	List<ProfileField> getHistorizedProfileFields(int companyID);
 
-	boolean checkAllowedDefaultValue(int companyID, String columnName, String fieldDefault);
-
 	/**
 	 * Check whether or not a {@code column} exists (either a default (built-in) column or a custom profile field).
 	 *
@@ -75,19 +74,11 @@ public interface ProfileFieldDao {
 	 */
 	boolean isTrackableColumn(String column, int companyId);
 
-	int countCustomerEntries(final int companyID);
-
-	boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase);
-
-	int getMaximumCompanySpecificFieldCount(int companyID);
-
 	DbColumnType getColumnType(int companyId, String columnName);
 
 	boolean isColumnIndexed(int companyId, String column);
 
 	void clearProfileStructureCache(int companyID);
-	
-	boolean isOracleDB();
 	
     /**
      * Loads profile field by company id and column name.
@@ -113,14 +104,6 @@ public interface ProfileFieldDao {
      * @return List of ProfileFields or empty list.
      */
     List<ProfileField> getProfileFields(int companyID, int adminID);
-
-    /**
-     * Loads all profile fields of certain company.
-     *
-     * @param companyID The companyID for the profile fields.
-     * @return List of ProfileFields or empty list.
-     */
-    CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID);
 
     /**
      * Loads all profile fields of certain company.
@@ -164,9 +147,9 @@ public interface ProfileFieldDao {
      */
     boolean alterColumnTypeInDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception;
 
-	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
+	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName);
 
-	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;
+	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers);
 
 	Set<String> getCustomerColumns(int companyId);
 }

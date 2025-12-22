@@ -11,7 +11,6 @@
 package com.agnitas.service;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +43,10 @@ import java.util.concurrent.Callable;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
 import javax.sql.DataSource;
 
-import com.agnitas.messages.I18nString;
 import com.agnitas.beans.ExportColumnMapping;
+import com.agnitas.messages.I18nString;
 import com.agnitas.util.CaseInsensitiveSet;
 import com.agnitas.util.CsvWriter;
 import com.agnitas.util.DbUtilities;
@@ -61,7 +59,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class GenericExportWorker implements Callable<GenericExportWorker> {
-    private static final transient Logger logger = LogManager.getLogger(GenericExportWorker.class);
+
+    private static final Logger logger = LogManager.getLogger(GenericExportWorker.class);
 	
 	/**
 	 * Cache variable for the dataSource vendor, so it must not be recalculated everytime.
@@ -150,7 +149,6 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	/**
 	 * Get the number of exported lines not including the csv header line, so lines within the exported file is "exportedLines + 1"
-	 * @return
 	 */
 	public long getExportedLines() {
 		return exportedLines;
@@ -312,7 +310,6 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	
 	/**
 	 * By default this is: ZoneId.systemDefault()
-	 * @param dbTimezone
 	 */
 	public void setDbTimezone(ZoneId dbTimezone) {
 		this.dbTimezone = dbTimezone;
@@ -335,11 +332,11 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 			done = false;
 			
 			if (dataSource == null) {
-				throw new Exception("DB DataSource is missing");
+				throw new IllegalStateException("DB DataSource is missing");
 			}
 			
 			if (StringUtils.isBlank(selectStatement)) {
-				throw new Exception("Select statement is missing");
+				throw new IllegalStateException("Select statement is missing");
 			}
 			
 			if (compressionType == FileCompressionType.ZIP && StringUtils.isEmpty(zipPassword)) {
@@ -382,7 +379,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				if (overwriteFile) {
 					new File(exportFile).delete();
 				} else {
-					throw new Exception("Outputfile already exists: " + exportFile);
+					throw new IllegalStateException("Outputfile already exists: " + exportFile);
 				}
 			}
 			
@@ -424,12 +421,12 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 				    		for (int i = 0; i < selectParameters.size(); i++) {
 				    			if (selectParameters.get(i) == null) {
 					    			preparedStatement.setNull(i + 1, Types.NULL);
-				    			} else if (selectParameters.get(i) instanceof String) {
-					    			preparedStatement.setNString(i + 1, (String) selectParameters.get(i));
-				    			} else if (selectParameters.get(i) instanceof Integer) {
-					    			preparedStatement.setInt(i + 1, (Integer) selectParameters.get(i));
-				    			} else if (selectParameters.get(i) instanceof Date) {
-					    			preparedStatement.setTimestamp(i + 1, new java.sql.Timestamp(((Date) selectParameters.get(i)).getTime()));
+				    			} else if (selectParameters.get(i) instanceof String strParam) {
+					    			preparedStatement.setNString(i + 1, strParam);
+				    			} else if (selectParameters.get(i) instanceof Integer intParam) {
+					    			preparedStatement.setInt(i + 1, intParam);
+				    			} else if (selectParameters.get(i) instanceof Date dateParam) {
+					    			preparedStatement.setTimestamp(i + 1, new java.sql.Timestamp(dateParam.getTime()));
 				    			} else {
 					    			preparedStatement.setObject(i + 1, selectParameters.get(i));
 				    			}
@@ -445,16 +442,12 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 							}
 							
 							// Scan headers
-							List<String> columnNames = new ArrayList<>();
 							List<String> columnLabels = new ArrayList<>();
-							List<String> columnTypes = new ArrayList<>();
 							for (int i = 1; i <= metaData.getColumnCount(); i++) {
 								String columnName = metaData.getColumnName(i);
 								String columnLabel = metaData.getColumnLabel(i);
 								if (excludedColumnsSet == null || !excludedColumnsSet.contains(columnName)) {
-									columnNames.add(columnName);
 									columnLabels.add(columnLabel);
-									columnTypes.add(metaData.getColumnTypeName(i));
 								}
 							}
 	
@@ -498,11 +491,11 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 												if (value == null) {
 													values.add(columnMapping.getDefaultValue());
-												} else if (value instanceof String) {
-													if (((String) value).length() == 0) {
+												} else if (value instanceof String strVal) {
+													if (strVal.isEmpty()) {
 														values.add(columnMapping.getDefaultValue());
 													} else {
-														values.add((String) value);
+														values.add(strVal);
 													}
 												} else if (value instanceof Number && decimalFormat != null) {
 													values.add(decimalFormat.format(value));
@@ -525,8 +518,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 											
 											if (value == null) {
 												values.add(nullValueText);
-											} else if (value instanceof String) {
-												values.add((String) value);
+											} else if (value instanceof String strVal) {
+												values.add(strVal);
 											} else if (value instanceof Number && decimalFormat != null) {
 												values.add(decimalFormat.format(value));
 											} else {
@@ -543,10 +536,10 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 					exportedLines = csvWriter.getWrittenLines() - 1;
 				}
 		    } catch (SQLException e) {
-		        logger.error("Error during export: " + e.getMessage() + "\nSQL: " + selectStatement, e);
+		        logger.error("Error during export: {}\nSQL: {}", e.getMessage(), selectStatement, e);
 		        throw e;
 		    } catch (Exception e) {
-		        logger.error("Error during export: " + e.getMessage(), e);
+		        logger.error("Error during export: {}", e.getMessage(), e);
 		        throw e;
 		    }
 			
@@ -608,7 +601,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 	        }
 			
 	        error = e;
-	        logger.error("Error during export: " + e.getMessage(), e);
+	        logger.error("Error during export: {}", e.getMessage(), e);
 		} finally {
 	        done = true;
 		}
@@ -632,12 +625,12 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 		return value;
 	}
 
-	private OutputStream getExportOutputStream() throws IOException, FileNotFoundException {
+	private OutputStream getExportOutputStream() throws IOException {
 		OutputStream outputStream = null;
 		try {
 			if (compressionType == FileCompressionType.ZIP) {
 				if (StringUtils.isEmpty(zipPassword)) {
-					outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
+					outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(exportFile));
 					
 					String entryFileName = zippedFileName;
 					if (StringUtils.isBlank(entryFileName)) {
@@ -672,7 +665,7 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 			} else if (compressionType == FileCompressionType.GZ) {
 				outputStream = new GZIPOutputStream(new FileOutputStream(exportFile));
 			} else {
-				outputStream = new FileOutputStream(new File(exportFile));
+				outputStream = new FileOutputStream(exportFile);
 			}
 			return outputStream;
 		} catch (Exception e) {

@@ -14,30 +14,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.CampaignDao;
+import com.agnitas.emm.core.auto_import.bean.AutoImportLight;
+import com.agnitas.emm.core.auto_import.service.AutoImportService;
+import com.agnitas.emm.core.autoexport.beans.AutoExport;
+import com.agnitas.emm.core.autoexport.service.AutoExportService;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.workflow.service.WorkflowService;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Campaign;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.workflow.service.WorkflowService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
 @Controller
 @RequestMapping("/workflow/ajax")
-@PermissionMapping("workflow")
 public class WorkflowAjaxController implements XssCheckAware {
 
     private final WorkflowService workflowService;
@@ -59,7 +57,7 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getMailingNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getMailingNames(Admin admin) {
         return workflowService.getAllMailings(admin).stream()
@@ -67,7 +65,7 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getAutoExportNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getAutoExportNames(Admin admin) {
         if (autoExportService == null) {
@@ -79,7 +77,7 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getAutoImportNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getAutoImportNames(Admin admin) {
         if (autoImportService == null) {
@@ -91,7 +89,7 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getMailinglistNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getMailinglistNames(Admin admin) {
         return mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin).stream()
@@ -99,7 +97,7 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getArchiveNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getArchiveNames(Admin admin) {
         return campaignDao.getCampaignList(admin.getCompanyID(), "lower(shortname)", 1).stream()
@@ -107,10 +105,11 @@ public class WorkflowAjaxController implements XssCheckAware {
     }
 
     @GetMapping("/getTargetNames.action")
-    @PermissionMapping("view")
+    @RequiredPermission("workflow.show")
     public @ResponseBody
     Map<Integer, String> getTargetNames(Admin admin) {
         return workflowService.getAllTargets(admin.getCompanyID()).stream()
                 .collect(Collectors.toMap(TargetLight::getId, TargetLight::getTargetName));
     }
+
 }

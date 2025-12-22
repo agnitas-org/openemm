@@ -1,40 +1,42 @@
 AGN.Lib.Controller.new('custom-thumbnail-view', function() {
 
-  this.addAction({
-    change: 'use-custom-thumbnail'
-  }, function() {
-    var $file = $('#customThumbnailFile');
+  this.addAction({change: 'use-custom-thumbnail'}, function() {
     // Remove name property to avoid input submitting
-    $file.prop('name', this.el.is(':checked') ? 'customThumbnailFile' : '');
+    $('#customThumbnailFile').prop('name', this.el.is(':checked') ? 'customThumbnailFile' : '');
   });
 
-  this.addAction({
-    change: 'custom-thumbnail-image'
-  }, function() {
-    var $file = this.el;
+  this.addAction({change: 'custom-thumbnail-image'}, function() {
+    const $file = this.el;
+    const files = $file.prop('files');
 
-    var files = $file.prop('files');
-    if (files && files.length) {
-      var file = files[0];
+    if (files?.length) {
+      const file = files[0];
       if (file.type == 'image' || file.type.match('image/.*')) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
+        const reader = new FileReader();
+        reader.onload = e => {
           showCustomThumbnailPreview($file, file.name, e.target.result);
         };
         reader.readAsDataURL(file);
       } else {
         AGN.Lib.Helpers.clearFormField($file);
-        showCustomThumbnailPreview($file, '', '');
+        showCustomThumbnailPreview($file);
       }
     } else {
-      showCustomThumbnailPreview($file, '', '');
+      showCustomThumbnailPreview($file);
     }
   });
 
-  function showCustomThumbnailPreview($file, name, content) {
-    var targets;
+  this.addAction({click: 'delete-custom-thumbnail-image'}, function() {
+    const $file = this.el.parent().parent().find('input[type="file"]');
 
-    targets = $file.data('preview-name');
+    if ($file.prop('files')?.length) {
+      AGN.Lib.Helpers.clearFormField($file);
+      showCustomThumbnailPreview($file);
+    }
+  });
+
+  function showCustomThumbnailPreview($file, name = '', content = '') {
+    let targets = $file.data('preview-name');
     if (targets) {
       $(targets).text(name);
     }
@@ -45,7 +47,7 @@ AGN.Lib.Controller.new('custom-thumbnail-view', function() {
         $(targets).prop('src', content);
       } else {
         $(targets).each(function() {
-          var $target = $(this);
+          const $target = $(this);
           $target.prop('src', $target.data('no-preview-src') || '');
         });
       }

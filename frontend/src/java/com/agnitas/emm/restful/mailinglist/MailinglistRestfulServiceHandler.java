@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.impl.MailinglistImpl;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType.SimpleDataType;
@@ -171,7 +171,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 
 				JsonObject mailinglistStatisticsJsonObject = new JsonObject();
 				for (Entry<Integer, Integer> entry : mailinglistService.getMailinglistWorldSubscribersStatistics(admin.getCompanyID(), mailinglist.getId()).entrySet()) {
-					mailinglistStatisticsJsonObject.add(UserStatus.getUserStatusByID(entry.getKey()).name().toLowerCase(), entry.getValue());
+					mailinglistStatisticsJsonObject.add(UserStatus.getByCode(entry.getKey()).name().toLowerCase(), entry.getValue());
 				}
 				mailinglistJsonObject.add("statistics", mailinglistStatisticsJsonObject);
 				

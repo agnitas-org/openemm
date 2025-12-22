@@ -10,8 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import static com.agnitas.emm.core.mailing.dao.MailingParameterDao.ReservedMailingParam.ERROR;
-import static com.agnitas.emm.core.mailing.dao.MailingParameterDao.ReservedMailingParam.NEXT_START;
 import static com.agnitas.util.DbUtilities.resultsetHasColumn;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
@@ -38,16 +36,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.RdirMailingData;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.impl.DynamicTagContentImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.beans.impl.MailingBaseImpl;
 import com.agnitas.beans.impl.MailingImpl;
+import com.agnitas.beans.impl.MailingSendStatusImpl;
 import com.agnitas.beans.impl.RdirMailingDataImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DynamicTagDao;
@@ -58,23 +67,36 @@ import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.dao.UndoDynContentDao;
 import com.agnitas.dao.UndoMailingComponentDao;
 import com.agnitas.dao.UndoMailingDao;
+import com.agnitas.dao.exception.TooBroadSearchException;
+import com.agnitas.dao.impl.mapper.DateRowMapper;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.LightweightMailingRowMapper;
+import com.agnitas.dao.impl.mapper.LightweightMailingWithMailinglistRowMapper;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
-import com.agnitas.emm.core.calendar.beans.CalendarUnsentMailing;
 import com.agnitas.emm.core.calendar.beans.MailingPopoverInfo;
 import com.agnitas.emm.core.commons.database.DatabaseInformation;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
 import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.MailingDataException;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
 import com.agnitas.emm.core.mailing.bean.MailingDto;
 import com.agnitas.emm.core.mailing.dao.MailingDaoOptions;
 import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
+import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
+import com.agnitas.emm.core.mailing.exception.MailingSaveException;
 import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
 import com.agnitas.emm.core.mailing.service.ListMailingCondition.MailingPropertyCondition;
 import com.agnitas.emm.core.mailing.service.ListMailingCondition.MailingStatusCondition;
@@ -84,37 +106,12 @@ import com.agnitas.emm.core.mailing.service.ListMailingCondition.SentBeforeCondi
 import com.agnitas.emm.core.mailing.service.ListMailingFilter;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.MailingSendStatus;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.beans.impl.DynamicTagContentImpl;
-import com.agnitas.beans.impl.MailingBaseImpl;
-import com.agnitas.beans.impl.MailingSendStatusImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.dao.impl.mapper.DateRowMapper;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.LightweightMailingRowMapper;
-import com.agnitas.dao.impl.mapper.LightweightMailingWithMailinglistRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.mailing.service.MailingSaveException;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
@@ -123,13 +120,14 @@ import com.agnitas.util.FulltextSearchInvalidQueryException;
 import com.agnitas.util.FulltextSearchQueryException;
 import com.agnitas.util.ParameterParser;
 import com.agnitas.util.SqlPreparedStatementManager;
-import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
+import com.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -185,10 +183,6 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     private Boolean isGridTemplateSupported;
 
-    public static String getSuccessTableName(final int companyId) {
-        return "success_" + companyId + "_tbl";
-    }
-
     protected UndoMailingDao undoMailingDao;
     protected MailingComponentDao mailingComponentDao;
 
@@ -213,7 +207,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param mediatypesDao - DAO
      */
-    public void setMediatypesDao(final MediatypesDao mediatypesDao) {
+    public void setMediatypesDao(MediatypesDao mediatypesDao) {
         this.mediatypesDao = mediatypesDao;
     }
 
@@ -222,7 +216,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param undoMailingDao - DAO
      */
-    public void setUndoMailingDao(final UndoMailingDao undoMailingDao) {
+    public void setUndoMailingDao(UndoMailingDao undoMailingDao) {
         this.undoMailingDao = undoMailingDao;
     }
 
@@ -231,7 +225,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param undoMailingComponentDao - DAO
      */
-    public void setUndoMailingComponentDao(final UndoMailingComponentDao undoMailingComponentDao) {
+    public void setUndoMailingComponentDao(UndoMailingComponentDao undoMailingComponentDao) {
         this.undoMailingComponentDao = undoMailingComponentDao;
     }
 
@@ -240,19 +234,19 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param undoDynContentDao - DAO
      */
-    public void setUndoDynContentDao(final UndoDynContentDao undoDynContentDao) {
+    public void setUndoDynContentDao(UndoDynContentDao undoDynContentDao) {
         this.undoDynContentDao = undoDynContentDao;
     }
 
-    public void setConfigService(final ConfigService service) {
+    public void setConfigService(ConfigService service) {
         this.configService = service;
     }
 
-    public final void setMailingParameterDao(final MailingParameterDao dao) {
+    public void setMailingParameterDao(MailingParameterDao dao) {
     	this.mailingParameterDao = Objects.requireNonNull(dao, "mailing parameter dao");
     }
 
-    public void setTrackableLinkDao(final TrackableLinkDao trackableLinkDao) {
+    public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
         this.trackableLinkDao = trackableLinkDao;
     }
 
@@ -261,11 +255,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param targetDao DAO
      */
-    public void setTargetDao(final TargetDao targetDao) {
+    public void setTargetDao(TargetDao targetDao) {
         this.targetDao = targetDao;
     }
 
-    public void setDatabaseInformation(final DatabaseInformation info) {
+    public void setDatabaseInformation(DatabaseInformation info) {
         this.databaseInformation = info;
     }
 
@@ -274,15 +268,15 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      *
      * @param componentDao DAO
      */
-    public void setMailingComponentDao(final MailingComponentDao componentDao) {
+    public void setMailingComponentDao(MailingComponentDao componentDao) {
         this.mailingComponentDao = componentDao;
     }
 
-    public void setFulltextSearchQueryGenerator(final FulltextSearchQueryGenerator fulltextSearchQueryGenerator) {
+    public void setFulltextSearchQueryGenerator(FulltextSearchQueryGenerator fulltextSearchQueryGenerator) {
         this.fulltextSearchQueryGenerator = fulltextSearchQueryGenerator;
     }
 
-    public void setDynamicTagDao(final DynamicTagDao dynamicTagDao) {
+    public void setDynamicTagDao(DynamicTagDao dynamicTagDao) {
         this.dynamicTagDao = dynamicTagDao;
     }
 
@@ -324,6 +318,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 if (numDays > 0) {
                     if (isOracleDB()) {
                         sql += " AND b.senddate > (SYSDATE " + (-numDays) + " )";
+                    } else if (isPostgreSQL()) {
+                        sql += " AND b.senddate > CURRENT_TIMESTAMP - INTERVAL '" + numDays + " DAYS'";
                     } else {
                         sql += " AND b.senddate > DATE_ADD(now(), interval " + (-numDays) + " day) ";
                     }
@@ -351,30 +347,23 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         // Check, if we have to return all values.
         // If count <= 0 then all mailings are returned.
         if (count > 0) {
-            if (isOracleDB()) {
-            	// Using "SELECT * ...", because flexible sql
-                sql = "SELECT * from (" + sql + ") WHERE rownum <= ?";
-            } else {
-                sql += " LIMIT ?";
-            }
-            parameters.add(count);
+            sql = addRowLimit(sql, count);
         }
 
         try {
             return select(sql, getRowMapper(), parameters.toArray());
-        } catch (final Exception e) {
+        } catch (Exception e) {
             return new LinkedList<>();
         }
     }
 
     @Override
-	public final List<Mailing> listMailings(final int companyId, final boolean template, final ListMailingFilter filter) {
+	public List<Mailing> listMailings(int companyId, boolean template, ListMailingFilter filter) {
     	if (filter == null) {
     		return getMailings(companyId, template);
     	}
 
     	final List<Object> paramsList = new ArrayList<>();
-
 
     	final StringBuffer sql = new StringBuffer("SELECT * FROM mailing_tbl m WHERE m.company_id = ? AND m.is_template = ? AND m.deleted=0");
     	paramsList.add(companyId);
@@ -382,7 +371,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     	for (final MailingPropertyCondition c : filter.listMailingPropertyConditions()) {
     		if (c instanceof MailingStatusCondition cond) {
-    			if(!((MailingStatusCondition) c).getStatusList().isEmpty()) {
+    			if(!cond.getStatusList().isEmpty()) {
 	    			sql.append(" AND m.work_status IN (");
 
 	    			boolean first = true;
@@ -398,7 +387,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     		} else {
 				final String msg = String.format("Unhandled mailing property condition of type %s", c.getClass().getCanonicalName());
 				logger.fatal(msg);
-				throw new RuntimeException(msg);
+				throw new IllegalArgumentException(msg);
     		}
     	}
 
@@ -418,7 +407,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     			} else {
     				final String msg = String.format("Unhandled send date condition of type %s", c.getClass().getCanonicalName());
     				logger.fatal(msg);
-    				throw new RuntimeException(msg);
+    				throw new IllegalArgumentException(msg);
     			}
     		}
 
@@ -579,7 +568,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<Map<String, Object>> getMailingsNamesByStatus(Admin admin, final List<MailingType> mailingTypes, String workStatus, String mailingStatus, boolean takeMailsForPeriod, String sort, String order) {
+    public List<Map<String, Object>> getMailingsNamesByStatus(Admin admin, List<MailingType> mailingTypes, String workStatus, String mailingStatus, boolean takeMailsForPeriod, String sort, String order) {
         int companyID = admin.getCompanyID();
         final Vector<Object> parameters = new Vector<>();
         parameters.add(companyID);
@@ -627,6 +616,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             if (numDays > 0) {
                 if (isOracleDB()) {
                     queryBuilder.append(" AND b.senddate > (SYSDATE ").append(-numDays).append(" )");
+                } else if (isPostgreSQL()) {
+                    queryBuilder.append(" AND b.senddate > CURRENT_TIMESTAMP - INTERVAL '").append(numDays).append(" DAYS'");
                 } else {
                     queryBuilder.append(" AND b.senddate > DATE_ADD(now(), interval ").append(-numDays).append(" day) ");
                 }
@@ -656,7 +647,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return select(queryBuilder.toString(), parameters.toArray());
     }
 
-	private String createMailingTypeCodeListString(final List<MailingType> mailingTypes) {
+	private String createMailingTypeCodeListString(List<MailingType> mailingTypes) {
 		StringBuilder listStringBuilder = new StringBuilder();
 		for (int i = 0; i < mailingTypes.size(); i++) {
         	if (i > 0) {
@@ -669,7 +660,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     public List<Integer> findTargetDependentMailings(int targetGroupId, int companyId) {
-        String query = "SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND deleted = 0 AND (" + DbUtilities.createTargetExpressionRestriction(isOracleDB()) + ")";
+        String query = "SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND deleted = 0 AND (" + DbUtilities.createTargetExpressionRestriction(dataSource) + ")";
         return select(query, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
     }
 
@@ -687,12 +678,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      * Attention: use only for Demo Account Service methods
      */
     @Override
-    public List<Integer> getAllMailings(final int companyID) {
+    public List<Integer> getAllMailings(int companyID) {
         return select("SELECT mailing_id FROM mailing_tbl WHERE company_id = ?", IntegerRowMapper.INSTANCE, companyID);
     }
 
     @Override
-    public Mailing getMailing(final int mailingID, final int companyID) {
+    public Mailing getMailing(int mailingID, int companyID) {
         return getMailing(mailingID, companyID, true, false);
     }
 
@@ -702,11 +693,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public Mailing getMailingWithDeletedDynTags(final int mailingID, final int companyID) {
+    public Mailing getMailingWithDeletedDynTags(int mailingID, int companyID) {
         return getMailing(mailingID, companyID, true, true);
     }
 
-	private Mailing getMailing(final int mailingID, final int companyID, final boolean includeDependencies, final boolean includeDeletedDynTags) {
+	private Mailing getMailing(int mailingID, int companyID, boolean includeDependencies, boolean includeDeletedDynTags) {
 		if (companyID <= 0 || mailingID <= 0) {
 			throw new MailingNotExistException(companyID, mailingID);
 		} else {
@@ -715,13 +706,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 					+ " FROM mailing_tbl a"
 					+ " WHERE a.company_id = ? AND a.mailing_id = ? AND a.deleted <= 0 ORDER BY a.send_date";
 
-				if (isOracleDB()) {
-					sql = String.format("SELECT * FROM (%s) WHERE rownum = 1", sql);
-				} else {
-					sql += " LIMIT 1";
-				}
-
-				final Mailing mailing = selectObjectDefaultNull(sql, getRowMapper(), companyID, mailingID);
+				Mailing mailing = selectObjectDefaultNull(addRowLimit(sql, 1), getRowMapper(), companyID, mailingID);
 
 				if (mailing == null) {
 					throw new MailingNotExistException(companyID, mailingID);
@@ -747,16 +732,16 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 					}
 					mailing.setComponents(mailingComponentMap);
 					mailing.setTrackableLinks(trackableLinkDao.getTrackableLinksMap(mailingID, companyID, false));
-					
+
 					mailing.setParameters(this.mailingParameterDao.getMailingParameters(companyID, mailingID));
 
 					final List<MaildropEntry> maildropEntryList = maildropService.getMaildropStatusEntriesForMailing(companyID, mailingID);
 					mailing.setMaildropStatus(new HashSet<>(maildropEntryList));
 				}
                 return mailing;
-            } catch (final MailingNotExistException e) {
+            } catch (MailingNotExistException e) {
 				throw e;
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				logger.error("Error loading mailing ID {}", mailingID, e);
 				throw new MailingNotExistException(companyID, mailingID);
 			}
@@ -787,7 +772,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int saveUndoMailing(final int mailingId, final int adminId) {
+    public int saveUndoMailing(int mailingId, int adminId) {
         return undoMailingDao.saveUndoData(mailingId, new Date(), adminId);
     }
 
@@ -835,7 +820,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
 
         try {
-            final String autoUrl = selectObjectDefaultNull("SELECT auto_url FROM mailinglist_tbl WHERE deleted = 0 AND mailinglist_id = ?", StringRowMapper.INSTANCE, mailing.getMailinglistID());
+            final String autoUrl = selectStringDefaultNull("SELECT auto_url FROM mailinglist_tbl WHERE deleted = 0 AND mailinglist_id = ?", mailing.getMailinglistID());
 
             performMailingSave(companyId, mailing, autoUrl);
 
@@ -856,9 +841,16 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     private void updateClearanceLastSendDate(int mailingId) {
-        String sendDate = isOracleDB() ? "TRUNC(mds.senddate)" : "DATE(mds.senddate)";
-        String today = isOracleDB() ? "TRUNC(CURRENT_TIMESTAMP)" : "DATE(CURRENT_TIMESTAMP)";
-        String query = "UPDATE rulebased_sent_tbl rbs SET rbs.lastsent = NULL WHERE mailing_id = ? AND EXISTS " +
+        String sendDate = "DATE(mds.senddate)";
+        String today = "DATE(CURRENT_TIMESTAMP)";
+        if (isOracleDB()) {
+            sendDate = "TRUNC(mds.senddate)";
+            today = "TRUNC(CURRENT_TIMESTAMP)";
+        } else if (isPostgreSQL()) {
+            sendDate = "CAST(mds.senddate AS DATE)";
+            today = "CAST(CURRENT_TIMESTAMP AS DATE)";
+        }
+        String query = "UPDATE rulebased_sent_tbl rbs SET lastsent = NULL WHERE mailing_id = ? AND EXISTS " +
                 " (SELECT 1 FROM maildrop_status_tbl mds WHERE mds.mailing_id = ? AND mds.status_field = ?  AND " + sendDate + " = " + today + ")";
 
         update(query, mailingId, mailingId, MaildropStatus.DATE_BASED.getCodeString());
@@ -866,13 +858,13 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public boolean markAsDeleted(final int mailingID, final int companyID) {
+    public boolean markAsDeleted(int mailingID, int companyID) {
         final int touchedLines = update("UPDATE mailing_tbl SET deleted = 1, change_date = CURRENT_TIMESTAMP WHERE mailing_id = ? AND company_id = ? AND (deleted IS NULL OR deleted != 1)", mailingID, companyID);
         return touchedLines > 0;
     }
 
     @Override
-    public List<Map<String, String>> loadAction(final int mailingID, final int companyID) {
+    public List<Map<String, String>> loadAction(int mailingID, int companyID) {
         final List<Map<String, String>> actions = new LinkedList<>();
         final String stmt = "SELECT url.shortname AS url_shortname, alt_text, full_url, act.shortname AS act_shortname, url.url_id, url.action_id FROM rdir_url_tbl url INNER JOIN rdir_action_tbl act ON url.action_id = act.action_id AND url.company_id = act.company_id WHERE url.mailing_id = ? AND url.company_id = ? AND url.deleted = 0";
         try {
@@ -895,7 +887,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
                 actions.add(itemAction);
             }
-        } catch (final Exception e) {
+        } catch (Exception e) {
             logger.error("Error loading actions for mailing {}", mailingID, e);
         }
 
@@ -903,7 +895,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean updateStatus(final int companyID, final int mailingID, final MailingStatus mailingStatus, Date sendDate) {
+    public boolean updateStatus(int companyID, int mailingID, MailingStatus mailingStatus, Date sendDate) {
     	if (mailingStatus == MailingStatus.NEW) {
     		// never reset a mailing to status new
             return false;
@@ -947,7 +939,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 newSendDate = sendDate;
                 break;
             default:
-                throw new RuntimeException("Unknown mailing status");
+                throw new IllegalArgumentException("Unknown mailing status");
         }
 
         try {
@@ -958,15 +950,15 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 int touchedMailings = update("UPDATE mailing_tbl SET work_status = ?, send_date = ? WHERE mailing_id = ?", newMailingStatus.getDbKey(), newSendDate, mailingID);
                 return touchedMailings >= 1;
             }
-        } catch (final Exception e) {
+        } catch (Exception e) {
             logger.error("Error updating work status for mailing {}", mailingID, e);
             return false;
         }
     }
 
     @Override
-    public MailingStatus getStatus(final int companyID, final int mailingID) {
-        String statusString = selectObjectDefaultNull("SELECT work_status FROM mailing_tbl WHERE company_id = ? and mailing_id = ?", StringRowMapper.INSTANCE, companyID, mailingID);
+    public MailingStatus getStatus(int companyID, int mailingID) {
+        String statusString = selectStringDefaultNull("SELECT work_status FROM mailing_tbl WHERE company_id = ? and mailing_id = ?", companyID, mailingID);
         if (StringUtils.isBlank(statusString)) {
         	return MailingStatus.NEW;
         }
@@ -986,69 +978,10 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                     "WHERE m.mailing_id = ? AND m.company_id = ? AND mt.mediatype = ? AND mt.status = ?";
 
             return selectInt(sql, mailingId, companyId, type.getMediaCode(), MediaTypeStatus.Active.getCode()) > 0;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             logger.error("Error checking email for mailing {}", mailingId, e);
             return false;
         }
-    }
-
-    @Override
-    public PaginatedListImpl<Map<String, Object>> getUnsentMailings(Admin admin, final int rownums) {
-        return getMailingForCalendar(admin, rownums, "is null");
-    }
-
-    @Override
-    public PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, final int rownums) {
-        return getMailingForCalendar(admin, rownums, "is not null");
-    }
-
-    private PaginatedListImpl<Map<String, Object>> getMailingForCalendar(Admin admin, final int rownums, final String plannedCondition) {
-        int companyID = admin.getCompanyID();
-        List<Object> params = new ArrayList<>();
-        params.add(MailingType.NORMAL.getCode());
-        params.add(companyID);
-        params.add(MaildropStatus.WORLD.getCodeString());
-        params.add(companyID);
-
-        String additionalRestriction = getAdditionalSqlRestrictions(admin, params, "m");
-
-        params.add(rownums);
-
-        String sql = "SELECT * FROM (SELECT m.mailing_id AS mailing_id, m.shortname AS shortname, m.description AS description, "
-                + " m.work_status AS work_status, ml.shortname AS mailinglist, m.plan_date, m.workflow_id "
-                + " FROM mailing_tbl m "
-                + " LEFT JOIN mailinglist_tbl ml ON (ml.mailinglist_id = m.mailinglist_id AND ml.company_id = m.company_id) "
-                + " WHERE m.is_template = 0 AND m.mailing_type = ? AND m.company_id = ? AND ml.deleted = 0 AND m.deleted = 0 "
-                + " AND NOT EXISTS (SELECT 1 FROM maildrop_status_tbl md WHERE md.mailing_id = m.mailing_id AND md.status_field = ? AND md.company_id = ?) "
-                + additionalRestriction
-                + " AND m.plan_date " + plannedCondition + " ";
-        if (isOracleDB()) {
-            sql += " ORDER BY m.mailing_id DESC) WHERE rownum <= ?";
-        } else {
-            sql += ") res ORDER BY mailing_id DESC LIMIT 0, ?";
-        }
-
-        List<Map<String, Object>> tmpList;
-        tmpList = select(sql, params.toArray());
-        final List<Map<String, Object>> result = new ArrayList<>();
-        for (final Map<String, Object> row : tmpList) {
-            final Map<String, Object> newBean = new HashMap<>();
-            newBean.put("workstatus", row.get("WORK_STATUS"));
-            final int mailingID = ((Number) row.get("MAILING_ID")).intValue();
-            newBean.put("mailingid", mailingID);
-            newBean.put("shortname", row.get("SHORTNAME"));
-            newBean.put("description", row.get("DESCRIPTION"));
-            newBean.put("mailinglist", row.get("MAILINGLIST"));
-            if ("is not null".equalsIgnoreCase(plannedCondition)) {
-                newBean.put("plandate", row.get("PLAN_DATE"));
-            }
-            if (hasActions(mailingID, companyID)) {
-                newBean.put("hasActions", Boolean.TRUE);
-            }
-            newBean.put("usedInCM", ((Number) row.get("workflow_id")).intValue() > 0);
-            result.add(newBean);
-        }
-        return new PaginatedListImpl<>(result, rownums, rownums, 1, "mailingid", "desc");
     }
 
     @Override
@@ -1083,44 +1016,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             params.toArray());
     }
 
-    // TODO EMMGUI-953 check usage and remove after ux-update has been successfully tested
     @Override
-    public List<CalendarUnsentMailing> getNotSentMailings(Admin admin, boolean planned) {
-        List<Object> params = new ArrayList<>(List.of(
-            MailingComponentType.ThumbnailImage.getCode(),
-            MailingType.NORMAL.getCode(),
-            admin.getCompanyID(),
-            MaildropStatus.WORLD.getCodeString(),
-            admin.getCompanyID(),
-            MediaTypeStatus.Active.getCode(),
-            MediaTypeStatus.Active.getCode()
-        ));
-        String sql = "SELECT * FROM (SELECT m.mailing_id, m.shortname, m.work_status, mt.mediatype,"
-            + " mt.param subject, cmp.component_id preview_component, m.is_post"
-            + " FROM mailing_tbl m "
-            + " LEFT JOIN mailing_mt_tbl mt ON m.mailing_id = mt.mailing_id"
-            + " LEFT JOIN mailinglist_tbl ml ON (ml.mailinglist_id = m.mailinglist_id AND ml.company_id = m.company_id) "
-            + " LEFT JOIN component_tbl cmp ON (m.mailing_id = cmp.mailing_id AND cmp.comptype = ?) "
-            + " WHERE m.is_template = 0 AND m.mailing_type = ? AND m.company_id = ? AND ml.deleted = 0 AND m.deleted = 0 "
-            + " AND NOT EXISTS (SELECT 1 FROM maildrop_status_tbl md WHERE md.mailing_id = m.mailing_id AND md.status_field = ? AND md.company_id = ?) "
-            + " AND mt.status = ? AND mt.priority = (SELECT MIN(priority) FROM mailing_mt_tbl WHERE mailing_id = m.mailing_id AND status = ?) "
-            + getAdditionalSqlRestrictions(admin, params, "m")
-            + " AND m.plan_date " + (planned ? "IS NOT NULL" : "IS NULL")
-            + (isOracleDB() ? " ORDER BY m.mailing_id DESC) WHERE rownum <= 10" : ") res ORDER BY mailing_id DESC LIMIT 10");
-
-        return select(sql, (rs, i) -> new CalendarUnsentMailing(
-            rs.getInt("mailing_id"),
-            rs.getInt("preview_component"),
-            rs.getBoolean("is_post"),
-            rs.getString("shortname"),
-            new ParameterParser(rs.getString(SUBJECT_COL_NAME)).parse(SUBJECT_COL_NAME),
-            MediaTypes.getMediaTypeForCode(rs.getInt("mediatype")),
-            MailingStatus.fromDbKey(rs.getString("work_status"))
-        ), params.toArray());
-    }
-
-    @Override
-    public PaginatedListImpl<Map<String, Object>> getMailingList(Admin admin, final MailingsListProperties props) throws FulltextSearchInvalidQueryException {
+    public PaginatedList<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException {
         List<Object> selectParameters = new ArrayList<>();
         String selectSql = generateMailingsSelectQuery(props, selectParameters, admin);
 
@@ -1131,11 +1028,6 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             String sort = props.getSort();
             sortColumn = StringUtils.lowerCase(sort);
             direction = StringUtils.defaultIfEmpty(props.getDirection(), "ASC").toUpperCase();
-
-
-            if (sort.startsWith("a.")) {
-                props.setSort(sort.substring(2));
-            }
 
             if ("creationdate".equals(sortColumn)) {
                 sortColumn = "creation_date";
@@ -1150,55 +1042,42 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 if (MailingAdditionalColumn.RECIPIENTS_COUNT == column) {
                     sort = "recipientscount";
                 }
-            } else if (StringUtils.isBlank(sort)) {
-                sort = "mailing_id";
-                sortColumn = "mailing_id";
+
+                if (MailingAdditionalColumn.ATTACHMENTS == column) {
+                    sort = "attachments_count";
+                }
             }
 
             if ("mailing_id".equalsIgnoreCase(sort)) {
                 sortClause = "ORDER BY " + sort + " " + props.getDirection();
             } else {
-                try {
-                    DbColumnType dbColumnType = DbUtilities.getColumnDataType(getDataSource(), "mailing_tbl", sort);
+                DbColumnType dbColumnType = DbUtilities.getColumnDataType(getDataSource(), "mailing_tbl", sort);
+                if (dbColumnType != null) {
+                    sort = "a." + sort;
+                } else {
+                    dbColumnType = DbUtilities.getColumnDataType(getDataSource(), "mailinglist_tbl", sort);
                     if (dbColumnType != null) {
-                        sort = "a." + sort;
-                    } else {
-                        dbColumnType = DbUtilities.getColumnDataType(getDataSource(), "mailing_account_sum_tbl", sort);
-                        if (dbColumnType != null) {
-                            sort = "c." + sort;
-                        } else {
-                            dbColumnType = DbUtilities.getColumnDataType(getDataSource(), "mailinglist_tbl", sort);
-                            if (dbColumnType != null) {
-                                sort = "m." + sort;
-                            }
-                        }
+                        sort = "m." + sort;
                     }
+                }
 
-                    if ("mailinglist".equalsIgnoreCase(sort)
-                            || "work_status".equalsIgnoreCase(sort)
-                            || (dbColumnType != null
-                            && dbColumnType.getSimpleDataType() == SimpleDataType.Characters)) {
-                        if (isOracleDB()) {
-                            sortClause = "ORDER BY LOWER(TRIM(" + sort + ")) " + direction + ", mailing_id " + direction;
-                        } else {
-                            // MySQL DESC sorts null-values to the end by default, oracle DESC sorts null-values to the top
-                            // MySQL ASC sorts null-values to the top by default, oracle ASC sorts null-values to the end
-                            if (StringUtils.isBlank(direction) || "ASC".equalsIgnoreCase(direction.trim())) {
-                                sortClause = "ORDER BY IF(" + sort + " = '' OR " + sort + " IS NULL, 1, 0), LOWER(TRIM(" + sort + ")) ASC, mailing_id ASC";
-                            } else {
-                                sortClause = "ORDER BY IF(" + sort + " = '' OR " + sort + " IS NULL, 0, 1), LOWER(TRIM(" + sort + ")) DESC, mailing_id DESC";
-                            }
-                        }
-                    } else if ("senddate".equalsIgnoreCase(sort) || (dbColumnType != null && (dbColumnType.getSimpleDataType() == SimpleDataType.Date || dbColumnType.getSimpleDataType() == SimpleDataType.DateTime))) {
-                        sortClause = generateSendDateSortClause(direction, sortColumn);
+                if ("mailinglist".equalsIgnoreCase(sort) || "work_status".equalsIgnoreCase(sort)
+                        || (dbColumnType != null && dbColumnType.getSimpleDataType() == SimpleDataType.Characters)) {
+                    if (isOracleDB() || isPostgreSQL()) {
+                        sortClause = "ORDER BY LOWER(TRIM(" + sort + ")) " + direction + ", mailing_id " + direction;
                     } else {
-                        sortClause = "ORDER BY " + sort + " " + direction + ", mailing_id " + direction;
+                        // MySQL DESC sorts null-values to the end by default, oracle DESC sorts null-values to the top
+                        // MySQL ASC sorts null-values to the top by default, oracle ASC sorts null-values to the end
+                        if (StringUtils.isBlank(direction) || "ASC".equalsIgnoreCase(direction.trim())) {
+                            sortClause = "ORDER BY IF(" + sort + " = '' OR " + sort + " IS NULL, 1, 0), LOWER(TRIM(" + sort + ")) ASC, mailing_id ASC";
+                        } else {
+                            sortClause = "ORDER BY IF(" + sort + " = '' OR " + sort + " IS NULL, 0, 1), LOWER(TRIM(" + sort + ")) DESC, mailing_id DESC";
+                        }
                     }
-                } catch (Exception e) {
-                    logger.error("Invalid sort field: %s".formatted(props.getSort()), e);
-                    sortClause = "ORDER BY mailing_id DESC";
-                    sortColumn = "mailing_id";
-                    direction = "DESC";
+                } else if ("senddate".equalsIgnoreCase(sort) || (dbColumnType != null && (dbColumnType.getSimpleDataType() == SimpleDataType.Date || dbColumnType.getSimpleDataType() == SimpleDataType.DateTime))) {
+                    sortClause = generateSendDateSortClause(direction, sortColumn);
+                } else {
+                    sortClause = "ORDER BY " + sort + " " + direction + ", mailing_id " + direction;
                 }
             }
         } else {
@@ -1207,18 +1086,37 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             sortClause = generateSendDateSortClause(direction, sortColumn);
         }
 
-        PaginatedListImpl<Map<String, Object>> resultList = selectPaginatedListWithSortClause(
-                selectSql,
-                sortClause, sortColumn, AgnUtils.sortingDirectionToBoolean(direction),
-                props.getPage(), props.getRownums(),
-                new MailingMapRowMapper(), selectParameters.toArray());
+        try {
+            PaginatedList<Map<String, Object>> resultList = selectPaginatedListWithSortClause(
+                    selectSql, sortClause, sortColumn, AgnUtils.sortingDirectionToBoolean(direction),
+                    props.getPage(), props.getRownums(), new MailingMapRowMapper(), selectParameters.toArray());
 
-        if (props.isRedesignedUiUsed() && props.isUiFiltersSet()) {
-            resultList.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(props, admin));
+            if (props.isUiFiltersSet()) {
+                resultList.setNotFilteredFullListSize(getTotalUnfilteredCountForOverview(props, admin));
+            }
+
+            addComponentIdsToList(resultList, "preview_component");
+
+            if (props.getAdditionalColumns().contains(MailingAdditionalColumn.ATTACHMENTS.getSortColumn())) {
+                addAttachmentsNamesToList(resultList);
+            }
+
+            return resultList;
+        } catch (UncategorizedSQLException ex) {
+            if (isOracleTextTooManyTermsError(ex)) {
+                throw new TooBroadSearchException("Too broad search query", ex);
+            }
+            throw ex;
+        }
+    }
+
+    private boolean isOracleTextTooManyTermsError(UncategorizedSQLException ex) {
+        Throwable root = ex.getRootCause();
+        if (root == null) {
+            return false;
         }
 
-        addComponentIdsToList(resultList, "preview_component");
-        return resultList;
+        return StringUtils.contains(root.getMessage(), "DRG-51030:");
     }
 
     private int getTotalUnfilteredCountForOverview(MailingsListProperties props, Admin admin) {
@@ -1260,101 +1158,51 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     private String generateMailingsSelectQuery(MailingsListProperties props, List<Object> selectParameters, Admin admin) throws FulltextSearchInvalidQueryException {
         int adminId = admin.getAdminID();
         int companyID = admin.getCompanyID();
-        boolean isRedesignedUiUsed = props.isRedesignedUiUsed();
 
-        // Check supported search modes by available db indices
-        if (!isRedesignedUiUsed) {
-            String searchQuery = props.getSearchQuery();
-            if (StringUtils.isNotEmpty(searchQuery)) {
-                if ((props.isSearchName() || props.isSearchDescription()) && !isBasicFullTextSearchSupported()) {
-                    props.setSearchName(false);
-                    props.setSearchDescription(false);
-                }
-
-                // Full text index search only works for patterns of size 3+ characters
-                if (!isContentFullTextSearchSupported() || searchQuery.length() < 3) {
-                    props.setSearchContent(false);
-                }
-            } else {
-                props.setSearchName(false);
-                props.setSearchDescription(false);
-                props.setSearchContent(false);
-            }
-        } else {
-            if ((StringUtils.isNotBlank(props.getSearchNameStr()) || StringUtils.isNotBlank(props.getSearchDescriptionStr())) && !isBasicFullTextSearchSupported()) {
-                props.setSearchNameStr("");
-                props.setSearchDescriptionStr("");
-            }
-
-            // Full text index search only works for patterns of size 3+ characters
-            if (!isContentFullTextSearchSupported() || StringUtils.length(props.getSearchContentStr()) < 3) {
-                props.setSearchContentStr("");
-            }
+        if ((StringUtils.isNotBlank(props.getSearchNameStr()) || StringUtils.isNotBlank(props.getSearchDescriptionStr())) && !isBasicFullTextSearchSupported()) {
+            props.setSearchNameStr("");
+            props.setSearchDescriptionStr("");
         }
 
-        String nameFullTextSearchClause = props.getSearchNameStr();
-        String descriptionFullTextSearchClause = props.getSearchDescriptionStr();
-        String contentFullTextSearchClause = props.getSearchContentStr();
-
-        if (!isRedesignedUiUsed) {
-            String fullTextSearchClause = props.getSearchQuery();
-            if (props.isSearchName() || props.isSearchDescription() || props.isSearchContent()) {
-                try {
-                    fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(props.getSearchQuery());
-                } catch (FulltextSearchQueryException e) {
-                    logger.error("Cannot transform full text search query: {}", props.getSearchQuery());
-                }
-            }
-
-            nameFullTextSearchClause = fullTextSearchClause;
-            descriptionFullTextSearchClause = fullTextSearchClause;
-            contentFullTextSearchClause = fullTextSearchClause;
-        } else {
-            nameFullTextSearchClause = generateFullTextSearchQuery(nameFullTextSearchClause);
-            descriptionFullTextSearchClause = generateFullTextSearchQuery(descriptionFullTextSearchClause);
-            contentFullTextSearchClause = generateFullTextSearchQuery(contentFullTextSearchClause);
+        // Full text index search only works for patterns of size 3+ characters
+        if (!isContentFullTextSearchSupported() || StringUtils.length(props.getSearchContentStr()) < 3) {
+            props.setSearchContentStr("");
         }
 
-        final StringBuilder selectSql = new StringBuilder("SELECT")
-                .append(" a.work_status AS work_status")
-                .append(", a.company_id AS company_id")
-                .append(", a.mailing_id AS mailing_id")
-                .append(", a.shortname AS shortname")
-                .append(", a.mailing_type AS mailing_type")
-                .append(", a.description AS description")
-                .append(", a.send_date AS senddate")
-                .append(", m.shortname AS mailinglist")
-                .append(", a.creation_date AS creationdate")
-                .append(", a.change_date AS changedate")
-                .append(", a.target_expression AS target_expression")
-                .append(", a.delivered AS recipientscount")
-                .append(", a.plan_date AS plan_date")
-                .append(", a.is_grid")
-                .append(", a.content_type")
-                .append(", a.workflow_id")
-                .append(", a.is_post AS isOnlyPostType")
+        String nameFullTextSearchClause = generateFullTextSearchQuery(props.getSearchNameStr());
+        String descriptionFullTextSearchClause = generateFullTextSearchQuery(props.getSearchDescriptionStr());
+        String contentFullTextSearchClause = generateFullTextSearchQuery(props.getSearchContentStr());
+
+        final StringBuilder selectSql = new StringBuilder("SELECT ")
+                .append("a.work_status AS work_status, a.company_id AS company_id, a.mailing_id AS mailing_id,")
+                .append("a.shortname AS shortname, a.mailing_type AS mailing_type, a.description AS description,")
+                .append("a.send_date AS senddate, m.shortname AS mailinglist, a.creation_date AS creationdate,")
+                .append("a.change_date AS changedate, a.target_expression AS target_expression, a.delivered AS recipientscount,")
+                .append("a.plan_date AS plan_date, a.is_grid, a.content_type, a.workflow_id, a.is_post AS isOnlyPostType")
                 .append(getAdditionalColumnsName(props.getAdditionalColumns()))
                 .append(" FROM mailing_tbl a")
                 .append(joinAdditionalColumns(props.getAdditionalColumns()))
                 .append(" LEFT JOIN mailinglist_tbl m ON a.mailinglist_id = m.mailinglist_id AND a.company_id = m.company_id AND m.deleted <> 1");
 
-        if ((!isRedesignedUiUsed && props.isSearchContent()) || (isRedesignedUiUsed && StringUtils.isNotBlank(contentFullTextSearchClause))) {
+        if (StringUtils.isNotBlank(contentFullTextSearchClause)) {
             // Subquery to search within static text and html blocks
             selectSql.append(" LEFT JOIN (SELECT mailing_id, MAX(")
-                    .append(isOracleDB() ? "CONTAINS(emmblock, ?)" : "MATCH(emmblock) AGAINST(? IN BOOLEAN MODE)")
+                    .append(isPostgreSQL() ? "(" : "")
+                    .append(DbUtilities.getFullTextSearchPart("emmblock", dataSource))
+                    .append(isPostgreSQL() ? ")::int" : "")
                     .append(") AS relevance");
             selectParameters.add(contentFullTextSearchClause);
 
-            selectSql.append(" FROM component_tbl")
-                    .append(" WHERE company_id = ? AND mtype IN ('text/plain', 'text/html')");
+            selectSql.append(" FROM component_tbl WHERE company_id = ? AND mtype IN ('text/plain', 'text/html')");
             selectParameters.add(companyID);
 
-            selectSql.append(" GROUP BY mailing_id")
-                    .append(") comp ON a.mailing_id = comp.mailing_id");
+            selectSql.append(" GROUP BY mailing_id) comp ON a.mailing_id = comp.mailing_id");
 
             // Subquery to search within dynamic (included into static with agn tags) text and html blocks
             selectSql.append(" LEFT JOIN (SELECT cont.mailing_id, MAX(")
-                    .append(isOracleDB() ? "CONTAINS(cont.dyn_content, ?)" : "MATCH(cont.dyn_content) AGAINST(? IN BOOLEAN MODE)")
+                    .append(isPostgreSQL() ? "(" : "")
+                    .append(DbUtilities.getFullTextSearchPart("cont.dyn_content", dataSource))
+                    .append(isPostgreSQL() ? ")::int" : "")
                     .append(") AS relevance");
             selectParameters.add(contentFullTextSearchClause);
 
@@ -1362,8 +1210,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                     .append(" WHERE cont.company_id = ?");
             selectParameters.add(companyID);
 
-            selectSql.append(" GROUP BY cont.mailing_id")
-                    .append(") cont ON a.mailing_id = cont.mailing_id");
+            selectSql.append(" GROUP BY cont.mailing_id) cont ON a.mailing_id = cont.mailing_id");
         }
 
         selectSql.append(" WHERE a.company_id = ?");
@@ -1387,34 +1234,16 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         final List<Integer> targetGroupIds = props.getTargetGroups();
         if (isNotEmpty(targetGroupIds)) {
-            final StringBuilder targetExpressionRestriction = new StringBuilder();
-            for (final Integer targetGroupId : targetGroupIds) {
-                if (Objects.nonNull(targetGroupId)) {
-                    if (targetExpressionRestriction.length() > 0) {
-                        targetExpressionRestriction.append(" OR ");
-                    }
-                    targetExpressionRestriction.append(DbUtilities.createTargetExpressionRestriction(isOracleDB(), "a"));
-                    selectParameters.add(targetGroupId);
-                }
-            }
-            if (targetExpressionRestriction.length() > 0) {
+            String targetExpressionRestriction = createTargetExpressionRestriction(targetGroupIds, selectParameters);
+            if (!targetExpressionRestriction.isEmpty()) {
                 selectSql.append(" AND (").append(targetExpressionRestriction).append(")");
             }
         }
+
         selectSql.append(getTargetRestrictions(admin, selectParameters, "a"));
 
-        if (isRedesignedUiUsed) {
-            if (StringUtils.isNotBlank(props.getTypes())) {
-                selectSql.append(" AND a.mailing_type IN (").append(props.getTypes()).append(")");
-            }
-        } else {
-            if (!props.isTemplate()) {
-                if (StringUtils.isNotBlank(props.getTypes())) {
-                    selectSql.append(" AND a.mailing_type IN (").append(props.getTypes()).append(")");
-                } else if (!props.isUseRecycleBin()) {
-                    selectSql.append(" AND a.mailing_type IN (100)");
-                }
-            }
+        if (StringUtils.isNotBlank(props.getTypes())) {
+            selectSql.append(" AND a.mailing_type IN (").append(props.getTypes()).append(")");
         }
 
         if (StringUtils.isNotBlank(props.getMediaTypes())) {
@@ -1437,19 +1266,19 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
 
         if (props.getSendDateBegin() != null || props.getSendDateEnd() != null) {
-            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.send_date", props.getSendDateBegin(), props.getSendDateEnd(), isOracleDB()));
+            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.send_date", props.getSendDateBegin(), props.getSendDateEnd(), isOracleDB() || isPostgreSQL()));
         }
 
         if (props.getCreationDateBegin() != null || props.getCreationDateEnd() != null) {
-            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.creation_date", props.getCreationDateBegin(), props.getCreationDateEnd(), isOracleDB()));
+            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.creation_date", props.getCreationDateBegin(), props.getCreationDateEnd(), isOracleDB() || isPostgreSQL()));
         }
 
         if (props.getPlanDateBegin() != null || props.getPlanDateEnd() != null) {
-            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.plan_date", props.getPlanDateBegin(), props.getPlanDateEnd(), isOracleDB()));
+            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.plan_date", props.getPlanDateBegin(), props.getPlanDateEnd(), isOracleDB() || isPostgreSQL()));
         }
 
         if (props.getChangeDateBegin() != null || props.getChangeDateEnd() != null) {
-            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.change_date", props.getChangeDateBegin(), props.getChangeDateEnd(), isOracleDB()));
+            selectSql.append(" AND ").append(DbUtilities.getDateConstraint("a.change_date", props.getChangeDateBegin(), props.getChangeDateEnd(), isOracleDB() || isPostgreSQL()));
         }
 
         if (isNotEmpty(props.getBadge())) {
@@ -1466,27 +1295,43 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
 
         final List<String> searchClauses = new ArrayList<>();
-        if ((!isRedesignedUiUsed && props.isSearchName()) || (isRedesignedUiUsed && StringUtils.isNotBlank(nameFullTextSearchClause))) {
-            searchClauses.add(isOracleDB() ? "CONTAINS(a.shortname, ?) > 0" : "MATCH(a.shortname) AGAINST(? IN BOOLEAN MODE) > 0");
+        if (StringUtils.isNotBlank(nameFullTextSearchClause)) {
+            searchClauses.add(getFullTextSearchMatchFilter("a.shortname"));
             selectParameters.add(nameFullTextSearchClause);
         }
 
-        if ((!isRedesignedUiUsed && props.isSearchDescription()) || (isRedesignedUiUsed && StringUtils.isNotBlank(descriptionFullTextSearchClause))) {
-            searchClauses.add(isOracleDB() ? "CONTAINS(a.description, ?) > 0" : "MATCH(a.description) AGAINST(? IN BOOLEAN MODE) > 0");
+        if (StringUtils.isNotBlank(descriptionFullTextSearchClause)) {
+            searchClauses.add(getFullTextSearchMatchFilter("a.description"));
             selectParameters.add(descriptionFullTextSearchClause);
         }
 
-        if ((!isRedesignedUiUsed && props.isSearchContent()) || (isRedesignedUiUsed && StringUtils.isNotBlank(contentFullTextSearchClause))) {
+        if (StringUtils.isNotBlank(contentFullTextSearchClause)) {
             searchClauses.add("(comp.relevance > 0 OR cont.relevance > 0) ");
         }
 
-        final String searchSqlPart = StringUtils.join(searchClauses, !isRedesignedUiUsed ? " OR " : " AND ");
+        final String searchSqlPart = StringUtils.join(searchClauses, " AND ");
 
         if (StringUtils.isNotEmpty(searchSqlPart)) {
             selectSql.append(" AND (").append(searchSqlPart).append(")");
         }
 
         return selectSql.toString();
+    }
+
+    private String createTargetExpressionRestriction(List<Integer> targetGroupIds, List<Object> params) {
+        StringBuilder result = new StringBuilder();
+
+        for (Integer targetGroupId : targetGroupIds) {
+            if (Objects.nonNull(targetGroupId)) {
+                if (!result.isEmpty()) {
+                    result.append(" OR ");
+                }
+                result.append(DbUtilities.createTargetExpressionRestriction(dataSource, "a"));
+                params.add(targetGroupId);
+            }
+        }
+
+        return result.toString();
     }
 
     private String generateFullTextSearchQuery(String searchQuery) throws FulltextSearchInvalidQueryException {
@@ -1502,28 +1347,66 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     /**
      * Thumbnail component_ids are mixed in to the data for making the basic db select more performant, because it does not need to detect the component_id for invisible elements
      */
-    private void addComponentIdsToList(PaginatedListImpl<Map<String, Object>> list, String componentIdPropertyName) {
-        List<Map<String, Object>> items = list.getList();
-        if (items.size() > 0) {
-            List<Integer> mailingIds = new ArrayList<>();
-            for (Map<String, Object> item : items) {
-                mailingIds.add(((Number) item.get("mailingid")).intValue());
-            }
-
-            List<Map<String, Object>> result = select("SELECT mailing_id, MAX(component_id) AS component_id FROM component_tbl WHERE mailing_id IN (" + StringUtils.join(mailingIds, ", ") + ") AND binblock IS NOT NULL AND comptype = ? GROUP BY mailing_id", MailingComponentType.ThumbnailImage.getCode());
-            Map<Integer, Integer> componentIdsByMailingId = new HashMap<>();
-            for (Map<String, Object> row : result) {
-                componentIdsByMailingId.put(((Number) row.get("mailing_id")).intValue(), ((Number) row.get("component_id")).intValue());
-            }
-
-            for (Map<String, Object> item : items) {
-                Integer componentId = componentIdsByMailingId.get(item.get("mailingid"));
-                if (componentId == null) {
-                    componentId = 0;
-                }
-                item.put(componentIdPropertyName, componentId);
-            }
+    private void addComponentIdsToList(PaginatedList<Map<String, Object>> list, String componentIdPropertyName) {
+        List<Integer> mailingIds = getMailingIds(list);
+        if (mailingIds.isEmpty()) {
+            return;
         }
+
+        List<Map<String, Object>> result = select("SELECT mailing_id, MAX(component_id) AS component_id FROM component_tbl WHERE mailing_id IN (" + StringUtils.join(mailingIds, ", ") + ") AND binblock IS NOT NULL AND comptype = ? GROUP BY mailing_id", MailingComponentType.ThumbnailImage.getCode());
+        Map<Integer, Integer> componentIdsByMailingId = new HashMap<>();
+        for (Map<String, Object> row : result) {
+            componentIdsByMailingId.put(((Number) row.get("mailing_id")).intValue(), ((Number) row.get("component_id")).intValue());
+        }
+
+        for (Map<String, Object> item : list.getList()) {
+            Integer componentId = componentIdsByMailingId.get(item.get("mailingid"));
+            if (componentId == null) {
+                componentId = 0;
+            }
+            item.put(componentIdPropertyName, componentId);
+        }
+    }
+
+    private void addAttachmentsNamesToList(PaginatedList<Map<String, Object>> list) {
+        List<Integer> mailingIds = getMailingIds(list);
+        if (mailingIds.isEmpty()) {
+            return;
+        }
+
+        String query = "SELECT mailing_id, compname FROM component_tbl WHERE " + makeBulkInClauseForInteger("mailing_id", mailingIds)
+                + " AND "
+                + makeBulkInClauseForInteger(
+                "comptype",
+                MailingComponentType.Attachment.getCode(),
+                MailingComponentType.PersonalizedAttachment.getCode(),
+                MailingComponentType.PrecAAttachement.getCode()
+        );
+
+        Map<Integer, List<String>> attachmentsNamesMap = select(query, (rs, i) -> Tuple.of(rs.getInt("mailing_id"), rs.getString("compname")))
+                .stream()
+                .collect(Collectors.groupingBy(Tuple::getFirst, Collectors.mapping(Tuple::getSecond, Collectors.toList())));
+
+        for (Map<String, Object> item : list.getList()) {
+            item.put("attachments_names", attachmentsNamesMap.getOrDefault(
+                    ((Number) item.get("mailingid")).intValue(),
+                    Collections.emptyList()
+            ));
+        }
+    }
+
+    private List<Integer> getMailingIds(PaginatedList<Map<String, Object>> list) {
+        List<Map<String, Object>> items = list.getList();
+        if (items.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Integer> mailingIds = new ArrayList<>();
+        for (Map<String, Object> item : items) {
+            mailingIds.add(((Number) item.get("mailingid")).intValue());
+        }
+
+        return mailingIds;
     }
 
     private String generateSendDateSortClause(String direction, String sortColumn) {
@@ -1533,16 +1416,16 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         final boolean isAscending = AgnUtils.sortingDirectionToBoolean(direction, true);
         direction = isAscending ? "ASC" : "DESC";
-        if (isOracleDB()) {
+        if (isOracleDB() || isPostgreSQL()) {
             return String.format("ORDER BY a.%3$s %1$s NULLS %2$s, mailing_id %1$s", direction, isAscending ? "LAST" : "FIRST", sortColumn);
         } else {
-            // MySQL DESC sorts null-values to the end by default, oracle DESC sorts null-values to the top
-            // MySQL ASC sorts null-values to the top by default, oracle ASC sorts null-values to the end
+            // MySQL DESC sorts null-values to the end by default, oracle and postgres DESC sorts null-values to the top
+            // MySQL ASC sorts null-values to the top by default, oracle and postgres ASC sorts null-values to the end
             return String.format("ORDER BY ISNULL(a.%2$s) %1$s, a.%2$s %1$s, mailing_id %1$s", direction, sortColumn);
         }
     }
 
-    private String joinAdditionalColumns(final Set<String> additionalColumns) {
+    private String joinAdditionalColumns(Set<String> additionalColumns) {
         final StringBuilder queryPart = new StringBuilder();
         for (final String columnKey : additionalColumns) {
             final MailingAdditionalColumn column = MailingAdditionalColumn.getColumn(columnKey);
@@ -1575,31 +1458,34 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             } else if (column == MailingAdditionalColumn.SUBJECT) {
                 if (isOracleDB()) {
                     queryPart.append(", SUBSTR(param, INSTR(param, 'subject=\"') + 9, INSTR(param, '\", charset') - INSTR(param, 'subject=\"') - 9) AS subject");
+                } else if (isPostgreSQL()) {
+                    queryPart.append(", SUBSTRING(param FROM 'subject=\"([^\"]+)\", charset') AS subject");
                 } else {
                     queryPart.append(", SUBSTRING_INDEX(SUBSTRING_INDEX(mt.param, 'subject=\"', -1), '\", charset', 1) AS subject");
                 }
             } else if (column == MailingAdditionalColumn.ARCHIVE) {
                 queryPart.append(", arch.shortname AS archive ");
+            } else if (column == MailingAdditionalColumn.ATTACHMENTS) {
+                queryPart.append(", (SELECT COUNT(*) FROM component_tbl att WHERE att.mailing_id = a.mailing_id AND ")
+                        .append(makeBulkInClauseForInteger(
+                                "comptype",
+                                MailingComponentType.Attachment.getCode(),
+                                MailingComponentType.PersonalizedAttachment.getCode(),
+                                MailingComponentType.PrecAAttachement.getCode()
+                        ))
+                        .append(") AS attachments_count");
             }
         }
         return queryPart.toString();
     }
 
     @Override
-    public boolean usedInCampaignManager(final int mailingId) {
-        final String sqlGetCount = "SELECT COUNT(*) FROM workflow_dependency_tbl " +
-                "WHERE type = ? AND entity_id = ?";
-
-        return selectInt(sqlGetCount, WorkflowDependencyType.MAILING_DELIVERY.getId(), mailingId) > 0;
-    }
-
-    @Override
-    public boolean usedInRunningWorkflow(final int mailingId, final int companyId) {
+    public boolean usedInRunningWorkflow(int mailingId, int companyId) {
         final String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl w " +
                 "JOIN workflow_dependency_tbl dep ON dep.company_id = w.company_id AND dep.workflow_id = w.workflow_id " +
                 "WHERE w.company_id = ? AND w.status IN (?, ?, ?) AND dep.type IN (?, ?) AND dep.entity_id = ?";
 
-        final Object[] sqlParameters = new Object[]{
+        final Object[] sqlParameters = {
                 companyId,
                 WorkflowStatus.STATUS_ACTIVE.getId(),
                 WorkflowStatus.STATUS_TESTING.getId(),
@@ -1613,7 +1499,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int getWorkflowId(final int mailingId) {
+    public int getWorkflowId(int mailingId) {
         final String sqlGetMaxId = "SELECT MAX(workflow_id) FROM workflow_dependency_tbl " +
                 "WHERE type = ? AND entity_id = ?";
 
@@ -1621,7 +1507,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int getWorkflowId(final int mailingId, final int companyId) {
+    public int getWorkflowId(int mailingId, int companyId) {
         final String sqlGetMaxId = "SELECT MAX(workflow_id) FROM workflow_dependency_tbl " +
                 "WHERE company_id = ? AND type = ? AND entity_id = ?";
 
@@ -1629,12 +1515,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
+    public PaginatedList<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
         SqlPreparedStatementManager statementManager = prepareMailingComparisonOverviewQuery(filter, admin, false);
 
         String sortTable = "senddate".equals(filter.getSort()) ? "" : "mailing_tbl";
 
-        PaginatedListImpl<MailingBase> list = selectPaginatedList(statementManager.getPreparedSqlString(), sortTable, filter.getSortOrDefault("mailing_id"),
+        PaginatedList<MailingBase> list = selectPaginatedList(statementManager.getPreparedSqlString(), sortTable, filter.getSortOrDefault("mailing_id"),
                 filter.ascending(), filter.getPage(), filter.getNumberOfRows(), new ComparisonMailingRowMapper(), statementManager.getPreparedSqlParameters());
 
         if (filter.isUiFiltersSet()) {
@@ -1666,13 +1552,13 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         query += getAdditionalSqlRestrictions(admin, params, "a");
 
-        if (filter != null && admin.isRedesignedUiUsed()) {
+        if (filter != null) {
             query += applyOverviewFilter(filter, params);
         }
 
         query += " GROUP BY a.mailing_id, a.shortname, a.description, a.is_post";
 
-        if (filter != null && admin.isRedesignedUiUsed() && filter.getSendDate().isPresent()) {
+        if (filter != null && filter.getSendDate().isPresent()) {
             DateRange sendDate = filter.getSendDate();
             query += " HAVING " + getDateRangeFilter("MIN(c.mintime)", sendDate, params).orElse("");
         }
@@ -1697,7 +1583,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public boolean saveStatusmailRecipients(final int mailingID, final String statusmailRecipients) {
+    public boolean saveStatusmailRecipients(int mailingID, final String statusmailRecipients) {
         try {
             final int result = update("UPDATE mailing_tbl SET statmail_recp = ? WHERE mailing_id = ?", statusmailRecipients, mailingID);
             return result == 1;
@@ -1709,11 +1595,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public boolean saveStatusmailOnErrorOnly(int companyID, final int mailingID, final boolean statusmailOnErrorOnly) {
+    public boolean saveStatusmailOnErrorOnly(int companyID, int mailingID, boolean statusmailOnErrorOnly) {
         try {
             final int result = update("UPDATE mailing_tbl SET statmail_onerroronly = ? WHERE company_id = ? AND mailing_id = ?", statusmailOnErrorOnly ? 1 : 0, companyID, mailingID);
             return result == 1;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             logger.error("Error while saveStatusmailOnErrorOnly", e);
             return false;
         }
@@ -1721,7 +1607,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public boolean saveSecuritySettings(int companyId, final int mailingId, MailingSendSecurityOptions options) {
+    public boolean saveSecuritySettings(int companyId, int mailingId, MailingSendSecurityOptions options) {
         try {
             final int result = update("UPDATE mailing_tbl SET statmail_onerroronly = ?, statmail_recp = ?, clearance_email = ?, clearance_threshold = ? WHERE company_id = ? AND mailing_id = ?",
                     BooleanUtils.toInteger(options.isEnableNoSendCheckNotifications()),
@@ -1729,14 +1615,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                     options.getClearanceThreshold(),
                     companyId, mailingId);
             return result == 1;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             logger.error("Error while saving security settings", e);
             return false;
         }
     }
 
     @Override
-    public List<Integer> getFollowupMailings(final int mailingID, final int companyID, final boolean includeUnscheduled) {
+    public List<Integer> getFollowupMailings(int mailingID, int companyID, boolean includeUnscheduled) {
         final StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
                 .append("SELECT mailing.mailing_id FROM mailing_tbl mailing")
@@ -1751,22 +1637,22 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int getStatusidForWorldMailing(final int mailingID, final int companyID) {
+    public int getStatusidForWorldMailing(int mailingID, int companyID) {
         final String query = "SELECT status_id FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = ? AND genstatus = 3 AND senddate < CURRENT_TIMESTAMP";
         try {
             return selectIntWithDefaultValue(query, 0, companyID, mailingID, MaildropStatus.WORLD.getCodeString());
-        } catch (final Exception e) {
+        } catch (Exception e) {
             return 0;
         }
     }
 
     @Override
-    public int getCompanyIdForMailingId(final int mailingId) {
+    public int getCompanyIdForMailingId(int mailingId) {
         return selectIntWithDefaultValue("SELECT company_id FROM mailing_tbl WHERE mailing_id = ?", -1, mailingId);
     }
 
     @Override
-    public RdirMailingData getRdirMailingData(final int mailingId) {
+    public RdirMailingData getRdirMailingData(int mailingId) {
         final List<Map<String, Object>> list = select("SELECT company_id, creation_date FROM mailing_tbl WHERE mailing_id = ?", mailingId);
 
         if (list.size() != 1) {
@@ -1778,30 +1664,6 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     /**
-     * returns the type of a Followup Mailing as String. The String can be fount
-     * in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER) if no followup
-     * is found, null is the returnvalue!
-     */
-    @Override
-    public String getFollowUpType(final int mailingID) {
-        String returnValue = null;
-        String params = null;
-        params = getEmailParameter(mailingID);
-        if (params != null) {
-            returnValue = getFollowUpTypeFromParameterString(params);
-        }
-        return returnValue;
-    }
-
-    /**
-     * This method takes the param-field from the mailing_mt_tbl as parameter
-     * and extracts the follow-up Type from it.
-     */
-    private String getFollowUpTypeFromParameterString(final String params) {
-        return AgnUtils.getAttributeFromParameterString(params, "followup_method");
-    }
-
-    /**
      * returns the base-mailing for the given followup.
      */
     @Override
@@ -1810,7 +1672,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             return null;
     	}
 
-        String params = null;
+        String params;
         String followUpFor = null;
         // first check, if we have a followup mailing.
         if (getMailingType(mailingID) != MailingType.FOLLOW_UP) {
@@ -1839,7 +1701,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums) {
+    public PaginatedList<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums) {
         String orderBy = getDashboardMailingsOrder(sort, direction, Arrays.asList("shortname", "description", "mailinglist"));
         if (!isOracleDB()) {
             orderBy = orderBy.replaceAll(" e\\.", " ");
@@ -1859,7 +1721,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 """
                 .formatted(
                         additionalRestriction,
-                        isOracleDB() ? "TO_DATE('01.01.1900', 'dd.mm.yyyy')" : "DATE_FORMAT('01.01.1900','%d.%m.%Y')"
+                        isOracleDB() || isPostgreSQL() ? "TO_DATE('01.01.1900', 'dd.mm.yyyy')" : "DATE_FORMAT('01.01.1900','%d.%m.%Y')"
                 ), rownums);
 
         String query = """
@@ -1889,12 +1751,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             result.add(newBean);
         }
 
-        PaginatedListImpl<Map<String, Object>> resultList = new PaginatedListImpl<>(result, result.size(), rownums, 1, sort, direction);
+        PaginatedList<Map<String, Object>> resultList = new PaginatedList<>(result, result.size(), rownums, 1, sort, direction);
         addComponentIdsToList(resultList, "component");
         return resultList;
     }
 
-    private String getDashboardMailingsOrder(final String sort, final String direction, final List<String> charColumns) {
+    private String getDashboardMailingsOrder(String sort, String direction, List<String> charColumns) {
         String orderby;
         if (StringUtils.isNotBlank(sort)) {
             /*
@@ -1903,7 +1765,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
              * get a strange order: null values are always the greatest values.
              */
             if (sort.trim().equalsIgnoreCase("senddate")) {
-                if (isOracleDB()) {
+                if (isOracleDB() || isPostgreSQL()) {
                     orderby = " ORDER BY COALESCE(senddate, TO_DATE('01.01.1900', 'dd.mm.yyyy'))";
                 } else {
                     orderby = " ORDER BY COALESCE(senddate, DATE_FORMAT('01.01.1900', '%d.%m.%Y'))";
@@ -1919,7 +1781,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         } else {
             // We need the workaround with COALESCE and TO_DATE here to get mailings
             // with change_date=NULL to be ordered lower than other change_dates
-            if (isOracleDB()) {
+            if (isOracleDB() || isPostgreSQL()) {
                 orderby = " ORDER BY COALESCE(change_date, TO_DATE('01.01.1900', 'dd.mm.yyyy')) DESC, mid DESC";
             } else {
                 orderby = " ORDER BY COALESCE(change_date, DATE_FORMAT('01.01.1900', '%d.%m.%Y')) DESC, mid DESC";
@@ -1929,7 +1791,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<Integer> getBirtReportMailingsToSend(final int companyID, final int reportId, final Date startDate, final Date endDate, final int filterId, final int filterValue) {
+    public List<Integer> getBirtReportMailingsToSend(int companyID, int reportId, Date startDate, Date endDate, int filterId, int filterValue) {
         List<Object> params = new ArrayList<>();
         params.add(companyID);
         params.add(MaildropStatus.WORLD.getCodeString());
@@ -1969,7 +1831,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public final Date getSendDate(final int companyId, final int mailingId) {
+    public Date getSendDate(int companyId, int mailingId) {
         final String sql = isOracleDB()
                 ? "SELECT senddate FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY DECODE(status_field, 'W', 1, 'R', 2, 'D', 2, 'E', 3, 'C', 3, 'T', 4, 'A', 4, 5), status_id DESC"
                 : "SELECT senddate FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY CASE status_field WHEN 'W' THEN 1 WHEN 'R' THEN 2 WHEN 'D' THEN 2 WHEN 'E' THEN 3 WHEN 'C' THEN 3 WHEN 'T' THEN 4 WHEN 'A' THEN 4 ELSE 5 END, status_id DESC";
@@ -1982,7 +1844,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public Timestamp getLastSendDate(final int mailingID) {
+    public Timestamp getLastSendDate(int mailingID) {
         String sql;
         if (isOracleDB()) {
             sql = "SELECT senddate FROM (SELECT senddate, row_number()"
@@ -2000,7 +1862,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             } else {
                 return null;
             }
-        } catch (final IncorrectResultSizeDataAccessException e) {
+        } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         }
     }
@@ -2030,13 +1892,13 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean deleteAccountSumEntriesByCompany(final int companyID) {
+    public boolean deleteAccountSumEntriesByCompany(int companyID) {
         update("DELETE FROM mailing_account_sum_tbl WHERE company_id = ?", companyID);
         return selectInt("SELECT COUNT(*) FROM mailing_account_sum_tbl WHERE company_id = ?", companyID) == 0;
     }
 
     @Override
-    public boolean isTransmissionRunning(final int mailingID) {
+    public boolean isTransmissionRunning(int mailingID) {
         String query = "SELECT count(*) FROM maildrop_status_tbl WHERE status_field IN (?) AND genstatus IN (1, 2) AND mailing_id = ?";
         final boolean isWorldMailingSentBeingAtTheMoment = selectInt(query, MaildropStatus.WORLD.getCodeString(), mailingID) > 0;
         if (isWorldMailingSentBeingAtTheMoment) {
@@ -2051,13 +1913,13 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int getLastSentMailing(final int companyID, final int customerID) {
+    public int getLastSentMailing(int companyID, int customerID) {
         return selectIntWithDefaultValue("SELECT MAX(mailing_id) FROM success_" + companyID + "_tbl WHERE customer_id = ?"
                 + " AND timestamp = (SELECT MAX(timestamp) FROM success_" + companyID + "_tbl " + " WHERE customer_ID =  ?)", -1, customerID, customerID);
     }
 
     @Override
-    public int getLastSentWorldMailingByCompanyAndMailinglist(final int companyID, final int mailingListID) {
+    public int getLastSentWorldMailingByCompanyAndMailinglist(int companyID, int mailingListID) {
         Object[] sqlParameters;
 
         final StringBuilder sb = new StringBuilder();
@@ -2068,29 +1930,29 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             sqlParameters = new Object[]{companyID, MaildropStatus.WORLD.getCodeString()};
         } else {
             sqlParameters = new Object[]{companyID, MaildropStatus.WORLD.getCodeString(), mailingListID};
-            sb.append("AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE mailinglist_id = ? AND deleted = 0)");
+            sb.append(" AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE mailinglist_id = ? AND deleted = 0)");
         }
         sb.append(")");
 
         try {
             return selectInt(sb.toString(), sqlParameters);
         } catch (final Exception e) {
-            logger.error("Error getting lastSent mailingID. CompanyID: " + companyID + " mailingListID: " + mailingListID, e);
+            logger.error("Error getting lastSent mailingID. CompanyID: {} mailingListID: {}", companyID, mailingListID, e);
         }
 
         return -1;
     }
 
     @Override
-    public List<MailingBase> getSentWorldMailingsForReports(final int companyID, final int number, final int targetId, Set<Integer> adminAltgIds) {
+    public List<MailingBase> getSentWorldMailingsForReports(int companyID, int number, int targetId, Set<Integer> adminAltgIds) {
         return getPredefinedMailingsForReports(companyID, number, -1, 0, null, "", targetId, adminAltgIds);
     }
 
     @Override
-    public List<MailingBase> getPredefinedNormalMailingsForReports(final int companyId, final Date from, final Date to, final int filterType, final int filterValue, final String orderKey, final int targetId, Set<Integer> adminAltgIds) {
+    public List<MailingBase> getPredefinedNormalMailingsForReports(int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId, Set<Integer> adminAltgIds) {
         final char statusField = MaildropStatus.WORLD.getCode();
         String orderColumn = "shortname";
-        if (!orderKey.isEmpty() && orderKey.equals("date")) {
+        if ("date".equals(orderKey)) {
             orderColumn = "change_date";
         }
 
@@ -2151,7 +2013,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     public static class PartialMailingBaseRowMapper implements RowMapper<MailingBase> {
         @Override
-        public MailingBase mapRow(final ResultSet resultSet, final int i) throws SQLException {
+        public MailingBase mapRow(ResultSet resultSet, int i) throws SQLException {
             final MailingBaseImpl mailingBase = new MailingBaseImpl();
             mailingBase.setId(resultSet.getInt("mailing_id"));
             mailingBase.setShortname(resultSet.getString("shortname"));
@@ -2162,7 +2024,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<MailingBase> getPredefinedMailingsForReports(final int companyId, final int rownum, final int filterType, final int filterValue, final MailingType mailingType, String orderKey, final int targetId, Set<Integer> adminAltgIds) {
+    public List<MailingBase> getPredefinedMailingsForReports(int companyId, int rownum, int filterType, int filterValue, MailingType mailingType, String orderKey, int targetId, Set<Integer> adminAltgIds) {
         if (DATE_ORDER_KEY.equalsIgnoreCase(orderKey)) {
             orderKey = "change_date";
         } else {
@@ -2230,7 +2092,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return MaildropStatus.WORLD.getCode();
     }
 
-    private String getSettingsTypeFilter(final int filterType, final int filterValue, final List<Object> parameters) {
+    private String getSettingsTypeFilter(int filterType, int filterValue, List<Object> parameters) {
         String filterClause = "";
         switch (FilterType.getFilterTypeByKey(filterType)) {
             case FILTER_ARCHIVE:
@@ -2242,7 +2104,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 parameters.add(filterValue);
                 break;
             case FILTER_TARGET:
-                filterClause = " AND " + DbUtilities.createTargetExpressionRestriction(isOracleDB(), "a");
+                filterClause = " AND " + DbUtilities.createTargetExpressionRestriction(dataSource, "a");
                 parameters.add(filterValue);
                 break;
 
@@ -2253,7 +2115,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return filterClause;
     }
 
-    private List<Map<String, String>> getTargetGroupsForTargetExpression(final String targetExpression, final Map<Integer, String> targetNameCache) {
+    private List<Map<String, String>> getTargetGroupsForTargetExpression(String targetExpression, Map<Integer, String> targetNameCache) {
         final List<Map<String, String>> result = new Vector<>();
 
         if (targetExpression != null) {
@@ -2268,7 +2130,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
                     result.add(target);
                 } else {
-                    logger.info("Found no name target group ID " + targetId);
+                    logger.info("Found no name target group ID {}", targetId);
                 }
             }
         }
@@ -2276,7 +2138,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return result;
     }
 
-    private String getTargetGroupName(final int targetId, final Map<Integer, String> targetNameCache) {
+    private String getTargetGroupName(int targetId, Map<Integer, String> targetNameCache) {
         if (targetNameCache.containsKey(targetId)) {
             return targetNameCache.get(targetId);
         }
@@ -2289,9 +2151,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             }
 
             return targetName;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             // In some cases, mailings reference to non-existing target groups.
-            logger.error("Exception reading name for target group ID " + targetId, e);
+            logger.error("Exception reading name for target group ID {}", targetId, e);
             return null;
         }
     }
@@ -2360,27 +2222,6 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<Map<String, Object>> getSentAndScheduledLight(Admin admin, Date startDate, Date endDate) {
-        List<Object> params = new ArrayList<>(List.of(
-                admin.getCompanyID(),
-                MaildropStatus.WORLD.getCodeString(),
-                MediaTypes.EMAIL.getMediaCode(),
-                startDate, endDate));
-        String sql = "SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, mailing.shortname," +
-                "   MIN(maildrop.senddate) senddate, mailinglist.shortname mailinglist_name" +
-                " FROM mailing_tbl mailing" +
-                "   LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
-                "   LEFT JOIN mailinglist_tbl mailinglist ON mailing.mailinglist_id = mailinglist.mailinglist_id" +
-                "   LEFT JOIN mailing_mt_tbl mediatype ON maildrop.mailing_id = mediatype.mailing_id" +
-                " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND mailing.is_template = 0" +
-                "   AND maildrop.status_field = ? AND mediatype.mediatype = ?" +
-                "   AND maildrop.senddate >= ? AND maildrop.senddate < ? " +
-                getAdditionalSqlRestrictions(admin, params, MAILING_ALIAS) +
-                " GROUP BY mailing.mailing_id, mailing.shortname, mailing.work_status, mailinglist.shortname ";
-        return select(addSortingToQuery(sql, "MIN(maildrop.senddate)", "desc"), params.toArray());
-    }
-
-    @Override
     public List<MailingDto> getSentAndScheduled(MailingDaoOptions opts, Admin admin) {
         List<Object> params = new ArrayList<>(List.of(
             admin.getCompanyID(),
@@ -2415,62 +2256,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return select(addSortingToQuery(sql, "senddate", "desc"), getMailingDtoRowMapper(), params.toArray());
     }
 
-    @Override
-    public List<Map<String, Object>> getSentAndScheduled(Admin admin, Date startDateIncl, Date endDateExcl, int limit) {
-        List<Object> params = new ArrayList<>();
-        params.add(admin.getCompanyID());
-        if (admin.isRedesignedUiUsed()) {
-            params.add(MediaTypeStatus.Active.getCode());
-            params.add(MediaTypeStatus.Active.getCode());
-        }
-        params.add(startDateIncl);
-        params.add(endDateExcl);
-
-        String query = "SELECT *"
-            + " FROM (SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, MAX(cmp.component_id) preview_component,"
-			+ " MIN(maildrop.senddate) senddate, mailing.shortname shortname, mediatype.param subject,"
-
-            + (admin.isRedesignedUiUsed() ?" mediatype.mediatype, " : "")
-
-			+ " COALESCE(SUM(account.no_of_mailings), 0) mailssent, MAX(maildrop.genstatus) genstatus, mailing.is_post isOnlyPostType"
-            + getRowNumCalendarRestriction(limit)
-			+ " FROM mailing_tbl mailing LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id"
-			+ " LEFT JOIN mailing_mt_tbl mediatype ON maildrop.mailing_id = mediatype.mailing_id"
-			+ " LEFT JOIN mailing_account_tbl account ON (maildrop.mailing_id = account.mailing_id AND account.status_field = maildrop.status_field)"
-			+ " LEFT JOIN component_tbl cmp ON (maildrop.mailing_id = cmp.mailing_id AND cmp.comptype = " + MailingComponentType.ThumbnailImage.getCode() + ")"
-			+ " WHERE mailing.company_id = ? AND mailing.deleted = 0 AND mailing.is_template = 0 AND maildrop.status_field IN ('" + MaildropStatus.WORLD.getCode() + "')"
-
-            + (admin.isRedesignedUiUsed()
-            ? " AND mediatype.status = ? AND mediatype.priority = (SELECT MIN(priority) FROM mailing_mt_tbl WHERE mailing_id = mailing.mailing_id AND mediatype.status = ?) "
-            : " AND mediatype.mediatype = " + MediaTypes.EMAIL.getMediaCode())
-
-			+ " AND maildrop.senddate >= ? AND maildrop.senddate < ?"
-			+ getAdditionalSqlRestrictions(admin, params, MAILING_ALIAS)
-			+ " GROUP BY mailing.mailing_id, mailing.shortname,"
-
-            + (admin.isRedesignedUiUsed() ? " mediatype.mediatype, " : "")
-
-            + " mediatype.param, mailing.work_status, maildrop.status_field, mailing.is_post, maildrop.senddate) subquery"
-            + (limit > 0 ? " WHERE row_num <= " + limit : "");
-        query = addSortingToQuery(query, "senddate", "desc");
-        final List<Map<String, Object>> mailingList = select(query, params.toArray());
-
-        for (final Map<String, Object> mailing : mailingList) {
-            final String param = mailing.get(SUBJECT_COL_NAME).toString();
-            if (param != null) {
-                final String subject = new ParameterParser(param).parse(SUBJECT_COL_NAME);
-                mailing.put(SUBJECT_COL_NAME, subject);
-            }
-        }
-        return mailingList;
-    }
-
     protected String getRowNumCalendarRestriction(int limit) {
         if (limit <= 0) {
             return "";
         }
         return ", ROW_NUMBER() OVER (PARTITION BY "
-                + (isOracleDB() ? "TO_CHAR(senddate, 'YYYY-MM-DD')" : "DATE_FORMAT(senddate, '%Y-%m-%d')")
+                + (isOracleDB() || isPostgreSQL() ? "TO_CHAR(senddate, 'YYYY-MM-DD')" : "DATE_FORMAT(senddate, '%Y-%m-%d')")
                 + " ORDER BY senddate) AS row_num ";
     }
 
@@ -2553,156 +2344,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         );
     }
 
-    @Override
-    public List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDateIncl, Date endDateExcl, int limit) {
-        List<Object> params = new ArrayList<>();
-
-        params.add(MailingComponentType.ThumbnailImage.getCode());
-        params.add(admin.getCompanyID());
-        params.add(startDateIncl);
-        params.add(endDateExcl);
-        if (admin.isRedesignedUiUsed()) {
-            params.add(MediaTypeStatus.Active.getCode());
-            params.add(MediaTypeStatus.Active.getCode());
-        }
-
-        String additionalRestriction = getAdditionalSqlRestrictions(admin, params, MAILING_ALIAS);
-
-        String query = "SELECT *" +
-                " FROM (SELECT mailingid, workstatus, preview_component, senddate, shortname, " +
-
-                (admin.isRedesignedUiUsed() ? "mediatype, " : "") +
-
-                " subject, genstatus, isOnlyPostType " +
-                getRowNumCalendarRestriction(limit) +
-                        "FROM ( " +
-                        "SELECT mailing.mailing_id mailingid," +
-                        "    mailing.work_status workstatus," +
-                        "    max(cmp.component_id) preview_component," +
-                        "    mailing.plan_date senddate," +
-                        "    mailing.shortname shortname," +
-                        "    mediatype.param subject, " +
-                        "    -1 genstatus, " +
-                        "    MAX(maildrop.gendate) lastMailDropDate," +
-
-                        (admin.isRedesignedUiUsed() ? " mediatype.mediatype, " : "") +
-
-                        "    mailing.is_post isOnlyPostType " +
-                        "FROM mailing_tbl mailing" +
-                        "    LEFT JOIN mailing_mt_tbl mediatype ON mailing.mailing_id = mediatype.mailing_id" +
-                        "    LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
-                        "    LEFT JOIN component_tbl cmp ON (mailing.mailing_id = cmp.mailing_id AND cmp.comptype = ?) " +
-                        "WHERE" +
-                        "    mailing.company_id = ? AND" +
-                        "    mailing.deleted = 0 AND" +
-                        "    mailing.plan_date >= ? AND mailing.plan_date < ? AND" +
-
-                        (admin.isRedesignedUiUsed()
-                            ? " mediatype.status = ? AND mediatype.priority = (SELECT MIN(priority) FROM mailing_mt_tbl WHERE mailing_id = mailing.mailing_id AND status = ?) "
-                            : " mediatype.mediatype = 0 ") +
-
-                        additionalRestriction +
-                        "    AND (maildrop.senddate IS NULL OR ( " +
-                        "        maildrop.senddate IS NOT NULL AND maildrop.status_field IN ('A', 'T') AND " +
-                        "        maildrop.genchange = (SELECT max(mds.genchange) FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id) AND " +
-                        "        not exists (SELECT * FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id AND mds.status_field = 'W') " +
-                        "        ) " +
-                        "    ) " +
-                        "GROUP BY mailing.mailing_id, mailing.shortname," +
-
-                        (admin.isRedesignedUiUsed() ? " mediatype.mediatype, " : "") +
-
-                        " mediatype.param, mailing.work_status, mailing.plan_date, mediatype.param, mailing.is_post)" + (isOracleDB() ? "" : "subsel ") +
-                ") subsel2 " +
-                (limit > 0 ? "WHERE row_num <= " + limit : "");
-        query = addUnsentMailingSort(query, "mailingid", "desc");
-        final List<Map<String, Object>> mailingList =
-                select(query, params.toArray());
-        for (final Map<String, Object> mailing : mailingList) {
-            Object param = mailing.get(SUBJECT_COL_NAME);
-            if (param != null) {
-                final String subject = new ParameterParser(param.toString()).parse(SUBJECT_COL_NAME);
-                mailing.put(SUBJECT_COL_NAME, subject);
-            }
-        }
-        return mailingList;
-    }
-
-    @Override
-    public List<Map<String, Object>> getPlannedMailingsLight(Admin admin, Date startDate, Date endDate) {
-        List<Object> params = new ArrayList<>(List.of(
-                startDate, endDate,
-                admin.getCompanyID(),
-                MediaTypes.EMAIL.getMediaCode()));
-        String sql =
-                " SELECT mailing.mailing_id mailingid, mailing.work_status workstatus, mailing.plan_date senddate," +
-                "  mailing.shortname, mailinglist.shortname mailinglist_name" +
-                " FROM mailing_tbl mailing" +
-                "    LEFT JOIN mailing_mt_tbl mediatype ON mailing.mailing_id = mediatype.mailing_id" +
-                "    LEFT JOIN maildrop_status_tbl maildrop ON mailing.mailing_id = maildrop.mailing_id" +
-                "    LEFT JOIN mailinglist_tbl mailinglist ON mailing.mailinglist_id = mailinglist.mailinglist_id " +
-                " WHERE mailing.plan_date >= ? AND mailing.plan_date <= ?" +
-                "   AND mailing.company_id = ? AND mailing.deleted = 0 AND mediatype.mediatype = ?" +
-                getAdditionalSqlRestrictions(admin, params, MAILING_ALIAS) +
-                "  AND (maildrop.senddate IS NULL OR " +
-                "      (maildrop.senddate IS NOT NULL AND maildrop.status_field IN ('A', 'T') AND " +
-                "      maildrop.genchange = (SELECT max(mds.genchange) FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id) AND " +
-                "      not exists (SELECT * FROM maildrop_status_tbl mds WHERE mds.mailing_id = mailing.mailing_id AND mds.status_field = 'W')) " +
-                "  )" +
-                " GROUP BY mailing.mailing_id, mailing.shortname, mailinglist.shortname, mailing.work_status, mailing.plan_date ";
-        return select(addUnsentMailingSort(sql, "mailingid", "desc"), params.toArray());
-    }
-
-    @Override
-    public Map<Integer, Integer> getOpeners(final int companyId, final List<Integer> mailingsId) {
-        return getOpeners(companyId, mailingsId, false);
-    }
-
-    @Override
-    public Map<Integer, Integer> getOpeners(final int companyId, final Collection<Integer> mailingsId, final boolean currentRecipientsOnly) {
-        String query = "SELECT COUNT(DISTINCT opl.customer_id) AS openers, opl.mailing_id FROM onepixellog_" + companyId + "_tbl opl ";
-        if (currentRecipientsOnly) {
-            query += " JOIN mailing_tbl m ON m.mailing_id = opl.mailing_id ";
-            query += " JOIN customer_" + companyId + "_binding_tbl bind ON bind.mailinglist_id = m.mailinglist_id AND opl.customer_id = bind.customer_id ";
-        }
-        query += " WHERE " + makeBulkInClauseForInteger("opl.mailing_id", mailingsId) + " GROUP BY opl.mailing_id";
-        final List<Map<String, Object>> resultList = select(query);
-        return fillAllMailings(resultList, "mailing_id", "openers", mailingsId);
-    }
-
-    @Override
-    public Map<Integer, Integer> getClickers(final int companyId, final List<Integer> mailingsId) {
-        return getClickers(companyId, mailingsId, false);
-    }
-
-    @Override
-    public Map<Integer, Integer> getClickers(final int companyId, final Collection<Integer> mailingsId, final boolean currentRecipientsOnly) {
-        String query = "SELECT COUNT(DISTINCT rlog.customer_id) AS clickers, rlog.mailing_id FROM rdirlog_" + companyId + "_tbl rlog ";
-        if (currentRecipientsOnly) {
-            query += " JOIN mailing_tbl m ON m.mailing_id = rlog.mailing_id ";
-            query += " JOIN customer_" + companyId + "_binding_tbl bind ON bind.mailinglist_id = m.mailinglist_id AND rlog.customer_id = bind.customer_id ";
-        }
-        query += " WHERE " + makeBulkInClauseForInteger("rlog.mailing_id", mailingsId) + " GROUP BY rlog.mailing_id";
-        final List<Map<String, Object>> resultList = select(query);
-        return fillAllMailings(resultList, "mailing_id", "clickers", mailingsId);
-    }
-
-    private Map<Integer, Integer> fillAllMailings(final List<Map<String, Object>> dbList, final String keyColumn, final String valueColumn, final Collection<Integer> mailingsId) {
-        final Map<Integer, Integer> result = new HashMap<>();
-        for (final Integer mailingId : mailingsId) {
-            result.put(mailingId, 0);
-        }
-        for (final Map<String, Object> row : dbList) {
-            final int key = ((Number) row.get(keyColumn)).intValue();
-            final int value = ((Number) row.get(valueColumn)).intValue();
-            result.put(key, value);
-        }
-        return result;
-    }
-
     public static class MailingRowMapper implements RowMapper<Mailing> {
         @Override
-        public Mailing mapRow(final ResultSet resultSet, final int index) throws SQLException {
+        public Mailing mapRow(ResultSet resultSet, int index) throws SQLException {
             final Mailing mailing = new MailingImpl();
 
             mailing.setCompanyID(resultSet.getInt("company_id"));
@@ -2713,22 +2357,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             if (contentTypeString == null) {
                 mailing.setMailingContentType(null);
             } else {
-                try {
-                    mailing.setMailingContentType(MailingContentType.getFromString(contentTypeString));
-                } catch (final Exception e) {
-                    throw new SQLException(e.getMessage(), e);
-                }
+                mailing.setMailingContentType(MailingContentType.getFromString(contentTypeString));
             }
             mailing.setDescription(resultSet.getString("description"));
             mailing.setCreationDate(resultSet.getTimestamp("creation_date"));
             mailing.setMailTemplateID(resultSet.getInt("mailtemplate_id"));
             mailing.setMailinglistID(resultSet.getInt("mailinglist_id"));
             mailing.setDeleted(resultSet.getInt("deleted"));
-            try {
-				mailing.setMailingType(MailingType.fromCode(resultSet.getInt("mailing_type")));
-			} catch (Exception e) {
-				throw new SQLException("Invalid MailingType code: " + resultSet.getInt("mailing_type"));
-			}
+            mailing.setMailingType(MailingType.getByCode(resultSet.getInt("mailing_type")));
             mailing.setCampaignID(resultSet.getInt("campaign_id"));
             mailing.setArchived(resultSet.getInt("archived"));
             mailing.setTargetExpression(resultSet.getString("target_expression"));
@@ -2758,7 +2394,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     // some fields are missing. see com.agnitas.dao.impl.MailingDaoImpl.MailingRowMapper for more
     protected static class MailingLighterRowMapper implements RowMapper<Mailing> {
         @Override
-        public Mailing mapRow(final ResultSet resultSet, final int index) throws SQLException {
+        public Mailing mapRow(ResultSet resultSet, int index) throws SQLException {
             final Mailing mailing = new MailingImpl();
 
             mailing.setCompanyID(resultSet.getInt("company_id"));
@@ -2768,22 +2404,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             if (contentTypeString == null) {
                 mailing.setMailingContentType(null);
             } else {
-                try {
-                    mailing.setMailingContentType(MailingContentType.getFromString(contentTypeString));
-                } catch (final Exception e) {
-                    throw new SQLException(e.getMessage(), e);
-                }
+                mailing.setMailingContentType(MailingContentType.getFromString(contentTypeString));
             }
             mailing.setDescription(resultSet.getString("description"));
             mailing.setCreationDate(resultSet.getTimestamp("creation_date"));
             mailing.setMailTemplateID(resultSet.getInt("mailtemplate_id"));
             mailing.setMailinglistID(resultSet.getInt("mailinglist_id"));
             mailing.setDeleted(resultSet.getInt("deleted"));
-            try {
-				mailing.setMailingType(MailingType.fromCode(resultSet.getInt("mailing_type")));
-			} catch (Exception e) {
-				throw new SQLException("Invalid MailingType code: " + resultSet.getInt("mailing_type"));
-			}
+            mailing.setMailingType(MailingType.getByCode(resultSet.getInt("mailing_type")));
             mailing.setCampaignID(resultSet.getInt("campaign_id"));
             mailing.setArchived(resultSet.getInt("archived"));
             mailing.setTargetExpression(resultSet.getString("target_expression"));
@@ -2806,7 +2434,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     protected static class MailingTemplatesWithPreviewRowMapper implements RowMapper<MailingBase> {
         @Override
-        public MailingBase mapRow(final ResultSet resultSet, final int i) throws SQLException {
+        public MailingBase mapRow(ResultSet resultSet, int i) throws SQLException {
             final Mailing mailing = new MailingImpl();
 
             mailing.setId(resultSet.getInt("mailing_id"));
@@ -2822,7 +2450,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     protected static class ScheduledMailingRowMapper implements RowMapper<ScheduledMailing> {
         @Override
-        public ScheduledMailing mapRow(final ResultSet resultSet, final int i) throws SQLException {
+        public ScheduledMailing mapRow(ResultSet resultSet, int i) throws SQLException {
             ScheduledMailing mailing = new ScheduledMailing();
 
             mailing.setId(resultSet.getInt("mailing_id"));
@@ -2835,9 +2463,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
     }
 
-    private class ComparisonMailingRowMapper implements RowMapper<MailingBase> {
+    private static class ComparisonMailingRowMapper implements RowMapper<MailingBase> {
         @Override
-        public MailingBase mapRow(final ResultSet resultSet, final int i) throws SQLException {
+        public MailingBase mapRow(ResultSet resultSet, int i) throws SQLException {
             final MailingBase newBean = new MailingBaseImpl();
             newBean.setId(resultSet.getInt("mailing_id"));
             newBean.setShortname(resultSet.getString("shortname"));
@@ -2849,65 +2477,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
     }
 
-    /**
-     * This Rowmapper reads all values from mailing_tbl also the class MailingBase cannot hold them all.
-     * This is for keeping former code especially in JSPs working, which might use this values by reflection.
-     * Hibernate returned all data of mailing_tbl in the old version of this Dao.
-     * <p>
-     * TODO: Check JSPs and return real MailingBase with reduced data
-     */
-    protected static class MailingToMailingBaseRowMapper implements RowMapper<MailingBase> {
-        @Override
-        public MailingBase mapRow(final ResultSet resultSet, final int index) throws SQLException {
-            final Mailing mailing = new MailingImpl();
-
-            mailing.setCompanyID(resultSet.getInt("company_id"));
-            mailing.setId(resultSet.getInt("mailing_id"));
-            mailing.setShortname(resultSet.getString("shortname"));
-            final String contentTypeString = resultSet.getString("content_type");
-            if (contentTypeString == null) {
-                mailing.setMailingContentType(null);
-            } else {
-                try {
-                    mailing.setMailingContentType(MailingContentType.getFromString(contentTypeString));
-                } catch (final Exception e) {
-                    throw new SQLException(e.getMessage(), e);
-                }
-            }
-            mailing.setDescription(resultSet.getString("description"));
-            mailing.setCreationDate(resultSet.getTimestamp("creation_date"));
-            mailing.setMailTemplateID(resultSet.getInt("mailtemplate_id"));
-            mailing.setMailinglistID(resultSet.getInt("mailinglist_id"));
-            mailing.setDeleted(resultSet.getInt("deleted"));
-            try {
-				mailing.setMailingType(MailingType.fromCode(resultSet.getInt("mailing_type")));
-			} catch (Exception e) {
-				throw new SQLException("Invalid MailingType code: " + resultSet.getInt("mailing_type"));
-			}
-            mailing.setCampaignID(resultSet.getInt("campaign_id"));
-            mailing.setArchived(resultSet.getInt("archived"));
-            mailing.setTargetExpression(resultSet.getString("target_expression"));
-            mailing.setSplitID(resultSet.getInt("split_id"));
-            mailing.setUseDynamicTemplate(resultSet.getInt("dynamic_template") > 0);
-            mailing.setLocked(resultSet.getInt("test_lock"));
-            mailing.setIsTemplate(resultSet.getInt("is_template") > 0);
-            mailing.setNeedsTarget(resultSet.getInt("needs_target") > 0);
-            mailing.setOpenActionID(resultSet.getInt("openaction_id"));
-            mailing.setClickActionID(resultSet.getInt("clickaction_id"));
-            mailing.setStatusmailRecipients(resultSet.getString("statmail_recp"));
-            mailing.setStatusmailOnErrorOnly(resultSet.getInt("statmail_onerroronly") > 0);
-            mailing.setClearanceThreshold(resultSet.getInt("clearance_threshold"));
-            mailing.setClearanceEmail(resultSet.getString("clearance_email"));
-            mailing.setPlanDate(resultSet.getTimestamp("plan_date"));
-            mailing.setOnlyPostType(BooleanUtils.toBoolean(resultSet.getInt("isOnlyPostType")));
-
-            return mailing;
-        }
-    }
-
     protected static class DynamicTagContentRowMapper implements RowMapper<DynamicTagContent> {
         @Override
-        public DynamicTagContent mapRow(final ResultSet resultSet, final int index) throws SQLException {
+        public DynamicTagContent mapRow(ResultSet resultSet, int index) throws SQLException {
             final DynamicTagContent tag = new DynamicTagContentImpl();
 
             tag.setCompanyID(resultSet.getInt("company_id"));
@@ -2924,7 +2496,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     protected static class DynamicTagRowMapper implements RowMapper<DynamicTag> {
         @Override
-        public DynamicTag mapRow(final ResultSet resultSet, final int index) throws SQLException {
+        public DynamicTag mapRow(ResultSet resultSet, int index) throws SQLException {
             final DynamicTag tag = new DynamicTagImpl();
 
             tag.setCompanyID(resultSet.getInt("company_id"));
@@ -2940,7 +2512,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public Map<String, Object> getMailingWithWorkStatus(final int mailingId, final int companyId) {
+    public Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId) {
         final StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("SELECT a.company_id, a.mailing_id, a.shortname, a.description, a.work_status, a.mailing_type, b.senddate, a.change_date, a.is_post AS isOnlyPostType");
         if (isOracleDB()) {
@@ -2972,9 +2544,9 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void cleanTestDataInSuccessTbl(final int mailingID, final int companyID) {
+    public void cleanTestDataInSuccessTbl(int mailingID, int companyID) {
         // delete from success_<companyId>_tbl
-        final boolean individualSuccessTableExists = DbUtilities.checkIfTableExists(getDataSource(), getSuccessTableName(companyID));
+        final boolean individualSuccessTableExists = DbUtilities.checkIfTableExists(getDataSource(), "success_" + companyID + "_tbl");
         if (individualSuccessTableExists) {
         	String sqlBounce = "DELETE FROM success_" + companyID + "_tbl"
 				+ " WHERE mailing_id = ?"
@@ -2986,7 +2558,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void cleanTestDataInMailtrackTbl(final int mailingID, final int companyID) {
+    public void cleanTestDataInMailtrackTbl(int mailingID, int companyID) {
     	String sql = "DELETE FROM mailtrack_" + companyID + "_tbl"
 			+ " WHERE mailing_id = ?"
 				+ " AND customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl"
@@ -2996,11 +2568,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteMailtrackDataForMailing(final int companyID, final int mailingID) {
+    public void deleteMailtrackDataForMailing(int companyID, int mailingID) {
 		update("DELETE FROM mailtrack_" + companyID + "_tbl WHERE mailing_id = ?", mailingID);
     }
 
-    protected String addSortingToQuery(final String query, final String sortField, final String sortDirection) {
+    protected String addSortingToQuery(String query, String sortField, String sortDirection) {
         String sorting = getSortingClause(sortField, sortDirection);
 
         if (sorting.isEmpty()) {
@@ -3010,7 +2582,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
     }
 
-    private String getSortingClause(final String column, final String direction) {
+    private String getSortingClause(String column, String direction) {
         String expression = getSortingExpression(column, direction);
 
         if (expression.isEmpty()) {
@@ -3020,55 +2592,35 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
     }
 
-    private String getSortingExpression(final String column, final String direction) {
+    private String getSortingExpression(String column, String direction) {
         if (StringUtils.isBlank(column)) {
             return "";
         }
 
         String directionKeyword = AgnUtils.sortingDirectionToBoolean(direction, true) ? "ASC" : "DESC";
 
-        if (isOracleDB()) {
+        if (isOracleDB() || isPostgreSQL()) {
             return String.format("%s %s NULLS LAST", column, directionKeyword);
         } else {
             return String.format("ISNULL(%s), %s %s", column, column, directionKeyword);
         }
     }
 
-    private String addUnsentMailingSort(final String query, final String sort, final String direction) {
-        String unsentSort = (sort == null) ? "" : sort;
-        String unsentDirection = (direction == null) ? "" : direction;
-        if (unsentSort.equalsIgnoreCase("date")) {
-            unsentSort = "creation_date";
-        }
-        if (unsentSort.isEmpty()) {
-            unsentSort = "m.mailing_id";
-            if (unsentDirection.isEmpty()) {
-                unsentDirection = "DESC";
-            }
-        }
-        return addSortingToQuery(query, unsentSort, unsentDirection);
+    @Override
+    public boolean isActiveIntervalMailing(int mailingId) {
+        return selectInt("""
+            SELECT COUNT(m.mailing_id)
+            FROM interval_mailing_tbl i, mailing_tbl m
+            WHERE m.mailing_id = ?
+              AND m.mailing_id = i.mailing_id
+              AND m.mailing_type = ?
+              AND m.work_status = ?
+              AND i.next_start IS NOT NULL
+        """, mailingId, MailingType.INTERVAL.getCode(), MailingStatus.ACTIVE.getDbKey()) > 0;
     }
 
     @Override
-    public List<Integer> getMailingIdsForIntervalSend() {
-        String sql;
-        if (isOracleDB()) {
-            sql = "SELECT DISTINCT mail.mailing_id FROM mailing_info_tbl info, mailing_tbl mail WHERE mail.deleted = 0 AND mail.mailing_id = info.mailing_id AND mail.mailing_type = ? AND mail.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND info.name = ? AND TO_DATE(info.value, 'YYYY.MM.DD HH24:MI') < CURRENT_TIMESTAMP AND NOT EXISTS (SELECT 1 FROM mailing_info_tbl b WHERE b.mailing_id = info.mailing_id AND b.name = ?)";
-        } else {
-            sql = "SELECT DISTINCT mail.mailing_id FROM mailing_info_tbl info, mailing_tbl mail WHERE mail.deleted = 0 AND mail.mailing_id = info.mailing_id AND mail.mailing_type = ? AND mail.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND info.name = ? AND DATE_FORMAT(info.value,'%Y.%m.%d %H:%i') < CURRENT_TIMESTAMP AND NOT EXISTS (SELECT 1 FROM mailing_info_tbl b WHERE b.mailing_id = info.mailing_id AND b.name = ?)";
-        }
-        return select(sql, IntegerRowMapper.INSTANCE, MailingType.INTERVAL.getCode(), NEXT_START.getName(), ERROR.getName());
-
-    }
-
-    @Override
-    public final boolean isActiveIntervalMailing(final int mailingID) {
-        final String sql = "SELECT COUNT(mail.mailing_id) FROM mailing_info_tbl info, mailing_tbl mail WHERE mail.mailing_id = ? AND mail.mailing_id = info.mailing_id AND mail.mailing_type = ? AND mail.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND info.name = ?";
-        return selectInt(sql, mailingID, MailingType.INTERVAL.getCode(), NEXT_START.getName()) > 0;
-    }
-
-    @Override
-    public MailingSendStatus getMailingSendStatus(final int mailingID, final int companyID) {
+    public MailingSendStatus getMailingSendStatus(int mailingID, int companyID) {
         final MailingSendStatus status = new MailingSendStatusImpl();
 
         final int daysToExpire = configService.getIntegerValue(ConfigValue.ExpireSuccess, companyID);
@@ -3088,7 +2640,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<Mailing> getMailingsForMLID(final int companyID, final int mailinglistID) {
+    public List<Mailing> getMailingsForMLID(int companyID, int mailinglistID) {
         final String sql = "SELECT company_id, mailing_id, shortname, content_type, description, deleted, mailtemplate_id, mailinglist_id, mailing_type, campaign_id, archived, target_expression, split_id, creation_date, test_lock, is_template, needs_target, openaction_id, clickaction_id, statmail_recp, statmail_onerroronly, clearance_threshold, clearance_email, dynamic_template, plan_date"
                 + " FROM mailing_tbl"
                 + " WHERE company_id = ? AND mailinglist_id = ? AND deleted = 0";
@@ -3110,8 +2662,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      * @param targetExpression The expression as string.
      * @return the resulting where clause.
      */
-    @Override
-    public String getSQLExpression(final String targetExpression) {
+    protected String getSQLExpression(String targetExpression) {
         if (targetExpression == null) {
             return null;
         }
@@ -3171,7 +2722,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      * sent to this recipient.
      */
     @Override
-    public int findLastNewsletter(final int customerID, final int companyID, final int mailinglist) {
+    public int findLastNewsletter(int customerID, int companyID, int mailinglist) {
         final String sql = "SELECT m.mailing_id, m.target_expression, a.timestamp"
                 + " FROM mailing_tbl m"
                 + " LEFT JOIN mailing_account_tbl a ON a.mailing_id = m.mailing_id"
@@ -3184,7 +2735,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 final int mailing_id = ((Number) map.get("mailing_id")).intValue();
                 final String targetExpression = (String) map.get("target_expression");
 
-                if (targetExpression == null || targetExpression.trim().length() == 0) {
+                if (targetExpression == null || targetExpression.trim().isEmpty()) {
                     return mailing_id;
                 } else {
                     if (selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust WHERE " + getSQLExpression(targetExpression) + " AND customer_id = ?", customerID) > 0) {
@@ -3193,16 +2744,16 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 }
             }
             return 0;
-        } catch (final Exception e) {
-            logger.error("findLastNewsletter: " + e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("findLastNewsletter: {}", e.getMessage(), e);
             return 0;
         }
     }
 
     @Override
-    public String getMailingRdirDomain(final int mailingID, final int companyID) {
+    public String getMailingRdirDomain(int mailingID, int companyID) {
         final String rdir_mailinglistquery = "SELECT ml.rdir_domain FROM mailinglist_tbl ml JOIN mailing_tbl m ON ml.mailinglist_id = m.mailinglist_id WHERE ml.deleted = 0 AND m.mailing_id = ?";
-        final String rdirdomain = selectObjectDefaultNull(rdir_mailinglistquery, StringRowMapper.INSTANCE, mailingID);
+        final String rdirdomain = selectStringDefaultNull(rdir_mailinglistquery, mailingID);
         if (rdirdomain != null) {
             return rdirdomain;
         } else {
@@ -3228,29 +2779,25 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public String getFormat(final int type) {
+    public String getFormat(int type) {
         try {
-            String format = selectObjectDefaultNull("SELECT format FROM date_tbl WHERE type = ?", StringRowMapper.INSTANCE, type);
+            String format = selectStringDefaultNull("SELECT format FROM date_tbl WHERE type = ?", type);
             if (format == null) {
                 logger.error("Query failed for data_tbl: No such type: {}", type);
                 return "d.M.yyyy";
             } else {
                 return format;
             }
-        } catch (final Exception e) {
-            logger.error("Query failed for data_tbl: " + e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Query failed for data_tbl: {}", e.getMessage(), e);
             return "d.M.yyyy";
         }
     }
 
     @Override
-    public int getLastGenstatus(final int mailingID, final char... statuses) {
+    public int getLastGenstatus(int mailingID, char... statuses) {
         final StringBuilder sqlQueryBuilder = new StringBuilder();
         final List<Object> sqlParameters = new ArrayList<>();
-
-        if (isOracleDB()) {
-            sqlQueryBuilder.append("SELECT * FROM (");
-        }
 
         sqlQueryBuilder.append("SELECT genstatus FROM maildrop_status_tbl WHERE mailing_id = ?");
         sqlParameters.add(mailingID);
@@ -3270,16 +2817,15 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         sqlQueryBuilder.append(" ORDER BY senddate DESC");
 
-        if (isOracleDB()) {
-            sqlQueryBuilder.append(") WHERE ROWNUM = 1");
-        } else {
-            sqlQueryBuilder.append(" LIMIT 1");
-        }
-        return selectIntWithDefaultValue(sqlQueryBuilder.toString(), -1, sqlParameters.toArray());
+        return selectIntWithDefaultValue(
+                addRowLimit(sqlQueryBuilder.toString(), 1),
+                -1,
+                sqlParameters.toArray()
+        );
     }
 
     @Override
-    public boolean hasPreviewRecipients(final int mailingID, final int companyID) {
+    public boolean hasPreviewRecipients(int mailingID, int companyID) {
         if (companyID <= 0 || mailingID <= 0) {
             return false;
         } else {
@@ -3291,36 +2837,20 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             try {
                 selectInt(query, companyID, mailingID);
                 return true;
-            } catch (final Exception e) {
-                logger.error("hasPreviewRecipients: mailingID = " + mailingID + ", companyID = " + companyID, e);
+            } catch (Exception e) {
+                logger.error("hasPreviewRecipients: mailingID = {}, companyID = {}", mailingID, companyID, e);
                 return false;
             }
         }
     }
 
-    @Override
-    public boolean hasActions(final int mailingId, final int companyID) {
-        final String stmt = "SELECT COUNT(action_id) FROM rdir_url_tbl WHERE mailing_id = ? AND company_id = ? AND action_id != 0";
+    private boolean hasActions(int mailingId, int companyID) {
         try {
-            final int count = selectInt(stmt, mailingId, companyID);
-            return count > 0;
-        } catch (final Exception e) {
-            logger.error("hasActions: " + e.getMessage(), e);
+            return selectInt("SELECT COUNT(action_id) FROM rdir_url_tbl WHERE mailing_id = ? AND company_id = ? AND action_id != 0", mailingId, companyID) > 0;
+        } catch (Exception e) {
+            logger.error("hasActions: {}", e.getMessage(), e);
             return false;
         }
-    }
-
-    @Override
-    public List<MailingBase> getTemplateMailingsByCompanyID(final int companyID) {
-        final String sql = "SELECT m.company_id, m.mailing_id, m.shortname, m.content_type, m.description, m.deleted, "
-                + " m.mailtemplate_id, m.mailinglist_id, m.mailing_type, m.campaign_id, m.archived, m.target_expression, "
-                + " m.split_id, m.creation_date, m.test_lock, m.is_template, m.needs_target, m.openaction_id, m.clickaction_id, "
-                + " m.statmail_recp, m.statmail_onerroronly, m.clearance_threshold, m.clearance_email, m.dynamic_template, m.plan_date, m.is_post AS isOnlyPostType"
-                + " FROM mailing_tbl m"
-                + " WHERE m.company_id = ? AND m.is_template = 1 AND m.deleted = 0"
-                + " ORDER BY m.shortname";
-
-        return select(sql, new MailingToMailingBaseRowMapper(), companyID);
     }
 
     @Override
@@ -3349,12 +2879,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         query.append(getTargetRestrictions(admin, params, "m"))
                 .append(" ORDER BY ");
 
-        if (admin.isUpdatedUxUsed()) {
-            query.append(getSortingExpression("m." + filter.getSort(), filter.getDir()));
-        } else {
-            query.append(getSortingExpression("m.mailing_id", ""));
-        }
-
+        query.append(getSortingExpression("m." + filter.getSort(), filter.getDir()));
         return select(query.toString(), new MailingTemplatesWithPreviewRowMapper(), params.toArray());
     }
 
@@ -3365,7 +2890,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<MailingBase> getMailingsByStatusE(final int companyID) {
+    public List<MailingBase> getMailingsByStatusE(int companyID) {
         final List<Map<String, Object>> result = select("SELECT mail.mailing_id, mail.shortname, mail.is_post AS isOnlyPostType"
                 + " FROM mailing_tbl mail, maildrop_status_tbl mds WHERE mail.mailing_id = mds.mailing_id AND mail.company_id = ? AND mail.deleted = 0 AND mail.mailing_type = 1 AND mds.status_field = 'E'", companyID);
         final List<MailingBase> returnList = new ArrayList<>();
@@ -3380,7 +2905,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<Integer> getTemplateReferencingMailingIds(final Mailing mailTemplate) {
+    public List<Integer> getTemplateReferencingMailingIds(Mailing mailTemplate) {
         if (!mailTemplate.isIsTemplate()) {
             // No template? Do nothing!
             return null;
@@ -3414,17 +2939,17 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean exist(final int mailingID, final int companyID) {
+    public boolean exist(int mailingID, int companyID) {
         return selectInt("SELECT COUNT(*) FROM mailing_tbl WHERE company_id = ? AND mailing_id = ? AND deleted = 0", companyID, mailingID) > 0;
     }
 
     @Override
-    public boolean exist(final int mailingID, final int companyID, final boolean isTemplate) {
+    public boolean exist(int mailingID, int companyID, boolean isTemplate) {
         return selectInt("SELECT COUNT(*) FROM mailing_tbl WHERE company_id = ? AND mailing_id = ? AND deleted = 0 AND is_template = ?", companyID, mailingID, isTemplate ? 1 : 0) > 0;
     }
 
     @Override
-    public List<Mailing> getMailings(final int companyId, final boolean isTemplate) {
+    public List<Mailing> getMailings(int companyId, boolean isTemplate) {
         final String sql = "SELECT company_id, mailing_id, shortname, content_type, description, deleted, mailtemplate_id, mailinglist_id, mailing_type,"
                 + " campaign_id, archived, target_expression, split_id, creation_date, test_lock, is_template, needs_target, openaction_id,"
                 + " clickaction_id, statmail_recp, statmail_onerroronly, clearance_threshold, clearance_email, dynamic_template, plan_date"
@@ -3434,21 +2959,21 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public int getMailingOpenAction(final int mailingID, final int companyID) {
+    public int getMailingOpenAction(int mailingID, int companyID) {
         try {
             return selectInt("SELECT openaction_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
-        } catch (final Exception e) {
-            logger.error("Error while getting mailing open action ID (mailingID: " + mailingID + ", companyID: " + companyID + ")", e);
+        } catch (Exception e) {
+            logger.error("Error while getting mailing open action ID (mailingID: {}, companyID: {})", mailingID, companyID, e);
             return 0;
         }
     }
 
     @Override
-    public int getMailingClickAction(final int mailingID, final int companyID) {
+    public int getMailingClickAction(int mailingID, int companyID) {
         try {
             return selectInt("SELECT clickaction_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyID, mailingID);
-        } catch (final Exception e) {
-            logger.error("Error while getting mailing click action ID (mailingID: " + mailingID + ", companyID: " + companyID + ")", e);
+        } catch (Exception e) {
+            logger.error("Error while getting mailing click action ID (mailingID: {}, companyID: {})", mailingID, companyID, e);
             return 0;
         }
     }
@@ -3457,32 +2982,19 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
      * returns the mailing-Parameter for the given mailing (only email, no sms or anything else).
      */
     @Override
-    public String getEmailParameter(final int mailingID) {
+    public String getEmailParameter(int mailingID) {
         try {
             return selectWithDefaultValue("SELECT param FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = 0", String.class, null, mailingID);
-        } catch (final Exception e) {
-            logger.error("getEmaiLParameter() failed for mailing " + mailingID, e);
+        } catch (Exception e) {
+            logger.error("getEmaiLParameter() failed for mailing {}", mailingID, e);
             return null;
         }
     }
 
     @Override
-    public List<LightweightMailing> getLightweightMailings(final int companyID) {
-        return getLightweightMailings(companyID, 0);
-    }
-
-    @Override
-    public List<LightweightMailing> getLightweightMailings(final int companyID, final int targetId) {
-        final List<java.lang.Object> params = new ArrayList<>();
+    public List<LightweightMailing> getLightweightMailings(int companyID) {
         String sql = "SELECT company_id, mailing_id, shortname, description, mailing_type, work_status, content_type FROM mailing_tbl WHERE company_id = ? AND deleted = 0 AND is_template = 0";
-        params.add(companyID);
-
-        if (targetId > 0) {
-            sql += " AND " + DbUtilities.createTargetExpressionRestriction(isOracleDB());
-            params.add(targetId);
-        }
-
-        return select(sql, LightweightMailingRowMapper.INSTANCE, params.toArray());
+        return select(sql, LightweightMailingRowMapper.INSTANCE, companyID);
     }
 
     @Override
@@ -3496,11 +3008,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     public MailingType getMailingType(int mailingID) {
-        try {
-            return MailingType.fromCode(selectIntWithDefaultValue("SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", -1, mailingID));
-        } catch (Exception e) {
-            return null;
-        }
+        return MailingType.findByCode(selectIntWithDefaultValue("SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", -1, mailingID))
+                .orElse(null);
     }
 
     @Override
@@ -3514,12 +3023,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public List<LightweightMailing> getMailingsByType(final int mailingType, final int companyID) {
+    public List<LightweightMailing> getMailingsByType(int mailingType, int companyID) {
         return getMailingsByType(mailingType, companyID, true);
     }
 
     @Override
-    public List<LightweightMailing> getMailingsByType(final int mailingType, final int companyID, boolean includeInactive) {
+    public List<LightweightMailing> getMailingsByType(int mailingType, int companyID, boolean includeInactive) {
         String sql = "SELECT company_id, mailing_id, shortname, description, mailing_type, work_status, content_type FROM mailing_tbl " +
                 " WHERE company_id = ? AND deleted = 0 AND is_template = 0 AND mailing_type = ? ";
 
@@ -3531,13 +3040,12 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public String getMailingName(final int mailingId, final int companyId) {
-        final String sqlGetName = "SELECT shortname FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
-        return selectObjectDefaultNull(sqlGetName, (rs, index) -> rs.getString("shortname"), mailingId, companyId);
+    public String getMailingName(int mailingId, int companyId) {
+        return selectStringDefaultNull("SELECT shortname FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?", mailingId, companyId);
     }
 
     @Override
-    public Map<Integer, String> getMailingNames(final Collection<Integer> mailingIds, final int companyId) {
+    public Map<Integer, String> getMailingNames(Collection<Integer> mailingIds, int companyId) {
         if (CollectionUtils.isEmpty(mailingIds) || companyId <= 0) {
             return Collections.emptyMap();
         }
@@ -3573,11 +3081,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     public int getAnyMailingIdForCompany(int companyID) {
-        if (isOracleDB()) {
-            return select("SELECT mailing_id FROM mailing_tbl WHERE company_id = ? AND rownum=1", Integer.class, companyID);
-        } else {
-            return select("SELECT mailing_id FROM mailing_tbl WHERE company_id = ? LIMIT 1", Integer.class, companyID);
-        }
+        String query = addRowLimit("SELECT mailing_id FROM mailing_tbl WHERE company_id = ?", 1);
+        return select(query, Integer.class, companyID);
     }
 
     @Override
@@ -3620,7 +3125,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public Map<Integer, Set<Integer>> getTargetsUsedInContent(final int companyId, final Set<Integer> mailingIds) {
+    public Map<Integer, Set<Integer>> getTargetsUsedInContent(int companyId, Set<Integer> mailingIds) {
         if (CollectionUtils.isEmpty(mailingIds) || companyId <= 0) {
             return new HashMap<>();
         }
@@ -3632,7 +3137,6 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         final MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("mailingIds", mailingIds);
         parameters.addValue("companyId", companyId);
-
 
         final NamedParameterJdbcTemplate jdbcTemplate = new NamedParameterJdbcTemplate(getDataSource());
 
@@ -3664,7 +3168,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean setTargetExpression(final int mailingId, final int companyId, String targetExpression) throws TooManyTargetGroupsInMailingException {
+    public boolean setTargetExpression(int mailingId, int companyId, String targetExpression) {
         if (!validateTargetExpression(targetExpression)) {
             throw new TooManyTargetGroupsInMailingException(mailingId);
         }
@@ -3679,14 +3183,15 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     private static class TargetExpressionMapper implements RowMapper<String> {
+
         private final boolean appendListSplit;
 
-        public TargetExpressionMapper(final boolean appendListSplit) {
+        public TargetExpressionMapper(boolean appendListSplit) {
             this.appendListSplit = appendListSplit;
         }
 
         @Override
-        public String mapRow(final ResultSet rs, final int i) throws SQLException {
+        public String mapRow(ResultSet rs, int i) throws SQLException {
             final String expression = rs.getString("target_expression");
             final int splitId = appendListSplit ? rs.getInt("split_id") : 0;
 
@@ -3707,7 +3212,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean isAdvertisingContentType(final int companyId, final int mailingId) {
+    public boolean isAdvertisingContentType(int companyId, int mailingId) {
         if (companyId <= 0 || mailingId <= 0) {
             return false;
         }
@@ -3720,7 +3225,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public boolean isTextVersionRequired(final int companyId, final int mailingId) {
+    public boolean isTextVersionRequired(int companyId, int mailingId) {
         final String sqlGetIsTextVersionRequired = "SELECT is_text_version_required FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
         return BooleanUtils.toBoolean(selectInt(sqlGetIsTextVersionRequired, mailingId, companyId));
     }
@@ -3734,10 +3239,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     protected class MailingMapRowMapper implements RowMapper<Map<String, Object>> {
+
         private final Map<Integer, String> targetNameCache = new TreeMap<>();
 
         @Override
-        public Map<String, Object> mapRow(final ResultSet resultSet, final int row) throws SQLException {
+        public Map<String, Object> mapRow(ResultSet resultSet, int row) throws SQLException {
             final Map<String, Object> newBean = new HashMap<>();
 
             final int companyID = resultSet.getInt("company_id");
@@ -3772,7 +3278,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
                 newBean.put("recipientsCount", resultSet.getInt("recipientscount"));
             }
 
-            if (DbUtilities.resultsetHasColumn(resultSet, "plan_date")) {
+            if (resultsetHasColumn(resultSet, "attachments_count")) {
+                newBean.put("attachments_count", resultSet.getInt("attachments_count"));
+            }
+
+            if (resultsetHasColumn(resultSet, "plan_date")) {
                 newBean.put("planDate", resultSet.getTimestamp("plan_date"));
             }
 
@@ -3789,7 +3299,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public Date getMailingSendDate(final int companyID, final int mailingID) {
+    public Date getMailingSendDate(int companyID, int mailingID) {
         return select("SELECT MIN(mintime) FROM mailing_account_sum_tbl WHERE company_id = ? and mailing_id = ? AND status_field IN (?, ?, ?)", Date.class, companyID, mailingID, MaildropStatus.WORLD.getCodeString(), MaildropStatus.ACTION_BASED.getCodeString(), MaildropStatus.DATE_BASED.getCodeString());
     }
 
@@ -3805,16 +3315,13 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
     }
 
     @Override
-    public LightweightMailing getLightweightMailing(final int companyID, final int mailingID) throws MailingNotExistException {
+    public LightweightMailing getLightweightMailing(int companyID, int mailingID) {
         final String sql = "SELECT mailing_id, description, shortname, company_id, mailing_type, work_status, content_type FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
 
         final List<LightweightMailing> list = select(sql, LightweightMailingRowMapper.INSTANCE, mailingID, companyID);
 
         if (list.isEmpty()) {
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Unable to load mailing (mailing ID %d, company ID %d)", mailingID, companyID));
-            }
-
+            logger.info("Unable to load mailing (mailing ID {}, company ID {})", mailingID, companyID);
             throw new MailingNotExistException(companyID, mailingID);
         } else {
             return list.get(0);
@@ -3857,7 +3364,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         return select(query, LightweightMailingRowMapper.INSTANCE, companyId, companyId, templateId, MaildropStatus.WORLD.getCodeString());
     }
 
-    protected void insertMailing(final int companyId, final Mailing mailing, final String autoUrl) {
+    protected void insertMailing(int companyId, Mailing mailing, String autoUrl) {
         if (mailing.getSplitID() < 0) {
             throw new IllegalArgumentException("SplitId should not be negative!");
         }
@@ -3866,7 +3373,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         if (isOracleDB()) {
             mailing.setId(selectInt("SELECT mailing_tbl_seq.NEXTVAL FROM DUAL"));
-            final Object[] params = new Object[]{
+            final Object[] params = {
                     mailing.getId(),
                     companyId,
                     mailing.isGridMailing() ? 1 : 0,
@@ -3896,7 +3403,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
             update("INSERT INTO mailing_tbl (mailing_id, company_id, is_grid, campaign_id, shortname, content_type, description, mailing_type, is_template, needs_target, mailtemplate_id, mailinglist_id, deleted, archived, test_lock, target_expression, split_id, work_status, dynamic_template, openaction_id, clickaction_id, creation_date, statmail_recp, statmail_onerroronly, plan_date, auto_url)"
                     + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '" + MailingStatus.NEW.getDbKey() + "', ?, ?, ?, ?, ?, ?, ?, ?)", params);
         } else {
-            final int newID = insertIntoAutoincrementMysqlTable("mailing_id", "INSERT INTO mailing_tbl (company_id, is_grid, campaign_id, shortname, content_type, description, mailing_type, is_template, needs_target, mailtemplate_id, mailinglist_id, deleted, archived, test_lock, target_expression, split_id, work_status, dynamic_template, openaction_id, clickaction_id, creation_date, statmail_recp, statmail_onerroronly, plan_date, auto_url)"
+            final int newID = insert("mailing_id", "INSERT INTO mailing_tbl (company_id, is_grid, campaign_id, shortname, content_type, description, mailing_type, is_template, needs_target, mailtemplate_id, mailinglist_id, deleted, archived, test_lock, target_expression, split_id, work_status, dynamic_template, openaction_id, clickaction_id, creation_date, statmail_recp, statmail_onerroronly, plan_date, auto_url)"
                             + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '" + MailingStatus.NEW.getDbKey() + "', ?, ?, ?, ?, ?, ?, ?, ?)",
                     companyId,
                     mailing.isGridMailing() ? 1 : 0,
@@ -3927,14 +3434,14 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         }
     }
 
-    protected void performMailingUpdate(final int companyId, final Mailing mailing, final String autoUrl) {
+    protected void performMailingUpdate(int companyId, Mailing mailing, String autoUrl) {
         if (mailing.getSplitID() < 0) {
             throw new IllegalArgumentException("SplitId should not be negative!");
         }
 
         mailing.setTargetExpression(checkTargetExpressionForALTG(companyId, mailing.getTargetExpression()));
 
-        final Object[] params = new Object[]{
+        final Object[] params = {
                 mailing.getCampaignID(),
                 mailing.getShortname(),
                 mailing.getMailingContentType() == null ? null : mailing.getMailingContentType().name(),
@@ -3967,7 +3474,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
        return new HashSet<>(SEPARATE_MAILING_FIELDS);
     }
 
-    private String getMailingSqlSelectFields(final String prefix) {
+    private String getMailingSqlSelectFields(String prefix) {
         Set<String> fields = getMailingTblSelectableFields();
         if (StringUtils.isNotBlank(prefix)) {
             return fields.stream()
@@ -3989,6 +3496,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
         if (isOracleDB()) {
             return "(CURRENT_TIMESTAMP + INTERVAL '" + durationSeconds + "' SECOND)";
+        } else if (isPostgreSQL()) {
+            return "(CURRENT_TIMESTAMP + INTERVAL '" + durationSeconds + " SECONDS')";
         } else {
             return "DATE_ADD(CURRENT_TIMESTAMP, INTERVAL " + durationSeconds + " SECOND) ";
         }
@@ -4006,27 +3515,17 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 
     @Override
     public String getEmailSubject(int companyID, int mailingID) {
-        try {
-            return ((MediatypeEmail) mediatypesDao.loadMediatypes(mailingID, companyID).get(MediaTypes.EMAIL.getMediaCode())).getSubject();
-        } catch (MediatypesDaoException e) {
-            throw new RuntimeException(e);
-        }
+        return ((MediatypeEmail) mediatypesDao.loadMediatypes(mailingID, companyID).get(MediaTypes.EMAIL.getMediaCode())).getSubject();
     }
 
     @Override
     public MailingContentType getMailingContentType(int companyID, int mailingId) {
         // If this mailing was deleted oder does not exist content_type will be handled as null
-        String contentTypeString = selectWithDefaultValue("SELECT content_type FROM mailing_tbl WHERE company_id = ? AND mailing_id = ? AND deleted <= 0", String.class, null, companyID, mailingId);
+        String contentTypeString = selectStringDefaultNull("SELECT content_type FROM mailing_tbl WHERE company_id = ? AND mailing_id = ? AND deleted <= 0", companyID, mailingId);
         if (contentTypeString != null) {
-            try {
-                return MailingContentType.getFromString(contentTypeString);
-            } catch (Exception e) {
-                logger.error("Invalid MailingContentType for mailing {}/{}", companyID, mailingId);
-                return null;
-            }
-        } else {
-            return null;
+            return MailingContentType.getFromString(contentTypeString);
         }
+        return null;
     }
 
     @Override
@@ -4056,6 +3555,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         String query;
         if (isOracleDB()) {
             query = "SELECT COUNT(*) FROM rulebased_sent_tbl WHERE mailing_id = ? AND TRUNC(lastsent) = TRUNC(SYSDATE)";
+        } else if (isPostgreSQL()) {
+            query = "SELECT COUNT(*) FROM rulebased_sent_tbl WHERE mailing_id = ? AND CAST(lastsent AS DATE) = CURRENT_DATE";
         } else {
             query = "SELECT COUNT(*) FROM rulebased_sent_tbl WHERE mailing_id = ? AND DATE(lastsent) = CURDATE()";
         }
@@ -4068,6 +3569,8 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         String query;
         if (isOracleDB()) {
             query = "DELETE FROM rulebased_sent_tbl WHERE mailing_id = ? AND TRUNC(lastsent) = TRUNC(SYSDATE)";
+        } else if (isPostgreSQL()) {
+            query = "DELETE FROM rulebased_sent_tbl WHERE mailing_id = ? AND CAST(lastsent AS DATE) = CURRENT_DATE";
         } else {
             query = "DELETE FROM rulebased_sent_tbl WHERE mailing_id = ? AND DATE(lastsent) = CURDATE()";
         }
@@ -4134,7 +3637,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 				}
 			}
 
-			if (trailingExpressionPart.length() > 0) {
+			if (!trailingExpressionPart.isEmpty()) {
 				String trailingExpressionPartString = trailingExpressionPart.toString();
 				for (Integer altgTargetID : altgTargetIDs) {
 					if (trailingExpressionPartString.contains(Integer.toString(altgTargetID))) {
@@ -4150,11 +3653,11 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 								.replace("&" + altgTargetID + "|", "|")
 								.replace("|" + altgTargetID + "&", "|");
 						if (trailingExpressionPartString.length() < previousLength) {
-							logger.error("Found and replaced ALTG targetgroup '" + altgTargetID + "' within targetExpression '" + targetExpression + "'");
+							logger.error("Found and replaced ALTG targetgroup '{}' within targetExpression '{}'", altgTargetID, targetExpression);
 						}
 					}
 				}
-				return leadingExpressionPart.toString() + trailingExpressionPartString;
+				return leadingExpressionPart + trailingExpressionPartString;
 			} else {
 				return targetExpression;
 			}
@@ -4173,6 +3676,7 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
 		update("DELETE FROM mailing_mt_tbl WHERE mailing_id = ?", mailingID);
 		update("DELETE FROM serverprio_tbl WHERE mailing_id = ?", mailingID);
 		update("DELETE FROM mailing_info_tbl WHERE mailing_id= ?", mailingID);
+		update("DELETE FROM interval_mailing_tbl WHERE mailing_id= ?", mailingID);
 		update("DELETE FROM mailing_grid_tbl WHERE mailing_id = ?", mailingID);
 		update("DELETE FROM mailing_import_lock_tbl WHERE mailing_id = ?", mailingID);
 		//update("DELETE FROM mailing_account_tbl WHERE mailing_id = ?", mailingID);
@@ -4211,4 +3715,5 @@ public class MailingDaoImpl extends PaginatedBaseDaoImpl implements MailingDao {
         	+ " WHERE company_id = ? AND deleted = 0 AND is_template = 1";
         return select(selectMailingTemplates, LightweightMailingRowMapper.INSTANCE, companyID);
     }
+
 }

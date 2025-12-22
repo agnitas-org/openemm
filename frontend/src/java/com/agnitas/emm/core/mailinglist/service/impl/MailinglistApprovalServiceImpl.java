@@ -19,32 +19,45 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class MailinglistApprovalServiceImpl implements MailinglistApprovalService {
 
 	private final MailinglistApprovalDao mailinglistApprovalDao;
 	private final AdminService adminService;
+    private final ConfigService configService;
 	private final MailinglistDao mailinglistDao;
 
-    public MailinglistApprovalServiceImpl(MailinglistApprovalDao mailinglistApprovalDao, AdminService adminService, MailinglistDao mailinglistDao) {
+    @Autowired
+    public MailinglistApprovalServiceImpl(MailinglistApprovalDao mailinglistApprovalDao, AdminService adminService, ConfigService configService,
+                                          MailinglistDao mailinglistDao) {
         this.mailinglistApprovalDao = mailinglistApprovalDao;
         this.adminService = adminService;
+        this.configService = configService;
         this.mailinglistDao = mailinglistDao;
     }
 
     @Override
     public List<Mailinglist> getEnabledMailinglistsNamesForAdmin(Admin admin) {
         return mailinglistApprovalDao.getEnabledMailinglistsNamesForAdmin(admin.getCompanyID(), admin.getAdminID());
+    }
+
+    @Override
+    public boolean hasEnabledMailinglistsForAdmin(Admin admin) {
+        return CollectionUtils.isNotEmpty(getEnabledMailinglistsForAdmin(admin));
     }
 
     @Override
@@ -55,9 +68,9 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
 
         if (mailinglistApprovalDao.hasAnyDisabledMailingListsForAdmin(admin.getCompanyID(), admin.getAdminID())) {
             return mailinglistApprovalDao.getEnabledMailinglistsForAdmin(admin.getCompanyID(), admin.getAdminID());
-        } else {
-            return mailinglistDao.getMailinglists(admin.getCompanyID());
         }
+
+        return mailinglistDao.getMailinglists(admin.getCompanyID());
     }
 
     @Override
@@ -117,8 +130,14 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
         userActions.add(new UserAction("edit user", description));
     }
 
-    @Override
-    public boolean setAdminsDisallowedToUseMailinglist(int companyId, int mailinglistId, Collection<Integer> adminIds){
+    /**
+     * Disable mailinglist for all admins in collection. <br>
+     * If collection is empty enable mailinglist for all admins. <br>
+     * Works faster if adminIDs is a set.
+     * @param adminIds set of adminIDs ids to disable
+     * @return were batch updates successful
+     */
+    private boolean setAdminsDisallowedToUseMailinglist(int companyId, int mailinglistId, Collection<Integer> adminIds){
         if(CollectionUtils.isEmpty(adminIds)){
         	mailinglistApprovalDao.allowAllAdminsToUseMailinglist(companyId, mailinglistId);
             return true;
@@ -204,4 +223,29 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
                 .stream()
                 .collect(Collectors.toMap(Mailinglist::getId, Mailinglist::getShortname));
     }
+
+    @Override
+    public SimpleServiceResult checkMaxCountOfALML(int count, int currentCount, int companyId) {
+        List<Message> warnings = new ArrayList<>();
+
+        int licenseMaximumOfAccessLimitingMailinglistsPerCompany = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany, companyId);
+        int gracefulExtension = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful, companyId);
+        if (licenseMaximumOfAccessLimitingMailinglistsPerCompany >= 0 && (licenseMaximumOfAccessLimitingMailinglistsPerCompany +gracefulExtension) < count) {
+            return SimpleServiceResult.simpleError(Message.of("error.alml.exceeded", licenseMaximumOfAccessLimitingMailinglistsPerCompany));
+        }
+
+        if (licenseMaximumOfAccessLimitingMailinglistsPerCompany >= 0 && licenseMaximumOfAccessLimitingMailinglistsPerCompany < count) {
+            warnings.add(Message.of("error.numberOfAccessLimitingMailinglistsExceeded.graceful", licenseMaximumOfAccessLimitingMailinglistsPerCompany, currentCount, gracefulExtension));
+        }
+
+        if (licenseMaximumOfAccessLimitingMailinglistsPerCompany < 0) {
+            int configMaximumOfAccessLimitingMailinglistsForThisCompany = configService.getIntegerValue(ConfigValue.MaximumAccessLimitingMailinglists, companyId);
+            if (configMaximumOfAccessLimitingMailinglistsForThisCompany >= 0 && configMaximumOfAccessLimitingMailinglistsForThisCompany < count) {
+                return SimpleServiceResult.simpleError(Message.of("error.alml.exceeded", configMaximumOfAccessLimitingMailinglistsForThisCompany));
+            }
+        }
+
+        return SimpleServiceResult.simpleWarning(warnings);
+    }
+
 }

@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,17 +40,43 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ColumnMapping;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.impl.ColumnMappingImpl;
+import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.ImportFileStatus;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
+import com.agnitas.emm.core.auto_import.enums.ImportFileStatus;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
+import com.agnitas.emm.core.commons.validation.AgnitasEmailValidatorWithWhitespace;
+import com.agnitas.emm.core.commons.validation.EmailValidator;
+import com.agnitas.emm.core.import_profile.bean.ImportDataType;
+import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
+import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
+import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.data.CsvDataProvider;
+import com.agnitas.emm.data.DataProvider;
+import com.agnitas.emm.data.ExcelDataProvider;
+import com.agnitas.emm.data.JsonDataProvider;
+import com.agnitas.emm.data.OdsDataProvider;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.service.ProfileImportException.ReasonCode;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.CsvDataException;
@@ -74,7 +101,8 @@ import com.agnitas.util.importvalues.ImportModeHandler;
 import com.agnitas.util.importvalues.NullValuesAction;
 import com.agnitas.util.importvalues.Separator;
 import com.agnitas.util.importvalues.TextRecognitionChar;
-import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.compress.utils.IOUtils;
@@ -82,36 +110,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.dao.ImportProcessActionDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
-import com.agnitas.emm.core.commons.validation.AgnitasEmailValidatorWithWhitespace;
-import com.agnitas.emm.core.commons.validation.EmailValidator;
-import com.agnitas.emm.core.import_profile.bean.ImportDataType;
-import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
-import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.emm.data.CsvDataProvider;
-import com.agnitas.emm.data.DataProvider;
-import com.agnitas.emm.data.ExcelDataProvider;
-import com.agnitas.emm.data.JsonDataProvider;
-import com.agnitas.emm.data.OdsDataProvider;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.json.Json5Reader;
-import com.agnitas.json.JsonObject;
-import com.agnitas.json.JsonReader.JsonToken;
-
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
 
 public class ProfileImportWorker {
 
@@ -135,7 +133,6 @@ public class ProfileImportWorker {
     private RecipientFieldService recipientFieldService;
     private ImportProcessActionDao importProcessActionDao = null;
     private EmmActionService emmActionService = null;
-	private ProfileFieldEncryptor profileFieldEncryptor = null;
 	private ProfileImportReporter profileImportReporter;
 	private ImportModeHandlerFactory importModeHandlerFactory;
 
@@ -219,10 +216,6 @@ public class ProfileImportWorker {
 		this.emmActionService = emmActionService;
 	}
 
-	public void setProfileFieldEncryptor(ProfileFieldEncryptor profileFieldEncryptor) {
-		this.profileFieldEncryptor = profileFieldEncryptor;
-	}
-
 	public void setProfileImportReporter(ProfileImportReporter profileImportReporter) {
 		this.profileImportReporter = profileImportReporter;
 	}
@@ -271,7 +264,7 @@ public class ProfileImportWorker {
 		return resultFile;
 	}
 
-	public void setImportProfile(ImportProfile importProfile) throws Exception {
+	public void setImportProfile(ImportProfile importProfile) {
 		this.importProfile = importProfile;
 		if (importProfile != null) {
 			importDateFormat = new SimpleDateFormat(DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue());
@@ -856,8 +849,6 @@ public class ProfileImportWorker {
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.InvalidNumber.toString() + "' AND errorfixed = 0"));
 			status.setError(ImportErrorType.DATE_ERROR, importRecipientsDao.getResultEntriesCount(
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.InvalidDate.toString() + "' AND errorfixed = 0"));
-			status.setError(ImportErrorType.ENCRYPTION_ERROR, importRecipientsDao.getResultEntriesCount(
-				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.InvalidEncryption.toString() + "' AND errorfixed = 0"));
 			status.setError(ImportErrorType.VALUE_TOO_LARGE_ERROR, importRecipientsDao.getResultEntriesCount(
 				"SELECT COUNT(*) FROM " + temporaryErrorTableName + " WHERE reason = '" + ReasonCode.ValueTooLarge.toString() + "' AND errorfixed = 0"));
 			status.setError(ImportErrorType.NUMBER_TOO_LARGE_ERROR, importRecipientsDao.getResultEntriesCount(
@@ -872,7 +863,6 @@ public class ProfileImportWorker {
 			status.setError(ImportErrorType.GENDER_ERROR, 0);
 			status.setError(ImportErrorType.NUMERIC_ERROR, 0);
 			status.setError(ImportErrorType.DATE_ERROR, 0);
-			status.setError(ImportErrorType.ENCRYPTION_ERROR, 0);
 			status.setError(ImportErrorType.VALUE_TOO_LARGE_ERROR, 0);
 			status.setError(ImportErrorType.DBINSERT_ERROR, 0);
 		}
@@ -1385,16 +1375,6 @@ public class ProfileImportWorker {
 			}
 		}
 		
-		// Decrypt encrypted csv data columns
-		if (profileFieldEncryptor != null && importProfile.getEncryptedColumns().contains(columnMapping.getDatabaseColumn())) {
-			try {
-				dataValueString = profileFieldEncryptor.decryptFromBase64(dataValueString, importProfile.getCompanyId());
-			} catch (@SuppressWarnings("unused") Exception e) {
-				status.addErrorColumn(columnMapping.getFileColumn());
-				throw new ProfileImportException(ReasonCode.InvalidEncryption, columnMapping.getFileColumn(), "Invalid encrypted value: " + dataValueString);
-			}
-		}
-		
 		// Validate and normalize emails
 		if ("email".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 			if (normalizeEmails) {
@@ -1649,7 +1629,7 @@ public class ProfileImportWorker {
 				if (batchValueEntry != null) {
 					batchValueEntry.add(null);
 				}
-			} else if (dataValueString != null && dataValueString.getBytes("UTF-8").length > columnDataTypes.get(columnMapping.getDatabaseColumn()).getCharacterLength()) {
+			} else if (dataValueString != null && dataValueString.getBytes(StandardCharsets.UTF_8).length > columnDataTypes.get(columnMapping.getDatabaseColumn()).getCharacterLength()) {
 				status.addErrorColumn(columnMapping.getFileColumn());
 				throw new ProfileImportException(ReasonCode.ValueTooLarge, columnMapping.getFileColumn(), "Value too large: " + dataValueString);
 			} else {
@@ -1687,8 +1667,10 @@ public class ProfileImportWorker {
 			return false;
 		}
 
-		if (ImportMode.TO_BLACKLIST.getIntValue() == importProfile.getImportMode()
-				&& Charset.UTF_8.equals(Charset.getCharsetById(importProfile.getCharset()))) {
+        boolean isBlacklistImportMode = ImportMode.TO_BLACKLIST.getIntValue() == importProfile.getImportMode()
+				|| ImportMode.BLACKLIST_EXCLUSIVE.getIntValue() == importProfile.getImportMode();
+
+		if (isBlacklistImportMode && Charset.UTF_8.equals(Charset.getCharsetById(importProfile.getCharset()))) {
 			return emailValidator.isValidUtf8Email(email);
 		}
 

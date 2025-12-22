@@ -26,7 +26,7 @@ public final class ListMailingFilter {
 		this.conditions = conditions != null ? conditions : new ArrayList<>();
 	}
 	
-	public final List<MailingPropertyCondition> listMailingPropertyConditions() {
+	public List<MailingPropertyCondition> listMailingPropertyConditions() {
 		return conditions
 				.stream()
 				.filter(c -> c instanceof MailingPropertyCondition)
@@ -34,22 +34,21 @@ public final class ListMailingFilter {
 				.collect(Collectors.toList());
 	}
 	
-	public final boolean containsSendDateConditions() {
+	public boolean containsSendDateConditions() {
 		return filterSendDateConditions()
 				.findFirst()
 				.isPresent();
 	}
 	
-	public final List<SendDateCondition> listSendDateConditions() {
+	public List<SendDateCondition> listSendDateConditions() {
 		return filterSendDateConditions()
 				.collect(Collectors.toList());
 	}
 	
-	private final Stream<SendDateCondition> filterSendDateConditions() {
+	private Stream<SendDateCondition> filterSendDateConditions() {
 		return conditions
 				.stream()
 				.filter(c -> c instanceof SendDateCondition)
 				.map(c -> (SendDateCondition) c);
 	}
-	
 }

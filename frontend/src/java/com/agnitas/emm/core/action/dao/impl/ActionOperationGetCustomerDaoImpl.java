@@ -10,50 +10,43 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
-import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;
+import org.apache.commons.lang3.BooleanUtils;
 
 public class ActionOperationGetCustomerDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationGetCustomerParameters> {
 
 	@Override
 	protected void processGetOperation(ActionOperationGetCustomerParameters operation) {
-		Map<String, Object> row = selectObject("select load_always from actop_get_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
-			@Override
-			public Map<String, Object> mapRow(ResultSet resultSet, int rowIndex) throws SQLException {
-				Map<String, Object> map = new HashMap<>(1);
-				map.put("load_always", resultSet.getBoolean("load_always"));
-				return map;
-			}
-		}, operation.getId());
+		Map<String, Object> row = selectObject("SELECT load_always FROM actop_get_customer_tbl WHERE action_operation_id = ?", (resultSet, rowIndex) -> {
+            Map<String, Object> map = new HashMap<>(1);
+            map.put("load_always", resultSet.getBoolean("load_always"));
+            return map;
+        }, operation.getId());
 		operation.setLoadAlways((Boolean) row.get("load_always"));
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationGetCustomerParameters operation) {
-		update("insert into actop_get_customer_tbl (action_operation_id, load_always) values (?,?)",
-				operation.getId(),
-				operation.isLoadAlways());
+		update("INSERT INTO actop_get_customer_tbl (action_operation_id, load_always) VALUES (?,?)",
+				operation.getId(), BooleanUtils.toInteger(operation.isLoadAlways()));
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationGetCustomerParameters operation) {
-		update("update actop_get_customer_tbl set load_always=? where action_operation_id=?",
-				operation.isLoadAlways(),
-				operation.getId());
+		update("UPDATE actop_get_customer_tbl SET load_always = ? WHERE action_operation_id = ?",
+				BooleanUtils.toInteger(operation.isLoadAlways()), operation.getId());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processDeleteOperation(ActionOperationGetCustomerParameters operation) {
-		update("delete from actop_get_customer_tbl where action_operation_id=?", operation.getId());
+		update("DELETE FROM actop_get_customer_tbl WHERE action_operation_id = ?", operation.getId());
 	}
 
 }

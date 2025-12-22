@@ -18,8 +18,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.service.ImportException;
 
 import com.agnitas.emm.core.importquota.common.ImportSize;
@@ -46,7 +46,7 @@ public final class ImportQuotaServiceImpl implements ImportQuotaRegisterService,
 	}
 
 	@Override
-	public final void checkImportQuota(final int companyID, final int linesToImport) throws ImportException {
+	public void checkImportQuota(int companyID, int linesToImport) {
 		if(importQuotaEnabled(companyID)) {
 			final long linesAfterImport = totalImportLinesCount(companyID, linesToImport);
 			

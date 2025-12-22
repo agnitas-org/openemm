@@ -141,11 +141,11 @@ public class JsonDataProvider extends DataProvider {
 		try {
 			if (StringUtils.isNotEmpty(schemaFilePath)) {
 				if (!new File(schemaFilePath).exists()) {
-					throw new Exception("JSON-Schema file does not exist: " + schemaFilePath);
+					throw new IllegalArgumentException("JSON-Schema file does not exist: " + schemaFilePath);
 				} else if (new File(schemaFilePath).isDirectory()) {
-					throw new Exception("JSON-Schema path is a directory: " + schemaFilePath);
+					throw new IllegalArgumentException("JSON-Schema path is a directory: " + schemaFilePath);
 				} else if (new File(schemaFilePath).length() == 0) {
-					throw new Exception("JSON-Schema file is empty: " + schemaFilePath);
+					throw new IllegalArgumentException("JSON-Schema file is empty: " + schemaFilePath);
 				}
 
 				try (InputStream validationStream = getInputStream();

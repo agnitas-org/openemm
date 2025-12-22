@@ -1,0 +1,29 @@
+@mixin sidebar-tooltip() {
+  z-index: 1000;
+  @include sidebar-colors;
+
+  border: 1px solid var(--sidebar-border-color);
+  border-left: 1px solid var(--sidebar-bg);
+  border-radius: 0 $border-radius $border-radius 0;
+}
+
+.sidebar__tooltip {
+  display: none;
+
+  &.open {
+    display: initial;
+    position: absolute;
+    @include sidebar-tooltip;
+    padding: 6px $sidebar-spacer * 2 6px $sidebar-spacer;
+  }
+
+  > * {
+    @include left-hand {
+      @include flipHorizontally;
+    }
+  }
+}
+
+.sidebar__tooltip-text {
+  white-space: nowrap;
+}

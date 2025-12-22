@@ -20,9 +20,9 @@ import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LayoutDao;
 import com.agnitas.emm.common.LicenseType;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.target.service.TargetService;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.util.ServerCommand.Server;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -90,11 +90,17 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				for (Company company : companyDao.getAllActiveCompanies()) {
 					if (isProfileHistoryRequired(company)) {
 						recipientProfileHistoryService.enableProfileFieldHistory(company.getId());
-						logger.warn("Activated ProfileFieldHistory for: {}", company.getId());
+
+						if (configService.isOpenEMM()) {
+							logger.warn("Activated ProfileFieldHistory for: {}", company.getId());
+						}
 					}
 					if (!configService.isRecipientProfileHistoryEnabled(company.getId())) {
 						recipientProfileHistoryService.disableProfileFieldHistory(company.getId());
-						logger.warn("Deactivated ProfileFieldHistory for: {}", company.getId());
+
+						if (configService.isOpenEMM()) {
+							logger.warn("Deactivated ProfileFieldHistory for: {}", company.getId());
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -130,10 +136,10 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				try (InputStream faviconInputStream = new FileInputStream(faviconFile)) {
 					layoutDao.saveLayoutData(0, "favicon.ico", IOUtils.toByteArray(faviconInputStream));
 				} catch (Exception e) {
-					logger.error("Cannot find faviconFile: " + faviconFile.getAbsolutePath(), e);
+					logger.error("Cannot find faviconFile: {}", faviconFile.getAbsolutePath(), e);
 				}
 			} else {
-				logger.error("Cannot find faviconFile: " + faviconFile.getAbsolutePath());
+				logger.error("Cannot find faviconFile: {}", faviconFile.getAbsolutePath());
 			}
 
 			File emmLogoSvgFile = new File(webApplicationContext.getServletContext().getRealPath("/assets/core/images/facelift/agnitas-emm-logo.svg"));
@@ -141,10 +147,10 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				try (InputStream logoSvgInputStream = new FileInputStream(emmLogoSvgFile)) {
 					layoutDao.saveLayoutData(0, "logo.svg", IOUtils.toByteArray(logoSvgInputStream));
 				} catch (Exception e) {
-					logger.error("Cannot find emmLogoSvgFile: " + emmLogoSvgFile.getAbsolutePath(), e);
+					logger.error("Cannot find emmLogoSvgFile: {}", emmLogoSvgFile.getAbsolutePath(), e);
 				}
 			} else {
-				logger.error("Cannot find emmLogoSvgFile: " + emmLogoSvgFile.getAbsolutePath());
+				logger.error("Cannot find emmLogoSvgFile: {}", emmLogoSvgFile.getAbsolutePath());
 			}
 
 			File emmLogoPngFile = new File(webApplicationContext.getServletContext().getRealPath("/assets/core/images/facelift/agnitas-emm-logo.png"));
@@ -152,10 +158,10 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				try (InputStream logoPngInputStream = new FileInputStream(emmLogoPngFile)) {
 					layoutDao.saveLayoutData(0, "logo.png", IOUtils.toByteArray(logoPngInputStream));
 				} catch (Exception e) {
-					logger.error("Cannot find emmLogoPngFile: " + emmLogoPngFile.getAbsolutePath(), e);
+					logger.error("Cannot find emmLogoPngFile: {}", emmLogoPngFile.getAbsolutePath(), e);
 				}
 			} else {
-				logger.error("Cannot find emmLogoPngFile: " + emmLogoPngFile.getAbsolutePath());
+				logger.error("Cannot find emmLogoPngFile: {}", emmLogoPngFile.getAbsolutePath());
 			}
 
 			File editionLogoFile = new File(webApplicationContext.getServletContext().getRealPath("/assets/core/images/facelift/edition_logo.png"));
@@ -166,7 +172,7 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 					logger.error("Cannot find editionLogoFile: " + editionLogoFile.getAbsolutePath(), e);
 				}
 			} else {
-				logger.error("Cannot find editionLogoFile: " + editionLogoFile.getAbsolutePath());
+				logger.error("Cannot find editionLogoFile: {}", editionLogoFile.getAbsolutePath());
 			}
 		}
 
@@ -176,10 +182,10 @@ public class ConfigurationValidityCheckImpl implements ConfigurationValidityChec
 				try (InputStream reportLogoInputStream = new FileInputStream(reportLogoFile)) {
 					layoutDao.saveLayoutData(0, "report_logo.png", IOUtils.toByteArray(reportLogoInputStream));
 				} catch (Exception e) {
-					logger.error("Cannot find reportLogoFile: " + reportLogoFile.getAbsolutePath(), e);
+					logger.error("Cannot find reportLogoFile: {}", reportLogoFile.getAbsolutePath(), e);
 				}
 			} else {
-				logger.error("Cannot find reportLogoFile: " + reportLogoFile.getAbsolutePath());
+				logger.error("Cannot find reportLogoFile: {}", reportLogoFile.getAbsolutePath());
 			}
 		}
     }

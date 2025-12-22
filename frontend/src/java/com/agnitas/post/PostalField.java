@@ -10,7 +10,7 @@
 
 package com.agnitas.post;
 
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public enum PostalField {
 

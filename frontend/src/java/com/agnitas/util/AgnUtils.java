@@ -20,21 +20,19 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
@@ -84,20 +82,18 @@ import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.mailing.enums.BlocksizeSteppingOption;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
 import com.agnitas.emm.validator.ApacheTikaUtils;
-import com.agnitas.util.Version;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.jsp.PageContext;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
-import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParametersHelper;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -116,7 +112,6 @@ public class AgnUtils {
 	public static final String APPLICATION_VERSION_REGEX = "(\\d){2}\\.(\\d){2}\\.(\\d){3}(((-hf)(\\d){1,3})|(\\.(\\d){3}))?";
 	public static final Pattern APPLICATION_VERSION_PATTERN = Pattern.compile(APPLICATION_VERSION_REGEX);
 
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(AgnUtils.class);
 
 	public static final String DEFAULT_MAILING_HTML_DYNNAME = Const.DynName.DEFAULT_MAILING_HTML_DYNNAME;
@@ -263,16 +258,6 @@ public class AgnUtils {
 		return company.getRdirDomain();
 	}
 
-	public static String getRedirectDomain(HttpServletRequest request) {
-		Company company = getCompany(request);
-
-		if (company == null) {
-			return null;
-		}
-
-		return company.getRdirDomain();
-	}
-
 	public static int compare(String a, String b) {
 		if (a == null || b == null) {
 			if (a != null) {
@@ -385,21 +370,6 @@ public class AgnUtils {
 		} catch (Exception e) {
 			logger.error("Error while reading admin from session", e);
 			return null;
-		}
-	}
-
-	public static int getAdminId(HttpServletRequest request) {
-		try {
-			Admin admin = getAdmin(request);
-			if (admin == null) {
-				logger.error("AgnUtils: getAdminId - no adminID found (admin is null)");
-				return 0;
-			} else {
-				return admin.getAdminID();
-			}
-		} catch (Exception e) {
-			logger.error("AgnUtils: getAdminId - no adminID found for request", e);
-			return 0;
 		}
 	}
 
@@ -607,35 +577,10 @@ public class AgnUtils {
 	}
 
 	/**
-	 * Escapes any HTML sequence in all values in the given map.
-	 */
-	public static Map<String, Object> escapeHtmlInValues(Map<String, Object> htmlMap) {
-		Map<String, Object> result = new CaseInsensitiveMap<>();
-
-		if (htmlMap != null) {
-			for(final Map.Entry<String, Object> entry : htmlMap.entrySet()) {
-				final Object value = entry.getValue();
-
-				if (value != null) {
-					result.put(entry.getKey(), StringEscapeUtils.escapeHtml4(value.toString()));
-				} else {
-					result.put(entry.getKey(), null);
-
-					if (logger.isDebugEnabled()) {
-						logger.debug("value for key '" + entry.getKey() + "' is null");
-					}
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
 	 *
 	 * @return a list of years from the current year back to the start year
 	 */
 	public static List<Integer> getYearList(int startYear) {
-
 		List<Integer> yearList = new ArrayList<>();
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
@@ -646,17 +591,6 @@ public class AgnUtils {
 		return yearList;
 	}
 
-	// TODO remove while removing the old UI design EMMGUI-714
-	public static List<Integer> getCalendarYearList(int startYear) {
-		List<Integer> yearList = new ArrayList<>();
-		GregorianCalendar calendar = new GregorianCalendar();
-		int currentYear = calendar.get(Calendar.YEAR);
-		for (int year = currentYear + 1; year >= startYear; year--) {
-			yearList.add(year);
-		}
-		return yearList;
-	}
-	
     public static List<Integer> getCalendarYearList(int startYear, int extraYears) {
   		List<Integer> yearList = new ArrayList<>();
   		GregorianCalendar calendar = new GregorianCalendar();
@@ -684,25 +618,9 @@ public class AgnUtils {
 		return monthList;
 	}
 
-	public static boolean parameterNotEmpty(HttpServletRequest request, String paramName) {
-		return StringUtils.isNotEmpty(request.getParameter(paramName));
-	}
-
 	public static String bytesToKbStr(int bytes) {
 		long kbSize100x = Math.round(bytes / 10.24);
 		return (kbSize100x / 100) + "." + (kbSize100x % 100);
-	}
-
-	public static int decryptLayoutID(String layout) {
-		int index = layout.indexOf('.');
-		layout = layout.substring(0, index);
-		return Integer.parseInt(layout, 36);
-	}
-
-	public static int decryptCompanyID(String company) {
-		int index = company.indexOf('.');
-		company = company.substring(index + 1);
-		return Integer.parseInt(company, 36);
 	}
 
 	public static File createDirectory(String path) {
@@ -901,36 +819,36 @@ public class AgnUtils {
 				|| "active".equalsIgnoreCase(value));
 	}
 
-	public static URL addUrlParameter(URL url, String parameterName, String parameterValue) throws UnsupportedEncodingException, MalformedURLException {
+	public static URL addUrlParameter(URL url, String parameterName, String parameterValue) throws MalformedURLException {
 		return addUrlParameter(url, parameterName, parameterValue, null);
 	}
 
-	public static URL addUrlParameter(URL url, String parameterName, String parameterValue, String encodingCharSet) throws UnsupportedEncodingException, MalformedURLException {
+	public static URL addUrlParameter(URL url, String parameterName, String parameterValue, Charset encodingCharSet) throws MalformedURLException {
 		return new URL(addUrlParameter(url.toString(), parameterName, parameterValue, encodingCharSet));
 	}
 
-	public static String addUrlParameter(String url, String parameterName, String parameterValue) throws UnsupportedEncodingException {
+	public static String addUrlParameter(String url, String parameterName, String parameterValue) {
 		return addUrlParameter(url, parameterName, parameterValue, null);
 	}
 
-	public static String addUrlParameter(String url, String parameterName, String parameterValue, String encodingCharSet) throws UnsupportedEncodingException {
+	public static String addUrlParameter(String url, String parameterName, String parameterValue, Charset charset) {
 		if (parameterName == null) {
 			return url;
 		} else {
 			StringBuilder escapedParameterNameAndValue = new StringBuilder();
 	
-			if (StringUtils.isEmpty(encodingCharSet)) {
+			if (charset == null) {
 				escapedParameterNameAndValue.append(parameterName);
 			} else {
-				escapedParameterNameAndValue.append(URLEncoder.encode(parameterName, encodingCharSet));
+				escapedParameterNameAndValue.append(URLEncoder.encode(parameterName, charset));
 			}
 	
 			escapedParameterNameAndValue.append('=');
 	
-			if (StringUtils.isEmpty(encodingCharSet)) {
+			if (charset == null) {
 				escapedParameterNameAndValue.append(parameterValue);
 			} else {
-				escapedParameterNameAndValue.append(URLEncoder.encode(parameterValue, encodingCharSet));
+				escapedParameterNameAndValue.append(URLEncoder.encode(parameterValue, charset));
 			}
 			return addUrlParameter(url, escapedParameterNameAndValue.toString());
 		}
@@ -978,34 +896,6 @@ public class AgnUtils {
 			}
 		}
 		return -1;
-	}
-
-	public static int getLineCountOfStream(InputStream inputStream) throws IOException {
-		LineNumberReader lineNumberReader = null;
-		try {
-			lineNumberReader = new LineNumberReader(new InputStreamReader(inputStream));
-			while (lineNumberReader.readLine() != null) {
-				// do nothing
-			}
-
-			return lineNumberReader.getLineNumber();
-		} finally {
-			IOUtils.closeQuietly(lineNumberReader);
-		}
-	}
-
-	public static int getLineCountOfString(String data) throws IOException {
-		LineNumberReader lineNumberReader = null;
-		try {
-			lineNumberReader = new LineNumberReader(new InputStreamReader(new ByteArrayInputStream(data.getBytes("UTF-8"))));
-			while (lineNumberReader.readLine() != null) {
-				// do nothing
-			}
-
-			return lineNumberReader.getLineNumber();
-		} finally {
-			IOUtils.closeQuietly(lineNumberReader);
-		}
 	}
 
 	public static Set<String> splitAndNormalizeEmails(String emails) {
@@ -1116,28 +1006,7 @@ public class AgnUtils {
 	}
 
 	public static String getUserName() {
-		String username = System.getProperty("user.name");
-		return username;
-	}
-
-	/**
-	 * Get the IP-address of the current running server.
-	 * This is the IP which is known to the DNS System for the hostname of this machine
-	 */
-	public static String getHostIpAddress() {
-		try {
-			return InetAddress.getLocalHost().getHostAddress();
-		} catch (java.net.UnknownHostException uhe) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Unknown ip-address", uhe);
-			}
-
-			try {
-				return getHostNameFallback();
-			} catch (Exception e) {
-				return "unknown ip-address";
-			}
-		}
+        return System.getProperty("user.name");
 	}
 
 	private static String getHostNameFallback() throws Exception {
@@ -1173,7 +1042,7 @@ public class AgnUtils {
 	 * Chop a list of items in pieces of lists with a maximum number of items
 	 * within each
 	 */
-	public static <T> List<List<T>> chopToChunks(List<T> originalList, int subListMaxSize) throws IllegalArgumentException {
+	public static <T> List<List<T>> chopToChunks(List<T> originalList, int subListMaxSize) {
 		if (originalList == null) {
 			throw new IllegalArgumentException("Null list not allowed to chopToChunks");
 		}
@@ -1204,7 +1073,7 @@ public class AgnUtils {
 	 * Chop a set of items in pieces of lists with a maximum number of items
 	 * within each
 	 */
-	public static <T> List<Set<T>> chopToChunks(Set<T> originalSet, int subSetMaxSize) throws IllegalArgumentException {
+	public static <T> List<Set<T>> chopToChunks(Set<T> originalSet, int subSetMaxSize) {
 		if (originalSet == null) {
 			throw new IllegalArgumentException("Null set not allowed to chopToChunks");
 		}
@@ -1264,12 +1133,8 @@ public class AgnUtils {
 		return ZipUtilities.unzip(decodeBase64(data));
 	}
 
-	public static String decodeURL(String encodedData) throws Exception {
-		try {
-			return URLDecoder.decode(encodedData, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new Exception("Invalid url-encoded data");
-		}
+	public static String decodeURL(String encodedData) {
+		return URLDecoder.decode(encodedData, StandardCharsets.UTF_8);
 	}
 
 	public static byte[] convertToByteArray(UUID uuid) {
@@ -1306,10 +1171,6 @@ public class AgnUtils {
 	private static SecureRandom random = new SecureRandom();
 	private static final char[] allCharacters = "0123456789abcdefghijklmnopqrstuvwxyz".toCharArray();
 
-	public static String getRandomString(int length) {
-		return getRandomString(allCharacters, length);
-	}
-
 	public static String getRandomString(char[] allowedCharacters, int length) {
 		char[] buffer = new char[length];
 		for (int i = 0; i < buffer.length; i++) {
@@ -1322,17 +1183,6 @@ public class AgnUtils {
 		for (GregorianCalendar listDay : listOfDays) {
 			if (listDay.get(Calendar.DAY_OF_YEAR) == day.get(Calendar.DAY_OF_YEAR)) {
 				return true;
-			}
-		}
-		return false;
-	}
-
-	public static boolean anyCharsAreEqual(char... values) {
-		for (int i = 0; i < values.length; i++) {
-			for (int j = i + 1; j < values.length; j++) {
-				if (values[i] == values[j]) {
-					return true;
-				}
 			}
 		}
 		return false;
@@ -1365,7 +1215,7 @@ public class AgnUtils {
 		}
 	}
 
-	public static Number parseNumber(String numberString) throws NumberFormatException {
+	public static Number parseNumber(String numberString) {
 		if (!isDouble(numberString)) {
 			throw new NumberFormatException("Not a number: '" + numberString + "'");
 		} else if (numberString.contains(".")) {
@@ -1426,85 +1276,16 @@ public class AgnUtils {
 		}
 	}
 
-	public static String checkAndNormalizeEmail(String email) throws Exception {
+	public static String checkAndNormalizeEmail(String email) {
 		if (StringUtils.isBlank(email)) {
-			throw new Exception("Empty email address");
+			throw new IllegalArgumentException("Empty email address");
 		} else {
 			email = normalizeEmail(email);
 			if (!isEmailValid(email)) {
-				throw new Exception("Invalid email address");
+				throw new IllegalArgumentException("Invalid email address");
 			} else {
 				return email;
 			}
-		}
-	}
-
-	public static boolean compareByteArrays(byte[] array1, byte[] array2) {
-		if (array1 == array2) {
-			return true;
-		} else if (array1 == null || array2 == null
-				|| array1.length != array2.length) {
-			return false;
-		} else {
-			for (int i = 0; i < array1.length; i++) {
-				if (array1[i] != array2[i]) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-
-    /**
-     * Compare two lists.
-     * Equity is checked by ".equals" of all list elements.
-     */
-	public static boolean compareLists(List<?> listExpected, List<?> listActually) {
-		if (listExpected == null && listActually == null) {
-			return true;
-		} else if (listExpected == null || listActually == null
-				|| listExpected.size() != listActually.size()) {
-			return false;
-		} else {
-			for (int i = 0; i < listExpected.size(); i++) {
-				if (listExpected.get(i) == null && listActually.get(i) == null) {
-					// ok
-				} else if (listExpected.get(i) == null
-						|| listActually.get(i) == null
-						|| !listExpected.get(i).equals(listActually.get(i))) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
-
-
-    /**
-     * Compare two lists.
-     * Equity is checked by ".equals" of all list elements.
-     */
-	public static boolean compareLists(List<?> listExpected, List<?> listActually, int... checkedIndexes) {
-		if (listExpected == null && listActually == null) {
-			return true;
-		} else if (listExpected == null || listActually == null
-				|| listExpected.size() != listActually.size()) {
-			return false;
-		} else {
-			for (int checkedIndex : checkedIndexes) {
-				if (checkedIndex >= listExpected.size()) {
-					throw new IllegalArgumentException("Itemindex to check is out of bounds");
-				}
-
-				if (listExpected.get(checkedIndex) == null && listActually.get(checkedIndex) == null) {
-					// ok
-				} else if (listExpected.get(checkedIndex) == null
-						|| listActually.get(checkedIndex) == null
-						|| !listExpected.get(checkedIndex).equals(listActually.get(checkedIndex))) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 
@@ -1663,6 +1444,10 @@ public class AgnUtils {
 		return false;
 	}
 
+	public static boolean isEmailsValid(Collection<String> emails) {
+		return isEmailsListValid(String.join(",", emails));
+	}
+
 	public static boolean isEmailsListValid(String emails) {
 		return isEmailsListValid(emails, true);
 	}
@@ -1794,7 +1579,7 @@ public class AgnUtils {
 		File ubuntuVersionFile = new File("/etc/os-release");
 
 		if (redhatVersionFile.exists()) {
-			return FileUtils.readFileToString(redhatVersionFile, "UTF-8");
+			return FileUtils.readFileToString(redhatVersionFile, StandardCharsets.UTF_8);
 		} else if (ubuntuVersionFile.exists()) {
 			Properties osProperties = new Properties();
 			try (FileInputStream ubuntuVersionFileInputStream = new FileInputStream(ubuntuVersionFile)) {
@@ -2018,17 +1803,6 @@ public class AgnUtils {
 		}
 	}
 
-	public static List<String> makeListTrim(List<String> data) {
-		List<String> returnList = new ArrayList<>();
-		for (String item : data) {
-			if (item == null) {
-				returnList.add(null);
-			} else {
-				returnList.add(item.trim());
-			}
-		}
-		return returnList;
-	}
 
 	/**
 	 * Search for the next index of any of the given search Strings after the startIndex in a data String
@@ -2448,30 +2222,6 @@ public class AgnUtils {
 		return builder.toString();
 	}
 
-	public static void checkUrl(String urlString) throws Exception{
-		if (StringUtils.isBlank(urlString)) {
-			throw new Exception("Url is empty");
-		}
-
-		URL url;
-		try {
-			url = new URL(urlString);
-		} catch (MalformedURLException e) {
-			throw new Exception("Url is invalid: " + urlString + " : " + e.getMessage(), e);
-		}
-
-		try {
-			HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-			httpURLConnection.setRequestMethod("GET");
-			httpURLConnection.connect();
-			httpURLConnection.getResponseCode();
-		} catch (ProtocolException e) {
-			throw new Exception("Url protocol is invalid: " + urlString + " : " + e.getMessage(), e);
-		} catch (IOException e) {
-			throw new Exception("Cannot connect to Url: " + urlString + " : " + e.getMessage(), e);
-		}
-	}
-
 	public static void checkHostConnection(String hostname, int port) throws Exception {
 		int timeout = 2000;
 
@@ -2526,24 +2276,6 @@ public class AgnUtils {
 
 		// anything else
 		return data.toLowerCase().indexOf(part.toLowerCase());
-	}
-
-	public static List<String> getArrayListOfStrings(String... values) {
-		List<String> returnList = new ArrayList<>();
-		if (values != null) {
-			returnList.addAll(Arrays.asList(values));
-		}
-
-		return returnList;
-	}
-
-	public static List<Integer> getArrayListOfIntegers(Integer... values) {
-		List<Integer> returnList = new ArrayList<>();
-		if (values != null) {
-			returnList.addAll(Arrays.asList(values));
-		}
-
-		return returnList;
 	}
 
 	/**
@@ -2665,9 +2397,9 @@ public class AgnUtils {
 
 		direction = direction.toLowerCase();
 
-		if (StringUtils.startsWith("ascending", direction)) {
+		if (StringUtils.startsWith("ascending", direction) || "asc".equals(direction)) {
 			return true;
-		} else if (StringUtils.startsWith("descending", direction)) {
+		} else if (StringUtils.startsWith("descending", direction) || "desc".equals(direction)) {
 			return false;
 		} else {
 			return defaultValue;
@@ -2842,31 +2574,6 @@ public class AgnUtils {
 			}
 		}
 	}
-
-	/**
-	 * JSP example:
-	 * <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-	 * ...
-	 * <fmt:formatDate value="${change_date}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
-	 */
-	public static void setAdminDateTimeFormatPatterns(HttpServletRequest request) {
-		Admin admin = AgnUtils.getAdmin(request);
-		if (admin != null) {
-	        request.setAttribute("adminTimeZone", admin.getAdminTimezone());
-
-			SimpleDateFormat dateTimeFormat = admin.getDateTimeFormat();
-	        request.setAttribute("adminDateTimeFormat", dateTimeFormat.toPattern());
-
-			SimpleDateFormat dateFormat = admin.getDateFormat();
-	        request.setAttribute("adminDateFormat", dateFormat.toPattern());
-
-			SimpleDateFormat timeFormat = admin.getTimeFormat();
-	        request.setAttribute("adminTimeFormat", timeFormat.toPattern());
-
-			SimpleDateFormat dateTimeFormatWithSeconds = admin.getDateTimeFormatWithSeconds();
-	        request.setAttribute("adminDateTimeFormatWithSeconds", dateTimeFormatWithSeconds.toPattern());
-		}
-    }
 
 	/**
 	 * JSP example:
@@ -3249,15 +2956,10 @@ public class AgnUtils {
         }
     }
     
-	public static boolean isValidPdf(byte[] data, boolean useAdvancedFileContentTypeDetection) {
-		boolean isValid = AgnUtils.startsWith(data, PDF_SIGNATURE);
-		if (isValid && useAdvancedFileContentTypeDetection) {
-			return ApacheTikaUtils.isValidPdf(data);
-		}
-		return isValid;
+	public static boolean isValidPdf(byte[] data) {
+		return AgnUtils.startsWith(data, PDF_SIGNATURE) && ApacheTikaUtils.isValidPdf(data);
 	}
 	
-
 	public static DateTimeFormatter getDateTimeFormatter(String timezone, Locale locale) {
 		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, null, IsoChronology.INSTANCE, locale);
 		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ") + " HH:mm";

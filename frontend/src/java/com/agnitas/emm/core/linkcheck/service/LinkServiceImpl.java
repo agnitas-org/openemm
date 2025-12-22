@@ -12,8 +12,8 @@ package com.agnitas.emm.core.linkcheck.service;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,14 +28,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.agnitas.backend.AgnTag;
+import com.agnitas.beans.BaseTrackableLink;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.TagDetails;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.TagDetailsImpl;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.emm.core.hashtag.service.HashTagEvaluationService;
+import com.agnitas.emm.core.linkcheck.exception.LinkScanException;
+import com.agnitas.emm.core.linkcheck.exception.ParseLinkException;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkWarning.WarningType;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
@@ -44,20 +50,16 @@ import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkExce
 import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
 import com.agnitas.service.AgnTagService;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Caret;
 import com.agnitas.util.DeepTrackingToken;
 import com.agnitas.util.LinkUtils;
-import com.agnitas.util.StringUtil;
-import com.agnitas.util.backend.Decrypt;
-import com.agnitas.backend.AgnTag;
-import com.agnitas.beans.BaseTrackableLink;
-import com.agnitas.beans.TagDetails;
-import com.agnitas.beans.impl.TagDetailsImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
 import com.agnitas.util.PubID;
+import com.agnitas.util.StringUtil;
 import com.agnitas.util.UnclosedTagException;
+import com.agnitas.util.backend.Decrypt;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,7 +69,7 @@ public class LinkServiceImpl implements LinkService {
 	private static final Logger logger = LogManager.getLogger(LinkServiceImpl.class);
 
 	private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("^\\{\\d+\\}$");
-	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#\\n]+)##");
+	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#\\n\\s]+)##");
 	private static final Pattern AGNTAG_PATTERN = Pattern.compile("\\[agn[^\\]]+]");
 	private static final Pattern GRIDTAG_PATTERN = Pattern.compile("\\[gridPH[^\\]]+]");
 	private static final Pattern DOCTYPE_PATTERN = Pattern.compile("<!DOCTYPE [^>]*>", Pattern.CASE_INSENSITIVE);
@@ -181,12 +183,8 @@ public class LinkServiceImpl implements LinkService {
 						String propertyValue = replaceHashTags(link, agnUidString, customerID, referenceTableRecordSelector, linkProperty.getPropertyValue(), staticValueMap);
 						
 						// Extend link properly (watch out for html-anchors etc.)
-						try {
-							// UrlEncoding is done separately before to prevent ##-tags from becomming encoded (=> encodingCharSet = null)
-							fullUrl = AgnUtils.addUrlParameter(fullUrl, propertyName, propertyValue == null ? "" : propertyValue, "UTF-8");
-						} catch (UnsupportedEncodingException e) {
-							throw new RuntimeException("Cannot add link extension: " + e.getMessage(), e);
-						}
+						// UrlEncoding is done separately before to prevent ##-tags from becomming encoded (=> encodingCharSet = null)
+						fullUrl = AgnUtils.addUrlParameter(fullUrl, propertyName, propertyValue == null ? "" : propertyValue, StandardCharsets.UTF_8);
 					}
 				}
 			}
@@ -342,7 +340,7 @@ public class LinkServiceImpl implements LinkService {
 	 */
 	// TODO: Check availablility and mimetype of image links
 	@Override
-	public LinkScanResult scanForLinks(String text, int mailingID, int mailinglistID, int companyID) throws Exception {
+	public LinkScanResult scanForLinks(String text, int mailingID, int mailinglistID, int companyID) {
 		if (StringUtils.isBlank(text)) {
 			return new LinkScanResult();
 		}
@@ -365,7 +363,7 @@ public class LinkServiceImpl implements LinkService {
 	 */
 	// TODO: Check availablility and mimetype of image links
 	@Override
-	public LinkScanResult scanForLinks(String textWithDoc, int companyID) throws Exception {
+	public LinkScanResult scanForLinks(String textWithDoc, int companyID) {
 		if (StringUtils.isBlank(textWithDoc)) {
 			return new LinkScanResult();
 		}
@@ -388,14 +386,13 @@ public class LinkServiceImpl implements LinkService {
 				doLinkChecks(context);
 			});
 		} catch (RuntimeException e) {
-			throw new Exception(e);
+			throw new LinkScanException(e);
 		}
 
 		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
 	}
 	
 	private void doLinkChecks(final LinkScanContext context) {
-		
 		// Do not check URLs that are values of attributes "xmlns" or "xmlns:<...>"
 		if (linkCheckIsNamespace(context)) {
 			return;
@@ -701,7 +698,7 @@ public class LinkServiceImpl implements LinkService {
 				
 				if (startIndexOfFormName == -1) {
 					// if the name attribute value is missing, throw an exception
-					throw new Exception("agnFORM name attribute start is missing or invalid");
+					throw new RuntimeException("agnFORM name attribute start is missing or invalid");
 				}
 				
 				char nameAttributeEndChar = tag.getFullText().charAt(startIndexOfFormName);
@@ -712,7 +709,7 @@ public class LinkServiceImpl implements LinkService {
 				
 				if (endIndexOfFormName == -1) {
 					// if the name attribute value is missing, throw an exception
-					throw new Exception("agnFORM name attribute end is missing or invalid");
+					throw new RuntimeException("agnFORM name attribute end is missing or invalid");
 				}
 				
 				tag.setName(tag.getFullText().substring(startIndexOfFormName, endIndexOfFormName));
@@ -978,9 +975,9 @@ public class LinkServiceImpl implements LinkService {
         return LinkUtils.parseLinkExtension(defaultExtension);
     }
 
-	private ParseLinkRuntimeException createParseException(String message, Matcher matcher, String text) {
+	private ParseLinkException createParseException(String message, Matcher matcher, String text) {
 		Caret caret = Caret.at(text, matcher.start());
-		return new ParseLinkRuntimeException(message + caret, matcher.group(), caret);
+		return new ParseLinkException(message + caret, matcher.group(), caret);
 	}
 	
 	@Override
@@ -990,11 +987,11 @@ public class LinkServiceImpl implements LinkService {
 	    
         List<Integer> newLinksIds = newLinks.stream()
                 .map(BaseTrackableLink::getId)
-                .collect(Collectors.toList());
+                .toList();
         
         List<TrackableLink> changedOrDeletedLinks = oldLinks.stream()
                 .filter(link -> !newLinksIds.contains(link.getId()))
-                .collect(Collectors.toList());
+                .toList();
         List<String> usedInActiveWorkflowLinks = changedOrDeletedLinks.stream().filter(link
                 -> workflowService.isLinkUsedInActiveWorkflow(link))
                 .map(BaseTrackableLink::getFullUrl)

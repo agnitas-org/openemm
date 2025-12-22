@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.dyncontent.service.validation;
 
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
 import com.agnitas.emm.core.validator.BaseValidator;
 
 public class ContentModelValidator extends BaseValidator {

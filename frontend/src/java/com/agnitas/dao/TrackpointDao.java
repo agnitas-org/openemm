@@ -10,14 +10,13 @@
 
 package com.agnitas.dao;
 
-import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import com.agnitas.beans.TrackpointDef;
+import com.agnitas.beans.PaginatedList;
 
 public interface TrackpointDao {
+
     /**
      * Getter for property trackpoint by trackpoint id and company id.
      *
@@ -31,11 +30,10 @@ public interface TrackpointDao {
 
     void deleteTrackpoint(TrackpointDef track);
 
-    List<TrackpointDef> getAllByCompanyID(int companyID);
-
-    PaginatedListImpl<TrackpointDef> getAll(int companyID, String sort, String direction, int pageNumber, int pageSize);
+    PaginatedList<TrackpointDef> getAll(int companyID, String sort, String direction, int pageNumber, int pageSize);
 
     boolean deleteTrackpointsByCompany(int companyId);
 
     Map<Integer, String> getNamesMap(int companyID);
+
 }

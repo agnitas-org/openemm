@@ -1,8 +1,8 @@
-(function () {
+(() => {
 
   AGN.Lib.FormBuilder = AGN.Lib.FormBuilder || {};
 
-  var TOOLTIPS_TEXT = {
+  const TOOLTIPS_TEXT = {
     agnCTOKEN: t('userform.formBuilder.tooltips.agnCTOKEN'),
     agnUID: t('userform.formBuilder.tooltips.agnUID')
   }
@@ -24,7 +24,7 @@
     ]
   }
 
-  var DEFAULT_EMM_HIDDEN_FIELDS = ['agnCTOKEN', 'agnUID', 'agnMAILINGLIST', 'agnSUBSCRIBE'];
+  const DEFAULT_EMM_HIDDEN_FIELDS = ['agnCTOKEN', 'agnUID', 'agnMAILINGLIST', 'agnSUBSCRIBE'];
 
   AGN.Lib.FormBuilder.Templates = {
     default: function () {
@@ -38,17 +38,14 @@
       };
     },
     dateForRender: function (fieldData) {
-      var self = this;
-      var classStyle = (this.config.className || '') + ' js-datepicker';
-      var config = $.extend({}, this.config, {
-        'data-datepicker-options': "format: 'yyyy/mm/dd', formatSubmit: 'yyyy/mm/dd'",
-        className: classStyle
-      });
+      const self = this;
+      const config = $.extend({}, this.config, {className: this.config.className || ''});
+
       return {
         field: self.markup('input', null, config),
         onRender: function (e) {
-          var $formGroup = $(e.target);
-          $formGroup.append('<input type="hidden" name="' + fieldData.name + '_format" value="' + 'yyyy/MM/dd' + '">');
+          // default format
+          $(e.target).append(`<input type="hidden" name="${fieldData.name}_format" value="yyyy-MM-dd">`);
         }
       };
     }
@@ -89,13 +86,13 @@
   }
 
   function displayTooltipIfExists($tooltip, fieldName) {
-      var tooltipValue = TOOLTIPS_TEXT[fieldName];
+      const tooltipValue = TOOLTIPS_TEXT[fieldName];
       if (!tooltipValue) {
           $tooltip.hide();
           return;
       }
-      $tooltip.attr('tooltip', tooltipValue);
-      $tooltip.show();
+      $tooltip.removeAttr('tooltip').show();
+      AGN.Lib.Tooltip.createTip($tooltip, tooltipValue)
   }
 
   function changeFieldsBySelectedEmmField($formField, fieldConfig, newEmmField, oldEmmField) {
@@ -160,9 +157,9 @@
   }
 
   function findFieldIndex($formField, $builderContainer) {
-    var fieldIndex = 0;
+    let fieldIndex = 0;
 
-    _.each($builderContainer.find('.form-field'), function (el, index) {
+    _.each($builderContainer.find('.form-field'), (el, index) => {
       if ($(el).prop('id') === $formField.prop('id')) {
         fieldIndex = index;
       }
@@ -172,9 +169,7 @@
   }
 
   function invokeAfterEventsFinishing(callback) {
-    window.setTimeout(function () {
-      callback();
-    }, 0);
+    window.setTimeout(() => callback(), 0);
   }
 
   function getOptionsByEmmField(fieldName) {

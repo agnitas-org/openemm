@@ -41,7 +41,7 @@ public class NetworkUtilities {
 
 	private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
-	public static byte[] getMacAddressBytes(final String macAddress) throws IllegalArgumentException {
+	public static byte[] getMacAddressBytes(final String macAddress) {
 		if (StringUtils.isEmpty(macAddress)) {
 			throw new IllegalArgumentException("Invalid MAC address.");
 		}

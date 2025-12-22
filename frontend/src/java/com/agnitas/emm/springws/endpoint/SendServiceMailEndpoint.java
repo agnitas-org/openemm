@@ -12,10 +12,8 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,8 +32,8 @@ import com.agnitas.emm.springws.jaxb.extended.SendServiceMailResponse;
  */
 @Endpoint
 public class SendServiceMailEndpoint extends BaseEndpoint {
-	/** The logger. */
-	private static final transient Logger classLogger = LogManager.getLogger(SendServiceMailEndpoint.class);
+
+	private static final Logger classLogger = LogManager.getLogger(SendServiceMailEndpoint.class);
 	
 	/** Service for sending service mails. */
 	private SendServiceMailService sendServiceMailingService;
@@ -45,7 +43,7 @@ public class SendServiceMailEndpoint extends BaseEndpoint {
 	
 	private SecurityContextAccess securityContextAccess;
 
-	public SendServiceMailEndpoint(SendServiceMailService sendServiceMailingService, ConfigService configService, final SecurityContextAccess securityContextAccess) {
+	public SendServiceMailEndpoint(SendServiceMailService sendServiceMailingService, ConfigService configService, SecurityContextAccess securityContextAccess) {
 		this.sendServiceMailingService = Objects.requireNonNull(sendServiceMailingService, "sendServiceMailingService");
 		this.configService = Objects.requireNonNull(configService, "configService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
@@ -65,16 +63,10 @@ public class SendServiceMailEndpoint extends BaseEndpoint {
 				throw new WebserviceNotAllowedException("SendServiceMailing");
 			}
 			
-			if(classLogger.isInfoEnabled()) {
-				classLogger.info(String.format("Sending service mail triggered by action (action ID: %d, customer ID %d, company ID %d)", actionID, customerID, companyID));
-			}
-			
+			classLogger.info("Sending service mail triggered by action (action ID: {}, customer ID {}, company ID {})", actionID, customerID, companyID);
 			sendServiceMailingService.sendServiceMailByEmmAction(actionID, customerID, companyID);
-			
-			if(classLogger.isInfoEnabled()) {
-				classLogger.info("Sending service mail triggered successfully");
-			}
-	
+			classLogger.info("Sending service mail triggered successfully");
+
 			return new SendServiceMailResponse();
     	}
 	}

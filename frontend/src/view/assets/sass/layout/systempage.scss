@@ -1,23 +1,39 @@
 .systempage {
-  padding-top: 15%;
+  @include flex-center;
+  background: rgba(75, 75, 75, 0.50);
 
-  #notifications-container {
-    position: relative;
-    width: 98%;
+  .logo-image {
+    margin-top: 4px;
+    max-height: 50px;
+  }
+}
 
-    margin: 0 auto;
+.edition-logo {
+  max-height: 50px;
+}
 
-    @media (min-width: $screen-sm-min) {
-      max-width: 550px;
-    }
+.emm-logo {
+  .emm-logo__image {
+    float: left;
+    width: 40px;
+    margin-right: 5px;
   }
 
-  .notification {
-    @include shadow-variant(regular);
+  .emm-logo__headline {
+    font-size: 28px;
+    line-height: 1em;
+    font-weight: 700;
+    white-space: nowrap;
+    color: $blue;
   }
 
-  .input-group-btn {
-    vertical-align: top;
+  .emm-logo__version {
+    font-size: 13px;
+    line-height: 1em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    color: #8d8d8f;
+    display: flex;
+    gap: 5px;
   }
-
 }

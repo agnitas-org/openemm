@@ -10,23 +10,24 @@
 
 package com.agnitas.emm.core.useractivitylog.dao;
 
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
 import com.agnitas.util.SqlPreparedStatementManager;
 
-import java.util.Date;
-import java.util.List;
-
-/**
- * Interface for accessing user activity log.
- */
 public interface UserActivityLogDao extends UserActivityLogDaoBase {
+
+	List<String> getDistinctUsernames(Integer companyId);
 
 	void writeUserActivityLog(Admin admin, String action, String description);
 
-	PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize);
+	PaginatedList<LoggedUserAction> getUserActivityEntries(UserActivityLogFilter filter);
 
-	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description);
+	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(UserActivityLogFilter filter);
+
+	void deleteByUsernames(Set<String> username, int companyID);
 
 }

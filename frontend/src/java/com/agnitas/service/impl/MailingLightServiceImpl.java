@@ -13,8 +13,8 @@ package com.agnitas.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.Mailing;

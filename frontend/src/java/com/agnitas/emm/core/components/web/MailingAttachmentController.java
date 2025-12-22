@@ -20,13 +20,13 @@ import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
@@ -40,23 +40,23 @@ import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.TargetService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.ResourceNotFoundException;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.MvcUtils;
-import com.agnitas.web.forms.FormUtils;
-import com.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.web.perm.NotAllowedActionException;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,7 +76,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/mailing")
-@PermissionMapping("mailing.attachment")
+@RequiredPermission("mailing.attachments.show")
 public class MailingAttachmentController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(MailingAttachmentController.class);
@@ -133,7 +133,7 @@ public class MailingAttachmentController implements XssCheckAware {
 
         FormUtils.syncPaginationData(webStorage, WebStorage.MAILING_ATTACHMENTS_OVERVIEW, form, restoreSort);
 
-        PaginatedListImpl<MailingAttachmentDto> attachments = mailingComponentsService.getAttachmentsOverview(form, mailingId, companyId);
+        PaginatedList<MailingAttachmentDto> attachments = mailingComponentsService.getAttachmentsOverview(form, mailingId, companyId);
         form.setAttachments(attachments.getList());
 
         Mailing mailing = mailingBaseService.getMailing(companyId, mailingId);
@@ -147,12 +147,8 @@ public class MailingAttachmentController implements XssCheckAware {
         model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingId, companyId));
         model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
         model.addAttribute("targetGroups", targetService.getTargetLights(admin));
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("isActiveMailing", isActiveMailing);
-            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
-        } else {
-            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
-        }
+        model.addAttribute("isActiveMailing", isActiveMailing);
+        model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
 
         writeUserActivityLog(admin, new UserAction("attachments list", "active tab - attachments"));
 
@@ -162,7 +158,7 @@ public class MailingAttachmentController implements XssCheckAware {
     @PostMapping(value = "/{mailingId:\\d+}/attachment/upload.action", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String upload(Admin admin, @PathVariable int mailingId, @ModelAttribute UploadMailingAttachmentForm form, Popups popups) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         if (mailingEditable(admin, mailingId)) {
@@ -196,7 +192,7 @@ public class MailingAttachmentController implements XssCheckAware {
     @PostMapping("/{mailingId:\\d+}/attachment/save.action")
     public String save(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") UpdateMailingAttachmentsForm form, Popups popups) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         if (mailingEditable(admin, mailingId)) {
@@ -214,54 +210,13 @@ public class MailingAttachmentController implements XssCheckAware {
         return MESSAGES_VIEW;
     }
 
-    @GetMapping("/{mailingId:\\d+}/attachment/{id:\\d+}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String confirmDelete(Admin admin, @PathVariable int mailingId, @PathVariable int id,
-                                @ModelAttribute("simpleActionForm") SimpleActionForm form,
-                                Model model, Popups popups) {
-        MailingComponent attachment = mailingComponentsService.getComponent(admin.getCompanyID(), mailingId, id);
-        if (attachment != null) {
-            form.setId(attachment.getId());
-            form.setShortname(attachment.getComponentName());
-
-            model.addAttribute("mailingId", mailingId);
-
-            return "mailing_attachments_delete_ajax";
-        }
-
-        popups.alert(ERROR_MSG);
-        return MESSAGES_VIEW;
-    }
-
-    @RequestMapping(value = "/{mailingId:\\d+}/attachment/delete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String delete(Admin admin, @PathVariable int mailingId, SimpleActionForm form, Popups popups) {
-        if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
-        }
-        int id = form.getId();
-        String name = form.getShortname();
-        try {
-            mailingComponentsService.deleteComponent(admin.getCompanyID(), mailingId, id);
-            writeUserActivityLog(admin, "delete attachment",
-                    String.format("%s (ID: %d) from mailing ID: %d", name, id, mailingId));
-            popups.success("default.selection.deleted");
-            return redirectToList(mailingId);
-        } catch (Exception e) {
-            logger.error("Mailing attachment ID: {} deletion failed", id, e);
-        }
-        popups.alert(ERROR_MSG);
-        return MESSAGES_VIEW;
-    }
-
-    @GetMapping(value = "/{mailingId:\\d+}/attachment/deleteRedesigned.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Model model) {
+    @GetMapping(value = "/{mailingId:\\d+}/attachment/delete.action")
+    public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Model model) {
         validateSelectedIds(bulkIds);
 
         List<String> names = mailingComponentsService.getNames(bulkIds, mailingId, admin);
         if (names.isEmpty()) {
-            throw new RequestErrorException(ERROR_MSG);
+            throw new ResourceNotFoundException(ERROR_MSG);
         }
 
         MvcUtils.addDeleteAttrs(model, names,
@@ -270,11 +225,10 @@ public class MailingAttachmentController implements XssCheckAware {
         return DELETE_VIEW;
     }
 
-    @RequestMapping(value = "/{mailingId:\\d+}/attachment/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    @PermissionMapping("delete")
-    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Popups popups) {
+    @RequestMapping(value = "/{mailingId:\\d+}/attachment/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    public String delete(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Popups popups) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
         validateSelectedIds(bulkIds);
         ServiceResult<UserAction> result = mailingComponentsService.delete(bulkIds, mailingId, admin);
@@ -286,7 +240,7 @@ public class MailingAttachmentController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{mailingId:\\d+}/attachment/bulk/download.action")
-    public ResponseEntity<DeleteFileAfterSuccessReadResource> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin, Popups popups) {
+    public ResponseEntity<DeleteFileAfterSuccessReadResource> bulkDownload(@RequestParam(required = false) Set<Integer> bulkIds, @PathVariable int mailingId, Admin admin) {
         File zip = mailingComponentsService.getZipToDownload(bulkIds, mailingId, admin);
         writeUserActivityLog(admin, "download attachments", String.format("downloaded %d attachment(s) as ZIP archive", bulkIds.size()));
 
@@ -300,7 +254,7 @@ public class MailingAttachmentController implements XssCheckAware {
 
     private void validateSelectedIds(Set<Integer> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+            throw new BadRequestException(NOTHING_SELECTED_MSG);
         }
     }
 
@@ -322,12 +276,9 @@ public class MailingAttachmentController implements XssCheckAware {
     private void writeUserActivityLog(Admin admin, String action, String description) {
         writeUserActivityLog(admin, new UserAction(action, description));
     }
+
     private void writeUserActivityLog(Admin admin, UserAction userAction) {
-        if (Objects.nonNull(userActivityLogService)) {
-            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-        } else {
-            logger.error("Missing userActivityLogService in {}", this.getClass().getSimpleName());
-            logger.info("Userlog: {} {} {}", admin.getUsername(), userAction.getAction(), userAction.getDescription());
-        }
+        UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
     }
+
 }

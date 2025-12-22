@@ -12,13 +12,13 @@ package com.agnitas.emm.core.datasource.web;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.service.DataSourceService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/importexport/datasource")
-@PermissionMapping("datasource")
 public class DatasourceController implements XssCheckAware {
 	
     private static final Logger logger = LogManager.getLogger(DatasourceController.class);
@@ -46,6 +45,7 @@ public class DatasourceController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
+    @RequiredPermission("datasource.show")
     public String list(Admin admin, @ModelAttribute("datasourceForm") PaginationForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, WebStorage.DATASOURCE_OVERVIEW, form);
@@ -57,4 +57,5 @@ public class DatasourceController implements XssCheckAware {
         }
         return "datasource_list";
     }
+
 }

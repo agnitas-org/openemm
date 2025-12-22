@@ -11,6 +11,7 @@
 package com.agnitas.json;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,10 +62,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>> {
 
 	@Override
 	public String toString() {
-		try (ByteArrayOutputStream output = new ByteArrayOutputStream(); JsonWriter writer = new JsonWriter(output, "UTF-8");) {
+		try (
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				JsonWriter writer = new JsonWriter(output)
+		) {
 			writer.add(this);
 			writer.flush();
-			return new String(output.toByteArray(), "UTF-8");
+			return new String(output.toByteArray(), StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

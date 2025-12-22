@@ -1,30 +1,16 @@
 AGN.Lib.Controller.new("mailing-styles", function () {
-    function updatePreview() {
-        const $mailingForm = $('form#mailingStylesForm');
-        const $previewForm = $('form#mailingPreviewForm');
 
-        const $sources = $mailingForm.find('input[name^="styles["]');
+  const Form = AGN.Lib.Form;
 
-        $.each($sources, function (index, source) {
-            const $source = $(source);
-            const name = $source.attr('name');
-            const $destination = $previewForm.find('input[name="' + name + '"]');
+  this.addAction({click: 'update-preview', submission: 'updatePreview'}, function () {
+    const form = Form.get($('#layoutPreviewForm'));
 
-            $destination.val($source.val());
-        });
-
-        $previewForm.submit();
-    }
-
-    this.addAction({submission: 'updatePreview'}, function () {
-        updatePreview();
+    Form.get(this.el).get$().find('input[name^="styles["]').each(function () {
+      const $el = $(this);
+      form.setValue($el.attr('name'), $el.val());
     });
 
-    this.addAction({click: 'updateMailingPreview'}, function () {
-        updatePreview();
-    });
+    form.submit();
+  });
 
-    this.addAction({click: 'saveMailingStyles'}, function () {
-        $('form#mailingStylesForm').submit();
-    });
 });

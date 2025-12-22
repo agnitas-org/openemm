@@ -29,24 +29,27 @@ import java.util.zip.ZipOutputStream;
 import com.agnitas.beans.Admin;
 import com.agnitas.dao.ServerStatusDao;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.serverstatus.PuppeteerStatus;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
+import com.agnitas.emm.puppeteer.service.PuppeteerService;
 import com.agnitas.messages.Message;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.Version;
-import jakarta.servlet.ServletContext;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.commons.util.DateUtil;
 import com.agnitas.service.JobDto;
 import com.agnitas.service.JobQueueService;
+import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
+import com.agnitas.util.TarGzUtilities;
+import com.agnitas.util.Version;
 import com.agnitas.util.ZipUtilities;
+import jakarta.servlet.ServletContext;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.DateUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,44 +57,51 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ServerStatusServiceImpl implements ServerStatusService {
-	
+
 	private static final Logger logger = LogManager.getLogger(ServerStatusServiceImpl.class);
-	
+
+	private static final String TEMP_LICENSE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "License";
+
 	private static final String ORACLE = "oracle";
 	private static final String MARIADB = "mariadb";
-	
+
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
-	
+
 	private final ServerStatusDao serverStatusDao;
 	private final ConfigService configService;
 	private final JobQueueService jobQueueService;
 	private final JavaMailService javaMailService;
+	private final PuppeteerService puppeteerService;
 
-	public ServerStatusServiceImpl(ServerStatusDao serverStatusDao, ConfigService configService, JobQueueService jobQueueService, JavaMailService javaMailService) {
+	@Autowired
+	public ServerStatusServiceImpl(ServerStatusDao serverStatusDao, ConfigService configService, JobQueueService jobQueueService,
+								   JavaMailService javaMailService, @Autowired(required = false) PuppeteerService puppeteerService) {
 		this.serverStatusDao = serverStatusDao;
 		this.configService = configService;
 		this.jobQueueService = jobQueueService;
 		this.javaMailService = javaMailService;
-	}
-	
-	@Override
-	public boolean checkDatabaseConnection() {
+        this.puppeteerService = puppeteerService;
+    }
+
+	private boolean checkDatabaseConnection() {
 	    return serverStatusDao.checkDatabaseConnection();
     }
-    
+
     @Override
     public String getDbUrl() {
 		return serverStatusDao.getDbUrl();
 	}
-    
+
     @Override
     public String getDbVersion() {
 		return serverStatusDao.getDbVersion();
 	}
-	
+
 	@Override
 	public boolean isDBStatusOK() {
 		// Only retrieve the status once per request for performance
@@ -103,7 +113,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		}
 		return true;
 	}
-	
+
 	@Override
 	public List<VersionStatus> getLatestDBVersionsAndErrors() {
 		List<VersionStatus> returnList = new ArrayList<>();
@@ -122,14 +132,13 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		}
 		return returnList;
 	}
-	
-	@Override
-	public Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception {
+
+	private Map<String, Object> getStatusProperties(ServletContext servletContext) {
 		Map<String, Object> status = new LinkedHashMap<>();
-		
+
 		// Various times and paths
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
-		
+
 		status.put("host.name", AgnUtils.getHostName());
 		status.put("host.time", dateFormat.format(new Date()));
 		status.put("host.build.time", dateFormat.format(ConfigService.getBuildTime()));
@@ -139,19 +148,23 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		status.put("emm.version", configService.getValue(ConfigValue.ApplicationVersion));
 		status.put("emm.tempdir", AgnUtils.getTempDir());
 		status.put("emm.installpath", servletContext.getRealPath("/"));
-		
-		status.put("os.version", AgnUtils.getOSVersion());
-		
-		// Python Version
+
+        try {
+            status.put("os.version", AgnUtils.getOSVersion());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Python Version
 		status.put("python.version", StringUtils.defaultString(AgnUtils.getPythonVersion(), ERROR));
 		status.put("python.ssl", StringUtils.defaultString(AgnUtils.getPythonSSL(), ERROR));
-		
+
 		// MySQL Client Version
 		String mysqlVersion = AgnUtils.getMysqlClientVersion();
 		if (StringUtils.isNotEmpty(mysqlVersion)) {
 			status.put("mysql.client.version", mysqlVersion);
 		}
-		
+
 		// SqlPlus Client Version
 		String sqlPlusVersion = AgnUtils.getSqlPlusClientVersion();
 		if (StringUtils.isNotEmpty(sqlPlusVersion)) {
@@ -164,9 +177,9 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} catch (Exception e) {
 			status.put("db.version", ERROR);
 		}
-		
+
 		status.put("db.url", serverStatusDao.getDbUrl());
-		
+
 		// EMM database versions
 		List<String> missingDbUpdates = new ArrayList<>();
 		for (Version version : getMandatoryDbVersions()) {
@@ -189,7 +202,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} catch (Exception e) {
 			status.put("db.errors", ERROR);
 		}
-		
+
 		// Job queue status
 		try {
 			List<String> erroneousStatus = serverStatusDao.getErrorJobsStatuses();
@@ -198,13 +211,13 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} catch (Exception e) {
 			status.put("emm.errorneaousjobs", ERROR);
 		}
-		
+
 		// Mail version
 		status.put("mail.version", AgnUtils.getMailVersion());
-		
+
 		// Tomcat Version
 		status.put("tomcat.version", StringUtils.defaultIfEmpty(AgnUtils.getTomcatVersion(), ERROR));
-		
+
 		// Java Version
 		status.put("java.version", StringUtils.defaultIfEmpty(System.getProperty("java.version"), ERROR));
 		if (StringUtils.isNotBlank(System.getProperty("java.vm.name"))) {
@@ -212,7 +225,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} else {
 			status.put("java.vendor", StringUtils.defaultIfEmpty(System.getProperty("java.vendor"), ERROR));
 		}
-		
+
 		// OS name and version
 		status.put("os.name", StringUtils.defaultString(System.getProperty("os.name"), ERROR));
 		status.put("os.version", StringUtils.defaultString(System.getProperty("os.version"), ERROR));
@@ -244,28 +257,30 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} catch (Exception e) {
 			status.put("emm.dkimkeys", ERROR);
 		}
-		
+
 		// Connections to backend hosts
 		status.putAll(configService.getHostSystemProperties());
-		
+
 		return status;
 	}
-	
+
 	@Override
 	public ServerStatus getServerStatus(ServletContext servletContext, Admin admin) {
 		String version = configService.getValue(ConfigValue.ApplicationVersion);
 		String installPath = servletContext.getRealPath("/");
 		SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
-		
+
 		List<AutoImport> stallingAutoImports = getStallingAutoImports();
 		boolean importStatusOK = getStallingImportsAmount(configService.getIntegerValue(ConfigValue.MaxUserImportDurationMinutes)) == 0 && (stallingAutoImports == null || stallingAutoImports.size() == 0);
-		
+		PuppeteerStatus puppeteerStatus = puppeteerService.getStatus();
+
 		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
 				.database(serverStatusDao.getDbVendor(), getDbUrl(), getDbVersion(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
-				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK())
+				.statuses(isOverallStatusOK() && puppeteerStatus.isAvailable(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
 				.diskSpaceFreePercentage(calcDiskSpaceFreePercentage())
+				.puppeteerStatus(puppeteerStatus)
 				.build();
 	}
 
@@ -277,21 +292,21 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 
 	@Override
 	public ServerStatus getAnonymousServerStatus(ServletContext servletContext) {
-		
+
 		List<AutoImport> stallingAutoImports = getStallingAutoImports();
 		boolean importStatusOK = getStallingImportsAmount(configService.getIntegerValue(ConfigValue.MaxUserImportDurationMinutes)) == 0 && (stallingAutoImports == null || stallingAutoImports.size() == 0);
-		
-		
+
+
 		return ServerStatus.externalStatusBuilder()
 				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK(), checkDatabaseConnection())
 				.externalStatusBuilder();
 	}
-	
+
 	@Override
 	public SimpleServiceResult sendTestMail(Admin admin, String testMailAddress) {
 		boolean success = false;
 		Message message;
-		
+
 		try {
 			String allCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 äöüßÄÖÜµ!?§@€$%&/\\<>(){}[]'\"´`^°¹²³*#.,;:=+-~_|½¼¬";
 			String subject = "Test mail subject: " + allCharacters;
@@ -305,47 +320,39 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 			}
 
 			success = javaMailService.sendEmail(admin.getCompanyID(), testMailAddress, subject, textMessage, htmlMessage);
-			
+
 			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", testMailAddress,
 					success ? "was successfully" : "wasn't successfully", fromAddress));
 		} catch (Exception e) {
 			logger.error(String.format("Cannot sent test email to %s, cause: %s", testMailAddress, e.getMessage()), e);
 			message = Message.of("Error");
 		}
-		
+
 		return new SimpleServiceResult(success, message);
 	}
-	
+
 	@Override
 	public SimpleServiceResult sendDiagnosisInfo(ServletContext servletContext, Admin admin, String sendDiagnosisEmail) {
-		boolean success = false;
-		Message message;
-		
-		try {
-			String subject = "Server status diagnosis data";
-			String textMessage = "Server status diagnosis data:\n" +
-					getStatusProperties(servletContext).entrySet().stream()
-							.map(pair -> String.format("%s: %s", pair.getKey(), String.valueOf(pair.getValue())))
-							.collect(Collectors.joining("\n"));
+		String subject = "Server status diagnosis data";
+		String textMessage = "Server status diagnosis data:\n" +
+				getStatusProperties(servletContext).entrySet().stream()
+						.map(pair -> String.format("%s: %s", pair.getKey(), String.valueOf(pair.getValue())))
+						.collect(Collectors.joining("\n"));
 
-			// Create same default from-address for result message as it will be used by javaMailService
-			String fromAddress = configService.getValue(ConfigValue.Mailaddress_Sender);
-			if (StringUtils.isBlank(fromAddress)) {
-				fromAddress = System.getProperty("user.name") + "@" + AgnUtils.getHostName();
-			}
-
-			success = javaMailService.sendEmail(admin.getCompanyID(), sendDiagnosisEmail, subject, textMessage, null);
-			
-			message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", sendDiagnosisEmail,
-					success ? "was successfully" : "wasn't successfully", fromAddress));
-		} catch (Exception e) {
-			logger.error(String.format("Cannot sent test email to %s, cause: %s", sendDiagnosisEmail, e.getMessage()), e);
-			message = Message.of("Error");
+		// Create same default from-address for result message as it will be used by javaMailService
+		String fromAddress = configService.getValue(ConfigValue.Mailaddress_Sender);
+		if (StringUtils.isBlank(fromAddress)) {
+			fromAddress = System.getProperty("user.name") + "@" + AgnUtils.getHostName();
 		}
-		
+
+		boolean success = javaMailService.sendEmail(admin.getCompanyID(), sendDiagnosisEmail, subject, textMessage, null);
+
+		Message message = Message.exact(String.format("Email to %s %s sent with \"from\"-address: %s", sendDiagnosisEmail,
+				success ? "was successfully" : "wasn't successfully", fromAddress));
+
 		return new SimpleServiceResult(success, message);
 	}
-	
+
 	@Override
     public boolean saveServerConfig(int companyId, String configName, String configValue, String description) {
 		if (companyId < 0 || !configService.getListValue(ConfigValue.EditableConfigValues).contains(configName) || StringUtils.isBlank(configValue)) {
@@ -356,17 +363,17 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		configService.writeValue(configValueId, companyId, configValue, description);
 		return true;
 	}
-	
+
 	@Override
 	public ConfigValueDto getServerConfigurations(int companyId, String configName) {
  		ConfigValueDto configValueDto = new ConfigValueDto();
 		if (companyId <= 0 || StringUtils.isBlank(configName)) {
 			return configValueDto;
 		}
-		
+
 		try {
 			ConfigValue configValueId = ConfigValue.getConfigValueByName(configName);
-			
+
 			configValueDto.setCompanyId(companyId);
 			configValueDto.setName(configName);
 			configValueDto.setValue(configService.getValue(configValueId, companyId));
@@ -375,7 +382,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		} catch (Exception e) {
 			logger.error("Cannot find config value by name: " + configName);
 		}
-		
+
 		return configValueDto;
 	}
 
@@ -424,14 +431,14 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 		// Only retrieve the status once per request for performance
 		return false;
 	}
-	
+
 	private List<Version> getMandatoryDbVersions() {
 		List<Version> list = new ArrayList<>();
 		String dbVendor = ConfigService.isOracleDB() ? ORACLE : MARIADB;
 		try {
 			List<String> versionStringList = IOUtils.readLines(getClass().getClassLoader()
 							.getResourceAsStream("mandatoryDbChanges_"+ dbVendor + ".csv"),
-							"UTF-8");
+							StandardCharsets.UTF_8);
 			for (String versionString : versionStringList) {
 				if (!versionString.contains("emm-")) {
 					list.add(new Version(versionString));
@@ -457,7 +464,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	public List<JobDto> getErroneousJobs() {
 		return jobQueueService.selectErroneousJobs();
 	}
-	
+
 	@Override
 	public List<String> killRunningImports() {
 		return serverStatusDao.killRunningImports();
@@ -467,47 +474,88 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 	public boolean checkActiveNode() {
 		return jobQueueService.checkActiveNode();
 	}
-	
+
 	@Override
-	public File getFullTbl(String dbStatement, String tableName) throws Exception {
-		return serverStatusDao.getFullTbl(dbStatement, tableName);
-	}
-	
-	@Override
-	public File downloadConfigFile() throws Exception {
-		File zippedFile = File.createTempFile(AgnUtils.getTempDir() + "/ConfigTables_", ".zip");
-		try (ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile)) {
-			String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
-			
-			String[] allSelects = {"select * from config_tbl order by class, name",
-					"select * from company_tbl order by company_id",
-					"select * from company_info_tbl order by company_id, cname",
-					"select * from serverset_tbl order by set_id",
-					"select * from serverprop_tbl order by mailer, mvar"
-					};
-			
-			for (int i = 0; i < allTables.length; i++) {
-				try {
-					
-					File fullTbl = getFullTbl(allSelects[i], allTables[i]);
-					
-					if (fullTbl != null) {
-						ZipUtilities.addFileToOpenZipFileStream(fullTbl, zipOutput);
-					}
-				
-				} catch (IOException ex) {
-					ZipUtilities.closeZipOutputStream(zipOutput);
-					logger.error("Error writing file." + ex);
-					throw ex;
+	public File unzipLicenseFile(MultipartFile archiveFile) throws Exception {
+		String currentTimeString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
+		File unzippedLicenseDataDirectory = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString);
+
+		if (!new File(TEMP_LICENSE_DIRECTORY).exists()) {
+			new File(TEMP_LICENSE_DIRECTORY).mkdirs();
+		}
+
+		if (archiveFile.getOriginalFilename().toLowerCase().endsWith(".zip")) {
+			File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".zip");
+			try {
+				archiveFile.transferTo(uploadedLicenseDataFile);
+				ZipUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
+			} finally {
+				if (uploadedLicenseDataFile.exists()) {
+					uploadedLicenseDataFile.delete();
 				}
 			}
-		
+		} else if (archiveFile.getOriginalFilename().toLowerCase().endsWith(".tar.gz")) {
+			File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".tar.gz");
+			try {
+				archiveFile.transferTo(uploadedLicenseDataFile);
+				TarGzUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
+			} finally {
+				if (uploadedLicenseDataFile.exists()) {
+					uploadedLicenseDataFile.delete();
+				}
+			}
+		} else if (archiveFile.getOriginalFilename().toLowerCase().endsWith(".tgz")) {
+			File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".tgz");
+			try {
+				archiveFile.transferTo(uploadedLicenseDataFile);
+				TarGzUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
+			} finally {
+				if (uploadedLicenseDataFile.exists()) {
+					uploadedLicenseDataFile.delete();
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("Unknown license data format");
+		}
+
+		return unzippedLicenseDataDirectory;
+	}
+
+	@Override
+	public File downloadConfigFile() throws IOException {
+		File zippedFile = File.createTempFile(AgnUtils.getTempDir() + "/ConfigTables_", ".zip");
+		try (ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile)) {
+            Map<String, String> tableSelectsMap = Map.of(
+                    "config_tbl","SELECT * FROM config_tbl ORDER BY class, name",
+                    "company_tbl","SELECT * FROM company_tbl ORDER BY company_id",
+                    "company_info_tbl", "SELECT * FROM company_info_tbl ORDER BY company_id, cname",
+                    "serverset_tbl", "SELECT * FROM serverset_tbl ORDER BY set_id",
+                    "serverprop_tbl", "SELECT * FROM serverprop_tbl ORDER BY mailer, mvar"
+            );
+
+            for (Map.Entry<String, String> entry : tableSelectsMap.entrySet()) {
+                try {
+					File fullTbl = serverStatusDao.getFullTbl(entry.getValue(), entry.getKey());
+
+                    if (fullTbl != null) {
+                        ZipUtilities.addFileToOpenZipFileStream(fullTbl, zipOutput);
+                    }
+
+                } catch (IOException ex) {
+                    ZipUtilities.closeZipOutputStream(zipOutput);
+                    logger.error("Error writing file." + ex);
+                    throw ex;
+                } catch (Exception e) {
+                    throw new RuntimeException("Error occurred when get table data! Table - " + entry.getValue(), e);
+                }
+            }
+
 			ZipUtilities.closeZipOutputStream(zipOutput);
 		}
-		
+
 		return zippedFile;
 	}
-	
+
 	@Override
 	public JSONArray getSystemStatus() {
 		JSONArray allStatus = new JSONArray();
@@ -529,7 +577,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 				checkDatabaseConnection(),
 				isReportStatusOK()
 			};
-		
+
 		for (int i = 0; i < statusNames.length; i++) {
 			JSONObject m = new JSONObject();
 			m.put("shortname", statusNames[i]);
@@ -537,7 +585,7 @@ public class ServerStatusServiceImpl implements ServerStatusService {
 			allStatus.put(m);
 			m = null;
 		}
-		
+
 		return allStatus;
 	}
 

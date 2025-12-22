@@ -12,7 +12,7 @@ package com.agnitas.emm.springws.endpoint.binding;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.binding.service.BindingModel;
+import com.agnitas.emm.core.binding.service.BindingModel;
 import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
@@ -31,18 +31,20 @@ public class SetSubscriberBindingEndpoint extends BaseEndpoint {
 	private final BindingService bindingService;
 	private final SecurityContextAccess securityContextAccess;
 
-	public SetSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService, final SecurityContextAccess securityContextAccess) {
+	public SetSubscriberBindingEndpoint(
+			@Qualifier("BindingService") BindingService bindingService,
+			SecurityContextAccess securityContextAccess
+	) {
 		this.bindingService = Objects.requireNonNull(bindingService, "bindingService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "SetSubscriberBindingRequest")
-	public @ResponsePayload SetSubscriberBindingResponse setSubscriberBinding(@RequestPayload SetSubscriberBindingRequest request) throws Exception {
+	public @ResponsePayload SetSubscriberBindingResponse setSubscriberBinding(@RequestPayload SetSubscriberBindingRequest request) {
 		final BindingModel model = parseModel(request, this.securityContextAccess);
 		bindingService.setBinding(model);
-		
-		final SetSubscriberBindingResponse response = new SetSubscriberBindingResponse();
-		return response;
+
+        return new SetSubscriberBindingResponse();
 	}
 	
 	static BindingModel parseModel(SetSubscriberBindingRequest request, final SecurityContextAccess securityContextAccess) {

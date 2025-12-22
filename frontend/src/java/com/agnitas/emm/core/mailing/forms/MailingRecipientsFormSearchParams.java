@@ -10,11 +10,10 @@
 
 package com.agnitas.emm.core.mailing.forms;
 
+import java.util.List;
+
 import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
 import com.agnitas.web.forms.FormSearchParams;
-
-import java.util.Collections;
-import java.util.List;
 
 public class MailingRecipientsFormSearchParams implements FormSearchParams<MailingRecipientsOverviewFilter> {
 
@@ -39,11 +38,4 @@ public class MailingRecipientsFormSearchParams implements FormSearchParams<Maili
         filter.setTypes(types);
     }
 
-    @Override
-    public void resetParams() {
-        firstname = "";
-        lastname = "";
-        email = "";
-        types = Collections.emptyList();
-    }
 }

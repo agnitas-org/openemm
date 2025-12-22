@@ -1,7 +1,8 @@
 AGN.Lib.Controller.new('mailing-followup-options', function() {
-  var $container;
-  var $mailingSelect = '';
-  var additionalOptions = [];
+
+  let $container;
+  let $mailingSelect = '';
+  let additionalOptions = [];
 
   this.addDomInitializer("mailing-followup-options", function() {
     $container = $("#followUpType");
@@ -15,21 +16,17 @@ AGN.Lib.Controller.new('mailing-followup-options', function() {
     });
   });
 
-  var getAdditionalAdvertisingOptions = function() {
-    return AGN.Lib.Template.text("followupAdvertisingOptions", {items: additionalOptions});
-  };
-
-  var changeFollowUpOptionsSet = function() {
-    var mailingIdToCheck = AGN.Lib.Select.get($mailingSelect).getSelectedValue();
+  const changeFollowUpOptionsSet = function() {
+    const mailingIdToCheck = AGN.Lib.Select.get($mailingSelect).getSelectedValue();
 
     $container.children('.advertisingOption').remove();
-    if (mailingIdToCheck) {
-      $.ajax({
-        type: 'POST',
-        url: AGN.url("/mailing/ajax/" + mailingIdToCheck + "/isAdvertisingContentType.action")
-      }).done(function(resp) {
-        if (resp && resp.success) {
-          $container.append(getAdditionalAdvertisingOptions());
+    if (mailingIdToCheck && parseInt(mailingIdToCheck) > 0) {
+      $.get(AGN.url(`/mailing/ajax/${mailingIdToCheck}/isAdvertisingContentType.action`), resp => {
+        if (resp?.success) {
+          $container.append(AGN.Lib.Template.text(
+            'followupAdvertisingOptions',
+            { items: additionalOptions }
+          ));
         }
       });
     }

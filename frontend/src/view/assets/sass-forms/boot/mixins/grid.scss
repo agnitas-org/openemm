@@ -1,0 +1,10 @@
+// Grid system
+//
+// Generate semantic grid columns with these mixins.
+
+// Creates a wrapper for a series of columns
+@mixin make-row($gutter: $grid-gutter-width) {
+  margin-left:  ($gutter / -2);
+  margin-right: ($gutter / -2);
+  @include clearfix();
+}

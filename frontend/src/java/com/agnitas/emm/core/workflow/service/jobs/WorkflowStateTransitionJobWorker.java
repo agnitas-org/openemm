@@ -14,20 +14,22 @@ import java.util.List;
 import java.util.Locale;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.service.WorkflowActivationService;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
+import com.agnitas.service.JobWorkerBase;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.JobWorker;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.util.quartz.JobWorker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class WorkflowStateTransitionJobWorker extends JobWorker {
+@JobWorker("WorkflowStateHandler")
+public class WorkflowStateTransitionJobWorker extends JobWorkerBase {
 
     private static final Logger logger = LogManager.getLogger(WorkflowStateTransitionJobWorker.class);
 

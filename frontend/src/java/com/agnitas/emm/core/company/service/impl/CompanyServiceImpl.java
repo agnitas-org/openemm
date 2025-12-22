@@ -10,12 +10,28 @@
 
 package com.agnitas.emm.core.company.service.impl;
 
+import static com.agnitas.util.AgnUtils.escapeForRFC5322;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.Target;
+import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.factory.CompanyFactory;
+import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.TargetDao;
+import com.agnitas.emm.common.LicenseType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
@@ -23,7 +39,11 @@ import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.commons.password.policy.PasswordPolicies;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.company.component.CompanySecretKeyGenerator;
 import com.agnitas.emm.core.company.dto.CompanyAdminDto;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
@@ -39,39 +59,20 @@ import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.LicenseError;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.factory.CompanyFactory;
-import com.agnitas.beans.impl.CompanyStatus;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.LicenseType;
-import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
-import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.web.mvc.Popups;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-
-import static com.agnitas.util.AgnUtils.escapeForRFC5322;
-import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 public class CompanyServiceImpl implements CompanyService {
 
@@ -88,6 +89,7 @@ public class CompanyServiceImpl implements CompanyService {
     private BounceFilterService bounceFilterService;
     protected CompanyDao companyDao;
     private CompanyTokenService companyTokenService;
+    private CompanySecretKeyGenerator secretKeyGenerator;
     private TargetDao targetDao;
 
     @Override
@@ -131,14 +133,13 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public void updateTechnicalContact(String email, int id) {
-        companyDao.updateTechnicalContact(email, id);
+    public void updateEmails(String techContactEmail, Set<String> systemMessageEmails, int id) {
+        companyDao.updateEmails(techContactEmail, systemMessageEmails, id);
     }
 
-    @Override
-    public boolean initTables(int companyID) {
+    protected boolean initTables(int companyID) {
         if (!companyDao.initTables(companyID)) {
-            logger.error("Cannot create tables for company id: " + companyID);
+            logger.error("Cannot create tables for company id: {}", companyID);
             companyDao.updateCompanyStatus(companyID, CompanyStatus.LOCKED);
             return false;
         }
@@ -162,8 +163,7 @@ public class CompanyServiceImpl implements CompanyService {
         return conversionService.convert(companyLight, CompanyInfoDto.class);
     }
 
-    @Override
-    public boolean addExecutiveAdmin(int companyID, int executiveAdminID) {
+    protected boolean addExecutiveAdmin(int companyID, int executiveAdminID) {
         return companyDao.addExecutiveAdmin(companyID, executiveAdminID);
     }
 
@@ -183,12 +183,6 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public PaginatedListImpl<CompanyInfoDto> getCompanyList(int companyID, String sort, String direction, int page, int rownums) {
-        PaginatedListImpl<CompanyEntry> companyList = companyDao.getCompanyList(companyID, sort, direction, page, rownums);
-        return conversionService.convertPaginatedList(companyList, CompanyEntry.class, CompanyInfoDto.class);
-    }
-
-    @Override
     public CompanyViewForm getCompanyForm(int companyId) {
         Company company = getCompany(companyId);
         return conversionService.convert(company, CompanyViewForm.class);
@@ -200,7 +194,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public PaginatedListImpl<AdminEntry> getAdmins(PaginationForm form, int companyId) {
+    public PaginatedList<AdminEntry> getAdmins(PaginationForm form, int companyId) {
         return adminService.getList(companyId,  form.getSort(), form.getDir(), form.getPage(), form.getNumberOfRows());
     }
 
@@ -231,13 +225,13 @@ public class CompanyServiceImpl implements CompanyService {
         createStandardBounceFilter(company.getId(), TimeZone.getTimeZone(form.getCompanySettingsDto().getTimeZone()));
         
         // Create random token
-        companyTokenService.assignRandomToken(company.getId(), false);
+        companyTokenService.assignRandomToken(company.getId());
         
         return company.getId();
     }
 
     @Override
-    public int update(Admin admin, CompanyViewForm form) throws Exception {
+    public int update(Admin admin, CompanyViewForm form) {
         Company company = companyDao.getCompany(form.getCompanyInfoDto().getId());
         UserAction companyChangesLog = getCompanyChangesLog(form, company);
         setupInfo(company, form.getCompanyInfoDto());
@@ -249,7 +243,7 @@ public class CompanyServiceImpl implements CompanyService {
         // save config values
         saveConfigValues(admin, company.getId(), form.getCompanySettingsDto());
 
-        companyTokenService.assignRandomToken(company.getId(), false);
+        companyTokenService.assignRandomToken(company.getId());
 
         // write UAL
         userActivityLogService.writeUserActivityLog(admin, companyChangesLog);
@@ -262,31 +256,13 @@ public class CompanyServiceImpl implements CompanyService {
 		return company.getStatus();
     }
 
-    @Override
-    public boolean deleteCompany(int companyIdForRemove) {
-        return false;
-    }
-    
-    @Override
-    public boolean deactivateCompany(int companyIdForDeactivation) {
+    protected boolean deactivateCompany(int companyIdForDeactivation) {
         Company company = companyDao.getCompany(companyIdForDeactivation);
         if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.ACTIVE) {
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.LOCKED);
             if (logger.isInfoEnabled()) {
-                logger.info("Company: " + companyIdForDeactivation + " deactivated");
+                logger.info("Company: {} deactivated", companyIdForDeactivation);
             }
-            return true;
-        } else {
-        	return false;
-        }
-    }
-    
-    @Override
-    public boolean reactivateCompany(int companyIdForReactivation) {
-        Company company = companyDao.getCompany(companyIdForReactivation);
-
-        if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
-            doReactivateCompany(companyIdForReactivation);
             return true;
         } else {
         	return false;
@@ -300,10 +276,7 @@ public class CompanyServiceImpl implements CompanyService {
         if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.LOCKED) {
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.TODELETE);
 
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("Company %d marked for deletion", company.getId()));
-            }
-
+            logger.info("Company {} marked for deletion", company.getId());
             return true;
         } else {
         	return false;
@@ -319,7 +292,8 @@ public class CompanyServiceImpl implements CompanyService {
             if (numberOfCompanies >= maximumNumberOfCompanies) {
                 if (gracefulExtension > 0
                         && numberOfCompanies < maximumNumberOfCompanies + gracefulExtension) {
-                    logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + gracefulExtension + " more accounts have been permitted");
+                    logger.warn("Invalid Number of tenants. Current value is {}. Limit is {}. Gracefully {} more accounts have been permitted",
+                            numberOfCompanies, maximumNumberOfCompanies, gracefulExtension);
                 } else {
                     throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
                 }
@@ -327,9 +301,7 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
         companyDao.updateCompanyStatus(id, CompanyStatus.ACTIVE);
-        if (logger.isInfoEnabled()) {
-            logger.info("Company: {} reactivated", id);
-        }
+        logger.info("Company: {} reactivated", id);
     }
 
     @Override
@@ -361,8 +333,9 @@ public class CompanyServiceImpl implements CompanyService {
         company.setSalutationExtended(BooleanUtils.toInteger(settingsDto.isHasExtendedSalutation()));
         company.setStatAdmin(settingsDto.getExecutiveAdministrator());
         company.setContactTech(settingsDto.getTechnicalContacts());
+        company.setSystemMessageEmails(settingsDto.getSystemMessageEmails());
 
-        company.setSecretKey(RandomStringUtils.randomAscii(32));
+        company.setSecretKey(secretKeyGenerator.generateSecretKey());
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
     }
@@ -421,6 +394,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendPasswordChangedNotification, companyId, admin, settings.isSendPasswordChangedNotification());
         checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendEncryptedMailings, companyId, admin, settings.isSendEncryptedMailings());
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.Honeypot.EnableIntermediatePage, companyId, admin, settings.isEnableHoneypotIntermediatePage());
 
         if (settings.getMaxAdminMails() > 0) {
         	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxAdminMails, companyId, admin, settings.getMaxAdminMails()) ;
@@ -498,42 +472,40 @@ public class CompanyServiceImpl implements CompanyService {
             checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.DefaultTestRunOption, companyId, admin, settings.getDefaultTestRunOption().getId());
         }
 
-        if (admin.isRedesignedUiUsed()) {
-            checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.IndividualLinkTrackingForAllMailings, companyId, admin, settings.isIndividualLinkTrackingForMailings());
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.IndividualLinkTrackingForAllMailings, companyId, admin, settings.isIndividualLinkTrackingForMailings());
 
-            checkChangeAndLogCompanyInfoValue(ConfigValue.Backend_AdminTestMark, companyId, admin, settings.getAdminTestMarkPlacement().getStorageValue());
+        checkChangeAndLogCompanyInfoValue(ConfigValue.Backend_AdminTestMark, companyId, admin, settings.getAdminTestMarkPlacement().getStorageValue());
 
-            if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.TO_ADDRESS) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
-                checkChangeAndLogCompanyInfoValue(
-                        ConfigValue.Backend_AdminTestMarkToAdmin,
-                        companyId,
-                        admin,
-                        escapeForRFC5322(defaultIfBlank(settings.getAdminMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToAdmin.getDefaultValue()))
-                );
-                checkChangeAndLogCompanyInfoValue(
-                        ConfigValue.Backend_AdminTestMarkToTest,
-                        companyId,
-                        admin,
-                        escapeForRFC5322(defaultIfBlank(settings.getTestMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToTest.getDefaultValue()))
-                );
-            }
-
-            if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.SUBJECT) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
-                checkChangeAndLogCompanyInfoValue(
-                        ConfigValue.Backend_AdminTestMarkSubjectAdmin,
-                        companyId,
-                        admin,
-                        defaultIfBlank(settings.getAdminMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectAdmin.getDefaultValue())
-                );
-                checkChangeAndLogCompanyInfoValue(
-                        ConfigValue.Backend_AdminTestMarkSubjectTest,
-                        companyId,
-                        admin,
-                        defaultIfBlank(settings.getTestMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectTest.getDefaultValue())
-                );
-            }
-            checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.EnableResponseInbox, companyId, admin, settings.isResponseInboxEnabled());
+        if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.TO_ADDRESS) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
+            checkChangeAndLogCompanyInfoValue(
+                    ConfigValue.Backend_AdminTestMarkToAdmin,
+                    companyId,
+                    admin,
+                    escapeForRFC5322(defaultIfBlank(settings.getAdminMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToAdmin.getDefaultValue()))
+            );
+            checkChangeAndLogCompanyInfoValue(
+                    ConfigValue.Backend_AdminTestMarkToTest,
+                    companyId,
+                    admin,
+                    escapeForRFC5322(defaultIfBlank(settings.getTestMailToAddressMark(), ConfigValue.Backend_AdminTestMarkToTest.getDefaultValue()))
+            );
         }
+
+        if (settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.SUBJECT) || settings.getAdminTestMarkPlacement().equals(AdminTestMarkPlacementOption.BOTH)) {
+            checkChangeAndLogCompanyInfoValue(
+                    ConfigValue.Backend_AdminTestMarkSubjectAdmin,
+                    companyId,
+                    admin,
+                    defaultIfBlank(settings.getAdminMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectAdmin.getDefaultValue())
+            );
+            checkChangeAndLogCompanyInfoValue(
+                    ConfigValue.Backend_AdminTestMarkSubjectTest,
+                    companyId,
+                    admin,
+                    defaultIfBlank(settings.getTestMailSubjectMark(), ConfigValue.Backend_AdminTestMarkSubjectTest.getDefaultValue())
+            );
+        }
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.EnableResponseInbox, companyId, admin, settings.isResponseInboxEnabled());
 
         if (settings.isRegenerateTargetSqlOnce()) {
         	regenerateTargetSql(companyId);
@@ -549,30 +521,20 @@ public class CompanyServiceImpl implements CompanyService {
         checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.UserPasswordExpireDays, companyId, admin, settings.getPasswordExpireDays());
     }
 
-	private void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyId, final Admin admin) {
-    	if (companyId != 0) { // Do not overwrite global settings
-    		final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromName(companySettings.getLoginlockSettingsName());
-    		
-    		if(settingsOptional.isPresent()) {
-    			final LoginlockSettings settings = settingsOptional.get();
-    			
-    			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, companyId, admin, settings.getLockTimeMinutes() * 60);
-    			
-    			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, companyId, admin, settings.getMaxFailedAttempts());
-    		} else {
-        		try {
-        			throw new Exception("Stack trace");	// Throw exception to get stack trace
-        		} catch(final Exception e) {
-        			logger.error(String.format("Invalid loginlock settings name: '%s'", companySettings.getLoginlockSettingsName()), e);
-        		}
-    		}
-    	} else {
-    		try {
-    			throw new Exception("Stack trace");	// Throw exception to get stack trace
-    		} catch(final Exception e) {
-    			logger.error("Attempt to overwrite global login tracking settings", e);
-    		}
-    	}
+	private void writeLoginLockSettingsConfigValues(CompanySettingsDto companySettings, int companyId, Admin admin) {
+        if (companyId == 0) {
+            return;
+        }
+
+        Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromName(companySettings.getLoginlockSettingsName());
+        if (settingsOptional.isEmpty()) {
+            return;
+        }
+
+        LoginlockSettings settings = settingsOptional.get();
+
+        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, companyId, admin, settings.getLockTimeMinutes() * 60);
+        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, companyId, admin, settings.getMaxFailedAttempts());
     }
     
     private void writeHostAuthSettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
@@ -598,7 +560,7 @@ public class CompanyServiceImpl implements CompanyService {
 		}
 	}
 
-	protected void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final Admin admin, boolean newValue) {
+	protected void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, int companyId, Admin admin, boolean newValue) {
 		boolean currentValue = configService.getBooleanValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, newValue ? "true" : "false", "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
@@ -606,7 +568,7 @@ public class CompanyServiceImpl implements CompanyService {
 		}
 	}
 
-	protected void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final Admin admin, int newValue) {
+	protected void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, int companyId, Admin admin, int newValue) {
 		int currentValue = configService.getIntegerValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, Integer.toString(newValue), "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
@@ -618,7 +580,7 @@ public class CompanyServiceImpl implements CompanyService {
         int companyId = company.getId();
 
         if (initTables(companyId)) {
-            logger.info("Company: " + companyId + " created");
+            logger.info("Company: {} created", companyId);
 
             LicenseType licenseType = configService.getLicenseType();
 			if (licenseType == LicenseType.Inhouse || licenseType == LicenseType.OpenEMM || licenseType == LicenseType.OpenEMM_Plus) {
@@ -640,7 +602,7 @@ public class CompanyServiceImpl implements CompanyService {
             generateMissingTemplateThumbnails(admin, sessionId, companyId);
         }
 
-        logger.info("Cannot successfully create new company: " + companyId);
+        logger.info("Cannot successfully create new company: {}", companyId);
     }
 
     void generateMissingTemplateThumbnails(Admin admin, String sessionId, int companyId) {
@@ -747,6 +709,16 @@ public class CompanyServiceImpl implements CompanyService {
     	return companyDao.createFrequencyFields(companyID);
     }
 
+    @Override
+	public int getNumberOfCompanies() {
+		return companyDao.getNumberOfCompanies();
+	}
+
+    @Override
+    public String getTechnicalContact(int companyId) {
+        return getCompany(companyId).getContactTech();
+    }
+
     public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
         this.recipientProfileHistoryService = recipientProfileHistoryService;
     }
@@ -779,26 +751,20 @@ public class CompanyServiceImpl implements CompanyService {
         this.companyDao = companyDao;
     }
 
-	public void setBounceFilterService(BounceFilterService bounceFilterService) {
-		this.bounceFilterService = bounceFilterService;
-	}
-    
-	public final void setCompanyTokenService(final CompanyTokenService service) {
-		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
-	}
+    public void setBounceFilterService(BounceFilterService bounceFilterService) {
+        this.bounceFilterService = bounceFilterService;
+    }
+
+    public void setCompanyTokenService(CompanyTokenService service) {
+        this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
+    }
 
     public void setTargetDao(TargetDao targetDao) {
         this.targetDao = targetDao;
     }
 
-	@Override
-	public int getNumberOfCompanies() {
-		return companyDao.getNumberOfCompanies();
-	}
-
-    @Override
-    public String getTechnicalContact(int companyId) {
-        return getCompany(companyId).getContactTech();
+    public void setSecretKeyGenerator(CompanySecretKeyGenerator secretKeyGenerator) {
+        this.secretKeyGenerator = secretKeyGenerator;
     }
 
     private void regenerateTargetSql(int companyID) {

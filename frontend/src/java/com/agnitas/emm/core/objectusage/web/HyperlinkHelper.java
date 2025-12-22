@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.target.web.TargetGroupViewHelper;
 import com.agnitas.messages.I18nString;
 import org.apache.commons.collections4.MapUtils;
@@ -31,7 +31,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * 
  * <p>
  * This class requires a message key &quot;referencingObject.&lt;type&gt;&quot;
- * defined for each enum constant in {@link ObjectUserType}.
+ * defined for each enum constant in {@link ObjectUsageType}.
  * (i. e. <i>referencingObject.TARGET_GROUP</i>).
  * 
  * Placeholders:
@@ -53,8 +53,8 @@ final class HyperlinkHelper {
 
 	 * @return hyperlink or plain text
 	 */
-	public static String toHyperlink(final ObjectUsage usage, final Locale locale) {
-		switch(usage.getObjectUserType()) {
+	public static String toHyperlink(ObjectUsage usage, Locale locale) {
+		switch(usage.getType()) {
             case TARGET_GROUP:
                 return targetGroupHyperlink(usage, locale);
             case WORKFLOW:
@@ -65,6 +65,8 @@ final class HyperlinkHelper {
 				return mailingHyperLink(usage, locale);
             case MAILINGLIST:
                 return mailinglistHyperlink(usage, locale);
+            case EXPORT_PROFILE:
+                return exportProfileHyperlink(usage, locale);
             case CLASSIC_MAILING_CONTENT:
                 return classicMailingContentHyperLink(usage, locale);
             case EMC_CONTENT:
@@ -77,13 +79,13 @@ final class HyperlinkHelper {
 	}
 
     private static String targetGroupHyperlink(final ObjectUsage usage, final Locale locale) {
-        return hyperLink(TargetGroupViewHelper.targetGroupViewUrl(usage.getObjectUserID()), usage, locale);
+        return hyperLink(TargetGroupViewHelper.targetGroupViewUrl(usage.getId()), usage, locale);
     }
 
     private static String workflowHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/workflow/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
     }
@@ -91,7 +93,7 @@ final class HyperlinkHelper {
     private static String triggerHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/action/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
     }
@@ -99,7 +101,7 @@ final class HyperlinkHelper {
     private static String birtReportHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/statistics/report/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
     }
@@ -107,7 +109,7 @@ final class HyperlinkHelper {
     private static String classicMailingContentHyperLink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/mailing/content/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
     }
@@ -115,7 +117,7 @@ final class HyperlinkHelper {
     private static String emcContentHyperLink(ObjectUsage usage, Locale locale) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance()
                 .path("/layoutbuilder/template/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action");
         if (MapUtils.isNotEmpty(usage.getDetails()) && usage.getDetails().containsKey("mailingId")) {
             Map.Entry<String, Object> mailingIdParam = usage.getDetails().entrySet().iterator().next();
@@ -127,7 +129,15 @@ final class HyperlinkHelper {
     private static String mailinglistHyperlink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/mailinglist/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
+                .path("/view.action")
+                .toUriString(), usage, locale);
+    }
+
+    private static String exportProfileHyperlink(ObjectUsage usage, Locale locale) {
+        return hyperLink(UriComponentsBuilder.newInstance()
+                .path("/export/")
+                .path(Integer.toString(usage.getId()))
                 .path("/view.action")
                 .toUriString(), usage, locale);
     }
@@ -135,7 +145,7 @@ final class HyperlinkHelper {
     private static String mailingHyperLink(ObjectUsage usage, Locale locale) {
         return hyperLink(UriComponentsBuilder.newInstance()
                 .path("/mailing/")
-                .path(Integer.toString(usage.getObjectUserID()))
+                .path(Integer.toString(usage.getId()))
                 .path("/settings.action")
                 .toUriString(), usage, locale);
     }
@@ -145,9 +155,9 @@ final class HyperlinkHelper {
     }
 
     private static String plainText(final ObjectUsage usage, final Locale locale) {
-        String name = StringUtils.defaultString(usage.getObjectUserName());
-        ObjectUserType type = usage.getObjectUserType();
-        if (List.of(ObjectUserType.CLASSIC_MAILING_CONTENT, ObjectUserType.EMC_CONTENT).contains(type)) {
+        String name = StringUtils.defaultString(usage.getName());
+        ObjectUsageType type = usage.getType();
+        if (List.of(ObjectUsageType.CLASSIC_MAILING_CONTENT, ObjectUsageType.EMC_CONTENT).contains(type)) {
             return StringEscapeUtils.escapeHtml4(StringUtils.abbreviate(name, 30));
         }
         String messageKey = "referencingObject." + type.name();

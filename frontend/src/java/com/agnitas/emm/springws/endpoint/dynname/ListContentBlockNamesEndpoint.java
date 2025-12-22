@@ -13,8 +13,8 @@ package com.agnitas.emm.springws.endpoint.dynname;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.emm.core.dynname.service.DynamicTagNameService;
-import org.agnitas.emm.core.dynname.service.NameModel;
+import com.agnitas.emm.core.dynname.service.DynamicTagNameService;
+import com.agnitas.emm.core.dynname.entity.NameModel;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.ListContentBlockNamesRequest;

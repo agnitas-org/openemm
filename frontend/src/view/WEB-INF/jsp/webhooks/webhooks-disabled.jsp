@@ -1,2 +1,0 @@
-
-Webhook interface is disabled

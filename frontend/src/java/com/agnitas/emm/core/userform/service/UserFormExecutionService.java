@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.userform.service;
 
+import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 public interface UserFormExecutionService {
 	
 	String FORM_MIMETYPE_PARAM_NAME = "formMimetype";
 
-	UserFormExecutionResult executeForm(final int companyID, final String formName, final HttpServletRequest request, CaseInsensitiveMap<String, Object> params, final boolean useSession) throws Exception;
+	UserFormExecutionResult executeForm(int companyID, String formName, HttpServletRequest request, CaseInsensitiveMap<String, Object> params, boolean useSession) throws BlacklistedDeviceException;
 }

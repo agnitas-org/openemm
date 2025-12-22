@@ -39,10 +39,9 @@ import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 import jakarta.annotation.Resource;
 import com.agnitas.beans.BaseTrackableLink;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -55,8 +54,6 @@ import org.json.JSONObject;
  * Service class dealing with trackable links.
  */
 public class TrackableLinkServiceImpl implements TrackableLinkService {
-
-    public static final String LINK_SWYN_PREFIX = "SWYN: ";
 
     private static final Logger logger = LogManager.getLogger(TrackableLinkServiceImpl.class);
 
@@ -100,8 +97,7 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
         }
     }
 
-    @Override
-    public Map<Integer, String> getMailingLinks(int mailingId, int companyId) {
+    private Map<Integer, String> getMailingLinks(int mailingId, int companyId) {
         List<TrackableLink> trackableLinks = trackableLinkDao.getTrackableLinks(companyId, mailingId);
 
         //productive links (A-Z), SWYN links (A-Z), administrative links (A-Z)"
@@ -219,7 +215,7 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
 		Mailing mailing = mailingService.getMailing(model);
 
 		// Check, if mailing is world sent or activated
-		if(!mailingService.isMailingWorldSent(mailing.getId(), mailing.getCompanyID()) && !mailingService.isActiveIntervalMailing(mailingID)) {
+		if (!mailingService.isMailingWorldSent(mailing.getId(), mailing.getCompanyID()) && !mailingService.isActiveIntervalMailing(mailingID)) {
 			if(logger.isInfoEnabled()) {
 				logger.info("Mailing " + mailing.getId() + " has not been sent");
 			}
@@ -281,7 +277,7 @@ public class TrackableLinkServiceImpl implements TrackableLinkService {
     }
 
     @Override
-    public Mailing getMailingForLinksOverview(int mailingId, int companyId, boolean includeDeleted) throws MediatypesDaoException {
+    public Mailing getMailingForLinksOverview(int mailingId, int companyId, boolean includeDeleted) {
         Mailing mailing = mailingService.getMailing(mailingId, companyId, false);
         mailing.setMediatypes(mailingService.getMediatypes(mailingId, companyId));
         mailing.setTrackableLinks(trackableLinkDao.getTrackableLinksMap(mailingId, companyId, includeDeleted));

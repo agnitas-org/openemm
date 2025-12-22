@@ -1,8 +1,8 @@
 package com.agnitas.emm.core.admin.web;
 
 import com.agnitas.emm.core.company.service.CompanyService;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.service.UserActivityLogService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -17,12 +17,10 @@ import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.service.CSVService;
 import com.agnitas.service.PdfService;
 import com.agnitas.service.WebStorage;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 @Controller
 @RequestMapping("/admin")
-@PermissionMapping("admin")
 @SessionAttributes(types = AdminListFormSearchParams.class)
 public class AdminControllerOpenemm extends AdminController {
     

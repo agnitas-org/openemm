@@ -10,19 +10,6 @@
 
 package com.agnitas.emm.core.userform.service;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.userform.bean.UserForm;
-import org.json.JSONArray;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
-import com.agnitas.exception.FormNotFoundException;
-import com.agnitas.util.DbColumnType;
-import com.agnitas.util.Tuple;
-
 import java.io.File;
 import java.util.Collection;
 import java.util.Date;
@@ -31,6 +18,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.userform.bean.UserForm;
+import com.agnitas.util.DbColumnType;
+import com.agnitas.util.Tuple;
+import com.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
+import org.json.JSONArray;
 
 public interface UserformService {
 
@@ -53,11 +52,11 @@ public interface UserformService {
 	 * @return user form
 	 * @throws FormNotFoundException if given form name is unknown
 	 */
-	UserForm getUserForm(int companyID, String formName) throws FormNotFoundException;
+	UserForm getUserForm(int companyID, String formName);
 
 	List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID);
 
-	void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistId, String rdirDomain, Map<Integer, Integer> actionIdReplacements) throws Exception;
+	void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistId, String rdirDomain, Map<Integer, Integer> actionIdReplacements);
 
 	void restore(Set<Integer> bulkIds, int companyId);
 
@@ -67,8 +66,6 @@ public interface UserformService {
 
     List<UserForm> getUserForms(int companyId);
 
-	// TODO: EMMGUI-714: Check usages and remove when removing old design
-    UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness);
     ServiceResult<List<UserForm>> setActiveness(Set<Integer> ids, int companyId, boolean activate);
 
 	int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive);
@@ -79,8 +76,6 @@ public interface UserformService {
 
 	List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, int companyId);
 
-	boolean deleteUserForm(int formId, int companyId);
-
 	String getCloneUserFormName(String name, int companyId, Locale locale);
 
 	ServiceResult<Integer> cloneUserForm(Admin admin, int userFormId);
@@ -88,7 +83,9 @@ public interface UserformService {
 	File exportUserForm(Admin admin, int userFormId, String userFormName);
 	
 	String getUserFormUrlPattern(final Admin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken);
+
 	List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final Admin admin, final String formName, final Optional<String> companyToken);
+
 	String getUserFormUrlWithoutUID(Admin admin, String formName, Optional<String> companyToken);
 
     JSONArray getUserFormsJson(Admin admin);

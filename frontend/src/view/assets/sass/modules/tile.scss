@@ -1,3 +1,4 @@
+
 /*doc
 ---
 title: Tiles
@@ -15,7 +16,7 @@ The basic structure is as follows:
 ```htmlexample
 <div class="tile">
     <div class="tile-header">...</div>
-    <div class="tile-content">...</div>
+    <div class="tile-body">...</div>
     <div class="tile-footer">...</div>
 </div>
 ```
@@ -32,55 +33,45 @@ parent: tiles
 This is a full example showcasing what eventually makes up a complete tile.
 
 ```htmlexample
-<div class="tile">
+<div class="tile" data-toggle-tile>
     <div class="tile-header">
-        <h2 class="headline">Headline</h2>
-        <ul class="tile-header-nav">
-            <li class="active">
-                <a href="#">These</a>
-            </li>
-            <li>
-                <a href="#"><i class="icon icon-arrow-down"></i> are</a>
-            </li>
-            <li>
-                <a href="#"><i class="icon icon-arrow-up"></i> tabs</a>
-            </li>
-        </ul>
-        <ul class="tile-header-actions">
-            <li>
-              <button class="btn btn-secondary btn-regular">action</button>
-            </li>
-            <li>
-              <a href="#" class="link">
-                <i class="icon icon-question-circle"></i>
-                <span class="text">Help</span>
-              </a>
-            </li>
-        </ul>
-    </div>
-    <div class="tile-content tile-content-forms">
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">Label</label>
-            </div>
-            <div class="col-sm-8">
-                <input type="text" class="form-control" />
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">Label</label>
-            </div>
-            <div class="col-sm-8">
-                <input type="text" class="form-control" />
-            </div>
+        <h1 class="tile-title">
+            <i class="icon icon-caret-up"></i>
+            Headline
+        </h1>
+        <div class="tile-title-controls">
+            <label class="switch">
+                <input type="checkbox">
+                <span>Basic</span>
+                <span>Advanced</span>
+            </label>
+        </div>
+
+        <div class="tile-controls">
+            <a class="btn btn-icon btn-secondary">
+                <i class="icon icon-sync"></i>
+            </a>
+            <a class="btn btn-icon btn-primary">
+                <i class="icon icon-search"></i>
+            </a>
+            <button type="button" class="btn btn-icon btn-secondary" data-full-screen>
+                <i class="icon icon-expand-arrows-alt"></i>
+            </button>
         </div>
     </div>
-    <div class="tile-footer">
-        <div class="btn-group">
-            <button class="btn btn-regular">Cancel</button>
-            <button class="btn btn-regular btn-primary">Save</button>
+    <div class="tile-body row g-3">
+        <div class="col-12">
+            <label for="input1" class="form-label">Label 1</label>
+            <input id="input1" type="text" class="form-control" />
         </div>
+        <div class="col-12">
+            <label for="input2" class="form-label">Label 2</label>
+            <input id="input2" type="text" class="form-control" />
+        </div>
+    </div>
+    <div class="tile-footer tile-footer--buttons">
+        <button class="btn btn-danger">Cancel</button>
+        <button class="btn btn-primary">Save</button>
     </div>
 </div>
 ```
@@ -105,54 +96,105 @@ parent: tiles_02_elements
 
 The tile header is the most complex component of a tile.
 
-It consists of 3 main areas: a headline, a nav / tab area and additional actions.
+It consists of 3 main areas: a title, a middle controls area and additional controls.
 
-The headline is always at the left, followed by the nav, while the actions are right aligned.
+The title is always positioned on the left, followed by the title controls, and the main controls are aligned to the right.
 */
 
 /*doc
 ---
-title: Headline
-name: tiles_04_headline
+title: Title
+name: tiles_04_title
 parent: tiles_03_header
 ---
 
-The headline is usually any heading element like `<h1>, <h2>, <h3>, <h4> ...` with the class `.headline`.
+The title is usually any heading element like `<h1>, <h2>, <h3>, <h4> ...` with the class `.tile-title`.
 
 ```htmlexample
 <div class="tile">
     <div class="tile-header">
-        <h2 class="headline">Headline</h2>
+        <h1 class="tile-title">Headline</h1>
     </div>
+</div>
+```
+
+To cut off a title that is too long, you need to add the class `.text-truncate`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header">
+        <h1 class="tile-title text-truncate">Headline is toooooooooooooooooooooooooooooooooooooooo looooooooooooooooooooooooooonnnnnnnngggggggg</h1>
+    </div>
+</div>
+```
+
+You can also add some kind of icon to the beginning or end of the title
+
+```htmlexample
+<div class="tile">
+  <div class="tile-header">
+    <h1 class="tile-title">
+        <i class="icon icon-caret-up"></i>
+        <span class="text-truncate">Headline</span>
+        <a href="#" class="icon icon-question-circle"></a>
+    </h1>
+  </div>
 </div>
 ```
 */
 
 /*doc
 ---
-title: Nav / Tabs
-name: tiles_05_nav
+title: Title controls
+name: tiles_05_title-controls
 parent: tiles_03_header
 ---
 
-The nav / tab area is a `<ul>` with class `.tile-header-nav` and should only contain `<a>`, each with their own `<li>`.
+Title controls are the area that is located between the title and the main actions (or between the edge(s) if there is no title or main actions). It occupies the entire available width.
 
-The `<li>` elements support `.active` to denote the currently active item.
+This area is very flexible and can store different types of elements. It can contain buttons, icons, switches, drop-down lists, navigation panel, etc.
 
 ```htmlexample
 <div class="tile">
     <div class="tile-header">
-        <ul class="tile-header-nav">
-            <li class="active">
-                <a href="">tab 1</a>
-            </li>
-            <li>
-                <a href="">tab 2</a>
-            </li>
-            <li>
-                <a href="">tab 3</a>
-            </li>
-        </ul>
+        <div class="tile-title-controls">
+            <label class="switch">
+                <input type="checkbox">
+                <i class="icon icon-image"></i>
+                <i class="icon icon-th-list"></i>
+            </label>
+
+            <a class="btn btn-icon btn-primary">
+                <i class="icon icon-search"></i>
+            </a>
+
+            <select class="form-control js-select" data-select-options="width: 'auto'">
+                <option value="true">Yes</option>
+                <option value="true">No</option>
+            </select>
+
+            <nav class="navbar navbar-expand-lg">
+                <a class="btn btn-header-tab active w-0" href="#"><span class="text text-truncate">Tab 1</span></a>
+                <button class="navbar-toggler btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#tile-title-nav" aria-controls="tile-title-nav" aria-expanded="false">
+                    <i class="icon icon-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse offcanvas" tabindex="-1" id="tile-title-nav">
+                    <ul class="navbar-nav offcanvas-body">
+                        <li class="nav-item">
+                            <a class="btn btn-outline-primary active" href="#" data-bs-dismiss="offcanvas">
+                                <span class="text-truncate">Tab 1</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="btn btn-outline-primary" href="#" data-bs-dismiss="offcanvas">
+                                <span class="text-truncate">Tab 2</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
     </div>
 </div>
 ```
@@ -160,77 +202,31 @@ The `<li>` elements support `.active` to denote the currently active item.
 
 /*doc
 ---
-title: Actions
-name: tiles_06_actions
+title: Main controls
+name: tiles_06_main-controls
 parent: tiles_03_header
 ---
 
-The action area is the most flexible and supports a wide range of elements.
-
-Each element should be wrapped in their own `<li>` with the exception of the divider element, which is a `<li>` with class `.divider`.
-
-`a.link` for text links, any `.btn` and their respective size modifiers, full height `.dropdown`s and also `.pagination` with its respective size modifiers.
-
-##### Divider, text link, buttons, dropdown
+This area is essentially the same as `tile-tile-controls`. It’s just that if there is a title tile, it is displayed on the right side.
+If the tile title is missing, you need to add the class `.justify-content-end` for `.tile-header` block.
 
 ```htmlexample
 <div class="tile">
-    <div class="tile-header">
-        <ul class="tile-header-actions">
-            <li>
-              <a href="#" class="link">
-                <i class="icon icon-arrow-left"></i>
-                <span class="text">Textlinks</span>
-              </a>
-            </li>
-            <li class="divider"></li>
-            <li>
-              <button class="btn btn-secondary" type="button">default</button>
-            </li>
-            <li>
-              <button class="btn btn-regular btn-secondary" type="button">regular</button>
-            </li>
-            <li>
-              <button class="btn btn-large btn-secondary" type="button">large</button>
-            </li>
+    <div class="tile-header justify-content-end">
+        <div class="tile-controls">
+            <div class="form-check form-switch">
+                <input id="tile-controls-switch" type="checkbox" class="form-check-input" role="switch" />
+                <label class="form-label form-check-label" for="tile-controls-switch">Enable</label>
+            </div>
 
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="icon icon-eye"></i>
-                    <span class="text">Dropdown</span>
-                    <i class="icon icon-caret-down"></i>
-                </a>
+            <div class="search-container">
+                <input type="text" class="form-control">
+            </div>
 
-                <ul class="dropdown-menu">
-                    <li class="dropdown-header">Dropdown header</li>
-                    <li>
-                        <a tabindex="-1" href="#">Link</a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-</div>
-```
-
-##### Pagination
-
-```htmlexample
-<div class="tile">
-    <div class="tile-header">
-        <ul class="tile-header-actions">
-            <li>
-                <ul class="pagination">
-                    <li><a href="#"><i class="icon icon-angle-left"></i> Previous</a></li>
-                    <li><a href="#">1</a></li>
-                    <li><a href="#">2</a></li>
-                    <li class="active"><a href="#">3</a></li>
-                    <li><a href="#">4</a></li>
-                    <li class="disabled"><a href="#">5</a></li>
-                    <li><a href="#">Next <i class="icon icon-angle-right"></i></a></li>
-                </ul>
-            </li>
-        </ul>
+            <button class="btn btn-icon btn-danger">
+                <i class="icon icon-trash-alt"></i>
+            </button>
+        </div>
     </div>
 </div>
 ```
@@ -238,29 +234,28 @@ Each element should be wrapped in their own `<li>` with the exception of the div
 
 /*doc
 ---
-title: Tile Content
-name: tiles_07_content
+title: Tile Body
+name: tiles_07_body
 parent: tiles_02_elements
 ---
 
-`.tile-content` is the main body of a `.tile`. Anything inside here goes.
+`.tile-body` is the main body of a `.tile`. Anything inside here goes.
 
-Supports `.tile-content-forms` either as a separate nested element or a modifier to provide padding to the body.
-
-Also available is a `.tile-separator` element that can be placed inside `.tile-content` to divide content visually, works regardless of whether or not `.tile-content-forms` is used.
+A .tile-body__block element is also available, which can be placed inside a .tile-body to visually separate content.
 
 ```htmlexample
 <div class="tile">
-    <div class="tile-content tile-content-forms">
-        <p>just some text content</p>
-        <div class="tile-separator"></div>
-        <p>just some text content</p>
+    <div class="tile-body">
+        <div class="tile-body__block">
+            <h2>Just some text content</h2>
+        </div>
+        <div class="tile-body__block">
+            <h2>Just some text content</h2>
+        </div>
     </div>
 </div>
 ```
 */
-
-
 
 /*doc
 ---
@@ -270,24 +265,275 @@ parent: tiles_02_elements
 ---
 
 The `.tile-footer` is mostly used for buttons, but as with the content anything goes.
+In order for the buttons to stretch to the available area, you need to add a class `.tile-footer--buttons`.
+
+<small class="text-muted">You can apply a <a href="components_-_char_counter.html"><i>char counter</i></a> component to this.</small>
 
 ```htmlexample
 <div class="tile">
-    <div class="tile-footer">
-        <button type="button" class="btn btn-regular">button</button>
-        <button type="button" class="btn btn-regular btn-primary">button</button>
+    <div class="tile-footer tile-footer--buttons">
+        <button type="button" class="btn btn-danger">button</button>
+        <button type="button" class="btn btn-primary">button</button>
     </div>
 </div>
 ```
 
-`.btn`s in a `.btn-group` are aligned to the right.
+You can also display the loader here. To do this you need to add a class `.tile-footer--loader` and put the loader icon inside.
 
 ```htmlexample
 <div class="tile">
-    <div class="tile-footer">
-        <div class="btn-group">
-          <button type="button" class="btn btn-regular">button</button>
-          <button type="button" class="btn btn-regular btn-primary">button</button>
+    <div class="tile-footer tile-footer--loader">
+        <i class="icon icon-spinner icon-pulse"></i>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile variants
+name: tiles_09_variants
+parent: tiles
+---
+*/
+
+/*doc
+---
+title: Colored tiles
+name: tiles_10_tile-colored
+parent: tiles_09_variants
+---
+
+You can make tiles of different colors simply by adding certain classes.
+
+```htmlexample
+  <div class="tile tile--alert">
+      <div class="tile-header">
+          <h1 class="tile-title">Error</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some alert message text!</p>
+      </div>
+      <div class="tile-footer tile-footer--buttons">
+          <button class="btn btn-primary">
+              <i class="icon icon-reply"></i>
+              <span class="text">Back</span>
+          </button>
+      </div>
+  </div>
+```
+
+Success: `.tile--success`.
+
+```htmlexample
+  <div class="tile tile--success">
+      <div class="tile-header">
+          <h1 class="tile-title">Success</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some success message text!</p>
+      </div>
+  </div>
+```
+
+Warning: `.tile--warning`.
+
+```htmlexample
+  <div class="tile tile--warning">
+      <div class="tile-header">
+          <h1 class="tile-title">Warning</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some warning message text!</p>
+      </div>
+  </div>
+```
+
+Info: `.tile--info`.
+
+```htmlexample
+  <div class="tile tile--info">
+      <div class="tile-header">
+          <h1 class="tile-title">Info</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some info message text!</p>
+      </div>
+  </div>
+```
+
+Dark blue: `.tile--dark-blue`.
+
+```htmlexample
+  <div class="tile tile--dark-blue">
+      <div class="tile-header">
+          <h1 class="tile-title">Info</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Some info message text!</p>
+      </div>
+  </div>
+```
+
+Highlighted: `.tile--highlighted`.
+
+```htmlexample
+  <div class="tile tile--highlighted">
+      <div class="tile-header">
+          <h1 class="tile-title">Hightlited tile title</h1>
+      </div>
+
+      <div class="tile-body">
+          <p>Hightlited tile body text!</p>
+      </div>
+  </div>
+```
+*/
+
+/*doc
+---
+title: Tile sizes
+name: tiles_11_tile-sizes
+parent: tiles_09_variants
+---
+
+There are several versions for controlling tile sizes. Basically, such tiles are used inside the main tile and are sub-tiles.
+
+Extra small: `.tile--xs`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--xs">
+          <div class="tile-header">
+              <h1 class="tile-title">Very small sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Very small sub tile text!</p>
+          </div>
+      </div>
+    </div>
+</div>
+```
+
+Small: `.tile--sm`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--sm">
+          <div class="tile-header">
+              <h1 class="tile-title">Small sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Small sub tile text!</p>
+          </div>
+      </div>
+    </div>
+</div>
+```
+
+Medium: `.tile--md`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--md">
+          <div class="tile-header">
+              <h1 class="tile-title">Medium sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Medium sub tile text!</p>
+          </div>
+          <div class="tile-footer tile-footer--buttons">
+            <button type="button" class="btn btn-danger">button</button>
+            <button type="button" class="btn btn-primary">button</button>
+          </div>
+      </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Tile with borders
+name: tiles_12_tile-borders
+parent: tiles_09_variants
+---
+
+In some cases, it is necessary to add a border below the header and above the footer. To do this you need to add the classes `.border-bottom` and `.border-top` respectively.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-header border-bottom">
+        <h1 class="tile-title">Headline</h1>
+    </div>
+    <div class="tile-body">
+        <p>Body content!</p>
+    </div>
+    <div class="tile-footer tile-footer--buttons border-top">
+        <button class="btn btn-danger">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+    </div>
+</div>
+```
+
+Medium: `.tile--md`.
+
+```htmlexample
+<div class="tile">
+    <div class="tile-body">
+      <div class="tile tile--md">
+          <div class="tile-header">
+              <h1 class="tile-title">Medium sub tile</h1>
+          </div>
+
+          <div class="tile-body">
+              <p>Medium sub tile text!</p>
+          </div>
+          <div class="tile-footer tile-footer--buttons">
+            <button type="button" class="btn btn-danger">button</button>
+            <button type="button" class="btn btn-primary">button</button>
+          </div>
+      </div>
+    </div>
+</div>
+```
+*/
+
+/*doc
+---
+title: Notification tile
+name: tiles_13_tile-notification
+parent: tiles_09_variants
+---
+
+This variation is needed to display in the center of the page. Еo use it you need to add a class `.tile--notification`.
+
+```htmlexample
+<div style="height: 300px; position: relative; width: 100%">
+    <div class="tile tile--notification">
+        <div class="tile-header">
+            <h1 class="tile-title">Item not found</h1>
+        </div>
+
+        <div class="tile-body">
+            <p>Item was not found!</p>
+        </div>
+        <div class="tile-footer tile-footer--buttons">
+            <button class="btn btn-primary">
+                <i class="icon icon-reply"></i>
+                <span class="text">Back</span>
+            </button>
         </div>
     </div>
 </div>
@@ -296,523 +542,537 @@ The `.tile-footer` is mostly used for buttons, but as with the content anything 
 
 /*doc
 ---
-title: Tile Notification
-name: tiles_09_notification
-parent: tiles_02_elements
+title: Message tile
+name: tiles_14_tile-message
+parent: tiles_09_variants
 ---
 
-The `.tile-notification` can be used for additional text content to provide context.
-
-It lives on the same nesting level as `.tile-header`, `.tile-content` and `.tile-footer`.
-While it does not matter after which element it appears, it is usually placed after the `.tile-header`.
-
-It supports the usual states as `.tile-notification-success`, `.tile-notification-info`, `.tile-notification-warning` and `.tile-notification-alert`.
-
-The content can be anything.
-
+Used primarily for error messages only on separate pages and is small in size. The tile header contains an image.
+To use it you need to add a class `.tile--msg`.
 
 ```htmlexample
-<div class="tile">
-    <div class="tile-notification">
-        <p>There's something you should read here.</p>
-    </div>
-</div>
+<div class="systempage" style="height: 350px;">
+    <div class="tile tile--msg tile--alert">
+        <div class="tile-header">
+            <svg><use href="/assets/core/images/facelift/sprite.svg#errors_error-500"></use></svg>
+            <h1>500 - Error</h1>
+        </div>
+        <div class="tile-body">
+            <h2>Full error explanation text!</h2>
 
-<div class="tile">
-    <div class="tile-notification tile-notification-success">
-        <p><i class="icon icon-state-success"></i> There's something you should read here.</p>
-    </div>
-</div>
-
-<div class="tile">
-    <div class="tile-notification tile-notification-info">
-        <p><i class="icon icon-state-info"></i> There's something you should read here.</p>
-    </div>
-</div>
-
-<div class="tile">
-    <div class="tile-notification tile-notification-warning">
-        <p><i class="icon icon-state-warning"></i> There's something you should read here.</p>
-    </div>
-</div>
-
-<div class="tile">
-    <div class="tile-notification tile-notification-alert">
-        <p><i class="icon icon-state-alert"></i> There's something you should read here.</p>
+            <a href="#" class="btn btn-primary w-100 flex-center gap-1">
+                <i class="icon icon-reply"></i>
+                <span class="text">Back</span>
+            </a>
+        </div>
     </div>
 </div>
 ```
 */
 
+/*doc
+---
+title: Expand / Collapse tile
+name: tiles_16_full-screen
+parent: tiles
+---
+
+Use `[data-full-screen]` in order to expand the tile to fill the entire browser window.
+
+Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, leaving only the header visible.
+
+<small class="text-muted">
+    With `.mobile-hidden` near `.icon-caret-up` the tile will be collapsable on mobile only.
+    If the browser window reaches the size of the desktop, the collapse will be automatically ignored. Resize window to see it in action.
+</small>
+
+```htmlexample
+<div class="tile" data-toggle-tile>
+    <div class="tile-header">
+        <h1 class="tile-title">
+          <i class="icon icon-caret-up"></i>
+          <span>I am stay when I or this caret icon on the left is clicked</span>
+        </h1>
+        <div class="tile-controls">
+            <button type="button" class="btn btn-icon btn-secondary" data-full-screen>
+                <i class="icon icon-expand-arrows-alt"></i>
+            </button>
+        </div>
+    </div>
+    <div class="tile-body border-top border-bottom">
+        I am hidden when tile title clicked
+    </div>
+    <div class="tile-footer">
+        I am also hidden when tile title clicked
+    </div>
+</div>
+
+<div class="tile mt-3" data-toggle-tile>
+    <div class="tile-header">
+        <h1 class="tile-title">
+          <i class="icon icon-caret-up mobile-visible"></i>
+          <span>If you shrink the browser window to the mobile size, you can see the icon on the left</span>
+        </h1>
+    </div>
+    <div class="tile-body border-top border-bottom">
+        <p>I am hidden when tile header is pressed (except controls), but only on mobile size</p>
+        <p>Anyway, if you resize browser window to desktop size back, I'll still be visible</p>
+    </div>
+</div>
+```
+*/
 
 .tile {
-  background-color: $c-white;
+  --tile-title-color: #{$dark-blue};
+  --tile-title-grey-color: #{$dark-grey};
+  --tile-footer-bg: #{$x-light-grey};
+  --tile-footer-color: inherit;
+  --tile-highlighted-header-bg: #{$gray-100};
+  --tile-highlighted-header-color: #{$dark-grey};
+  --tile-variant-color: #{$white};
 
-  margin-bottom: 10px;
+  @extend .card;
+  border-color: $border-color-var;
+  height: 100%;
+  overflow: hidden;
 
-  @include shadow-variant(regular);
+  .card-title {
+    margin-bottom: 0;
+  }
 
-  &.flex-tile {
-    display: flex;
-    flex-direction: column;
-    height: calc(100% - 10px);
+  nav.tile-header {
+    padding: 0;
+    flex: 0;
+    border-radius: 0;
 
-    & > .tile-header, & > .tile-footer {
-      flex-shrink: 0;
+    .btn {
+      border: none !important;
+      border-radius: 0 !important;
+    }
+  }
+
+  .tile-body {
+    @extend .card-body;
+    @include hide-scroll;
+    color: $body-color-var;
+    padding: $tile-body-spacer;
+    position: relative;
+
+    &.tile-body--js-editor {
+      padding: 0;
+      min-height: 250px;
+      display: grid; // FF fix
     }
 
-    & > .tile-content {
-      flex-grow: 1;
-      height: 0;
-      overflow: hidden auto;
+    @include mobile {
+      padding: $gap-sm;
+      gap: $gap-sm;
+    }
+  }
+
+  $collapse-mobile-only: '.tile-title > i.icon-caret-up.mobile-visible, .tile-title > i.icon-caret-down.mobile-visible';
+
+  &--collapsed {
+    .tile-header {
+      border-bottom: none !important;
+    }
+
+    height: max-content;
+    flex: none;
+
+    &:has(#{$collapse-mobile-only}) {
+      height: initial;
+
+      @include mobile {
+        .tile-body, .tile-footer {
+          display: none !important;
+        }
+      }
+    }
+
+    &:not(:has(#{$collapse-mobile-only})) {
+      .tile-body, .tile-footer {
+        display: none !important;
+      }
+    }
+  }
+
+  &--full-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    border-radius: 0;
+    border: 0;
+
+    .tile-title i:first-child {
+      display: none;
+    }
+
+    .tile-body {
+      height: 100%;
+    }
+
+    &:not(:has(#{$collapse-mobile-only})) {
+      .tile-body, .tile-footer {
+        display: flex !important;
+      }
+    }
+
+    .tile-header, .tile-footer {
+      border-radius: 0;
+    }
+  }
+
+  &--switchable {
+
+    .tile-header {
+      justify-content: unset;
+      gap: $gap-x-sm;
+      color: var(--tile-title-grey-color);
+      flex-basis: 30px;
+      font-size: $font-size-base;
+      font-weight: $font-weight-semibold;
+      padding: $gap-x-sm $gap-md;
+    }
+
+    .tile-body {
+      padding: $gap-sm;
+      border-top: $border-default;
     }
   }
 }
 
-body.dark-theme .tile {
-  background-color: $c-dt-tile-background;
-  box-shadow: 0 1px 3px 0 lighten($c-dt-tile-background, 10%);
+@include color-mode(dark) {
+  .tile {
+    --tile-title-color: #{$light-blue};
+    --tile-title-grey-color: #{$light-grey};
+    --tile-footer-bg: #{$grey-blue};
+    --tile-highlighted-header-bg: #{$grey-blue};
+    --tile-highlighted-header-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .tile {
+    --tile-title-color: #{$con-dark-blue};
+    --tile-title-grey-color: var(--tile-title-color);
+    --tile-highlighted-header-bg: #{$con-grey};
+    --tile-highlighted-header-color: #{$con-dark-blue};
+    --tile-variant-color: #{$con-dark-blue};
+    --tile-footer-bg: #{$con-light-blue};
+    --tile-footer-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .tile {
+    --tile-title-color: #{$white};
+    --tile-title-grey-color: var(--tile-title-color);
+    --tile-footer-bg: #{$con-light-blue};
+    --tile-highlighted-header-bg: #{$dark-grey};
+    --tile-highlighted-header-color: #{$white};
+    --tile-variant-color: #{$con-dark-blue};
+    --tile-footer-color: #{$con-dark-blue};
+  }
 }
 
 .tile-header {
-  height: 50px;
-  padding: 0 0 0 15px;
-  position: relative;
+  @extend .card-header;
 
-  background-color: $c-white;
+  @include flex-row($gap-sm);
+  align-items: center;
+  justify-content: space-between;
 
-  @include clearfix();
+  border-bottom: none;
+  flex: 0 0 40px;
+  background-color: transparent;
+  padding: $gap-sm $gap $gap-x-sm $gap;
 
-  .headline {
-    float: left;
-    margin: 0;
-    margin-right: 20px;
-    line-height: 22px;
-    margin-top: 14px;
-    font-size: $fs-xlarge;
-    font-weight: $fw-semi;
-    color: $c-black-85;
-
-    &.ellipsis {
-      float: none;
-      overflow-x: hidden;
-      text-overflow: ellipsis;
-    }
-
-    a {
-      font-size: $fs-xlarge;
-      font-weight: $fw-semi;
-      color: $c-black-85;
-      line-height: 20px;
-    }
-
-    .select2-container {
-      margin-top: -7px;
-
-      .select2-choice {
-        height: 36px;
-        line-height: 36px;
-        font-size: $fs-xlarge;
-        font-weight: $fw-semi;
-        color: $c-black-85;
-      }
-    }
-
-    .badge {
-      vertical-align: middle;
-    }
+  @include mobile {
+    padding: $gap-sm;
+    gap: $gap-sm;
   }
+}
 
-  .form-control {
-    margin-top: 10px;
-  }
+.tile-title {
+  @include flex-row($gap-sm);
+  align-items: center;
+  font-weight: $font-weight-medium;
+  color: var(--tile-title-color);
+  overflow: hidden; // for text truncation
 
-  .tile-toggle {
-    color: $c-gray-80; 
-  }
-
-  .btn {
-    margin-top: 15px;
-  }
-
-  .btn-regular {
-    margin-top: 10px;
-  }
-
-  .btn-large {
-    margin-top: 5px;
-  }
-
-  .dropdown-toggle {
+  &.text-truncate {
     display: block;
-    padding: 15px 10px;
-
-    color: $c-gray-55;
   }
 
-  .pagination {
-    margin-top: 10px;
-  }
-
-  .pagination-small {
-    margin-top: 15px;
-  }
-
-  .pagination-large {
-    margin-top: 5px;
-  }
-
-  .link {
-    display: block;
-    line-height: 20px;
-    margin-top: 15px;
-    color: $c-gray-55;
-
-    &:hover,
-    &:focus,
-    &:active {
-      color: $c-blue-27;
-    }
-  }
-
-  .dropdown {
-    &:hover,
-    &:focus,
-    &:active {
-      background-color: $c-blue-27;
-
-      .dropdown-toggle {
-        color: $c-white;
-      }
-    }
-  }
-
-  .status {
-    padding: 15px;
-    display: block;
-    line-height: 20px;
-    color: $c-gray-55;
-
-    .form-badge {
-      margin: 0;
-    }
-  }
-
-  .dropdown.open {
-    background-color: $c-blue-27;
-
-    .dropdown-toggle {
-      color: $c-white;
-    }
-  }
-
-  .tab {
-
-    a {
-      display: inline-block;
-      padding: 15px;
-
-      color: $c-gray-55;
-
-      &:hover {
-        color: $c-blue-27;
-      }
-    }
-
-    &.active {
-      border-left: 1px solid $c-gray-20;
-      border-right: 1px solid $c-gray-20;
-      border-bottom: 1px solid #fff;
-      height: calc(100% + 1px);
-
-      a {
-        color: $c-blue-27;
-      }
-    }
-
-
-  }
-
-  .notification {
-    margin-top: 5px;
-
-    .notification-header {
-      padding: 8px 40px 8px 15px;
-
-      .text {
-        color: $c-gray-55;
-      }
-    }
-  }
-
-}
-
-body.dark-theme .tile-header {
-  background-color: $c-dt-tile-header;
-
-  .headline {
-    color: $c-dt-tile-text;
-    a {
-      color: $c-dt-tile-text;
-    }
-
-    .select2-container .select2-choice {
-      background-color: $c-dt-tile-header;
-      color: $c-dt-tile-text;
-    }
-  }
-
-  .dropdown-toggle {
-    color: $c-dt-dropdown-toggle-text;
-  }
-
-  .status,
-  .link {
-    color: $c-dt-tile-header-actions-text;
-
-    &:hover,
-    &:focus,
-    &:active {
-      color: $c-blue-27;
-    }
-  }
-
-  .tab.active {
-    border-left-color: $c-dt-tile-border;
-    border-right-color: $c-dt-tile-border;
-    border-bottom: none;
-    background-color: $c-dt-tile-background;
-  }
-  
-  .tile-toggle {
-    color: $c-dt-dropdown-toggle-text;
+  &--grey {
+    color: var(--tile-title-grey-color);
   }
 }
 
-body.dark-theme .tile-header-nav {
-  > li {
-
-    > a {
-      color: $c-dt-tile-text;
-    }
-
-    &:hover,
-    &:focus,
-    &.active {
-      > a {
-        color: $c-dt-tile-text;
-      }
-    }
-  }
+.tile-title-controls {
+  @include flex-row($gap-sm);
+  flex: 1;
+  min-width: 0;
 }
 
-.tile-header-nav, .tile-header-actions {
-  height: 100%;
+.tile-controls {
+  @include flex-row($gap-sm);
+  align-items: center;
+  min-width: 0;
 
-  > li, .dropdown-toggle {
-    height: 100%;
+  .form-check-label {
+    font-weight: normal;
   }
 
-  .select {
-    padding: 11px 10px 10px;
-
-    .select2-container {
-      border: none;
-      @include box-shadow(0 0 0 0 transparent);
-    }
+  .form-switch {
+    font-size: $font-size-base;
+    font-weight: normal;
   }
 
-  .control-label {
-    line-height: 50px;
-    padding-top: 0;
+  > .select2-container {
+    min-width: 0;
   }
-}
 
-.tile-header-group {
-  border-left: 1px solid $c-gray-11;
-}
-
-.tile-content {
-  border-top: 1px solid $c-gray-20;
-}
-
-body.dark-theme .tile-content:not(.tile-content-birt-page) {
-  border-color: $c-dt-tile-top-border;
-  background-color: $c-dt-tile-background;
-
-  @include box-shadow(inset 0px 10px 4px -8px $c-dt-tile-shadow);
+  .progress {
+    width: 280px;
+  }
 }
 
 .tile-footer {
-  padding: 10px;
-  border-top: 1px solid $c-gray-20;
+  @extend .card-footer;
+  border-top: 0;
+  padding: $gap-x-sm $gap-sm;
+  margin: 0;
+  color: var(--tile-footer-color);
+  background-color: var(--tile-footer-bg);
+  display: grid;
 
-  @include clearfix();
+  &.tile-footer--loader {
+    @extend .flex-center;
 
-  .btn-group {
-    text-align: right;
+    i {
+      font-size: 25px;
+    }
+  }
+
+  &.tile-footer--buttons {
+    @include flex-row($gap-sm);
+    padding: $gap-md;
+    background-color: inherit;
+
+    > .btn {
+      flex-grow: 1;
+    }
   }
 }
 
-body.dark-theme .tile-footer {
-  border-color: $c-dt-tile-border;
-  background-color: $c-dt-tile-background;
+.tile--notification {
+  max-width: 700px;
+  height: auto;
+  @include center-absolute;
+
+  > .tile-footer {
+    padding: 0 $gap-md $gap-md $gap-md;
+    background-color: transparent;
+  }
 }
 
-.tile-notification {
-  padding: 15px 30px;
-  font-size: $fs-regular;
-  border-top: 1px solid $c-gray-20;
+.tile--xs {
+  > .tile-header {
+    color: $body-color-var;
+    flex-basis: 30px;
+    padding: 0 $gap-sm;
+    gap: $gap-x-sm;
+  }
+
+  .tile-title {
+    gap: $gap-x-sm;
+  }
+
+  > .tile-body {
+    padding: $gap-sm;
+  }
 }
 
-body.dark-theme .tile-notification {
-  border-color: $c-dt-tile-border;
+.tile--sm {
+  > .tile-header {
+    color: $body-color-var;
+    flex-basis: 40px;
+    padding: 0 $gap-sm;
+  }
+
+  > .tile-body {
+    padding: $gap-sm;
+  }
+}
+
+.tile--md {
+  > .tile-header {
+    color: $body-color-var;
+    padding: 0 $gap-md;
+  }
+
+  > .tile-body {
+    padding: $gap-md;
+  }
+
+  > .tile-footer {
+    &.tile-footer--buttons {
+      padding: $gap-sm;
+    }
+  }
+}
+
+.tile--headless {
+  border: none;
+
+  > .tile-header {
+    padding-inline: 0;
+  }
+
+  > .tile-body {
+    @include border;
+  }
+}
+
+.tile-body__block {
+  padding-block: $tile-body-spacer;
+  position: relative;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    &:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -$tile-body-spacer;
+      right: -$tile-body-spacer;
+      height: 100%;
+      border-bottom: $border-default;
+      pointer-events: none;
+    }
+  }
+}
+
+@mixin tile-variant($state, $color) {
+  .tile--#{$state} {
+    border-color: $color;
+
+    .tile-header {
+      color: var(--tile-variant-color);
+      background-color: $color;
+
+      .tile-title {
+        color: var(--tile-variant-color);
+      }
+    }
+  }
 }
 
 @each $conf in $states {
   $state: nth($conf, 1);
   $color: nth($conf, 2);
 
-  .tile-notification-#{$state} {
-    color: $color;
+  @include tile-variant($state, $color);
+}
+
+.tile--highlighted {
+  .tile-header {
+    background-color: var(--tile-highlighted-header-bg);
+    border-bottom: $border-default;
+  }
+
+  .tile-title {
+    color: var(--tile-highlighted-header-color);
   }
 }
 
+.tile--dark-blue {
+  border-color: $dark-blue;
 
-.tile-header-actions {
-  float: right;
-  margin-left: 15px;
-
-  > li {
-    float: left;
+  .tile-header, .tile-body {
+    color: $white;
+    background: $dark-blue;
   }
 
-  > li + li {
-    margin-left: 10px;
+  .tile-title {
+    color: $white;
   }
-
-  > .divider {
-    width: 1px;
-    overflow: hidden;
-    background-color: $c-gray-11;
-  }
-
-  > li:last-child:not(.status) {
-    .btn, button[type="button"], .link, .pagination {
-      margin-right: 10px;
-    }
-    .form-control {
-      margin-right: 10px;
-      width: calc(100% - 10px);
-    }
-  }
-
 }
 
-.tile-header-nav {
-  float: left;
+.tile--msg {
+  max-width: 350px;
 
-  > li {
-    float: left;
+  .tile-header {
+    @include flex-column($gap);
+    padding: $gap;
 
-    + li {
-      margin-left: 20px;
-    }
-
-    > a {
-      display: block;
-      padding: 15px 0;
-      line-height: 18px;
-      color: $c-gray-55;
-
-      border-bottom: 2px solid $c-transparent;
-
-      @include transition(all .25s ease-in-out);
-    }
-
-    &:hover,
-    &:active,
-    &:focus,
-    &.active {
-      > a {
-        color: $c-blue-27;
-        border-bottom-color: $c-blue-27;
-      }
-    }
-
-    &.disabled {
-      > a {
-        pointer-events: none;
-        cursor: default !important;
-        color: $c-gray-33;
-      }
-
-      &:hover,
-      &:active,
-      &:focus {
-        > a {
-          border-bottom-color: $c-transparent;
-        }
-      }
-
-      &.active {
-        > a {
-          border-bottom-color: $c-gray-33;
-        }
-      }
+    img, svg {
+      max-height: 100px;
     }
   }
 
-}
-
-.tile-separator {
-  display: block;
-  margin-top: 20px;
-  margin-bottom: 20px;
-
-  background-color: $c-gray-11;
-  height: 1px;
-  font-size: 1px;
-  line-height: 1px;
-}
-
-body.dark-theme .tile-separator {
-  background-color: $c-dt-tile-border;
-}
-
-.tile-content-forms {
-  padding: 30px;
-
-  background-color: $c-white;
-
-  .empty-list {
-    margin: 0;
+  .tile-body {
+    @include flex-column($gap-md);
+    align-items: center;
   }
 
-  .tile-separator {
-    margin-right: -30px;
-    margin-left: -30px;
+  height: auto;
+}
+
+.tile--processing {
+  --processing-tile-bg-color: #{$primary};
+  --processing-tile-title-text-color: #{$white};
+  --processing-tile-btn-color: #{$white};
+  --processing-tile-btn-text-color: #{$primary};
+
+  background-color: var(--processing-tile-bg-color);
+  border-color: var(--processing-tile-bg-color);
+
+  .tile-header {
+    border-bottom: none;
+    padding-bottom: 0;
+
+    .tile-title {
+      color: var(--processing-tile-title-text-color);
+      font-size: $font-size-md;
+      font-weight: 600;
+    }
+  }
+
+  .tile-body {
+    .btn {
+      background-color: var(--processing-tile-btn-color);
+      color: var(--processing-tile-btn-text-color);
+    }
   }
 }
 
-body.dark-theme .tile-content-forms {
-  background-color: $c-dt-tile-background;
+@include color-mode(light-contrast) {
+  .tile--processing {
+    --processing-tile-bg-color: #{$con-dark-blue};
+    --processing-tile-title-text-color: #{$white};
+    --processing-tile-btn-color: #{$white};
+    --processing-tile-btn-text-color: #{$con-dark-blue};
+  }
 }
 
-.tile-content-padded {
-  padding: 15px;
-}
-
-.l-tile-recipient-info-box {
-  margin: 10px;
-  position: relative;
-  border: 1px solid #cccdcd;
-  color: #338dc7;
-  padding: 15px 30px;
-  font-size: 14px;
-}
-
-.tile-info-box {
-  padding: 10px 0 10px;
-  border-bottom: 1px solid #cccdcd;
+@include color-mode(dark-contrast) {
+  .tile--processing {
+    --processing-tile-bg-color: #{$white};
+    --processing-tile-title-text-color: #{$con-dark-blue};
+    --processing-tile-btn-color: #{$con-dark-blue};
+    --processing-tile-btn-text-color: #{$white};
+  }
 }

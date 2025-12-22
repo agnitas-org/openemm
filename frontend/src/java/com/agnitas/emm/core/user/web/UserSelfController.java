@@ -10,39 +10,13 @@
 
 package com.agnitas.emm.core.user.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.dao.AdminGroupDao;
-import com.agnitas.dao.AdminPreferencesDao;
-import com.agnitas.dao.CompanyDao;
-import com.agnitas.dao.EmmLayoutBaseDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.logon.service.LogonService;
-import com.agnitas.emm.core.user.form.UserSelfForm;
-import com.agnitas.emm.core.user.service.UserSelfService;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpSession;
-import com.agnitas.beans.AdminGroup;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
-import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
-import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
-import org.agnitas.emm.core.commons.password.util.PasswordUtil;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.logintracking.bean.LoginData;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getDashboardMailingsView;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getGenderText;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingContentViewName;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingLivePreviewPosition;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingSettingsViewName;
+import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -51,14 +25,42 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getDashboardMailingsView;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getGenderText;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingContentViewName;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingLivePreviewPosition;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getMailingSettingsViewName;
-import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStatisticLoadType;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.dao.AdminGroupDao;
+import com.agnitas.dao.AdminPreferencesDao;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.EmmLayoutBaseDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
+import com.agnitas.emm.core.commons.password.PasswordCheckHandler;
+import com.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
+import com.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
+import com.agnitas.emm.core.commons.password.util.PasswordUtil;
+import com.agnitas.emm.core.loginmanager.bean.LoginData;
+import com.agnitas.emm.core.logon.service.LogonService;
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
+import com.agnitas.emm.core.user.form.UserSelfForm;
+import com.agnitas.emm.core.user.service.UserSelfService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.AlwaysAllowed;
+import jakarta.servlet.http.HttpSession;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 public class UserSelfController implements XssCheckAware {
 
@@ -96,6 +98,7 @@ public class UserSelfController implements XssCheckAware {
     }
 
     @RequestMapping("/view.action")
+    @AlwaysAllowed
     public String view(Admin admin, @ModelAttribute("selfForm") UserSelfForm form, Model model) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.ADMIN_LOGIN_LOG_OVERVIEW, form);
 
@@ -118,6 +121,7 @@ public class UserSelfController implements XssCheckAware {
     }
 
     @PostMapping("/save.action")
+    @AlwaysAllowed
     public String save(Admin admin, @ModelAttribute UserSelfForm form, Popups popups, HttpSession session) {
         AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
 
@@ -129,7 +133,7 @@ public class UserSelfController implements XssCheckAware {
         }
 
         saveData(admin, form, adminPreferences);
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         updateSessionAttributes(session, admin, adminPreferences);
 
@@ -164,9 +168,7 @@ public class UserSelfController implements XssCheckAware {
         admin.setAdminLang(form.getAdminLocale().getLanguage());
         admin.setAdminCountry(form.getAdminLocale().getCountry());
         admin.setLayoutBaseID(form.getLayoutBaseId());
-        if (admin.isRedesignedUiUsed()) {
-            admin.setLayoutType(form.getUiLayoutType());
-        }
+        admin.setLayoutType(form.getUiLayoutType());
         admin.setAdminTimezone(form.getAdminTimezone());
         admin.setGender(form.getGender());
 
@@ -233,6 +235,7 @@ public class UserSelfController implements XssCheckAware {
             adminPreferences.setMailingContentView(form.getMailingContentView());
             adminPreferences.setMailingSettingsView(form.getMailingSettingsView());
             adminPreferences.setStatisticLoadType(form.getStatisticLoadType());
+            adminPreferences.setMailingSettingsViewType(form.getMailingSettingsViewType());
 
             adminPreferencesDao.save(adminPreferences);
         }
@@ -280,6 +283,7 @@ public class UserSelfController implements XssCheckAware {
         form.setMailingSettingsView(adminPreferences.getMailingSettingsView());
         form.setLivePreviewPosition(adminPreferences.getLivePreviewPosition());
         form.setStatisticLoadType(adminPreferences.getStatisticLoadType());
+        form.setMailingSettingsViewType(adminPreferences.getMailingSettingsViewType());
 
         if (logger.isDebugEnabled()) {
             logger.debug("loadAdmin: admin {} loaded", form.getId());
@@ -306,6 +310,17 @@ public class UserSelfController implements XssCheckAware {
             if (oldStatisticLoadType != newStatisticLoadType) {
                 writeUserActivityLog(admin, EDIT_USER_STR, String.format("%s. Statistic-Summary load type changed from %s to %s",
                         userName, getStatisticLoadType(oldStatisticLoadType), getStatisticLoadType(newStatisticLoadType)));
+            }
+
+            // Log changes of Statistic-Summary load type
+            MailingSettingsViewType oldMailingSettingsViewType = adminPreferences.getMailingSettingsViewType();
+            MailingSettingsViewType newMailingSettingsViewType = form.getMailingSettingsViewType();
+
+            if (oldMailingSettingsViewType != newMailingSettingsViewType) {
+                writeUserActivityLog(admin, EDIT_USER_STR, String.format("%s. Statistic-Summary mailing settings view changed from %s to %s",
+                    userName,
+                    I18nString.getLocaleString(oldMailingSettingsViewType.getMsgKey(), Locale.ENGLISH),
+                    I18nString.getLocaleString(newMailingSettingsViewType.getMsgKey(), Locale.ENGLISH)));
             }
 
             // Log changes of default mailing content view
@@ -335,9 +350,7 @@ public class UserSelfController implements XssCheckAware {
                         userName, getMailingLivePreviewPosition(oldLivePreviewPosition), getMailingLivePreviewPosition(newLivePreviewPosition)));
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("saveEmmUser: self edit save user preferences {}", form.getId());
-            }
+            logger.info("saveEmmUser: self edit save user preferences {}", form.getId());
         } catch (Exception e) {
             logger.error("Log EMM User self user preferences changes error: {}", e.getMessage(), e);
         }
@@ -424,9 +437,7 @@ public class UserSelfController implements XssCheckAware {
                         String.format("%s. User Group changed from %s to %s", userName, oldGroupIdsList, newGroupIdsList));
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("saveEmmUser: self edit save user {}", form.getId());
-            }
+            logger.info("saveEmmUser: self edit save user {}", form.getId());
         } catch (Exception e) {
             logger.error("Log EMM User self changes error: {}", e.getMessage(), e);
         }
@@ -440,4 +451,5 @@ public class UserSelfController implements XssCheckAware {
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
         return "password".equals(param) || "passwordConfirm".equals(param);
     }
+
 }

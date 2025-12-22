@@ -10,36 +10,9 @@
 
 package com.agnitas.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExportPredefService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.ExportPredef;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.export.dao.ExportPredefDao;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.FileCompressionType;
-import com.agnitas.service.RecipientExportWorker;
-import com.agnitas.service.RecipientExportWorkerFactory;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.Const;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.importvalues.Charset;
-import com.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import javax.sql.DataSource;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
@@ -49,13 +22,42 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.sql.DataSource;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.ExportPredef;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.export.dao.ExportPredefDao;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExportPredefService;
+import com.agnitas.service.FileCompressionType;
+import com.agnitas.service.RecipientExportWorker;
+import com.agnitas.service.RecipientExportWorkerFactory;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Const;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.importvalues.Charset;
+import com.agnitas.web.forms.PaginationForm;
+import com.agnitas.web.perm.NotAllowedActionException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
 
     private static final Logger LOGGER = LogManager.getLogger(ExportPredefServiceImpl.class);
-    
+
+    protected ExportPredefDao exportPredefDao;
     private RecipientExportWorkerFactory recipientExportWorkerFactory;
-    private ExportPredefDao exportPredefDao;
     private ConfigService configService;
     private DataSource dataSource;
     private BulkActionValidationService<Integer, ExportPredef> bulkActionValidationService;
@@ -71,12 +73,47 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
+    public boolean isReferenceTableExportAllowed(Admin admin) {
+        return false;
+    }
+
+    @Override
+    public List<ExportPredef> getExportProfilesByReferenceTable(int tableId, int companyId) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ExportPredef> getExportProfilesByReferenceTableColumn(int tableId, String columnName, int companyId) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void renameUsedReferenceTableColumn(int tableId, String oldName, String newName, int companyId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int save(ExportPredef src, Admin admin) {
-        if (!isManageAllowed(src, admin)) {
-            throw new UnsupportedOperationException();
+        if (src == null || src.getCompanyID() == 0) {
+            throw new IllegalArgumentException();
         }
 
+        if (!isManageAllowed(src, admin)) {
+            throw new NotAllowedActionException();
+        }
+
+        syncReferenceTableColumns(src);
+
+        if (src.getReferenceTableId() == null) {
+            src.setRefTableJoinCondition(null);
+        }
+
+        src.getExportColumnMappings().removeIf(cm -> StringUtils.isBlank(cm.getDbColumn()));
         return exportPredefDao.save(src);
+    }
+
+    protected void syncReferenceTableColumns(ExportPredef exportProfile) {
+        // nothing to for OpenEMM
     }
 
     @Override
@@ -85,7 +122,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public PaginatedListImpl<ExportPredef> getExportProfilesOverview(PaginationForm form, Admin admin) {
+    public PaginatedList<ExportPredef> getExportProfilesOverview(PaginationForm form, Admin admin) {
         final List<ExportPredef> exports = getExportProfiles(admin);
         final int page = AgnUtils.getValidPageNumber(exports.size(), form.getPage(), form.getNumberOfRows());
 
@@ -95,7 +132,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
                 .limit(form.getNumberOfRows())
                 .toList();
 
-        return new PaginatedListImpl<>(sortedExports, exports.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
+        return new PaginatedList<>(sortedExports, exports.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder());
     }
 
     private Comparator<ExportPredef> getComparator(PaginationForm form) {
@@ -119,8 +156,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     	return exportPredefDao.getAllExportIds(admin);
     }
     
-    @Override
-    public ServiceResult<ExportPredef> getExportForDeletion(int exportId, int companyId) {
+    protected ServiceResult<ExportPredef> getExportForDeletion(int exportId, int companyId) {
         ExportPredef export = get(exportId, companyId);
         if (export == null) {
             return ServiceResult.error(Message.of("error.general.missing"));
@@ -129,17 +165,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public ServiceResult<ExportPredef> delete(int exportId, int companyId) {
-        ServiceResult<ExportPredef> exportForDeletion = getExportForDeletion(exportId, companyId);
-        if (!exportForDeletion.isSuccess()) {
-            return ServiceResult.error(exportForDeletion.getErrorMessages());
-        }
-        ExportPredef export = exportForDeletion.getResult();
-        return new ServiceResult<>(export, exportPredefDao.delete(export));
-    }
-    
-    @Override
-    public RecipientExportWorker getRecipientsToZipWorker(ExportPredef export, Admin admin) throws Exception {
+    public RecipientExportWorker getRecipientsToZipWorker(ExportPredef export, Admin admin) {
         File tmpExportFile = getTempRecipientExportFile(admin.getCompanyID());
         
         RecipientExportWorker worker = recipientExportWorkerFactory.newWorker(export, admin);
@@ -171,10 +197,6 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         return companyCsvExportDirectory;
     }
 
-    public final ExportPredefDao getExportPredefDao() {
-    	return this.exportPredefDao;
-    }
-
     @Override
     public Set<Charset> getAvailableCharsetOptionsForDisplay(Admin admin, ExportPredef export) {
         Set<Charset> options = getAvailableCharsetOptions(admin);
@@ -186,10 +208,10 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) throws UnknownUserStatusException {
+    public Set<UserStatus> getAvailableUserStatusOptionsForDisplay(Admin admin, ExportPredef export) {
         Set<UserStatus> options = getAvailableUserStatusOptions(admin);
         if (export != null && export.getUserStatus() != 0) {
-            options.add(UserStatus.getUserStatusByID(export.getUserStatus()));
+            options.add(UserStatus.getByCode(export.getUserStatus()));
         }
 
         return options;
@@ -245,7 +267,7 @@ public class ExportPredefServiceImpl implements ExportPredefService {
         }
 
         final Set<UserStatus> availableUserStatusOptions = getAvailableUserStatusOptions(admin);
-        if (export.getUserStatus() != 0 && !availableUserStatusOptions.contains(UserStatus.findByCode(export.getUserStatus()))) {
+        if (export.getUserStatus() != 0 && !availableUserStatusOptions.contains(UserStatus.getByCode(export.getUserStatus()))) {
             return false;
         }
 

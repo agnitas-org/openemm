@@ -22,9 +22,13 @@ import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.service.ImportException;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbUtilities;
@@ -33,10 +37,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.service.RecipientStandardField;
 
 public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 
@@ -134,10 +134,10 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 			}
 		}
 		
-		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
+		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl");
 		status.setInvalidNullValues(invalidNullValueEntries);
 		
-		int insertedEntries = importRecipientsDao.insertNewCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
+		int insertedEntries = importRecipientsDao.insertNewCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType());
 		status.setInserted(insertedEntries);
 	}
 
@@ -146,11 +146,11 @@ public class ImportModeAddAndUpdateHandler implements ImportModeHandler {
 		// Update customer data
 		if (importProfile.getUpdateAllDuplicates()) {
 			// Update all existing customer identified by keycolumns
-			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumnImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateAllExistingCustomersByKeyColumnImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId);
 			status.setUpdated(updatedEntries);
 		} else {
 			// Update the first existing customer only
-			int updatedEntries = importRecipientsDao.updateFirstExistingCustomersImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId, importProfile.getCompanyId());
+			int updatedEntries = importRecipientsDao.updateFirstExistingCustomersImproved(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, importIndexColumn, importProfile.getNullValuesAction(), datasourceId);
 			status.setUpdated(updatedEntries);
 		}
 	}

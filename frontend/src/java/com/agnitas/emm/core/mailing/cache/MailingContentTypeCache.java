@@ -10,9 +10,8 @@
 
 package com.agnitas.emm.core.mailing.cache;
 
-import org.agnitas.emm.core.commons.daocache.CompanyBasedDaoCache;
-
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.emm.core.commons.daocache.CompanyBasedDaoCache;
 
 public interface MailingContentTypeCache extends CompanyBasedDaoCache<MailingContentType> {
 	// No code needed

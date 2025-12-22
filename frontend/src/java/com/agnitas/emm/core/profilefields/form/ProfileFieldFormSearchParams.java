@@ -43,13 +43,4 @@ public class ProfileFieldFormSearchParams implements FormSearchParams<ProfileFie
         form.setHistorized(this.historized);
     }
 
-    @Override
-    public void resetParams() {
-        fieldName = null;
-        dbFieldName = null;
-        description = null;
-        type = null;
-        mode = null;
-        historized = null;
-    }
 }

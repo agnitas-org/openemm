@@ -16,7 +16,7 @@ import java.util.Set;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.RecipientHistory;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.exception.RecipientProfileHistoryException;
 
 /**
  * Persistence-layer interface for writing history data of modified profile fields.
@@ -25,11 +25,11 @@ public interface RecipientProfileHistoryDao {
 	/**
 	 * Sets up profile field history for given company ID.
 	 *
-	 * @param companyID     company ID
+	 * @param companyId     company ID
 	 * @param profileFields list of profile fields to be included in history
 	 * @throws RecipientProfileHistoryException on errors processing request
 	 */
-	void setupProfileHistory(final int companyId, final List<ProfileField> profileFields) throws RecipientProfileHistoryException;
+	void setupProfileHistory(int companyId, List<ProfileField> profileFields) throws RecipientProfileHistoryException;
 	
 	/**
 	 * This method is called, when the structure of the profile fields has been changed.
@@ -58,9 +58,9 @@ public interface RecipientProfileHistoryDao {
 	 * @return empty list in case of table not exist or nothing for retrieving
 	 * otherwise return List with recipient profile changes.
 	 */
-	List<RecipientHistory> listProfileFieldHistory(final int subscriberID, final int companyID);
+	List<RecipientHistory> listProfileFieldHistory(int subscriberID, int companyID);
 	
-	void deactivateProfileHistory(int companyId) throws RecipientProfileHistoryException;
+	void deactivateProfileHistory(int companyId);
 
 	List<Integer> getChangedRecipients(Set<String> fields, ZonedDateTime startDate, int companyId);
 }

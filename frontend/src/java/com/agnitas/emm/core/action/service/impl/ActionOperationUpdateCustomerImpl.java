@@ -28,7 +28,6 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 
 public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ActionOperationUpdateCustomerImpl.class);
 
 	private RecipientDao recipientDao;

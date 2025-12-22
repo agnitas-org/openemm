@@ -18,16 +18,16 @@ public class LinkProperty {
 	public enum PropertyType {
 		LinkExtension;
 		
-		public static PropertyType parseString(String value) throws Exception {
+		public static PropertyType parseString(String value) {
 			if (StringUtils.isBlank(value)) {
-				throw new Exception("Invalid empty type of LinkProperty");
+				throw new IllegalArgumentException("Invalid empty type of LinkProperty");
 			} else {
 				for (PropertyType type : PropertyType.values()) {
 					if (type.toString().equalsIgnoreCase(value)) {
 						return type;
 					}
 				}
-				throw new Exception("Invalid type of LinkProperty: " + value);
+				throw new IllegalArgumentException("Invalid type of LinkProperty: " + value);
 			}
 		}
 	}

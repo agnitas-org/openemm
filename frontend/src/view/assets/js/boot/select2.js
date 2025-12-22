@@ -1,40 +1,62 @@
-jQuery.extend( $.fn.select2.defaults, {
+($ => {
 
-  formatNoMatches: function (term) {
-    return t('selects.noMatches', term);
-  },
+  const Defaults = $.fn.select2.amd.require('select2/defaults');
 
-  formatInputTooShort: function (input, min) {
-    return t('selects.errors.inputTooShort', min);
-  },
+  $.extend(Defaults.defaults, {
+    searchInputPlaceholder: '',
+    showSearchIcon: false,
+    language: {
+      noResults: function (term) {
+        return t('selects.noMatches', term || '');
+      },
+    },
+  });
 
-  formatInputTooLong: function (input, max) {
-    return t('selects.errors.inputTooLong', max);
-  },
+  const SearchDropdown = $.fn.select2.amd.require('select2/dropdown/search');
+  const _renderSearchDropdown = SearchDropdown.prototype.render;
 
-  formatSelectionTooBig: function (limit) {
-    return t('selects.errors.selectionTooBig', limit);
-  },
+  SearchDropdown.prototype.render = function (decorated) {
+    // invoke parent method
+    const $rendered = _renderSearchDropdown.apply(this, Array.prototype.slice.apply(arguments));
 
-  formatLoadMore: function (pageNumber) {
-    return t('selects.loadMore');
-  },
+    this.$search.attr('placeholder', this.options.get('searchInputPlaceholder'));
 
-  formatSearching: function () {
-    return t('selects.loadMore');
-  },
+    if (this.options.get('showSearchIcon')) {
+      this.$searchContainer.append(`<i class="icon icon-search select2-search-icon"></i>`);
+    }
 
-  formatAjaxError: function() {
-    return t('selects.errors.ajax');
-  },
+    return $rendered;
+  };
 
-  formatMatches: function (matches) {
-    if (matches > 1) {
-      return t('selects.matches', matches);
-    } else {
-      return t('selects.matchesSing', matches);
+  const Search = $.fn.select2.amd.require('select2/selection/search');
+  const _updateSearch = Search.prototype.update;
+
+  Search.prototype.update = function (decorated, data) {
+    _updateSearch.apply(this, Array.prototype.slice.apply(arguments));
+
+    if (this.options.get('preventPlaceholderClear') && this.placeholder?.text) {
+      this.$search.attr('placeholder', this.placeholder.text); // prevents clear of placeholder
     }
   }
 
-});
+  Search.prototype.resizeSearch = function () {
+    this.$search.css('width', '100%');
+  }
 
+  const SingleSelection = $.fn.select2.amd.require('select2/selection/single');
+  const MultipleSelection = $.fn.select2.amd.require('select2/selection/multiple');
+
+  const _singleUpdate = SingleSelection.prototype.update;
+  const _multipleUpdate = MultipleSelection.prototype.update;
+
+  // Removes 'title' attribute cuz browser displays tooltip with own styles
+  SingleSelection.prototype.update = function (decorated, placeholder) {
+    _singleUpdate.apply(this, Array.prototype.slice.apply(arguments));
+    this.$selection.find('.select2-selection__rendered').removeAttr('title');
+  }
+  MultipleSelection.prototype.update = function (data) {
+    _multipleUpdate.apply(this, Array.prototype.slice.apply(arguments));
+    this.$selection.find('.select2-selection__choice').removeAttr('title');
+  }
+
+})(window.jQuery);

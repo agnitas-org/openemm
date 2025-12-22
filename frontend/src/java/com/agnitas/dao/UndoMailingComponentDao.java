@@ -12,7 +12,6 @@ package com.agnitas.dao;
 
 import java.util.List;
 
-
 import com.agnitas.beans.UndoMailingComponent;
 
 /**
@@ -20,6 +19,7 @@ import com.agnitas.beans.UndoMailingComponent;
  * Currently only the template components (<i>agnText</i> and <i>agnHtml</i>) is accessed.
  */
 public interface UndoMailingComponentDao {
+
 	/**
 	 * Save undo data for the components of a given mailing.
 	 * 
@@ -27,16 +27,6 @@ public interface UndoMailingComponentDao {
 	 * @param undoId ID of the undo step
 	 */
 	void saveUndoData(int mailingId, int undoId);
-	
-	/**
-	 * Get a specific undo step for the components of a given mailing.
-	 * 
-	 * @param mailingId mailing ID
-	 * @param componentId component ID
-	 * @param undoId ID of undo step
-	 * @return undo step for component
-	 */
-	UndoMailingComponent getUndoData(int mailingId, int componentId, int undoId);
 	
 	/**
 	 * Get undo data for all mailing components for a given undo step.
@@ -57,4 +47,5 @@ public interface UndoMailingComponentDao {
 	boolean deleteByCompany(int companyId);
 
 	void deleteUndoData(List<Integer> undoIds);
+
 }

@@ -18,6 +18,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -42,6 +43,12 @@ public class ExportPredef {
 	protected int mailinglistID;           // GWUA-5878 openemm field
     
 	protected Set<Integer> mailinglistIds; // GWUA-5878 extended scope field
+
+	protected Integer referenceTableId; // GWUA-6583 extended scope field
+
+	protected String refTableJoinCondition; // GWUA-6583 extended scope field
+
+	protected Set<String> referenceTableColumns = new HashSet<>(); // GWUA-6583 extended scope field
 
 	protected String delimiter = "";
 	
@@ -139,7 +146,31 @@ public class ExportPredef {
 	public void setUserType(String userType) {
 		this.userType = userType;
 	}
-	
+
+	public Integer getReferenceTableId() {
+		return referenceTableId;
+	}
+
+	public void setReferenceTableId(Integer referenceTableId) {
+		this.referenceTableId = referenceTableId;
+	}
+
+	public String getRefTableJoinCondition() {
+		return refTableJoinCondition;
+	}
+
+	public void setRefTableJoinCondition(String refTableJoinCondition) {
+		this.refTableJoinCondition = refTableJoinCondition;
+	}
+
+	public Set<String> getReferenceTableColumns() {
+		return referenceTableColumns;
+	}
+
+	public void setReferenceTableColumns(Set<String> referenceTableColumns) {
+		this.referenceTableColumns = referenceTableColumns;
+	}
+
 	// TODO Parameter to com.agnitas.emm.common.UserStatus
 	public void setUserStatus(int userStatus) {
 		this.userStatus = userStatus;

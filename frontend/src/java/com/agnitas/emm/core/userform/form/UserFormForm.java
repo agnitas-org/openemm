@@ -13,10 +13,10 @@ package com.agnitas.emm.core.userform.form;
 import com.agnitas.emm.core.userform.dto.ResultSettings;
 
 public class UserFormForm {
+
 	private int formId;
 	private String formName;
 	private String description;
-	private boolean active; // TODO: EMMGUI-714 remove after remove of old design
 	private ResultSettings successSettings = new ResultSettings(true);
 	private ResultSettings errorSettings = new ResultSettings(false);
 	
@@ -42,14 +42,6 @@ public class UserFormForm {
 	
 	public String getDescription() {
 		return description;
-	}
-	
-	public void setActive(boolean active) {
-		this.active = active;
-	}
-	
-	public boolean isActive() {
-		return active;
 	}
 	
 	public void setSuccessSettings(ResultSettings successSettings) {

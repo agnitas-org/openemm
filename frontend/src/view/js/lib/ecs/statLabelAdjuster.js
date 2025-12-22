@@ -95,7 +95,7 @@
           var $link = $(link);
           var uid = getLinkUid($link);
 
-          if (uid > -1) {
+          if (uid != -1) {
             // get stats info for the URL from hidden field
             var linkInfo = $scope.find('#info-' + uid);
 

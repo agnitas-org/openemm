@@ -10,9 +10,8 @@
 
 package com.agnitas.emm.springws.exceptionresolver;
 
-import org.agnitas.emm.core.component.service.ComponentNotExistException;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
+import com.agnitas.emm.core.components.exception.ComponentNotExistException;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
 public class MailingComponentExceptionResolver extends AbstractEmmExceptionResolver {

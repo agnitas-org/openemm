@@ -1,23 +1,11 @@
-;(function() {
+AGN.Lib.CoreInitializer.new('input-mask', function($scope = $(document)) {
+  _.each($scope.find('.js-inputmask'), input => {
+    const $input = $(input);
 
-  var Helpers = AGN.Lib.Helpers;
+    const options = _.merge({}, AGN.Lib.Helpers.objFromString($input.data("inputmask-options")));
+    const mask = options.mask;
+    delete options.mask;
 
-  AGN.Lib.CoreInitializer.new('input-mask', function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
-
-    _.each($scope.find('.js-inputmask'), function(input) {
-      var $input = $(input);
-      var options;
-      var mask;
-
-      options = _.merge({}, Helpers.objFromString($input.data("inputmask-options")));
-      mask = options.mask;
-      delete options.mask;
-
-      $input.inputmask(mask, options);
-    });
+    $input.inputmask(mask, options);
   });
-
-})();
+});

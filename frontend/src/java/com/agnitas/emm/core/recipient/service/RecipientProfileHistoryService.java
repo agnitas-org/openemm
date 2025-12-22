@@ -14,8 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 
+
 import com.agnitas.beans.RecipientHistory;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.recipient.exception.RecipientProfileHistoryException;
 
 /**
  * Service-layer interface for writing history data of profile field modifications.

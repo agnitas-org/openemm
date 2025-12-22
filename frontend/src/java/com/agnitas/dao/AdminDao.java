@@ -14,24 +14,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.sql.DataSource;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.beans.AdminEntry;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.admin.AdminNameNotFoundException;
 import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.commons.password.PasswordReminderState;
 import com.agnitas.emm.core.news.enums.NewsType;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
 
 public interface AdminDao {
-    List<Map<String, Object>> getAdminsNames(int companyID, List<Integer> adminsIds);
 
     List<AdminEntry> getAllAdminsByCompanyIdOnly(int companyID);
-
-	Admin getAdminForReport(int companyID);
 
     List<AdminEntry> getAllAdminsByCompanyIdOnlyHasEmail(int companyID);
 
@@ -39,7 +34,7 @@ public interface AdminDao {
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
 
-    PaginatedListImpl<AdminEntry> getAdminList(
+    PaginatedList<AdminEntry> getAdminList(
     	int companyID,
     	String searchFirstName,
     	String searchLastName,
@@ -90,17 +85,9 @@ public interface AdminDao {
 	
 	boolean delete(final int adminID, final int companyID);
 
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	List<AdminEntry> getAllAdminsByCompanyId(int companyID);
-	List<AdminEntry> getAllAdminsByCompanyId(boolean restful, int companyID);
+	List<String> getUsernames(boolean restful);
 
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	List<AdminEntry> getAllAdmins();
-	List<AdminEntry> getAllAdmins(boolean restful);
-
-	List<AdminEntry> getAllWsAdminsByCompanyId( int companyID);			// TODO Move to webservice related class
-
-	List<AdminEntry> getAllWsAdmins();													// TODO Move to webservice related class
+	List<String> getUsernames(boolean restful, int companyId);
 
     /**
      * Checks the existence of any admin with given username for certain company.
@@ -124,40 +111,15 @@ public interface AdminDao {
      */
     int saveAdminRights(int adminID, Set<String> userRights);
 
-    boolean isPermissionGranted(int adminId, Permission permission);
-
-    void grantPermission(int adminId, Permission permission);
-
-    void revokePermission(int adminId, Permission permission);
-
     Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
 
-	/**
-	 * Get timezone id for an admin referenced by {@code adminId}.
-	 *
-	 * @param adminId an identifier of an admin to access.
-	 * @param companyId an identifier of a company that a referenced admin belongs to.
-	 * @return a timezone id or {@code null} if admin doesn't exist or timezone is not specified.
-	 */
-	String getAdminTimezone(int adminId, int companyId);
+	Admin getByEmail(String email);
 
 	Admin getOldestAdminOfCompany(int companyId);
-
-	DataSource getDataSource();
-
-	int getAdminWelcomeMailingId(String language);
-
-	int getPasswordResetMailingId(String language);
-
-	int getPasswordChangedMailingId(String language);
 
 	List<Admin> getAdmins(int companyID, boolean restful);
 
 	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
-
-	int getSecurityCodeMailingId(String language);
-
-    int getEmailChangedMailingId(String language);
 
 	int getOpenEmmDemoAccountWaitingMailingID(String language);
 
@@ -171,11 +133,9 @@ public interface AdminDao {
 
 	String getDashboardLayout(int adminId);
 
-    int getPasswordExpirationMailingId(String language);
-
     void setPasswordReminderState(int adminId, PasswordReminderState state);
 
-	PaginatedListImpl<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
+	PaginatedList<AdminEntry> getList(int companyId, String sort, String dir, int pageNumber, int pageSize);
 
     List<AdminEntry> findAllByEmailPart(String email, int companyID);
 
@@ -184,4 +144,5 @@ public interface AdminDao {
     void updateEmail(String email, int id, int companyId);
 
     AdminEntry findByEmail(String email, int companyId);
+
 }

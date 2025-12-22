@@ -147,7 +147,7 @@ public class TilesConfigurer implements ServletContextAware, InitializingBean, D
      * @throws TilesException in case of setup failure
      */
     @Override
-    public void afterPropertiesSet() throws TilesException {
+    public void afterPropertiesSet() {
         Assert.state(this.servletContext != null, "No ServletContext available");
         ApplicationContext preliminaryContext = new SpringWildcardServletTilesApplicationContext(this.servletContext);
         if (this.tilesInitializer == null) {
@@ -161,7 +161,7 @@ public class TilesConfigurer implements ServletContextAware, InitializingBean, D
      * @throws TilesException in case of cleanup failure
      */
     @Override
-    public void destroy() throws TilesException {
+    public void destroy() {
         if (this.tilesInitializer != null) {
             this.tilesInitializer.destroy();
         }

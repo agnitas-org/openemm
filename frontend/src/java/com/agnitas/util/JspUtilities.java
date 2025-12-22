@@ -19,14 +19,15 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.enums.UiLayoutType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DbColumnType;
-import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 
 public class JspUtilities {
+
+    private JspUtilities() {
+
+    }
 
     private static final TimeoutLRUMap<Integer, String> CKEDITOR_PATH_CACHE = new TimeoutLRUMap<>(100, 5);
     private static final TimeoutLRUMap<Integer, String> JODIT_EDITOR_PATH_CACHE = new TimeoutLRUMap<>(100, 5);
@@ -135,7 +136,7 @@ public class JspUtilities {
         return "/" + url;
     }
 
-    public static boolean permissionAllowed(String token, HttpServletRequest req) throws Exception {
+    public static boolean permissionAllowed(String token, HttpServletRequest req) {
         return AgnUtils.allowed(req, Permission.getPermissionsByToken(token));
     }
 
@@ -190,7 +191,7 @@ public class JspUtilities {
         }
 
         if (StringUtils.isBlank(applicationInstallPath)) {
-            throw new Exception("Cannot find application install directory");
+            throw new IllegalStateException("Cannot find application install directory");
         } else {
             applicationInstallPath += libRelativePath;
             try {

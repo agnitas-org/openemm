@@ -10,17 +10,16 @@
 
 package com.agnitas.emm.core.mailing.dto;
 
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.agnitas.beans.SortingWebStorageEntry;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import com.agnitas.beans.SortingWebStorageEntry;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
 
@@ -35,8 +34,6 @@ public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
 
     @JsonProperty("page")
     private int page = 1;
-
-    private String searchQueryText;
 
     public Set<MailingType> getMailingTypes() {
         return mailingTypes;
@@ -68,24 +65,5 @@ public class MailingOverviewWebStorageEntry extends SortingWebStorageEntry {
 
     public void setPage(int page) {
         this.page = page;
-    }
-
-    public String getSearchQueryText() {
-        return searchQueryText;
-    }
-
-    public void setSearchQueryText(String searchQueryText) {
-        this.searchQueryText = searchQueryText;
-    }
-
-    @Override
-    public MailingOverviewWebStorageEntry clone() throws CloneNotSupportedException {
-        MailingOverviewWebStorageEntry entry = (MailingOverviewWebStorageEntry) super.clone();
-        entry.setMailingTypes(mailingTypes);
-        entry.setMediaTypes(mediaTypes);
-        entry.setSelectedFields(selectedFields.isEmpty() ? Collections.emptyList() : new ArrayList<>(selectedFields));
-        entry.setSearchQueryText(searchQueryText);
-        entry.setPage(page);
-        return entry;
     }
 }

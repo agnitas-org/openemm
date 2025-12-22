@@ -31,29 +31,50 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.impl.BindingEntryImpl;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.beans.impl.MaildropEntryImpl;
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.dao.ScripthelperEmailLogDao;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.MailgunOptions;
+import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
+import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
+import com.agnitas.emm.core.service.RecipientStandardField;
+import com.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
+import com.agnitas.json.Json5Reader;
+import com.agnitas.json.JsonObject;
 import com.agnitas.preview.Preview;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,31 +85,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.dao.BindingEntryDao;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.dao.RecipientDao;
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.dao.ScripthelperEmailLogDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mailing.service.MailgunOptions;
-import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
-import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
-import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.json.Json5Reader;
-import com.agnitas.json.JsonObject;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 public class ScriptHelper {
 
@@ -1286,15 +1282,10 @@ public class ScriptHelper {
 				final List<UserStatus> statusList = new ArrayList<>();
 				
 				for(final int statusCode : userStatusList) {
-					try {
-						final UserStatus status = UserStatus.getUserStatusByID(statusCode);
-						statusList.add(status);
-					} catch(final UnknownUserStatusException e) {
-						/*
-						 * When an unknown status code is encountered we
-						 * can ignore it. Even as int-typed code, if wouldn't have any effect.
-						 */
-						logger.error(String.format("Skipping unknown user status code %d", statusCode));
+					if (UserStatus.existsWithId(statusCode)) {
+						statusList.add(UserStatus.getByCode(statusCode));
+					} else {
+						logger.error("Skipping unknown user status code {}", statusCode);
 					}
 				}
 
@@ -1333,11 +1324,30 @@ public class ScriptHelper {
 			Boolean success = (Boolean) jsonResponse.get("success");
 			return success != null && success;
 		} catch (Exception e) {
-			logger.error("Recaptcha validate error: " + e.getMessage(), e);
+			logger.error("Recaptcha validate error: {}", e.getMessage(), e);
 			return false;
 		}
 	}
-	
+
+	public boolean validateFriendlyCaptcha(String apiKey, String captchaResponseToken) {
+		try {
+			String response = HttpUtils.executeHttpRequest(
+				"https://global.frcapi.com/api/v2/captcha/siteverify",
+				Map.of("X-API-Key", apiKey),               // headers
+				Map.of(),                                  // url params
+				Map.of("response", captchaResponseToken),  // post params
+				true,
+				configuredSecureTransportLayerProtocol(companyID));
+
+			JsonObject jsonResponse = (JsonObject) Json5Reader.readJsonItemString(response).getValue();
+			Boolean success = (Boolean) jsonResponse.get("success");
+			return success != null && success;
+		} catch (Exception e) {
+			logger.error("FriendlyCaptcha validate error: {}", e.getMessage(), e);
+			return false;
+		}
+	}
+
 	public int random(int startLimitInclusive, int endLimitExclusive) {
 		return ((int) (Math.random() * (endLimitExclusive - startLimitInclusive)) + startLimitInclusive);
 	}

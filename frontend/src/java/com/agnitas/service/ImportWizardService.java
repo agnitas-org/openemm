@@ -28,7 +28,7 @@ public interface ImportWizardService {
      * Tries to read csv file Reads database column structure reads first line
      * splits line into tokens
      */
-    ServiceResult<List<CsvColInfo>> parseFirstLine(ImportWizardHelper helper) throws IOException;
+    ServiceResult<List<CsvColInfo>> parseFirstLine(ImportWizardHelper helper);
 
     /**
      * check in the columnMapping for the key column, and eventually for gender

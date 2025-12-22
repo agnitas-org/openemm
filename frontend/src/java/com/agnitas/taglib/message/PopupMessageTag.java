@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 import com.agnitas.messages.Message;
+import com.agnitas.messages.entity.MessagePopup;
+import com.agnitas.messages.enums.MessageType;
 import com.agnitas.web.mvc.impl.PopupsImpl;
 import jakarta.servlet.jsp.PageContext;
 import org.apache.commons.collections4.CollectionUtils;
@@ -21,16 +23,16 @@ import org.apache.commons.collections4.CollectionUtils;
 public interface PopupMessageTag {
 
     default List<Message> getPopupsMessages(PageContext pageContext, String type) {
-        List<PopupsImpl.MessagePopup> messages = (List<PopupsImpl.MessagePopup>) pageContext.findAttribute(PopupsImpl.POPUPS_MESSAGES_KEY);
+        List<MessagePopup> messages = (List<MessagePopup>) pageContext.findAttribute(PopupsImpl.POPUPS_MESSAGES_KEY);
 
         if (CollectionUtils.isEmpty(messages)) {
             return Collections.emptyList();
         }
 
-        PopupsImpl.MessageType messageType = PopupsImpl.MessageType.valueOf(type);
+        MessageType messageType = MessageType.valueOf(type);
         return messages.stream()
                 .filter(m -> messageType.equals(m.getType()))
-                .map(PopupsImpl.MessagePopup::getMessage)
+                .map(MessagePopup::getMessage)
                 .toList();
     }
 }

@@ -12,14 +12,14 @@ package com.agnitas.emm.core.mailing.dao;
 
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.util.SqlPreparedStatementManager;
 
 import java.util.Set;
 
 public interface MailingRecipientsDao {
 
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields,
+    PaginatedList<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields,
                                                                     int maxCompanyRecipients, int mailingId, int companyId);
 
     SqlPreparedStatementManager prepareSqlStatement(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int mailingId, int companyId);

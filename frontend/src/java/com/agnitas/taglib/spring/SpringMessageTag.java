@@ -11,7 +11,6 @@
 package com.agnitas.taglib.spring;
 
 import jakarta.servlet.jsp.JspException;
-
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.web.servlet.tags.MessageTag;
 
@@ -19,7 +18,7 @@ public class SpringMessageTag extends MessageTag {
     private static final long serialVersionUID = -6352556676392121496L;
 
     @Override
-    protected String resolveMessage() throws JspException, NoSuchMessageException {
+    protected String resolveMessage() throws JspException {
         try {
             return super.resolveMessage();
         } catch (NoSuchMessageException e) {

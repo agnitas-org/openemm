@@ -17,10 +17,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 
 public class BasicReader implements Closeable {
+
 	/** UTF-8 BOM (Byte Order Mark) character for readers. */
 	public static final char BOM_UTF_8_CHAR = (char) 65279;
 
@@ -28,7 +30,7 @@ public class BasicReader implements Closeable {
 	public static final char BOM_UTF_8_CHAR_ISO_8859 = (char) 239;
 
 	/** Default input encoding. */
-	public static final String DEFAULT_ENCODING = "UTF-8";
+	public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
 	/** Input stream. */
 	private InputStream inputStream;
@@ -44,20 +46,20 @@ public class BasicReader implements Closeable {
 	private long readCharacters = 0;
 	private long readLines = 0;
 
-	public BasicReader(final InputStream inputStream) throws Exception {
+	public BasicReader(InputStream inputStream) {
 		this(inputStream, (String) null);
 	}
 
-	public BasicReader(final InputStream inputStream, final String encoding) throws Exception {
-		this(inputStream, isBlank(encoding) ? Charset.forName(DEFAULT_ENCODING) : Charset.forName(encoding));
+	public BasicReader(InputStream inputStream, String encoding) {
+		this(inputStream, isBlank(encoding) ? DEFAULT_CHARSET : Charset.forName(encoding));
 	}
 
-	public BasicReader(final InputStream inputStream, final Charset encodingCharset) throws Exception {
+	public BasicReader(InputStream inputStream, Charset encodingCharset) {
 		if (inputStream == null) {
-			throw new Exception("Invalid empty inputStream");
+			throw new IllegalStateException("Invalid empty inputStream");
 		}
 		this.inputStream = new BufferedInputStream(inputStream);
-		encoding = encodingCharset == null ? Charset.forName(DEFAULT_ENCODING) : encodingCharset;
+		encoding = encodingCharset == null ? DEFAULT_CHARSET : encodingCharset;
 	}
 
 	public long getReadCharacters() {
@@ -90,7 +92,7 @@ public class BasicReader implements Closeable {
 			final int currentCharInt = inputReader.read();
 			if (currentCharInt != -1) {
 				// Check for UTF-8 BOM at data start
-				if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR && encoding == Charset.forName("UTF-8")) {
+				if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR && encoding == DEFAULT_CHARSET) {
 					return readNextCharacter();
 				} else if (readCharacters == 0 && currentCharInt == BOM_UTF_8_CHAR_ISO_8859 && encoding.displayName().toUpperCase().startsWith("ISO-8859-")) {
 					throw new InvalidCharsetException("Data encoding \"" + encoding + "\" is invalid: UTF-8 BOM detected");
@@ -120,9 +122,9 @@ public class BasicReader implements Closeable {
 
 	protected String readUpToNext(final boolean includeLimitChars, final Character escapeCharacter, final char... endChars) throws Exception {
 		if (anyCharsAreEqual(endChars)) {
-			throw new Exception("Invalid limit characters");
+			throw new IllegalArgumentException("Invalid limit characters");
 		} else if (contains(endChars, escapeCharacter)) {
-			throw new Exception("Invalid escape characters");
+			throw new IllegalArgumentException("Invalid escape characters");
 		}
 
 		final StringBuilder returnValue = new StringBuilder();
@@ -193,7 +195,7 @@ public class BasicReader implements Closeable {
 
 	protected String readQuotedText(final char quoteChar, final Character escapeCharacter) throws Exception {
 		if (currentChar != quoteChar) {
-			throw new Exception("Invalid start of double-quoted text");
+			throw new IllegalStateException("Invalid start of double-quoted text");
 		}
 
 		final String returnValue = readUpToNext(true, escapeCharacter, quoteChar);

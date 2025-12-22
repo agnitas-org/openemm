@@ -120,6 +120,16 @@
       }
       Select.get($('#start-editor [name="userType"]')).selectOption(data.recipients != '' ? 2 : 1); // init reminder user type
 
+      this.$find('select[name="recipients"]').on('select2:selecting', e => {
+        const email = $(e.target).find('option:last-child').val();
+        if (AGN.Lib.Helpers.isValidEmail(email)) {
+          return true;
+        }
+
+        AGN.Lib.Messages.warn(t('error.workflow.cantAddInvalidEmailToTheList', email));
+        e.preventDefault();
+      });
+
       this.form.cleanFieldFeedback();
 
       const forceAutomaticEndType = !this.isStartEditor && this.editor.isAllLinkedFilledStartsHasDateType(node);
@@ -206,9 +216,7 @@
         data.recipients = $.trim(data.recipients)
           .toLowerCase()
           .split(/[,;\s\n\r]+/)
-          .filter(function (address) {
-            return !!address;
-          })
+          .filter(address =>!!address)
           .join(', ');
       } else {
         data.recipients = '';
@@ -343,17 +351,19 @@
       }
 
       function validateReminderRecipients() {
-        var emails = $.trim(self.$find('textarea[name="recipients"]').val())
-          .split(/[,;\s\n\r]+/)
-          .filter(function (address) {
-            return !!address
-          });
+        const emails = self.$find('select[name="recipients"]').val();
 
-        if (!emails.length) {
-          if (showErrors) {
+        if (emails.length) {
+          if (!AGN.Lib.Helpers.isValidEmails(emails)) {
             valid = false;
-            Messages.warn('error.workflow.emptyRecipientList');
+
+            if (showErrors) {
+              self.form.showFieldError('recipients', t('error.workflow.wrongEmail'))
+            }
           }
+        } else if (showErrors) {
+          valid = false;
+          Messages.warn('error.workflow.emptyRecipientList');
         }
       }
     }

@@ -159,10 +159,6 @@ public class LogonStateBundle {
         this.hostId = hostId;
     }
     
-    public final boolean isInState(final LogonState logonState) {
-    	return getState() == logonState;
-    }
-    
     public final void requireLogonState(final LogonState... states) {
         if (ArrayUtils.isEmpty(states)) {
             throw new IllegalArgumentException("states.length must be > 0");

@@ -15,29 +15,25 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.Sha1Encoder;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.exception.SaltFileException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utility class to encrypt passwords.
  */
 public class PasswordEncryptor {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(PasswordEncryptor.class);
-	
-	/** Fixed charset used to read salt from file. */
-	private static final String SALT_CHARSET = "ISO8859_1";
+	private static final Logger LOGGER = LogManager.getLogger(PasswordEncryptor.class);
 	
 	/** Salt bytes. */
 	private byte[] hexSaltBytes;
@@ -72,10 +68,10 @@ public class PasswordEncryptor {
 	 * 
 	 * @throws IOException on errors accessing salt file
 	 */
-	private static final String readSaltFromFile(final File file) throws IOException {
-		try(final FileInputStream fis = new FileInputStream( file)) {
-			try(final InputStreamReader isr = new InputStreamReader( fis, SALT_CHARSET)) {
-				try(final BufferedReader br = new BufferedReader( isr)) {
+	private static String readSaltFromFile(File file) throws IOException {
+		try (FileInputStream fis = new FileInputStream( file)) {
+			try (InputStreamReader isr = new InputStreamReader( fis, StandardCharsets.ISO_8859_1)) {
+				try (BufferedReader br = new BufferedReader( isr)) {
 					return br.readLine();
 				}
 			}
@@ -88,25 +84,20 @@ public class PasswordEncryptor {
 	 * 
 	 * @param password the password to encrypt
 	 * @param obfuscatingValue a value used for obfuscation
-	 * @param encoding character encoding of password
+	 * @param charset character encoding of password
 	 * @param encoder encoder used for hashing
 	 * 
 	 * @return encrypted password
-	 * @throws Exception
 	 */
-	public final String encrypt(final String password, final int obfuscatingValue, final String encoding, final ByteArrayEncoder encoder) throws Exception {
-		try {
-			byte[] passwordBytes;
-			if (encoding != null) {
-				passwordBytes = password.getBytes(encoding);
-			} else {
-				passwordBytes = password.getBytes();
-			}
-			return toPasswordHexString(encoder.encode(plus(passwordBytes, encryptSalt(obfuscatingValue, encoding))));
-		} catch (UnsupportedEncodingException e) {
-			LOGGER.error("Cannot encrypt user password: " + e.getMessage(), e);
-			throw new Exception("Cannot encrypt user password");
+	public String encrypt(String password, int obfuscatingValue, Charset charset, ByteArrayEncoder encoder) {
+		byte[] passwordBytes;
+		if (charset != null) {
+			passwordBytes = password.getBytes(charset);
+		} else {
+			passwordBytes = password.getBytes();
 		}
+
+		return toPasswordHexString(encoder.encode(plus(passwordBytes, encryptSalt(obfuscatingValue, charset))));
 	}
 	
 	/**
@@ -115,9 +106,8 @@ public class PasswordEncryptor {
 	 * @param obfuscatingValue obfuscation value
 	 * 
 	 * @return encrypted salt
-	 * @throws UnsupportedEncodingException
 	 */
-	private final byte[] encryptSalt(final int obfuscatingValue, final String encoding) throws Exception {
+	private byte[] encryptSalt(int obfuscatingValue, Charset charset) {
 		if (hexSaltBytes == null) {
 			String saltFilePath;
 			if (saltFilePathOverride != null) {
@@ -127,19 +117,18 @@ public class PasswordEncryptor {
 			}
 			try {
 				String hexSalt = toPasswordHexString(readSaltFromFile(new File(saltFilePath)));
-				if (encoding != null) {
-					hexSaltBytes = hexSalt.getBytes(encoding);
+				if (charset != null) {
+					hexSaltBytes = hexSalt.getBytes(charset);
 				} else {
 					hexSaltBytes = hexSalt.getBytes();
 				}
-			} catch( IOException e) {
-				LOGGER.fatal( "unable to read salt from file: " + saltFilePath);
-				
-				throw e;
+			} catch (IOException e) {
+				LOGGER.fatal( "unable to read salt from file: {}", saltFilePath);
+				throw new SaltFileException("unable to read salt from file: " + saltFilePath, e);
 			}
 		}
 		
-		return sha1Encoder.encode(plus(hexSaltBytes, Integer.toString(obfuscatingValue, 16).getBytes("UTF-8")));
+		return sha1Encoder.encode(plus(hexSaltBytes, Integer.toString(obfuscatingValue, 16).getBytes(StandardCharsets.UTF_8)));
 	}
 	
 	/**
@@ -150,7 +139,7 @@ public class PasswordEncryptor {
 	 * 
 	 * @return combined array of bytes
 	 */
-	private static final byte[] plus(final byte[] b0, final byte[] b1) {
+	private static byte[] plus(byte[] b0, byte[] b1) {
 		final byte[] b = new byte[b0.length + b1.length];
 		
 		for(int i = 0; i < b0.length; i++) {
@@ -171,7 +160,7 @@ public class PasswordEncryptor {
 	 * 
 	 * @return sequence of hex digits
 	 */
-	private static final String toPasswordHexString(final String str) {
+	private static String toPasswordHexString(String str) {
 		final byte[] bytes = str.getBytes( UTF_8);
 
 		return toPasswordHexString( bytes);
@@ -185,7 +174,7 @@ public class PasswordEncryptor {
 	 * 
 	 * @return hex-encoded String
 	 */
-	private static final String toPasswordHexString(final byte[] bytes) {
+	private static String toPasswordHexString(byte[] bytes) {
 		final StringBuffer buffer = new StringBuffer();
 		
 		for(int i = 0; i < bytes.length; i++) {
@@ -204,19 +193,22 @@ public class PasswordEncryptor {
 		return buffer.toString();
 	}
 	
-	public final boolean isAdminPassword(final String password, final Admin admin) throws Exception {
+	public final boolean isAdminPassword(String password, Admin admin) {
 		return isAdminPassword(password, admin, this.sha512Encoder);
 	}
 	
-	public final boolean isAdminPassword(final String password, final Admin admin, final ByteArrayEncoder encoder) throws Exception {
+	public boolean isAdminPassword(String password, Admin admin, ByteArrayEncoder encoder) {
 		// TODO: remove this default system encoding and iso encoding in future where all passwords are UTF-8 encoded
 		final String encryptedPasswordToCheck_SystemEncoding = encrypt(password, admin.getAdminID(), null, encoder);
-		final String encryptedPasswordToCheck_UtfEncoding = encrypt(password, admin.getAdminID(), "UTF-8", encoder);
-		final String encryptedPasswordToCheck_IsoEncoding = encrypt(password, admin.getAdminID(), "ISO-8859-15", encoder);
+		final String encryptedPasswordToCheck_UtfEncoding = encrypt(password, admin.getAdminID(), StandardCharsets.UTF_8, encoder);
+		final String encryptedPasswordToCheck_IsoEncoding = encrypt(password, admin.getAdminID(), Charset.forName("ISO-8859-15"), encoder);
 
-		if(LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Hash for (admin) password typed by user: " + encryptedPasswordToCheck_SystemEncoding + "/" + encryptedPasswordToCheck_UtfEncoding + "/" + encryptedPasswordToCheck_IsoEncoding);
-		}
+		LOGGER.debug(
+				"Hash for (admin) password typed by user: {}/{}/{}",
+				encryptedPasswordToCheck_SystemEncoding,
+				encryptedPasswordToCheck_UtfEncoding,
+				encryptedPasswordToCheck_IsoEncoding
+		);
 
 		return encryptedPasswordToCheck_SystemEncoding.equalsIgnoreCase(admin.getSecurePasswordHash())
 				|| encryptedPasswordToCheck_UtfEncoding.equalsIgnoreCase(admin.getSecurePasswordHash())
@@ -224,34 +216,27 @@ public class PasswordEncryptor {
 	
 	}
 	
-	public final String computeAdminPasswordHash(final String password, final int adminID) throws Exception {
-		return computeAdminPasswordHash(password, adminID, this.sha512Encoder);
+	public String computeAdminPasswordHash(String password, int adminID) {
+		return encrypt(password, adminID, StandardCharsets.UTF_8, sha512Encoder);
 	}
-	
-	private final String computeAdminPasswordHash(final String password, final int adminID, final ByteArrayEncoder encoder) throws Exception {
-		return encrypt(password, adminID, "UTF-8", encoder);
-	}
-	
-	public final boolean isSupervisorPassword(final String password, final int supervisorID, final String expectedHash) throws Exception {
+
+	public boolean isSupervisorPassword(String password, int supervisorID, String expectedHash) {
 		return isSupervisorPassword(password, supervisorID, expectedHash, this.sha512Encoder);
 	}
 	
-	private final boolean isSupervisorPassword(final String password, final int supervisorID, final String expectedPasswordHash, final ByteArrayEncoder encoder) throws Exception {
+	private boolean isSupervisorPassword(String password, int supervisorID, String expectedPasswordHash, ByteArrayEncoder encoder) {
 		// TODO: remove this default system encoding and iso encoding in future where all passwords are UTF-8 encoded
 		final String providedPasswordHash_SystemEncoding = encrypt(password, supervisorID, null, encoder);
-		final String providedPasswordHash_UtfEncoding = encrypt(password, supervisorID, "UTF-8", encoder);
-		final String providedPasswordHash_IsoEncoding = encrypt(password, supervisorID, "ISO-8859-15", encoder);
+		final String providedPasswordHash_UtfEncoding = encrypt(password, supervisorID, StandardCharsets.UTF_8, encoder);
+		final String providedPasswordHash_IsoEncoding = encrypt(password, supervisorID, Charset.forName("ISO-8859-15"), encoder);
 
 		return providedPasswordHash_SystemEncoding.equals(expectedPasswordHash)
 			|| providedPasswordHash_UtfEncoding.equals(expectedPasswordHash)
 			|| providedPasswordHash_IsoEncoding.equals(expectedPasswordHash);
 	}
 	
-	public final String computeSupervisorPasswordHash(final String password, final int supervisorID) throws Exception {
-		return computeSupervisorPasswordHash(password, supervisorID, this.sha512Encoder);
+	public String computeSupervisorPasswordHash(String password, int supervisorID) {
+		return encrypt(password, supervisorID, StandardCharsets.UTF_8, sha512Encoder);
 	}
-	
-	private final String computeSupervisorPasswordHash(final String password, final int supervisorID, final ByteArrayEncoder encoder) throws Exception {
-		return encrypt(password, supervisorID, "UTF-8", encoder);
-	}
+
 }

@@ -4,7 +4,7 @@ AGN.Lib.Validator.new('mailing-priorities/form', {
       return true;
     }
 
-    AGN.Lib.Messages(t('defaults.error'), t('error.mailing.invalidPriorityCount'), 'alert');
+    AGN.Lib.Messages.alert('error.mailing.invalidPriorityCount');
 
     return false;
   },

@@ -57,7 +57,7 @@ public class MailNotificationBufferDaoImpl extends BaseDaoImpl implements MailNo
 				int newId = selectInt("SELECT mail_noti_buffer_tbl_seq.NEXTVAL FROM DUAL");
 				update("INSERT INTO mail_notification_buffer_tbl (id, recipients, subject, text, send_time, last_request_time, request_count) VALUES (" + AgnUtils.repeatString("?", 7, ", ") + ")", newId, toAddresses, mailSubject, textShortened, new Date(), new Date(), 1);
 			} else {
-				insertIntoAutoincrementMysqlTable("id", "INSERT INTO mail_notification_buffer_tbl (recipients, subject, text, send_time, last_request_time, request_count) VALUES (" + AgnUtils.repeatString("?", 6, ", ") + ")", toAddresses, mailSubject, textShortened, new Date(), new Date(), 1);
+				insert("id", "INSERT INTO mail_notification_buffer_tbl (recipients, subject, text, send_time, last_request_time, request_count) VALUES (" + AgnUtils.repeatString("?", 6, ", ") + ")", toAddresses, mailSubject, textShortened, new Date(), new Date(), 1);
 			}
 			return true;
 		}

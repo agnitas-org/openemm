@@ -10,31 +10,29 @@
 
 package com.agnitas.dao.impl;
 
+import javax.sql.DataSource;
+
 import com.agnitas.dao.AnonymizeStatisticsDao;
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.CssDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.RdirTrafficAmountDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.TargetDao;
 import com.agnitas.dao.UndoDynContentDao;
 import com.agnitas.dao.UndoMailingComponentDao;
 import com.agnitas.dao.UndoMailingDao;
-import com.agnitas.dao.CssDao;
-import com.agnitas.dao.DatasourceDescriptionDao;
-import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
-import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
-import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.dao.RdirTrafficAmountDao;
-import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
-import com.agnitas.service.ImportModeHandlerFactory;
 import com.agnitas.emm.core.imports.reporter.ProfileImportReporter;
-
-import javax.sql.DataSource;
+import com.agnitas.emm.core.loginmanager.dao.LoginTrackDao;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
+import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
+import com.agnitas.service.ImportModeHandlerFactory;
 
 public abstract class DaoLookupFactory {
 	
@@ -44,7 +42,6 @@ public abstract class DaoLookupFactory {
 	abstract public DynamicTagDao getBeanDynamicTagDao();
 	abstract public MailingDao getBeanMailingDao();
 	abstract public MaildropService getBeanMaildropService();
-	abstract public MailingParameterDao getBeanMailingParameterDao();
 	abstract public LoginTrackDao getBeanGuiLoginTrackDao();
 	abstract public LoginTrackDao getBeanWsLoginTrackDao();
 	abstract public UndoMailingDao getBeanUndoMailingDao();
@@ -53,7 +50,6 @@ public abstract class DaoLookupFactory {
 	abstract public TargetDao getBeanTargetDao();
 	abstract public MailinglistDao getBeanMailinglistDao();
 	abstract public ImportRecipientsDao getBeanImportRecipientsDao();
-	abstract public ProfileFieldEncryptor getBeanProfileFieldEncryptor();
 	abstract public WorkflowReactionDao getBeanWorkflowReactionDao();
 	abstract public RecipientDao getBeanRecipientDao();
 	abstract public EmmActionService getBeanEmmActionService();

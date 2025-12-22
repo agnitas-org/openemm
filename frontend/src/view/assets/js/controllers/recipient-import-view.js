@@ -1,21 +1,18 @@
 AGN.Lib.Controller.new('recipient-import-view', function () {
 
-    this.addAction({click: 'delete-file'}, function () {
-        const jqxhr = $.post(AGN.url('/recipient/import/file/delete.action'));
-        jqxhr.done(function () {
-            $('#uploaded-file-container').remove();
-            $('#uploadFile').removeClass('hidden').prop('disabled', false);
-        });
+  this.addAction({click: 'delete-file'}, function () {
+    $.post(AGN.url('/recipient/import/file/delete.action')).done(() => {
+      this.el.parent().remove();
+      $('#import-file').prop('disabled', false).parent().removeClass('hidden');
     });
+  });
 
-    this.addDomInitializer('recipient-import-view', function () {
-        const attachmentCsvFileID = this.config.attachmentCsvFileID;
+  this.addDomInitializer('recipient-import-view', function () {
+    const attachmentCsvFileID = this.config.attachmentCsvFileID;
 
-        if (attachmentCsvFileID > 0) {
-            const $csvUploadToggle = $('#useCsvUpload');
-            $csvUploadToggle.prop('checked', true);
-            $csvUploadToggle.trigger('change');
-        }
-    });
+    if (attachmentCsvFileID > 0) {
+      $('#useCsvUpload').prop('checked', true).trigger('change');
+    }
+  });
 
 });

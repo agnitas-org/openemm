@@ -19,7 +19,7 @@ public enum ModeType {
 		this.code = code;
 	}
 
-	public static final ModeType getDefaultMode() {
+	public static ModeType getDefaultMode() {
 		return RECIPIENT;
 	}
 

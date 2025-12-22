@@ -1,0 +1,132 @@
+
+<script id="content-editor-template" type="text/x-mustache-template">
+    {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
+    {{var disabled = isEditableMailing ? '' : 'disabled="disabled"';}}
+
+    <c:set var="aceEditorAllowed" value="true"/>
+    <c:set var="wysiwygEditorAllowed" value="true"/>
+    <emm:ShowByPermission token="mailing.editor.hide.html">
+        <c:set var="aceEditorAllowed" value="false"/>
+    </emm:ShowByPermission>
+    <emm:ShowByPermission token="mailing.editor.hide">
+        <c:set var="wysiwygEditorAllowed" value="false"/>
+    </emm:ShowByPermission>
+
+    <div id="multi-editor" class="tile">
+        <div class="tile-header p-2 bg-disabled">
+            {{ if (showHTMLEditor || isContentGenerationAllowed) { }}
+            <ul class="tile-title-controls gap-1">
+                <emm:HideByPermission token="mailing.editor.hide.html">
+                    <li>
+                        <a href="#" class="btn btn-icon btn-secondary" data-toggle-tab="#tab-content-html">
+                            <i class="icon icon-code"></i>
+                        </a>
+                    </li>
+                </emm:HideByPermission>
+                <emm:HideByPermission token="mailing.editor.hide">
+                    {{ if (showHTMLEditor) { }}
+                    <li>
+                        <a href="#" class="btn btn-icon btn-secondary" data-toggle-tab="#tab-content-wysiwyg" data-multi-editor-option="wysiwyg">
+                            <i class="icon icon-font"></i>
+                        </a>
+                    </li>
+                    {{ } }}
+                    <%@include file="ai-content-editor-tab.jspf" %>
+                </emm:HideByPermission>
+            </ul>
+            {{ } }}
+
+            <div class="tile-controls">
+                <input type="checkbox" class="btn-check" id="editor-header-toggle" autocomplete="off" checked>
+                <label class="btn btn-icon btn-icon--toggle btn-secondary" for="editor-header-toggle"><i class="icon icon-caret-up"></i></label>
+
+                <button type="button" class="btn btn-secondary full-screen-shown" data-url='${saveUrl}' data-action='save'>
+                    <i class="icon icon-save"></i>
+                    <mvc:message code="button.Save"/>
+                </button>
+
+                <button type="button" class="btn btn-icon btn-secondary" data-full-screen>
+                    <i class="icon icon-expand-arrows-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="tile-header p-2 pt-0 d-flex flex-column gap-2 bg-disabled" data-show-by-checkbox="#editor-header-toggle">
+            <div id="content-block-selection">
+                <div class="input-group">
+                    <span class="input-group-text disabled"><mvc:message code="mailing.content.edit.target"/></span>
+                    <span id='content-block-index' class="input-group-text disabled"></span>
+                    <select class="form-control" data-action="switch-content-block">
+                        <%-- populated with js. see mailing-content-select-template --%>
+                    </select>
+                </div>
+
+                <button type="button" class="btn btn-primary" data-modal="manage-targets-modal-template" data-modal-set="dynTagName: {{- dynTagName }}">
+                    <i class="icon icon-sort-numeric-down"></i>
+                    <mvc:message code="button.mailing.target.manage"/>
+                </button>
+            </div>
+
+            <div class="input-group">
+                <span class="input-group-text disabled"><a href="#" class="icon icon-question-circle" data-help="mailing/content/Interest.xml" tabindex="-1" type="button"></a></span>
+                <select class="form-control" placeholder='<mvc:message code="mailing.interest.field.notset"/>' data-action="change-interest-group">
+                    <option value="">--</option>
+                    <c:forEach var="interestGroup" items="${form.availableInterestGroups}">
+                        <option value="${interestGroup.column}">${interestGroup.shortname}</option>
+                    </c:forEach>
+                </select>
+            </div>
+        </div>
+
+        <div class="tile-body d-flex flex-column p-0 border-0">
+            <emm:ShowByPermission token="mailing.editor.hide">
+                <emm:HideByPermission token="mailing.editor.hide.html">
+                    <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} h-100" data-tab-show="true">
+                        <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                        <textarea id="content" data-show-char-counter="tile-footer" class="form-control js-editor" {{- readonly }}></textarea>
+                    </div>
+                </emm:HideByPermission>
+            </emm:ShowByPermission>
+
+            <emm:HideByPermission token="mailing.editor.hide">
+                <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} h-100">
+                    <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                </div>
+                <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height-ck-editor h-100">
+                            <textarea id="content" name="content"
+                                      class="form-control js-editor js-wysiwyg hidden"
+                                      {{ usedInSmsContent ? print(`data-action="validate-sms-content" data-feedback-anchor=".tile-body"`) : print('') }}
+                    data-show-char-counter="tile-footer"
+                    data-editor-options="toolbarType: ${emm:getWysiwygToolbarType(pageContext.request, 'EMM')}, isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                    {{- readonly }}></textarea>
+                </div>
+
+                <!-- AI EDITOR -->
+                <jsp:include page="/WEB-INF/jsp/mailing/fragments/ai/ai-text-generation-tab.jsp" flush="true">
+                    <jsp:param name="mustacheTemplate" value="true" />
+                </jsp:include>
+            </emm:HideByPermission>
+        </div>
+    </div>
+</script>
+
+<script id="mailing-content-select-template" type="text/x-mustache-template">
+    <select class="form-control" data-action="switch-content-block">
+        {{ _.forEach(dynTag.contentBlocks, block => { }}
+        <option value="{{- block.uniqueId }}">
+            {{ if (!block.targetId) { }}
+            <mvc:message code="statistic.all_subscribers"/>
+            {{ } }}
+            <c:forEach var="target" items="${targets}">
+                {{ if (${target.id} === block.targetId) { }}
+                    ${fn:escapeXml(target.targetName)}
+                {{ } }}
+            </c:forEach>
+        </option>
+        {{ }); }}
+    </select>
+</script>
+
+<%@ include file="manage-targets-modal.jspf" %>
+
+<%@include file="ai-text-generation-apply-dialog.jspf" %>

@@ -13,6 +13,7 @@ package com.agnitas.util;
 import org.apache.commons.lang3.StringUtils;
 
 public class DbColumnType {
+
 	public static final String GENERIC_TYPE_INTEGER = "INTEGER";
 	public static final String GENERIC_TYPE_FLOAT = "FLOAT";
 	public static final String GENERIC_TYPE_DOUBLE = "DOUBLE";
@@ -23,24 +24,25 @@ public class DbColumnType {
 	public static final String GENERIC_TYPE_BLOB = "BLOB";
 	public static final String GENERIC_TYPE_TIMESTAMP = "TIMESTAMP";
 
-	private String typeName;
-	private long characterLength; // only for VARCHAR and VARCHAR2 types
-	private int numericPrecision; // only for numeric types
-	private int numericScale; // only for numeric types
-	private boolean nullable;
+	private final String typeName;
+	private final long characterLength; // only for VARCHAR and VARCHAR2 types
+	private final int numericPrecision; // only for numeric types
+	private final int numericScale; // only for numeric types
+	private final boolean nullable;
 	
 	public enum SimpleDataType {
-		Characters("settings.fieldType.VARCHAR", "VARCHAR"),
-		Numeric("settings.fieldType.INTEGER", "INTEGER"),
-		Float("settings.fieldType.DOUBLE", "DOUBLE"),
-		Date("settings.fieldType.DATE", "DATE"),
-		DateTime("settings.fieldType.DATETIME", "DATETIME"),
-		Blob("settings.fieldType.Blob", "BLOB");
 
-		private String messageKey;
-		private String genericDbDataTypeName;
+		Characters("settings.fieldType.VARCHAR", GENERIC_TYPE_VARCHAR),
+		Numeric("settings.fieldType.INTEGER", GENERIC_TYPE_INTEGER),
+		Float("settings.fieldType.DOUBLE", GENERIC_TYPE_DOUBLE),
+		Date("settings.fieldType.DATE", GENERIC_TYPE_DATE),
+		DateTime("settings.fieldType.DATETIME", GENERIC_TYPE_DATETIME),
+		Blob("settings.fieldType.Blob", GENERIC_TYPE_BLOB);
 
-		private SimpleDataType(String messageKey, String genericDbDataTypeName) {
+		private final String messageKey;
+		private final String genericDbDataTypeName;
+
+		SimpleDataType(String messageKey, String genericDbDataTypeName) {
 			this.messageKey = messageKey;
 			this.genericDbDataTypeName = genericDbDataTypeName;
 		}
@@ -53,7 +55,7 @@ public class DbColumnType {
 			return genericDbDataTypeName;
 		}
 		
-		public static SimpleDataType getFromString(String dataTypeString) throws Exception {
+		public static SimpleDataType getFromString(String dataTypeString) {
 			if ("integer".equalsIgnoreCase(dataTypeString)) {
 				return SimpleDataType.Numeric;
 			}
@@ -62,7 +64,7 @@ public class DbColumnType {
 					return simpleDataType;
 				}
 			}
-			throw new Exception("Invalid SimpleDataType: " + dataTypeString);
+			throw new IllegalArgumentException("Invalid SimpleDataType: " + dataTypeString);
 		}
 	}
 	
@@ -116,8 +118,6 @@ public class DbColumnType {
 	
 	/**
 	 * Return a simple dbFieldType which can be interpreted by a bean:message-Tag
-	 * @param typeName
-	 * @return
 	 */
 	public static String dbType2String(String typeName, int scale) {
 		if (StringUtils.isBlank(typeName)) {
@@ -163,12 +163,10 @@ public class DbColumnType {
 	
 	/**
 	 * Read a bean:message-Tag text to a db data type
-	 * @param typeName
-	 * @return
 	 */
-	public static String string2DbType(String beanTypeString) throws Exception {
+	public static String string2DbType(String beanTypeString) {
 		if (StringUtils.isBlank(beanTypeString)) {
-			throw new Exception("Invalid dbtype");
+			throw new IllegalArgumentException("Invalid dbtype: " + beanTypeString);
 		}
 		
 		beanTypeString = beanTypeString.toUpperCase();
@@ -185,7 +183,7 @@ public class DbColumnType {
 			case GENERIC_TYPE_DATETIME:
 				return "TIMESTAMP";
 			default:
-				throw new Exception("Invalid dbtype");
+				throw new IllegalArgumentException("Invalid dbtype:" + beanTypeString);
 		}
 	}
 }

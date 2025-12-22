@@ -10,23 +10,23 @@
 
 package com.agnitas.service.impl;
 
+import java.util.Objects;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.impl.DatasourceDescriptionImpl;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.datasource.bean.DataSource;
 import com.agnitas.emm.core.datasource.enums.DataSourceType;
+import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.DataSourceService;
 import com.agnitas.service.FailedCreateDataSourceException;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import com.agnitas.beans.DatasourceDescription;
-import com.agnitas.beans.impl.DatasourceDescriptionImpl;
-import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Objects;
 
 public class DataSourceServiceImpl implements DataSourceService {
 	
@@ -86,12 +86,10 @@ public class DataSourceServiceImpl implements DataSourceService {
             JSONObject entry = new JSONObject();
             entry.put("id", dataSource.getId());
             entry.put("description", dataSource.getDescription());
-			if (admin.isRedesignedUiUsed()) {
-				entry.put("timestamp", dataSource.getTimestamp().getTime());
-				entry.put("type", DataSourceType.findBySourceGroupType(dataSource.getSourceGroupType()).orElse(null));
-				entry.put("sourceGroupType", dataSource.getSourceGroupType());
-				entry.put("extraData", dataSource.getExtraData());
-			}
+			entry.put("timestamp", dataSource.getTimestamp().getTime());
+			entry.put("type", DataSourceType.findBySourceGroupType(dataSource.getSourceGroupType()).orElse(null));
+			entry.put("sourceGroupType", dataSource.getSourceGroupType());
+			entry.put("extraData", dataSource.getExtraData());
             jsonArray.put(entry);
         }
         return jsonArray;

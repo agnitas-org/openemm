@@ -18,14 +18,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.messages.Message;
 import com.agnitas.beans.ImportStatus;
+import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.messages.Message;
 import com.agnitas.util.Blacklist;
 import com.agnitas.util.CsvColInfo;
 import com.agnitas.util.ImportUtils.ImportErrorType;
-
-import com.agnitas.emm.core.commons.dto.FileDto;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ImportWizardHelper {
 
@@ -37,26 +36,26 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property datasourceID.
 	 */
-	public abstract int getDatasourceID();
+	int getDatasourceID();
 
 	/**
 	 * Sets an error.
 	 */
-	public abstract void setError(ImportErrorType id, String desc);
+	void setError(ImportErrorType id, String desc);
 
 	/**
 	 * Getter for property error.
 	 * 
 	 * @return Value of property error.
 	 */
-	public abstract StringBuffer getError(ImportErrorType id);
+	StringBuffer getError(ImportErrorType id);
 
 	/**
 	 * Getter for property status.
 	 * 
 	 * @return Value of property status.
 	 */
-	public abstract ImportStatus getStatus();
+	ImportStatus getStatus();
 
 	/**
 	 * Setter for property charset.
@@ -64,14 +63,14 @@ public interface ImportWizardHelper {
 	 * @param status
 	 *            New value of property status.
 	 */
-	public abstract void setStatus(ImportStatus status);
+	void setStatus(ImportStatus status);
 
 	/**
 	 * Getter for property csvAllColumns.
 	 * 
 	 * @return Value of property csvAllColumns.
 	 */
-	public abstract ArrayList<CsvColInfo> getCsvAllColumns();
+	ArrayList<CsvColInfo> getCsvAllColumns();
 
 	/**
 	 * Setter for property csvAllColumns.
@@ -79,7 +78,7 @@ public interface ImportWizardHelper {
 	 * @param csvAllColumns
 	 *            New value of property csvAllColumns.
 	 */
-	public abstract void setCsvAllColumns(ArrayList<CsvColInfo> csvAllColumns);
+	void setCsvAllColumns(ArrayList<CsvColInfo> csvAllColumns);
 
 	/**
 	 * Getter for property mailingLists.
@@ -87,7 +86,7 @@ public interface ImportWizardHelper {
 	 * @return Value of property mailingLists.
 	 * 
 	 */
-	public abstract Vector<String> getMailingLists();
+	Vector<String> getMailingLists();
 
 	/**
 	 * Setter for property mailingLists.
@@ -95,7 +94,7 @@ public interface ImportWizardHelper {
 	 * @param mailingLists
 	 *            New value of property mailingLists.
 	 */
-	public abstract void setMailingLists(Vector<String> mailingLists);
+	void setMailingLists(Vector<String> mailingLists);
 
     List<Integer> getMailinglists();
 
@@ -106,7 +105,7 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property usedColumns.
 	 */
-	public abstract ArrayList<String> getUsedColumns();
+	ArrayList<String> getUsedColumns();
 
 	/**
 	 * Setter for property usedColumns.
@@ -114,14 +113,14 @@ public interface ImportWizardHelper {
 	 * @param usedColumns
 	 *            New value of property usedColumns.
 	 */
-	public abstract void setUsedColumns(ArrayList<String> usedColumns);
+	void setUsedColumns(ArrayList<String> usedColumns);
 
 	/**
 	 * Getter for property parsedContent.
 	 * 
 	 * @return Value of property parsedContent.
 	 */
-	public abstract LinkedList<LinkedList<Object>> getParsedContent();
+	LinkedList<LinkedList<Object>> getParsedContent();
 
 	/**
 	 * Setter for property parsedContent.
@@ -129,28 +128,28 @@ public interface ImportWizardHelper {
 	 * @param parsedContent
 	 *            New value of property parsedContent.
 	 */
-	public abstract void setParsedContent(LinkedList<LinkedList<Object>> parsedContent);
+	void setParsedContent(LinkedList<LinkedList<Object>> parsedContent);
 
 	/**
 	 * Getter for property emailAdresses.
 	 * 
 	 * @return Value of property emailAdresses.
 	 */
-	public abstract Set<String> getUniqueValues();
+	Set<String> getUniqueValues();
 
 	/**
 	 * Setter for property emailAdresses.
 	 * 
 	 * @param uniqueValues
 	 */
-	public abstract void setUniqueValues(Set<String> uniqueValues);
+	void setUniqueValues(Set<String> uniqueValues);
 
 	/**
 	 * Getter for property dbAllColumns.
 	 * 
 	 * @return Value of property dbAllColumns.
 	 */
-	public abstract Map<String, CsvColInfo> getDbAllColumns();
+	Map<String, CsvColInfo> getDbAllColumns();
 
 	/**
 	 * Setter for property dbAllColumns.
@@ -158,14 +157,14 @@ public interface ImportWizardHelper {
 	 * @param dbAllColumns
 	 *            New value of property dbAllColumns.
 	 */
-	public abstract void setDbAllColumns(Map<String, CsvColInfo> dbAllColumns);
+	void setDbAllColumns(Map<String, CsvColInfo> dbAllColumns);
 
 	/**
 	 * Getter for property mode.
 	 * 
 	 * @return Value of property mode.
 	 */
-	public abstract int getMode();
+	int getMode();
 
 	/**
 	 * Setter for property mode.
@@ -173,14 +172,14 @@ public interface ImportWizardHelper {
 	 * @param mode
 	 *            New value of property mode.
 	 */
-	public abstract void setMode(int mode);
+	void setMode(int mode);
 
 	/**
 	 * Creates a simple date format When mapping for a column is found get real
 	 * csv column information Checks email / email adress / email adress on
 	 * blacklist. ?????
 	 */
-	public abstract LinkedList<Object> parseLine(List<String> inputData);
+	LinkedList<Object> parseLine(List<String> inputData);
 
 	void setCsvMaxUsedColumn(int csvMaxUsedColumn);
 
@@ -188,7 +187,7 @@ public interface ImportWizardHelper {
 
 	Blacklist getBlacklistHelper();
 
-	public LinkedList<Object> parseLine(List<String> inputData, boolean addErrors);
+	LinkedList<Object> parseLine(List<String> inputData, boolean addErrors);
 
 	/**
 	 * Maps columns from database.
@@ -197,14 +196,14 @@ public interface ImportWizardHelper {
 	 * -corresponding columns in dbAllColumns will be activated
 	 * -csvAllColumns will be updated too
 	 */
-	public abstract void mapColumns(Map<String, String> mapParameters);
+	void mapColumns(Map<String, String> mapParameters);
 
 	/**
 	 * Getter for property linesOK.
 	 * 
 	 * @return Value of property linesOK.
 	 */
-	public abstract int getLinesOK();
+	int getLinesOK();
 
 	/**
 	 * Setter for property linesOK.
@@ -212,14 +211,14 @@ public interface ImportWizardHelper {
 	 * @param linesOK
 	 *            New value of property linesOK.
 	 */
-	public abstract void setLinesOK(int linesOK);
+	void setLinesOK(int linesOK);
 
 	/**
 	 * Getter for property dbInsertStatus.
 	 * 
 	 * @return Value of property dbInsertStatus.
 	 */
-	public abstract int getDbInsertStatus();
+	int getDbInsertStatus();
 
 	/**
 	 * Setter for property dbInsertStatus.
@@ -227,14 +226,14 @@ public interface ImportWizardHelper {
 	 * @param dbInsertStatus
 	 *            New value of property dbInsertStatus.
 	 */
-	public abstract void setDbInsertStatus(int dbInsertStatus);
+	void setDbInsertStatus(int dbInsertStatus);
 
 	/**
 	 * Getter for property parsedData.
 	 * 
 	 * @return Value of property parsedData.
 	 */
-	public abstract StringBuffer getParsedData();
+	StringBuffer getParsedData();
 
 	/**
 	 * Setter for property parsedData.
@@ -242,14 +241,14 @@ public interface ImportWizardHelper {
 	 * @param parsedData
 	 *            New value of property parsedData.
 	 */
-	public abstract void setParsedData(StringBuffer parsedData);
+	void setParsedData(StringBuffer parsedData);
 
 	/**
 	 * Getter for property downloadName.
 	 * 
 	 * @return Value of property downloadName.
 	 */
-	public abstract String getDownloadName();
+	String getDownloadName();
 
 	/**
 	 * Setter for property downloadName.
@@ -257,23 +256,23 @@ public interface ImportWizardHelper {
 	 * @param downloadName
 	 *            New value of property downloadName.
 	 */
-	public abstract void setDownloadName(String downloadName);
+	void setDownloadName(String downloadName);
 
 	/**
 	 * Getter for property dbInsertStatusMessagesAndParameters.
 	 * 
 	 * @return Value of property dbInsertStatusMessagesAndParameters.
 	 */
-	public abstract List<Message> getDbInsertStatusMessagesAndParameters();
+	List<Message> getDbInsertStatusMessagesAndParameters();
 
-	public abstract void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters);
+	void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters);
 
 	/**
 	 * Getter for property resultMailingListAdded.
 	 * 
 	 * @return Value of property resultMailingListAdded.
 	 */
-	public abstract Map<MediaTypes, Map<String, String>> getResultMailingListAdded();
+	Map<MediaTypes, Map<String, String>> getResultMailingListAdded();
 
 	/**
 	 * Setter for property resultMailingListAdded.
@@ -281,29 +280,14 @@ public interface ImportWizardHelper {
 	 * @param resultMailingListAdded
 	 *            New value of property resultMailingListAdded.
 	 */
-	public abstract void setResultMailingListAdded(Map<MediaTypes, Map<String, String>> resultMailingListAdded);
-
-//	/**
-//	 * Getter for property blacklist.
-//	 *
-//	 * @return Value of property blacklist.
-//	 */
-//	public abstract HashSet getBlacklist();
-//
-//	/**
-//	 * Setter for property blacklist.
-//	 *
-//	 * @param blacklist
-//	 *            New value of property blacklist.
-//	 */
-//	public abstract void setBlacklist(HashSet blacklist);
+	void setResultMailingListAdded(Map<MediaTypes, Map<String, String>> resultMailingListAdded);
 
 	/**
 	 * Getter for property previewOffset.
 	 * 
 	 * @return Value of property previewOffset.
 	 */
-	public abstract int getPreviewOffset();
+	int getPreviewOffset();
 
 	/**
 	 * Setter for property previewOffset.
@@ -311,14 +295,14 @@ public interface ImportWizardHelper {
 	 * @param previewOffset
 	 *            New value of property previewOffset.
 	 */
-	public abstract void setPreviewOffset(int previewOffset);
+	void setPreviewOffset(int previewOffset);
 
 	/**
 	 * Getter for property dateFormat.
 	 * 
 	 * @return Value of property dateFormat.
 	 */
-	public abstract String getDateFormat();
+	String getDateFormat();
 
 	/**
 	 * Setter for property dateFormat.
@@ -326,65 +310,66 @@ public interface ImportWizardHelper {
 	 * @param dateFormat
 	 *            New value of property dateFormat.
 	 */
-	public abstract void setDateFormat(String dateFormat);
+	void setDateFormat(String dateFormat);
 
 	/**
 	 * Getter for property columnMapping.
 	 * 
 	 * @return Value of property columnMapping.
 	 */
-	public abstract Map<String, CsvColInfo> getColumnMapping();
+	Map<String, CsvColInfo> getColumnMapping();
 
 	/**
 	 * Setter for property columnMapping.
 	 * 
 	 * @param columnMapping   New value of property columnMapping.
 	 */
-	public abstract void setColumnMapping(Map<String, CsvColInfo> columnMapping);
+	void setColumnMapping(Map<String, CsvColInfo> columnMapping);
 
-	public abstract String getErrorId();
+	String getErrorId();
 
-	public abstract void setErrorId(String errorId);
+	void setErrorId(String errorId);
 
-	public abstract String getManualAssignedMailingType();
+	String getManualAssignedMailingType();
 
-	public abstract void setManualAssignedMailingType(String manualAssignedMailingType);
+	void setManualAssignedMailingType(String manualAssignedMailingType);
 
-	public abstract String getManualAssignedGender();
+	String getManualAssignedGender();
 
-	public abstract void setManualAssignedGender(String manualAssignedGender);
+	void setManualAssignedGender(String manualAssignedGender);
 
-	public abstract boolean isMailingTypeMissing();
+	boolean isMailingTypeMissing();
 
-	public abstract void setMailingTypeMissing(boolean mailingTypeMissing);
+	void setMailingTypeMissing(boolean mailingTypeMissing);
 
-	public abstract boolean isGenderMissing();
+	boolean isGenderMissing();
 
-	public abstract void setGenderMissing(boolean genderMissing);
+	void setGenderMissing(boolean genderMissing);
 
-	public abstract Locale getLocale();
+	Locale getLocale();
 
-	public abstract void setLocale(Locale locale);
+	void setLocale(Locale locale);
 
-	public abstract Map<ImportErrorType, StringBuffer> getErrorData();
+	Map<ImportErrorType, StringBuffer> getErrorData();
 
-	public abstract void setErrorData(Map<ImportErrorType, StringBuffer> errorData);
+	void setErrorData(Map<ImportErrorType, StringBuffer> errorData);
 
-	public abstract byte[] getFileData();
+	byte[] getFileData();
 
-	public abstract void setFileData(byte[] fileData);
+	void setFileData(byte[] fileData);
 
-	public abstract int getCompanyID();
+	int getCompanyID();
 
-	public abstract void setCompanyID(int companyID);
+	void setCompanyID(int companyID);
 
-    public void clearDummyColumnsMappings();
+    void clearDummyColumnsMappings();
 
-    public abstract String getKeyColumn();
+    String getKeyColumn();
     
     FileDto getFile();
 
     void setFile(FileDto file);
 
 	void clearDbInsertStatusMessagesAndParameters();
+
 }

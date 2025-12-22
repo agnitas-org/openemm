@@ -45,7 +45,7 @@ public class ActionExporter extends BaseImporterExporter {
 	@Resource(name="EmmActionOperationDao")
 	private EmmActionOperationDao actionOperationDao;
 	
-	protected void exportActions(JsonWriter writer, int companyID, Set<Integer> actionIDs) throws Exception {
+	protected void exportActions(JsonWriter writer, int companyID, Set<Integer> actionIDs) {
 		if (actionIDs.size() > 0) {
 			writer.openJsonObjectProperty("actions");
 			writer.openJsonArray();
@@ -56,7 +56,7 @@ public class ActionExporter extends BaseImporterExporter {
 		}
 	}
 	
-	public void exportAction(int companyID, int actionID, JsonWriter writer) throws Exception {
+	public void exportAction(int companyID, int actionID, JsonWriter writer) {
 		EmmAction action = actionDao.getEmmAction(actionID, companyID);
 		action.setActionOperations(actionOperationDao.getOperations(actionID, companyID));
 		writer.openJsonObject();
@@ -140,7 +140,7 @@ public class ActionExporter extends BaseImporterExporter {
 					writeJsonObjectAttribute(writer, "useTrack", actionOperationUpdateCustomer.isUseTrack());
 					break;
 				default:
-					throw new Exception("Invalid actionoperation type: " + actionOperation.getOperationType());
+					throw new UnsupportedOperationException("Invalid action operation type: " + actionOperation.getOperationType());
 			}
 
 			writer.closeJsonObject();
@@ -150,19 +150,19 @@ public class ActionExporter extends BaseImporterExporter {
 		writer.closeJsonObject();
 	}
 	
-	protected void writeJsonObjectAttribute(JsonWriter writer, String attributeName, Object attributeValue) throws Exception {
+	protected void writeJsonObjectAttribute(JsonWriter writer, String attributeName, Object attributeValue) {
 		writer.openJsonObjectProperty(attributeName);
 		writer.addSimpleJsonObjectPropertyValue(attributeValue);
 	}
 
-	protected void writeJsonObjectAttributeWhenNotNullOrBlank(JsonWriter writer, String attributeName, String attributeValueString) throws Exception {
+	protected void writeJsonObjectAttributeWhenNotNullOrBlank(JsonWriter writer, String attributeName, String attributeValueString) {
 		if (StringUtils.isNotBlank(attributeValueString)) {
 			writer.openJsonObjectProperty(attributeName);
 			writer.addSimpleJsonObjectPropertyValue(attributeValueString);
 		}
 	}
 	
-	protected void exportProperties(JsonWriter writer, List<LinkProperty > linkProperties) throws Exception {
+	protected void exportProperties(JsonWriter writer, List<LinkProperty > linkProperties) {
 		if (CollectionUtils.isNotEmpty(linkProperties)) {
 			writer.openJsonObjectProperty("properties");
 			writer.openJsonArray();

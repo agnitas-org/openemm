@@ -14,11 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.core.mailingcontent.validator.impl.HtmlContentValidator;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.MailingEditableCheck;
@@ -46,7 +46,14 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 	private final UserActivityLogAccess userActivityLogAccess;
 	private final HtmlContentValidator htmlContentValidator;
 	
-	public UpdateContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, MailingEditableCheck mailingEditableCheck, ThumbnailService thumbnailService, SecurityContextAccess securityContextAccess, UserActivityLogAccess userActivityLogAccess, HtmlContentValidator htmlContentValidator) {
+	public UpdateContentBlockEndpoint(
+			DynamicTagContentService dynamicTagContentService,
+			MailingEditableCheck mailingEditableCheck,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess,
+			UserActivityLogAccess userActivityLogAccess,
+			HtmlContentValidator htmlContentValidator
+	) {
 		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService, "dynamicTagContentService");
 		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
@@ -79,14 +86,14 @@ public class UpdateContentBlockEndpoint extends BaseEndpoint {
 		try {
 			final DynamicTagContent currentContent = this.dynamicTagContentService.getContent(model);
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, currentContent.getMailingID());
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing containing content block", request.getContentID()), e);
+		} catch (Exception e) {
+			LOGGER.error("Error updating thumbnail of mailing containing content block {}", request.getContentID(), e);
 		}
 
 		return response;
 	}
 	
-	private void validateContent(final ContentModel model) throws InvalidMailingContentException {
+	private void validateContent(ContentModel model) throws InvalidMailingContentException {
 		final List<String> invalidElements = this.htmlContentValidator.findIllegalTags(model.getContent());
 		
 		if(!invalidElements.isEmpty()) {

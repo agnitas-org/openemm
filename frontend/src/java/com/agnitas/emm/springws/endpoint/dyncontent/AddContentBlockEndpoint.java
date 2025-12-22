@@ -14,10 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.core.mailingcontent.validator.impl.HtmlContentValidator;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.MailingEditableCheck;
@@ -26,8 +26,6 @@ import com.agnitas.emm.springws.jaxb.AddContentBlockRequest;
 import com.agnitas.emm.springws.jaxb.AddContentBlockResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import com.agnitas.emm.springws.util.UserActivityLogAccess;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -36,8 +34,6 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class AddContentBlockEndpoint extends BaseEndpoint {
 
-	private static final Logger LOGGER = LogManager.getLogger(AddContentBlockEndpoint.class);
-
 	private final DynamicTagContentService dynamicTagContentService;
 	private final MailingEditableCheck mailingEditableCheck;
 	private final ThumbnailService thumbnailService;
@@ -45,9 +41,14 @@ public class AddContentBlockEndpoint extends BaseEndpoint {
 	private final UserActivityLogAccess userActivityLogAccess;
 	private final HtmlContentValidator htmlContentValidator;
 
-	public AddContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, MailingEditableCheck mailingEditableCheck,
-								   ThumbnailService thumbnailService, SecurityContextAccess securityContextAccess, UserActivityLogAccess userActivityLogAccess,
-								   HtmlContentValidator htmlContentValidator) {
+	public AddContentBlockEndpoint(
+			DynamicTagContentService dynamicTagContentService,
+			MailingEditableCheck mailingEditableCheck,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess,
+			UserActivityLogAccess userActivityLogAccess,
+			HtmlContentValidator htmlContentValidator
+	) {
 
 		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService, "dynamicTagContentService");
 		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
@@ -79,11 +80,7 @@ public class AddContentBlockEndpoint extends BaseEndpoint {
 		response.setContentID(dynamicTagContentService.addContent(model, userActions));
 		this.userActivityLogAccess.writeLog(userActions);
 		
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getMailingID());
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", request.getMailingID()), e);
-		}
+		thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, request.getMailingID());
 
 		return response;
 	}

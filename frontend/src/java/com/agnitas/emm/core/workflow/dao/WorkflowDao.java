@@ -15,25 +15,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.beans.CompaniesConstraints;
-
-
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.CompaniesConstraints;
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 
 public interface WorkflowDao {
-    /**
-     * Check whether a referenced workflow exists.
-     *
-     * @param workflowId a workflow identifier to be checked.
-     * @param companyId an identifier of a company that owns referenced workflow.
-     * @return {@code true} if a referenced workflow is there or {@code false} otherwise.
-     */
-    boolean exists(int workflowId, int companyId);
 
 	Workflow getWorkflow(int workflowId, int companyId);
 
@@ -46,20 +36,7 @@ public interface WorkflowDao {
      */
 	String getSchema(int workflowId, int companyId);
 
-    String getSchema(int workflowId);
-
-    /**
-     * Store workflow schema string representation (JSON).
-     *
-     * @param schema a workflow schema string representation (JSON).
-     * @param workflowId an identifier of a workflow to update schema for.
-     * @param companyId an identifier of a company that owns a referenced workflow.
-     * @return whether ({@code true}) or not ({@code false}) schema has been updated.
-     * @throws java.lang.NullPointerException if {@code schema} is {@code null}.
-     */
-	boolean setSchema(String schema, int workflowId, int companyId);
-
-    int insertUndoEntry(Workflow workflow, int adminId);
+	String getSchema(int workflowId);
 
     String getSchemaBeforePause(int workflowId, int companyId);
 
@@ -137,15 +114,13 @@ public interface WorkflowDao {
 
     int getPauseAdminId(int workflowId, int companyId);
 
-    List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId);
-
     void changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus);
 
     List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId);
 
     int countCustomers(int companyId, int mailinglistId, String targetSQL);
 
-    void deleteWorkflow(int companyID);
+    void deleteWorkflows(int companyID);
 
     /**
      * Get all workflows having given {@code dependency}.
@@ -197,8 +172,6 @@ public interface WorkflowDao {
     void savePausedSchemaForUndo(Workflow workflow, int adminId);
 
     Date getPauseDate(int workflowId, int companyId);
-
-    void deleteUndoEntry(int workflowId, int companyId);
 
     void deletePauseUndoEntry(int workflowId, int companyId);
 

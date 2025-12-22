@@ -13,10 +13,13 @@ package com.agnitas.emm.core.widget.web;
 import java.util.List;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.recipient.service.SubscribeRecipientService;
 import com.agnitas.emm.core.widget.beans.SubscribeWidgetSettings;
 import com.agnitas.emm.core.widget.enums.WidgetType;
+import com.agnitas.emm.core.widget.exception.InvalidWidgetTokenException;
 import com.agnitas.emm.core.widget.form.SubscribeWidgetForm;
 import com.agnitas.emm.core.widget.form.SubscribeWidgetSettingsForm;
 import com.agnitas.emm.core.widget.service.WidgetService;
@@ -24,16 +27,14 @@ import com.agnitas.emm.core.widget.validator.SubscribeWidgetFormValidator;
 import com.agnitas.emm.core.widget.validator.SubscribeWidgetSettingsFormValidator;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.HttpUtils;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.Anonymous;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
-import com.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.recipient.service.SubscribeRecipientService;
-import com.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -44,7 +45,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@PermissionMapping("widget")
+@RequiredPermission("forms.change")
 public class WidgetController implements XssCheckAware {
 
     private final MailinglistApprovalService mailinglistApprovalService;
@@ -96,7 +97,7 @@ public class WidgetController implements XssCheckAware {
     @Anonymous
     public String viewWidget(@RequestParam String token) {
         if (!widgetService.isTokenValid(token)) {
-            throw new IllegalArgumentException("Invalid widget token: " + token);
+            throw new InvalidWidgetTokenException(token);
         }
 
         WidgetType widgetType = widgetService.getWidgetType(token);
@@ -105,7 +106,7 @@ public class WidgetController implements XssCheckAware {
             case SUBSCRIBE:
                 return "forward:/widget/subscribe.action";
             default:
-                throw new IllegalStateException("Unexpected widget type: " + widgetType);
+                throw new UnsupportedOperationException("Unexpected widget type: " + widgetType);
         }
     }
 
@@ -119,12 +120,12 @@ public class WidgetController implements XssCheckAware {
     @Anonymous
     public String subscribeRecipient(SubscribeWidgetForm form, Popups popups, HttpServletRequest req, RedirectAttributes ra) throws JsonProcessingException {
         if (!widgetService.isTokenValid(form.getToken(), WidgetType.SUBSCRIBE)) {
-            throw new IllegalArgumentException("Invalid widget token: " + form.getToken());
+            throw new InvalidWidgetTokenException(form.getToken());
         }
 
-        SubscribeWidgetSettings settings = widgetService.parseSettings(form.getToken(), SubscribeWidgetSettings.class);
-
         if (subscribeWidgetFormValidator.validate(form, popups)) {
+            SubscribeWidgetSettings settings = widgetService.parseSettings(form.getToken(), SubscribeWidgetSettings.class);
+
             settings.setRemoteAddress(req.getRemoteAddr());
             settings.setReferrer(HttpUtils.getReferrer(req));
 

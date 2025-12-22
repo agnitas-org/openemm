@@ -10,13 +10,13 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.beans.FormComponent;
-import com.agnitas.beans.FormComponent.FormComponentType;
-import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import java.util.List;
 import java.util.Set;
+
+import com.agnitas.beans.FormComponent;
+import com.agnitas.beans.FormComponent.FormComponentType;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 
 /**
  * The Interface FormComponentDao.
@@ -33,18 +33,9 @@ public interface FormComponentDao {
 	 */
 	FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType);
 
-	/**
-	 * Exists.
-	 *
-	 * @param formID the form id
-	 * @param companyID the company id
-	 * @param componentID the component id
-	 * @return true, if successful
-	 */
-	boolean exists(int formID, int companyID, int componentID);
 	boolean exists(int formId, int companyID, String componentName);
 
-	PaginatedListImpl<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter);
+	PaginatedList<FormComponent> getFormComponentOverview(UserFormImagesOverviewFilter filter);
 
 	/**
 	 * Delete form component.

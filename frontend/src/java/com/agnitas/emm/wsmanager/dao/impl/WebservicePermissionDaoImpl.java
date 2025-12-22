@@ -19,7 +19,7 @@ import java.util.List;
 public final class WebservicePermissionDaoImpl extends BaseDaoImpl implements WebservicePermissionDao {
 
 	@Override
-	public final List<WebservicePermission> listPermissions() {
+	public List<WebservicePermission> listPermissions() {
 		final String sql = "SELECT * FROM webservice_permissions_tbl";
 		
 		return select(sql, new WebservicePermissionRowMapper());

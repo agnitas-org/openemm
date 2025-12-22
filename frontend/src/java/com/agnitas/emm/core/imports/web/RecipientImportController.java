@@ -37,17 +37,20 @@ import com.agnitas.beans.ColumnMapping;
 import com.agnitas.beans.DatasourceDescription;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.beans.impl.DatasourceDescriptionImpl;
 import com.agnitas.beans.impl.ImportStatusImpl;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.exceptions.InvalidCharsetException;
 import com.agnitas.emm.common.exceptions.TooManyFilesInZipToImportException;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
 import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import com.agnitas.emm.core.imports.beans.ImportErrorCorrection;
 import com.agnitas.emm.core.imports.beans.ImportProgressSteps;
@@ -60,8 +63,10 @@ import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.imports.wizard.dto.LocalFileDto;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.data.DataProvider;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ImportException;
 import com.agnitas.service.ImportProfileService;
 import com.agnitas.service.ProfileImportWorker;
@@ -85,13 +90,9 @@ import com.agnitas.web.mvc.AgnRedirectView;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.impl.PopupsImpl;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -117,6 +118,7 @@ public class RecipientImportController {
     public static final String SESSION_WORKER_KEY = "recipient-import-worker";
     private static final String IMPORT_DATA_KEY = "import-recipients";
     private static final String ERRORS_EDIT_KEY = "import-recipients-errors";
+    private static final String CONTINUE_IMPORT_EXECUTION = "redirect:/recipient/import/execute.action";
 
     private final ImportProfileService importProfileService;
     private final MailinglistService mailinglistService;
@@ -155,12 +157,12 @@ public class RecipientImportController {
     @ExceptionHandler(CsvDataInvalidItemCountException.class)
     public String onCsvDataInvalidItemCountException(CsvDataInvalidItemCountException ex, Popups popups) {
         LOGGER.error(ex.getMessage());
-        popups.alert("GWUA.error.imort.invalid.item.count", ex.getErrorLineNumber(), ex.getExpected(), ex.getActual());
+        popups.alert("error.import.column.count.invalid", ex.getErrorLineNumber(), ex.getExpected(), ex.getActual());
         return MESSAGES_VIEW;
     }
 
     @GetMapping("/chooseMethod.action")
-    @PermissionMapping("choose.method")
+    @RequiredPermission("wizard.import|wizard.importclassic")
     public String chooseImportMethod(@RequestParam(required = false) boolean cancelImport, Admin admin, Popups popups, HttpSession session) {
         if (cancelImport) {
             clearFinishedWorker(session);
@@ -186,7 +188,7 @@ public class RecipientImportController {
         clearFinishedWorker(session);
 
         if (isWorkerExists(session)) {
-            return continueImportExecution();
+            return CONTINUE_IMPORT_EXECUTION;
         }
 
         if (form.getProfileId() == 0) {
@@ -256,16 +258,12 @@ public class RecipientImportController {
             model.addAttribute("possibleToSelectMailinglist", true);
         }
 
-        if (admin.isRedesignedUiUsed()) {
-            List<List<String>> result = parsingResult.getResult();
-            model.addAttribute("columnsNames", result.get(0));
-            model.addAttribute("columnsData", previewResultDataToJson(
-                    result.subList(1, result.size()),
-                    result.get(0)
-            ));
-        } else {
-            model.addAttribute("parsedContent", parsingResult.getResult());
-        }
+        List<List<String>> result = parsingResult.getResult();
+        model.addAttribute("columnsNames", result.get(0));
+        model.addAttribute("columnsData", previewResultDataToJson(
+                result.subList(1, result.size()),
+                result.get(0)
+        ));
 
         return "recipient_import_preview";
     }
@@ -293,7 +291,7 @@ public class RecipientImportController {
 
     @RequestMapping("/execute.action")
     public Object execute(@ModelAttribute("form") RecipientImportForm form,
-                          Admin admin, Popups popups, HttpSession session) throws Exception {
+                          Admin admin, Popups popups, HttpSession session) throws IOException {
         ProfileImportWorker importWorker;
 
         if (isWorkerExists(session)) {
@@ -336,7 +334,7 @@ public class RecipientImportController {
         Map<String, Object> attributesMap = new HashMap<>();
 
         PollingUid pollingUid = new PollingUid(session.getId(), IMPORT_DATA_KEY, importWorker.isIgnoresErroneousData());
-        return new Pollable<>(pollingUid, SHORT_TIMEOUT, new ModelAndView(viewProgress(importWorker, attributesMap, false), attributesMap), worker);
+        return new Pollable<>(pollingUid, SHORT_TIMEOUT, new ModelAndView(viewProgress(importWorker, attributesMap), attributesMap), worker);
     }
 
     private void prepareModelAttributesForResultPage(Map<String, Object> attributesMap, ProfileImportWorker worker, Admin admin) {
@@ -402,11 +400,11 @@ public class RecipientImportController {
             worker.ignoreErroneousData();
         }
 
-        return continueImportExecution();
+        return CONTINUE_IMPORT_EXECUTION;
     }
 
     @RequestMapping("/errors/edit.action")
-    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session, Admin admin) {
+    public Object editErrors(@ModelAttribute("form") RecipientImportForm form, HttpSession session) {
         Callable<Object> worker = () -> {
             ProfileImportWorker importWorker = extractImportWorker(session);
             Map<String, Object> attributesMap = new HashMap<>();
@@ -424,12 +422,12 @@ public class RecipientImportController {
 
         FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_WIZARD_ERRORS_OVERVIEW, form);
 
-        PollingUid pollingUid = new PollingUid(session.getId(), ERRORS_EDIT_KEY);
-        if (admin.isRedesignedUiUsed()) {
-            return new Pollable<>(pollingUid, Pollable.SHORT_TIMEOUT, new ModelAndView("redirect:/recipient/import/errors/edit.action", form.toMap()), worker);
-        } else {
-            return new Pollable<>(pollingUid, SHORT_TIMEOUT, "recipient_import_loading", worker);
-        }
+        return new Pollable<>(
+                new PollingUid(session.getId(), ERRORS_EDIT_KEY),
+                Pollable.SHORT_TIMEOUT,
+                new ModelAndView("redirect:/recipient/import/errors/edit.action", form.toMap()),
+                worker
+        );
     }
 
     @PostMapping("/errors/save.action")
@@ -453,7 +451,7 @@ public class RecipientImportController {
             return "redirect:/recipient/import/errors/edit.action?invalidRecipientsSize=" + form.getInvalidRecipientsSize();
         }
 
-        return continueImportExecution();
+        return CONTINUE_IMPORT_EXECUTION;
     }
 
     @RequestMapping("/cancel.action")
@@ -523,7 +521,6 @@ public class RecipientImportController {
 
         clearWorkerInSession(session);
         int datasourceId = importWorker.getDatasourceId();
-
         ImportMode importMode = ImportMode.getFromInt(importWorker.getImportProfile().getImportMode());
 
         return ImportMode.TO_BLACKLIST == importMode || ImportMode.BLACKLIST_EXCLUSIVE == importMode
@@ -552,24 +549,15 @@ public class RecipientImportController {
         }
     }
 
-    private String continueImportExecution() {
-        return "redirect:/recipient/import/execute.action";
-    }
-
-    private String viewProgress(ProfileImportWorker worker, Map<String, Object> attributesMap, boolean errorOccurred) {
-        if (errorOccurred) {
-            attributesMap.put("errorOccurred", true);
-            attributesMap.put("profileId", worker.getImportProfileId());
-        } else {
-            attributesMap.put("stepsLength", ImportProgressSteps.values().length);
-            attributesMap.put("completedPercent", worker.getCompletedPercent());
-            attributesMap.put("currentProgressStatus", worker.getCurrentProgressStatus());
-        }
+    private String viewProgress(ProfileImportWorker worker, Map<String, Object> attributesMap) {
+        attributesMap.put("stepsLength", ImportProgressSteps.values().length);
+        attributesMap.put("completedPercent", worker.getCompletedPercent());
+        attributesMap.put("currentProgressStatus", worker.getCurrentProgressStatus());
 
         return "recipient_import_progress";
     }
 
-    private PaginatedListImpl<Map<String, Object>> findInvalidRecipients(ProfileImportWorker worker, RecipientImportForm form) {
+    private PaginatedList<Map<String, Object>> findInvalidRecipients(ProfileImportWorker worker, RecipientImportForm form) {
         return importRecipientsDao.getInvalidRecipientList(
                 worker.getTemporaryErrorTableName(),
                 worker.getImportedDataFileColumns(),
@@ -703,7 +691,7 @@ public class RecipientImportController {
         return builder.toString();
     }
 
-    private ProfileImportWorker createNewProfileImportWorker(RecipientImportForm form, ImportProfile profile, int companyID, Admin admin, HttpSession session) throws Exception {
+    private ProfileImportWorker createNewProfileImportWorker(RecipientImportForm form, ImportProfile profile, int companyID, Admin admin, HttpSession session) throws IOException {
         FileDto fileDto = getImportFile(form, admin, session);
 
         DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
@@ -772,12 +760,11 @@ public class RecipientImportController {
             return false;
         } catch (TooManyFilesInZipToImportException e) {
             LOGGER.error(e.getMessage());
-            throw new RequestErrorException("error.import.zip.files");
+            throw new BadRequestException("error.import.zip.files");
         }
 		
 		if (dataPropertyNames == null || dataPropertyNames.isEmpty()) {
-			popups.alert("error.emptyImportFile");
-			return false;
+            throw new BadRequestException("error.emptyImportFile");
 		}
 
         if (!isValidSeparatorUsed(Separator.getSeparatorById(profile.getSeparator()), dataPropertyNames)) {
@@ -799,8 +786,7 @@ public class RecipientImportController {
         }
         
         if (!duplicateColumns.isEmpty()) {
-        	popups.alert("error.import.column.name.duplicate", StringUtils.join(duplicateColumns, ", "));
-        	return false;
+            throw new BadRequestException(Message.of("error.import.column.name.duplicate", StringUtils.join(duplicateColumns, ", ")));
         }
 
         for (ColumnMapping mapping : profile.getColumnMapping()) {
@@ -845,6 +831,11 @@ public class RecipientImportController {
 
         if (!hasMappingsForKeyColumns(profile)) {
             popups.alert("error.import.keycolumn_not_imported");
+            return false;
+        }
+
+        if (Separator.getSeparatorById(profile.getSeparator()).getValueChar() == profile.getDecimalSeparator()) {
+            popups.alert("error.import.separator.same");
             return false;
         }
 
@@ -933,4 +924,5 @@ public class RecipientImportController {
     private void writeUserActivityLog(String action, String description, Admin admin) {
         UserActivityUtil.log(userActivityLogService, admin, action, description, LOGGER);
     }
+
 }

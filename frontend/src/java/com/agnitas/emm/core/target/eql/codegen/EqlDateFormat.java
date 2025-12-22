@@ -145,7 +145,7 @@ public class EqlDateFormat implements Iterable<EqlDateFormat.DateFragment> {
 		return new EqlDateFormat(list);
 	}
 
-	public String normalizeValue(String value) throws EqlDateValueFormatException {
+	public String normalizeValue(String value) {
 		if (StringUtils.isBlank(value)) {
 			throw new EqlDateValueFormatException(toString(), value);
 		}

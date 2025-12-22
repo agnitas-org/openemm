@@ -1,922 +1,945 @@
-// /*doc
-// ---
-// title: Form
-// name: form-features
-// category: Javascripts - Forms
-// ---
-// */
-//
-// /*doc
-// ---
-// title: Custom Loader
-// name: form-features-01
-// parent: form-features
-// ---
-//
-// The `data-custom-loader` attribute makes (if specified) form trigger `form:loadershow` and `form:loaderhide` events (on form element)
-// when loader is expected to be shown/hidden so listening those events you can provide custom loading indication.
-//
-// Also it enables `form:progress` event that is being thrown on form uploading progress.
-//
-// ```htmlexample
-// <form action="#form-features-01" id="customLoaderDemoForm" data-form="" data-custom-loader="">
-//   <button type="submit" class="btn btn-regular btn-primary">Submit</button>
-// </form>
-// ```
-//
-// ```jsexample
-// $('#customLoaderDemoForm').on({
-//   'form:loadershow': function() {
-//     AGN.Lib.Messages('Form', 'Form submission started!', 'success');
-//   },
-//   'form:loaderhide': function() {
-//     AGN.Lib.Messages('Form', 'Form submission finished!', 'success');
-//   }
-// });
-// ```
-//
-// The `form:progress` event depends on browser so it's not quite reliable and may be missing. When fired it's supplied with the following data:
-//
-// Property | Description
-// ---------|------------
-// `loaded` | Number of bytes already loaded (only available if `progress !== true`).
-// `total` | Total number of bytes to be loaded (only available if `progress !== true`).
-// `progress` | Formatted progress percentage number or `true` (if detailed progress percentage is not supported).
-// */
-//
-// /*doc
-// ---
-// title: Controls disabling
-// name: form-features-02
-// parent: form-features
-// ---
-//
-// The `data-disable-controls` attribute allows to disable some controls (the ones having `data-controls-group` attribute) during form submission (and enable them back afterwards).
-// Use `data-disable-controls="*"` to refer all the elements having `data-controls-group` attribute or specify a particular value to refer a named group (group's name is defined by `data-controls-group` attribute).
-//
-// ```htmlexample
-// <form action="#form-features-02" id="controlsDisablingDemoForm" data-form="" data-disable-controls="group-1">
-//   <div class="form-group">
-//     <div class="col-sm-4">
-//       <label class="control-label">
-//         <label for="Name">First name</label>
-//       </label>
-//     </div>
-//     <div class="col-sm-8">
-//       <input type="text" name="firstname" class="form-control" data-controls-group="group-1"/>
-//     </div>
-//   </div>
-//
-//   <div class="form-group">
-//     <div class="col-sm-4">
-//       <label class="control-label">
-//         <label for="Name">Last name</label>
-//       </label>
-//     </div>
-//     <div class="col-sm-8">
-//       <input type="text" name="lastname" class="form-control" data-controls-group="group-2"/>
-//     </div>
-//   </div>
-//
-//   <div class="form-group">
-//     <div class="col-sm-4">
-//       <label class="control-label">
-//         <label for="Name">Last name</label>
-//       </label>
-//     </div>
-//     <div class="col-sm-8">
-//       <button type="submit" class="btn btn-regular btn-primary" data-controls-group="group-1">Submit</button>
-//     </div>
-//   </div>
-// </form>
-// ```
-// */
+/*doc
+---
+title: Form
+name: form-features
+category: Javascripts - Forms
+---
+*/
 
-(function(){
+/*doc
+---
+title: Custom Loader
+name: form-features-01
+parent: form-features
+---
 
-  var Form,
-      Field = AGN.Lib.Field,
-      CSRF = AGN.Lib.CSRF,
-      ControlsToDisable;
+The `data-custom-loader` attribute makes (if specified) form trigger `form:loadershow` and `form:loaderhide` events (on form element)
+when loader is expected to be shown/hidden so listening those events you can provide custom loading indication.
 
-  ControlsToDisable = function(group) {
-    this.group = group;
-    this.$controls = $();
-  };
+Also it enables `form:progress` event that is being thrown on form uploading progress.
 
-  ControlsToDisable.prototype._collect = function(group) {
-    var $all = $('[data-controls-group]');
+```htmlexample
+<form action="#form-features-01" id="customLoaderDemoForm" data-form="" data-custom-loader="">
+  <button type="submit" class="btn btn-regular btn-primary">Submit</button>
+</form>
+```
 
-    if (group === '*') {
-      return $all;
-    }
-
-    if (group) {
-      return $all.filter(function() {
-        return group === $(this).attr('data-controls-group');
-      });
-    } else {
-      return $();
-    }
-  };
-
-  ControlsToDisable.prototype.collect = function() {
-    if (this.group) {
-      this.$controls = this._collect(this.group).filter(function() {
-        var $e = $(this);
-        // Exclude disabled controls (otherwise they will be enabled when submission is complete).
-        return !$e.prop('disabled') && !$e.hasClass('disabled');
-      });
-    }
-  };
-
-  ControlsToDisable.prototype.setDisabled = function(isDisabled) {
-    if (isDisabled === false) {
-      this.$controls.removeClass('disabled');
-      this.$controls.prop('disabled', false);
-    } else {
-      this.$controls.addClass('disabled');
-      this.$controls.prop('disabled', true);
-    }
-  };
-
-  Form = function($form) {
-    this.$form = $form;
-    this.form  = $form[0];
-
-    this._abort = null;
-    this._data  = {};
-    this._dataNextRequest = {};
-    this.fields = [];
-    this.validatorName = null;
-    this.validatorOptions = null;
-    this.dirtyChecking = $form.is('[data-form-dirty-checking]');
-    this.editable = !$form.is('[data-editable]') || !!$form.data('editable');
-
-    this.url = $form.attr('action');
-    this.urlNextRequest = null;
-    this.method = $form.attr('method');
-    this.isMultipart = 'multipart/form-data' == ($form.attr('enctype') || '').toLowerCase();
-    this.isCustomLoader = $form.is('[data-custom-loader]');
-    this.controlsToDisable = new ControlsToDisable($form.attr('data-disable-controls'));
-
-    if ($form.is('[data-custom-loader]')) {
-      this.isCustomLoader = $form.attr('data-custom-loader') !== 'false';
-    } else {
-      this.isCustomLoader = false;
-    }
-
-    this.initFields();
-    this.initValidator();
-
-    this.handleMessages($('body'), true);
-
-    if (this.dirtyChecking) {
-      enableDirtyChecking($form);
-    }
-
-    if (!this.editable) {
-      $form.find(':input, button').prop('disabled', true);
-    }
-  };
-
-  function enableDirtyChecking($form) {
-    $form.dirty({
-      preventLeaving: true,
-      leavingMessage: t('grid.layout.leaveQuestion')
-    });
-
-    window.onbeforeunload = function () {
-      //prevent show loader if form is dirty
-      if (!$form.dirty('isDirty') === true) {
-        AGN.Lib.Loader.show();
-      }
-    };
+```jsexample
+$('#customLoaderDemoForm').on({
+  'form:loadershow': function() {
+    AGN.Lib.Messages('Form', 'Form submission started!', 'success');
+  },
+  'form:loaderhide': function() {
+    AGN.Lib.Messages('Form', 'Form submission finished!', 'success');
   }
+});
+```
 
-  // Static Method
-  // gets a singleton instance
-  // of the form object
-  Form.get = function($needle) {
-    var $form,
-        type,
-        formType,
-        formObj;
+The `form:progress` event depends on browser so it's not quite reliable and may be missing. When fired it's supplied with the following data:
 
-    $form = Form.getWrapper($needle);
-    formObj = $form.data('_form');
+Property | Description
+---------|------------
+`loaded` | Number of bytes already loaded (only available if `progress !== true`).
+`total` | Total number of bytes to be loaded (only available if `progress !== true`).
+`progress` | Formatted progress percentage number or `true` (if detailed progress percentage is not supported).
+*/
 
-    if (!formObj) {
-      formType = $form.data('form');
-      type = AGN.Opt.Forms[formType] || AGN.Lib.Form;
-      formObj = new type($form);
-      $form.data('_form', formObj);
-    }
+/*doc
+---
+title: Controls disabling
+name: form-features-02
+parent: form-features
+---
 
-    return formObj;
-  };
+The `[data-disable-controls]` attribute allows to disable some controls (the ones having `[data-controls-group]` attribute) during form submission (and enable them back afterwards).
+Use `[data-disable-controls="*"]` to refer all the elements having `[data-controls-group]` attribute or specify a particular value to refer a named group (group's name is defined by `[data-controls-group]` attribute).
 
-  // gets the jquery wrapped form tag
-  Form.getWrapper = function($needle) {
-    var $form;
+```htmlexample
+<form action="#form-features-02" id="controlsDisablingDemoForm" data-form="" data-disable-controls="group-1" class="form-column">
+    <div>
+        <label class="form-label" for="Name">First name</label>
+        <input type="text" name="firstname" class="form-control" data-controls-group="group-1"/>
+    </div>
+    <div>
+        <label class="form-label">Last name</label>
+        <input type="text" name="lastname" class="form-control" data-controls-group="group-2"/>
+    </div>
+    <button type="submit" class="btn btn-regular btn-primary" data-controls-group="group-1">Submit</button>
+</form>
+```
+*/
 
-    $form = $($needle.data('form-target'));
+/*doc
+---
+title: Form Dirty Check
+name: form-features-03
+parent: form-features
+---
 
-    if ( $form.length == 0 ) {
-       $form = $needle.closest('form');
-    }
+Add `[data-form-dirty-checking]` to a form to enable automatic dirty tracking of all input, select, and textarea fields.
+To exclude specific fields from being tracked, add `[data-dirty-ignore]` to those inputs;
 
-    return $form;
-  };
+```htmlexample
+<form action="#form-features-03" data-form="" class="form-column" data-form-dirty-checking>
+    <div>
+        <label class="form-label" for="Name">First name</label>
+        <input type="text" name="firstname" class="form-control" placeholder="Change and try to leave page"/>
+    </div>
+    <div>
+        <label class="form-label">Last name</label>
+        <input type="text" name="lastname" class="form-control" placeholder="Ignored by dirty check" data-dirty-ignore/>
+    </div>
+    <a href="javascripts_-_helpers.html" class="btn btn-regular btn-primary">Go to next docs page - Helpers</a>
+</form>
+```
+*/
 
-  Form.prototype.valid = function(options) {
-    var validationEvent = $.Event('validation');
-    options = _.merge({}, this.validatorOptions, options);
-    this.$form.trigger(validationEvent, options);
+(() => {
 
-    if (validationEvent.isDefaultPrevented()) {
-      return false;
-    }
+  const Field = AGN.Lib.Field;
+  const CSRF = AGN.Lib.CSRF;
 
-    var fieldsValid = _.every(this.fields, function(field) {
-      return field.valid()
-    });
+  class ScrollHelper {
+    static scrollTo($fields) {
+      const points = this.#findMinScrollPoints($fields);
+      const minPointData = this.#findMinScrollPoint(points);
 
-    if (this.validatorName) {
-      var validator = AGN.Lib.Validator.get(this.validatorName);
-      if (validator) {
-        return validator.valid(this, options, fieldsValid);
+      if (this.inHiddenTab($(_.last($fields)))) {
+        this.showTab($(_.last($fields)));
+      }
+      points.forEach((pos, container) => this.scrollToPos($(container), pos)); // scroll containers
+
+      // scroll page
+      if (AGN.Lib.Helpers.isMobileView() && !minPointData?.container?.closest('.modal').exists()) {
+        const $tilesContainer = $('.tiles-container, .filter-overview');
+        $tilesContainer.animate({scrollTop: minPointData.pos - $tilesContainer.offset().top + $tilesContainer.scrollTop()});
       }
     }
 
-    return fieldsValid;
-  };
-
-  Form.prototype.validate = function(options) {
-    if (this.valid(options)) {
-      return true;
-    } else {
-      this.handleErrors();
-      return false;
-    }
-  };
-
-  Form.prototype.get$ = function() {
-    return this.$form;
-  };
-
-  Form.prototype.getAction = function() {
-    if (this.urlNextRequest) {
-      var value = this.urlNextRequest;
-      this.urlNextRequest = null;
-      return value;
-    }
-    return this.url;
-  };
-
-  Form.prototype.setActionOnce = function(url) {
-    this.urlNextRequest = url;
-  };
-
-  Form.prototype.errors = function() {
-    var errors = [];
-
-    _.each(this.fields, function(field) {
-      errors = errors.concat(field.errors());
-    });
-
-    if (this.validatorName) {
-      var validator = AGN.Lib.Validator.get(this.validatorName);
-      if (validator) {
-        errors = errors.concat(validator.errors(this, this.validatorOptions));
-      }
+    static scrollToPos($el, pos) {
+      $el.animate({scrollTop: pos - $el.offset().top + $el.scrollTop()});
     }
 
-    return errors;
-  };
-
-  // set a value transparently,
-  // if no input is found, value gets
-  // set inside the _data object
-  Form.prototype.setValue = function(field, value) {
-    var node = this.form[field];
-    if (typeof node === 'object') {
-      $(node).val([value]);
-      $(node).trigger('change');
-    } else {
-      if (typeof value === 'undefined') {
-        delete this._data[field];
-      } else {
-        this._data[field] = value;
-      }
+    static inHiddenTab($el) {
+      const $container = this.#findScrollableContainer$($el);
+      return $container.hasClass('hidden') && this.#getTileHeader$($el).is('.navbar');
     }
-  };
 
-  // set a value for the next request,
-  Form.prototype.setValueOnce = function(field, value) {
-    if (typeof value === 'undefined') {
-      delete this._dataNextRequest[field];
-    } else {
-      this._dataNextRequest[field] = value;
+    static showTab($el) {
+      const $container = this.#findScrollableContainer$($el);
+      AGN.Lib.Tab.show(this.#getTileHeader$($el).find(`[data-toggle-tab="#${$container.attr('id')}"]`));
     }
-  };
 
-  // get a value
-  Form.prototype.getValue = function(field) {
-    var node = this.form[field];
-    if (typeof node === 'object') {
-      return node.value;
-    } else {
-      return this._data[field];
-    }
-  };
+    static #findMinScrollPoints($fields) {
+      const points = new Map();
 
-  // merges data from the input fields
-  // and the _data object
-  Form.prototype.data = function() {
-    if (this.isMultipart) {
-      var formData = new FormData();
-      var data = this.$form.serializeFormDataObject();
+      _.each($fields, field => {
+        const $field = $(field);
 
-      $.each(this._data, function(k, v) {
-        if (!data.hasOwnProperty(k)) {
-          data[k] = v;
-        }
-      });
+        const scrollableParent = this.#findScrollableContainer$($field).get(0);
+        const point = this.#getFieldContainer($field).offset().top;
 
-      $.each(this._dataNextRequest, function(k, v) {
-        data[k] = v;
-      });
-
-      $.each(data, function(k, v) {
-        if ($.isArray(v)) {
-          $.each(v, function(index, value) {
-            formData.append(k, value);
-          });
+        if (points.has(scrollableParent)) {
+          if (points.get(scrollableParent) > point) {
+            points.set(scrollableParent, point);
+          }
         } else {
-          formData.append(k, v);
+          points.set(scrollableParent, point);
         }
       });
 
-      return formData;
-    } else {
-      return _.merge(
-        {},
-        this._data,
-        this.$form.serializeObject(),
-        this._dataNextRequest
-      );
-    }
-  };
-
-  Form.prototype.params = function() {
-    return $.param(this.data(), true);
-  };
-
-  // handle for the ajax request
-  Form.prototype.jqxhr = function() {
-    var self = this,
-        xhr = $.ajaxSettings.xhr(),
-        jqxhr,
-        deferred = $.Deferred();
-
-    this.$form.trigger('form:submit');
-
-    var parameters = {
-      url: this.getAction(),
-      method: this.method,
-      loader: this.loader(),
-      xhr: function() { return xhr; }
-    };
-
-    if (this.isMultipart) {
-      parameters.data = this.data();
-      parameters.enctype = 'multipart/form-data';
-      parameters.processData = false;
-      parameters.contentType = false;
-    } else {
-      parameters.data = this.params();
+      return points;
     }
 
-    if (this.isCustomLoader) {
-      var onProgress = function(e) {
-        var progress = true;
+    static #findScrollableContainer$($field) {
+      const $tile = this.#getTile$($field);
+      return $tile.exists() ? $field.closest('.tile-body') : $field.closest('.modal-body').first();
+    }
 
-        if (e.lengthComputable) {
-          progress = (e.loaded / e.total * 100).toFixed(1);
+    static #getTile$($el) {
+      return $el.closest('.tiles-container > .tile, .filter-overview > .tile, .tiles-block > .tile');
+    }
+
+    static #getTileHeader$($el) {
+      return this.#getTile$($el).find('> .tile-header');
+    }
+
+    static #getFieldContainer($field) {
+      const editor = $field.data('_editor')?.editor;
+      const $container = editor ? $(editor.container) : $field.closest('.has-feedback');
+      return $container.exists() ? $container : $field.parent();
+    }
+
+    static #findMinScrollPoint(points) {
+      let result;
+      let minPos = Infinity;
+
+      points.forEach((pos, container) => {
+        if (pos < minPos) {
+          minPos = pos;
+          result = { container: $(container), pos: pos };
         }
+      });
 
-        self.$form.trigger('form:progress', {
-          loaded: e.loaded,
-          total: e.total,
-          progress: progress
-        });
-      };
-
-      if ('upload' in xhr) {
-        parameters.xhr = function() {
-          xhr.upload.onprogress = onProgress;
-          return xhr;
-        };
-      } else {
-        parameters.xhrFields = {
-          onprogress: onProgress
-        };
-      }
-    }
-
-    if (typeof xhr.abort === 'function') {
-      this._abort = function() {
-        xhr.abort();
-      };
-    }
-
-    jqxhr = $.ajax(parameters);
-
-    this._dataNextRequest = {};
-
-    this.setLoaderShown(true);
-    deferred.always(function() {
-      self.setLoaderShown(false);
-    });
-
-    jqxhr.done(function (resp){
-      var $resp = $(resp),
-          $pollingForm,
-          pollingFormObj,
-          pollingFormJqxhr;
-
-      $pollingForm = $resp.
-          filter('[data-form="polling"]').
-          add($resp.find('[data-form="polling"]'));
-
-      // response includes a polling form
-      if ($pollingForm.length == 1) {
-          pollingFormObj =  Form.get($pollingForm);
-
-          // submit the polling form and wait for the response
-          pollingFormJqxhr = pollingFormObj.jqhxr();
-
-          pollingFormJqxhr.done(function() {
-            deferred.resolve.apply(this, arguments);
-            var $body = $('body');
-            var $resp = $('<div></div>');
-            $resp.html(resp);
-
-            $resp.find('script[data-message][type="text/html"]')
-                .appendTo($body);
-
-            $resp.find('script[data-message][type="text/javascript"]').each(function() {
-              try {
-                eval.call(window, $(this).html());
-              } catch (e) {}
-            });
-
-            $resp.remove();
-          });
-
-          pollingFormJqxhr.fail(function() {
-            deferred.reject.apply(this, arguments);
-          });
-
-      // response is the response
-      } else {
-        deferred.resolve(resp);
-      }
-
-    });
-
-    jqxhr.fail(function () {
-      deferred.reject.apply(this, arguments);
-    });
-
-    return deferred.promise();
-  };
-
-  Form.prototype._submit = function() {
-    var jqxhr,
-        self = this;
-
-    this.setLoaderShown(true);
-    jqxhr = this.jqxhr();
-
-    jqxhr.done(function(resp) {
-      self.setLoaderShown(false);
-      self.updateHtml(resp);
-      self.$form.trigger('submitted', resp);
-
-      if (self.dirtyChecking) {
-        changeDirtyState(self.$form);
-      }
-    });
-
-    return jqxhr;
-  };
-
-  function changeDirtyState($form) {
-    const formRewritten = $('body').has($form).length === 0;
-    if (formRewritten) {
-      $form.dirty('destroy');
-    } else {
-      $form.dirty('setAsClean')
+      return result;
     }
   }
 
-  Form.prototype._submitStatic = function() {
-    var data = this.data(),
-        $staticForm;
+  class ControlsToDisable {
+    constructor(group) {
+      this.group = group;
+      this.$controls = $();
+    }
+  
+    _collect(group) {
+      const $all = $('[data-controls-group]');
+  
+      if (group === '*') {
+        return $all;
+      }
+  
+      if (group) {
+        return $all.filter(function() {
+          return group === $(this).attr('data-controls-group');
+        });
+      } else {
+        return $();
+      }
+    }
+  
+    collect() {
+      if (this.group) {
+        this.$controls = this._collect(this.group).filter(function() {
+          const $e = $(this);
+          // Exclude disabled controls (otherwise they will be enabled when submission is complete).
+          return !$e.prop('disabled') && !$e.hasClass('disabled');
+        });
+      }
+    }
+  
+    setDisabled(isDisabled) {
+      if (isDisabled === false) {
+        this.$controls.removeClass('disabled');
+        this.$controls.prop('disabled', false);
+      } else {
+        this.$controls.addClass('disabled');
+        this.$controls.prop('disabled', true);
+      }
+    }
+  }
 
-    if (CSRF.isProtectionEnabled()) {
-      data[CSRF.getParameterName()] = CSRF.readActualToken();
+  class Form {
+    constructor($form) {
+      this.$form = $form;
+      this.form = $form[0];
+
+      this._abort = null;
+      this._data = {};
+      this._dataNextRequest = {};
+      this._isSubmitting = false;
+      this.fields = [];
+      this.validatorName = null;
+      this.validatorOptions = null;
+      this.dirtyChecking = $form.is('[data-form-dirty-checking]');
+      this.editable = !$form.is('[data-editable]') || !!$form.data('editable');
+
+      this.url = $form.attr('action');
+      this.urlNextRequest = null;
+      this.methodNextRequest = null;
+      this.method = $form.attr('method');
+      this.isMultipart = 'multipart/form-data' == ($form.attr('enctype') || '').toLowerCase();
+      this.isCustomLoader = $form.is('[data-custom-loader]');
+      this.controlsToDisable = new ControlsToDisable($form.attr('data-disable-controls'));
+
+      if ($form.is('[data-custom-loader]')) {
+        this.isCustomLoader = $form.attr('data-custom-loader') !== 'false';
+      } else {
+        this.isCustomLoader = false;
+      }
+
+      this.initFields();
+      this.initValidator();
+
+      this.#handleFieldsMessages();
+
+      if (this.dirtyChecking) {
+        this.#enableDirtyChecking($form);
+      }
+
+      if (!this.editable) {
+        $form.find(':input').prop('disabled', true);
+      }
     }
 
-    $staticForm = $('<form method="' + this.method + '" action="' + this.getAction() + '"></form>');
-    _.each(data, function(value, param) {
-      if (_.isArray(value)) {
-        var $select = $('<select multiple name="' + param + '"></select>');
-        _.each(value, function(option) {
-          var $option = $('<option selected="selected"></option>');
-          $option.val(option);
-          $option.appendTo($select);
-        });
-        $select.appendTo($staticForm);
-      } else {
-        var $input = $('<input type="hidden" name="' + param + '"/>');
-        $input.val(value);
-        $input.appendTo($staticForm);
+    #enableDirtyChecking($form) {
+      $form.dirty({
+        preventLeaving: true,
+        leavingMessage: t('grid.layout.leaveQuestion')
+      });
+
+      window.onbeforeunload = () => {
+        //prevent show loader if form is dirty
+        if (!$form.dirty('isDirty') === true) {
+          AGN.Lib.Loader.show();
+        }
+      };
+    }
+
+    // gets a singleton instance of the form object
+    static get($needle) {
+      const $form = Form.getWrapper($needle);
+      let formObj = $form.data('_form');
+
+      if (!formObj) {
+        const formType = $form.data('form');
+        const type = AGN.Opt.Forms[formType] || AGN.Lib.Form;
+        formObj = new type($form);
+        $form.data('_form', formObj);
       }
-    });
 
-    $staticForm.appendTo($('body'));
-    $staticForm.submit();
-    $staticForm.remove();
+      return formObj;
+    }
 
-    this._dataNextRequest = {};
-  };
+    // gets the jquery wrapped form tag
+    static getWrapper($needle) {
+      let $form = $($needle.data('form-target'));
 
-  // submit an action
-  Form.prototype._submitAction = function(actionId) {
-    this.setValue('previousAction', this.getValue('actionList'));
-    this.setValueOnce('action', actionId);
+      if (!$form.exists()) {
+        if ($needle.attr('form')) {
+          $form = $(`#${$needle.attr('form')}`)
+        }
 
-    return this.submit();
-  };
+        if (!$form.exists()) {
+          $form = $needle.closest('form');
+        }
+      }
 
-  Form.prototype._submitEvent = function() {
-    var submissionEvent = $.Event('submission');
-    this.$form.trigger(submissionEvent);
+      return $form;
+    }
 
-    if (!submissionEvent.isDefaultPrevented()) {
-      this.$form.trigger('submitted');
+    valid(options) {
+      const validationEvent = $.Event('validation');
+      options = _.merge({}, this.validatorOptions, options);
+      this.$form.trigger(validationEvent, options);
+
+      if (validationEvent.isDefaultPrevented()) {
+        return false;
+      }
+
+      const fieldsValid = _.every(this.fields, field => field.valid());
+
+      if (fieldsValid && this.validatorName) {
+        const validator = AGN.Lib.Validator.get(this.validatorName);
+        if (validator) {
+          return validator.valid(this, options, fieldsValid);
+        }
+      }
+
+      return fieldsValid;
+    }
+
+    validate(options) {
+      if (this.valid(options)) {
+        this.cleanFieldFeedback();
+        return true;
+      } else {
+        this.handleErrors();
+        return false;
+      }
+    }
+
+    validateField($field) {
+      this.cleanFieldFeedback($field);
+
+      const field = this.fields.find(f => f.isInitializedFor($field));
+      if (field && !field.valid()) {
+        this.#handleErrors(field.errors());
+      }
+    }
+
+    get$() {
+      return this.$form;
+    }
+
+    isEditable() {
+      return this.editable;
+    }
+
+    getAction() {
+      if (this.urlNextRequest) {
+        const value = this.urlNextRequest;
+        this.urlNextRequest = null;
+        return value;
+      }
+      return this.url;
+    }
+
+    setActionOnce(url) {
+      this.urlNextRequest = url;
+      return this;
+    }
+
+    setMethodOnce(method) {
+      this.methodNextRequest = method;
+      return this;
+    }
+
+    getMethod() {
+      if (this.methodNextRequest) {
+        const value = this.methodNextRequest;
+        this.methodNextRequest = null;
+        return value;
+      }
+
+      return this.method;
+    }
+
+    errors() {
+      let errors = this.fields.map(field => field.errors()).flat();
+
+      if (this.validatorName) {
+        const validator = AGN.Lib.Validator.get(this.validatorName);
+        if (validator) {
+          errors = errors.concat(validator.errors(this, this.validatorOptions));
+        }
+      }
+
+      return errors;
+    };
+
+    // set a value transparently,
+    // if no input is found, value gets
+    // set inside the _data object
+    setValue(field, value) {
+      const node = this.form[field];
+      if (typeof node === 'object') {
+        const $node = $(node);
+        if ($node.is('select')) {
+          AGN.Lib.Select.get($node).selectValue(value);
+        } else {
+          $node.val([value]);
+        }
+
+        $node.trigger('change');
+      } else {
+        if (typeof value === 'undefined') {
+          delete this._data[field];
+        } else {
+          this._data[field] = value;
+        }
+      }
+    }
+
+    // set a value for the next request,
+    setValueOnce(field, value) {
+      if (typeof value === 'undefined') {
+        delete this._dataNextRequest[field];
+      } else {
+        this._dataNextRequest[field] = value;
+      }
+    }
+
+    // get a value
+    getValue(field) {
+      const node = this.form[field];
+      if (typeof node === 'object') {
+        return node.value;
+      } else {
+        return this._data[field];
+      }
+    }
+
+    getValues(field) {
+      const node = this.form[field];
+      if (node instanceof NodeList) {
+        return Array.from(node, _node => _node.value);
+      }
+
+      return [this.getValue(field)];
+    }
+
+    // merges data from the input fields
+    // and the _data object
+    data() {
+      if (this.isMultipart) {
+        const formData = new FormData();
+        const data = this.$form.serializeFormDataObject();
+
+        $.each(this._data, (k, v) => {
+          if (!data.hasOwnProperty(k)) {
+            data[k] = v;
+          }
+        });
+
+        $.each(this._dataNextRequest, (k, v) => {
+          data[k] = v;
+        });
+
+        $.each(data, (k, v) => {
+          if ($.isArray(v)) {
+            $.each(v, (index, value) => {
+              formData.append(k, value);
+            });
+          } else {
+            formData.append(k, v);
+          }
+        });
+
+        return formData;
+      } else {
+        return _.merge(
+            {},
+            this._data,
+            this.$form.serializeObject(),
+            this._dataNextRequest
+        );
+      }
+    }
+
+    params() {
+      return $.param(this.data(), true);
+    }
+
+    // handle for the ajax request
+    jqxhr() {
+      const self = this;
+      const xhr = $.ajaxSettings.xhr();
+      const deferred = $.Deferred();
+
+      this.$form.trigger('form:submit');
+
+      const parameters = {
+        url: this.getAction(),
+        method: this.getMethod(),
+        loader: this.loader(),
+        xhr: function () {
+          return xhr;
+        }
+      };
+
+      if (this.isMultipart) {
+        parameters.data = this.data();
+        parameters.enctype = 'multipart/form-data';
+        parameters.processData = false;
+        parameters.contentType = false;
+      } else {
+        parameters.data = this.params();
+      }
+
+      if (this.isCustomLoader) {
+        const onProgress = function (e) {
+          let progress = true;
+
+          if (e.lengthComputable) {
+            progress = (e.loaded / e.total * 100).toFixed(1);
+          }
+
+          self.$form.trigger('form:progress', {
+            loaded: e.loaded,
+            total: e.total,
+            progress: progress
+          });
+        };
+
+        if ('upload' in xhr) {
+          parameters.xhr = function () {
+            xhr.upload.onprogress = onProgress;
+            return xhr;
+          };
+        } else {
+          parameters.xhrFields = {
+            onprogress: onProgress
+          };
+        }
+      }
+
+      if (typeof xhr.abort === 'function') {
+        this._abort = function () {
+          xhr.abort();
+        };
+      }
+
+      const jqxhr = $.ajax(parameters);
+
+      this._dataNextRequest = {};
+
+      this.setLoaderShown(true);
+      deferred.always(function () {
+        self.setLoaderShown(false);
+      });
+
+      jqxhr.done(resp => deferred.resolve(resp));
+      jqxhr.fail(function () {
+        deferred.reject.apply(this, arguments);
+      });
+
+      return deferred.promise();
+    }
+
+    #submit() {
+      this._isSubmitting = true;
+      this.setLoaderShown(true);
+      const jqxhr = this.jqxhr();
+
+      jqxhr.done(resp => {
+        this.setLoaderShown(false);
+        this.updateHtml(resp);
+        this.$form.trigger('submitted', resp);
+
+        if (this.dirtyChecking) {
+          this.#changeDirtyState(this.$form);
+        }
+      });
+
+      jqxhr.fail(jqxhr => {
+        if (jqxhr.responseText) {
+          this.handleFieldsMessages(jqxhr.responseText);
+          this.$form.trigger('submitted', jqxhr.responseText);
+        }
+      });
+
+      jqxhr.always(() => this._isSubmitting = false);
+
+      return jqxhr;
+    }
+
+    #changeDirtyState($form) {
+      const formRewritten = $('body').has($form).length === 0;
+      if (formRewritten) {
+        $form.dirty('destroy');
+      } else {
+        $form.dirty('setAsClean')
+      }
+    }
+
+    #submitStatic() {
+      const data = this.data();
+
+      if (CSRF.isProtectionEnabled()) {
+        data[CSRF.getParameterName()] = CSRF.readActualToken();
+      }
+
+      const $staticForm = $(`<form method="${this.getMethod()}" action="${this.getAction()}"></form>`);
+      _.each(data, (value, param) => {
+        if (_.isArray(value)) {
+          const $select = $(`<select multiple name="${param}"></select>`);
+          _.each(value, option => {
+            const $option = $('<option selected="selected"></option>');
+            $option.val(option);
+            $option.appendTo($select);
+          });
+          $select.appendTo($staticForm);
+        } else {
+          const $input = $(`<input type="hidden" name="${param}"/>`);
+          $input.val(value);
+          $input.appendTo($staticForm);
+        }
+      });
+
+      $staticForm.appendTo($('body'));
+      $staticForm.submit();
+      $staticForm.remove();
+
       this._dataNextRequest = {};
     }
-  };
 
-  Form.prototype._submitConfirm = function(actionId) {
-    this.setValue('previousAction', this.getValue('actionList'));
-    this.setValueOnce('action', actionId);
+    #submitEvent() {
+      const submissionEvent = $.Event('submission');
+      this.$form.trigger(submissionEvent);
 
-    var jqxhr = this.jqxhr();
-    var self = this;
-
-    jqxhr.done(function(resp) {
-      self.$form.trigger('submitted', resp);
-    });
-
-    return jqxhr;
-  };
-
-  Form.prototype.submit = function(type) {
-    var actionId = 0;
-    _.each(this.fields, function(field) {
-      field.onSubmit();
-    });
-    var validationOptions = {};
-    if ((type == 'confirm' || type == 'action') &&
-        (typeof arguments[1] === 'number' || typeof arguments[1] === 'string')) {
-      actionId = arguments[1];
-      validationOptions = arguments[2];
-    } else {
-      validationOptions = arguments[1];
-    }
-
-    if (this.valid(validationOptions)) {
-      this.cleanErrors();
-    } else {
-      this.handleErrors();
-      return false;
-    }
-
-    switch(type) {
-      case "static":
-        return this._submitStatic();
-      case "confirm":
-        return this._submitConfirm(actionId);
-      case "action":
-        return this._submitAction(actionId);
-      case "event":
-        return this._submitEvent();
-      default:
-        return this._submit();
-    }
-  };
-
-  Form.prototype.revertAction = function() {
-    // If a user cancels an action - what to do
-  };
-
-  Form.prototype.reset = function() {
-    this.$form.trigger('reset');
-  };
-
-  Form.prototype.abort = function() {
-    this.$form.trigger('form:abort');
-
-    if (this._abort) {
-      this._abort();
-      this._abort = null;
-    }
-  };
-
-  Form.prototype.bulkUpdate = function(group, value) {
-    if (group) {
-      this.$form.find('[name^="' + group + '"]').prop('checked', value);
-    } else {
-      this.$form.find('.js-bulk-ids').prop('checked', value);
-    }
-  };
-
-  Form.prototype.handleMessages = function($resp, formFieldsOnly) {
-    const self = this;
-
-    if (!($resp instanceof $)) {
-      $resp = $($resp);
-    }
-
-    $resp.all('script[data-message][type="text/html"]').each(function() {
-      const $this = $(this);
-      const message = $this.text();
-      const fieldName = $this.data('message');
-
-      if (message && fieldName) {
-        self.showFieldError(fieldName, message, false)
+      if (!submissionEvent.isDefaultPrevented()) {
+        this.$form.trigger('submitted');
+        this._dataNextRequest = {};
       }
-    });
-
-    if (formFieldsOnly === true) {
-      return;
     }
 
-    const $messages = $resp.
-      filter('script[data-message]').
-      add($resp.find('script[data-message]'));
+    #submitConfirm() {
+      this._isSubmitting = true;
+      const jqxhr = this.jqxhr();
+      jqxhr.done(resp => this.$form.trigger('submitted', resp));
+      jqxhr.fail(jqxhr => {
+        if (jqxhr.responseText) {
+          this.handleFieldsMessages(jqxhr.responseText);
+          this.$form.trigger('submitted', jqxhr.responseText);
+        }
+      });
 
-    _.each($messages, function(msg) {
-      $('body').append(msg);
-    })
-  };
+      jqxhr.always(() => this._isSubmitting = false);
 
-  Form.prototype.initFields = function($scope) {
-    var self = this;
-
-    if (!$scope) {
-      $scope = this.$form;
+      return jqxhr;
     }
 
-    self.fields.length = 0;
-    _.each($scope.find('[data-field]'), function(field) {
-      self.fields.push(Field.create($(field)));
-    });
-  };
-
-  Form.prototype.initValidator = function() {
-    this.validatorName = this.$form.data('validator');
-
-    var options = this.$form.data('validator-options');
-    this.validatorOptions = options ? AGN.Lib.Helpers.objFromString(options) : null;
-  };
-
-  Form.prototype.updateHtml = function(resp) {
-    var $newForm,
-        $resp = $(resp);
-
-    if (this.$form.attr('id')) {
-      $newForm = $(resp).
-        filter('#' + this.$form.attr('id')).
-        add($resp.find('#' + this.$form.attr('id')));
-    } else if (this.$form.attr('name')) {
-      $newForm = $(resp).
-        filter('[name="' + this.$form.attr('name') + '"]').
-        add($resp.find('[name="' + this.$form.attr('name') + '"]'));
-    } else {
-      $newForm = $(resp).
-        filter('form').
-        add($resp.find('form'));
-    }
-
-    this.$form.html($newForm.html());
-
-    this.handleMessages(resp);
-    this.initFields();
-    this.initValidator();
-
-    AGN.Lib.Controller.init(this.$form);
-    AGN.runAll(this.$form);
-
-  };
-
-  Form.prototype.loader = function() {
-    var self = this;
-
-    return {
-      show: function() {
-        self.controlsToDisable.collect();
-        self.controlsToDisable.setDisabled(true);
-        self.setLoaderShown(true);
-      },
-
-      hide: function() {
-        self.controlsToDisable.setDisabled(false);
-        self.setLoaderShown(false);
+    submit(type, validationOptions = {}) {
+      if (this._isSubmitting) {
+        console.warn('The form is already being submitted, please wait...')
+        return $.Deferred().promise();
       }
-    };
-  };
 
-  Form.prototype.setLoaderShown = function(shown) {
-    if (this.isCustomLoader) {
-      if (shown) {
-        this.$form.trigger('form:loadershow');
+      _.each(this.fields, field => field.onSubmit());
+      
+      if (this.valid(validationOptions)) {
+        this.cleanFieldFeedback();
       } else {
-        this.$form.trigger('form:loaderhide');
+        this.handleErrors();
+        return false;
       }
-    } else {
-      if (shown) {
-        AGN.Lib.Loader.show();
-      } else {
-        AGN.Lib.Loader.hide();
+
+      switch (type) {
+        case "static":
+          return this.#submitStatic();
+        case "confirm":
+          return this.#submitConfirm();
+        case "event":
+          return this.#submitEvent();
+        default:
+          return this.#submit();
       }
     }
-  };
 
-  Form.prototype.cleanErrors = function($group) {
-    if (!$group) { $group = this.$form.find('.js-form-error') }
+    revertAction() {
+      // If a user cancels an action - what to do
+    }
 
-    _.each($group, function(group) {
-      var $group = $(group);
+    reset() {
+      this.$form.trigger('reset');
+      AGN.Lib.CoreInitializer.run('select', this.$form);
+    }
 
-      $group.removeClass('has-alert has-feedback js-form-error');
-      $group.find('.js-form-error-ind').remove();
-      $group.find('.js-form-error-msg').remove();
-    });
-  };
+    abort() {
+      this.$form.trigger('form:abort');
 
-  function appendFeedbackMessage($field, message) {
-    var anchor = $field;
-    var editor = $field.data('_editor');
-    var emojioneArea = $field.data('emojioneArea');
-    var isDateTimeField = $field.closest('[data-field="datetime"]').length;
-    var showIcon = true;
-
-    if (editor) {
-      // For inputs managed by editors a feedback message has to be shown below an actual editor's element
-      editor = editor.editor;
-      if (editor.container) {
-        showIcon = false;
-        anchor = $(editor.container);
+      if (this._abort) {
+        this._abort();
+        this._abort = null;
       }
-    } else if (emojioneArea) {
-      if (emojioneArea.editor) {
-        showIcon = false;
-        anchor = emojioneArea.editor.parent();
-      }
-    } else {
-      if (anchor.is('select')) {
-        showIcon = false;
+    }
 
-        if (anchor.is('.input-group .input-group-controls .js-select')) {
-          anchor = anchor.closest('.input-group');
+    clear() {
+      _.forEach(this.data(), (value, field) => this.setValue(field, ''));
+    }
+
+    handleMessages($resp) {
+      if (!($resp instanceof $)) {
+        $resp = $($resp);
+      }
+
+      this.handleFieldsMessages($resp);
+
+      const $messages = $resp.all('script[data-message]');
+      _.each($messages, msg => $('body').append(msg));
+    }
+
+    #handleFieldsMessages() {
+      const $modal = AGN.Lib.Modal.getWrapper(this.$form);
+      this.handleFieldsMessages($modal.exists() ? $modal : $('body'));
+    }
+
+    handleFieldsMessages($resp) {
+      const self = this;
+
+      if (!($resp instanceof $)) {
+        $resp = $($resp);
+      }
+
+      $resp.all('script[data-message][type="text/html"]').each(function () {
+        const $msg = $(this);
+        self.showFieldError($msg.data('message'), $msg.text())
+        $msg.remove();
+      });
+    }
+
+    initFields($scope = $(document)) {
+      this.fields.length = 0;
+
+      $scope.all('[data-field]').each((index, field) => {
+        const $field = $(field);
+        if (Form.getWrapper($field).is(this.$form)) {
+          this.fields.push(Field.create($field));
+        }
+      });
+    }
+
+    initValidator() {
+      this.validatorName = this.$form.data('validator');
+
+      const options = this.$form.data('validator-options');
+      this.validatorOptions = options ? AGN.Lib.Helpers.objFromString(options) : null;
+    }
+
+    updateHtml(resp) {
+      let $newForm;
+
+      if (this.$form.attr('id')) {
+        $newForm = $(resp).all(`#${this.$form.attr('id')}`);
+      } else if (this.$form.attr('name')) {
+        $newForm = $(resp).all(`[name="${this.$form.attr('name')}"]`);
+      } else {
+        $newForm = $(resp).all('form');
+      }
+
+      this.$form.html($newForm.html());
+
+      this.handleMessages(resp);
+      this.initFields();
+      this.initValidator();
+
+      AGN.Lib.Controller.init(this.$form);
+      AGN.runAll(this.$form);
+    }
+
+    loader() {
+      const self = this;
+
+      return {
+        show: function () {
+          self.controlsToDisable.collect();
+          self.controlsToDisable.setDisabled(true);
+          self.setLoaderShown(true);
+        },
+
+        hide: function () {
+          self.controlsToDisable.setDisabled(false);
+          self.setLoaderShown(false);
+        }
+      };
+    }
+
+    setLoaderShown(shown) {
+      if (this.isCustomLoader) {
+        if (shown) {
+          this.$form.trigger('form:loadershow');
+        } else {
+          this.$form.trigger('form:loaderhide');
+        }
+      } else {
+        if (shown) {
+          AGN.Lib.Loader.show();
+        } else {
+          AGN.Lib.Loader.hide();
         }
       }
     }
 
-    if (showIcon) {
-      const $existingIcon = anchor.next("span[class*='icon-state-']");
+    cleanFieldFeedback($field) {
+      Form.cleanFieldFeedback$($field, this.$form);
 
-      if ($existingIcon) {
-        $existingIcon.hide();
-      }
-      if (!isDateTimeField) {
-        anchor.after('<span class="icon icon-state-alert form-control-feedback js-form-error-ind"></span>');
+      if (!$field && this.$form.attr('id')) {
+        const $inputsOutsideForm = $(`:input[form='${(this.$form.attr('id'))}']`);
+        $inputsOutsideForm.each((index, input) => Form.cleanFieldFeedback$($(input)))
       }
     }
-    anchor.parent().append('<div class="form-control-feedback-message js-form-error-msg">' + message + '</div>');
+
+    static cleanFieldFeedback$($field, $form) {
+      const $group = $field
+        ? Form.#findAnchorForFeedback($field).parent()
+        : $form.find('.js-form-field-feedback');
+
+      _.each($group, group=> {
+        const $group = $(group);
+
+        $group.removeClass('has-feedback has-alert has-success has-warning js-form-field-feedback');
+        $group.find('.form-control-feedback-message').remove();
+      });
+    }
+
+    static appendFeedbackMessage($field, message, type = 'alert') {
+      Form.#findAnchorForFeedback($field).parent().append(AGN.Lib.Template.text('input-feedback', {type, message}));
+      $field.data('_editor')?.editor?.resize();
+    }
+
+    handleErrors() {
+      this.cleanFieldFeedback();
+      this.#handleErrors(this.errors());
+    }
+
+    #handleErrors(errors) {
+      errors = errors.filter(error => error.field?.exists());
+
+      //print errors
+      _.each(errors, error => {
+        const $field = error.field;
+        this.markField($field);
+        Form.appendFeedbackMessage($field, error.msg);
+      });
+
+      const $fields = errors.map(e => e.field);
+      ScrollHelper.scrollTo($fields);
+    }
+
+    cleanFieldError(field) {
+      if (this.form[field]) {
+        this.cleanFieldError$($(this.form[field]));
+      }
+    }
+
+    cleanFieldError$($field) {
+      this.cleanFieldFeedback($field);
+    }
+
+    showFieldError(field, message, disableScrolling) {
+      if (!field || !message) {
+        return;
+      }
+
+      if (this.form[field]) {
+        this.showFieldError$($(this.form[field]), message, disableScrolling);
+      } else {
+        console.warn(`Field '${field}' not found inside the form!`);
+        AGN.Lib.Messages.alertText(message);
+      }
+    }
+
+    showFieldError$($field, message, disableScrolling) {
+      Form.showFieldError$($field, message, disableScrolling)
+    }
+
+    static showFieldError$($field, message, disableScrolling) {
+      Form.markField($field);
+
+      $field.closest('.js-form-field-feedback').find('.form-control-feedback-message').remove();
+      Form.appendFeedbackMessage($field, message);
+
+      if (disableScrolling !== true) {
+        Form.scrollToField($field);
+      }
+    }
+
+    static showFieldError(fieldName, message) {
+      const formWithField = Array.from(document.forms)
+        .find(form => form[fieldName]);
+
+      if (formWithField) {
+        this.get($(formWithField)).showFieldError(fieldName, message);
+      }
+    }
+
+    markField($field, markType = 'alert') {
+      Form.markField($field, markType);
+    };
+
+    static markField($field, markType = 'alert') {
+      const $anchor = Form.#findAnchorForFeedback($field);
+      $anchor.parent().addClass(`has-${markType} has-feedback js-form-field-feedback`);
+    }
+
+    static #findAnchorForFeedback($field) {
+      if ($field.is('[data-feedback-anchor]')) {
+        return $field.closest($field.data('feedback-anchor'));
+      }
+
+      const editor = $field.data('_editor')?.editor;
+      if (!editor || !editor.container) {
+        return $field;
+      }
+
+      return $(editor.container);
+    }
+
+    static scrollToField($field) {
+      ScrollHelper.scrollTo($field);
+    }
   }
-
-  Form.prototype.handleErrors = function() {
-    var errorPos = [];
-
-    this.cleanErrors();
-
-    var errors = this.errors().filter(function (error) {
-      return error.field && error.field.length > 0;
-    });
-
-    //print errors
-    _.each(errors, function(error) {
-      var $field = error.field;
-      markFieldInRed($field);
-      appendFeedbackMessage($field, error.msg);
-    });
-
-    //calculate errors positions
-    _.each(this.errors(), function(error) {
-      var $field = error.field;
-      if ($field.data('select2')) {
-        errorPos.push($field.parent().find('.select2-container').offset().top);
-      } else if ($field.data('_editor') && $field.data('_editor').editor) {
-        var editor = $field.data('_editor').editor;
-        errorPos.push($(editor.container).offset().top);
-      } else {
-        errorPos.push($field.offset().top);
-      }
-    });
-
-    var containerScroll = false;
-    var $view = this.$form.closest('.modal');
-    if (!$view.exists()) {
-      $view = $('.tile-content[data-sizing="scroll"]');
-      if ($view.exists()) {
-        containerScroll = true;
-      }
-    }
-    if (!$view.exists()) {
-      $view = $(document);
-    }
-
-    if ($view.find('.popover.support-popover').exists()) {
-      return;
-    }
-
-    var formPosition = this.$form.offset().top;
-    var scrollTopPos;
-    if(containerScroll) {
-      scrollTopPos = _.sortBy(errorPos)[0] + $view.scrollTop() - $view.offset().top - 25;
-    } else {
-      scrollTopPos = _.sortBy(errorPos)[0] - formPosition - 25;
-    }
-    $view.scrollTop(scrollTopPos);
-  };
-
-  Form.prototype.cleanFieldError = function(field) {
-    if (this.form[field]) {
-      this.cleanFieldError$($(this.form[field]));
-    }
-  };
-
-  Form.prototype.cleanFieldError$ = function($field) {
-    var $group = $field.closest('.js-form-error');
-
-    $group.removeClass('has-alert has-feedback js-form-error');
-    $group.find('.js-form-error-ind').remove();
-    $group.find('.js-form-error-msg').remove();
-  };
-
-  Form.prototype.showFieldError = function(field, message, disableScrolling) {
-    if (this.form[field]) {
-      this.showFieldError$($(this.form[field]), message, disableScrolling);
-    }
-  };
-
-  Form.prototype.showFieldError$ = function($field, message, disableScrolling) {
-    var $group = $field.parents('.form-group');
-
-    $group.addClass('has-alert has-feedback js-form-error');
-    $group.find('.js-form-error-ind').remove();
-    $group.find('.js-form-error-msg').remove();
-
-    appendFeedbackMessage($field, message);
-
-    if (disableScrolling !== true) {
-      var $view = this.$form.closest('[data-sizing=scroll], .modal').first();
-      if ($view.exists()) {
-        var $target = $(".has-alert").first();
-
-        $view.animate({scrollTop: $target.offset().top - $view.offset().top + $view.scrollTop()});
-      } else {
-        $view = $(document);
-        $view.scrollTop($field.offset().top - 125);
-      }
-    }
-  };
-
+  
   AGN.Lib.Form = Form;
 
-  function markFieldInRed($field) {
-    var $td = $field.closest("td");
-    if ($td.length && $td.parents('.table-form').length) {
-      $td.addClass('has-alert js-form-error')
-    } else {
-      $field.parents('.form-group').addClass('has-alert has-feedback js-form-error');
-    }
-  }
 })();

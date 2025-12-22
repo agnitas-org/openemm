@@ -18,7 +18,7 @@ import java.util.Set;
 import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

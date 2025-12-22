@@ -23,8 +23,8 @@ import com.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.ecs.web.HeatmapStatInfo;
 import com.agnitas.preview.PreviewFactory;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.preview.PreviewImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -60,8 +60,17 @@ public class EmbeddedClickStatServiceImpl implements EmbeddedClickStatService {
                 int clicks = entry.getValue();
                 double percent = clickStatInfo.getPercentClicks().get(entry.getKey());
                 String color = getColorForPercent(percent, rangeColors);
-                statEntries.add(getClickStatInfo(entry.getKey(), clicks, clickStatInfo.getClicksOverall().get(entry.getKey()), percent, color));
+                statEntries.add(getClickStatInfo(Integer.toString(entry.getKey()), clicks, clickStatInfo.getClicksOverall().get(entry.getKey()), percent, color));
             }
+	    for (Map.Entry<String, Integer> entry : clickStatInfo.getClicksPerPosition().entrySet()) {
+		String key = entry.getKey ();
+		int clicks = entry.getValue ();
+		int overall = clickStatInfo.getClicksOverall().get(extractUrlId(key));
+		double percent = clickStatInfo.getPercentClicksPerPosition().get(key);
+		String color = getColorForPercent(percent, rangeColors);
+			    
+		statEntries.add(getClickStatInfo(key, clicks, overall, percent, color));
+	    }
             info.setStatEntries(statEntries);
         }
 
@@ -69,14 +78,24 @@ public class EmbeddedClickStatServiceImpl implements EmbeddedClickStatService {
         return info;
     }
 
-    private HeatmapStatInfo.Entry getClickStatInfo(int urlId, int clicks, int clicksOverall, double percent, String color) {
+	private int extractUrlId(String urlIdKey) {
+		try {
+			int	n = urlIdKey.indexOf ('-');
+		
+			return Integer.parseInt (n == -1 ? urlIdKey : urlIdKey.substring (0, n));
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
+    private HeatmapStatInfo.Entry getClickStatInfo(String urlId, int clicks, int clicksOverall, double percent, String color) {
         // format percent value to be in a form XX.XX
         BigDecimal bigDecimal = BigDecimal.valueOf(percent);
         double percentFormatted = bigDecimal.setScale(2, RoundingMode.HALF_UP).doubleValue();
         // in links URLs the coded URL id is used that's why we need to code it
         // here also to be able to get statistics information from hidden input
         // for the link url
-        return new HeatmapStatInfo.Entry(Integer.toString(urlId), clicks + " / " + clicksOverall + " (" + percentFormatted + "%)", color);
+        return new HeatmapStatInfo.Entry(urlId, clicks + " / " + clicksOverall + " (" + percentFormatted + "%)", color);
     }
 
     /**

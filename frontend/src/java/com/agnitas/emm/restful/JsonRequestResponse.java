@@ -11,6 +11,7 @@
 package com.agnitas.emm.restful;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +23,8 @@ import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
 
 public class JsonRequestResponse extends BaseRequestResponse {
-	private static final transient Logger logger = LogManager.getLogger(JsonRequestResponse.class);
+
+	private static final Logger logger = LogManager.getLogger(JsonRequestResponse.class);
 	
 	private JsonNode jsonDataNode;
 
@@ -46,7 +48,7 @@ public class JsonRequestResponse extends BaseRequestResponse {
 						jsonWriter.addSimpleValue(jsonDataNode.getValue());
 					}
 				}
-				responseJsonString = new String(outputStream.toByteArray(), "UTF-8");
+				responseJsonString = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 			} else {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				try (JsonWriter jsonWriter = new JsonWriter(outputStream)) {
@@ -55,7 +57,7 @@ public class JsonRequestResponse extends BaseRequestResponse {
 					jsonWriter.addSimpleJsonObjectPropertyValue("Invalid end state");
 					jsonWriter.closeJsonObject();
 				}
-				responseJsonString = new String(outputStream.toByteArray(), "UTF-8");
+				responseJsonString = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 			}
 		} else {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -71,7 +73,7 @@ public class JsonRequestResponse extends BaseRequestResponse {
 				jsonWriter.addSimpleJsonObjectPropertyValue(new Date());
 				jsonWriter.closeJsonObject();
 			}
-			responseJsonString = new String(outputStream.toByteArray(), "UTF-8");
+			responseJsonString = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
 		}
 
 		logger.debug(responseJsonString);

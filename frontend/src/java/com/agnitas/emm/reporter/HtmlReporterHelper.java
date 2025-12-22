@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.reporter;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -336,4 +336,9 @@ public class HtmlReporterHelper {
 	public static String getOutputTableEnd() {
 		return "	<tr>\n		<td aria-hidden=\"true\" height=\"20\" style=\"font-size: 0; line-height: 0;\">&nbsp;</td>\n	</tr>\n</table>\n";
 	}
+
+	public static String getHtmlEnd() {
+		return "</center></body></html>";
+	}
+
 }

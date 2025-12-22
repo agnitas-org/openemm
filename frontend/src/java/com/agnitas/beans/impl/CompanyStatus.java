@@ -11,6 +11,7 @@
 package com.agnitas.beans.impl;
 
 public enum CompanyStatus {
+
 	ACTIVE("active", true),
 	LOCKED("locked", false),
 	TODELETE("todelete", false),
@@ -30,16 +31,16 @@ public enum CompanyStatus {
 		return dbValue;
 	}
 	
-	public static CompanyStatus getCompanyStatus(String dbValue) throws Exception {
+	public static CompanyStatus getCompanyStatus(String dbValue) {
 		if (dbValue == null) {
-			throw new Exception("Invalid CompanyStatus dbValue: null");
-		} else {
-			for (CompanyStatus status : values()) {
-				if (status.getDbValue().replace(" ", "").replace("_", "").replace("-", "").equalsIgnoreCase(dbValue.replace(" ", "").replace("_", "").replace("-", ""))) {
-					return status;
-				}
-			}
-			throw new Exception("Invalid CompanyStatus dbValue: " + dbValue);
+			throw new IllegalArgumentException("Invalid CompanyStatus dbValue: null");
 		}
+
+		for (CompanyStatus status : values()) {
+			if (status.getDbValue().replace(" ", "").replace("_", "").replace("-", "").equalsIgnoreCase(dbValue.replace(" ", "").replace("_", "").replace("-", ""))) {
+				return status;
+			}
+		}
+		throw new IllegalArgumentException("Invalid CompanyStatus dbValue: " + dbValue);
 	}
 }

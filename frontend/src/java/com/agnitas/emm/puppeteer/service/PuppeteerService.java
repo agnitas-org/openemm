@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.puppeteer.service;
 
+import com.agnitas.emm.core.serverstatus.PuppeteerStatus;
+
 public interface PuppeteerService {
 
     String getScreenshotUrl();
@@ -21,5 +23,7 @@ public interface PuppeteerService {
     boolean isServiceRunning();
 
     void startService();
+
+    PuppeteerStatus getStatus();
 
 }

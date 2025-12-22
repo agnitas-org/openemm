@@ -17,11 +17,6 @@ import com.agnitas.web.forms.PaginationForm;
 
 public class TargetForm extends PaginationForm {
 
-    private boolean showWorldDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean showTestAndAdminDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchNameChecked = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchDescriptionChecked = true; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String searchDescription;
     private String searchName;
     private TargetComplexityGrade searchComplexity;
@@ -29,46 +24,6 @@ public class TargetForm extends PaginationForm {
     private DateRange searchCreationDate = new DateRange();
     private DateRange searchChangeDate = new DateRange();
     private boolean showDeleted;
-
-    public boolean isShowWorldDelivery() {
-        return showWorldDelivery || !showTestAndAdminDelivery;
-    }
-
-    public void setShowWorldDelivery(boolean showWorldDelivery) {
-        this.showWorldDelivery = showWorldDelivery;
-    }
-
-    public boolean isShowTestAndAdminDelivery() {
-        return showTestAndAdminDelivery;
-    }
-
-    public void setShowTestAndAdminDelivery(boolean showTestAdminDelivery) {
-        this.showTestAndAdminDelivery = showTestAdminDelivery;
-    }
-
-    public String getSearchQueryText() {
-        return searchQueryText;
-    }
-
-    public void setSearchQueryText(String searchQueryText) {
-        this.searchQueryText = searchQueryText;
-    }
-
-    public boolean isSearchNameChecked() {
-        return searchNameChecked;
-    }
-
-    public void setSearchNameChecked(boolean searchNameChecked) {
-        this.searchNameChecked = searchNameChecked;
-    }
-
-    public boolean isSearchDescriptionChecked() {
-        return searchDescriptionChecked;
-    }
-
-    public void setSearchDescriptionChecked(boolean searchDescriptionChecked) {
-        this.searchDescriptionChecked = searchDescriptionChecked;
-    }
 
     public String getSearchName() {
         return searchName;

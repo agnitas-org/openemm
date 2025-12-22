@@ -21,7 +21,6 @@ import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.emm.grid.grid.beans.GridCustomPlaceholderType;
-import com.agnitas.util.Caret;
 
 public interface LinkService {
 
@@ -37,9 +36,8 @@ public interface LinkService {
 	 * AgnTag [agnPROFILE] will be resolved.
 	 * AgnTag [agnUNSUBSCRIBE] will be resolved.
 	 * AgnTag [agnFORM] will be resolved.
-	 * @throws Exception
 	 */
-	LinkScanResult scanForLinks(String text, int mailingID, int mailinglistID, int companyID) throws Exception;
+	LinkScanResult scanForLinks(String text, int mailingID, int mailinglistID, int companyID);
 
 	/**
 	 * Scan a text for http and https links.
@@ -49,9 +47,8 @@ public interface LinkService {
 	 * AgnTag [agnPROFILE] ARE NOT resolved.
 	 * AgnTag [agnUNSUBSCRIBE] ARE NOT resolved.
 	 * AgnTag [agnFORM] ARE NOT resolved.
-	 * @throws Exception
 	 */
-	LinkScanResult scanForLinks(String text, int companyID) throws Exception;
+	LinkScanResult scanForLinks(String text, int companyID);
 
 	String createDeepTrackingUID(int companyID, int mailingID, int linkID, int customerID);
 
@@ -75,68 +72,6 @@ public interface LinkService {
             Collection<TrackableLink> oldLinks,
             Collection<TrackableLink> newLinks) throws DependentTrackableLinkException;
 
-	class ParseLinkException extends Exception implements ErrorLinkStorage {
-		private static final long serialVersionUID = -4821051425601251856L;
-		
-		private final String errorLink;
-		private String errorMessage;
-
-		public ParseLinkException(String message, Throwable cause) {
-			super(message, cause);
-			if(cause instanceof ErrorLinkStorage){
-				errorLink = ((ErrorLinkStorage) cause).getErrorLink();
-				errorMessage = ((ErrorLinkStorage) cause).getErrorMessage();
-			} else {
-				errorLink = null;
-			}
-		}
-
-		@Override
-		public String getErrorLink() {
-			return errorLink;
-		}
-
-		@Override
-		public String getErrorMessage() {
-			return errorMessage;
-		}
-
-	}
-
-	class ParseLinkRuntimeException extends RuntimeException implements ErrorLinkStorage {
-		private static final long serialVersionUID = -6277656615171367404L;
-
-		private final String errorLink;
-		private final String errorMessage;
-		private final Caret caret;
-
-		public ParseLinkRuntimeException(String message, String errorLink, Caret caret) {
-			super(message);
-			this.errorLink = errorLink;
-			errorMessage = message;
-			this.caret = caret;
-		}
-
-		@Override
-		public String getErrorLink() {
-			return errorLink;
-		}
-
-		@Override
-		public String getErrorMessage() {
-			return errorMessage;
-		}
-
-		public Caret getCaret() {
-			return caret;
-		}
-	}
-
-	interface ErrorLinkStorage {
-		String getErrorLink();
-		String getErrorMessage();
-	}
-	
 	class LinkScanResult {
 		private final List<TrackableLink> trackableLinks;
 		private final List<String> imageLinks;
@@ -144,8 +79,7 @@ public interface LinkService {
 		private final List<ErroneousLink> erroneousLinks;
 		private final List<ErroneousLink> localLinks;
 		private final List<LinkWarning> linkWarnings;
-		
-		
+
 		public LinkScanResult() {
 			this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 		}

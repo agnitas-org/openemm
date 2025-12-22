@@ -10,30 +10,6 @@
 
 package com.agnitas.emm.core.import_profile.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.beans.ColumnMapping;
-import com.agnitas.beans.ImportProfile;
-import com.agnitas.beans.impl.ColumnMappingImpl;
-import com.agnitas.beans.impl.ImportProfileImpl;
-import com.agnitas.emm.core.action.dao.EmmActionOperationDao;
-import com.agnitas.emm.core.import_profile.dao.ImportProfileDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DataEncryptor;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.util.CollectionUtils;
-
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -44,7 +20,29 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
+import javax.sql.DataSource;
+
+import com.agnitas.beans.ColumnMapping;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.impl.ColumnMappingImpl;
+import com.agnitas.beans.impl.ImportProfileImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.action.dao.EmmActionOperationDao;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.import_profile.dao.ImportProfileDao;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DataEncryptor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.util.CollectionUtils;
 
 /**
  * DAO handler for ImportProfile-Objects
@@ -72,8 +70,8 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	public int insertImportProfile(ImportProfile importProfile) {
 		int profileId;
 		if (isOracleDB()) {
-			profileId = selectInt("SELECT import_profile_tbl_seq.nextval FROM DUAL");
-	        
+			profileId = selectInt("SELECT " + "import_profile_tbl_seq" + ".NEXTVAL FROM DUAL");
+
 			update(
 				"INSERT INTO import_profile_tbl (id, company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
@@ -109,7 +107,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				importProfile.getReportTimezone()
 			);
 		} else {
-			profileId = insertIntoAutoincrementMysqlTable("id",
+			profileId = insert("id",
 				"INSERT INTO import_profile_tbl (company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
 					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all"
@@ -231,16 +229,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 
 	@Override
     public ImportProfile getImportProfileById(int id) {
-		try {
-			return selectObjectDefaultNull("SELECT * FROM import_profile_tbl WHERE id = ? AND deleted != 1", new ImportProfileRowMapper(), id);
-		} catch (DataAccessException e) {
-			return null; // No ImportProfile found
-		}
-    }
-
-	@Override
-    public ImportProfile getImportProfileByShortname(String shortname) {
-		return selectObjectDefaultNull("SELECT * FROM import_profile_tbl WHERE UPPER(shortname) = UPPER(?) AND deleted != 1", new ImportProfileRowMapper(), shortname);
+		return selectObjectDefaultNull("SELECT * FROM import_profile_tbl WHERE id = ? AND deleted != 1", new ImportProfileRowMapper(), id);
     }
 
 	@Override
@@ -287,9 +276,9 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 		if (columnMappings != null && !columnMappings.isEmpty()){
 			String insertStatementString;
 			if (isOracleDB()) {
-				insertStatementString = "INSERT INTO import_column_mapping_tbl (id, profile_id, file_column, db_column, mandatory, encrypted, default_value) VALUES (import_column_mapping_tbl_seq.NEXTVAL, ?, ?, ?, ?, ?, ?)";
+				insertStatementString = "INSERT INTO import_column_mapping_tbl (id, profile_id, file_column, db_column, mandatory, default_value) VALUES (import_column_mapping_tbl_seq.NEXTVAL, ?, ?, ?, ?, ?)";
 			} else {
-				insertStatementString = "INSERT INTO import_column_mapping_tbl (profile_id, file_column, db_column, mandatory, encrypted, default_value) VALUES (?, ?, ?, ?, ?, ?)";
+				insertStatementString = "INSERT INTO import_column_mapping_tbl (profile_id, file_column, db_column, mandatory, default_value) VALUES (?, ?, ?, ?, ?)";
 			}
 
 			List<Object[]> parameterList = new ArrayList<>();
@@ -298,8 +287,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 						mapping.getProfileId(),
 						mapping.getFileColumn(),
 						mapping.getDatabaseColumn(),
-						mapping.isMandatory(),
-						mapping.isEncrypted(),
+						mapping.isMandatory() ? 1 : 0,
 						mapping.getDefaultValue() });
 			}
 			batchupdate(insertStatementString, parameterList);
@@ -309,7 +297,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@Override
     public void updateColumnMappings(List<ColumnMapping> mappings) {
 		if (!CollectionUtils.isEmpty(mappings)) {
-			String updateStatement = "UPDATE import_column_mapping_tbl SET profile_id = ?, file_column = ?, db_column = ?, mandatory = ?, encrypted = ?, default_value = ? WHERE id = ?";
+			String updateStatement = "UPDATE import_column_mapping_tbl SET profile_id = ?, file_column = ?, db_column = ?, mandatory = ?, default_value = ? WHERE id = ?";
 
 			List<Object[]> parameterListForUpdate = new ArrayList<>();
 			for (ColumnMapping mapping : mappings) {
@@ -317,8 +305,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 						mapping.getProfileId(),
 						mapping.getFileColumn(),
 						mapping.getDatabaseColumn(),
-						mapping.isMandatory(),
-						mapping.isEncrypted(),
+						mapping.isMandatory() ? 1 : 0,
 						mapping.getDefaultValue(),
 						mapping.getId()});
 			}
@@ -330,9 +317,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	public void deleteColumnMappings(List<Integer> ids) {
 		if (!CollectionUtils.isEmpty(ids)) {
 			String sql = "DELETE FROM import_column_mapping_tbl WHERE id = ?";
-			batchupdate(sql, ids.stream()
-					.map(id -> new Object[] {id})
-					.collect(Collectors.toList()));
+			batchupdate(sql, ids.stream().map(id -> new Object[] {id}).toList());
 		}
 	}
 
@@ -477,7 +462,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
             mapping.setId(resultSet.getInt("id"));
             mapping.setProfileId(resultSet.getInt("profile_id"));
             mapping.setMandatory(resultSet.getBoolean("mandatory"));
-            mapping.setEncrypted(resultSet.getBoolean("encrypted"));
             mapping.setDatabaseColumn(resultSet.getString("db_column"));
             mapping.setFileColumn(resultSet.getString("file_column"));
             String defaultValue = resultSet.getString("default_value");

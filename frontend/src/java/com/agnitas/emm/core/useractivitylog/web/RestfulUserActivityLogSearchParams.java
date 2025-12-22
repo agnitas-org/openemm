@@ -44,11 +44,4 @@ public class RestfulUserActivityLogSearchParams extends UserActivityLogSearchPar
         restfulFilter.setDescription(this.description);
     }
 
-    @Override
-    public void resetParams() {
-        super.resetParams();
-        this.requestUrl = null;
-        this.requestMethod = null;
-        this.description = null;
-    }
 }

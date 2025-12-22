@@ -32,23 +32,26 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.db_schema.bean.DbColumnInfo;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaCheckResult;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaSnapshot;
 import com.agnitas.emm.core.db_schema.bean.DbTableInfo;
 import com.agnitas.emm.core.db_schema.dao.DbSchemaSnapshotDao;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotMissingException;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotReadException;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotWriteException;
+import com.agnitas.emm.core.db_schema.exception.InvalidDbSchemaSnapshotFormatException;
 import com.agnitas.emm.core.db_schema.service.DbSchemaSnapshotService;
 import com.agnitas.emm.core.service.RecipientFieldService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ServiceResult;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Tuple;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -127,40 +130,30 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
 
             return new DbSchemaSnapshot(data.getFirst(), tables);
         } catch (JsonProcessingException e) {
-            logger.error("Error occurred when map snapshot data!", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private DbSchemaSnapshot readSnapshotFile(InputStreamSource inputStreamSrc) throws JsonParseException {
-        try(InputStream fileStream = inputStreamSrc.getInputStream()) {
-            return objectMapper.readValue(
-                    String.join("\n", IOUtils.readLines(fileStream, StandardCharsets.UTF_8)),
-                    DbSchemaSnapshot.class
-            );
-        } catch (JsonParseException jpe) {
-            throw jpe;
-        } catch (IOException e) {
-            logger.error("Error occurred when read snapshot file!", e);
-            throw new RuntimeException(e);
+            throw new InvalidDbSchemaSnapshotFormatException("Snapshot file contains invalid JSON", e);
         }
     }
 
     @Override
-    public ServiceResult<DbSchemaSnapshot> read(MultipartFile file) {
-        try {
-            return ServiceResult.success(readSnapshotFile(file));
-        } catch (JsonParseException e) {
-            return ServiceResult.error(Message.of("GWUA.dbSchema.parse.error"));
-        }
+    public DbSchemaSnapshot read(MultipartFile file) {
+        return readSnapshotFile(file);
     }
 
     @Override
     public DbSchemaSnapshot read(File file) {
-        try {
-            return readSnapshotFile(() -> new FileInputStream(file));
-        } catch (JsonParseException e) {
-            throw new RuntimeException(e);
+        return readSnapshotFile(() -> new FileInputStream(file));
+    }
+
+    private DbSchemaSnapshot readSnapshotFile(InputStreamSource inputStreamSrc) {
+        try (InputStream fileStream = inputStreamSrc.getInputStream()) {
+            return objectMapper.readValue(
+                    String.join("\n", IOUtils.readLines(fileStream, StandardCharsets.UTF_8)),
+                    DbSchemaSnapshot.class
+            );
+        } catch (JsonParseException | JsonMappingException e) {
+            throw new InvalidDbSchemaSnapshotFormatException("Snapshot file contains invalid JSON", e);
+        } catch (Exception e) {
+            throw new DbSchemaSnapshotReadException("Failed to read DB snapshot! " + e.getMessage(), e);
         }
     }
 
@@ -201,7 +194,7 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
             return snapshotFile;
         } catch (IOException e) {
             logger.error("Error when create DB snapshot!", e);
-            throw new RuntimeException(e);
+            throw new DbSchemaSnapshotWriteException("Error creating DB schema snapshot file", e);
         }
     }
 
@@ -210,9 +203,8 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
         try {
             String json = objectMapper.writeValueAsString(snapshot.getTables());
             snapshotDao.save(snapshot.getVersionNumber(), json);
-        } catch (IOException e) {
-            logger.error("Error when save DB snapshot!", e);
-            throw new RuntimeException(e);
+        } catch (JsonProcessingException e) {
+            throw new InvalidDbSchemaSnapshotFormatException("Snapshot file contains invalid JSON", e);
         }
     }
 
@@ -251,6 +243,10 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
 
     @Override
     public DbSchemaCheckResult check() {
+        if (!exists()) {
+            throw new DbSchemaSnapshotMissingException("DB schema can't be checked: snapshot file is missing");
+        }
+
         Map<String, DbTable> snapshotTables = readSnapshot().getTables()
                 .stream()
                 .collect(Collectors.toMap(DbTableInfo::getName, t -> new DbTable(t.getName(), t.getColumns())));
@@ -269,11 +265,7 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
     }
 
     @Override
-    public File getFileWithDifferences() {
-        if (!exists()) {
-            throw new IllegalStateException("DB schema can't be checked due to missing snapshot file!");
-        }
-
+    public File createDiffFile() {
         DbSchemaCheckResult result = check();
         try {
             return Files.writeString(
@@ -281,7 +273,7 @@ public class DbSchemaSnapshotServiceImpl implements DbSchemaSnapshotService {
                     objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result)
             ).toFile();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new DbSchemaSnapshotWriteException("Failed to write DB schema diff to file!", e);
         }
     }
 

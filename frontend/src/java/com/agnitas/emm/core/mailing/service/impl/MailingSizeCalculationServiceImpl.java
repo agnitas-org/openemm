@@ -24,7 +24,7 @@ import com.agnitas.util.Span;
 import com.agnitas.backend.AgnTag;
 import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.util.AgnTagUtils;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DynTagException;
@@ -587,7 +587,9 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
         }
 
         try {
-            agnTagService.collectTags(content, tag -> isImageTag(tag.getTagName()))
+            agnTagService.collectTags(content, AGN_IMAGE_TAGS)
+                    .stream()
+                    .filter(t -> t.getTagParameters() != null)
                     .forEach(tag -> imageLinks.add(new ImageLinkSpan(tag.getName(), tag.getStartPos(), tag.getEndPos())));
         } catch (Exception e) {
             logger.error(format("Error occurred: {0}", e.getMessage()), e);

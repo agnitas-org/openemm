@@ -10,27 +10,24 @@
 
 package com.agnitas.emm.springws;
 
-import com.agnitas.beans.impl.CompanyStatus;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import com.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
-import com.agnitas.emm.springws.security.authorities.CompanyAuthority;
-import com.agnitas.emm.springws.security.authorities.EndpointAuthority;
-import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue.Webservices;
+import com.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
+import com.agnitas.emm.springws.security.authorities.CompanyAuthority;
+import com.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class WebserviceUserDetailService extends BaseDaoImpl implements UserDetailsService {
 
@@ -46,7 +43,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     }
     
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException, DataAccessException {
+    public UserDetails loadUserByUsername(String username) {
         final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id = c.company_id and c.status = '" + CompanyStatus.ACTIVE.getDbValue() + "'";
         
         final List<Map<String, Object>> result = select(usersByUsernameQuery, username);
@@ -66,17 +63,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
         return new WebserviceUserDetails(username, companyID, password, true, true, true, true, grantedAuthorities);
     }
     
-    public final Optional<Integer> findCompanyIDForUsername(final String username) {
-        final String sql = "SELECT company_id FROM webservice_user_tbl WHERE username=?";
-
-        final List<Integer> result = select(sql,  IntegerRowMapper.INSTANCE, username);
-        
-        return result.isEmpty()
-        		? Optional.empty()
-        		: Optional.of(result.get(0));
-    }
-    
-    private String decryptPassword(final String encryptedPasswordBase64, final String username) throws UsernameNotFoundException {
+    private String decryptPassword(String encryptedPasswordBase64, String username) {
         try {
             return webservicePasswordEncryptor.decrypt(username, encryptedPasswordBase64);
         } catch (Exception e) {

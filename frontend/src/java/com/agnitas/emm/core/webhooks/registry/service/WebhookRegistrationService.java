@@ -12,8 +12,6 @@ package com.agnitas.emm.core.webhooks.registry.service;
 
 import java.util.List;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookNotRegisteredException;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookRegistrationException;

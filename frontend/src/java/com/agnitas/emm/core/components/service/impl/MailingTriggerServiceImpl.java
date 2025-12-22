@@ -32,16 +32,12 @@ public class MailingTriggerServiceImpl implements MailingTriggerService {
 
             // Interval Mailings are only triggered by an Jobqueue Worker
             if (mailingType != MailingType.INTERVAL) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Before Mailgun");
-                }
+                logger.debug("Before Mailgun");
 
                 MailoutClient aClient = new MailoutClient();
                 aClient.invoke("fire", Integer.toString(maildropStatusID));
 
-                if (logger.isDebugEnabled()) {
-                    logger.debug("After Mailgun");
-                }
+                logger.debug("After Mailgun");
             }
             return true;
         } catch (Exception e) {

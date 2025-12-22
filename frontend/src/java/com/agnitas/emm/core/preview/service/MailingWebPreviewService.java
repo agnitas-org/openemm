@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.preview.service;
 
+import java.util.List;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.preview.dto.PreviewResult;
 import com.agnitas.emm.core.preview.form.PreviewForm;
 import com.agnitas.preview.Page;
-
-import java.util.List;
 
 public interface MailingWebPreviewService {
 
@@ -40,9 +40,5 @@ public interface MailingWebPreviewService {
 
     @Deprecated
     Page generateBackEndPreview(PreviewForm previewForm);
-
-    Page generateBackEndPreview(PreviewSettings settings);
-
-    boolean isPostMailing(Mailing mailing);
 
 }

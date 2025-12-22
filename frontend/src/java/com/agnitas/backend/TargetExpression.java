@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.util.Log;
-import com.agnitas.backend.exceptions.BackendException;
 import com.agnitas.backend.exceptions.InvalidTargetException;
+import com.agnitas.backend.exceptions.MissingTargetException;
+import com.agnitas.util.Log;
 
 public class TargetExpression {
 	/**
@@ -225,23 +225,22 @@ public class TargetExpression {
 	 * handle a missing target expression, give up, if the mailing type
 	 * requires one
 	 */
-	public void handleMissingTargetExpression() throws BackendException {
+	public void handleMissingTargetExpression() throws MissingTargetException {
 		if (expression == null) {
 			if (data.maildropStatus.isRuleMailing()) {
 				try {
-					data.maildropStatus.removeEntry();
-					data.logging(Log.INFO, "init", "Removed entry from maildrop status table due to missing target expression");
-				} catch (SQLException e) {
-					data.logging(Log.ERROR, "init", "Failed to disable rule based mailing: " + e.toString(), e);
+					data.maildropStatus.setGenerationStatus (0, 1);
+				} catch (Exception e) {
+					data.logging (Log.ERROR, "init", "Failed to reset genstatus to 1: " + e.toString (), e);
 				}
-				throw new BackendException("Missing target: Rule based mailing generation aborted and disabled");
+				throw new MissingTargetException("Missing target: Rule based mailing generation aborted and disabled");
 			} else if (data.maildropStatus.isOnDemandMailing()) {
 				try {
 					data.maildropStatus.setGenerationStatus(0, 4);
 				} catch (Exception e) {
 					data.logging(Log.ERROR, "init", "Failed to set genreation status: " + e.toString(), e);
 				}
-				throw new BackendException("Missing target: On Demand mailing generation aborted and left in undefined condition");
+				throw new MissingTargetException("Missing target: On Demand mailing generation aborted and left in undefined condition");
 			}
 		}
 	}

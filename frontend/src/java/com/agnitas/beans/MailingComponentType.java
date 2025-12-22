@@ -11,6 +11,7 @@
 package com.agnitas.beans;
 
 public enum MailingComponentType {
+
 	Template(0),
 	Image(1), // Image hosted by some foreign server
 	Attachment(3),
@@ -30,21 +31,21 @@ public enum MailingComponentType {
 		return code;
 	}
 	
-	public static MailingComponentType getMailingComponentTypeByCode(int code) throws Exception {
+	public static MailingComponentType getMailingComponentTypeByCode(int code) {
 		for (MailingComponentType type : values()) {
 			if (type.code == code) {
 				return type;
 			}
 		}
-		throw new Exception("Invalid MailingComponentType code: " + code);
+		throw new IllegalArgumentException("Invalid MailingComponentType code: " + code);
 	}
 	
-	public static MailingComponentType getMailingComponentTypeByName(String name) throws Exception {
+	public static MailingComponentType getMailingComponentTypeByName(String name) {
 		for (MailingComponentType type : values()) {
 			if (type.name().equalsIgnoreCase(name)) {
 				return type;
 			}
 		}
-		throw new Exception("Invalid MailingComponentType name: " + name);
+		throw new IllegalArgumentException("Invalid MailingComponentType name: " + name);
 	}
 }

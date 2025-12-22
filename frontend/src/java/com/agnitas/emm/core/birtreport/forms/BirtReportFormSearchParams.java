@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.birtreport.forms;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.web.forms.FormSearchParams;
 
 public class BirtReportFormSearchParams extends BirtReportOverviewFilter implements FormSearchParams<BirtReportOverviewFilter> {
@@ -29,10 +28,4 @@ public class BirtReportFormSearchParams extends BirtReportOverviewFilter impleme
         filter.setChangeDate(this.getChangeDate());
     }
 
-    @Override
-    public void resetParams() {
-        this.setName("");
-        this.setChangeDate(new DateRange());
-        this.setLastDeliveryDate(new DateRange());
-    }
 }

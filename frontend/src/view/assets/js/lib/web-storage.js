@@ -1,36 +1,44 @@
-(function() {
-  var Storage = AGN.Lib.Storage;
-  var WebStorage = {};
+(() => {
 
-  WebStorage.get = function(k) {
-    var key = 'web-storage#' + $.trim(k);
+  const Storage = AGN.Lib.Storage;
 
-    try {
-      return Storage.get(key);
-    } catch (e) {
-      console.error(e);
+  class WebStorage {
+
+    static PREFIX = 'web-storage#';
+
+    static get(key) {
+      try {
+        return Storage.get(WebStorage.PREFIX + $.trim(key));
+      } catch (e) {
+        console.error(e);
+      }
+
+      return null;
     }
 
-    return null;
-  };
-
-  WebStorage.set = function(k, v) {
-    Storage.set('web-storage#' + $.trim(k), v);
-  };
-
-  WebStorage.extend = function(k, v) {
-    var value = WebStorage.get(k);
-
-    if (value != null) {
-      value = $.extend(value, v);
-    } else {
-      value = v;
+    static set(key, val) {
+      Storage.set(WebStorage.PREFIX + $.trim(key), val);
     }
 
-    WebStorage.set(k, value);
+    static extend(key, val) {
+      let value = WebStorage.get(key);
 
-    return value;
-  };
+      if (value != null) {
+        if (key === 'mailing-preview') {
+          value = $.extend(true, {}, value, val);
+        } else {
+          value = $.extend(value, val);
+        }
+      } else {
+        value = val;
+      }
+
+      WebStorage.set(key, value);
+
+      return value;
+    }
+  }
 
   AGN.Lib.WebStorage = WebStorage;
+
 })();

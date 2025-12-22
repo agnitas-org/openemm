@@ -10,10 +10,18 @@
 
 package com.agnitas.emm.core.imports.service.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.imports.form.ImportForm;
 import com.agnitas.emm.core.imports.service.MailingImportService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.UiMessageException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ImportResult;
 import com.agnitas.service.MailingImporter;
@@ -24,13 +32,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MailingImportServiceImpl implements MailingImportService {
 
@@ -44,12 +45,12 @@ public class MailingImportServiceImpl implements MailingImportService {
     }
 
     @Override
-    public ImportResult importMailing(ImportForm form, Admin admin) throws Exception {
+    public ImportResult importMailing(ImportForm form, Admin admin) {
         MultipartFile uploadedFile = form.getUploadFile();
         String fileExtension = extractFileExtension(uploadedFile.getOriginalFilename());
 
         if (!isFileUploadingSupports(fileExtension)) {
-            throw new RequestErrorException(Message.of("error.import.invalidDataType", getSupportedFilesExtensionsAsStr()));
+            throw new BadRequestException(Message.of("error.import.invalidDataType", getSupportedFilesExtensionsAsStr()));
         }
 
         if (fileExtension.equalsIgnoreCase("json")) {
@@ -63,22 +64,26 @@ public class MailingImportServiceImpl implements MailingImportService {
         return null;
     }
 
-    private ImportResult tryImportDataFromJson(ImportForm form, Admin admin, MultipartFile uploadedFile) throws Exception {
+    private ImportResult tryImportDataFromJson(ImportForm form, Admin admin, MultipartFile uploadedFile) {
         try (InputStream input = uploadedFile.getInputStream()) {
             return importMailingDataFromJson(admin, input, form);
         } catch (Exception e) {
             LOGGER.error("Mailing import failed", e);
-            if (e instanceof RequestErrorException) {
-                throw e;
+            if (e instanceof UiMessageException ume) {
+                throw ume;
             }
-            throw new RequestErrorException("error.mailing.import");
+            throw new UiMessageException("error.mailing.import");
         }
     }
 
-    private void importMailingsFromZipArchive(ImportForm form, Admin admin) throws Exception {
-        File tempZipFile = File.createTempFile("Mailing_Import", ".json.zip");
-        File tempUnzippedDirectory = new File(tempZipFile.getAbsolutePath() + ".unzipped");
+    private void importMailingsFromZipArchive(ImportForm form, Admin admin) {
+        File tempZipFile = null;
+        File tempUnzippedDirectory = null;
+
         try {
+            tempZipFile = File.createTempFile("Mailing_Import", ".json.zip");
+            tempUnzippedDirectory = new File(tempZipFile.getAbsolutePath() + ".unzipped");
+
             try (
                     InputStream inputZipped = form.getUploadFile().getInputStream();
                     FileOutputStream tempZipFileOutputStream = new FileOutputStream(tempZipFile)
@@ -97,17 +102,19 @@ public class MailingImportServiceImpl implements MailingImportService {
                     }
                 }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
-            if (tempZipFile.exists()) {
+            if (tempZipFile != null && tempZipFile.exists()) {
                 tempZipFile.delete();
             }
-            if (tempUnzippedDirectory.exists()) {
+            if (tempUnzippedDirectory != null && tempUnzippedDirectory.exists()) {
                 FileUtils.removeRecursively(tempUnzippedDirectory);
             }
         }
     }
 
-    protected ImportResult importMailingDataFromJson(Admin admin, InputStream input, ImportForm form) throws Exception {
+    protected ImportResult importMailingDataFromJson(Admin admin, InputStream input, ImportForm form) {
         return mailingImporter.importMailingFromJson(admin.getCompanyID(), input, form.isTemplate(), form.isOverwriteTemplate(), form.isGrid());
     }
 

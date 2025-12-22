@@ -5,18 +5,16 @@ import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.service.UserActivityLogService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 @Controller
 @RequestMapping("/mailing/{mailingId:\\d+}/images")
-@PermissionMapping("mailing.images")
 @SessionAttributes(types = MailingImagesFormSearchParams.class)
 public class MailingImagesControllerOpenemm extends MailingImagesController {
 

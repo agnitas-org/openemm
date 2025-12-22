@@ -10,29 +10,27 @@
 
 package com.agnitas.emm.springws.endpoint.mailing;
 
-import com.agnitas.beans.Mailing;
-
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.ListMailingsInMailinglistRequest;
 import com.agnitas.emm.springws.jaxb.ListMailingsInMailinglistResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.mailing.service.MailingService;
-
 @Endpoint
 public class ListMailingsInMailinglistEndpoint extends BaseEndpoint {
 
-	private MailingService mailingService;
-	private SecurityContextAccess securityContextAccess;
+	private final MailingService mailingService;
+	private final SecurityContextAccess securityContextAccess;
 
 	public ListMailingsInMailinglistEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
@@ -40,7 +38,7 @@ public class ListMailingsInMailinglistEndpoint extends BaseEndpoint {
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListMailingsInMailinglistRequest")
-	public @ResponsePayload ListMailingsInMailinglistResponse listMailingsInMailinglist(@RequestPayload ListMailingsInMailinglistRequest request) throws Exception {
+	public @ResponsePayload ListMailingsInMailinglistResponse listMailingsInMailinglist(@RequestPayload ListMailingsInMailinglistRequest request) {
 		ListMailingsInMailinglistResponse response = new ListMailingsInMailinglistResponse();
 
 		MailingModel model = new MailingModel();

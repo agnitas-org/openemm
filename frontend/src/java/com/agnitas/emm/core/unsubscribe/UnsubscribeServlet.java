@@ -12,29 +12,27 @@ package com.agnitas.emm.core.unsubscribe;
 
 import java.util.Locale;
 
+import com.agnitas.dao.BindingEntryDao;
+import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
+import com.agnitas.emm.core.userform.service.UserFormExecutionService;
+import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.util.SafeString;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import com.agnitas.exception.FormNotFoundException;
-import com.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.dao.BindingEntryDao;
-import com.agnitas.dao.MailingDao;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
-import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 
 /**
  * Servlet handling unsubscription requests.
@@ -120,7 +118,7 @@ public final class UnsubscribeServlet extends HttpServlet {
         }
     }
     
-    private final void showUnsubscriptionLandingPage(final ExtensibleUID uid, final HttpServletRequest request, final HttpServletResponse response) {
+    private void showUnsubscriptionLandingPage(ExtensibleUID uid, HttpServletRequest request, HttpServletResponse response) {
     	try {
     		CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
     		final UserFormExecutionResult result = userFormExecuteService.executeForm(uid.getCompanyID(), "unsubscribe", request, params, false);
@@ -131,7 +129,7 @@ public final class UnsubscribeServlet extends HttpServlet {
     		response.getWriter().flush();
     	} catch (FormNotFoundException nfe) {
 			logger.error("User form 'unsubscribe' not found for company ID {}!", uid.getCompanyID());
-		} catch(final Exception e) {
+		} catch (Exception e) {
     		logger.error("Error showing landing page for unsubscription", e);
     	}
     }

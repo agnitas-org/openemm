@@ -19,6 +19,7 @@ import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkWarning;
 
 final class LinkScanContext {
+
 	private final String fullText;
 	private final int start;
 	private final int end;
@@ -53,40 +54,40 @@ final class LinkScanContext {
 		this.protocolSchemaPresent = false;
 	}
 
-	public final String getFullText() {
+	public String getFullText() {
 		return this.fullText;
 	}
 
-	public final int getStart() {
+	public int getStart() {
 		return this.start;
 	}
 	
-	public final List<TrackableLink> getFoundTrackableLinks() {
+	public List<TrackableLink> getFoundTrackableLinks() {
 		return foundTrackableLinks;
 	}
 
-	public final List<String> getFoundImages() {
+	public List<String> getFoundImages() {
 		return foundImages;
 	}
 
-	public final List<String> getFoundNotTrackableLinks() {
+	public List<String> getFoundNotTrackableLinks() {
 		return foundNotTrackableLinks;
 	}
 
-	public final List<ErroneousLink> getFoundErroneousLinks() {
+	public List<ErroneousLink> getFoundErroneousLinks() {
 		return foundErroneousLinks;
 	}
 
-	public final List<ErroneousLink> getLocalLinks() {
+	public List<ErroneousLink> getLocalLinks() {
 		return localLinks;
 	}
 
-	public final List<LinkWarning> getLinkWarnings() {
+	public List<LinkWarning> getLinkWarnings() {
 		return linkWarnings;
 	}
 
-	public final String getTextWithAgnTagsReplaced() {
-		if(this.fullTextWithTagsReplaced == null) {
+	public String getTextWithAgnTagsReplaced() {
+		if (this.fullTextWithTagsReplaced == null) {
 			this.fullTextWithTagsReplaced = LinkServiceImpl.getTextWithReplacedAgnTags(this.fullText, "x");
 			
 			assert fullTextWithTagsReplaced == null || fullText.length() == fullTextWithTagsReplaced.length();
@@ -95,7 +96,7 @@ final class LinkScanContext {
 		return this.fullTextWithTagsReplaced;
 	}
 	
-	public final String getLinkUrl() {
+	public String getLinkUrl() {
 		if(linkUrl == null) {
 			this.linkUrl = fullText.substring(start, end).trim();
 		}
@@ -103,7 +104,7 @@ final class LinkScanContext {
 		return linkUrl;
 	}
 	
-	public final String getLinkUrlWithAgnTagsReplaced() {
+	public String getLinkUrlWithAgnTagsReplaced() {
 		if(linkUrlWithTagsReplaced == null) {
 			this.linkUrlWithTagsReplaced = getTextWithAgnTagsReplaced().substring(start, end).trim();
 		}
@@ -111,7 +112,7 @@ final class LinkScanContext {
 		return linkUrlWithTagsReplaced;
 	}
 	
-	public final String getProtocolSchema() {
+	public String getProtocolSchema() {
 		if(!this.protocolSchemaPresent) {
 			final Matcher schemaMatcher = LinkServiceImpl.PROTOCOL_SCHEMA_PATTERN.matcher(getLinkUrl());
 			this.protocolSchema = schemaMatcher.matches() ? schemaMatcher.group(1) : null;

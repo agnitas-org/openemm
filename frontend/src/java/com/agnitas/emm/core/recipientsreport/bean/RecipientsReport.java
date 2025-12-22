@@ -24,7 +24,7 @@ public class RecipientsReport {
      */
     private String filename;
     /**
-     * datasource ID created by import (if type = {@link RecipientReportType#IMPORT_REPORT})
+     * datasource ID created by import
      */
     private Integer datasourceId;
     /**
@@ -36,8 +36,6 @@ public class RecipientsReport {
      * EMM user name (who initiated the import)
      */
     private String username;
-
-    private RecipientReportType type;
 
     /**
      * download_tbl.download_id -> used if file can`t be stored in content(CLOB) column of recipients_report_tbl
@@ -79,7 +77,7 @@ public class RecipientsReport {
     }
 
     /**
-     * datasource ID created by import (if type = {@link RecipientReportType#IMPORT_REPORT})
+     * datasource ID created by import
      */
     public Integer getDatasourceId() {
         return datasourceId;
@@ -106,14 +104,6 @@ public class RecipientsReport {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public RecipientReportType getType() {
-        return type;
-    }
-
-    public void setType(RecipientReportType type) {
-        this.type = type;
     }
 
     public Integer getFileId() {
@@ -172,23 +162,8 @@ public class RecipientsReport {
         this.entityData = entityData;
     }
 
-    @Deprecated
-    public enum RecipientReportType {
-        IMPORT_REPORT("recipient.reports.type.import.report"),
-        EXPORT_REPORT("recipient.reports.type.export.report");
-
-        private String messageKey;
-
-        RecipientReportType(String messageKey) {
-            this.messageKey = messageKey;
-        }
-
-        public String getMessageKey() {
-            return messageKey;
-        }
-    }
-
     public enum EntityType implements IntEnum {
+
         UNKNOWN(0, "MailType.unknown"),
         IMPORT(1, "recipient.reports.type.import.report"),
         EXPORT(2, "recipient.reports.type.export.report");
@@ -212,6 +187,7 @@ public class RecipientsReport {
     }
 
     public enum EntityExecution implements IntEnum {
+
         UNKNOWN(0),
         MANUAL(1),
         AUTOMATIC(2);
@@ -229,6 +205,7 @@ public class RecipientsReport {
     }
 
     public enum EntityData implements IntEnum {
+
         UNKNOWN(0),
         PROFILE(1),
         REFERENCE_TABLE(2);

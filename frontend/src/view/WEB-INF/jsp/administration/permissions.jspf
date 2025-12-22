@@ -1,0 +1,116 @@
+<%@ page contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action" %>
+<%@page import="com.agnitas.emm.core.Permission"%>
+<c:set var="USERRIGHT_MESSAGEKEY_PREFIX" value="<%= Permission.USERRIGHT_MESSAGEKEY_PREFIX %>"/>
+<c:set var="mailingShowPermissionToken" value="<%= Permission.MAILING_SHOW.getTokenString() %>"/>
+
+<div id="edit-rights-tile" class="tile" data-editable-tile="main" style="flex: 3">
+    <div class="tile-header">
+        <h1 class="tile-title text-truncate"><mvc:message code="UserRights.edit"/></h1>
+    </div>
+    <div class="tile-body" style="display: grid; grid-template-columns: minmax(300px, 1fr) 3fr; gap: 10px">
+        <div class="permission-categories">
+            <c:forEach items="${permissionCategories}" var="category" varStatus="status">
+                <c:set var="categoryIndex" value="${status.index}"/>
+                <input type="radio" class="btn-check" name="view-category" autocomplete="off" id="${categoryIndex}-category-btn"
+                       ${categoryIndex eq '0' ? 'checked' : ''}>
+                <label class="permission-categories__btn" for="${categoryIndex}-category-btn" data-category-index="${categoryIndex}" data-action="change-category">
+                    <span>
+                        <i class="icon icon-${category.iconCode}"></i>
+                        <strong><mvc:message code="${category.name}"/></strong>
+                    </span>
+                    <span class="permissions-counter"><%-- load by JS--%></span>
+                </label>
+            </c:forEach>
+        </div>
+        <c:forEach items="${permissionCategories}" var="category" varStatus="status">
+            <c:set var="categoryIndex" value="${status.index}"/>
+            <div id="${categoryIndex}-category-permissions" class="tile">
+                <div class="tile-header">
+                    <h1 class="tile-title tile-title--grey text-truncate"><mvc:message code="${category.name}"/></h1>
+                    <div class="tile-controls">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="toggle-permissions-${categoryIndex}" data-toggle-checkboxes="on">
+                            <label class="form-label form-check-label" for="toggle-permissions-${categoryIndex}"><mvc:message code="ToggleOnOff"/></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="tile-body js-scrollable">
+                    <div class="notification-simple no-results-found" style="display: none">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="noResultsFound"/></span>
+                    </div>
+
+                    <div id="${categoryIndex}-permission-category-subcategories" class="row row-cols-2 checkboxes-content">
+                        <c:forEach items="${category.subCategories.values()}" var="subCategory">
+                            <div class="permission_category-subcategory mb-6">
+                                <c:if test="${not empty subCategory.name}">
+                                    <h3 class="headline mb-3"><mvc:message code="${subCategory.name}"/></h3>
+                                </c:if>
+
+                                <ul class="d-flex flex-column gap-3">
+                                    <c:forEach items="${subCategory.permissions}" var="permission">
+                                        <c:set var="adminGroupTooltipMsg" value=""/>
+										<c:if test="${permission.showInfoTooltip}">
+											<c:set var="adminGroupTooltipMsg">
+												<mvc:message code="permission.group.set" arguments="${permission.adminGroup.shortname}"/>
+											</c:set>
+										</c:if>
+
+                                        <li class="permission">
+                                            <div class="form-check form-switch" data-tooltip="${adminGroupTooltipMsg}">
+                                                <input class="form-check-input" type="checkbox" role="switch" id='${permission.name}' name="grantedPermissions" value="${permission.name}"
+                                                    ${permission.granted ? 'checked' : ''}
+                                                    ${permission.changeable ? '' : 'disabled'}/>
+                                                <label class="form-check-label" for="${permission.name}"><mvc:message code='${USERRIGHT_MESSAGEKEY_PREFIX}${permission.name}'/></label>
+                                            </div>
+                                        </li>
+                                    </c:forEach>
+                                </ul>
+                            </div>
+                        </c:forEach>
+                    </div>
+               </div>
+            </div>
+        </c:forEach>
+    </div>
+</div>
+
+<div id="filter-tile" class="tile" data-action="handle-filter-enterdown" data-editable-tile style="flex: 1">
+    <div class="tile-header">
+        <h1 class="tile-title text-truncate">
+            <i class="icon icon-caret-up mobile-visible"></i><mvc:message code="report.mailing.filter"/>
+        </h1>
+        <div class="tile-controls">
+            <a class="btn btn-icon btn-secondary" data-form-clear="#filter-tile" data-action="apply-filter" data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+            <a class="btn btn-icon btn-primary" data-action="apply-filter" data-tooltip="<mvc:message code="button.filter.apply"/>"><i class="icon icon-search"></i></a>
+        </div>
+    </div>
+    <div class="tile-body vstack gap-3 js-scrollable">
+        <div>
+            <mvc:message var="nameMsg" code="Name"/>
+            <label class="form-label" for="name-filter">${nameMsg}</label>
+            <input type="text" id="name-filter" class="form-control" placeholder="${nameMsg}"/>
+        </div>
+        <div>
+            <label class="form-label" for="right-filter"><mvc:message code="user.permission"/></label>
+            <input type="text" id="right-filter" class="form-control" placeholder="${mailingShowPermissionToken}"/>
+        </div>
+
+        <script data-initializer="user|groups-permissions" type="application/json">
+            {
+                "permissionCategories": ${emm:toJson(permissionCategories)}
+            }
+        </script>
+        <div>
+            <label class="form-label" for="type-filter"><mvc:message code="default.Type"/></label>
+            <select id="type-filter" multiple class="form-control">
+                <option value="granted"><mvc:message code="settings.permission.granted"/></option>
+                <option value="grantedForUser"><mvc:message code="settings.permission.granted.user"/></option>
+                <option value="grantedByGroup"><mvc:message code="settings.permission.granted.group"/></option>
+                <option value="grantable"><mvc:message code="settings.permission.grantable"/></option>
+                <option value="notGrantable"><mvc:message code="settings.permission.notavailable"/></option>
+                <option value="new"><mvc:message code="New"/></option>
+            </select>
+        </div>
+    </div>
+</div>

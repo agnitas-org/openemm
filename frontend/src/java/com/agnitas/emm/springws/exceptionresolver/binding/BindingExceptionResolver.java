@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.springws.exceptionresolver.binding;
 
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import com.agnitas.exception.InvalidUserStatusException;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;

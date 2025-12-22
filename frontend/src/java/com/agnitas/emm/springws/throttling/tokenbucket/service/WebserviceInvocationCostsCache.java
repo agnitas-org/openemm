@@ -12,8 +12,8 @@ package com.agnitas.emm.springws.throttling.tokenbucket.service;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 import com.agnitas.emm.util.quota.tokenbucket.AbstractApiInvocationCostsCache;
 import com.agnitas.emm.util.quota.tokenbucket.ApiInvocationCosts;

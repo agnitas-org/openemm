@@ -10,11 +10,14 @@
 
 package com.agnitas.emm.springws.security;
 
+import java.util.Objects;
+import java.util.Optional;
+
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.loginmanager.service.LoginTrackService;
 import com.agnitas.emm.springws.WebserviceUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.security.core.Authentication;
@@ -30,9 +33,6 @@ import org.springframework.ws.transport.context.TransportContext;
 import org.springframework.ws.transport.context.TransportContextHolder;
 import org.springframework.ws.transport.http.HttpServletConnection;
 
-import java.util.Objects;
-import java.util.Optional;
-
 public class LoginTrackingXwsSecurityInterceptor extends Wss4jSecurityInterceptor {
 
 	private static final Logger LOGGER = LogManager.getLogger(LoginTrackingXwsSecurityInterceptor.class);
@@ -45,7 +45,7 @@ public class LoginTrackingXwsSecurityInterceptor extends Wss4jSecurityIntercepto
 	}
 	
 	@Override
-	protected void validateMessage(final SoapMessage message, final MessageContext context) throws WsSecurityValidationException {
+	protected void validateMessage(SoapMessage message, MessageContext context) {
 		final boolean loginTrackingEnabled = this.configService.getBooleanValue(ConfigValue.LoginTracking.LoginTrackingWebserviceEnabled);		
 
 		if(loginTrackingEnabled) {
@@ -56,7 +56,7 @@ public class LoginTrackingXwsSecurityInterceptor extends Wss4jSecurityIntercepto
 		
 	}
 	
-	private void validateMessageWithLoginTracking(final SoapMessage message, final MessageContext context) throws WsSecurityValidationException {
+	private void validateMessageWithLoginTracking(SoapMessage message, MessageContext context) {
 		try {
 			super.validateMessage(message, context);
 		} catch(final WsSecurityValidationException e) {

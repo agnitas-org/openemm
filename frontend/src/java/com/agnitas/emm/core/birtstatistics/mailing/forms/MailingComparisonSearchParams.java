@@ -10,12 +10,9 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.forms;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.web.forms.FormSearchParams;
 
-public class MailingComparisonSearchParams
-        extends MailingComparisonFilter
-        implements FormSearchParams<MailingComparisonFilter> {
+public class MailingComparisonSearchParams extends MailingComparisonFilter implements FormSearchParams<MailingComparisonFilter> {
 
     @Override
     public void storeParams(MailingComparisonFilter filter) {
@@ -31,10 +28,4 @@ public class MailingComparisonSearchParams
         filter.setSendDate(this.getSendDate());
     }
 
-    @Override
-    public void resetParams() {
-        this.setMailing("");
-        this.setDescription("");
-        this.setSendDate(new DateRange());
-    }
 }

@@ -13,9 +13,9 @@ package com.agnitas.emm.core.mailing.dto;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.agnitas.beans.WebStorageEntry;
 import com.agnitas.emm.core.preview.dto.MailingPreviewSettings;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.agnitas.beans.WebStorageEntry;
 
 public class MailingPreviewWebStorageEntry implements WebStorageEntry {
 
@@ -35,9 +35,8 @@ public class MailingPreviewWebStorageEntry implements WebStorageEntry {
     }
 
     @Override
-    public MailingPreviewWebStorageEntry clone() throws CloneNotSupportedException {
-        MailingPreviewWebStorageEntry entry = (MailingPreviewWebStorageEntry) super.clone();
-        entry.setSettings(settings);
-        return entry;
+    public WebStorageEntry clone() {
+        throw new UnsupportedOperationException();
     }
+
 }

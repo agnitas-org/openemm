@@ -57,6 +57,10 @@ public class ExportForm {
 	private boolean mailinglistBindIncludeCurrentDay;
     private String[] userColumns;
     private List<ExportColumnMapping> customColumns = new ArrayList<>();
+    private Integer referenceTable;
+    private String recipientKeyColumn;
+    private String referenceTableKeyColumn;
+    private Set<String> referenceTableColumns = new HashSet<>();
     private boolean inProgress;
 
     public String getShortname() {
@@ -368,6 +372,38 @@ public class ExportForm {
 
     public void setUseDecodedValues(boolean useDecodedValues) {
         this.useDecodedValues = useDecodedValues;
+    }
+
+    public Integer getReferenceTable() {
+        return referenceTable;
+    }
+
+    public void setReferenceTable(Integer referenceTable) {
+        this.referenceTable = referenceTable;
+    }
+
+    public Set<String> getReferenceTableColumns() {
+        return referenceTableColumns;
+    }
+
+    public void setReferenceTableColumns(Set<String> referenceTableColumns) {
+        this.referenceTableColumns = referenceTableColumns;
+    }
+
+    public String getRecipientKeyColumn() {
+        return recipientKeyColumn;
+    }
+
+    public void setRecipientKeyColumn(String recipientKeyColumn) {
+        this.recipientKeyColumn = recipientKeyColumn;
+    }
+
+    public String getReferenceTableKeyColumn() {
+        return referenceTableKeyColumn;
+    }
+
+    public void setReferenceTableKeyColumn(String referenceTableKeyColumn) {
+        this.referenceTableKeyColumn = referenceTableKeyColumn;
     }
 
     // in case of modification, adapt export-progress.jsp

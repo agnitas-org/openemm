@@ -20,7 +20,6 @@ import java.util.Set;
 
 import com.agnitas.util.Log;
 import com.agnitas.util.importvalues.MailType;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 public class Extractor implements ResultSetExtractor<Object> {
@@ -67,7 +66,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 		skip = false;
 	}
 
-	private void extractRecord(ResultSet rset) throws SQLException, DataAccessException {
+	private void extractRecord(ResultSet rset) throws SQLException {
 		if (meta == null) {
 			meta = rset.getMetaData();
 			metacount = meta.getColumnCount();
@@ -325,7 +324,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 	}
 
 	@Override
-	public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
+	public Object extractData(ResultSet rset) throws SQLException {
 		while (rset.next()) {
 			extractRecord(rset);
 		}

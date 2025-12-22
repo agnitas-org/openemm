@@ -1,0 +1,65 @@
+$ff-regular : Arial, sans-serif;
+
+// Font-Sizes
+$fs-tiny    : 11px;
+$fs-small   : 13px;
+$fs-regular : 14px;
+$fs-large   : 15px;
+$fs-xlarge  : 18px;
+$fs-xxlarge : 20px;
+
+// Font-Weights
+$fw-regular : 400;
+$fw-semi    : 600;
+$fw-bold    : 700;
+
+// Colors
+$c-transparent: rgba(0,0,0,0);
+$c-white: #fff;
+$c-black: #000;
+$c-black-85: #222326;
+$c-gray-02: #faf9f9;
+$c-gray-11:  #e2e3e3;
+$c-gray-20: #cccdcd;
+$c-gray-33: #a9aaab;
+$c-gray-44: #8d8d8f;
+$c-gray-55: #707173;
+$c-gray-80: #303030;
+$c-blue-22: #338dc7;
+$c-blue-27: #0071b9;
+$c-green-02: #f1f9e6;
+$c-green-38: #109e4d;
+
+// states
+$c-state-success : $c-green-38;
+$states: (
+  success $c-state-success,
+  info    $c-blue-22,
+  warning #ffa300,
+  alert   #fa6861,
+  danger  #fa6861
+);
+
+//Dark theme (dt)
+$c-dt-primary-text: $c-white;
+$c-dt-main-background: #222222;
+$c-dt-border: #666;
+
+$c-dt-btn-primary: $c-blue-27;
+$c-dt-btn-secondary: #444;
+$c-dt-btn-secondary-text: $c-dt-primary-text;
+
+$c-dt-input-background: #4a4949;
+$c-dt-input-disabled-background: $c-gray-55;
+$c-dt-input-text: $c-gray-02;
+$c-dt-input-border: $c-dt-border;
+$c-dt-input-focus: $c-blue-27;
+$c-dt-input-label: $c-gray-20;
+
+//dp- datepicker
+$c-dt-dp-background: $c-gray-80;
+$c-dt-dp-primary-text: $c-dt-primary-text;
+$c-dt-dp-text: $c-gray-20;
+$c-dt-dp-border: $c-dt-border;
+$c-dt-dp-border-hover: $c-blue-27;
+$c-dt-dp-today: #0f3306;

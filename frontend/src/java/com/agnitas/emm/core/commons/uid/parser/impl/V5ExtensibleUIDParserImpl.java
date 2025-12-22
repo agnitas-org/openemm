@@ -11,21 +11,20 @@
 package com.agnitas.emm.core.commons.uid.parser.impl;
 
 import java.io.IOException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.uid.parser.impl.BaseExtensibleUIDParser;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessageUnpacker;
-import org.msgpack.core.MessageFormat;
-import org.msgpack.value.ValueType;
 
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.msgpack.core.MessageFormat;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
+import org.msgpack.value.ValueType;
 
 /**
  * Implementation of UID parser for UID version 5.
@@ -78,8 +77,10 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 		int	customerID = 0;
 		int	mailingID = 0;
 		int	urlID = 0;
+		int	position = 1;
 		long	bitfield = 0;
 		long	senddate = 0;
+		char	statusField = '\0';
 		byte[]	payload = base64Encoder.decodeBytes (correctedParts[PAYLOAD_GROUP]);
 
 		if (payload != null && payload.length > 0) {
@@ -113,30 +114,48 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 						break;
 					case 2:
 						state = 1;
-						if ((name != null) && type.isIntegerType ()) {
-							long	value = 0;
+						if (name != null) {
+							if (type.isIntegerType ()) {
+								long	value = 0;
 						
-							switch (format) {
-							case UINT64:
-								value = mp.unpackBigInteger ().longValue ();
-								break;
-							case INT64:
-							case UINT32:
-								value = mp.unpackLong ();
-								break;
-							default:
-								value = mp.unpackInt ();
-								break;
-							}
-							switch (name) {
-							case "_l":	licenceID = (int) value;	break;
-							case "_c":	companyID = (int) value;	break;
-							case "_m":	mailingID = (int) value;	break;
-							case "_r":	customerID = (int) value;	break;
-							case "_u":	urlID = (int) value;		break;
-							case "_o":	bitfield = value;		break;
-							case "_s":	senddate = value;		break;
-							default:	/* STFU */			break;
+								switch (format) {
+								case UINT64:
+									value = mp.unpackBigInteger ().longValue ();
+									break;
+								case INT64:
+								case UINT32:
+									value = mp.unpackLong ();
+									break;
+								default:
+									value = mp.unpackInt ();
+									break;
+								}
+								switch (name) {
+								case "_l":	licenceID = (int) value;	break;
+								case "_c":	companyID = (int) value;	break;
+								case "_m":	mailingID = (int) value;	break;
+								case "_r":	customerID = (int) value;	break;
+								case "_u":	urlID = (int) value;		break;
+								case "_x":	position = (int) value;		break;
+								case "_o":	bitfield = value;		break;
+								case "_s":	senddate = value;		break;
+								default:	/* STFU */			break;
+								}
+							} else if (type.isStringType ()) {
+								String	value = mp.unpackString ();
+								
+								switch (name) {
+								case "_f":
+									if (value.length () == 1) {
+										statusField = value.charAt (0);
+									}
+									break;
+								default:
+									/* STFU */
+									break;
+								}
+							} else {
+								mp.unpackValue ();
 							}
 						} else {
 							mp.unpackValue ();
@@ -149,9 +168,12 @@ public class V5ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 			}
 		}
 		
-		ExtensibleUID uid = UIDFactory.from(correctedParts[PREFIX_GROUP], licenceID, companyID, customerID, mailingID, urlID, bitfield);
+		ExtensibleUID uid = UIDFactory.from(correctedParts[PREFIX_GROUP], licenceID, companyID, customerID, mailingID, urlID, position, bitfield);
 		if (senddate > 0) {
 			uid.setSendDate (senddate);
+		}
+		if (statusField != '\0') {
+			uid.setStatusField (statusField);
 		}
 		return uid;
 	}

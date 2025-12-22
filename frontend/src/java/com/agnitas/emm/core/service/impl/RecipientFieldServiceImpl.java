@@ -23,6 +23,8 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
@@ -36,8 +38,6 @@ import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Const;
 import com.agnitas.util.DbColumnType;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,26 +67,6 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	}
 
 	@Override
-	public List<RecipientFieldDescription> getRecipientFields(ProfileFieldForm profileForm, int companyId) {
-		List<RecipientFieldDescription> fields = getRecipientFields(companyId);
-
-		String fieldName = profileForm.getFilterFieldName();
-		String dbFieldName = profileForm.getFilterDbFieldName();
-		String description = profileForm.getFilterDescription();
-		DbColumnType.SimpleDataType type = profileForm.getFilterType();
-		ProfileFieldMode mode = profileForm.getFilterMode();
-		Boolean historized = profileForm.getHistorized();
-		return fields.stream()
-				.filter(f -> StringUtils.isBlank(fieldName) || f.getShortName().toLowerCase().contains(fieldName.toLowerCase()))
-				.filter(f -> StringUtils.isBlank(dbFieldName) || f.getColumnName().toLowerCase().contains(dbFieldName.toLowerCase()))
-				.filter(f -> StringUtils.isBlank(description) || (f.getDescription() != null && f.getDescription().toLowerCase().contains(description.toLowerCase())))
-				.filter(f -> type == null || type.equals(f.getSimpleDataType()))
-				.filter(f -> mode == null || mode.equals(f.getDefaultPermission()))
-				.filter(f -> historized == null || historized.equals(RecipientStandardField.isHistorized(f)))
-				.collect(Collectors.toList());
-	}
-
-    @Override
 	public List<RecipientFieldDescription> getEditableFields(int companyId) {
 		return getRecipientFields(companyId).stream()
 				.filter(t -> EnumSet.of(ProfileFieldMode.Editable).contains(t.getDefaultPermission()))
@@ -106,7 +86,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	private List<RecipientFieldDescription> getHistorizedFields(int companyId, boolean includeStandard) {
 		Set<String> historizedStandardFields = RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames();
 		return getRecipientFields(companyId).stream()
-			.filter(f -> f.isHistorized() || (!includeStandard || historizedStandardFields.contains(f.getColumnName())))
+			.filter(f -> f.isHistorized() || (includeStandard && historizedStandardFields.contains(f.getColumnName())))
 			.toList();
 	}
 
@@ -115,6 +95,26 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		return getEditableFields(companyId)
 				.stream()
 				.collect(Collectors.toMap(RecipientFieldDescription::getColumnName, RecipientFieldDescription::getShortName));
+	}
+
+	@Override
+	public List<RecipientFieldDescription> getRecipientFields(ProfileFieldForm profileForm, int companyId) {
+		List<RecipientFieldDescription> fields = getRecipientFields(companyId);
+
+		String fieldName = profileForm.getFilterFieldName();
+		String dbFieldName = profileForm.getFilterDbFieldName();
+		String description = profileForm.getFilterDescription();
+		DbColumnType.SimpleDataType type = profileForm.getFilterType();
+		ProfileFieldMode mode = profileForm.getFilterMode();
+		Boolean historized = profileForm.getHistorized();
+		return fields.stream()
+				.filter(f -> StringUtils.isBlank(fieldName) || f.getShortName().toLowerCase().contains(fieldName.toLowerCase()))
+				.filter(f -> StringUtils.isBlank(dbFieldName) || f.getColumnName().toLowerCase().contains(dbFieldName.toLowerCase()))
+				.filter(f -> StringUtils.isBlank(description) || (f.getDescription() != null && f.getDescription().toLowerCase().contains(description.toLowerCase())))
+				.filter(f -> type == null || type.equals(f.getSimpleDataType()))
+				.filter(f -> mode == null || mode.equals(f.getDefaultPermission()))
+				.filter(f -> historized == null || historized.equals(RecipientStandardField.isHistorized(f)))
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -132,7 +132,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	@Override
 	public void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception {
 		if (RecipientStandardField.Bounceload.getColumnName().equalsIgnoreCase(recipientFieldDescription.getColumnName())) {
-			throw new Exception("Recipient field bounceload is unchangeable");
+			throw new IllegalArgumentException("Recipient field bounceload is unchangeable");
 		} else {
 			recipientFieldDao.saveRecipientField(companyID, recipientFieldDescription);
 
@@ -147,7 +147,7 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	@Override
 	public void deleteRecipientField(int companyID, String recipientFieldName) throws Exception {
 		if (RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(recipientFieldName)) {
-			throw new Exception("Cannot delete recipient standard field: " + recipientFieldName);
+			throw new IllegalArgumentException("Cannot delete recipient standard field: " + recipientFieldName);
 		} else {
 			recipientFieldDao.deleteRecipientField(companyID, recipientFieldName);
 
@@ -265,7 +265,6 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		
 		for (RecipientFieldDescription recipientField : getRecipientFields(companyID)) {
 			if (!recipientStandardFieldColumnNames.contains(recipientField.getColumnName())
-				&& !RecipientFieldService.OLD_SOCIAL_MEDIA_FIELDS.contains(recipientField.getColumnName())
 				&& !postalFieldColumnNames.contains(recipientField.getColumnName())) {
 					companySpecificFieldCount++;
 			}

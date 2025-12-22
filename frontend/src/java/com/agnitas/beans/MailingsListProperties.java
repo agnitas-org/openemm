@@ -10,24 +10,19 @@
 
 package com.agnitas.beans;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class MailingsListProperties {
 
     private String types;
     private String mediaTypes;
     private boolean isTemplate;
-    private String searchQuery; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
-    private boolean searchName; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
-    private boolean searchDescription; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
-    private boolean searchContent; // TODO: remove after EMMGUI-714 will be finished and old design will removed. Note: if not necessary for mailing statistics search
-    private boolean isRedesignedUiUsed; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String searchNameStr;
     private String searchDescriptionStr;
     private String searchContentStr;
@@ -75,38 +70,6 @@ public class MailingsListProperties {
 
     public void setTemplate(boolean template) {
         isTemplate = template;
-    }
-
-    public String getSearchQuery() {
-        return searchQuery;
-    }
-
-    public void setSearchQuery(String searchQuery) {
-        this.searchQuery = searchQuery;
-    }
-
-    public boolean isSearchName() {
-        return searchName;
-    }
-
-    public void setSearchName(boolean searchName) {
-        this.searchName = searchName;
-    }
-
-    public boolean isSearchDescription() {
-        return searchDescription;
-    }
-
-    public void setSearchDescription(boolean searchDescription) {
-        this.searchDescription = searchDescription;
-    }
-
-    public boolean isSearchContent() {
-        return searchContent;
-    }
-
-    public void setSearchContent(boolean searchContent) {
-        this.searchContent = searchContent;
     }
 
     public List<String> getStatuses() {
@@ -291,14 +254,6 @@ public class MailingsListProperties {
 
     public void setSearchContentStr(String searchContentStr) {
         this.searchContentStr = searchContentStr;
-    }
-
-    public boolean isRedesignedUiUsed() {
-        return isRedesignedUiUsed;
-    }
-
-    public void setRedesignedUiUsed(boolean redesignedUiUsed) {
-        isRedesignedUiUsed = redesignedUiUsed;
     }
 
     public void setMailingStatisticsOverview(boolean mailingStatisticsOverview) {

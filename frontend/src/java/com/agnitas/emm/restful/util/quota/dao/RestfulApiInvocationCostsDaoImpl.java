@@ -15,10 +15,10 @@ import com.agnitas.dao.impl.BaseDaoImpl;
 public final class RestfulApiInvocationCostsDaoImpl extends BaseDaoImpl implements RestfulApiInvocationCostsDao {
 
 	/** Default costs. */
-	public static final transient int DEFAULT_INVOCATION_COSTS = 1;
+	public static final int DEFAULT_INVOCATION_COSTS = 1;
 	
 	@Override
-	public final int invocationCostsForApi(final int companyID, final String endpointName) {
+	public int invocationCostsForApi(int companyID, String endpointName) {
 		int costs = queryCosts(companyID, endpointName);
 		
 		if(costs == 0) {
@@ -32,9 +32,8 @@ public final class RestfulApiInvocationCostsDaoImpl extends BaseDaoImpl implemen
 		return costs;
 	}
 
-	private final int queryCosts(final int companyId, final String apiName) {
+	private int queryCosts(int companyId, String apiName) {
 		final String sql = "SELECT costs FROM restful_api_costs_tbl WHERE name=? AND company_id=?";
-
 		return selectInt(sql, apiName, companyId);
 	}
 

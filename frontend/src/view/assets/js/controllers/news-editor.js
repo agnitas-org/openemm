@@ -1,9 +1,10 @@
 AGN.Lib.Controller.new('news-editor', function() {
     var Template = AGN.Lib.Template;
     var languages = ['de', 'en'];
-    var index = 0;
-
+    var index;
+    
     this.addDomInitializer('news-editor-init', function() {
+        index = 0;
         var newsId = $('input[name="newsId"]').val();
         var existentNews = $('.existent-news');
 
@@ -54,10 +55,6 @@ AGN.Lib.Controller.new('news-editor', function() {
         if (language != '') {
             var $block = Template.dom('news-content-template-row', {lang: language, index: index, title: title, content: content});
 
-            if ($('#news-content-editor > .l-news-content-block').length == 0) {
-                $('#news-content-editor').append('<div class="tile-separator"></div>');
-            }
-
             $block.appendTo('#news-content-editor');
             AGN.runAll($block);
 
@@ -67,26 +64,16 @@ AGN.Lib.Controller.new('news-editor', function() {
     }
 
     function updateAddButtonsVisibility() {
-        var usedLanguages = getUsedLanguages();
-        var lastContentBlockIndex = $('#news-content-editor > .l-news-content-block').last().find("input[name='index']").val();
-
-        if (languages.length == usedLanguages.length) {
-            $("#add-news-" + lastContentBlockIndex).hide();
-        } else {
-            $("#add-news-" + lastContentBlockIndex).show();
-        }
+        const usedLanguages = getUsedLanguages();
+        const lastContentBlockIndex = $('#news-content-editor > .l-news-content-block').last().data('index');
+        $("#add-news-" + lastContentBlockIndex).toggle(languages.length != usedLanguages.length);
     }
 
     function updateRemoveButtonVisibility() {
-        var contentBlocks = $('#news-content-editor > .l-news-content-block');
+        const contentBlocks = $('#news-content-editor > .l-news-content-block');
         $("button[id^='add-news-']").hide();
-        var firstContentBlockIndex = $(contentBlocks).first().find("input[name='index']").val();
-
-        if (contentBlocks.length == 1) {
-            $("#delete-news-" + firstContentBlockIndex).hide();
-        } else {
-            $("#delete-news-" + firstContentBlockIndex).show();
-        }
+        const firstContentBlockIndex = $(contentBlocks).first().data('index');
+        $("#delete-news-" + firstContentBlockIndex).toggle(contentBlocks.length != 1);
     }
 
     function refreshDropDownLanguages() {

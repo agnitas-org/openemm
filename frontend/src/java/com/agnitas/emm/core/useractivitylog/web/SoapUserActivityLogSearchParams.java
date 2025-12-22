@@ -41,10 +41,4 @@ public class SoapUserActivityLogSearchParams extends UserActivityLogSearchParams
         restfulFilter.setIpAddress(this.ipAddress);
     }
 
-    @Override
-    public void resetParams() {
-        super.resetParams();
-        this.endpoint = null;
-        this.ipAddress = null;
-    }
 }

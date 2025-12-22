@@ -116,7 +116,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             return profileFieldDao.saveProfileField(field, admin);
         } catch (Exception e) {
             logger.error("Something went wrong when tried to save new field", e);
-
             return false;
         }
     }

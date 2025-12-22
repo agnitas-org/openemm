@@ -12,32 +12,32 @@ package com.agnitas.beans.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingComponentType;
+import com.agnitas.util.ImageUtils;
 import com.agnitas.util.NetworkUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.jakartaee.commons.io.IOUtils;
 
-import com.agnitas.util.ImageUtils;
-
 public class MailingComponentImpl implements MailingComponent {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger( MailingComponentImpl.class);
+	private static final Logger logger = LogManager.getLogger( MailingComponentImpl.class);
 
 	/** Maximum length of component name. Must match column size in database. */
 	public static final int COMPONENT_NAME_MAX_LENGTH = 500;
@@ -116,12 +116,7 @@ public class MailingComponentImpl implements MailingComponent {
 
     @Override
 	public String getComponentNameUrlEncoded() {
-        try {
-            return URLEncoder.encode(getComponentName(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-            return getComponentName();
-        }
+		return URLEncoder.encode(getComponentName(), StandardCharsets.UTF_8);
     }
 
 	@Override
@@ -201,28 +196,28 @@ public class MailingComponentImpl implements MailingComponent {
 		
 		final RequestConfig.Builder requestConfigBuilder = RequestConfig
 				.custom()
-				.setConnectTimeout(5000);
+				.setConnectionRequestTimeout(5000, TimeUnit.MILLISECONDS);
 		
 		final HttpClientBuilder httpClientBuilder = HttpClients.custom()
 				.setDefaultRequestConfig(requestConfigBuilder.build());
 		
-		try(final CloseableHttpClient httpClient = httpClientBuilder.build()) {
+		try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
 			final HttpGet request = new HttpGet(encodedURI);
 			
 			NetworkUtil.setHttpClientProxyFromSystem(request, encodedURI);
 			request.setHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36");	// TODO Use configured user agent
 			
-			try(final CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-				final int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
+			try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+				int httpStatusCode = httpResponse.getCode();
 				
 				if(httpStatusCode == HttpStatus.SC_OK) {
-					final org.apache.http.Header contentTypeHeader = httpResponse.getFirstHeader("Content-Type");
+					final Header contentTypeHeader = httpResponse.getFirstHeader("Content-Type");
 					final String contentTypeValue = contentTypeHeader != null ? contentTypeHeader.getValue() : "";
 					
 					final HttpEntity responseEntity = httpResponse.getEntity();
 					
-					try(final InputStream in = responseEntity.getContent()) {
-						try(final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+					try (InputStream in = responseEntity.getContent()) {
+						try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 							IOUtils.copy(in, out);
 
 							setBinaryBlock(out.toByteArray(), contentTypeValue);

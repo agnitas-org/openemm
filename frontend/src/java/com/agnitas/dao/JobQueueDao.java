@@ -19,6 +19,9 @@ import java.util.Map;
 
 public interface JobQueueDao {
 
+	// TODO: GWUA-6469: Remove after removing 'development.jobworker.useAnnotation' config value
+	List<JobDto> readUpcomingJobsForExecutionByRunClass();
+
 	List<JobDto> readUpcomingJobsForExecution();
 
     List<JobDto> getJobsWithLostNextStart();
@@ -30,25 +33,25 @@ public interface JobQueueDao {
 	boolean initJobStart(int id, Date nextStart);
 
 	boolean initJobStart(int id, Date nextStart, boolean manuallyOverride);
-	
-	int resetJobsForCurrentHost();
+
+	void resetJobsForCurrentHost();
 	
 	/**
 	 * Update the jobs status only and ignore the parameters
 	 */
 	boolean updateJob(JobDto job);
 	
-	boolean deleteJob(int id);
-	
 	List<JobDto> selectErroneousJobs();
 	
 	List<JobDto> getOverview(JobQueueOverviewFilter filter);
+
 	int getCountForOverview();
+
 	List<JobDto> getAllActiveJobs();
 
 	List<JobDto> getHangingJobs(Date timeLimit);
 	
-	void writeJobResult(int job_id, Date time, String result, int durationInSeconds, String hostname);
+	void writeJobResult(int jobId, Date time, String result, int durationInSeconds, String hostname);
 	
 	boolean updateJobStatus(JobDto job);
 
@@ -56,7 +59,7 @@ public interface JobQueueDao {
 
 	void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue);
 
-	List<Map<String, Object>> getLastJobResults(int job_id);
+	List<Map<String, Object>> getLastJobResults(int jobId);
 
 	List<JobDto> selectCriticalErroneousJobs();
 }

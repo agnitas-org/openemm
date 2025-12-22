@@ -10,24 +10,21 @@
 
 package com.agnitas.emm.core.fullview;
 
+import java.io.PrintWriter;
+
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.web.perm.annotations.Anonymous;
-import jakarta.servlet.http.HttpServletResponse;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import com.agnitas.preview.Page;
 import com.agnitas.preview.Preview;
 import com.agnitas.preview.PreviewFactory;
+import com.agnitas.web.perm.annotations.Anonymous;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.io.PrintWriter;
 
 @Controller
 @Anonymous
@@ -49,7 +46,7 @@ public class FullviewController {
     public void view(@RequestParam("agnUID") String uid, HttpServletResponse response) throws Exception {
         response.setContentType("text/html");
 
-        ExtensibleUID extensibleUID = decodeUidString(uid);
+        ExtensibleUID extensibleUID = extensibleUIDService.parse(uid);
         int mailingID = extensibleUID.getMailingID();
         int customerID = extensibleUID.getCustomerID();
 
@@ -66,23 +63,4 @@ public class FullviewController {
         }
     }
 
-    private ExtensibleUID decodeUidString(String uidString) {
-        try {
-            return extensibleUIDService.parse(uidString);
-        } catch (DeprecatedUIDVersionException e) {
-            logInfo(String.format("Deprecated UID version of UID: %s", uidString), e);
-        } catch (UIDParseException e) {
-            logInfo(String.format("Error parsing UID: %s", uidString), e);
-        } catch (InvalidUIDException e) {
-            logInfo(String.format("Invalid UID: %s", uidString), e);
-        }
-
-        return null;
-    }
-
-    private void logInfo(String message, Exception cause) {
-        if (logger.isInfoEnabled()) {
-            logger.info(message, cause);
-        }
-    }
 }

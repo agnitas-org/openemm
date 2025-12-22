@@ -16,8 +16,8 @@ import java.util.Objects;
 
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.TrackableLink;
@@ -90,7 +90,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 				
 				final int trackedRecipientID = (trackingLevel == TrackingLevel.ANONYMOUS) ? 0 : uid.getCustomerID();
 				
-				final boolean result = trackableLinkDao.logClickInDB(link, trackedRecipientID, ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress), deviceClass, deviceID, clientID);
+				final boolean result = trackableLinkDao.logClickInDB(link, trackedRecipientID, ((trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress), deviceClass, deviceID, clientID, uid.getPosition());
 					
 				if(!result) {
 					logger.warn(String.format("Could not track click on link %d for customer %d (company ID %d)", uid.getUrlID(), uid.getCustomerID(), uid.getCompanyID()));

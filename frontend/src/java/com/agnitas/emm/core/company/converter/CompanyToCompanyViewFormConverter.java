@@ -10,7 +10,15 @@
 
 package com.agnitas.emm.core.company.converter;
 
+import static com.agnitas.util.AgnUtils.unescapeForRFC5322;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import com.agnitas.beans.Company;
+import com.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
@@ -18,20 +26,12 @@ import com.agnitas.emm.core.company.form.CompanyViewForm;
 import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
 import com.agnitas.emm.core.components.entity.TestRunOption;
 import com.agnitas.post.PostalField;
-import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-
-import static com.agnitas.util.AgnUtils.unescapeForRFC5322;
 
 @Component
 public class CompanyToCompanyViewFormConverter implements Converter<Company, CompanyViewForm> {
@@ -69,6 +69,7 @@ public class CompanyToCompanyViewFormConverter implements Converter<Company, Com
         settingsDto.setHasExtendedSalutation(BooleanUtils.toBoolean(company.getSalutationExtended()));
         settingsDto.setExecutiveAdministrator(company.getStatAdmin());
         settingsDto.setTechnicalContacts(company.getContactTech());
+        settingsDto.setSystemMessageEmails(company.getSystemMessageEmails());
 
         // todo: check is it necessary. the reason is: company.getLocaleLanguage()
         String localeLanguage = configService.getValue(ConfigValue.LocaleLanguage, company.getId());
@@ -107,6 +108,7 @@ public class CompanyToCompanyViewFormConverter implements Converter<Company, Com
 
         settingsDto.setSendPasswordChangedNotification(configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, company.getId()));
         settingsDto.setSendEncryptedMailings(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, company.getId()));
+        settingsDto.setEnableHoneypotIntermediatePage(configService.getBooleanValue(ConfigValue.Honeypot.EnableIntermediatePage, company.getId()));
 
         settingsDto.setDefaultLinkExtension(configService.getValue(ConfigValue.DefaultLinkExtension, company.getId()));
         settingsDto.setLinkcheckerLinktimeout(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout, company.getId()));
@@ -155,6 +157,10 @@ public class CompanyToCompanyViewFormConverter implements Converter<Company, Com
         executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkToAdmin, company.getId(), val -> settingsDto.setAdminMailToAddressMark(unescapeForRFC5322(val)));
         executeIfNotDefaultValueSet(ConfigValue.Backend_AdminTestMarkToTest, company.getId(), val -> settingsDto.setTestMailToAddressMark(unescapeForRFC5322(val)));
         settingsDto.setResponseInboxEnabled(configService.getBooleanValue(ConfigValue.EnableResponseInbox, company.getId()));
+        settingsDto.setVouchersMandatory(configService.getBooleanValue(ConfigValue.Voucher.Vouchers_Mandatory, company.getId()));
+        settingsDto.setVoucherEnableReport(configService.getBooleanValue(ConfigValue.Voucher.ReportEnable, company.getId()));
+        settingsDto.setVoucherCcReportEmails(configService.getValue(ConfigValue.Voucher.ReportCc, company.getId()));
+        settingsDto.setVoucherBccReportEmails(configService.getValue(ConfigValue.Voucher.ReportBcc, company.getId()));
 
         return settingsDto;
     }

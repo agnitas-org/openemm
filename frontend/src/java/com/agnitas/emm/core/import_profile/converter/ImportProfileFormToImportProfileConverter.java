@@ -10,21 +10,19 @@
 
 package com.agnitas.emm.core.import_profile.converter;
 
-import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.beans.ImportProfile;
-import com.agnitas.beans.impl.ImportProfileImpl;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.impl.ImportProfileImpl;
+import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
+import com.agnitas.util.importvalues.CheckForDuplicates;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ImportProfileFormToImportProfileConverter implements Converter<ImportProfileForm, ImportProfile> {
@@ -40,7 +38,7 @@ public class ImportProfileFormToImportProfileConverter implements Converter<Impo
         importProfile.setNoHeaders(form.isNoHeaders());
         importProfile.setZipPassword(form.getZipPassword());
         importProfile.setFirstKeyColumn(form.getFirstKeyColumn());
-        importProfile.setCheckForDuplicates(form.getCheckForDuplicates());
+        importProfile.setCheckForDuplicates(form.isShouldCheckForDuplicates() ? CheckForDuplicates.COMPLETE.getIntValue() : CheckForDuplicates.NO_CHECK.getIntValue());
         importProfile.setUpdateAllDuplicates(form.isUpdateAllDuplicates());
         importProfile.setDefaultMailType(form.getDefaultMailType());
         importProfile.setImportProcessActionID(form.getImportProcessActionID());
@@ -62,17 +60,10 @@ public class ImportProfileFormToImportProfileConverter implements Converter<Impo
         importProfile.setMailinglistsAll(form.isMailinglistsAll());
         importProfile.setImportMode(form.getImportMode());
         importProfile.setDecimalSeparator(form.getDecimalSeparator());
-        importProfile.setMediatypes(getMediatypes(form));
         importProfile.setGenderMapping(getGenderMappings(form));
+        importProfile.setMediatypes(form.getSelectedMediatypes());
 
         return importProfile;
-    }
-
-    private Set<MediaTypes> getMediatypes(ImportProfileForm form) {
-        return form.getMediatype().entrySet().stream()
-                .filter(e -> "true".equals(e.getValue()))
-                .map(e -> MediaTypes.getMediaTypeForCode(e.getKey()))
-                .collect(Collectors.toSet());
     }
 
     private Map<String, Integer> getGenderMappings(ImportProfileForm form) {

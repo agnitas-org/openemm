@@ -16,29 +16,27 @@ import java.util.Base64;
 import java.util.Objects;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.MailingComponentImpl;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.components.exception.ComponentMaximumSizeExceededException;
 import com.agnitas.emm.core.components.service.ComponentService;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.service.MimeTypeService;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.impl.MailingComponentImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.component.service.ComponentMaximumSizeExceededException;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.AddMailingImageRequest;
 import com.agnitas.emm.springws.jaxb.AddMailingImageResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
+import com.agnitas.service.MimeTypeService;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -47,20 +45,26 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 @Endpoint
 public class AddMailingImageEndpoint extends BaseEndpoint {
-	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
-	private final ThumbnailService thumbnailService;
-    private ComponentService componentService;
-    private TrackableLinkDao trackableLinkDao;
-    private MailingDao mailingDao;
-    private  MimeTypeService mimeTypeService;
-    private ConfigService configService;
-    private SecurityContextAccess securityContextAccess;
-    private MailingComponentDao mailingComponentDao;
+    private final ThumbnailService thumbnailService;
+    private final ComponentService componentService;
+    private final TrackableLinkDao trackableLinkDao;
+    private final MailingDao mailingDao;
+    private final MimeTypeService mimeTypeService;
+    private final ConfigService configService;
+    private final SecurityContextAccess securityContextAccess;
+    private final MailingComponentDao mailingComponentDao;
 
-    public AddMailingImageEndpoint(@Qualifier("componentService") ComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final MailingComponentDao mailingComponentDao) {
+    public AddMailingImageEndpoint(
+            @Qualifier("componentService") ComponentService componentService,
+            TrackableLinkDao trackableLinkDao,
+            MailingDao mailingDao,
+            MimeTypeService mimeTypeService,
+            ConfigService configService,
+            ThumbnailService thumbnailService,
+            SecurityContextAccess securityContextAccess,
+            MailingComponentDao mailingComponentDao
+    ) {
         this.componentService = Objects.requireNonNull(componentService, "componentService");
         this.trackableLinkDao = Objects.requireNonNull(trackableLinkDao, "trackableLinkDao");
         this.mailingDao = Objects.requireNonNull(mailingDao, "mailingDao");
@@ -75,7 +79,6 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     public @ResponsePayload AddMailingImageResponse addMailingImage(@RequestPayload AddMailingImageRequest request) {
     	final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
     	
-
         validateParameters(request);
 
         final MailingComponent component = new MailingComponentImpl();
@@ -101,12 +104,8 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         		? addOrReplaceComponent(component)
         		: componentService.addMailingComponent(component);
         
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getMailingID());
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", request.getMailingID()), e);
-		}
-        
+        thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, request.getMailingID());
+
 		final AddMailingImageResponse res = new AddMailingImageResponse();
         res.setID(imageComponentId);
         
@@ -168,4 +167,5 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     private boolean isValidMandatoryFields(String content, String filename) {
         return StringUtils.isNotBlank(content) && StringUtils.isNotBlank(filename);
     }
+
 }

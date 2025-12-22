@@ -12,31 +12,20 @@ package com.agnitas.emm.core.recipient.converter;
 
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.emm.common.UserStatus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.dto.RecipientBindingDto;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipient.dto.RecipientBindingDto;
-
 @Component
 public class BindingEntryToRecipientBindingDtoConverter implements Converter<BindingEntry, RecipientBindingDto> {
-
-    private static final Logger logger = LogManager.getLogger(BindingEntryToRecipientBindingDtoConverter.class);
 
     @Override
     public RecipientBindingDto convert(BindingEntry bindingEntry) {
         RecipientBindingDto dto = new RecipientBindingDto(MediaTypes.getMediaTypeForCode(bindingEntry.getMediaType()));
         dto.setMailinglistId(bindingEntry.getMailinglistID());
 
-        UserStatus userStatus = null;
-        try {
-             userStatus = UserStatus.getUserStatusByID(bindingEntry.getUserStatus());
-        } catch (Exception e) {
-            logger.warn("Incorrect user status code: " + bindingEntry.getUserStatus());
-        }
-        dto.setStatus(userStatus);
+        dto.setStatus(UserStatus.getByCode(bindingEntry.getUserStatus()));
         dto.setUserType(bindingEntry.getUserType());
 
         dto.setUserRemark(bindingEntry.getUserRemark());

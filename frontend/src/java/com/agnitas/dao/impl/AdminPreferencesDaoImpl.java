@@ -14,6 +14,7 @@ import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.impl.AdminPreferencesImpl;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
 import com.agnitas.util.preferences.PreferenceItem;
 import org.springframework.dao.DataAccessException;
 
@@ -37,6 +38,7 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
     private static final String PREFERENCE_MAILING_LIVE_PREVIEW = "mailing.livepreview"; //Live Preview
     private static final String PREFERENCE_MAILING_SETTINGS = "mailing.settings";        //Mailing settings
     private static final String PREFERENCE_STATISTIC_LOADTYPE = "statistic.loadtype";    //Statistic-Summary
+    private static final String PREFERENCE_MAILING_SETTINGS_VIEW_TYPE = "mailing.settings.view.type";
 
     //SQL requests
     private static final String DELETE_PREFERENCES_BY_ADMIN_ID = "DELETE FROM " + TABLE + " WHERE " + FIELD_ADMIN_ID + " = ?";
@@ -65,6 +67,8 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_MAILING_LIVE_PREVIEW)) : PreferenceItem.MAILING_LIVE_PREVIEW.getDefaultValue();
                 int prefMailingSettings = adminPreferencesMap.get(PREFERENCE_MAILING_SETTINGS) != null ?
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_MAILING_SETTINGS)) : PreferenceItem.MAILING_SETTINGS.getDefaultValue();
+                int prefMailingSettingsViewType = adminPreferencesMap.get(PREFERENCE_MAILING_SETTINGS_VIEW_TYPE) != null ?
+                        Integer.parseInt(adminPreferencesMap.get(PREFERENCE_MAILING_SETTINGS_VIEW_TYPE)) : PreferenceItem.MAILING_SETTINGS_VIEW_TYPE.getDefaultValue();
                 int prefContentBlocks = adminPreferencesMap.get(PREFERENCE_CONTENTBLOCKS) != null ?
                         Integer.parseInt(adminPreferencesMap.get(PREFERENCE_CONTENTBLOCKS)) : PreferenceItem.CONTENTBLOCKS.getDefaultValue();
                 int statisticLoadType = adminPreferencesMap.get(PREFERENCE_STATISTIC_LOADTYPE) != null ?
@@ -73,6 +77,7 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
                 adminPreferences.setDashboardMailingsView(prefDashboardMailing);
                 adminPreferences.setLivePreviewPosition(prefMailingLivePreview);
                 adminPreferences.setMailingSettingsView(prefMailingSettings);
+                adminPreferences.setMailingSettingsViewType(MailingSettingsViewType.from(prefMailingSettingsViewType));
                 adminPreferences.setMailingContentView(prefContentBlocks);
                 adminPreferences.setStatisticLoadType(statisticLoadType);
 
@@ -85,7 +90,7 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
                 adminPreferences.setMailingSettingsView(PreferenceItem.MAILING_SETTINGS.getDefaultValue());
                 adminPreferences.setMailingContentView(PreferenceItem.CONTENTBLOCKS.getDefaultValue());
                 adminPreferences.setStatisticLoadType(PreferenceItem.STATISTIC_LOADTYPE.getDefaultValue());
-
+                adminPreferences.setMailingSettingsViewType(MailingSettingsViewType.from(PreferenceItem.MAILING_SETTINGS_VIEW_TYPE.getDefaultValue()));
                 return adminPreferences;
             }
         } catch (DataAccessException | NumberFormatException e) {
@@ -126,7 +131,8 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
         touchedLines += update(INSERT, adminId, PREFERENCE_CONTENTBLOCKS, adminPreferences.getMailingContentView());
         touchedLines += update(INSERT, adminId, PREFERENCE_MAILING_SETTINGS, adminPreferences.getMailingSettingsView());
         touchedLines += update(INSERT, adminId, PREFERENCE_STATISTIC_LOADTYPE, adminPreferences.getStatisticLoadType());
-        
+        touchedLines += update(INSERT, adminId, PREFERENCE_MAILING_SETTINGS_VIEW_TYPE, adminPreferences.getMailingSettingsViewType().getId());
+
         return touchedLines;
     }
 }

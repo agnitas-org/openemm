@@ -21,6 +21,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.ecs.EcsPreviewSize;
 import com.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import com.agnitas.ecs.service.EcsService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -37,10 +38,9 @@ import com.agnitas.util.UserActivityUtil;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
@@ -56,7 +56,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 
 @Controller
-@PermissionMapping("heatmap")
+@RequiredPermission("stats.ecs")
 public class EcsHeatmapController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(EcsHeatmapController.class);
@@ -111,11 +111,8 @@ public class EcsHeatmapController implements XssCheckAware {
         model.addAttribute("mailing", mailingBaseService.getMailing(companyId, mailingId));
         model.addAttribute("previewWidth", DeviceClass.getPreviewSizeByDeviceType(form.getDeviceType()).getWidth());
         model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
-
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, companyId));
-            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailingBaseService.getMailinglistId(mailingId, companyId)));
-        }
+        model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, companyId));
+        model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailingBaseService.getMailinglistId(mailingId, companyId)));
 
         writeUserActivityLog(admin, new UserAction("view ecs", "active tab - heatmap"));
         return "ecs_view";
@@ -143,7 +140,7 @@ public class EcsHeatmapController implements XssCheckAware {
     }
 
     @PostMapping("/mailing/{mailingId:\\d+}/heatmap/export.action")
-    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) throws Exception {
+    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) {
         String mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
         String previewHeatmapUrl = getHeatmapPreviewUrl(mailingId, form);
         File file = ecsService.generatePDF(admin, previewHeatmapUrl, mailingName);
@@ -165,7 +162,7 @@ public class EcsHeatmapController implements XssCheckAware {
         int previewSize = DeviceClass.getPreviewSizeByDeviceType(form.getDeviceType()).getId();
         return String.format("%s/mailing/%d/heatmap/preview.action;jsessionid=%s?" +
                         "recipientId=%d&viewMode=%d&deviceType=%d&previewSize=%d",
-                StringUtils.removeEnd(configService.getValue(ConfigValue.SystemUrl), "/"),
+                Strings.CS.removeEnd(configService.getPreviewBaseUrl(), "/"),
                 mailingId,
                 sessionId,
                 form.getRecipientId(),
@@ -208,4 +205,5 @@ public class EcsHeatmapController implements XssCheckAware {
     private void writeUserActivityLog(Admin admin, UserAction userAction) {
         UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
     }
+
 }

@@ -47,7 +47,7 @@ import com.agnitas.util.LinkUtils;
 
 public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
-	private static final transient Logger logger = LogManager.getLogger(FormTrackableLinkServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(FormTrackableLinkServiceImpl.class);
 
 	private FormTrackableLinkDao trackableLinkDao;
 	private LinkService linkService;
@@ -175,8 +175,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		return true;
 	}
 
-	private List<TrackableUserFormLink> getValidTrackableLinks(Admin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
-            throws Exception {
+	private List<TrackableUserFormLink> getValidTrackableLinks(Admin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, List<Message> warnings) {
         int companyId = admin.getCompanyID();
         LinkService.LinkScanResult successSettingsLinkResult = validateLinks(userFormDto.getSuccessSettings(), admin, errors, warnings);
         LinkService.LinkScanResult errorSettingsLinkResult = validateLinks(userFormDto.getErrorSettings(), admin, errors, warnings);
@@ -210,7 +209,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
         return userFormLinks;
     }
 
-    private LinkService.LinkScanResult validateLinks(ResultSettings settings, Admin admin, List<Message> errors, List<Message> warnings) throws Exception {
+    private LinkService.LinkScanResult validateLinks(ResultSettings settings, Admin admin, List<Message> errors, List<Message> warnings) {
 		String type = settings.isSuccess() ? "SUCCESS" : "ERROR";
 		LinkService.LinkScanResult links = linkService.scanForLinks(settings.getTemplate(), admin.getCompanyID());
 

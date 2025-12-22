@@ -10,6 +10,6 @@
 
 package com.agnitas.web.perm.exceptions;
 
-public class AuthorizationException extends Exception {
+public class AuthorizationException extends RuntimeException {
 	private static final long serialVersionUID = 9161958671695670618L;
 }

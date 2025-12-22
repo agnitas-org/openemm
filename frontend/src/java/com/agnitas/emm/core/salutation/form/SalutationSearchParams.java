@@ -36,14 +36,4 @@ public class SalutationSearchParams extends SalutationOverviewFilter implements 
         form.setGender5(this.getGender5());
     }
 
-    @Override
-    public void resetParams() {
-        this.setSalutationId(0);
-        this.setName("");
-        this.setGender0("");
-        this.setGender1("");
-        this.setGender2("");
-        this.setGender4("");
-        this.setGender5("");
-    }
 }

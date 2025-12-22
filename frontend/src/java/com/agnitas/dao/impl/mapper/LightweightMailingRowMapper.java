@@ -13,11 +13,10 @@ package com.agnitas.dao.impl.mapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * {@link RowMapper} for {@link LightweightMailing}.
@@ -42,18 +41,12 @@ public class LightweightMailingRowMapper implements RowMapper<LightweightMailing
 		final int mailingID = resultSet.getInt("mailing_id");
 		final String shortname = resultSet.getString("shortname") != null ? resultSet.getString("shortname") : "";
 		final String description = resultSet.getString("description") != null ? resultSet.getString("description") : "";
-		MailingType mailingType;
-		try {
-			mailingType = MailingType.fromCode(resultSet.getInt("mailing_type"));
-		} catch (Exception e) {
-			throw new SQLException("Invalid mailingtype code: " + resultSet.getInt("mailing_type"));
-		}
+		final MailingType mailingType = MailingType.getByCode(resultSet.getInt("mailing_type"));
 		final String workStatus = resultSet.getString("work_status");
 		final String contentTypeString = resultSet.getString("content_type");
 		
 		final MailingContentType contentType = decodeContentType(contentTypeString);
-		
-		
+
 		return new LightweightMailing(companyID, mailingID, shortname, description, mailingType, workStatus, contentType);
 	}
 

@@ -18,8 +18,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +26,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -40,17 +41,12 @@ import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.WorkflowDao;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.PredicateUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,12 +56,6 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
     protected TargetService targetService;
     protected ConfigService configService;
 
-    @Override
-    public boolean exists(int workflowId, int companyId) {
-        String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
-        return selectInt(sqlGetCount, workflowId, companyId) > 0;
-    }
-
 	@Override
 	public Workflow getWorkflow(int workflowId, int companyId) {
         return selectObjectDefaultNull("SELECT * FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", new WorkflowRowMapper(), workflowId, companyId);
@@ -74,19 +64,13 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 	@Override
     public String getSchema(int workflowId, int companyId) {
 	    String sqlGetSchema = "SELECT workflow_schema FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
-	    return selectObjectDefaultNull(sqlGetSchema, StringRowMapper.INSTANCE, workflowId, companyId);
+	    return selectStringDefaultNull(sqlGetSchema, workflowId, companyId);
     }
 
     @Override
     public String getSchema(int workflowId) {
         String sqlGetSchema = "SELECT workflow_schema FROM workflow_tbl WHERE workflow_id = ?";
         return selectStringDefaultNull(sqlGetSchema, workflowId);
-    }
-
-    @Override
-    public boolean setSchema(String schema, int workflowId, int companyId) {
-        String sqlSetSchema = "UPDATE workflow_tbl SET workflow_schema = ? WHERE workflow_id = ? AND company_id = ?";
-        return update(sqlSetSchema, Objects.requireNonNull(schema, "schema == null"), workflowId, companyId) > 0;
     }
 
     @Transactional
@@ -101,8 +85,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                 undoId, workflowId, companyId);
     }
 
-    @Override
-    public int insertUndoEntry(Workflow workflow, int adminId) {
+    private int insertUndoEntry(Workflow workflow, int adminId) {
         List<Object> params = new ArrayList<>(List.of(
                 workflow.getWorkflowId(),
                 adminId,
@@ -118,7 +101,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                     "VALUES (?, ?, ?, ?, ?)", params.toArray());
             return newUndoId;
         } else {
-            return insertIntoAutoincrementMysqlTable("undo_id", "INSERT INTO undo_workflow_tbl " +
+            return insert("undo_id", "INSERT INTO undo_workflow_tbl " +
                     "(workflow_id, admin_id, company_id, workflow_schema) " +
                     "VALUES (?, ?, ?, ?)", params.toArray());
         }
@@ -155,11 +138,10 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 
         String subQuery = "SELECT wf.workflow_id, wf.shortname, wf.general_start_date, wf.actual_end_date, wf.end_type, " +
                 " CASE " + buildSqlWithStatusConditions() + " END AS status FROM workflow_tbl wf " +
-                " WHERE wf.company_id = ? AND wf.is_inner = 0 AND " + makeBulkInClauseForInteger("wf.status", necessaryWorkflowStatuses);
+                " WHERE wf.company_id = ? AND " + makeBulkInClauseForInteger("wf.status", necessaryWorkflowStatuses);
 
         parameters.add(admin.getCompanyID());
-        subQuery += getDisabledMailingListsSqlRestriction(admin, parameters);
-        subQuery += getWorkflowOverviewAdditionalRestrictions(admin, parameters);
+        subQuery += getAdminRestrictions(admin, parameters);
 
         String query = String.format(
                 "SELECT workflow_id, shortname, status, general_start_date, actual_end_date, end_type FROM (%s) %s ORDER BY status ASC, general_start_date DESC ",
@@ -210,15 +192,14 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
         deleteUndoEntry(pauseUndoId, companyId);
     }
 
+    private void deleteUndoEntry(int undoId, int companyId) {
+        update("DELETE FROM undo_workflow_tbl WHERE undo_id = ? AND company_id = ?", undoId, companyId);
+    }
+
     @Override
     public void setActualEndDate(int workflowId, Date date, int companyId) {
         String query = "UPDATE workflow_tbl SET actual_end_date = ? WHERE workflow_id = ? AND company_id = ?";
         update(query, date, workflowId, companyId);
-    }
-
-    @Override
-    public void deleteUndoEntry(int undoId, int companyId) {
-        update("DELETE FROM undo_workflow_tbl WHERE undo_id = ? AND company_id = ?", undoId, companyId);
     }
 
     @Override
@@ -237,7 +218,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteWorkflow(int companyId) {
+    public void deleteWorkflows(int companyId) {
         update("UPDATE workflow_tbl SET pause_undo_id = NULL WHERE company_id = ?", companyId);
         update("DELETE FROM undo_workflow_tbl WHERE company_id = ?", companyId);
         update("DELETE FROM workflow_tbl WHERE company_id = ?", companyId);
@@ -246,28 +227,13 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
     @Override
 	@DaoUpdateReturnValueCheck
 	public boolean updateWorkflow(Workflow workflow) {
-        String updateStatement = "UPDATE workflow_tbl SET " +
-                "shortname = ?, " +
-                "description = ?, " +
-                "status = ?, " +
-                "editor_position_left = ?, " +
-                "editor_position_top = ?, " +
-                "is_inner = ?, " +
-                "general_start_date = ?, " +
-                "general_end_date = ?, " +
-                "end_type = ?, " +
-                "general_start_reaction = ?, " +
-                "general_start_event = ?, " +
-                "created = ?, " +
-                "workflow_schema = ? " +
-                "WHERE workflow_id = ? AND company_id = ?";
+        String updateStatement = "UPDATE workflow_tbl SET shortname = ?, description = ?, status = ?, " +
+                "general_start_date = ?, general_end_date = ?, end_type = ?, general_start_reaction = ?, " +
+                "general_start_event = ?, created = ?, workflow_schema = ? WHERE workflow_id = ? AND company_id = ?";
 
         int rows = update(updateStatement, workflow.getShortname(),
                 workflow.getDescription(),
                 workflow.getStatus().getId(),
-                workflow.getEditorPositionLeft(),
-                workflow.getEditorPositionTop(),
-                BooleanUtils.toInteger(workflow.isInner()),
                 workflow.getGeneralStartDate(),
                 workflow.getGeneralEndDate(),
                 workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
@@ -287,21 +253,10 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 	    String insertStatement;
 		int newId;
 		if (isOracleDB()) {
-		    insertStatement ="INSERT INTO workflow_tbl (" +
-                    "workflow_id, " +
-                    "company_id, " +
-                    "shortname, " +
-                    "description, " +
-                    "status, " +
-                    "editor_position_left, " +
-                    "editor_position_top, " +
-                    "is_inner, " +
-                    "general_start_date, " +
-                    "general_end_date, " +
-                    "end_type, " +
-                    "general_start_reaction, " +
-                    "general_start_event, " +
-                    "workflow_schema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		    insertStatement = "INSERT INTO workflow_tbl (" +
+                    "workflow_id, company_id, shortname, description, status, general_start_date, " +
+                    "general_end_date, end_type, general_start_reaction, general_start_event, workflow_schema) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			newId = selectInt("SELECT workflow_tbl_seq.NEXTVAL FROM dual");
             int affectedRows = update(insertStatement,
                     newId,
@@ -309,9 +264,6 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                     workflow.getShortname(),
                     workflow.getDescription(),
                     workflow.getStatus().getId(),
-                    workflow.getEditorPositionLeft(),
-                    workflow.getEditorPositionTop(),
-                    BooleanUtils.toInteger(workflow.isInner()),
                     workflow.getGeneralStartDate(),
                     workflow.getGeneralEndDate(),
                     workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
@@ -319,35 +271,21 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                     workflow.getGeneralStartEvent() == null ? 0 : workflow.getGeneralStartEvent().getId(),
                     workflow.getWorkflowSchema());
             if (affectedRows == 0) {
-                throw new RuntimeException();
+                throw new IllegalStateException();
             }
             workflow.setWorkflowId(newId);
         } else {
             insertStatement = "INSERT INTO workflow_tbl (" +
-                    "company_id, " +
-                    "shortname, " +
-                    "description, " +
-                    "status, " +
-                    "editor_position_left, " +
-                    "editor_position_top, " +
-                    "is_inner, " +
-                    "general_start_date, " +
-                    "general_end_date, " +
-                    "end_type, " +
-                    "general_start_reaction, " +
-                    "general_start_event, " +
-                    "created, " +
-                    "workflow_schema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "company_id, shortname, description, status, general_start_date, general_end_date, " +
+                    "end_type, general_start_reaction, general_start_event, created, workflow_schema) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             int generatedId =
-                    insertIntoAutoincrementMysqlTable("workflow_id", insertStatement,
+                    insert("workflow_id", insertStatement,
                             workflow.getCompanyId(),
                             workflow.getShortname(),
                             workflow.getDescription(),
                             workflow.getStatus().getId(),
-                            workflow.getEditorPositionLeft(),
-                            workflow.getEditorPositionTop(),
-                            BooleanUtils.toInteger(workflow.isInner()),
                             workflow.getGeneralStartDate(),
                             workflow.getGeneralEndDate(),
                             workflow.getEndType() == null ? 0 : workflow.getEndType().getId(),
@@ -357,7 +295,7 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
                             workflow.getWorkflowSchema()
                             );
             if (generatedId == 0) {
-                throw new RuntimeException();
+                throw new IllegalStateException();
             }
             workflow.setWorkflowId(generatedId);
 		}
@@ -463,24 +401,22 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
     @Override
     public List<Workflow> getWorkflowsOverview(Admin admin) {
         List<Object> parameters = new ArrayList<>();
-		String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
-				" wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
+		String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status," +
+				" wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
 				" wf.general_start_event, wf.workflow_schema FROM workflow_tbl wf" +
-				" WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
+				" WHERE wf.company_id = ? ";
 		parameters.add(admin.getCompanyID());
 
-        query += getDisabledMailingListsSqlRestriction(admin, parameters);
-        query += getWorkflowOverviewAdditionalRestrictions(admin, parameters);
+        query += getAdminRestrictions(admin, parameters);
 
 		query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
 				" CASE WHEN  wf.status = 2 OR  wf.status = 3 OR  wf.status = 4 THEN  wf.general_start_date WHEN  wf.status = 1 THEN  wf.created END DESC";
 
-
 		return select(query, new WorkflowRowMapper(), parameters.toArray());
     }
 
-    protected String getWorkflowOverviewAdditionalRestrictions(Admin admin, List<Object> params) {
-        return StringUtils.EMPTY;
+    protected String getAdminRestrictions(Admin admin, List<Object> params) {
+        return getDisabledMailingListsSqlRestriction(admin, params);
     }
 
     @Override
@@ -545,16 +481,6 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
             throw new IllegalStateException("Unable to get the undo entry of a paused workflow");
         }
         return selectInt("SELECT admin_id FROM undo_workflow_tbl WHERE undo_id = ?", pauseUndoId);
-    }
-
-    @Override
-    public List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId) {
-        if (workflowIds == null || workflowIds.size() <= 0) {
-            return new LinkedList<>();
-        }
-        String workflowIdsStr = StringUtils.join(new LinkedHashSet<>(workflowIds).toArray(), ", ");
-        String sql = "SELECT * FROM workflow_tbl WHERE company_id = ? AND workflow_id in (" + workflowIdsStr + ") AND is_inner = 0";
-        return select(sql, new WorkflowRowMapper(), companyId);
     }
 
     @Override
@@ -757,9 +683,6 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 			workflow.setShortname(resultSet.getString("shortname"));
 			workflow.setDescription(resultSet.getString("description"));
 			workflow.setStatus(WorkflowStatus.fromId(resultSet.getBigDecimal("status").intValue(), false));
-            workflow.setEditorPositionLeft(resultSet.getBigDecimal("editor_position_left").intValue());
-            workflow.setEditorPositionTop(resultSet.getBigDecimal("editor_position_top").intValue());
-			workflow.setInner(resultSet.getBigDecimal("is_inner").intValue() == 1);
             workflow.setGeneralStartDate(resultSet.getTimestamp("general_start_date"));
             workflow.setGeneralEndDate(resultSet.getTimestamp("general_end_date"));
             workflow.setEndType(WorkflowStop.WorkflowEndType.fromId(resultSet.getInt("end_type")));
@@ -774,16 +697,14 @@ public class WorkflowDaoImpl extends BaseDaoImpl implements WorkflowDao {
 
         @Override
         public DashboardWorkflow mapRow(ResultSet rs, int rowNum) throws SQLException {
-            final DashboardWorkflow workflow = new DashboardWorkflow();
-
-            workflow.setId(rs.getBigDecimal("workflow_id").intValue());
-            workflow.setName(rs.getString("shortname"));
-            workflow.setStatus(DashboardWorkflow.Status.fromId(rs.getInt("status"), false));
-            workflow.setStartDate(rs.getTimestamp("general_start_date"));
-            workflow.setEndDate(rs.getTimestamp("actual_end_date"));
-            workflow.setEndType(WorkflowStop.WorkflowEndType.fromId(rs.getInt("end_type")));
-
-            return workflow;
+            return new DashboardWorkflow(
+                    rs.getBigDecimal("workflow_id").intValue(),
+                    rs.getString("shortname"),
+                    rs.getTimestamp("general_start_date"),
+                    rs.getTimestamp("actual_end_date"),
+                    DashboardWorkflow.Status.fromId(rs.getInt("status"), false),
+                    WorkflowStop.WorkflowEndType.fromId(rs.getInt("end_type"))
+            );
         }
     }
 	

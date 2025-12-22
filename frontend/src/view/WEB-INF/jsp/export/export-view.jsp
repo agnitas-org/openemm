@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@page import="com.agnitas.emm.common.UserStatus"%>
 <%@page import="com.agnitas.service.RecipientExportWorker"%>
 <%@ page import="com.agnitas.util.DbColumnType" %>
@@ -31,70 +31,51 @@
 
 <c:set var="localeDatePattern" value="${fn:toLowerCase(localeDatePattern)}"/>
 
-<mvc:form servletRelativeAction="/export/${id}/save.action" id="exportForm" modelAttribute="exportForm" data-form="resource"
+<mvc:form cssClass="tiles-container" servletRelativeAction="/export/${id}/save.action" id="exportForm" modelAttribute="exportForm" data-form="resource"
           data-form-focus="shortname"
           data-controller="export-view"
           data-initializer="export-view"
           data-validator="export/form"
-          data-editable="${isManageAllowed}">
-    
+          data-editable="${isManageAllowed}"
+          data-editable-view="${agnEditViewKey}">
     <script id="config:export-view" type="application/json">
         {
-            "adminHasOwnColumnPermission": ${isOwnColumnsExportAllowed},
-            "bounceUserStatusCode": ${BOUNCE_USER_STATUS_CODE},
-            "customColumns": ${emm:toJson(exportForm.customColumns)}
+            "bounceUserStatusCode": ${BOUNCE_USER_STATUS_CODE}
         }
     </script>
     
-    <div class="tile">
-        <div class="tile-header">
-            <h2 class="headline">
-                <mvc:message code="export.ExportDefinition"/>
-            </h2>
-        </div>
-        <div class="tile-content tile-content-forms">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-name" class="control-label">
+    <div class="tiles-block flex-column">
+        <div class="tile" style="flex-shrink: 0; flex-basis: min-content; flex-grow: 1" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title"><mvc:message code="mailing.generalSettings"/></h1>
+            </div>
+            <div class="tile-body form-column">
+                <div>
+                    <label for="recipient-export-name" class="form-label">
                         <c:set var="nameMsg"><mvc:message code="default.Name"/></c:set>
-                        ${nameMsg}*
+                        ${nameMsg} *
                     </label>
-                </div>
-                <div class="col-sm-8">
                     <mvc:text path="shortname" id="recipient-export-name" cssClass="form-control" maxlength="99" placeholder="${nameMsg}"/>
                 </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-description" class="control-label">
-                        <c:set var="descriptionMsg"><mvc:message code="default.description"/></c:set>
+                <div>
+                    <label for="recipient-export-description" class="form-label">
+                        <c:set var="descriptionMsg"><mvc:message code="Description"/></c:set>
                         ${descriptionMsg}
                     </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:textarea path="description" id="recipient-export-description" cssClass="form-control v-resizable" rows="5" placeholder="${descriptionMsg}"/>
+                    <mvc:textarea path="description" id="recipient-export-description" cssClass="form-control" rows="1" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#recipient-export-tile-selection">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <mvc:message code="export.selection"/>
-            </a>
-        </div>
-        <div class="tile-content tile-content-forms" id="recipient-export-tile-selection">
-            <c:set var="mailinglistSelect">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label for="recipient-export-mailinglist" class="control-label">
-                            <mvc:message code="Mailinglist"/>
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <mvc:select path="mailinglistId" id="recipient-export-mailinglist" cssClass="js-select form-control">
+    
+        <div class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title"><mvc:message code="export.settings"/></h1>
+            </div>
+            <div class="tile-body form-column js-scrollable">
+                <c:set var="mailinglistSelect">
+                    <div>
+                        <label for="recipient-export-mailinglist" class="form-label"><mvc:message code="Mailinglist"/></label>
+                        <mvc:select path="mailinglistId" id="recipient-export-mailinglist" cssClass="form-control">
                             <c:if test="${not adminHasDisabledMailingLists}">
                                 <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
                                 <mvc:option value="${NO_MAILINGLIST}"><mvc:message code="No_Mailinglist"/></mvc:option>
@@ -102,50 +83,32 @@
                             <mvc:options items="${mailinglists}" itemValue="id" itemLabel="shortname"/>
                         </mvc:select>
                     </div>
-                </div>
-            </c:set>
-            
-            <%@ include file="fragments/export-mailinglist-select.jspf" %>
-            
-            ${mailinglistSelect}
+                </c:set>
+                
+                <%@ include file="fragments/export-mailinglist-select.jspf" %>
 
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-targetgroup" class="control-label">
-                        <mvc:message code="target.Target"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="targetId" id="recipient-export-targetgroup" cssClass="form-control js-select">
+                ${mailinglistSelect}
+
+                <div>
+                    <label for="recipient-export-targetgroup" class="form-label"><mvc:message code="target.Target"/></label>
+                    <mvc:select path="targetId" id="recipient-export-targetgroup" cssClass="form-control">
                         <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
                         <mvc:options items="${targetGroups}" itemValue="id" itemLabel="targetName"/>
                     </mvc:select>
                 </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-recipienttype" class="control-label">
-                        <mvc:message code="recipient.RecipientType"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
+                <div>
+                    <label for="recipient-export-recipienttype" class="form-label"><mvc:message code="recipient.RecipientType"/></label>
                     <mvc:select path="userType" cssClass="form-control" id="recipient-export-recipienttype">
                         <c:forEach var="userType" items="${availableUserTypeOptions}">
                             <mvc:option value="${userType.typeCode}">
-                                <mvc:message code="${userType.messageKey}" />
+                                <mvc:message code="${userType.messageKey}"/>
                             </mvc:option>
                         </c:forEach>
                     </mvc:select>
                 </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-recipientstatus" class="control-label">
-                        <mvc:message code="recipient.RecipientStatus"/>
-                    </label>
-                </div>
-                <div class="col-sm-8" data-action="add-bounce-col-to-choose">
-                    <mvc:select path="userStatus" cssClass="form-control" id="recipient-export-recipientstatus">
+                <div>
+                    <label for="recipient-export-recipientstatus" class="form-label"><mvc:message code="recipient.RecipientStatus"/></label>
+                    <mvc:select path="userStatus" cssClass="form-control" id="recipient-export-recipientstatus" data-action="add-bounce-col-to-choose">
                         <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
                         <c:forEach var="userStatus" items="${availableUserStatusOptions}">
                             <mvc:option value="${userStatus.statusCode}">
@@ -154,32 +117,11 @@
                         </c:forEach>
                     </mvc:select>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#recipient-export-tile-columns">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <mvc:message code="export.columns"/>
-            </a>
-        </div>
-        <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
-            <div class="form-group">
-                <div class="col-sm-offset-4 col-sm-8">
-                    <div class="notification-simple notification-info">
-                        <mvc:message code="export.wizard.hint.export.columns"/>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="user-columns"><mvc:message code="export.columns"/></label>
-                </div>
-                <div class="col-sm-8">
-                    <c:set var="allColumnsStr"><mvc:message code="export.columns.all"/></c:set>
-                    <mvc:select path="userColumns" id="user-columns" multiple="true" cssClass="form-control js-select" data-placeholder="${allColumnsStr}">
+                
+                <div>
+                    <label class="form-label" for="user-columns"><mvc:message code="export.columns"/></label>
+                    <mvc:message var="allColumnsStr" code="export.columns.all" />
+                    <mvc:select path="userColumns" id="user-columns" multiple="true" cssClass="form-control" data-placeholder="${allColumnsStr}" data-action="user-columns-update">
                         <c:forEach var="profileField" items="${profileFields}">
                             <c:set var="colType">
                                 <c:choose>
@@ -204,127 +146,93 @@
                         </c:forEach>
                         <mvc:option id="mailing-bounce-column-option" value="mailing_bounce"><mvc:message code="report.bounce.reason"/> (<mvc:message code="statistic.alphanumeric"/>)</mvc:option>
                     </mvc:select>
-                </div>
-            </div>
-            <c:if test="${isOwnColumnsExportAllowed}">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="columnMappings"><mvc:message code="export.columns.add.own"/></label>
+                    <div id="24h-col-info" class="notification-simple notification-simple--info mt-1">
+                        <mvc:message code="export.wizard.hint.export.columns"/>
                     </div>
-                    <div id="columnMappings" class="col-sm-8">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th><mvc:message code="export.Column_Name"/></th>
-                                        <th><mvc:message code="default.value.optional"/></th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <%-- this block load by JS--%>
-                                    <%@ include file="fragments/export-column-mapping-row-template.jspf" %>
-                                </tbody>
-                            </table>
+                </div>
+                
+                <c:if test="${isOwnColumnsExportAllowed}">
+                    <div>
+                        <label class="form-label" for="custom-column-mappings"><mvc:message code="export.columns.add.own"/></label>
+                        <div id="custom-column-mappings">
+                            <script data-config type="application/json">
+                                {
+                                  "data": ${emm:toJson(exportForm.customColumns)},
+                                  "readonly": ${not isManageAllowed}
+                                }
+                            </script>
+                            <script data-row-template type="text/x-mustache-template">
+                                <tr>
+                                    <td><input type="text" class="form-control" data-name="dbColumn" value="{{- dbColumn }}" maxlength="30" placeholder="<mvc:message code='export.Column_Name'/>" ${isManageAllowed ? '' : 'readonly'}/></td>
+                                    <td><input type="text" class="form-control" data-name="defaultValue" value="{{- defaultValue }}" placeholder="<mvc:message code='default.value.optional'/>" ${isManageAllowed ? '' : 'readonly'}/></td>
+                                </tr>
+                            </script>
+
+                            <%-- populated with js. see class CustomMappingsTable . In case of modification recheck export/form validator and controller --%>
                         </div>
                     </div>
-                </div>
-            </c:if>
-        </div>
-    </div>
+                </c:if>
 
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#recipient-export-tile-mailingslists">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <mvc:message code="export.mailinglist.status"/>
-            </a>
-        </div>
-        <div class="tile-content tile-content-forms" id="recipient-export-tile-mailingslists">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label">
+                <%@ include file="fragments/export-ref-table-selection.jspf" %>
+
+                <div>
+                    <label class="form-label">
                         <mvc:message code="export.mailinglist.status"/>
-                        <button class="icon icon-help" data-help="help_${helplanguage}/export/Export_Mailinglist_Status.xml" tabindex="-1" type="button">
-                        </button>
+                        <a href="#" class="icon icon-question-circle" data-help="export/Export_Mailinglist_Status.xml"></a>
                     </label>
-                </div>
-                <div class="col-sm-8">
-                    <ul class="list-group">
+                    <mvc:select path="mailinglists" id="mailinglists" multiple="true" cssClass="form-control">
                         <c:forEach var="mailinglist" items="${mailinglists}">
-                            <li class="list-group-item">
-                                <label class="checkbox-inline">
-                                    <mvc:checkbox path="mailinglists" value='${mailinglist.id}'/>
-                                    ${mailinglist.shortname}
-                                </label>
-                            </li>
+                            <mvc:option value='${mailinglist.id}'>${mailinglist.shortname}</mvc:option>
                         </c:forEach>
-                    </ul>
+                    </mvc:select>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#recipient-export-tile-fileformats">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <mvc:message code="export.file_format"/>
-            </a>
-        </div>
-        <div class="tile-content tile-content-forms" id="recipient-export-tile-fileformats">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-separator" class="control-label">
-                        <mvc:message code="import.Separator"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="separator" cssClass="form-control" id="recipient-export-format-separator">
-                        <mvc:option value=";">;</mvc:option>
-                        <mvc:option value=",">,</mvc:option>
-                        <mvc:option value="|">|</mvc:option>
-                        <mvc:option value="t">Tab</mvc:option>
-                        <mvc:option value="^">^</mvc:option>
-                    </mvc:select>
-                </div>
+    <div class="tiles-block flex-column">
+        <div class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title"><mvc:message code="export.file.settings"/></h1>
             </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="import.Delimiter"/>
-                    </label>
+            <div class="tile-body form-column js-scrollable">
+                <div class="row">
+                    <div class="col">
+                        <label for="recipient-export-format-separator" class="form-label"><mvc:message code="import.Separator"/></label>
+                        <mvc:select path="separator" cssClass="form-control" id="recipient-export-format-separator">
+                            <mvc:option value=";">;</mvc:option>
+                            <mvc:option value=",">,</mvc:option>
+                            <mvc:option value="|">|</mvc:option>
+                            <mvc:option value="t">Tab</mvc:option>
+                            <mvc:option value="^">^</mvc:option>
+                        </mvc:select>
+                    </div>
+                    <div class="col">
+                        <label for="file-decimal-separator" class="form-label"><mvc:message code="csv.DecimalSeparator"/></label>
+                        <mvc:select path="decimalSeparator" cssClass="form-control" id="file-decimal-separator">
+                            <mvc:option value=".">.</mvc:option>
+                            <mvc:option value=",">,</mvc:option>
+                        </mvc:select>
+                    </div>
+                    <div class="col">
+                        <label for="recipient-export-format-delimiter" class="form-label"><mvc:message code="import.Delimiter"/></label>
+                        <mvc:select path="delimiter" cssClass="form-control" id="recipient-export-format-delimiter">
+                            <mvc:option value='"'><mvc:message code="delimiter.doublequote"/></mvc:option>
+                            <mvc:option value="'"><mvc:message code="delimiter.singlequote"/></mvc:option>
+                        </mvc:select>
+                    </div>
                 </div>
-                <div class="col-sm-8">
-                    <mvc:select path="delimiter" cssClass="form-control" id="recipient-export-format-delimiter">
-                        <mvc:option value='"'><mvc:message code="delimiter.doublequote"/></mvc:option>
-                        <mvc:option value="'"><mvc:message code="delimiter.singlequote"/></mvc:option>
-                    </mvc:select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="csv.alwaysQuote"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="alwaysQuote" cssClass="form-control" id="recipient-export-format-delimiter">
+                
+                <div>
+                    <label for="file-text-marking" class="form-label"><mvc:message code="csv.alwaysQuote"/></label>
+                    <mvc:select path="alwaysQuote" cssClass="form-control" id="file-text-marking">
                         <mvc:option value="false"><mvc:message code="delimiter.ifneeded"/></mvc:option>
                         <mvc:option value="true"><mvc:message code="delimiter.always"/></mvc:option>
                     </mvc:select>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-charset" class="control-label">
-                        <mvc:message code="mailing.Charset"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
+                
+                <div>
+                    <label for="recipient-export-format-charset" class="form-label"><mvc:message code="mailing.Charset"/></label>
                     <mvc:select path="charset" cssClass="form-control" id="recipient-export-format-charset">
                         <c:forEach var="charset" items="${availableCharsetOptions}">
                             <mvc:option value="${charset.charsetName}">
@@ -333,244 +241,142 @@
                         </c:forEach>
                     </mvc:select>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="csv.DateFormat"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="dateFormat" cssClass="form-control js-select" id="recipient-export-format-delimiter">
-						<c:forEach var="dateFormat" items="${dateFormats}">
-							<mvc:option value="${dateFormat}">${dateFormat.publicValue}</mvc:option>
-						</c:forEach>
-                    </mvc:select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="csv.DateTimeFormat"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="dateTimeFormat" cssClass="form-control js-select" id="recipient-export-format-delimiter">
-						<c:forEach var="dateTimeFormat" items="${dateTimeFormats}">
-							<mvc:option value="${dateTimeFormat}">${dateTimeFormat.publicValue}</mvc:option>
-						</c:forEach>
-                    </mvc:select>
-                </div>
-            </div>
-		
-			<div class="form-group">
-				<div class="col-sm-4">
-					<label class="control-label" for="locale"><mvc:message code="import.report.locale" /></label>
-				</div>
-				<div class="col-sm-8">
-					<mvc:select path="locale" cssClass="form-control js-select" id="locale">
-						<mvc:option value="de_DE"><mvc:message code="settings.German"/></mvc:option>
-						<mvc:option value="en_US"><mvc:message code="settings.English"/></mvc:option>
-						<mvc:option value="fr_FR"><mvc:message code="settings.French"/></mvc:option>
-						<mvc:option value="es_ES"><mvc:message code="settings.Spanish"/></mvc:option>
-						<mvc:option value="pt_PT"><mvc:message code="settings.Portuguese"/></mvc:option>
-						<mvc:option value="nl_NL"><mvc:message code="settings.Dutch"/></mvc:option>
-						<mvc:option value="it_IT"><mvc:message code="settings.Italian"/></mvc:option>
-					</mvc:select>
-				</div>
-			</div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="Timezone"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="timezone" cssClass="form-control js-select" id="recipient-export-format-delimiter">
-						<c:forEach var="availableTimeZone" items="${timeZones}">
-							<mvc:option value="${availableTimeZone}">${availableTimeZone}</mvc:option>
-						</c:forEach>
-                    </mvc:select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="recipient-export-format-delimiter" class="control-label">
-                        <mvc:message code="csv.DecimalSeparator"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="decimalSeparator" cssClass="form-control" id="recipient-export-format-delimiter">
-						<mvc:option value=".">.</mvc:option>
-						<mvc:option value=",">,</mvc:option>
-                    </mvc:select>
-                </div>
-            </div>
 
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label for="export-decoded-values" class="control-label checkbox-control-label">
+                <div class="row">
+                    <div class="col">
+                        <label for="file-date-format" class="form-label"><mvc:message code="csv.DateFormat"/></label>
+                        <mvc:select path="dateFormat" cssClass="form-control" id="file-date-format">
+                            <c:forEach var="dateFormat" items="${dateFormats}">
+                                <mvc:option value="${dateFormat}">${dateFormat.publicValue}</mvc:option>
+                            </c:forEach>
+                        </mvc:select>
+                    </div>
+                    <div class="col">
+                        <label for="file-date-time-format" class="form-label"><mvc:message code="csv.DateTimeFormat"/></label>
+                        <mvc:select path="dateTimeFormat" cssClass="form-control" id="file-date-time-format">
+                            <c:forEach var="dateTimeFormat" items="${dateTimeFormats}">
+                                <mvc:option value="${dateTimeFormat}">${dateTimeFormat.publicValue}</mvc:option>
+                            </c:forEach>
+                        </mvc:select>
+                    </div>
+                </div>
+            
+                <div class="row">
+                    <div class="col">
+                        <label class="form-label" for="locale"><mvc:message code="import.report.locale" /></label>
+                        <mvc:select path="locale" cssClass="form-control" id="locale">
+                            <mvc:option value="de_DE"><mvc:message code="settings.German"/></mvc:option>
+                            <mvc:option value="en_US"><mvc:message code="settings.English"/></mvc:option>
+                            <mvc:option value="fr_FR"><mvc:message code="settings.French"/></mvc:option>
+                            <mvc:option value="es_ES"><mvc:message code="settings.Spanish"/></mvc:option>
+                            <mvc:option value="pt_PT"><mvc:message code="settings.Portuguese"/></mvc:option>
+                            <mvc:option value="nl_NL"><mvc:message code="settings.Dutch"/></mvc:option>
+                            <mvc:option value="it_IT"><mvc:message code="settings.Italian"/></mvc:option>
+                        </mvc:select>
+                    </div>
+                    <div class="col">
+                        <label for="file-timezone" class="form-label"><mvc:message code="Timezone"/></label>
+                        <mvc:select path="timezone" cssClass="form-control" id="file-timezone">
+                            <c:forEach var="availableTimeZone" items="${timeZones}">
+                                <mvc:option value="${availableTimeZone}">${availableTimeZone}</mvc:option>
+                            </c:forEach>
+                        </mvc:select>
+                    </div>
+                </div>
+    
+                <div class="form-check form-switch">
+                    <mvc:checkbox path="useDecodedValues" id="export-decoded-values" cssClass="form-check-input" role="switch"/>
+                    <label class="form-label form-check-label" for="export-decoded-values">
                         <mvc:message code="export.decode.values"/>
                     </label>
                 </div>
-                <div class="col-sm-8">
-                    <label class="toggle">
-                        <mvc:checkbox path="useDecodedValues" id="export-decoded-values"/>
-                        <div class="toggle-control"></div>
+            </div>
+        </div>
+
+        <div class="tile" data-editable-tile>
+            <div class="tile-header">
+                <h1 class="tile-title"><mvc:message code="export.dates.limits"/></h1>
+                <div class="tile-controls">
+                    <label class="switch">
+                        <mvc:checkbox path="timeLimitsLinkedByAnd"/>
+                        <span>AND</span>
+                        <span>OR</span>
                     </label>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="tile">
-        <div class="tile-header">
-            <a href="#" class="headline" data-toggle-tile="#recipient-export-tile-datelimits">
-                <i class="tile-toggle icon icon-angle-up"></i>
-                <mvc:message code="export.dates.limits"/>
-            </a>
-        </div>
-        <div class="tile-content tile-content-forms" id="recipient-export-tile-datelimits">
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th><mvc:message code="Start"/></th>
-                        <th><mvc:message code="report.stopDate"/></th>
-                        <th><mvc:message code="lastDays"/></th>
-                        <%@ include file="fragments/export-date-limits-currentdate-column.jspf" %>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><mvc:message code="export.dates.timestamp"/></td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="timestampStart" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="timestampEnd" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="timestampLastDaysStr" type="number" cssClass="form-control"
-                                              value="${exportForm.timestampLastDays == 0 ? '' : exportForm.timestampLastDays}"/>
-                                </div>
-                            </div>
-                        </td>
+            <div class="tile-body form-column js-scrollable">
+                <div data-field="toggle-vis">
+                    <label class="form-label" for="change-period-limit-type"><mvc:message code="export.dates.timestamp"/></label>
+                    <select id="change-period-limit-type" class="form-control" data-field-vis="">
+                        <option data-field-vis-show="#change-period-limit-date-range-inputs"
+                                data-field-vis-hide="#change-period-limit-days-inputs"><mvc:message code="birt.report.period.custom"/></option>
+                        <option data-field-vis-hide="#change-period-limit-date-range-inputs"
+                                data-field-vis-show="#change-period-limit-days-inputs"
+                                ${exportForm.timestampLastDays > 0 ? 'selected' : ''}><mvc:message code="lastDays"/></option>
+                    </select>
+                    <div id="change-period-limit-date-range-inputs" class="inline-input-range mt-1" data-date-range="">
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text id="timestamp-start" path="timestampStart" cssClass="form-control js-datepicker"/>
+                        </div>
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text path="timestampEnd" cssClass="form-control js-datepicker"/>
+                        </div>
+                    </div>
+                    <div id="change-period-limit-days-inputs" class="form-column-2 mt-1">
+                        <mvc:text path="timestampLastDaysStr" type="number" cssClass="form-control" value="${exportForm.timestampLastDays == 0 ? '' : exportForm.timestampLastDays}"/>
                         <c:set var="includeCurentDayInputName" value="timestampIncludeCurrentDay"/>
-                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="export.dates.creation_date"/></td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="creationDateStart" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="creationDateEnd" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="creationDateLastDaysStr" type="number" cssClass="form-control"
-                                        value="${exportForm.creationDateLastDays == 0 ? '' : exportForm.creationDateLastDays}"/>
-                                </div>
-                            </div>
-                        </td>
+                        <%@ include file="fragments/export-include-current-day-switch.jspf" %>
+                    </div>
+                </div>
+                
+                <div data-field="toggle-vis">
+                    <label class="form-label" for="creation-period-limit-type"><mvc:message code="export.dates.creation_date"/></label>
+                    <select id="creation-period-limit-type" class="form-control" data-field-vis="">
+                        <option data-field-vis-show="#creation-period-limit-date-range-inputs"
+                                data-field-vis-hide="#creation-period-limit-days-inputs"><mvc:message code="birt.report.period.custom"/></option>
+                        <option data-field-vis-hide="#creation-period-limit-date-range-inputs"
+                                data-field-vis-show="#creation-period-limit-days-inputs"
+                                ${exportForm.creationDateLastDays > 0 ? 'selected' : ''}><mvc:message code="lastDays"/></option>
+                    </select>
+                    <div id="creation-period-limit-date-range-inputs" class="inline-input-range mt-1" data-date-range="">
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text path="creationDateStart" cssClass="form-control js-datepicker"/>
+                        </div>
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text path="creationDateEnd" cssClass="form-control js-datepicker"/>
+                        </div>
+                    </div>
+                    <div id="creation-period-limit-days-inputs" class="form-column-2 mt-1">
+                        <mvc:text path="creationDateLastDaysStr" type="number" cssClass="form-control" value="${exportForm.creationDateLastDays == 0 ? '' : exportForm.creationDateLastDays}"/>
                         <c:set var="includeCurentDayInputName" value="creationDateIncludeCurrentDay"/>
-                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
-                    </tr>
-                    <tr>
-                        <td><mvc:message code="export.dates.mailinglists"/>*</td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="mailinglistBindStart" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="mailinglistBindEnd" cssClass="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${localeDatePattern}'"/>
-                                </div>
-                                <div class="input-group-btn">
-                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
-                                        <i class="icon icon-calendar-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group">
-                                <div class="input-group-controls">
-                                    <mvc:text path="mailinglistBindLastDaysStr" type="number" cssClass="form-control"
-                                              value="${exportForm.mailinglistBindLastDays == 0 ? '' : exportForm.mailinglistBindLastDays}"/>
-                                </div>
-                            </div>
-                        </td>
+                        <%@ include file="fragments/export-include-current-day-switch.jspf" %>
+                    </div>
+                </div>
+                
+                <div data-field="toggle-vis">
+                    <label class="form-label" for="mailing-list-period-limit-type"><mvc:message code="export.dates.mailinglists"/></label>
+                    <select id="mailing-list-period-limit-type" class="form-control" data-field-vis="">
+                        <option data-field-vis-show="#mailing-list-period-limit-date-range-inputs"
+                                data-field-vis-hide="#mailing-list-period-limit-days-inputs"><mvc:message code="birt.report.period.custom"/></option>
+                        <option data-field-vis-hide="#mailing-list-period-limit-date-range-inputs"
+                                data-field-vis-show="#mailing-list-period-limit-days-inputs"
+                                ${exportForm.mailinglistBindLastDays > 0 ? 'selected' : ''}><mvc:message code="lastDays"/></option>
+                    </select>
+                    <div id="mailing-list-period-limit-date-range-inputs" class="inline-input-range mt-1" data-date-range="">
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text path="mailinglistBindStart" cssClass="form-control js-datepicker"/>
+                        </div>
+                        <div class="date-picker-container flex-grow-1">
+                            <mvc:text path="mailinglistBindEnd" cssClass="form-control js-datepicker"/>
+                        </div>
+                    </div>
+                    <div id="mailing-list-period-limit-days-inputs" class="form-column-2 mt-1">
+                        <mvc:text path="mailinglistBindLastDaysStr" type="number" cssClass="form-control" value="${exportForm.mailinglistBindLastDays == 0 ? '' : exportForm.mailinglistBindLastDays}"/>
                         <c:set var="includeCurentDayInputName" value="mailinglistBindIncludeCurrentDay"/>
-                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="input-group">
-                                <label class="toggle" style="padding-right: 5px">
-                                    <mvc:checkbox path="timeLimitsLinkedByAnd"/>
-                                    <div class="toggle-control"></div>
-                                </label>
-                                <mvc:message code="export.timeLimitsLinkedByAnd"/>
-                            </div>
-                        </td>
-                        <td colspan="3">* <mvc:message code="export.dates.mailinglists.hint"/></td>
-                    </tr>
-                </tbody>
-            </table>
+                        <%@ include file="fragments/export-include-current-day-switch.jspf" %>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </mvc:form>

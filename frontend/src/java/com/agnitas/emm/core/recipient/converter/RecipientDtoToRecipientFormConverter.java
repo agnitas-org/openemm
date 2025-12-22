@@ -24,7 +24,7 @@ import com.agnitas.emm.core.recipient.forms.RecipientForm;
 import com.agnitas.emm.core.service.RecipientFieldService.RecipientOptionalField;
 import com.agnitas.util.importvalues.Gender;
 import com.agnitas.util.importvalues.MailType;
-import org.agnitas.emm.core.recipient.RecipientUtils;
+import com.agnitas.emm.core.recipient.utils.RecipientUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -16,21 +16,22 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 public class SqlPreparedUpdateStatementManager {
+
 	private static final String SQL_SET_SIGN = "SET";
 	private static final String SQL_WHERE_SIGN = "WHERE";
 	private static final String SQL_OPERATOR_AND = "AND";
 	private static final String SQL_OPERATOR_OR = "OR";
 	
-	private String baseStatement = null;
-	private List<String> updateFieldNames = new ArrayList<>();
-	private List<Object> updateValues = new ArrayList<>();
-	private List<Boolean> specialSqlValueMarkers = new ArrayList<>();
-	private StringBuilder whereClauseBuilder = new StringBuilder("");
-	private List<Object> whereClauseValues = new ArrayList<>();
+	private String baseStatement;
+	private final List<String> updateFieldNames = new ArrayList<>();
+	private final List<Object> updateValues = new ArrayList<>();
+	private final List<Boolean> specialSqlValueMarkers = new ArrayList<>();
+	private final StringBuilder whereClauseBuilder = new StringBuilder("");
+	private final List<Object> whereClauseValues = new ArrayList<>();
 	
-	public SqlPreparedUpdateStatementManager(String baseStatement) throws Exception {
+	public SqlPreparedUpdateStatementManager(String baseStatement) {
 		if (baseStatement == null || !baseStatement.toLowerCase().startsWith("update ")) {
-			throw new Exception("Invalid baseStatement for update statement");
+			throw new IllegalArgumentException("Invalid baseStatement for update statement");
 		}
 		
 		baseStatement = baseStatement.trim();
@@ -44,8 +45,6 @@ public class SqlPreparedUpdateStatementManager {
 	
 	/**
 	 * Add a Value that will be used as a preparedStatement value (uses ?)
-	 * @param fieldName
-	 * @param value
 	 */
 	public void addValue(String fieldName, Object value) {
 		addValue(fieldName, value, false);
@@ -53,8 +52,6 @@ public class SqlPreparedUpdateStatementManager {
 	
 	/**
 	 * Add a Value to the insert statement
-	 * @param fieldName
-	 * @param value
 	 * @param isSpecialSqlValue
 	 * 							if set that value will not be used as a preparedStatement value (no encapsulation by single quote, no use of ?)
 	 * 							if NOT set that value will used as a normal preparedStatement value (uses ?)
@@ -67,31 +64,22 @@ public class SqlPreparedUpdateStatementManager {
 	
 	/**
 	 * Append a where clause to the statement concatenated by " AND "
-	 * 
-	 * @param whereClause
-	 * @param parameter
-	 * @throws Exception 
 	 */
-	public void addWhereClause(String whereClause, Object... parameter) throws Exception {
+	public void addWhereClause(String whereClause, Object... parameter) {
 		addWhereClause(false, whereClause, parameter);
 	}
 	
 	/**
 	 * Append a where clause to the statement.
-	 * 
-	 * @param concatenateByOr type of concatenation (false = AND / true = OR)
-	 * @param whereClause
-	 * @param parameter
-	 * @throws Exception 
 	 */
-	public void addWhereClause(boolean concatenateByOr, String whereClause, Object... parameter) throws Exception {
+	public void addWhereClause(boolean concatenateByOr, String whereClause, Object... parameter) {
 		if (StringUtils.isBlank(whereClause)) {
-			throw new Exception("Invalid empty where clause");
+			throw new IllegalArgumentException("Invalid empty where clause");
 		}
 		
 		int numberOfQuestionMarks = StringUtils.countMatches(whereClause, "?");
 		if ((parameter == null && numberOfQuestionMarks != 0) || (parameter != null && numberOfQuestionMarks != parameter.length)) {
-			throw new Exception("Invalid number of parameters in where clause");
+			throw new IllegalArgumentException("Invalid number of parameters in where clause");
 		}
 		
 		if (whereClauseBuilder.length() > 0) {

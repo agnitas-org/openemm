@@ -10,29 +10,24 @@
 
 package com.agnitas.emm.core.mobile.dao.impl;
 
-import com.agnitas.emm.core.mobile.bean.Client;
-import com.agnitas.emm.core.mobile.dao.ClientDao;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.mobile.bean.Client;
+import com.agnitas.emm.core.mobile.dao.ClientDao;
+import org.springframework.jdbc.core.RowMapper;
+
 public class ClientDaoImpl extends BaseDaoImpl implements ClientDao {
 	
-	/**
-	 * Returns all Clients of this
-	 * 
-	 * @return
-	 */
 	@Override
 	public List<Client> getClients() {
 		String sql = "SELECT client_id, description, regex FROM client_tbl ORDER BY client_order ASC";
 		return select(sql, new ClientRowMapper());
 	}
 
-	private class ClientRowMapper implements RowMapper<Client> {
+	private static class ClientRowMapper implements RowMapper<Client> {
 		@Override
 		public Client mapRow(ResultSet resultSet, int row) throws SQLException {
 			Client client = new Client();
@@ -42,4 +37,5 @@ public class ClientDaoImpl extends BaseDaoImpl implements ClientDao {
 			return client;
 		}
 	}
+
 }

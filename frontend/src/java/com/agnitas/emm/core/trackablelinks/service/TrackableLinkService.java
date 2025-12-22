@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.trackablelinks.service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
@@ -21,11 +20,10 @@ import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
-import com.agnitas.web.exception.ClearLinkExtensionsException;
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.web.exception.ClearLinkExtensionsException;
 import org.json.JSONObject;
 
 /**
@@ -64,8 +62,6 @@ public interface TrackableLinkService {
 
 	void removeLegacyMailingLinkExtension(Mailing aMailing, Set<Integer> bulkLinkIds);
 
-    Map<Integer, String> getMailingLinks(int mailingId, int companyId);
-
     JSONObject getMailingLinksJson(int mailingId, int companyId);
 
 	/**
@@ -85,7 +81,7 @@ public interface TrackableLinkService {
 	
     void bulkClearExtensions(int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
 
-    Mailing getMailingForLinksOverview(int mailingId, int companyId, boolean includeDeleted) throws MediatypesDaoException;
+    Mailing getMailingForLinksOverview(int mailingId, int companyId, boolean includeDeleted);
 
 	void updateTrackableLinkSettings(TrackableLinkModel trackableLinkModel);
 

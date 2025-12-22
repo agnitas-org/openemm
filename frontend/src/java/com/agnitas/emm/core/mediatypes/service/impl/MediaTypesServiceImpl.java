@@ -10,25 +10,20 @@
 
 package com.agnitas.emm.core.mediatypes.service.impl;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class MediaTypesServiceImpl implements MediaTypesService {
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 
-    private static final Logger logger = LogManager.getLogger(MediaTypesServiceImpl.class);
+public class MediaTypesServiceImpl implements MediaTypesService {
 
     protected final MediatypesDao mediatypesDao;
 
@@ -48,21 +43,13 @@ public class MediaTypesServiceImpl implements MediaTypesService {
         if (mailingId == 0 || companyId == 0) {
             return null;
         }
-        return tryGetMailingMediatype(companyId, mailingId);
-    }
-
-    private Mediatype tryGetMailingMediatype(int companyId, int mailingId) {
-        try {
-            return mediatypesDao.loadMediatypes(mailingId, companyId)
-                    .entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .map(Map.Entry::getValue)
-                    .filter(mediatype -> mediatype.getStatus() == MediaTypeStatus.Active.getCode())
-                    .findFirst().orElse(null);
-        } catch (MediatypesDaoException e) {
-            logger.warn("Could not load media types for mailing ID {}", mailingId, e);
-            return null;
-        }
+        return mediatypesDao.loadMediatypes(mailingId, companyId)
+                .entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .filter(mediatype -> mediatype.getStatus() == MediaTypeStatus.Active.getCode())
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

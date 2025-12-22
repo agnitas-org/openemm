@@ -17,7 +17,7 @@ import java.util.Objects;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
@@ -82,7 +82,7 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	private List<ObjectUsage> collectTriggerUsagesOfProfileField(String column, int companyID) {
         return emmActionService.findActionsUsingProfileField(column, companyID)
 				.stream()
-				.map(id -> new ObjectUsage(ObjectUserType.TRIGGER, id, emmActionService.getEmmActionName(id, companyID)))
+				.map(id -> new ObjectUsage(ObjectUsageType.TRIGGER, id, emmActionService.getEmmActionName(id, companyID)))
 				.toList();
 	}
 

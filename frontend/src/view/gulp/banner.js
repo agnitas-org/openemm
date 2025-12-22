@@ -10,11 +10,6 @@ module.exports = {
       .pipe(insert.prepend(readBanner('application.js')))
       .pipe(gulp.dest(config.assets));
   },
-  bannerJsRedesigned: () => {
-    return gulp.src(`${config.assets}/application.redesigned.min.js`)
-      .pipe(insert.prepend(readBanner('application.js')))
-      .pipe(gulp.dest(config.assets));
-  },
   bannerBirtJs: () => {
     return gulp.src(`${config.assets}/birt.min.js`)
       .pipe(insert.prepend(readBanner('birt.js')))
@@ -22,11 +17,6 @@ module.exports = {
   },
   bannerCss: () => {
     return gulp.src(`${config.assets}/application.min.css`)
-      .pipe(insert.prepend(readBanner('application.css')))
-      .pipe(gulp.dest(config.assets));
-  },
-  bannerCssRedesigned: () => {
-    return gulp.src(`${config.assets}/application.redesigned.min.css`)
       .pipe(insert.prepend(readBanner('application.css')))
       .pipe(gulp.dest(config.assets));
   },

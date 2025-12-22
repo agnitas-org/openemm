@@ -15,12 +15,19 @@ import java.util.List;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 
 public interface RecipientFieldDao {
-	List<RecipientFieldDescription> getRecipientFields(int companyID);
-	List<String> getFieldNames(int companyId);
-	void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception;
-	void deleteRecipientField(int companyID, String recipientFieldName);
-	boolean isReservedKeyWord(String fieldname);
-	boolean hasRecipients(int companyID);
-	boolean hasRecipientsWithNullValue(int companyID, String columnName);
-	int countCustomerEntries(int companyID);
+
+    List<RecipientFieldDescription> getRecipientFields(int companyID);
+
+    void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception;
+
+    void deleteRecipientField(int companyID, String recipientFieldName);
+
+    boolean isReservedKeyWord(String fieldname);
+
+    boolean hasRecipients(int companyID);
+
+    boolean hasRecipientsWithNullValue(int companyID, String columnName);
+
+    int countCustomerEntries(int companyID);
+
 }

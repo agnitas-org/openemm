@@ -20,11 +20,9 @@ import org.apache.commons.collections4.CollectionUtils;
 
 public class ProfileFieldStatForm extends BirtStatisticForm {
 
-    private static final String REPORT_NAME = "profiledb_evaluation.rptdesign";
     private static final int DEFAULT_MAX_DOMAIN_NUM = 5;
 
     public ProfileFieldStatForm() {
-        setReportName(REPORT_NAME);
         setLimit(DEFAULT_MAX_DOMAIN_NUM);
     }
 

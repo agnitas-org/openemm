@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import com.agnitas.backend.dao.ComponentDAO;
 import com.agnitas.backend.exceptions.EMMTagException;
@@ -755,16 +754,14 @@ public class BlockCollection {
 			if (data.previewCreateAll) {
 				comptypes = new MailingComponentType[] {
 					MailingComponentType.Template,
+					MailingComponentType.Attachment,
 					MailingComponentType.PersonalizedAttachment,
-					MailingComponentType.HostedImage,
-					MailingComponentType.Font,
 					MailingComponentType.PrecAAttachement
 				};
 			} else {
 				comptypes = new MailingComponentType[] {
 					MailingComponentType.Template,
-					MailingComponentType.PersonalizedAttachment,
-					MailingComponentType.HostedImage,
+					MailingComponentType.PersonalizedAttachment
 				};
 			}
 		}

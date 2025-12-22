@@ -10,12 +10,9 @@
 
 package com.agnitas.dao.impl.mapper;
 
-import java.io.InputStream;
-import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -39,15 +36,8 @@ public class BlobRowMapper implements RowMapper<byte[]> {
 	
 	@Override
 	public byte[] mapRow(ResultSet resultSet, int index) throws SQLException {
-		Blob blob = resultSet.getBlob(1);
-		if (blob == null || blob.length() == 0) {
-			return null;
-		} else {
-			try (InputStream dataStream = blob.getBinaryStream()) {
-				return IOUtils.toByteArray(dataStream);
-			} catch (Exception e) {
-				throw new SQLException("Cannot read predelivery data: " + e.getMessage(), e);
-			}
-		}
+		byte[] bytes = resultSet.getBytes(1);
+		return bytes == null || bytes.length == 0 ? null : bytes;
 	}
+
 }

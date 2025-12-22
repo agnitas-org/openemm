@@ -1,14 +1,10 @@
-AGN.Lib.CoreInitializer.new('template', function($scope) {
-  if (!$scope) {
-    $scope = $(document);
-  }
-
-  $scope.find('script[type="text/x-mustache-template"]').each(function() {
-    var $template = $(this);
-    var id = $template.attr('id');
+AGN.Lib.CoreInitializer.new('template', function($scope = $(document)) {
+  $scope.find('script[type="text/x-mustache-template"], template').each(function() {
+    const $template = $(this);
+    const id = $template.attr('id');
 
     if (id) {
-      AGN.Opt.Templates[id] = $template.html();
+      AGN.Lib.Template.register(id, $template.html());
     }
   });
 });

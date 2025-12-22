@@ -39,14 +39,12 @@ public interface EmmActionService {
 
     boolean executeActions(int actionID, int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception;
 
-    int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) throws Exception;
+    int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements);
 
     @Transactional
     int saveEmmAction(int companyId, EmmAction action, List<UserAction> userActions);
 
     EmmAction getEmmAction(int actionID, int companyID);
-
-    boolean deleteEmmAction(int actionID, int companyID);
 
     List<Integer> getReferencedMailinglistsFromAction(int companyID, int actionID);
 
@@ -69,9 +67,6 @@ public interface EmmActionService {
     void bulkDelete(Set<Integer> actionIds, int companyId);
 
     String getEmmActionName(int actionId, int companyId);
-
-    // TODO: EMMGUI-714 remove after remove of old design
-    boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions);
 
     ServiceResult<List<EmmAction>> setActiveness(Set<Integer> ids, int companyId, boolean activate);
 

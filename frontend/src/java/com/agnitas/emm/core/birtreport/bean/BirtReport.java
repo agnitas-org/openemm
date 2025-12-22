@@ -32,10 +32,6 @@ public interface BirtReport {
     String FORMAT_PDF = "pdf";
     String FORMAT_CSV = "csv";
 
-    int MAILINGS = 0;
-    int MAILINGLIST = 1;
-    int TARGETGROUP = 2;
-
     BirtReportComparisonSettings getReportComparisonSettings();
     BirtReportMailingSettings getReportMailingSettings();
     BirtReportRecipientSettings getReportRecipientSettings();

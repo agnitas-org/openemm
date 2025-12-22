@@ -10,6 +10,46 @@
 
 package com.agnitas.emm.core.workflow.service;
 
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.CONTAINS;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.EQ;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.GEQ;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.GT;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.IS;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.LEQ;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.LIKE;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.LT;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.MOD;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.NEQ;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.NO;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_CONTAINS;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_LIKE;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_STARTS_WITH;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.STARTS_WITH;
+import static com.agnitas.emm.core.target.beans.ConditionalOperator.YES;
+import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.MAILING_ICON_TYPE_IDS;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
@@ -17,15 +57,23 @@ import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.auto_import.service.AutoImportService;
+import com.agnitas.emm.core.autoexport.beans.AutoExport;
+import com.agnitas.emm.core.autoexport.service.AutoExportService;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.beans.ConditionalOperator;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -60,66 +108,19 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.emm.core.company.service.CompanyService;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.target.beans.ConditionalOperator;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus.STATUS_PAUSED;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.MAILING_ICON_TYPE_IDS;
-import static java.util.Collections.emptyList;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.CONTAINS;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.EQ;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.GEQ;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.GT;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.IS;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.LEQ;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.LIKE;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.LT;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.MOD;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.NEQ;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.NO;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_CONTAINS;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_LIKE;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.NOT_STARTS_WITH;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.STARTS_WITH;
-import static com.agnitas.emm.core.target.beans.ConditionalOperator.YES;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 
 public class WorkflowValidationService {
     private static final Logger logger = LogManager.getLogger(WorkflowValidationService.class);
@@ -288,10 +289,7 @@ public class WorkflowValidationService {
                 return SimpleServiceResult.simpleError(Message.of("error.workflow.SaveActivatedWorkflow"));
             default:
                 switch (newStatus) {
-                    case STATUS_OPEN:
-                    case STATUS_INACTIVE:
-                    case STATUS_ACTIVE:
-                    case STATUS_TESTING:
+                    case STATUS_OPEN, STATUS_INACTIVE, STATUS_ACTIVE, STATUS_TESTING:
                         return SimpleServiceResult.simpleSuccess();
 
                     default:
@@ -300,7 +298,7 @@ public class WorkflowValidationService {
         }
     }
 
-    public SimpleServiceResult validate(int workflowId, List<WorkflowIcon> icons, Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus, Admin admin) throws Exception {
+    public SimpleServiceResult validate(int workflowId, List<WorkflowIcon> icons, Workflow.WorkflowStatus oldStatus, Workflow.WorkflowStatus newStatus, Admin admin) {
         List<Message> messages = new ArrayList<>();
 
         final int companyId = admin.getCompanyID();
@@ -424,18 +422,38 @@ public class WorkflowValidationService {
         messages.addAll(validateReferencedProfileFields(icons, companyId));
         messages.addAll(validateOperatorsInDecisions(icons, companyId));
         messages.addAll(validateMailingDataAndComponents(icons, admin));
+        messages.addAll(validateSplits(workflowGraph));
 
-        if (admin.isRedesignedUiUsed()) {
-            messages.addAll(validateDuplicatedMailings(icons, admin));
+        messages.addAll(validateDuplicatedMailings(icons, admin));
 
-            if (messages.isEmpty()) {
-                return validateStatusTransition(oldStatus, newStatus);
-            }
-
-            return SimpleServiceResult.simpleError(messages);
-        } else {
-            return new SimpleServiceResult(messages.isEmpty(), messages);
+        if (messages.isEmpty()) {
+            return validateStatusTransition(oldStatus, newStatus);
         }
+
+        return SimpleServiceResult.simpleError(messages);
+    }
+
+    private List<Message> validateSplits(WorkflowGraph graph) {
+        return containsInvalidSplit(graph)
+            ? List.of(Message.of("error.workflow.split.icon"))
+            : emptyList();
+    }
+
+    private static boolean containsInvalidSplit(WorkflowGraph graph) {
+        return graph.getAllNodesByType(WorkflowIconType.PARAMETER.getId()).stream()
+            .filter(node -> node.getNodeIcon().isEditable())
+            .anyMatch(paramNode -> missingPreviousSplitIcon(paramNode, graph)
+                                   && missingNextAutoOptIcon(paramNode, graph));
+    }
+
+    private static boolean missingNextAutoOptIcon(WorkflowNode node, WorkflowGraph graph) {
+        WorkflowIcon decision = graph.getNextIconByType(
+            node.getNodeIcon(), WorkflowIconType.DECISION.getId(), emptyList(), false);
+        return decision == null || !WorkflowUtils.isAutoOptimizationIcon(decision);
+    }
+
+    private static boolean missingPreviousSplitIcon(WorkflowNode node, WorkflowGraph graph) {
+        return graph.getPreviousIconByType(node.getNodeIcon(), WorkflowIconType.SPLIT.getId(), emptySet()) == null;
     }
 
     private List<Message> validateDuplicatedMailings(List<WorkflowIcon> icons, Admin admin) {
@@ -445,7 +463,7 @@ public class WorkflowValidationService {
         }
 
         List<ObjectUsage> usages = duplicatedMailings.stream()
-                .map(m -> new ObjectUsage(ObjectUserType.MAILING, m.getId(), m.getShortname()))
+                .map(m -> new ObjectUsage(ObjectUsageType.MAILING, m.getId(), m.getShortname()))
                 .collect(Collectors.toList());
 
         return List.of(new ObjectUsages(usages).toMessage("error.workflow.mailingIsUsingInSeveralIcons", admin.getLocale()));
@@ -459,7 +477,7 @@ public class WorkflowValidationService {
         }
     }
 
-    private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {
+    private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, int companyId, int trackingDays) {
         List<Message> messages = new ArrayList<>();
 
         // It's possible to show a separate error message for each case (e.g. listing names of affected mailings)
@@ -490,8 +508,7 @@ public class WorkflowValidationService {
     private Message translateToActionMessage(WorkflowValidationService.MailingTrackingUsageError error, int trackingDays) {
         MailingType mailingType = error.getMailingType();
         switch (error.getErrorType()) {
-            case BASE_MAILING_NOT_FOUND:
-            case DECISION_MAILING_INVALID:
+            case BASE_MAILING_NOT_FOUND, DECISION_MAILING_INVALID:
                 if (mailingType == MailingType.ACTION_BASED || mailingType == MailingType.DATE_BASED) {
                     return Message.of("error.workflow.baseMailingNeedActivated", error.getMailingName());
                 } else {
@@ -588,7 +605,7 @@ public class WorkflowValidationService {
     }
 
     private WorkflowIcon getLinkedStart(WorkflowDecisionImpl icon, WorkflowGraph graph) {
-        return graph.getPreviousIconByType(icon, WorkflowIconType.START.getId(), Collections.emptySet());
+        return graph.getPreviousIconByType(icon, WorkflowIconType.START.getId(), emptySet());
     }
 
     private boolean validateAutoOptimizationStructure(List<WorkflowIcon> icons) {
@@ -725,7 +742,7 @@ public class WorkflowValidationService {
         for (WorkflowIcon icon : icons) {
             if (icon.getType() == WorkflowIconType.IMPORT.getId()) {
                 // Find a start icon related to this import icon.
-                WorkflowIcon start = graph.getPreviousIconByType(icon, WorkflowIconType.START.getId(), Collections.emptySet());
+                WorkflowIcon start = graph.getPreviousIconByType(icon, WorkflowIconType.START.getId(), emptySet());
 
                 // If a start icon is missing or isn't filled yet just ignore that (let's assume it's ok).
                 if (start != null && start.isFilled()) {
@@ -1232,9 +1249,8 @@ public class WorkflowValidationService {
      * external mailings check validity of a mailtracking use.
      * @param icons workflow icons to process.
      * @param trackingDays mailtracking data expiration period (or 0 when a mailtracking is disabled).
-     * @throws Exception
      */
-    public List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {
+    private List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, int companyId, int trackingDays) {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         WorkflowGraph workflowGraph = new WorkflowGraph();
         if (!workflowGraph.build(icons)) {
@@ -1287,7 +1303,7 @@ public class WorkflowValidationService {
                                                 errors.add(errorMailingDisordered(mailingIcon, companyId));
                                             }
                                         } else {
-                                            logger.debug("Unable to calculate send date for mailing icon #" + mailingIcon.getId() + " (mailingId: " + mailingIcon.getMailingId() + ")");
+                                            logger.debug("Unable to calculate send date for mailing icon #{} (mailingId: {})", mailingIcon.getId(), mailingIcon.getMailingId());
                                         }
                                     } else {
                                         errors.add(errorMailingDisordered(mailingIcon, companyId));
@@ -1310,7 +1326,7 @@ public class WorkflowValidationService {
                             } else {
                                 String baseStatus = (String) baseMailing.get("work_status");
                                 Date baseSendDate = (Date) baseMailing.get("senddate");
-                                MailingType mailingType = MailingType.fromCode(((Number) baseMailing.get("mailing_type")).intValue());
+                                MailingType mailingType = MailingType.getByCode(((Number) baseMailing.get("mailing_type")).intValue());
 
                                 if (baseSendDate != null && FOLLOWED_MAILING_STATUSES.contains(baseStatus)) {
                                     // Calculate the max possible send date for a mailings dependent on decision
@@ -1358,7 +1374,7 @@ public class WorkflowValidationService {
                             }
                         }
                     } else {
-                        logger.debug("Unable to calculate date for decision icon #" + decision.getId());
+                        logger.debug("Unable to calculate date for decision icon #{}", decision.getId());
                     }
                 }
             }
@@ -1403,13 +1419,13 @@ public class WorkflowValidationService {
                 true));
     }
 
-    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, int companyId) throws Exception {
+    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, int companyId) {
         Map<String, Object> data = mailingDao.getMailingWithWorkStatus(icon.getMailingId(), companyId);
 
         return new MailingTrackingUsageError(
                 MailingTrackingUsageErrorType.DECISION_MAILING_DISORDERED,
                 icon.getMailingId(),
-                MailingType.fromCode(((Number) data.get("mailing_type")).intValue()),
+                MailingType.getByCode(((Number) data.get("mailing_type")).intValue()),
                 (String) data.get("shortname")
         );
     }
@@ -1898,7 +1914,7 @@ public class WorkflowValidationService {
         return true;
     }
 
-    public List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, int companyId, int trackingDays) throws Exception {
+    private List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, int companyId, int trackingDays) {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         List<WorkflowFollowupMailing> followupMailingIcons = workflowService.getFollowupMailingIcon(workflowIcons);
         Map<Integer, WorkflowMailingAware> workflowMailings = new HashMap<>();
@@ -1928,7 +1944,7 @@ public class WorkflowValidationService {
                         errors.add(new MailingTrackingUsageError(
                                 MailingTrackingUsageErrorType.BASE_MAILING_DISORDERED,
                                 icon.getMailingId(),
-                                MailingType.fromCode(((Number) baseMailing.get("mailing_type")).intValue()),
+                                MailingType.getByCode(((Number) baseMailing.get("mailing_type")).intValue()),
                                 (String)baseMailing.get("shortname")
                         ));
                     } else {
@@ -1951,10 +1967,10 @@ public class WorkflowValidationService {
                     }
                 } else {
                     if (baseSendDate == null) {
-                        logger.debug("Unable to calculate send date for followup mailing icon #" + icon.getId() + " (mailingId: " + icon.getBaseMailingId() + ")");
+                        logger.debug("Unable to calculate send date for followup mailing icon #{} (mailingId: {})", icon.getId(), icon.getBaseMailingId());
                     }
                     if (followSendDate == null) {
-                        logger.debug("Unable to calculate send date for base mailing (mailingId: " + icon.getBaseMailingId() + ")");
+                        logger.debug("Unable to calculate send date for base mailing (mailingId: {})", icon.getBaseMailingId());
                     }
                 }
             } else {

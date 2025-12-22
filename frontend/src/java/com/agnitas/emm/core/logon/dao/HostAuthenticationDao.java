@@ -29,7 +29,7 @@ public interface HostAuthenticationDao {
 	 * @throws NoSecurityCodeHostAuthenticationDaoException if there is no pending host authentication for given admin and host
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException;
+	String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException;
 
 	/**
 	 * Returns security code for pending host authentication.
@@ -42,7 +42,7 @@ public interface HostAuthenticationDao {
 	 * @throws NoSecurityCodeHostAuthenticationDaoException if there is no pending host authentication for given supervisor and host
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public String getSecurityCode(Supervisor supervisor, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException;
+	String getSecurityCode(Supervisor supervisor, String hostID) throws HostAuthenticationDaoException;
 
 	/**
 	 * Writes a security code for a pending host authentication.
@@ -92,7 +92,7 @@ public interface HostAuthenticationDao {
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
+	void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
 
 	/**
 	 * Writes data for a host authentication. Either a new host authentication is written or the expiration date of an
@@ -104,7 +104,7 @@ public interface HostAuthenticationDao {
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public void writeHostAuthentication(Supervisor supervisor, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
+	void writeHostAuthentication(Supervisor supervisor, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
 
 	/**
 	 * Removes pending security code for admin and host.
@@ -125,14 +125,14 @@ public interface HostAuthenticationDao {
 	/**
 	 * Remove all expired host authentications.
 	 */
-	public void removeExpiredHostAuthentications();
+	void removeExpiredHostAuthentications();
 
 	/**
 	 * Remove all pending host authentications old than given maximum age.
 	 * 
 	 * @param maxPendingHostAuthenticationsAgeMinutes maximum age of a pending host authentication in minutes
 	 */
-	public void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes);
+	void removeExpiredPendingAuthentications(final int maxPendingHostAuthenticationsAgeMinutes);
 
-	public void removeAuthentictedHost(final String hostId);
+	void removeAuthenticatedHost(final String hostId);
 }

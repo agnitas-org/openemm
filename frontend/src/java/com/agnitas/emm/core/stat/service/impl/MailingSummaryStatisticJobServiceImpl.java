@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import com.agnitas.dao.MailingDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -121,7 +121,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 	}
 	
 	@Override
-	public List<Integer> parseGroupList(String targetGroups) throws NumberFormatException {
+	public List<Integer> parseGroupList(String targetGroups) {
 		if (StringUtils.isBlank(targetGroups)) {
 			return null;
 		}
@@ -181,7 +181,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 
 	@Override
 	@Transactional
-	public MailingStatJobDescriptor getStatisticJob(int jobId) throws SummaryStatJobNotExistException {
+	public MailingStatJobDescriptor getStatisticJob(int jobId) {
 		try {
 			return mailingStatJobDao.getMailingStatJob(jobId);
 		} catch (DataAccessException e) {
@@ -191,12 +191,12 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 	
 	@Override
 	@Transactional
-	public MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId) throws DataAccessException {
+	public MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId) {
 		return mailingStatTgtGrpDao.getMailingStatTgtGrpByJobId(jobId, targetGroupId);
 	}
 	
 	@Transactional
-	public void saveStatisticTgtGrp(MailingStatisticTgtGrp tgtGrp) throws DataAccessException {
+	public void saveStatisticTgtGrp(MailingStatisticTgtGrp tgtGrp) {
 		mailingStatTgtGrpDao.saveMalingStatTgtGrp(tgtGrp);
 	}
 	

@@ -72,7 +72,6 @@ public class CsvReader extends BasicReader {
 
 	/** state variable to check for a break inside the last cell of line */
 	private boolean lastCellInLineHasUnclosedQuote = false;
-	/** indicates whether it is necessary to find line breaks in the cell */
 
 	/**
 	 * CSV Reader derived constructor.
@@ -80,8 +79,8 @@ public class CsvReader extends BasicReader {
 	 * @param inputStream
 	 *            the input stream
 	 */
-	public CsvReader(InputStream inputStream) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
+	public CsvReader(InputStream inputStream) {
+		this(inputStream, DEFAULT_CHARSET, DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -92,7 +91,7 @@ public class CsvReader extends BasicReader {
 	 * @param encoding
 	 *            the encoding
 	 */
-	public CsvReader(InputStream inputStream, String encoding) throws Exception {
+	public CsvReader(InputStream inputStream, String encoding) {
 		this(inputStream, Charset.forName(encoding), DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
@@ -104,7 +103,7 @@ public class CsvReader extends BasicReader {
 	 * @param encoding
 	 *            the encoding
 	 */
-	public CsvReader(InputStream inputStream, Charset encoding) throws Exception {
+	public CsvReader(InputStream inputStream, Charset encoding) {
 		this(inputStream, encoding, DEFAULT_SEPARATOR, DEFAULT_STRING_QUOTE);
 	}
 
@@ -116,8 +115,8 @@ public class CsvReader extends BasicReader {
 	 * @param separator
 	 *            the separator
 	 */
-	public CsvReader(InputStream inputStream, char separator) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, DEFAULT_STRING_QUOTE);
+	public CsvReader(InputStream inputStream, char separator) {
+		this(inputStream, DEFAULT_CHARSET, separator, DEFAULT_STRING_QUOTE);
 	}
 
 	/**
@@ -130,7 +129,7 @@ public class CsvReader extends BasicReader {
 	 * @param separator
 	 *            the separator
 	 */
-	public CsvReader(InputStream inputStream, String encoding, char separator) throws Exception {
+	public CsvReader(InputStream inputStream, String encoding, char separator) {
 		this(inputStream, Charset.forName(encoding), separator, DEFAULT_STRING_QUOTE);
 	}
 
@@ -144,7 +143,7 @@ public class CsvReader extends BasicReader {
 	 * @param separator
 	 *            the separator
 	 */
-	public CsvReader(InputStream inputStream, Charset encoding, char separator) throws Exception {
+	public CsvReader(InputStream inputStream, Charset encoding, char separator) {
 		this(inputStream, encoding, separator, DEFAULT_STRING_QUOTE);
 	}
 
@@ -158,8 +157,8 @@ public class CsvReader extends BasicReader {
 	 * @param stringQuote
 	 *            the string quote
 	 */
-	public CsvReader(InputStream inputStream, char separator, Character stringQuote) throws Exception {
-		this(inputStream, Charset.forName(DEFAULT_ENCODING), separator, stringQuote);
+	public CsvReader(InputStream inputStream, char separator, Character stringQuote) {
+		this(inputStream, DEFAULT_CHARSET, separator, stringQuote);
 	}
 
 	/**
@@ -174,7 +173,7 @@ public class CsvReader extends BasicReader {
 	 * @param stringQuote
 	 *            the string quote
 	 */
-	public CsvReader(InputStream inputStream, String encoding, char separator, Character stringQuote) throws Exception {
+	public CsvReader(InputStream inputStream, String encoding, char separator, Character stringQuote) {
 		this(inputStream, Charset.forName(encoding), separator, stringQuote);
 	}
 
@@ -189,9 +188,8 @@ public class CsvReader extends BasicReader {
 	 *            the separator
 	 * @param stringQuote
 	 *            the string quote
-	 * @throws Exception
 	 */
-	public CsvReader(InputStream inputStream, Charset encoding, char separator, Character stringQuote) throws Exception {
+	public CsvReader(InputStream inputStream, Charset encoding, char separator, Character stringQuote) {
 		super(inputStream, encoding);
 		
 		this.separator = separator;

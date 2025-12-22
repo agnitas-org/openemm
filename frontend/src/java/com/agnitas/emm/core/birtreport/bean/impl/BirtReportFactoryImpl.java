@@ -11,11 +11,11 @@
 package com.agnitas.emm.core.birtreport.bean.impl;
 
 import java.util.HashMap;
+import java.util.Map;
 
-import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
+import com.agnitas.emm.core.birtreport.bean.BirtReportFactory;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 @Component("BirtReportFactory")
 public class BirtReportFactoryImpl implements BirtReportFactory {
     
-	/** The logger. */
     private static final Logger logger = LogManager.getLogger(BirtReportFactoryImpl.class);
     
     @Override
@@ -39,13 +38,13 @@ public class BirtReportFactoryImpl implements BirtReportFactory {
                 return new BirtReportTopDomainsSettings();
             default:
         }
-        logger.warn("Unsupported birt report settings type: " + type);
+        logger.warn("Unsupported birt report settings type: {}", type);
         return null;
     }
     
     @Override
     public BirtReport createReport() {
-        HashMap<ReportSettingsType, BirtReportSettings> settings = new HashMap<>();
+        Map<ReportSettingsType, BirtReportSettings> settings = new HashMap<>();
         for (ReportSettingsType type: ReportSettingsType.values()) {
             settings.put(type, createReportSettings(type));
         }

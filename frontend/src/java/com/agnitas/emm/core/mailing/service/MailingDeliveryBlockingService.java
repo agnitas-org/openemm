@@ -12,8 +12,6 @@ package com.agnitas.emm.core.mailing.service;
 
 public interface MailingDeliveryBlockingService {
 
-    void blockDeliveryByAutoImport(int autoImportId, int mailingId, int companyId);
-
     void unblock(int mailingId);
 
     void resumeBlockingIfNeeded(int mailingId, int companyId);
@@ -21,4 +19,5 @@ public interface MailingDeliveryBlockingService {
     int findBlockingAutoImportId(int mailingId);
 
     void blockByAutoImport(int mailingId, int autoImportId, int maildropStatusId);
+
 }

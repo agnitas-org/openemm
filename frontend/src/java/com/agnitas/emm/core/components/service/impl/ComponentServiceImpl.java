@@ -38,12 +38,22 @@ import javax.imageio.ImageIO;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.factory.MailingComponentFactory;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.FormComponentDao;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.components.dto.FormComponentDto;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.emm.core.components.entity.ComponentModel;
+import com.agnitas.emm.core.components.entity.validation.ComponentModelValidator;
+import com.agnitas.emm.core.components.exception.ComponentAlreadyExistException;
+import com.agnitas.emm.core.components.exception.ComponentNotExistException;
 import com.agnitas.emm.core.components.service.ComponentService;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.userform.form.UserFormImagesOverviewFilter;
 import com.agnitas.emm.core.userform.util.WebFormUtils;
 import com.agnitas.messages.Message;
@@ -51,22 +61,11 @@ import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ImageDimensionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.ImageUtils;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.factory.MailingComponentFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
-import org.agnitas.emm.core.component.service.ComponentModel;
-import org.agnitas.emm.core.component.service.ComponentNotExistException;
-import org.agnitas.emm.core.component.service.validation.ComponentModelValidator;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.FileUtils;
+import com.agnitas.util.ImageUtils;
 import com.agnitas.util.ZipUtilities;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
@@ -153,11 +152,6 @@ public class ComponentServiceImpl implements ComponentService {
 	}
 
 	@Override
-	public boolean deleteFormComponent(int formID, int companyID, String componentName) {
-		return formComponentDao.deleteFormComponent(companyID, formID, componentName, null);
-	}
-
-	@Override
 	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponent.FormComponentType componentType) {
 		return formComponentDao.getFormComponent(formID, companyID, imageFileName, componentType);
 	}
@@ -222,10 +216,10 @@ public class ComponentServiceImpl implements ComponentService {
 	}
 
 	@Override
-	public PaginatedListImpl<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId) {
+	public PaginatedList<FormComponentDto> getFormImageComponents(UserFormImagesOverviewFilter filter, int companyID, int formId) {
 		initFilterData(filter, companyID, formId);
 
-		PaginatedListImpl<FormComponent> components = formComponentDao.getFormComponentOverview(filter);
+		PaginatedList<FormComponent> components = formComponentDao.getFormComponentOverview(filter);
 		return conversionService.convertPaginatedList(components, FormComponent.class, FormComponentDto.class);
 	}
 
@@ -364,9 +358,7 @@ public class ComponentServiceImpl implements ComponentService {
 				existingNames.add(name);
 			}
 
-			if (!ImageUtils.isValidImageFileExtension(AgnUtils.getFileExtension(name))) {
-				invalidFormat.add(name);
-			} else if (!ImageUtils.isValidImage(component.getData(), configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
+			if (!ImageUtils.isValidImageFileExtension(AgnUtils.getFileExtension(name)) || !ImageUtils.isValidImage(component.getData())) {
 				invalidFormat.add(name);
 			}
 		}
@@ -386,30 +378,6 @@ public class ComponentServiceImpl implements ComponentService {
 		}
 
 		return errors;
-	}
-
-	@Override
-	public SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting) {
-		try {
-			ServiceResult<List<FormUploadComponentDto>> readResult = readComponentsFromZipFile(zipFile);
-			if (!readResult.isSuccess()) {
-				return new SimpleServiceResult(false, readResult.getErrorMessages());
-			}
-
-			List<FormUploadComponentDto> components = readResult.getResult();
-			components.forEach(c -> c.setOverwriteExisting(overwriteExisting));
-
-			List<Message> errors = validateComponents(components, false);
-			if (errors.isEmpty()) {
-				List<FormComponent> componentList = conversionService.convert(components, FormUploadComponentDto.class, FormComponent.class);
-				return saveFormComponents(admin, formId, componentList, userActions);
-			}
-
-			return new SimpleServiceResult(false, errors);
-		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
-			return new SimpleServiceResult( false, Message.of("Error"));
-		}
 	}
 
 	@Override

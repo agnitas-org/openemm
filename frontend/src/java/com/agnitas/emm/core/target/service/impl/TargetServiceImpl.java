@@ -12,6 +12,7 @@ package com.agnitas.emm.core.target.service.impl;
 
 import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
 import static java.util.Collections.emptySet;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,11 @@ import java.util.stream.Collectors;
 import bsh.Interpreter;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.ListSplit;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
@@ -47,6 +51,7 @@ import com.agnitas.dao.TargetDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.dto.IntRange;
+import com.agnitas.emm.core.mailing.forms.SplitSettings;
 import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
@@ -73,33 +78,30 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConvert
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollector;
 import com.agnitas.emm.core.target.exception.EqlFormatException;
+import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotCompatibleWithContentBlockException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
+import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
 import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.target.service.UserActivityLog;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.service.MailingContentService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
-import com.agnitas.emm.core.target.exception.TargetGroupNotCompatibleWithContentBlockException;
-import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
-import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import com.agnitas.emm.core.target.service.UserActivityLog;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import com.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.ui.Model;
 
 /**
  * Implementation of {@link TargetService} interface.
@@ -375,25 +377,7 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
-	public ServiceResult<List<Integer>> bulkDelete(Set<Integer> targetIds, Admin admin) {
-		List<Integer> deletedTargets = new ArrayList<>();
-		List<Message> errorMessages = new ArrayList<>();
-
-		for (int targetId : targetIds) {
-			SimpleServiceResult deletionResult = deleteTargetGroup(targetId, admin);
-
-			if (deletionResult.isSuccess()) {
-				deletedTargets.add(targetId);
-			} else {
-				errorMessages.addAll(deletionResult.getErrorMessages());
-			}
-		}
-
-		return new ServiceResult<>(deletedTargets, errorMessages.isEmpty(), errorMessages);
-	}
-
-	@Override
-	public List<Integer> bulkDeleteRedesigned(Set<Integer> ids, Admin admin) {
+	public List<Integer> bulkDelete(Set<Integer> ids, Admin admin) {
 		List<Integer> deletedTargets = new ArrayList<>();
 
 		for (int targetId : ids) {
@@ -516,44 +500,45 @@ public class TargetServiceImpl implements TargetService {
 	public Target getTargetGroupOrNull(int targetId, int companyId) {
 		try {
 			return getTargetGroup(targetId, companyId);
-		} catch (UnknownTargetGroupIdException e) {
-			logger.warn(String.format("Could not find target group ID: %d CID: %d", targetId, companyId));
+		} catch (TargetGroupNotFoundException e) {
+			logger.warn("Could not find target group ID: {} CID: {}", targetId, companyId);
+			return null;
 		}
-
-		return null;
 	}
 
 	@Override
-	public final Target getTargetGroup(final int targetId, final int companyId) throws UnknownTargetGroupIdException {
+	public Target getTargetGroupOrNull(int targetId, int companyId, int adminId) {
+		try {
+			return getTargetGroup(targetId, companyId, adminId);
+		} catch (TargetGroupNotFoundException e) {
+			logger.warn("Could not find target group ID: {} CID: {} adminID: {}", targetId, companyId, adminId);
+			return null;
+		}
+	}
+
+	@Override
+	public Target getTargetGroup(int targetId, int companyId) {
         return getTargetGroup(targetId, companyId, 0);
     }
 
     @Override
-	public final Target getTargetGroup(final int targetId, final int companyId, final int adminId) throws UnknownTargetGroupIdException {
-		if (logger.isInfoEnabled()) {
-			logger.info(String.format("Retrieving target group ID %d for company ID %d", targetId, companyId));
-		}
+	public Target getTargetGroup(int targetId, int companyId, int adminId) {
+		logger.info("Retrieving target group ID {} for company ID {}", targetId, companyId);
 
 		final Target result = this.targetDao.getTarget(targetId, companyId);
 
 		if (result == null) {
-			// Logged at INFO level, because this is not an internally caused error
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Target ID %d not found for company ID %d", targetId, companyId));
-			}
-
-			throw new UnknownTargetGroupIdException(targetId);
-		} else {
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Found target group ID %d for company ID %d", targetId, companyId));
-			}
-
-			if (adminId > 0) {
-			    result.setFavorite(isTargetFavoriteForAdmin(result, adminId));
-            }
-
-			return result;
+			logger.info("Target ID {} not found for company ID {}", targetId, companyId);
+			throw new TargetGroupNotFoundException(targetId);
 		}
+
+		logger.info("Found target group ID {} for company ID {}", targetId, companyId);
+
+		if (adminId > 0) {
+			result.setFavorite(isTargetFavoriteForAdmin(result, adminId));
+		}
+
+		return result;
 	}
 
     protected boolean isTargetFavoriteForAdmin(Target target, int adminId) {
@@ -647,20 +632,7 @@ public class TargetServiceImpl implements TargetService {
 
 	@Override
 	public List<TargetLight> getTargetLights(final Admin admin) {
-		return getTargetLights(admin, true, true, false);
-	}
-
-	@Override
-	public List<TargetLight> getTargetLights(int adminId, final int companyID, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		TargetLightsOptions options = TargetLightsOptions.builder()
-                .setAdminId(adminId)
-				.setCompanyId(companyID)
-				.setWorldDelivery(worldDelivery)
-				.setAdminTestDelivery(adminTestDelivery)
-				.setContent(content)
-				.build();
-
-		return getTargetLights(options);
+		return getTargetLights(admin, false, null);
 	}
 	
 	@Override
@@ -668,8 +640,6 @@ public class TargetServiceImpl implements TargetService {
 		TargetLightsOptions options = TargetLightsOptions.builder()
                 .setAdminId(admin.getAdminID())
 				.setCompanyId(admin.getCompanyID())
-				.setWorldDelivery(true)
-				.setAdminTestDelivery(true)
 				.setContent(false)
 				.build();
 		
@@ -698,12 +668,17 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), worldDelivery, adminTestDelivery, content);
+	public List<TargetLight> getTargetLights(final Admin admin, boolean content, TargetGroupDeliveryOption delivery) {
+		TargetLightsOptions options = TargetLightsOptions.builder()
+			.setAdminId(admin.getAdminID())
+			.setCompanyId(admin.getCompanyID())
+			.setDeliveryOption(delivery)
+			.setContent(content)
+			.build();
+		return getTargetLights(options);
 	}
 
-	@Override
-	public List<TargetLight> getTargetLights(TargetLightsOptions options) {
+	protected List<TargetLight> getTargetLights(TargetLightsOptions options) {
 		try {
 			return targetDao.getTargetLightsBySearchParameters(options);
 		} catch (Exception e) {
@@ -714,12 +689,12 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
-	public PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexity) {
+	public PaginatedList<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexity) {
 		try {
 			int numberOfRecipients = recipientDao.getNumberOfRecipients(options.getCompanyId());
 			if (numberOfRecipients < TargetUtils.MIN_RECIPIENT_COUNT_CONDITION_THRESHOLD
 					&& (TargetComplexityGrade.YELLOW.equals(complexity) || TargetComplexityGrade.RED.equals(complexity))) {
-				return new PaginatedListImpl<>(
+				return new PaginatedList<>(
 						Collections.emptyList(),
 						0,
 						options.getPageSize(),
@@ -742,30 +717,7 @@ public class TargetServiceImpl implements TargetService {
 		} catch (Exception e) {
 			logger.error(String.format("Getting target light error: %s", e.getMessage()), e);
 		}
-		return new PaginatedListImpl<>();
-	}
-
-	@Override
-	public List<ListSplit> getListSplits(int companyId) {
-		List<TargetLight> targets = targetDao.getSplitTargetLights(companyId, "");
-
-		if (CollectionUtils.isNotEmpty(targets)) {
-			return targets.stream()
-					.map(TargetLight::toListSplit)
-					.filter(Objects::nonNull)
-					.sorted((s1, s2) -> {
-						// Primary sorting criteria
-						int d = s1.getParts().length - s2.getParts().length;
-						if (d == 0) {
-							// Secondary sorting criteria
-							return s1.getPartIndex() - s2.getPartIndex();
-						}
-						return d;
-					})
-					.collect(Collectors.toList());
-		}
-
-		return Collections.emptyList();
+		return new PaginatedList<>();
 	}
 
 	@Override
@@ -788,8 +740,7 @@ public class TargetServiceImpl implements TargetService {
         return targetId > 0 ? targetId : NONE_SPLIT_ID;
 	}
 
-	@Override
-	public String getTargetSplitName(int splitId) {
+	private String getTargetSplitName(int splitId) {
 		return targetDao.getTargetSplitName(splitId);
 	}
 
@@ -903,30 +854,12 @@ public class TargetServiceImpl implements TargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final Admin admin, boolean content, TargetGroupDeliveryOption delivery) {
-		TargetLightsOptions options = TargetLightsOptions.builder()
-			.setAdminId(admin.getAdminID())
-			.setCompanyId(admin.getCompanyID())
-			.setDeliveryOption(delivery)
-			.setContent(content)
-			.build();
-		return getTargetLights(options);
-	}
-
-	@Override
 	public List<TargetLight> getSplitTargetLights(int companyId, String splitType) {
 		return targetDao.getSplitTargetLights(companyId, splitType);
 	}
 
 	@Override
-	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
-                                                                                Set<TargetGroupDependentType> allowedTypes, int pageNumber,
-                                                                                int pageSize, String sortColumn, String order) {
-		return targetDao.getDependents(companyId, targetId, allowedTypes, pageNumber, pageSize, sortColumn, order);
-	}
-
-	@Override
-	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int targetId, int companyId, PaginationForm filter) {
+	public PaginatedList<Dependent<TargetGroupDependentType>> getDependents(int targetId, int companyId, PaginationForm filter) {
 		return targetDao.getDependents(companyId, targetId, emptySet(),
 			filter.getPage(), filter.getNumberOfRows(), filter.getSort(), filter.getOrder());
 	}
@@ -961,8 +894,7 @@ public class TargetServiceImpl implements TargetService {
 		return calculateComplexityIndex(eql, companyId, new TargetComplexityEvaluationCacheImpl());
 	}
 
-	@Override
-	public int calculateComplexityIndex(String eql, int companyId, TargetComplexityEvaluationCache cache) {
+	private int calculateComplexityIndex(String eql, int companyId, TargetComplexityEvaluationCache cache) {
 		try {
 			return complexityEvaluator.evaluate(eql, companyId, cache);
 		} catch (Exception e) {
@@ -1006,21 +938,6 @@ public class TargetServiceImpl implements TargetService {
 	@Override
 	public boolean isBasicFullTextSearchSupported(){
 		return targetDao.isBasicFullTextSearchSupported();
-	}
-
-	@Override
-	public boolean isRecipientMatchTarget(Admin admin, int targetGroupId, int customerId) {
-		try {
-			String targetExpression = targetDao.getTargetSQL(targetGroupId, admin.getCompanyID());
-			if (StringUtils.isEmpty(targetExpression)) {
-				return true;
-			}
-			return recipientDao.isRecipientMatchTarget(admin.getCompanyID(), targetExpression, customerId);
-		} catch (Exception e) {
-			logger.error(String.format("Error occurs while checking if recipient match target group: %s", e.getMessage()), e);
-		}
-
-		return false;
 	}
 
 	@Override
@@ -1111,6 +1028,11 @@ public class TargetServiceImpl implements TargetService {
 		}
 
 		return targetId;
+	}
+
+	@Override
+	public boolean exist(int targetId, int companyId) {
+		return targetDao.exist(targetId, companyId);
 	}
 
 	@Override
@@ -1256,6 +1178,70 @@ public class TargetServiceImpl implements TargetService {
 		}
 
 		return Collections.emptyList();
+	}
+
+	@Override
+	public int getTargetListSplitIdForSave(int splitId, String splitBase, String splitPart) {
+		int id = getTargetListSplitId(splitBase, splitPart, isWmSplit(splitId));
+		if (id == Mailing.YES_SPLIT_ID) { //-1 Should not be saved to DB
+			id = Mailing.NONE_SPLIT_ID;
+		}
+		return id;
+	}
+
+	private boolean isWmSplit(int splitId) {
+		if (splitId > 0) {
+			String name = getTargetSplitName(splitId);
+			return isNotEmpty(name)
+				   && name.startsWith(TargetLight.LIST_SPLIT_CM_PREFIX);
+		}
+		return false;
+	}
+
+	@Override
+	public void setSplitSettings(SplitSettings split, int splitId, boolean preserveCmListSplit) {
+		if (splitId > 0) {
+			String name = getTargetSplitName(splitId);
+
+			if (isNotEmpty(name)) {
+				if (name.startsWith(TargetLight.LIST_SPLIT_CM_PREFIX)) {
+					if (preserveCmListSplit) {
+						split.setSplitBase(name.substring(TargetLight.LIST_SPLIT_CM_PREFIX.length(), name.lastIndexOf('_')));
+						split.setSplitPart(name.substring(name.lastIndexOf("_") + 1));
+						return;
+					}
+				} else {
+					split.setSplitBase(name.substring(12, name.indexOf('_', 13)));
+					split.setSplitPart(name.substring(name.indexOf('_', 13) + 1));
+					return;
+				}
+			}
+		}
+		split.setSplitBase(splitId == Mailing.YES_SPLIT_ID ? Mailing.YES_SPLIT : Mailing.NONE_SPLIT);
+		split.setSplitPart("1");
+	}
+
+	@Override
+	public void addSplitTargetModelAttrs(Model model, int companyId, int splitId, String splitBase, String splitPart) {
+		model.addAttribute("splitId", splitId);
+		model.addAttribute("splitTargets", getSplitTargetLights(companyId, "").stream().limit(500).toList());
+		model.addAttribute("splitTargetsForSplitBase", getSplitTargetLights(companyId, splitBase).stream().limit(500).toList());
+		if (splitId > 0) {
+			String name = getTargetSplitName(splitId);
+			if (isNotEmpty(name) && name.startsWith(TargetLight.LIST_SPLIT_CM_PREFIX)) {
+				String[] parts = splitBase.split(";");
+				StringBuilder splitBaseMessage = new StringBuilder();
+				for (int i = 1; i <= parts.length; i++) {
+					String part = parts[i - 1];
+					splitBaseMessage.append(part).append("% / ");
+					if (i == Integer.parseInt(splitPart)) {
+						model.addAttribute("splitPartMessage", i + ". " + part + "%");
+					}
+				}
+				model.addAttribute("splitBaseMessage", splitBaseMessage.substring(0, splitBaseMessage.length() - 2));
+				model.addAttribute("wmSplit", true);
+			}
+		}
 	}
 
 	@Override

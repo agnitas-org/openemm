@@ -16,7 +16,6 @@ import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,19 +32,13 @@ public class WysiwygController implements XssCheckAware {
     }
 
     @RequestMapping("/dialogs/agn-tags.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
     public ModelAndView showAgnTags(Admin admin) {
-        return new ModelAndView("wysiwyg_agn_tags_dialog", "tags", agnTagService.getSupportedAgnTags(admin));
-    }
-
-    @RequestMapping("/dialogs/agn-tagsRedesigned.action")
-    @PermissionMapping("showAgnTags")
-    public ModelAndView showAgnTagsRedesigned(Admin admin) {
         return new ModelAndView("wysiwyg_agn_tags_modal", "tags", agnTagService.getSupportedAgnTags(admin));
     }
 
     @RequestMapping("/images/names-urls.action")
-    public ResponseEntity<Map<String, Object>> getNamesUrlsJsonMap(final Admin admin, @RequestParam(name = "mi", required = false) final int mailingId) {
+    public ResponseEntity<Map<String, Object>> getNamesUrlsJsonMap(Admin admin, @RequestParam(name = "mi", required = false) int mailingId) {
         return ResponseEntity.ok(wysiwygService.getImagesLinksWithDescriptionJson(admin, mailingId).toMap());
     }
+
 }

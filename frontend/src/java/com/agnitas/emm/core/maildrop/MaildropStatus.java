@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.maildrop;
 
 public enum MaildropStatus {
+
 	WORLD('W'),
 	TEST('T'),
 	ADMIN('A'),
@@ -36,21 +37,21 @@ public enum MaildropStatus {
 		return Character.toString(this.code);
 	}
 	
-	public static MaildropStatus fromCode(final char code) throws Exception {
+	public static MaildropStatus fromCode(char code) {
 		for(final MaildropStatus item : values()) {
 			if (item.code == code) {
 				return item;
 			}
 		}
-		throw new Exception("Invalid user MaildropStatus: " + code);
+		throw new IllegalArgumentException("Invalid user MaildropStatus: " + code);
 	}
 	
-	public static MaildropStatus fromName(final String name) throws Exception {
+	public static MaildropStatus fromName(String name) {
 		for(final MaildropStatus item : values()) {
 			if (item.name().equalsIgnoreCase(name)) {
 				return item;
 			}
 		}
-		throw new Exception("Invalid user MaildropStatus: " + name);
+		throw new IllegalArgumentException("Invalid user MaildropStatus: " + name);
 	}
 }

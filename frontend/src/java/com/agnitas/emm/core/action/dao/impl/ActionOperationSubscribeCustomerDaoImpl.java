@@ -10,29 +10,23 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
-import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
 
 public class ActionOperationSubscribeCustomerDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationSubscribeCustomerParameters> {
 
 	@Override
 	protected void processGetOperation(ActionOperationSubscribeCustomerParameters operation) {
-		Map<String, Object> row = selectObject("select double_check, key_column, double_opt_in from actop_subscribe_customer_tbl where action_operation_id=?", new RowMapper<Map<String, Object>>() {
-			@Override
-			public Map<String, Object> mapRow(ResultSet resultSet, int rowIndex) throws SQLException {
-				Map<String, Object> map = new HashMap<>(3);
-				map.put("double_check", resultSet.getBoolean("double_check"));
-				map.put("key_column", resultSet.getString("key_column"));
-				map.put("double_opt_in", resultSet.getBoolean("double_opt_in"));
-				return map;
-			}
-		}, operation.getId());
+		Map<String, Object> row = selectObject("SELECT double_check, key_column, double_opt_in FROM actop_subscribe_customer_tbl WHERE action_operation_id = ?", (resultSet, rowIndex) -> {
+            Map<String, Object> map = new HashMap<>(3);
+            map.put("double_check", resultSet.getBoolean("double_check"));
+            map.put("key_column", resultSet.getString("key_column"));
+            map.put("double_opt_in", resultSet.getBoolean("double_opt_in"));
+            return map;
+        }, operation.getId());
 		operation.setDoubleCheck((Boolean) row.get("double_check"));
 		operation.setKeyColumn((String) row.get("key_column"));
 		operation.setDoubleOptIn((Boolean) row.get("double_opt_in"));
@@ -41,27 +35,29 @@ public class ActionOperationSubscribeCustomerDaoImpl extends AbstractActionOpera
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationSubscribeCustomerParameters operation) {
-		update("insert into actop_subscribe_customer_tbl (action_operation_id, double_check, key_column, double_opt_in) values (?,?,?,?)",
+		update("INSERT INTO actop_subscribe_customer_tbl (action_operation_id, double_check, key_column, double_opt_in) VALUES (?,?,?,?)",
 				operation.getId(),
-				operation.isDoubleCheck(),
+				operation.isDoubleCheck() ? 1 : 0,
 				operation.getKeyColumn(),
-				operation.isDoubleOptIn());
+				operation.isDoubleOptIn() ? 1 : 0
+		);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationSubscribeCustomerParameters operation) {
-		update("update actop_subscribe_customer_tbl set double_check=?, key_column=?, double_opt_in=? where action_operation_id=?",
-				operation.isDoubleCheck(),
+		update("UPDATE actop_subscribe_customer_tbl SET double_check = ?, key_column = ?, double_opt_in = ? WHERE action_operation_id = ?",
+				operation.isDoubleCheck() ? 1 : 0,
 				operation.getKeyColumn(),
-				operation.isDoubleOptIn(),
-				operation.getId());
+				operation.isDoubleOptIn() ? 1 : 0,
+				operation.getId()
+		);
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processDeleteOperation(ActionOperationSubscribeCustomerParameters operation) {
-		update("delete from actop_subscribe_customer_tbl where action_operation_id=?", operation.getId());
+		update("DELETE FROM actop_subscribe_customer_tbl WHERE action_operation_id = ?", operation.getId());
 	}
 
 }

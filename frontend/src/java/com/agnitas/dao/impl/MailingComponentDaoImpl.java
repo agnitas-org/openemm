@@ -28,26 +28,26 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.factory.MailingComponentFactory;
 import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.emm.util.html.HtmlCheckerException;
-import com.agnitas.web.CdnImage;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.factory.MailingComponentFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.web.CdnImage;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +77,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		this.trackableLinkDao = trackableLinkDao;
 	}
 	
-	public final void setConfigService(final ConfigService service) {
+	public void setConfigService(ConfigService service) {
 		this.configService = Objects.requireNonNull(service, "configService");
 	}
 
@@ -85,6 +85,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return getMailingComponents(mailingID, companyID, componentType, true);
 	}
 
+	@Override
 	public List<MailingComponent> getMailingComponents(int mailingID, int companyID, MailingComponentType componentType, boolean includeContent) {
 		String sqlGetComponents = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp" +
 				(includeContent ? ", emmblock, binblock " : " ") +
@@ -95,10 +96,12 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return select(sqlGetComponents, new MailingComponentRowMapper(includeContent), companyID, mailingID, componentType.getCode());
 	}
 
+	@Override
 	public List<MailingComponent> getMailingComponents(int mailingID, int companyID) {
 		return getMailingComponents(mailingID, companyID, true);
 	}
 
+	@Override
 	public List<MailingComponent> getMailingComponents(int mailingID, int companyID, boolean includeContent) {
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, mtype, target_id, url_id, description, timestamp" +
 				(includeContent ? ", emmblock, binblock " : " ") +
@@ -130,6 +133,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return mailingComponentList;
 	}
 
+	@Override
     public List<MailingComponent> getMailingComponents(int companyID, int mailingID, Set<Integer> componentIds) {
 		String sqlGetComponents = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp, emmblock, binblock " +
 				"FROM component_tbl " +
@@ -139,6 +143,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return select(sqlGetComponents, new MailingComponentRowMapper(true), companyID, mailingID);
     }
 
+	@Override
 	public MailingComponent getMailingComponent(int compID, int companyID) {
 		if (companyID == 0) {
 			return null;
@@ -154,6 +159,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	public MailingComponent getMailingComponent(int mailingId, int componentId, int companyId) {
 		String sqlGetComponent = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp " +
 				"FROM component_tbl WHERE mailing_id = ? AND component_id = ? AND company_id = ?";
@@ -161,6 +167,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return selectObjectDefaultNull(sqlGetComponent, new MailingComponentRowMapper(), mailingId, componentId, companyId);
 	}
 
+	@Override
 	public MailingComponent getMailingComponentByName(int mailingID, int companyID, String name) {
 		if (companyID == 0) {
 			return null;
@@ -182,6 +189,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveMailingComponent(MailingComponent mailingComponent) {
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
@@ -191,17 +199,17 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		// Check for unallowed html tags
 		try {
 			HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
-		} catch(final HtmlCheckerException e) {
+		} catch (HtmlCheckerException e) {
 			throw new IllegalArgumentException("Mailing component name contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
-		} catch(final HtmlCheckerException e) {
+		} catch (HtmlCheckerException e) {
 			throw new IllegalArgumentException("Mailing component description contains unallowed HTML tags");
 		}
 		try {
 			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getEmmBlock(), true);
-		} catch(final HtmlCheckerException e) {
+		} catch (HtmlCheckerException e) {
 			throw new IllegalArgumentException("Mailing component description contains unallowed HTML tags");
 		}
 
@@ -234,7 +242,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 				String sql = "INSERT INTO component_tbl (component_id, mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
 				int touchedLines = update(sql, newID, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
 				if (touchedLines != 1) {
-					throw new RuntimeException("Illegal insert result");
+					throw new IllegalStateException("Illegal insert result");
 				} else {
 					try {
 						updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
@@ -242,20 +250,20 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 					} catch (Exception e) {
 						logger.error(String.format("Error saving mailing component %d (mailing ID %d, company ID %d)", mailingComponent.getId(), mailingComponent.getMailingID(), mailingComponent.getCompanyID()), e);
 						update("DELETE FROM component_tbl WHERE component_id = ?", newID);
-						throw new RuntimeException(e);
+						throw e;
 					}
 				}
 
 				mailingComponent.setId(newID);
 			} else {
 				String insertStatement = "INSERT INTO component_tbl (mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 11, ", ") + ")";
-				int newID = insertIntoAutoincrementMysqlTable("component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
+				int newID = insert("component_id", insertStatement, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), mailtemplateID, comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription());
 				try {
 					updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), newID);
 					updateClob("UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
 				} catch (Exception e) {
 					update("DELETE FROM component_tbl WHERE component_id = ?", newID);
-					throw new RuntimeException(e);
+					throw e;
 				}
 				mailingComponent.setId(newID);
 			}
@@ -266,7 +274,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			String sql = "UPDATE component_tbl SET mailing_id = ?, company_id = ?, compname = ?, comptype = ?, mtype = ?, target_id = ?, url_id = ?, comppresent = ?, timestamp = ?, description = ? WHERE component_id = ?";
 			int touchedLines = update(sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
 			if (touchedLines != 1) {
-				throw new RuntimeException("Illegal update result");
+				throw new IllegalStateException("Illegal update result");
 			} else {
 				updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", mailingComponent.getBinaryBlock(), mailingComponent.getId());
 				updateClob("UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), mailingComponent.getId());
@@ -274,6 +282,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteMailingComponent(MailingComponent comp) {
 		String sql = "DELETE FROM component_tbl WHERE component_id = ?";
@@ -284,6 +293,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteMailingComponents(List<MailingComponent> components) {
 		if (!components.isEmpty()) {
@@ -296,6 +306,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	public Map<Integer, Integer> getImageSizes(int companyID, int mailingID) {
 		Map<Integer, Integer> map = new HashMap<>();
 		Object[] sqlParameters = new Object[] { companyID, mailingID, MailingComponentType.Image.getCode(), MailingComponentType.HostedImage.getCode() };
@@ -311,6 +322,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return map;
 	}
 
+	@Override
 	public Map<Integer, String> getImageNames(int companyId, int mailingId, boolean includeExternalImages) {
 		if (companyId <= 0 || mailingId <= 0) {
 			return Collections.emptyMap();
@@ -333,15 +345,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return map;
 	}
 
-	public Map<Integer, Date> getImageComponentsTimestamps(int companyID, int mailingID) {
-		String sql = "SELECT timestamp, component_id FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)";
-		Object[] sqlParameters = new Object[]{companyID, mailingID, MailingComponentType.Image.getCode(), MailingComponentType.HostedImage.getCode()};
-
-		Map<Integer, Date> map = new HashMap<>();
-		query(sql, rs -> map.put(rs.getInt("component_id"), rs.getTimestamp("timestamp")), sqlParameters);
-		return map;
-	}
-
+	@Override
 	public Date getComponentTime(int companyID, int mailingID, String name) {
 		String sql = "SELECT timestamp FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND compname = ?";
 		try {
@@ -352,27 +356,36 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	public List<MailingComponent> getMailingComponentsByType(MailingComponentType componentType, int companyID) {
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE company_id = ? AND comptype = ? ORDER BY compname ASC";
 		return select(componentSelect, new MailingComponentRowMapper(), companyID, componentType.getCode());
 	}
 
-	public boolean exists(int mailingID, int companyID, int componentID) {
+	private boolean exists(int mailingID, int companyID, int componentID) {
 		String sql = "SELECT COUNT(component_id) FROM component_tbl WHERE mailing_id = ? AND company_id = ? AND component_id = ?";
 		int total = selectInt(sql, mailingID, companyID, componentID);
 		return total > 0;
 	}
 
+	@Override
 	public boolean attachmentExists(int companyId, int mailingId, String name, int targetId) {
 		return selectInt(
-				"SELECT COUNT(*) FROM component_tbl " +
-						" WHERE (comptype = ? OR comptype = ?) AND compname = ? AND target_id = ?" +
-						" AND mailing_id = ? AND company_id = ?  ORDER BY component_id",
+				"""
+						SELECT COUNT(*)
+						FROM component_tbl
+						WHERE (comptype = ? OR comptype = ?)
+						  AND compname = ?
+						  AND target_id = ?
+						  AND mailing_id = ?
+						  AND company_id = ?
+						""",
 				MailingComponentType.Attachment.getCode(),
 				MailingComponentType.PersonalizedAttachment.getCode(),
 				name, targetId, mailingId, companyId) > 0;
 	}
 
+	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean deleteMailingComponentsByCompanyID(int companyID) {
 		String deleteSQL = "DELETE FROM component_tbl WHERE company_id = ?";
@@ -385,6 +398,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	public MailingComponent findComponent(int id, int companyId) {
 		String query = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp " +
 				"FROM component_tbl " +
@@ -393,6 +407,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return selectObjectDefaultNull(query, new MailingComponentRowMapper(false), id, companyId);
 	}
 
+	@Override
 	public List<Integer> filterComponentsOfNotSentMailings(List<Integer> components) {
 		if (components.isEmpty()) {
 			return Collections.emptyList();
@@ -409,6 +424,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return select(query, IntegerRowMapper.INSTANCE, MailingStatus.SENT.getDbKey());
 	}
 
+	@Override
 	public List<Integer> findTargetDependentMailingsComponents(int targetGroupId, int companyId) {
 		String sql = "SELECT c.component_id " +
 				"FROM mailing_tbl m INNER JOIN component_tbl c " +
@@ -418,11 +434,13 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return select(sql, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
 	}
 
+	@Override
 	public void deleteMailingComponentsByMailing(int mailingID) {
 		String deleteSQL = "DELETE FROM component_tbl WHERE mailing_id = ?";
 		update(deleteSQL, mailingID);
 	}
 
+	@Override
 	public boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
 			return false;
@@ -433,6 +451,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return update(sqlDeleteImages, companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()) > 0;
 	}
 
+	@Override
 	public List<String> getImagesNames(int mailingId, Set<Integer> ids, int companyID) {
 		String query = "SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype in (?, ?)";
 		if (CollectionUtils.isNotEmpty(ids)) {
@@ -442,7 +461,8 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return select(query, StringRowMapper.INSTANCE, companyID, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode());
 	}
 
-	public PaginatedListImpl<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter) {
+	@Override
+	public PaginatedList<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter) {
 		StringBuilder query = new StringBuilder("SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp, ");
 
 		if (isOracleDB()) {
@@ -460,7 +480,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			query.append(" ORDER BY comptype DESC, compname ASC");
 		}
 
-		PaginatedListImpl<MailingComponent> list = selectPaginatedList(query.toString(), sortTable, filter,
+		PaginatedList<MailingComponent> list = selectPaginatedList(query.toString(), sortTable, filter,
 				new MailingComponentRowMapper(), params.toArray());
 
 		if (filter.isUiFiltersSet()) {
@@ -470,6 +490,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return list;
 	}
 
+	@Override
 	public List<String> getMailingImagesNamesForMobileAlternative(int mailingId, int companyId) {
 		StringBuilder query = new StringBuilder("SELECT compname FROM component_tbl WHERE company_id = ? AND mailing_id = ? AND comptype IN (?, ?)")
 				.append(" AND compname NOT LIKE '").append(MOBILE_IMAGE_PREFIX).append("%' ORDER BY comptype DESC, compname ASC");
@@ -514,6 +535,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		return new ArrayList<>(List.of(companyId, mailingId, MailingComponentType.HostedImage.getCode(), MailingComponentType.Image.getCode()));
 	}
 
+	@Override
     public List<MailingComponent> getMailingComponentsByType(int companyID, int mailingID, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
 			return new ArrayList<>();
@@ -525,7 +547,8 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
     }
 
 	protected class MailingComponentRowMapper implements RowMapper<MailingComponent> {
-		private boolean includeContent;
+
+		private final boolean includeContent;
 
 		public MailingComponentRowMapper() {
 			this(true);
@@ -543,11 +566,7 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			component.setMailingID(resultSet.getInt("mailing_id"));
 			component.setId(resultSet.getInt("component_id"));
 			component.setComponentName(resultSet.getString("compname"));
-			try {
-				component.setType(MailingComponentType.getMailingComponentTypeByCode(resultSet.getInt("comptype")));
-			} catch (Exception e) {
-				throw new SQLException("Invalid mailing component type found: " + resultSet.getInt("comptype"), e);
-			}
+			component.setType(MailingComponentType.getMailingComponentTypeByCode(resultSet.getInt("comptype")));
 			component.setPresent(resultSet.getInt("comppresent"));
 			component.setTargetID(resultSet.getInt("target_id"));
 			component.setUrlID(resultSet.getInt("url_id"));
@@ -555,23 +574,40 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			component.setTimestamp(resultSet.getTimestamp("timestamp"));
 
 			if (includeContent) {
-				Blob blob = resultSet.getBlob("binblock");
-				// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
-				
-				// Only store one of type of data: emmblock or binblock
-				// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
-				
-				if (blob != null && blob.length() > 1) {
-					try (InputStream dataStream = blob.getBinaryStream()) {
-						byte[] data = IOUtils.toByteArray(dataStream);
-						component.setBinaryBlock(data, resultSet.getString("mtype"));
-					} catch (Exception ex) {
-						logger.error("Error:" + ex, ex);
+				if (isPostgreSQL()) { // TODO: 6533: Try to use this block for mariaDB and OracleDB in future
+					byte[] bytes = resultSet.getBytes("binblock");
+
+					// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
+
+					// Only store one of type of data: emmblock or binblock
+					// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
+
+					if (bytes != null && bytes.length > 1) {
+						component.setBinaryBlock(bytes, resultSet.getString("mtype"));
 					}
-				}
-				
-				if (blob == null || blob.length() <= 1 || "application/pdf".equalsIgnoreCase(resultSet.getString("mtype"))) {
-					component.setEmmBlock(resultSet.getString("emmblock"), resultSet.getString("mtype"));
+
+					if (bytes == null || bytes.length <= 1 || "application/pdf".equalsIgnoreCase(resultSet.getString("mtype"))) {
+						component.setEmmBlock(resultSet.getString("emmblock"), resultSet.getString("mtype"));
+					}
+				} else {
+					Blob blob = resultSet.getBlob("binblock");
+					// binblock sometimes contains an array "byte[1] = {0}", which also signals empty binary data
+
+					// Only store one of type of data: emmblock or binblock
+					// Exemption: Personalized PDF attachments require emmblock and binblock to be filled with different files
+
+					if (blob != null && blob.length() > 1) {
+						try (InputStream dataStream = blob.getBinaryStream()) {
+							byte[] data = IOUtils.toByteArray(dataStream);
+							component.setBinaryBlock(data, resultSet.getString("mtype"));
+						} catch (Exception ex) {
+							logger.error("Error:" + ex, ex);
+						}
+					}
+
+					if (blob == null || blob.length() <= 1 || "application/pdf".equalsIgnoreCase(resultSet.getString("mtype"))) {
+						component.setEmmBlock(resultSet.getString("emmblock"), resultSet.getString("mtype"));
+					}
 				}
 			}
 
@@ -583,40 +619,38 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
     public int getImageComponent(int companyId, int mailingId, MailingComponentType componentType) {
-		String sqlGetComponentId = "SELECT component_id FROM component_tbl " +
+		String query = "SELECT component_id FROM component_tbl " +
 				"WHERE company_id = ? AND mailing_id = ? AND comptype = ? " +
 				"ORDER BY timestamp DESC";
 
-		if (isOracleDB()) {
-			sqlGetComponentId = "SELECT component_id FROM (" + sqlGetComponentId + ") WHERE rownum = 1";
-		} else {
-			sqlGetComponentId += " LIMIT 1";
-		}
-
-        return selectInt(sqlGetComponentId, companyId, mailingId, componentType.getCode());
+        return selectInt(addRowLimit(query, 1), companyId, mailingId, componentType.getCode());
     }
 
+	@Override
 	public List<MailingComponent> getPreviewHeaderComponents(int mailingID, int companyID) {
 		// Using "SELECT * ...", because of flexible used fields in RowMapper
 		return select("SELECT * FROM component_tbl WHERE (comptype = ? OR comptype = ?) AND mailing_id = ? AND company_id = ? ORDER BY component_id", new MailingComponentRowMapper(),
 				MailingComponentType.Attachment.getCode(), MailingComponentType.PersonalizedAttachment.getCode(), mailingID, companyID);
 	}
 
+	@Override
 	public void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes) {
 		try {
 			String sql = "UPDATE component_tbl SET timestamp = ? WHERE component_id = ?";
 			int touchedLines = update(sql, new Date(), componentID);
 			if (touchedLines != 1) {
-				throw new RuntimeException("Illegal insert result");
+				throw new IllegalStateException("Illegal insert result");
 			} else {
 				updateBlob("UPDATE component_tbl SET binblock = ? WHERE component_id = ?", imageBytes, componentID);
 			}
 		} catch (Exception e) {
-			logger.error("Error saving component " + componentID, e);
+			logger.error("Error saving component {}", componentID, e);
 		}
 	}
 
+	@Override
 	public CdnImage getCdnImage(int companyID, int mailingID, String imageName, boolean mobile) {
 		if (companyID == 0) {
 			return null;
@@ -674,10 +708,12 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 		}
 	}
 
+	@Override
 	public MailingComponent getComponentByCdnID(String cdnID) {
 		return selectObjectDefaultNull("SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE cdn_id = ?", new MailingComponentRowMapper(), cdnID);
 	}
 
+	@Override
 	public int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents) {
 		if(presentComponents == null || presentComponents.isEmpty()) {
 			return 0;
@@ -722,4 +758,5 @@ public class MailingComponentDaoImpl extends PaginatedBaseDaoImpl implements Mai
 			throw new IllegalArgumentException("Value for component_tbl.description is to long (Maximum: 200, Current: " + description.length() + ")");
 		}
 	}
+
 }

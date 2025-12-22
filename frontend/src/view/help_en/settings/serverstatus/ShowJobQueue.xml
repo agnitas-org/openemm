@@ -1,4 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Show Jobqueue]]></title>
-    <content><![CDATA[With this function you get a list of all existing batch jobs in the table "job_queue_tbl" of the database as well as their current status.]]></content>
-</HelpBalloon>

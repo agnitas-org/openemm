@@ -35,21 +35,21 @@ public interface MailingSendService {
 
     SimpleServiceResult isRequiredDataAndComponentsExists(Mailing mailing);
 
-    ServiceResult<UserAction> sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin) throws Exception;
+    ServiceResult<UserAction> sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin);
 
     ServiceResult<UserAction> sendWorldMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
 
-    ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions) throws Exception;
+    ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions);
 
     ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
 
     ServiceResult<UserAction> activateActionBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
 
-    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int requiredAutoImportId, int mailingId, Admin admin);
+    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int autoImportId, Mailing mailing, Admin admin);
 
     boolean isLimitationForSendExists(int companyId);
 
-    ServiceResult<UserAction> sendMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) throws Exception;
+    ServiceResult<UserAction> sendMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
 
     boolean deactivateMailing(Mailing mailing, int companyId, boolean isWorkflowDriven);
 

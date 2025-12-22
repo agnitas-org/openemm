@@ -10,26 +10,20 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.forms;
 
-import com.agnitas.web.forms.PaginationForm;
-import org.apache.commons.lang3.ArrayUtils;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.forms.PaginationForm;
+import org.apache.commons.lang3.ArrayUtils;
+
 public class MailingStatatisticListForm extends PaginationForm {
 
     private int mailingID;
-
-    private String[] availableTargets;
-
     private String shortname;
 
-    private String searchQueryText; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchNameChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean searchDescriptionChecked; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private boolean inEditColumnsMode;
     private String filterSendDateBegin;
     private String filterSendDateEnd;
@@ -42,20 +36,6 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     private int[] filteredMailingLists = ArrayUtils.EMPTY_INT_ARRAY;
 
-    private int[] filteredTargetGroups = ArrayUtils.EMPTY_INT_ARRAY; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-
-    public boolean isSearchNameChecked() {
-        return searchNameChecked;
-    }
-
-    public void setSearchNameChecked(boolean searchNameChecked) {
-        this.searchNameChecked = searchNameChecked;
-    }
-
-    public boolean isSearchDescriptionChecked() {
-        return searchDescriptionChecked;
-    }
-
     public boolean isInEditColumnsMode() {
         return inEditColumnsMode;
     }
@@ -64,32 +44,12 @@ public class MailingStatatisticListForm extends PaginationForm {
         this.inEditColumnsMode = inEditColumnsMode;
     }
 
-    public void setSearchDescriptionChecked(boolean searchDescriptionChecked) {
-        this.searchDescriptionChecked = searchDescriptionChecked;
-    }
-
-    public String getSearchQueryText() {
-        return searchQueryText;
-    }
-
-    public void setSearchQueryText(String searchQueryText) {
-        this.searchQueryText = searchQueryText;
-    }
-
     public int getMailingID() {
         return mailingID;
     }
 
     public void setMailingID(int mailingID) {
         this.mailingID = mailingID;
-    }
-
-    public String[] getAvailableTargets() {
-        return availableTargets;
-    }
-
-    public void setAvailableTargets(String[] availableTargets) {
-        this.availableTargets = availableTargets;
     }
 
     public String getShortname() {
@@ -132,24 +92,6 @@ public class MailingStatatisticListForm extends PaginationForm {
 
     public void setFilteredMailingLists(int[] filteredMailingLists) {
         this.filteredMailingLists = filteredMailingLists;
-    }
-
-    public List<Integer> getFilteredTargetGroupsAsList() {
-        if (ArrayUtils.isEmpty(filteredTargetGroups)) {
-            return Collections.emptyList();
-        }
-
-        return Arrays.stream(filteredTargetGroups)
-                .boxed()
-                .collect(Collectors.toList());
-    }
-
-    public int[] getFilteredTargetGroups() {
-        return filteredTargetGroups;
-    }
-
-    public void setFilteredTargetGroups(int[] filteredTargetGroups) {
-        this.filteredTargetGroups = filteredTargetGroups;
     }
 
     public String getFilterName() {

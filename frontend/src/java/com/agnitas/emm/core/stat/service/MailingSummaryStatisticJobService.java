@@ -12,21 +12,18 @@ package com.agnitas.emm.core.stat.service;
 
 import java.util.List;
 
-import org.springframework.dao.DataAccessException;
-
 import com.agnitas.emm.core.stat.beans.MailingStatJobDescriptor;
 import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
-import com.agnitas.emm.core.stat.service.impl.SummaryStatJobNotExistException;
 
 public interface MailingSummaryStatisticJobService {
 
 	int startSummaryStatisticJob(int mailingId, final int companyId, List<Integer> targetList, Integer recipientsType);
 
-	MailingStatJobDescriptor getStatisticJob(int jobId) throws SummaryStatJobNotExistException;
+	MailingStatJobDescriptor getStatisticJob(int jobId);
 
-	MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId) throws DataAccessException;
+	MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId);
 
-	List<Integer> parseGroupList(String targetGroups) throws NumberFormatException;
+	List<Integer> parseGroupList(String targetGroups);
 
 	void removeExpiredData();
 }

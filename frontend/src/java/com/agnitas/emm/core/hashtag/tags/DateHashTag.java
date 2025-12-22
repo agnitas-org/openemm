@@ -19,8 +19,8 @@ import java.util.Map;
 import com.agnitas.emm.core.hashtag.AbstractColonHashTagWithParameters;
 import com.agnitas.emm.core.hashtag.HashTagContext;
 import com.agnitas.dao.DateFormatDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.TimeoutLRUMap;
 
 public class DateHashTag extends AbstractColonHashTagWithParameters {

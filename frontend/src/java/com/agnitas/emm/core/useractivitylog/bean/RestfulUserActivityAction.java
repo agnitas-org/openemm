@@ -23,6 +23,18 @@ public class RestfulUserActivityAction {
     private String username;
     private String supervisorName;
 
+    public RestfulUserActivityAction(String username, String supervisorName, String endpoint, String description, String requestMethod, Date timestamp) {
+        this.timestamp = timestamp;
+        this.endpoint = endpoint;
+        this.description = description;
+        this.requestMethod = requestMethod;
+        this.username = username;
+        this.supervisorName = supervisorName;
+    }
+
+    public RestfulUserActivityAction() {
+    }
+
     public Date getTimestamp() {
         return timestamp;
     }

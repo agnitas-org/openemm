@@ -21,14 +21,14 @@ import java.util.List;
 public final class ImportQuotaDaoImpl extends BaseDaoImpl implements ImportQuotaDao {
 	
 	@Override
-	public final void saveImportSize(final int companyID, final int importID, final ZonedDateTime timestamp, final ImportType importType, final int linesCount) {
+	public void saveImportSize(int companyID, int importID, ZonedDateTime timestamp, ImportType importType, int linesCount) {
 		final String sql = "INSERT INTO import_size_tbl (company_ref, import_ref, import_type, timestamp, lines_count) VALUES (?,?,?,?,?)";
 		
 		this.update(sql, companyID, importID, importType.name(), Date.from(timestamp.toInstant()), linesCount);
 	}
 
 	@Override
-	public final List<ImportSize> listImportSized(final int companyID, final ZonedDateTime from, final ZonedDateTime untilExclusive) {
+	public List<ImportSize> listImportSized(int companyID, ZonedDateTime from, ZonedDateTime untilExclusive) {
 		final String sql = "SELECT company_ref, import_ref, import_type, timestamp, lines_count FROM import_size_tbl WHERE company_ref=? AND timestamp BETWEEN ? AND ?";
 		
 		return this.select(sql, ImportSizeRowMapper.INSTANCE, companyID, Date.from(from.toInstant()), Date.from(untilExclusive.toInstant()));
@@ -40,5 +40,4 @@ public final class ImportQuotaDaoImpl extends BaseDaoImpl implements ImportQuota
 
 		this.update(sql, companyId);
 	}
-
 }

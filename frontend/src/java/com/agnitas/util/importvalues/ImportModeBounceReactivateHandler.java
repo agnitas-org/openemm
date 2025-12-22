@@ -19,16 +19,15 @@ import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.util.DbColumnType;
-
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.DbColumnType;
 
 public class ImportModeBounceReactivateHandler implements ImportModeHandler {
     
-    private ImportRecipientsDao importRecipientsDao;
-    
-	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
+    private final ImportRecipientsDao importRecipientsDao;
+
+	public ImportModeBounceReactivateHandler(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
 	}
 
@@ -71,6 +70,15 @@ public class ImportModeBounceReactivateHandler implements ImportModeHandler {
 		    		mailinglistAssignStatistics.get(mediatype).put(mailingListId, changed);
 	    		}
 	    	}
+
+			boolean changesExist = mailinglistAssignStatistics.values().stream()
+					.flatMap(m -> m.values().stream())
+					.mapToInt(Integer::intValue)
+					.sum() > 0;
+			if (changesExist) {
+				importRecipientsDao.updateLatestDataSourceId(datasourceId, temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId());
+			}
+
 			return mailinglistAssignStatistics;
 		} else {
 			return null;

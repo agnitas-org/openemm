@@ -49,6 +49,8 @@ import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.auto_import.service.AutoImportService;
+import com.agnitas.emm.core.autoexport.service.AutoExportService;
 import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.components.service.MailingSendService.DeliveryType;
 import com.agnitas.emm.core.mailing.service.MailingService;
@@ -92,8 +94,6 @@ import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.util.AgnUtils;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -445,7 +445,7 @@ public class WorkflowActivationService {
 				});
 	}
 
-	private void sendMailings(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Admin admin, boolean testing, boolean unpausing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	private void sendMailings(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Admin admin, boolean testing, boolean unpausing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
 		List<Integer> lockedMailings = new ArrayList<>();
 
@@ -569,8 +569,7 @@ public class WorkflowActivationService {
 
 	private int findRequiredAutoImportId(WorkflowGraph workflowGraph, WorkflowIcon workflowMailing) {
 		WorkflowIcon importIcon = workflowGraph.getPreviousIconByType(workflowMailing, WorkflowIconType.IMPORT.getId(), Collections.emptySet());
-		if (importIcon instanceof WorkflowImport) {
-			WorkflowImport autoImportIcon = ((WorkflowImport) importIcon);
+		if (importIcon instanceof WorkflowImport autoImportIcon) {
 			return autoImportIcon.isErrorTolerant() ? 0 : autoImportIcon.getImportexportId();
 		}
 
@@ -584,7 +583,7 @@ public class WorkflowActivationService {
 				.setClearanceThreshold(dateBasedMailing.getClearanceThreshold())
 				.build();
 
-		if (!mailingService.saveSecuritySettings(companyId, dateBasedMailing.getMailingId(), options)) {
+        if (!mailingService.saveSecuritySettings(companyId, dateBasedMailing.getMailingId(), options)) {
 			throw new IllegalStateException("Security settings for mailing %d was not saved!".formatted(dateBasedMailing.getMailingId()));
 		}
 	}

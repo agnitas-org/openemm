@@ -15,7 +15,6 @@ import java.util.Locale;
 import com.agnitas.emm.core.components.service.MailingRecipientsService;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
 import com.agnitas.emm.core.mailing.service.MailingRecipientsExportWorker;
-import com.agnitas.service.MailingRecipientExportWorkerFactory;
 
 public class MailingRecipientExportWorkerFactoryImpl implements MailingRecipientExportWorkerFactory {
 

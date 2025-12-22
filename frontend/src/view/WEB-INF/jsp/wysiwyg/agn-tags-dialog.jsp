@@ -1,118 +1,93 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="tags" type="java.util.List<com.agnitas.beans.AgnTagDto>"--%>
 
-<div class="modal">
+<div class="modal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content" data-controller="wysiwyg-agn-tags">
+            <script type="application/json" data-initializer="wysiwyg-agn-tags">
+                ${emm:toJson(tags)}
+            </script>
+
             <div class="modal-header">
-                <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
-                    <i aria-hidden="true" class="icon icon-times-circle"></i>
+                <h1 class="modal-title"><mvc:message code="htmled.agntagsWindowTitle" /></h1>
+                <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
                     <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
-                <h4 class="modal-title"><mvc:message code="htmled.agntagsWindowTitle"/></h4>
             </div>
 
-            <div class="modal-body">
-                <div class="well block" style="margin-bottom: 10px">
-                    <p><mvc:message code="info.manual.agnTags" arguments="${emm:getHelpUrl(pageContext.request, 'agnTags')}" /></p>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label" for="agn-tag-name"><mvc:message code="htmled.tag"/>:</label>
-                    </div>
-                    <div class="col-sm-8">
-                        <select id="agn-tag-name" class="form-control js-select" data-action="select-agn-tag">
-                            <%-- To be populated by JS --%>
-                        </select>
-                    </div>
+            <div class="modal-body vstack gap-3">
+                <div class="notification-simple notification-simple--lg notification-simple--info">
+                    <span><mvc:message code="info.manual.agnTags" arguments="${emm:getHelpUrl(pageContext.request, 'agnTags')}" /></span>
                 </div>
 
-                <div id="agn-tag-attributes">
+                <div>
+                    <label for="agn-tag-name" class="form-label"><mvc:message code="htmled.tag"/></label>
+                    <select id="agn-tag-name" class="form-control" data-action="select-agn-tag">
+                        <%-- To be populated by JS --%>
+                    </select>
+                </div>
+
+                <div id="agn-tag-attributes" class="d-flex flex-column gap-inherit">
                     <%-- To be populated by JS --%>
                 </div>
-
-                <script type="text/x-mustache-template" id="agn-tag-select-attribute">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label" for="agn-tag-attribute-{{- index }}">{{- name.replace(/_/g,' ')}}:</label>
-                        </div>
-                        <div class="col-sm-8">
-                            <select class="form-control js-select" id="agn-tag-attribute-{{- index }}">
-                                {{ _.each(options, function(value, key) { }}
-                                <option value="{{- key }}">{{- value }}</option>
-                                {{ }) }}
-                            </select>
-                        </div>
-                    </div>
-                </script>
-
-                <script type="text/x-mustache-template" id="agn-tag-text-attribute">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label" for="agn-tag-attribute-{{- index }}">{{- name.replace(/_/g,' ')}}:</label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input type="text" class="form-control" id="agn-tag-attribute-{{- index }}"/>
-                        </div>
-                    </div>
-                </script>
-
-                <c:set var="linkCreationExtendedAttrs">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label checkbox-control-label" for="createLinkToggle"><mvc:message code="TrackableLink.createLink"/>:</label>
-                        </div>
-                        <div class="col-sm-8">
-                            <label class="toggle">
-                                <input type="checkbox" class="form-control" id="createLinkToggle"/>
-                                <div class="toggle-control"></div>
-                            </label>
-                        </div>
-                        <div id="tagLinkParams">
-                            <div class="col-sm-4">
-                                <label class="control-label"><mvc:message code="TrackableLink.linkText"/>:</label>
-                            </div>
-                            <div class="col-sm-8">
-                                <input type="text" class="form-control" id="tagLinkText"/>
-                            </div>
-                        </div>
-                    </div>
-                </c:set>
-
-                <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
-                    ${linkCreationExtendedAttrs}
-                </script>
-
-                <script type="text/x-mustache-template" id="agnFULLVIEW-extended-attributes">
-                    ${linkCreationExtendedAttrs}
-                </script>
-
-                <script type="text/x-mustache-template" id="agnWEBVIEW-extended-attributes">
-                    ${linkCreationExtendedAttrs}
-                </script>
-
-                <script type="application/json" data-initializer="wysiwyg-agn-tags">
-                    ${emm:toJson(tags)}
-                </script>
             </div>
 
             <div class="modal-footer">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-default btn-large pull-left js-confirm-negative" data-dismiss="modal">
-                        <i class="icon icon-times"></i>
-                        <span class="text"><mvc:message code="button.Cancel"/></span>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-large" data-action="insert-agn-tag">
-                        <i class="icon icon-check"></i>
-                        <span class="text"><mvc:message code="button.Apply"/></span>
-                    </button>
-                </div>
+                <button type="button" class="btn btn-primary" data-action="insert-agn-tag">
+                    <i class="icon icon-save"></i>
+                    <span class="text">
+                        <mvc:message code="button.Apply"/>
+                    </span>
+                </button>
             </div>
         </div>
     </div>
+
+    <script type="text/x-mustache-template" id="agn-tag-select-attribute">
+        <div>
+            <label class="form-label" for="agn-tag-attribute-{{- index }}">{{- name.replace(/_/g,' ')}}:</label>
+            <select class="form-control" id="agn-tag-attribute-{{- index }}">
+                {{ _.each(options, function(value, key) { }}
+                <option value="{{- key }}">{{- value }}</option>
+                {{ }) }}
+            </select>
+        </div>
+    </script>
+
+    <script type="text/x-mustache-template" id="agn-tag-text-attribute">
+        <div>
+            <label class="form-label" for="agn-tag-attribute-{{- index }}">{{- name.replace(/_/g,' ')}}:</label>
+            <input type="text" class="form-control" id="agn-tag-attribute-{{- index }}"/>
+        </div>
+    </script>
+
+    <c:set var="linkCreationExtendedAttrs">
+        <div class="d-flex flex-column gap-1">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="createLinkToggle" role="switch"/>
+                <label class="form-label form-check-label" for="createLinkToggle">
+                    <mvc:message code="TrackableLink.createLink"/>
+                </label>
+            </div>
+
+            <mvc:message var="linkTextMsg" code="TrackableLink.linkText"/>
+            <input type="text" class="form-control" id="tagLinkText" placeholder="${linkTextMsg}"/>
+        </div>
+    </c:set>
+
+    <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
+        ${linkCreationExtendedAttrs}
+    </script>
+
+    <script type="text/x-mustache-template" id="agnFULLVIEW-extended-attributes">
+        ${linkCreationExtendedAttrs}
+    </script>
+
+    <script type="text/x-mustache-template" id="agnWEBVIEW-extended-attributes">
+        ${linkCreationExtendedAttrs}
+    </script>
 </div>

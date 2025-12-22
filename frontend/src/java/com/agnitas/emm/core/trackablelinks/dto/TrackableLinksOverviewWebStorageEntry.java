@@ -10,8 +10,8 @@
 
 package com.agnitas.emm.core.trackablelinks.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.agnitas.beans.SortingWebStorageEntry;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TrackableLinksOverviewWebStorageEntry extends SortingWebStorageEntry {
 
@@ -24,12 +24,5 @@ public class TrackableLinksOverviewWebStorageEntry extends SortingWebStorageEntr
 
     public void setIncludeDeleted(boolean includeDeleted) {
         this.includeDeleted = includeDeleted;
-    }
-
-    @Override
-    public TrackableLinksOverviewWebStorageEntry clone() throws CloneNotSupportedException {
-        TrackableLinksOverviewWebStorageEntry entry = (TrackableLinksOverviewWebStorageEntry) super.clone();
-        entry.setIncludeDeleted(includeDeleted);
-        return entry;
     }
 }

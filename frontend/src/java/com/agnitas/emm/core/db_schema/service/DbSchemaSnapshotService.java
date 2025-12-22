@@ -14,7 +14,6 @@ import java.io.File;
 
 import com.agnitas.emm.core.db_schema.bean.DbSchemaCheckResult;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaSnapshot;
-import com.agnitas.service.ServiceResult;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface DbSchemaSnapshotService {
@@ -27,7 +26,7 @@ public interface DbSchemaSnapshotService {
 
     DbSchemaCheckResult check();
 
-    ServiceResult<DbSchemaSnapshot> read(MultipartFile file);
+    DbSchemaSnapshot read(MultipartFile file);
 
     DbSchemaSnapshot read(File file);
 
@@ -37,6 +36,6 @@ public interface DbSchemaSnapshotService {
 
     String getVendorName();
 
-    File getFileWithDifferences();
+    File createDiffFile();
 
 }

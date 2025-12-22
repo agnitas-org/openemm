@@ -1,14 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.web.forms.FormSearchParams" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
-<c:set var="RESTORE_SEARCH_PARAM_NAME" value="<%= FormSearchParams.RESTORE_PARAM_NAME%>"/>
+<c:set var="RESTORE_SEARCH_PARAM_NAME" value="<%= FormSearchParams.RESTORE_PARAM_NAME %>"/>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientForm"--%>
 <%--@elvariable id="isSaveButtonDisabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="recipientMention" type="java.lang.String"--%>
 
 <c:url var="recipientsOverviewLink" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
@@ -19,16 +20,12 @@
 
 <c:set var="recipientExists" value="${form.id gt 0}"/>
 
-<c:set var="reportTooltipMessage" scope="request">
-    <mvc:message code="recipient.report.rightOfAccess.mouseover"/>
-</c:set>
-
 <c:set var="agnTitleKey" 			value="Recipient" 									scope="request" />
-<c:set var="agnSubtitleKey" 		value="Recipients" 									scope="request" />
 <c:set var="sidemenu_active" 		value="Recipients" 									scope="request" />
-<c:set var="sidemenu_sub_active" 	value="default.search" 								scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 										scope="request" />
+<c:set var="sidemenu_sub_active" 	value="default.Overview" 							scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="Recipients" 									scope="request" />
+<c:set var="agnBreadcrumbsRootUrl"	value="${recipientsOverviewLink}" 					scope="request" />
+<c:set var="agnEditViewKey" 	    value="recipient-view"                              scope="request" />
 
 <emm:sideMenuAdditionalParam name="${RESTORE_SEARCH_PARAM_NAME}" value="true" forSubmenuOnly="false"/>
 
@@ -48,29 +45,8 @@
 				<c:set var="agnNavigationKey" value="subscriber_editor_no_mailtracking" scope="request" />
 		    </c:otherwise>
 		</c:choose>
-        
-        <c:choose>
-            <c:when test="${not empty form.firstname and not empty form.lastname}">
-                <c:set var="recipientMention" value="${form.firstname} ${form.lastname}"/>
-            </c:when>
-            <c:when test="${not empty form.firstname}">
-                <c:set var="recipientMention" value="${form.firstname}"/>
-            </c:when>
-            <c:when test="${not empty form.lastname}">
-                <c:set var="recipientMention" value="${form.lastname}"/>
-            </c:when>
-            <c:otherwise>
-                <c:set var="recipientMention" value="${form.email}"/>
-            </c:otherwise>
-        </c:choose>
 
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
-            <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-                <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-                <c:set target="${agnBreadcrumb}" property="textKey" value="default.search"/>
-                <c:set target="${agnBreadcrumb}" property="url" value="${recipientsOverviewLink}"/>
-            </emm:instantiate>
-
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
                 <c:set target="${agnBreadcrumb}" property="text" value="${recipientMention}"/>
@@ -78,7 +54,6 @@
         </emm:instantiate>
     </c:when>
     <c:otherwise>
-        <c:set var="agnNavigationKey" 	value="none" 					scope="request" />
         <c:set var="agnHighlightKey" 	value="recipient.NewRecipient" 	scope="request" />
         <c:set var="agnHelpKey" 		value="newRecipient" 			scope="request" />
 
@@ -99,11 +74,9 @@
         <emm:instantiate var="element" type="java.util.LinkedHashMap">
             <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 
-            <c:set target="${element}" property="btnCls" value="btn btn-secondary btn-regular dropdown-toggle"/>
-            <c:set target="${element}" property="extraAttributes" value="data-toggle='dropdown'"/>
+            <c:set target="${element}" property="cls" value="mobile-hidden"/>
             <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
             <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
-            <c:set target="${element}" property="iconAfter" value="icon-caret-down"/>
 
             <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
                 <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
@@ -114,13 +87,15 @@
                 <emm:instantiate var="option" type="java.util.LinkedHashMap">
                     <c:set target="${optionList}" property="0" value="${option}"/>
 
-                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load='' data-tooltip-help data-tooltip-help-text='${reportTooltipMessage}'"/>
+                    <c:set var="reportPopoverOptions" value='{"popperConfig": {"placement": "bottom-end"}}'/>
+                    <mvc:message var="reportPopoverMsg" code="recipient.report.rightOfAccess.mouseover"/>
+
+                    <c:set target="${option}" property="extraAttributes" value="data-prevent-load='' data-popover='${reportPopoverMsg}' data-popover-options='${reportPopoverOptions}'"/>
                     <c:set target="${option}" property="url">
                         <c:url value="/report/recipients.action">
                             <c:param name="id" value="${form.id}"/>
                         </c:url>
                     </c:set>
-                    <c:set target="${option}" property="icon" value="icon-bar-chart-o"/>
                     <c:set target="${option}" property="name">
                         <mvc:message code="recipient.report.rightOfAccess"/>
                     </c:set>
@@ -131,77 +106,57 @@
 
                         <c:set target="${option}" property="extraAttributes" value="data-confirm=''"/>
                         <c:set target="${option}" property="url">
-                            <c:url value="/recipient/${form.id}/confirmDelete.action"/>
+                            <c:url value="/recipient/delete.action?bulkIds=${form.id}"/>
                         </c:set>
-                        <c:set target="${option}" property="icon" value="icon-trash-o"/>
                         <c:set target="${option}" property="name">
                             <mvc:message code="button.Delete"/>
                         </c:set>
                     </emm:instantiate>
                 </emm:ShowByPermission>
             </c:if>
-
-            <emm:instantiate var="option" type="java.util.LinkedHashMap">
-                <c:set target="${optionList}" property="1" value="${option}"/>
-
-                <c:set target="${option}" property="extraAttributes"/>
-                <c:set target="${option}" property="url">
-                    <c:url value="/recipient/list.action">
-                        <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
-                        <c:param name="restoreSort" value="true"/>
-                    </c:url>
-                </c:set>
-                <c:set target="${option}" property="icon" value="icon-times"/>
-                <c:set target="${option}" property="name">
-                    <mvc:message code="button.Cancel"/>
-                </c:set>
-            </emm:instantiate>
         </emm:instantiate>
     </emm:instantiate>
 
     <emm:ShowByPermission token="recipient.change">
-        <c:if test="${recipientExists}">
-            <emm:instantiate var="element" type="java.util.LinkedHashMap">
-                <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+        <c:choose>
+            <c:when test="${recipientExists}">
+                <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                    <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse ${isSaveButtonDisabled ? 'disabled' : ''}"/>
-                <c:set target="${element}" property="type" value="button"/>
-                <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipientForm' data-form-submit-event data-action='toggleSaveAndBack'"/>
-                <c:set target="${element}" property="iconBefore" value="icon-save"/>
-                <c:set target="${element}" property="name">
-                    <mvc:message code="button.Save"/>
-                </c:set>
+                    <c:set target="${element}" property="btnCls" value="js-btn-dropdown ${isSaveButtonDisabled ? 'disabled' : ''}"/>
+                    <c:set target="${element}" property="cls" value="mobile-hidden" />
+                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipient-detail-view' data-form-submit-event"/>
+                    <c:set target="${element}" property="iconBefore" value="icon-save"/>
+                    <c:set target="${element}" property="name">
+                        <mvc:message code="button.Save"/>
+                    </c:set>
 
-                <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
-                    <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
+                    <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
+                        <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
+                    </emm:instantiate>
+
+                    <emm:instantiate var="option" type="java.util.LinkedHashMap">
+                        <c:set target="${optionList}" property="0" value="${option}"/>
+
+                        <c:set target="${option}" property="extraAttributes" value="data-form-url='${saveAndBackToListLink}' data-form-target='#recipient-detail-view' data-form-submit-event"/>
+                        <c:set target="${option}" property="name">
+                            <mvc:message code="button.SaveAndBack"/>
+                        </c:set>
+                    </emm:instantiate>
                 </emm:instantiate>
+            </c:when>
+            <c:otherwise>
+                <emm:instantiate var="element" type="java.util.LinkedHashMap">
 
-                <emm:instantiate var="option" type="java.util.LinkedHashMap">
-                    <c:set target="${optionList}" property="0" value="${option}"/>
+                    <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                    <c:set target="${option}" property="extraAttributes" value="data-form-url='${saveAndBackToListLink}' data-form-target='#recipientForm' data-form-submit-event data-action='toggleSubmenuSaveAndBack'"/>
-                    <c:set target="${option}" property="url" value="#"/>
-                    <c:set target="${option}" property="icon" value="icon-times"/>
-                    <c:set target="${option}" property="name">
-                        <mvc:message code="button.SaveAndBack"/>
+                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipient-detail-view' data-form-submit-event"/>
+                    <c:set target="${element}" property="iconBefore" value="icon-save"/>
+                    <c:set target="${element}" property="name">
+                        <mvc:message code="button.Save"/>
                     </c:set>
                 </emm:instantiate>
-            </emm:instantiate>
-        </c:if>
-
-        <c:if test="${not recipientExists}">
-            <emm:instantiate var="element" type="java.util.LinkedHashMap">
-
-                <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
-
-                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                <c:set target="${element}" property="type" value="button"/>
-                <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipientForm' data-form-submit-event"/>
-                <c:set target="${element}" property="iconBefore" value="icon-save"/>
-                <c:set target="${element}" property="name">
-                    <mvc:message code="button.Save"/>
-                </c:set>
-            </emm:instantiate>
-        </c:if>
+            </c:otherwise>
+        </c:choose>
     </emm:ShowByPermission>
 </emm:instantiate>

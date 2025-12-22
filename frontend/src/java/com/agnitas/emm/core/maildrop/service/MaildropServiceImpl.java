@@ -10,95 +10,54 @@
 
 package com.agnitas.emm.core.maildrop.service;
 
-import com.agnitas.beans.Company;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.DkimDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.company.service.CompanyService;
-import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HtmlUtils;
-import com.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.DkimDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
+import com.agnitas.emm.core.systemmessages.service.SystemMailMessageService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.transaction.annotation.Transactional;
+
 public class MaildropServiceImpl implements MaildropService {
 
 	private static final Logger logger = LogManager.getLogger(MaildropServiceImpl.class);
 
-	protected MailingService mailingService;
-	protected MaildropStatusDao maildropStatusDao;
+	private MailingService mailingService;
+	private MaildropStatusDao maildropStatusDao;
 	private DkimDao dkimDao;
 	private MediaTypesService mediaTypesService;
-	private CompanyService companyService;
-	private JavaMailService javaMailService;
 	private ConfigService configService;
-	private AdminService adminService;
-
-	public void setMailingService(MailingService mailingService) {
-		this.mailingService = mailingService;
-	}
-
-	public void setDkimDao(DkimDao dkimDao) {
-		this.dkimDao = dkimDao;
-	}
-
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
-	public void setCompanyService(CompanyService companyService) {
-		this.companyService = companyService;
-	}
-
-	public void setJavaMailService(JavaMailService javaMailService) {
-		this.javaMailService = javaMailService;
-	}
-
-	public void setMediaTypesService(MediaTypesService mediaTypesService) {
-		this.mediaTypesService = mediaTypesService;
-	}
-
-	public void setAdminService(AdminService adminService) {
-		this.adminService = adminService;
-	}
-
-	public void setMaildropStatusDao(final MaildropStatusDao dao) {
-		this.maildropStatusDao = dao;
-	}
+	private SystemMailMessageService systemMailMessageService;
 
 	@Override
-	public final boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID) {
+	public boolean stopWorldMailingBeforeGeneration(int companyID, int mailingID) {
 		return maildropStatusDao.delete(companyID, mailingID, MaildropStatus.WORLD, MaildropGenerationStatus.SCHEDULED);
 	}
 
 	@Override
-	public boolean isActiveMailing(final int mailingID, final int companyID) {
+	public boolean isActiveMailing(int mailingID, int companyID) {
 		if (hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD)) {
 			return true;
 		}
@@ -106,7 +65,7 @@ public class MaildropServiceImpl implements MaildropService {
 	}
 
 	@Override
-	public final boolean hasMaildropStatus(final int mailingID, final int companyID, final MaildropStatus... statusList) {
+	public boolean hasMaildropStatus(int mailingID, int companyID, MaildropStatus... statusList) {
 		return !findMaildrops(mailingID, companyID, statusList).isEmpty();
 	}
 
@@ -158,7 +117,7 @@ public class MaildropServiceImpl implements MaildropService {
 			MaildropEntry existingEntry = this.getEntryForStatus(mailingID, entry.getCompanyID(), entry.getStatus());
 			if (existingEntry != null) {
 				entry.setId(existingEntry.getId());
-				logger.error("Trying to activate mailing multiple times: " + mailingID);
+				logger.error("Trying to activate mailing multiple times: {}", mailingID);
 			}
 		}
 
@@ -221,25 +180,7 @@ public class MaildropServiceImpl implements MaildropService {
 			return;
 		}
 
-		Locale locale = Optional.ofNullable(configService.getValue(ConfigValue.LocaleLanguage, companyId))
-				.map(Locale::new)
-				.orElse(Locale.UK);
-
-		Company company = companyService.getCompany(companyId);
-
-		AgnUtils.splitAndTrimList(StringUtils.defaultString(company.getContactTech()))
-				.stream()
-				.filter(StringUtils::isNotBlank)
-				.forEach(techEmail -> {
-					String salutationPart = Optional.ofNullable(adminService.findByEmail(techEmail, companyId))
-							.map(u -> I18nString.getLocaleString("email.dkimKey.missing.salutation", locale, u.getFullname()))
-							.orElse(I18nString.getLocaleString("email.dkimKey.missing.salutation.unknown", locale));
-
-					String subject = I18nString.getLocaleString("email.dkimKey.missing.subject", locale, company.getShortname());
-					String emailText = I18nString.getLocaleString("email.dkimKey.missing.text", locale, salutationPart, senderDomain);
-
-					javaMailService.sendEmail(companyId, techEmail, subject, emailText, HtmlUtils.replaceLineFeedsForHTML(emailText));
-				});
+		systemMailMessageService.sendDkimWarningMail(companyId, senderDomain);
 	}
 
 	@Override
@@ -277,4 +218,29 @@ public class MaildropServiceImpl implements MaildropService {
 	public List<MaildropEntry> getMaildropStatusEntriesForMailing(int companyID, int mailingID) {
 		return maildropStatusDao.getMaildropStatusEntriesForMailing(companyID, mailingID);
 	}
+
+	public void setMailingService(MailingService mailingService) {
+		this.mailingService = mailingService;
+	}
+
+	public void setMaildropStatusDao(MaildropStatusDao maildropStatusDao) {
+		this.maildropStatusDao = maildropStatusDao;
+	}
+
+	public void setDkimDao(DkimDao dkimDao) {
+		this.dkimDao = dkimDao;
+	}
+
+	public void setMediaTypesService(MediaTypesService mediaTypesService) {
+		this.mediaTypesService = mediaTypesService;
+	}
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	public void setSystemMailMessageService(SystemMailMessageService systemMailMessageService) {
+		this.systemMailMessageService = systemMailMessageService;
+	}
+
 }

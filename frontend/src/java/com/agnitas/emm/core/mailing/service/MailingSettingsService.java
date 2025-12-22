@@ -33,13 +33,11 @@ public interface MailingSettingsService {
 
     Map<String, Object> saveMailingGridInfo(int gridTemplateId, int mailingId, Admin admin);
     
-    void setMailingTargetsToForm(MailingSettingsForm form, Mailing mailing);
-
-    void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, Integer workflowId, boolean regularTemplate, boolean withFollowUpSettings);
+    void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, boolean withFollowUpSettings);
 
     void populateDisabledSettings(Mailing mailing, MailingSettingsForm form, boolean isGrid, Admin admin, WorkflowParameters workflowParams);
 
-    MailingSettingsForm prepareFormForCopy(Mailing origin, Locale locale, Integer workflowId, boolean forFollowUp);
+    MailingSettingsForm prepareFormForCopy(Mailing origin, Locale locale, boolean forFollowUp);
 
     void removeInvalidTargets(Mailing mailing, Popups popups);
 

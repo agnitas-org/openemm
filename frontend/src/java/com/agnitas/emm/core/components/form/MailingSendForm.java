@@ -12,12 +12,9 @@ package com.agnitas.emm.core.components.form;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import com.agnitas.beans.DeliveryStat;
 import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.web.forms.PaginationForm;
@@ -32,9 +29,7 @@ public class MailingSendForm extends PaginationForm {
     private boolean isTemplate;
     private int mailingtype;
     private String shortname;
-    private boolean isMailingUndoAvailable; // TODO: EMMGUI-714: remove when old design will be removed
     private boolean worldMailingSend;
-    private DeliveryStat deliveryStat; // TODO: EMMGUI-714: remove when old design will be removed
     private int sendHour;
     private int sendMinute;
     private String sendTime;
@@ -56,12 +51,6 @@ public class MailingSendForm extends PaginationForm {
     private int autoImportId;
     private String statusmailRecipients = "";
     private String workStatus = "";
-    private String[] filterTypes; // TODO: EMMGUI-714: remove when old design will be removed
-    private int offlineHtmlEmailsCount;  // TODO: EMMGUI-714: remove after remove of old design
-    private int totalSentCount;  // TODO: EMMGUI-714: remove after remove of old design
-    private int htmlEmailsCount;  // TODO: EMMGUI-714: remove after remove of old design
-    private int textEmailsCount; // TODO: EMMGUI-714: remove after remove of old design
-    private Map<Integer, Integer> sentStatistics = new HashMap<>();  // TODO: EMMGUI-714: remove after remove of old design
     private int templateId;
     private boolean isActivateAgainToday;
     private Date date;
@@ -124,28 +113,12 @@ public class MailingSendForm extends PaginationForm {
         this.shortname = shortname;
     }
 
-    public boolean getIsMailingUndoAvailable() {
-        return isMailingUndoAvailable;
-    }
-
-    public void setIsMailingUndoAvailable(boolean isMailingUndoAvailable) {
-        this.isMailingUndoAvailable = isMailingUndoAvailable;
-    }
-
     public boolean isWorldMailingSend() {
         return worldMailingSend;
     }
 
     public void setWorldMailingSend(boolean worldMailingSend) {
         this.worldMailingSend = worldMailingSend;
-    }
-
-    public DeliveryStat getDeliveryStat() {
-        return deliveryStat;
-    }
-
-    public void setDeliveryStat(DeliveryStat deliveryStat) {
-        this.deliveryStat = deliveryStat;
     }
 
     public int getSendHour() {
@@ -322,62 +295,6 @@ public class MailingSendForm extends PaginationForm {
 
     public void setWorkStatus(String workStatus) {
         this.workStatus = workStatus;
-    }
-
-    public void setFilterTypes(String[] filterTypes) {
-        this.filterTypes = filterTypes;
-    }
-
-    public String[] getFilterTypes() {
-        return filterTypes;
-    }
-
-    public int getOfflineHtmlEmailsCount() {
-        return offlineHtmlEmailsCount;
-    }
-
-    public void setOfflineHtmlEmailsCount(int offlineHtmlEmailsCount) {
-        this.offlineHtmlEmailsCount = offlineHtmlEmailsCount;
-    }
-
-    public int getHtmlEmailsCount() {
-        return htmlEmailsCount;
-    }
-
-    public void setHtmlEmailsCount(int htmlEmailsCount) {
-        this.htmlEmailsCount = htmlEmailsCount;
-    }
-
-    public int getTextEmailsCount() {
-        return textEmailsCount;
-    }
-
-    public void setTextEmailsCount(int textEmailsCount) {
-        this.textEmailsCount = textEmailsCount;
-    }
-
-    public int getSendStatisticsItem(int id) {
-        if (sentStatistics.containsKey(id)) {
-            return sentStatistics.get(id);
-        }
-
-        return 0;
-    }
-
-    public void setSentStatisticsItem(int id, int value) {
-        sentStatistics.put(id, value);
-    }
-
-    public Map<Integer, Integer> getSentStatistics() {
-        return sentStatistics;
-    }
-
-    public int getTotalSentCount() {
-        return totalSentCount;
-    }
-
-    public void setTotalSentCount(int totalSentCount) {
-        this.totalSentCount = totalSentCount;
     }
 
     public int getTemplateId() {

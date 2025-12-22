@@ -10,10 +10,11 @@
 
 package com.agnitas.util.quartz;
 
-import org.agnitas.emm.core.logintracking.dao.LoginTrackDao;
+import com.agnitas.emm.core.loginmanager.dao.LoginTrackDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@JobWorker("WebserviceLoginTrackTableCleaner")
 public class WebserviceLoginTrackTableCleanerJobWorker extends AbstractLoginTrackTableCleanerJobWorker {
 	
 	/**

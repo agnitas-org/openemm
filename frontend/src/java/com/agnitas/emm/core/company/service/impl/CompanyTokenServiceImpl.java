@@ -13,24 +13,17 @@ package com.agnitas.emm.core.company.service.impl;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.agnitas.emm.core.company.service.CompanyService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.tokengen.TokenGenerator;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.company.dao.CompanyTokenDao;
+import com.agnitas.emm.core.company.service.CompanyService;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.company.service.FailedToAssignCompanyTokenException;
-import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import org.springframework.transaction.annotation.Transactional;
 
-public final class CompanyTokenServiceImpl implements CompanyTokenService {
-
-	private static final Logger logger = LogManager.getLogger(CompanyTokenServiceImpl.class);
+public class CompanyTokenServiceImpl implements CompanyTokenService {
 
 	private CompanyTokenDao companyTokenDao;
 	private CompanyService companyService;
@@ -38,60 +31,43 @@ public final class CompanyTokenServiceImpl implements CompanyTokenService {
 	private ConfigService configService;
 	
 	@Override
-	public Company findCompanyByToken(final String token) throws UnknownCompanyTokenException {
-        Company company = companyService.getCompany(companyTokenDao.getCompanyIdByToken(token));
-
-		if (company == null) {
-			logger.error("Company not found by token: {}", token);
-			throw new UnknownCompanyTokenException(token);
-		}
-
-		return company;
+	public Optional<Company> findCompanyByToken(String token) {
+		return companyTokenDao.getCompanyIdByToken(token)
+				.map(cId -> companyService.getCompany(cId));
 	}
 
 	@Override
-	public Integer findCompanyIdToken(String token) {
-        try {
-            return findCompanyByToken(token).getId();
-        } catch (UnknownCompanyTokenException e) {
-			logger.error("Company not found by token: {}", token);
-            return null;
-        }
+	public Optional<Integer> findCompanyIdByToken(String token) {
+		return companyTokenDao.getCompanyIdByToken(token);
     }
 
 	@Override
-	public Optional<String> getCompanyToken(final int companyID) throws UnknownCompanyIdException {
+	public Optional<String> getCompanyToken(int companyID) {
 		return this.companyTokenDao.getCompanyToken(companyID);
 	}
 
 	@Transactional
 	@Override
-	public final void assignRandomToken(final int companyID, final boolean overwriteExisting) throws UnknownCompanyIdException, FailedToAssignCompanyTokenException {
-		final Optional<String> tokenOpt = getCompanyToken(companyID);
+	public void assignRandomToken(int companyID) {
+        if (getCompanyToken(companyID).isPresent()) {
+			return;
+		}
 
-		if(!tokenOpt.isPresent() || overwriteExisting) {
-			// Up to 100 attempts to find a free token
-			for(int i = 0; i < 100; i++) {
-				final String token = this.tokenGenerator.generateToken(this.configService.getIntegerValue(ConfigValue.CompanyTokenLength, companyID));
-			
-				if(!isTokenInUse(token)) {
-					this.companyTokenDao.assignToken(companyID, token);
-					return;
-				}
-			}
-			
-			throw new FailedToAssignCompanyTokenException(companyID, "Could not find a free token");
-		}
-	}
+        // Up to 100 attempts to find a free token
+        for(int i = 0; i < 100; i++) {
+            String token = tokenGenerator.generateToken(configService.getIntegerValue(ConfigValue.CompanyTokenLength, companyID));
+
+            if (!isTokenInUse(token)) {
+                this.companyTokenDao.assignToken(companyID, token);
+                return;
+            }
+        }
+
+        throw new FailedToAssignCompanyTokenException(companyID, "Could not find a free token");
+    }
 	
-	private boolean isTokenInUse(final String token) {
-		try {
-			findCompanyByToken(token);
-			
-			return true;
-		} catch(final UnknownCompanyTokenException e) {
-			return false;
-		}
+	private boolean isTokenInUse(String token) {
+		return findCompanyIdByToken(token).isPresent();
 	}
 
 	public void setCompanyTokenDao(final CompanyTokenDao dao) {

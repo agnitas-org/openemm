@@ -17,6 +17,7 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import com.agnitas.util.DbUtilities;
 import com.agnitas.util.TimeoutLRUMap;
 import com.agnitas.emm.core.commons.database.DatabaseInformation;
 import com.agnitas.emm.core.commons.database.DatabaseInformationException;
@@ -35,8 +36,10 @@ public class DatabaseInformationImpl implements DatabaseInformation {
 	}
 	
 	@Override
-	public int getColumnStringLength(String tableName, String columnName) throws DatabaseInformationException {
-		columnName = columnName.toUpperCase();
+	public int getColumnStringLength(String tableName, String columnName) {
+		columnName = DbUtilities.checkDbVendorIsPostgreSQL(datasource)
+			? columnName.toLowerCase()
+			: columnName.toUpperCase();
 		
 		TableAndColumn tableAndColumn = new TableAndColumn(tableName, columnName);
 		Integer columnLength = columnLengthMap.get(tableAndColumn);

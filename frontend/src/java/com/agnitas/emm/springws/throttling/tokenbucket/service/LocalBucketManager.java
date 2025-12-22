@@ -13,8 +13,8 @@ package com.agnitas.emm.springws.throttling.tokenbucket.service;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.util.quota.tokenbucket.AbstractLocalBucketManager;

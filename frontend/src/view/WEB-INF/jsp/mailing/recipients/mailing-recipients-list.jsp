@@ -1,185 +1,198 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
-<%@ page import="com.agnitas.service.MailingRecipientExportWorker" %>
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingRecipientType" %>
+<%@ page import="com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn" %>
 
-<%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
-<%@ taglib prefix="tiles"   uri="http://tiles.apache.org/tags-tiles" %>
-<%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="fmt"     uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="fieldsMap" type="java.util.Map"--%>
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="deactivatePagination" type="java.lang.Boolean"--%>
-<%--@elvariable id="form" type="com.agnitas.emm.core.mailing.forms.MailingRecipientsForm"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter"--%>
+<%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
+<%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
+<%--@elvariable id="recipient" type="com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow"--%>
+<%--@elvariable id="countOfRecipients" type="java.lang.Integer"--%>
+<%--@elvariable id="recipients" type="com.agnitas.beans.PaginatedList<com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow>"--%>
+<%--@elvariable id="additionalColumns" type="java.util.Set<java.lang.String>"--%>
 
-<c:set var="RECIPIENTS_SHOW_ALL" value="<%= MailingRecipientExportWorker.MAILING_RECIPIENTS_ALL %>"/>
-<c:set var="RECIPIENTS_SHOW_OPENED" value="<%= MailingRecipientExportWorker.MAILING_RECIPIENTS_OPENED %>"/>
-<c:set var="RECIPIENTS_SHOW_CLICKED" value="<%= MailingRecipientExportWorker.MAILING_RECIPIENTS_CLICKED %>"/>
-<c:set var="RECIPIENTS_SHOW_BOUNCED" value="<%= MailingRecipientExportWorker.MAILING_RECIPIENTS_BOUNCED %>"/>
-<c:set var="RECIPIENTS_SHOW_UNSUBSCRIBED" value="<%= MailingRecipientExportWorker.MAILING_RECIPIENTS_UNSUBSCRIBED %>"/>
+<c:set var="RECIPIENT_TYPES" value="<%= MailingRecipientType.values() %>"/>
+<c:set var="OPT_OUT_TIME_FIELD" value="<%= MailingRecipientsAdditionalColumn.OPT_OUT_TIME %>"/>
+<c:set var="BOUNCE_TIME_FIELD" value="<%= MailingRecipientsAdditionalColumn.BOUNCE_TIME %>"/>
 
-<c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
+<c:set var="recipientsLimitExceeded" value="${recipients.fullListSize > countOfRecipients}" />
+<c:set var="tableSortable" value="${not recipientsLimitExceeded}" />
+<mvc:message var="allMsg" code="default.All" />
 
-<mvc:form servletRelativeAction="/mailing/${mailingId}/recipients/list.action" id="form" modelAttribute="form" data-form="resource" method="GET">
-    <input type="hidden" name="loadRecipients" value="true">
+<div class="filter-overview" data-editable-view="${agnEditViewKey}">
+    <mvc:form id="table-tile" servletRelativeAction="/mailing/${mailingId}/recipients/list.action" modelAttribute="form" method="GET" cssClass="tile"
+              data-editable-tile="main" data-controller="mailing-recipients">
+        <input type="hidden" name="loadRecipients" value="true">
 
-    <script type="application/json" data-initializer="web-storage-persist">
-        {
-            "mailing-recipient-overview": {
-                "rows-count": ${form.numberOfRows},
-                "fields": ${emm:toJson(form.selectedFields)}
-            }
-        }
-    </script>
+        <c:if test="${not form.inEditColumnsMode}">
+            <script type="application/json" data-initializer="web-storage-persist">
+                {
+                    "mailing-recipient-overview": {
+                        "rows-count": ${form.numberOfRows},
+                        "fields": ${emm:toJson(form.selectedFields)}
+                    }
+                }
+            </script>
+        </c:if>
 
-    <div class="tile">
-        <div class="tile-header">
-            <ul class="tile-header-nav">
-                <c:choose>
-                    <c:when test="${isMailingGrid eq true}">
-                        <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
-                    </c:when>
-                    <c:otherwise>
-                        <h2 class="headline">
-                            <mvc:message code="default.Overview"/>
-                        </h2>
-                    </c:otherwise>
-                </c:choose>
-            </ul>
+        <div class="tile-body vstack gap-3">
+            <c:if test="${recipientsLimitExceeded}">
+                <div class="notification-simple notification-simple--lg notification-simple--info">
+                    <span><mvc:message code="recipient.search.max_recipients" arguments="${countOfRecipients}"/></span>
+                </div>
+            </c:if>
 
-            <ul class="tile-header-actions">
-                <li>
-                    <a href="#" class="link" data-form-url="<c:url value='/mailing/${mailingId}/recipients/export.action'/>"
-                       data-tooltip="<mvc:message code='export.message.csv'/>" data-form-submit-static data-prevent-load>
-                        <i class="icon icon-cloud-download"></i>
-                        <mvc:message code="Export"/>
-                    </a>
-                </li>
-
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="icon icon-eye"></i>
-                        <span class="text"><mvc:message code="button.Show"/></span>
-                        <i class="icon icon-caret-down"></i>
-                    </a>
-
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-header"><mvc:message code="listSize"/></li>
-                        <li>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="20"/>
-                                <span class="label-text">20</span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="50"/>
-                                <span class="label-text">50</span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="100"/>
-                                <span class="label-text">100</span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="200"/>
-                                <span class="label-text">200</span>
-                            </label>
-                        </li>
-
-                        <li class="divider"></li>
-
-                        <li class="dropdown-header"><mvc:message code="default.View"/></li>
-                        <li>
-                            <label class="label">
-                                <mvc:radiobutton path="recipientsFilter" value="${RECIPIENTS_SHOW_ALL}"/>
-                                <span class="label-text"><mvc:message code="default.All"/></span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="recipientsFilter" value="${RECIPIENTS_SHOW_OPENED}"/>
-                                <span class="label-text"><mvc:message code="statistic.opened"/></span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="recipientsFilter" value="${RECIPIENTS_SHOW_CLICKED}"/>
-                                <span class="label-text"><mvc:message code="default.clicked"/></span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="recipientsFilter" value="${RECIPIENTS_SHOW_BOUNCED}"/>
-                                <span class="label-text"><mvc:message code="recipient.MailingState2"/></span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="recipientsFilter" value="${RECIPIENTS_SHOW_UNSUBSCRIBED}"/>
-                                <span class="label-text"><mvc:message code="recipient.status.optout"/></span>
-                            </label>
-                        </li>
-
-                        <li class="divider"></li>
-
-                        <li>
-                            <p>
-                                <button class="btn btn-block btn-secondary btn-regular" data-form-change data-form-submit type="button">
-                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Show"/></span>
-                                </button>
-                            </p>
-                        </li>
-                    </ul>
-                </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="icon icon-columns"></i>
-                        <span class="text"><mvc:message code="settings.fields"/></span>
-                        <i class="icon icon-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-header"><mvc:message code="settings.fields"/> </li>
-                        <li>
-                            <p>
-                                <mvc:select path="selectedFields" cssClass="form-control js-select" multiple="multiple">
-                                    <c:forEach var="field" items="${fieldsMap}">
-                                        <c:set var="column" value="${field.key}"/>
-                                        <c:set var="fieldName" value="${field.value}"/>
-
-                                        <c:set var="isDefaultField" value="${form.isDefaultColumn(column)}"/>
-                                        <c:set var="fieldSelected" value="${form.isSelectedColumn(column)}"/>
-
-                                        <c:if test="${isDefaultField}">
-                                            <option title="${column}" value="${column}" disabled>${fieldName}</option>
-                                        </c:if>
-                                        <c:if test="${not isDefaultField}">
-                                            <option title="${column}" value="${column}" ${fieldSelected ? 'selected' : ''}>${fieldName}</option>
-                                        </c:if>
-                                    </c:forEach>
-                                </mvc:select>
-                            </p>
-                        </li>
-                        <li>
-                            <p>
-                                <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
-                                    <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Refresh"/></span>
-                                </button>
-                            </p>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-        <div class="tile-content">
-            <div class="${deactivatePagination ? 'table-wrapper hide-pagination' : 'table-wrapper'}">
-                <c:choose>
-                    <c:when test="${not form.loadRecipients}">
-                        <div class="table-controls">
-                            <div class="table-control" style="text-align: center; padding: 10px;">
-                                <a href="#" class="btn btn-regular btn-primary" data-form-submit style="display:inline-block;">
-                                    <i class="icon icon-refresh"></i>
-                                    <span class="text"><mvc:message code="button.load.recipients"/></span>
-                                </a>
-                            </div>
+            <div class="table-wrapper ${deactivatePagination ? 'table-wrapper--no-pagination' : ''}" data-table-column-manager data-action="update-columns">
+                <c:if test="${form.loadRecipients}">
+                    <script type="application/json" data-table-column-manager-config>
+                        {
+                            "columns": [
+                                <c:forEach var="field" items="${fieldsMap}" varStatus="loop_status">
+                                    {
+                                        "name": ${emm:toJson(field.key)},
+                                        "text": ${emm:toJson(field.value)},
+                                        "selected": ${form.isSelectedColumn(field.key)}
+                                    }${loop_status.index + 1 lt fn:length(fieldsMap) ? ',' : ''}
+                                </c:forEach>
+                            ],
+                            "editMode": ${form.inEditColumnsMode}
+                        }
+                    </script>
+                </c:if>
+                <div class="table-wrapper__header">
+                    <h1 class="table-wrapper__title"><mvc:message code="default.Overview" /></h1>
+                    <c:if test="${form.loadRecipients}">
+                        <div class="table-wrapper__controls">
+                            <c:if test="${recipients.fullListSize gt 0}">
+                                <%@include file="../../common/table/edit-columns-btn.jspf" %>
+                                <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                            </c:if>
+                            <jsp:include page="../../common/table/entries-label.jsp">
+                                <jsp:param name="filteredEntries" value="${recipients.fullListSize}"/>
+                                <jsp:param name="totalEntries" value="${recipients.notFilteredFullListSize}"/>
+                            </jsp:include>
                         </div>
-                    </c:when>
-                    <c:otherwise>
-                        <%@include file="mailing-recipients-table.jspf" %>
-                    </c:otherwise>
-                </c:choose>
-            <div>
+                    </c:if>
+                </div>
+
+                <div class="table-wrapper__body">
+                    <emm:table var="recipient" modelAttribute="recipients" cssClass="table table--borderless js-table">
+
+                        <c:if test="${not form.loadRecipients}">
+                            <c:set var="agnTableEmptyListMsg" value="" />
+                        </c:if>
+
+                        <emm:column titleKey="Firstname" sortProperty="firstname" property="firstName" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn('firstname') ? '' : 'hidden'}" cssClass="${form.isSelectedColumn('firstname') ? '' : 'hidden'}"
+                                           data-table-column="firstname" />
+
+                        <emm:column titleKey="Lastname" sortProperty="lastname" property="lastName" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn('lastname') ? '' : 'hidden'}" cssClass="${form.isSelectedColumn('lastname') ? '' : 'hidden'}"
+                                           data-table-column="lastname" />
+
+                        <emm:column titleKey="mailing.MediaType.0" property="email" sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="statistic.mailing.recipient.received" sortProperty="receive_time" property="receiveTime"
+                                        sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="statistic.opened" sortProperty="open_time" property="openTime" sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="statistic.openings" sortProperty="openings" property="openingsCount" sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="default.clicked" sortProperty="click_time" property="clickTime" sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="statistic.Clicks" sortProperty="clicks" property="clicksCount" sortable="${tableSortable}" data-table-column="" />
+
+                        <emm:column titleKey="recipient.MailingState2" sortProperty="bounce_time" property="bounceTime" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           cssClass="${form.isSelectedColumn(BOUNCE_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           data-table-column="${BOUNCE_TIME_FIELD.name()}" />
+
+                        <emm:column titleKey="recipient.status.optout" sortProperty="optout_time" property="unsubscribeTime" sortable="${tableSortable}"
+                                           headerClass="${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           cssClass="${form.isSelectedColumn(OPT_OUT_TIME_FIELD.name()) ? '' : 'hidden'}"
+                                           data-table-column="${OPT_OUT_TIME_FIELD.name()}" />
+
+                        <c:forEach var="field" items="${form.selectedFields}">
+                            <c:if test="${not form.isDefaultColumn(field) and not fn:contains(additionalColumns, field)}">
+                                <c:choose>
+                                    <c:when test="${'gender'.equalsIgnoreCase(field)}">
+                                        <emm:column titleKey="recipient.Salutation" sortProperty="gender" sortable="${tableSortable}" data-table-column="${field}">
+                                            <span><mvc:message code="recipient.gender.${recipient.getVal(field)}.short"/></span>
+                                        </emm:column>
+                                    </c:when>
+
+                                    <c:otherwise>
+                                        <emm:column title="${fieldsMap.get(field)}" sortProperty="${field}" sortable="${tableSortable}" data-table-column="${field}">
+                                            <span>${recipient.getVal(field)}</span>
+                                        </emm:column>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:if>
+                        </c:forEach>
+
+                        <emm:column headerClass="columns-picker" />
+                    </emm:table>
+                </div>
+
+                <c:if test="${not form.loadRecipients}">
+                    <button class="btn btn-primary absolute-center" data-form-submit>
+                        <i class="icon icon-sync"></i>
+                        <span class="text"><mvc:message code="button.load.recipients"/></span>
+                    </button>
+                </c:if>
+            </div>
+            <c:if test="${not form.loadRecipients}">
+                <div class="table-wrapper__footer"></div>
+            </c:if>
         </div>
-    </div>
-</mvc:form>
+    </mvc:form>
+
+    <mvc:form id="filter-tile" cssClass="tile" method="GET" servletRelativeAction="/mailing/${mailingId}/recipients/search.action" modelAttribute="form"
+              data-form="resource" data-resource-selector="#table-tile" data-toggle-tile="" data-editable-tile="">
+
+        <div class="tile-header">
+            <h1 class="tile-title">
+                <i class="icon icon-caret-up mobile-visible"></i>
+                <span class="text-truncate"><mvc:message code="report.mailing.filter"/></span>
+            </h1>
+            <div class="tile-controls">
+                <a class="btn btn-icon btn-secondary" data-form-clear data-form-submit data-tooltip="<mvc:message code="filter.reset"/>"><i class="icon icon-undo-alt"></i></a>
+                <a class="btn btn-icon btn-primary" data-form-submit data-tooltip="<mvc:message code='button.filter.apply'/>"><i class="icon icon-search"></i></a>
+            </div>
+        </div>
+        <div class="tile-body vstack gap-3 js-scrollable">
+            <div>
+                <label for="filter-types" class="form-label"><mvc:message code="default.Type" /></label>
+                <mvc:select id="filter-types" path="types" cssClass="form-control" placeholder="${allMsg}">
+                    <c:forEach var="recipientType" items="${RECIPIENT_TYPES}">
+                        <mvc:option value="${recipientType}">${recipientType}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+            <div>
+                <mvc:message var="firstnameMsg" code="Firstname" />
+                <label for="filter-firstname" class="form-label">${firstnameMsg}</label>
+                <mvc:text id="filter-firstname" path="firstname" cssClass="form-control" placeholder="${firstnameMsg}"/>
+            </div>
+            <div>
+                <mvc:message var="lastnameMsg" code="Lastname" />
+                <label for="filter-lastname" class="form-label">${lastnameMsg}</label>
+                <mvc:text id="filter-lastname" path="lastname" cssClass="form-control" placeholder="${lastnameMsg}"/>
+            </div>
+            <div>
+                <label for="filter-email" class="form-label"><mvc:message code="mailing.MediaType.0" /></label>
+                <mvc:text id="filter-email" path="email" cssClass="form-control" placeholder="${emailPlaceholder}"/>
+            </div>
+        </div>
+    </mvc:form>
+</div>

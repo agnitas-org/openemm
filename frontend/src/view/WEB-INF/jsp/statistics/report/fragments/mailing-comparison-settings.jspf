@@ -1,0 +1,189 @@
+<%@ page import="com.agnitas.emm.core.birtreport.dto.FilterType" %>
+<%@ page import="com.agnitas.emm.core.birtreport.dto.ReportSettingsType" %>
+
+<%--@elvariable id="birtReportForm" type="com.agnitas.emm.core.birtreport.forms.BirtReportForm"--%>
+<%--@elvariable id="propertiesMap" type="java.util.Map<ReportSettingsType, Map<String, List<BirtReportSettings.Properties>>>"--%>
+<%--@elvariable id="targetList" type="java.util.List"--%>
+
+<c:set var="FILTER_NO_FILTER" value="<%=FilterType.FILTER_NO_FILTER.getKey()%>"       scope="request" />
+<c:set var="FILTER_ARCHIVE" value="<%=FilterType.FILTER_ARCHIVE.getKey()%>"           scope="request" />
+<c:set var="FILTER_MAILINGLIST" value="<%=FilterType.FILTER_MAILINGLIST.getKey()%>"   scope="request" />
+<c:set var="FILTER_TARGET" value="<%=FilterType.FILTER_TARGET.getKey()%>"             scope="request" />
+
+<c:set var="COMPARISON" value="<%= ReportSettingsType.COMPARISON%>"/>
+<c:set var="COMPARISON_KEY" value="<%= ReportSettingsType.COMPARISON.getKey()%>"/>
+
+<c:set var="predefined" value="${birtReportForm.settings[COMPARISON]['predefineMailing']}"/>
+<c:if test="${empty predefined}">
+    <c:set var="predefined" value="0"/>
+</c:if>
+
+<c:set var="filter" value="${birtReportForm.settings[COMPARISON]['mailingFilter']}"/>
+<c:if test="${empty filter}">
+    <c:set var="filter" value="${FILTER_NO_FILTER}"/>
+</c:if>
+
+<c:set var="allowedStatsRevenue" value="false"/>
+<emm:ShowByPermission token="stats.revenue">
+    <c:set var="allowedStatsRevenue" value="true"/>
+</emm:ShowByPermission>
+
+<div class="row g-3" data-initializer="report-settings" data-field="toggle-vis">
+    <script id="config:report-settings" type="application/json">
+        {
+            "settingsType" : ${COMPARISON_KEY},
+            "data" : {
+                "mailingType": ${birtReportForm.settings[COMPARISON]['mailingType']},
+                "mailingFilter": ${filter},
+                "predefineMailing": ${predefined},
+                "selectedMailings": ${emm:toJson(birtReportForm.settings[COMPARISON]['selectedMailings'])}
+            },
+
+            "selectors" : {
+                "filterBlockId" : "#comparison-filter-block select",
+                "normalMailing" : "#normal_mailings_comparison select",
+                "mailingType" : "[name='settings[COMPARISON][mailingType]']",
+                "mailingFilter" : "[name='settings[COMPARISON][mailingFilter]']",
+                "predefineMailing" : "[name='settings[COMPARISON][selectedMailings]']"
+            }
+        }
+    </script>
+
+    <div class="col-12">
+        <div class="row g-1">
+            <div class="col-12">
+                <label for="comparison-mailings-selection" class="form-label"><mvc:message code="report.mailings"/></label>
+                <mvc:select id="comparison-mailings-selection" path="settings[COMPARISON][mailingType]" cssClass="form-control" data-field-vis="">
+                    <mvc:option value="1" data-field-vis-hide="#normal_mailings_comparison" data-field-vis-show="#last-mailings_comparison">
+                        <mvc:message code="birt.report.predefinedMailing"/>
+                    </mvc:option>
+                    <mvc:option value="2" data-field-vis-hide="#last-mailings_comparison" data-field-vis-show="#normal_mailings_comparison">
+                        <mvc:message var="selectMailingsMsg" code="report.mailing.select"/>
+                        ${selectMailingsMsg}
+                    </mvc:option>
+                </mvc:select>
+            </div>
+
+            <div id="normal_mailings_comparison" class="col-12">
+                <mvc:select id="normal_mailings" path="settings[COMPARISON][selectedMailings]" cssClass="form-control" multiple="true" placeholder="${selectMailingsMsg}">
+                </mvc:select>
+            </div>
+
+            <div id="last-mailings_comparison" class="col-12">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <mvc:select path="settings[COMPARISON][predefinedMailings]" data-field-vis="" size="1" cssClass="form-control">
+                            <mvc:option value="2"  data-field-vis-hide="#period" ><mvc:message code="report.mailing.last.two"/></mvc:option>
+                            <mvc:option value="3"  data-field-vis-hide="#period"><mvc:message code="report.mailing.last.three"/></mvc:option>
+                            <mvc:option value="5"  data-field-vis-hide="#period"><mvc:message code="report.mailing.last.five"/></mvc:option>
+                            <mvc:option value="10" data-field-vis-hide="#period"><mvc:message code="report.mailing.last.ten"/></mvc:option>
+                            <mvc:option value="0"  data-field-vis-show="#period" ><mvc:message code="report.period.select"/></mvc:option>
+                        </mvc:select>
+                    </div>
+                    <div id="period" class="col-12">
+                        <jsp:include page="fragments/birtreport-editor-period.jsp">
+                            <jsp:param name="periodPath" value="settings[COMPARISON][periodType]"/>
+                            <jsp:param name="startDatePath" value="settings[COMPARISON][startDate]"/>
+                            <jsp:param name="stopDatePath" value="settings[COMPARISON][stopDate]"/>
+                        </jsp:include>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col">
+                <label class="form-label"><mvc:message code="report.mailing.filter"/></label>
+                <mvc:select path="settings[COMPARISON][mailingFilter]" cssClass="form-control" data-field-vis="" size="1">
+                    <mvc:option value="${FILTER_NO_FILTER}" data-field-vis-hide="#comparison-filter-block">
+                        <mvc:message code="report.mailing.filter.default"/>
+                    </mvc:option>
+                    <mvc:option value="${FILTER_ARCHIVE}" data-field-vis-show="#comparison-filter-block">
+                        <mvc:message code="mailing.archive"/>
+                    </mvc:option>
+                    <mvc:option value="${FILTER_MAILINGLIST}" data-field-vis-show="#comparison-filter-block">
+                        <mvc:message code="Mailinglist"/>
+                    </mvc:option>
+                    <mvc:option value="${FILTER_TARGET}" data-field-vis-show="#comparison-filter-block">
+                        <mvc:message code="target.Target"/>
+                    </mvc:option>
+                </mvc:select>
+            </div>
+
+            <div id="comparison-filter-block" class="col">
+                <div class="d-flex align-items-end h-100">
+                    <mvc:select path="settings[COMPARISON][predefineMailing]" cssClass="form-control" size="1">
+                    </mvc:select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label" for="availableTargets_comparison"><mvc:message code="Target-Groups"/></label>
+        <mvc:message var="addTargetGroupMessage" code="addTargetGroup" />
+        <mvc:select id="availableTargets_comparison" path="settings[COMPARISON][selectedTargets]" cssClass="form-control" multiple="true" placeholder="${addTargetGroupMessage}">
+            <mvc:options items="${targetList}" itemValue="id" itemLabel="targetName"/>
+        </mvc:select>
+    </div>
+
+    <div class="grid gap-2" style="grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, min-content)">
+        <c:forEach items="${propertiesMap}" var="settings">
+            <c:if test="${settings.key.key == COMPARISON_KEY}">
+                <c:forEach items="${settings.value}" var="group">
+                    <div class="tile tile--sm tile--headless">
+                        <div class="tile-header">
+                            <div class="form-check form-switch">
+                                <input id="${group.key}-toggle-all" class="form-check-input" type="checkbox" role="switch" data-toggle-checkboxes="on">
+                                <label class="form-label form-check-label" for="${group.key}-toggle-all"><mvc:message code="${group.key}"/></label>
+                            </div>
+                        </div>
+                        <div class="tile-body d-flex flex-column gap-2">
+                            <c:if test="${group.key == 'General'}">
+                                <div class="form-check form-switch">
+                                    <input id="sentEmails_comparison" type="checkbox" class="form-check-input" checked="checked" disabled="disabled" role="switch"/>
+                                    <label class="form-label form-check-label fw-normal" for="sentEmails_comparison">
+                                        <mvc:message code="report.deliveredMails"/>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input id="sentEmails_comparison" type="checkbox" class="form-check-input" checked="checked" disabled="disabled" role="switch"/>
+                                    <label class="form-label form-check-label fw-normal" for="sentEmails_comparison">
+                                        <mvc:message code="statistic.mails.delivered"/>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input id="sentDate_comparison" type="checkbox" class="form-check-input" checked="checked" disabled="disabled" role="switch"/>
+                                    <label class="form-label form-check-label fw-normal" for="sentDate_comparison">
+                                        <mvc:message code="mailing.senddate"/>
+                                    </label>
+                                </div>
+                            </c:if>
+
+                            <c:forEach items="${group.value}" var="prop">
+                                <c:choose>
+                                    <c:when test="${prop.propName eq 'conversionRate' && not allowedStatsRevenue}">
+                                        <mvc:hidden path="settings[COMPARISON][${prop.propName}]" value="false"/>
+                                    </c:when>
+
+                                    <c:otherwise>
+                                        <div class="form-check form-switch">
+                                            <mvc:checkbox id="property_comparison_${prop.propName}" path="settings[COMPARISON][${prop.propName}]" cssClass="form-check-input" value="true" role="switch"/>
+                                            <label class="form-label form-check-label fw-normal" for="property_comparison_${prop.propName}">
+                                                <mvc:message code="${prop.labelCode}"/>
+                                            </label>
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:forEach>
+                        </div>
+                    </div>
+                </c:forEach>
+            </c:if>
+        </c:forEach>
+    </div>
+</div>

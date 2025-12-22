@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.agnitas.beans.DatasourceDescription;
+import com.agnitas.beans.factory.DatasourceDescriptionFactory;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.datasource.bean.DataSource;
 import com.agnitas.emm.core.datasource.bean.impl.DataSourceImpl;
-import com.agnitas.beans.DatasourceDescription;
-import com.agnitas.beans.factory.DatasourceDescriptionFactory;
 import com.agnitas.emm.core.datasource.enums.SourceGroupType;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -65,7 +65,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     			return SourceGroupType.getUserSourceGroupType(entry.getKey());
     		}
     	}
-    	throw new IllegalStateException("Unknown sourcegrouptypeid: " + id);
+    	throw new IllegalArgumentException("Unknown sourcegrouptypeid: " + id);
     }
     
     /**
@@ -78,12 +78,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     		throw new IllegalArgumentException("Unknown sourcegrouptypename: " + sourceGroupType.name());
     	} else {
 	        String sql = "SELECT datasource_id, company_id, sourcegroup_id, description, url, desc2, timestamp FROM datasource_description_tbl WHERE sourcegroup_id = ? AND company_id IN (0, ?) AND description = ? ORDER BY company_id DESC, datasource_id DESC";
-	        List<DatasourceDescription> resultList = select(sql, new DatasourceDescription_RowMapper(), sourceGroupId, companyID, description);
-	        if (!resultList.isEmpty()) {
-	        	return resultList.get(0);
-	        } else {
-	        	return null;
-	        }
+	        return selectObjectDefaultNull(sql, new DatasourceDescription_RowMapper(), sourceGroupId, companyID, description);
     	}
     }
 
@@ -107,7 +102,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
                 sql = "INSERT INTO datasource_description_tbl (datasource_id, company_id, sourcegroup_id, description, url, desc2, timestamp) VALUES (?, ?, ?, ?, ?, ?, SYSDATE)";
                 update(sql, newDatasourceID, dsDescription.getCompanyID(), sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2());
             } else {
-            	newDatasourceID = insertIntoAutoincrementMysqlTable(
+            	newDatasourceID = insert(
         			"datasource_id",
         			"INSERT INTO datasource_description_tbl (company_id, sourcegroup_id, description, url, desc2, timestamp) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
         			dsDescription.getCompanyID(), sourceGroupId, dsDescription.getDescription(), dsDescription.getUrl(), dsDescription.getDescription2());
@@ -183,7 +178,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 		}
 	}
 
-	private class DataSourceRowMapper implements RowMapper<DataSource> {
+	private static class DataSourceRowMapper implements RowMapper<DataSource> {
 		@Override
 		public DataSource mapRow(ResultSet resultSet, int row) throws SQLException {
             DataSource datasource = new DataSourceImpl();

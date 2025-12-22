@@ -20,8 +20,7 @@ import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
 
@@ -160,7 +159,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 					Map<Integer, Integer> results = mailinglistDao.getMailinglistWorldSubscribersStatistics(companyID, mailingslistID);
 					JsonObject resultJsonObject = new JsonObject();
 					for (Entry<Integer, Integer> row : results.entrySet()) {
-						resultJsonObject.add(UserStatus.getUserStatusByID(row.getKey()).name(), row.getValue());
+						resultJsonObject.add(UserStatus.getByCode(row.getKey()).name(), row.getValue());
 					}
 
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics/" + MAILINGLIST, new Date());
@@ -281,7 +280,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 		return 0;
 	}
 
-	private JsonObject getCustomersStatistics(int companyID) throws UnknownUserStatusException {
+	private JsonObject getCustomersStatistics(int companyID) {
 		JsonObject resultJsonObject = new JsonObject();
 		
 		resultJsonObject.add("customersTotal", companyDao.getNumberOfCustomers(companyID));
@@ -295,7 +294,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 
 			JsonObject resultMailinglistStatusJsonObject = new JsonObject();
 			for (Entry<Integer, Integer> row : results.entrySet()) {
-				resultMailinglistStatusJsonObject.add(UserStatus.getUserStatusByID(row.getKey()).name(), row.getValue());
+				resultMailinglistStatusJsonObject.add(UserStatus.getByCode(row.getKey()).name(), row.getValue());
 			}
 			resultMailinglistJsonObject.add("customers", resultMailinglistStatusJsonObject);
 			

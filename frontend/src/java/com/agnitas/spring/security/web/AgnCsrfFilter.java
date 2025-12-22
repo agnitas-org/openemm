@@ -10,6 +10,12 @@
 
 package com.agnitas.spring.security.web;
 
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import com.agnitas.util.AgnUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,11 +30,6 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 public class AgnCsrfFilter extends OncePerRequestFilter {
 
     private static final String HEADER_AND_COOKIE_NAME = "X-XSRF-TOKEN";
@@ -40,7 +41,6 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private static final Pattern WIDGET__PATTERN = Pattern.compile("^.*/widget/.*$");
     private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
     private static final Pattern SSO_PATTERN = Pattern.compile("^.*/sso(?:Select)?.action$");
-    private static final Pattern FACEBOOK_LEADADS_PATTERN = Pattern.compile("^.*/facebook/leadads/webhook\\.action.*$");
 
     private static final String ERROR_PAGE_URL = "/csrf/error.action";
 
@@ -81,7 +81,7 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(req, resp);
         } else {
-            logger.debug(LogMessage.of(() -> "Invalid CSRF token found for " + UrlUtils.buildFullRequestUrl(req)));
+            logger.warn(LogMessage.of(() -> "Invalid CSRF token found for %s".formatted(getRequestUrl(req))));
 
             resp.setStatus(HttpStatus.FORBIDDEN.value());
             req.getRequestDispatcher(ERROR_PAGE_URL).forward(req, resp);
@@ -91,12 +91,12 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private CsrfToken generateNewToken(HttpServletRequest req, HttpServletResponse resp) {
         CsrfToken csrfToken = tokenRepository.generateToken(req);
         tokenRepository.saveToken(csrfToken, req, resp);
-        addSameSitePolictyToCookie(resp);
+        addSameSitePolicyToCookie(resp);
 
         return csrfToken;
     }
 
-    private void addSameSitePolictyToCookie(HttpServletResponse resp) {
+    private void addSameSitePolicyToCookie(HttpServletResponse resp) {
         resp.getHeaders("Set-Cookie")
                 .stream()
                 .filter(header -> StringUtils.startsWith(header, HEADER_AND_COOKIE_NAME))
@@ -104,45 +104,41 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
                 .ifPresent(header -> resp.setHeader("Set-Cookie", header + "; SameSite=Lax"));
     }
 
-    private static void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
+    private void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
         req.setAttribute(CsrfToken.class.getName(), csrfToken);
         req.setAttribute(csrfToken.getParameterName(), csrfToken);
     }
 
-    private static boolean shouldSkipTokenComparison(HttpServletRequest req) {
+    private boolean shouldSkipTokenComparison(HttpServletRequest req) {
         return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req)
                 || isSsoRequest(req) || isSentFromWidget(req);
     }
 
-    private static boolean isSentFromUserWebForm(HttpServletRequest req) {
+    private boolean isSentFromUserWebForm(HttpServletRequest req) {
         return req.getRequestURI().endsWith("form.action") || req.getRequestURI().endsWith("form.do");
     }
 
-    private static boolean isSentFromWidget(HttpServletRequest req) {
+    private boolean isSentFromWidget(HttpServletRequest req) {
         return WIDGET__PATTERN.matcher(req.getRequestURI()).matches();
     }
 
-    private static boolean isFacebookLeadAdsRequest(final HttpServletRequest req) {
-        return FACEBOOK_LEADADS_PATTERN.matcher(req.getRequestURI()).matches();
-    }
-
-    private static boolean isPushApiRequest(final HttpServletRequest req) {
+    private boolean isPushApiRequest(final HttpServletRequest req) {
         return PUSH_API_PATTERN.matcher(req.getRequestURI()).matches();
     }
 
-    private static boolean isMailingLockRequest(HttpServletRequest req) {
+    private boolean isMailingLockRequest(HttpServletRequest req) {
         return MAILING_LOCK_PATTERN.matcher(req.getRequestURI()).matches();
     }
 
-    private static final boolean isSsoRequest(final HttpServletRequest request) {
+    private boolean isSsoRequest(final HttpServletRequest request) {
         return SSO_PATTERN.matcher(request.getRequestURI()).matches();
     }
 
-    private static boolean isAllowedHttpMethod(HttpServletRequest req) {
+    private boolean isAllowedHttpMethod(HttpServletRequest req) {
         return ALLOWED_METHODS.contains(req.getMethod());
     }
 
-    private static String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
+    private String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
         String token = req.getHeader(csrfToken.getHeaderName());
         if (token == null) {
             token = req.getParameter(csrfToken.getParameterName());
@@ -150,4 +146,9 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
 
         return token;
     }
+
+    private String getRequestUrl(HttpServletRequest request) {
+        return AgnUtils.removeJsessionIdFromUrl(UrlUtils.buildFullRequestUrl(request));
+    }
+
 }

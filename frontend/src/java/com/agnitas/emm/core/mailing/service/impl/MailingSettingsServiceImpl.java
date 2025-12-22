@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.mailing.service.impl;
 
 import static com.agnitas.emm.core.mailing.dao.MailingParameterDao.ReservedMailingParam.isReservedParam;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -44,6 +43,7 @@ import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.bean.impl.MailingValidator;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
+import com.agnitas.emm.core.mailing.forms.SplitSettings;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
@@ -118,7 +118,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     @Override
     public boolean saveFrameContent(Mailing mailing, FrameContentForm form, Admin admin, String sessionId, Popups popups) {
         if (maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return false;
         }
         return trySetFrameContent(mailing, form, admin, popups) && trySaveFrameContent(mailing, admin, sessionId, popups);
@@ -130,7 +130,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             setFrameContentFromForm(form, mailing);
             syncMediatypeTemplates(mailing);
             List<String> dynNamesForDeletion = new ArrayList<>();
-            mailing.buildDependencies(popups, true, dynNamesForDeletion, applicationContext, admin);
+            mailing.buildDependencies(popups, true, dynNamesForDeletion, applicationContext, admin.getLocale());
             dynamicTagDao.markNamesAsDeleted(mailing.getId(), dynNamesForDeletion);
         });
     }
@@ -190,7 +190,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
 
             mailing.setParameters(collectMailingParams(form, admin, options));
             List<String> dynNamesForDeletion = new ArrayList<>();
-            mailing.buildDependencies(popups, true, dynNamesForDeletion, applicationContext, admin);
+            mailing.buildDependencies(popups, true, dynNamesForDeletion, applicationContext, admin.getLocale());
             dynamicTagDao.markNamesAsDeleted(mailing.getId(), dynNamesForDeletion);
             if (form.getEmailMediatype().isActive()) {
                 mailingBaseService.doTextTemplateFilling(mailing, admin, popups);
@@ -225,6 +225,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         form.setUseDynamicTemplate(mailing.getUseDynamicTemplate());
         setMediatypesToForm(mailing, form);
         setMailingParamsToForm(form, mailing.getId(), admin.getCompanyID());
+        targetService.setSplitSettings(form.getSplitSettings(), mailing.getSplitID(), true);
         if (mailing.getPlanDate() != null) {
             form.setPlanDate(definePlanDateFormat(mailing.getPlanDate(), admin).format(mailing.getPlanDate()));
         } else {
@@ -252,7 +253,6 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
 
     protected void setMailingPropertiesFromForm(Mailing mailing, MailingSettingsForm form, Admin admin,
                                                 MailingSettingsOptions options) throws Exception {
-        mailing.setSplitID(options.getNewSplitId());
         mailing.setIsTemplate(options.isTemplate());
         mailing.setCampaignID(form.getArchiveId());
         mailing.setDescription(form.getDescription());
@@ -262,6 +262,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailing.setPlanDate(getMailingPlanDateFromForm(form, admin));
         mailing.setArchived(form.isArchived() ? 1 : 0);
         if (!workflowDriven(options.getWorkflowId())) {
+            mailing.setSplitID(options.getNewSplitId());
             mailing.setTargetExpression(generateMailingTargetExpression(mailing, form, admin, options));
         }
         mailing.setMailingContentType(form.getMailingContentType());
@@ -334,7 +335,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     }
 
     protected void setMediatypesToMailing(Mailing mailing, MailingSettingsOptions options, MailingSettingsForm form) {
-        boolean requestApproval = mailing.getEmailParam().isRequestApproval();
+        int approvalRequester = mailing.getEmailParam().getApprovalRequester();
         String approvedBy = mailing.getEmailParam().getApprovedBy();
         mailing.setMediatypes(form.getMediatypes().entrySet().stream().collect(Collectors.toMap(
                 Map.Entry::getKey,
@@ -344,7 +345,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         mailingEmailMediatype.setLinefeed(formEmailMediatype.getLinefeed());
         mailingEmailMediatype.setCharset(formEmailMediatype.getCharset());
         mailingEmailMediatype.setOnepixel(formEmailMediatype.getOnepixel());
-        mailingEmailMediatype.setRequestApproval(requestApproval);
+        mailingEmailMediatype.setApprovalRequester(approvalRequester);
         mailingEmailMediatype.setApprovedBy(approvedBy);
         setMailingFollowupProperties(mailing, form);
         if (mailing.isGridMailing()) {
@@ -447,7 +448,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             popups.alert("error.mailing.tooManyTargetGroups");
         } catch (Exception e) {
             LOGGER.info(String.format("Error occurred: %s", e.getMessage()), e);
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
         }
         return !popups.hasAlertPopups();
     }
@@ -501,8 +502,8 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
         }
     }
     
-    @Override // overridden in extended class 
-    public void setMailingTargetsToForm(MailingSettingsForm form, Mailing mailing) {
+    // overridden in extended class
+    protected void setMailingTargetsToForm(MailingSettingsForm form, Mailing mailing) {
         form.setTargetGroupIds(mailing.getTargetGroups());
         form.setTargetMode(mailing.getTargetMode());
         form.setTargetExpression(mailing.getTargetExpression());
@@ -523,22 +524,16 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
      *
      * @param template        Mailing bean object, contains mailing template data
      * @param form            MailingSettingsForm object
-     * @param regularTemplate whether the regular template is used or a mailing (clone & edit)
      */
     @Override
-    public void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, Integer workflowId, boolean regularTemplate, boolean withFollowUpSettings) {
+    public void copyTemplateSettingsToMailingForm(Mailing template, MailingSettingsForm form, boolean withFollowUpSettings) {
         MailingComponent tmpComp;
         // If we already have a campaign we don't have to override settings inherited from it
-        boolean overrideInherited = (workflowId == null || workflowId == 0 || !regularTemplate);
 
-        if (overrideInherited) {
-            form.setMailingType(template.getMailingType());
-            form.setMailinglistId(template.getMailinglistID());
-            form.setArchiveId(template.getCampaignID());
-        }
-        if (overrideInherited || template.getMailingType() == MailingType.DATE_BASED) {
-            form.setTargetGroupIds(template.getTargetGroups());
-        }
+        form.setMailingType(template.getMailingType());
+        form.setMailinglistId(template.getMailinglistID());
+        form.setArchiveId(template.getCampaignID());
+        form.setTargetGroupIds(template.getTargetGroups());
         form.setTargetMode(getTargetModeForForm(template));
         setMediatypesToForm(template, form);
         form.setArchived(template.getArchived() != 0);
@@ -590,6 +585,10 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             }
         }
         form.setParams(newParameters);
+
+        SplitSettings split = new SplitSettings();
+        targetService.setSplitSettings(split, template.getSplitID(), true);
+        form.setSplitSettings(split);
     }
 
     @Override
@@ -625,6 +624,7 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
     private void populateActiveMailingSettings(MailingSettingsForm form, Mailing mailing, Admin admin) {
         if (maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID())) {
             setMediatypesToForm(mailing, form);
+            targetService.setSplitSettings(form.getSplitSettings(), mailing.getSplitID(), true);
             setDisabledSettingsToForm(form, mailing, admin);
         }
     }
@@ -661,23 +661,21 @@ public class MailingSettingsServiceImpl implements MailingSettingsService {
             return Optional.empty();
         }
 
-        try {
-            String mailingTypeStr = params.getParamsAsMap().get("mailingType");
-            return Optional.of(MailingType.fromCode(NumberUtils.toInt(mailingTypeStr, 0)));
-        } catch (Exception e) {
-            return Optional.of(MailingType.NORMAL);
-        }
+        String mailingTypeStr = params.getParamsAsMap().get("mailingType");
+        return MailingType.findByCode(NumberUtils.toInt(mailingTypeStr, 0))
+                .or(() -> Optional.of(MailingType.NORMAL));
     }
 
     @Override
-    public MailingSettingsForm prepareFormForCopy(Mailing origin, Locale locale, Integer workflowId, boolean forFollowUp) {
+    public MailingSettingsForm prepareFormForCopy(Mailing origin, Locale locale, boolean forFollowUp) {
         MailingSettingsForm form = getNewSettingsForm();
 
-        copyTemplateSettingsToMailingForm(origin, form, workflowId, false, false);
+        copyTemplateSettingsToMailingForm(origin, form, false);
         form.setShortname(forFollowUp
                 ? SafeString.getLocaleString("mailing.Followup_Mailing", locale) + " " + origin.getShortname()
                 : SafeString.getLocaleString("mailing.CopyOf", locale) + " " + origin.getShortname());
         form.setDescription(forFollowUp ? "" : origin.getDescription());
+        targetService.setSplitSettings(form.getSplitSettings(), origin.getSplitID(), false);
         return form;
     }
 

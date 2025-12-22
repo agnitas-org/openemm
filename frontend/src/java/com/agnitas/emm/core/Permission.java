@@ -247,34 +247,28 @@ public class Permission {
 
 	public static final Permission DB_SCHEMA_SNAPSHOT_CREATE = new Permission("master.dbschema.snapshot.create", false, PermissionType.System);
 
-	// Special migration and rollback permissions
-	public static final Permission AI_SUPPORT_CHAT = new Permission("ai.support.chat", false, PermissionType.Migration);
-    public static final Permission RECIPIENT_DISTRIBUTION_STAT = new Permission("recipient.stat.distribution", false, PermissionType.Migration);
-
 	// --------- webhooks ---------
 	public static final Permission WEBHOOKS_ADMIN = new Permission("webhooks.admin", true, PermissionType.Standard);
 	public static final Permission WEBHOOKS_ENABLE = new Permission("webhooks.enable", true, PermissionType.Standard);
 	// ------------------
 
-	// ---------- REDESIGN ----------
-	public static final Permission USE_OLD_UI = new Permission("use.old.ui", false, PermissionType.Migration);
-	public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
-	public static final Permission UX_UPDATES = new Permission("ux.updates", false, PermissionType.Migration);
-	public static final Permission UX_UPDATES_ROLLBACK = new Permission("ux.updates.rollback", false, PermissionType.Migration);
-	// ------------------------------
+	// Special migration and rollback permissions
+   	public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
+	public static final Permission IMPORT_INTERVAL_MIGRATION = new Permission("migration.import.interval", false, PermissionType.Migration);
+	public static final Permission MAILING_APPROVAL_MESSAGE_MIGRATION = new Permission("migration.mailing.approval.message", false, PermissionType.Migration);
 
 	private final String tokenString;
 	private final boolean visible;
 	private final PermissionType permissionType;
 	
-	protected Permission(String tokenString, final boolean visible, final PermissionType permissionType) throws RuntimeException {
+	protected Permission(String tokenString, boolean visible, PermissionType permissionType) {
 		this.tokenString = tokenString;
 		this.visible = visible;
 		this.permissionType = permissionType;
 
 		Permission existing = ALL_PERMISSIONS.get(tokenString);
 		if (existing != null) {
-			throw new RuntimeException("Duplicate creation of permission: " + tokenString);
+			throw new IllegalArgumentException("Duplicate creation of permission: " + tokenString);
 		}
 
 		ALL_PERMISSIONS.put(tokenString, this);
@@ -322,12 +316,12 @@ public class Permission {
 		return permissions;
 	}
 
-	public static Permission[] getPermissionsByToken(String token) throws Exception {
+	public static Permission[] getPermissionsByToken(String token) {
 		List<Permission> permissionList = new ArrayList<>();
 		for (String tokenString : AgnUtils.splitAndTrimStringlist(token)) {
 			Permission permission = getPermissionByToken(tokenString);
 			if (permission == null) {
-				throw new Exception("Invalid security token found: " + token);
+				throw new IllegalArgumentException("Invalid security token found: " + token);
 			} else {
 				permissionList.add(permission);
 			}
@@ -336,7 +330,6 @@ public class Permission {
 	}
 
 	/**
-	 * @param allowedPremiumPermissions
 	 * @return Returns true if grantedPermissions contains any of
 	 *         checkedPermissions.
 	 */

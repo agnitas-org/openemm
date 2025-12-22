@@ -10,14 +10,11 @@
 
 package com.agnitas.emm.core.mobile.service;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.mobile.bean.AccessData;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AccessDataService {
 
-	void writeAccessData(final AccessData data);
-	
 	void logAccess(final HttpServletRequest request, final ExtensibleUID uid, final int deviceID);
+
 }

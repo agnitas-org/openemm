@@ -39,14 +39,22 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.mailing.autooptimization.service.OptimizationService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.util.DateUtilities;
-import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.stereotype.Service;
 
+@Service
 public class WorkflowStatisticsService {
 
-	private WorkflowService workflowService;
-    private OptimizationService optimizationService;
-	private BirtStatisticsService birtStatisticsService;
-	private MailingService mailingService;
+	private final WorkflowService workflowService;
+    private final OptimizationService optimizationService;
+	private final BirtStatisticsService birtStatisticsService;
+	private final MailingService mailingService;
+
+	public WorkflowStatisticsService(WorkflowService workflowService, OptimizationService optimizationService, BirtStatisticsService birtStatisticsService, MailingService mailingService) {
+		this.workflowService = workflowService;
+		this.optimizationService = optimizationService;
+		this.birtStatisticsService = birtStatisticsService;
+		this.mailingService = mailingService;
+	}
 
 	public int getStartYear(int workflowId, Admin admin) {
 		Date mailingStartDate = findMinSendDate(workflowId, admin);
@@ -97,57 +105,16 @@ public class WorkflowStatisticsService {
 				.collect(Collectors.toMap(WorkflowUtils::getMailingId, WorkflowIcon::getIconTitle));
 	}
 
-	// TODO: EMMGUI-714: Remove when removing old design
-	public Map<String, String> getStatUrlsMap(int workflowId, Admin admin) {
-		final int companyId = admin.getCompanyID();
-		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-		Map<String, String> urlsMap = new LinkedHashMap<>();
-
-		Workflow workflow = workflowService.getWorkflow(workflowId, companyId);
-		urlsMap.put(getWorkflowStatUrl(workflow, admin, sessionId, null), I18nString.getLocaleString("statistic.total", admin.getLocale()));
-
-		if (isTotalStatisticAvailable(workflow)) {
-			int mailingI = getFinalMailingID(workflow, companyId);
-			urlsMap.put(getMailingStatUrl(mailingI, admin, sessionId), I18nString.getLocaleString("resultMailing", admin.getLocale()));
-		}
-
-		urlsMap.putAll(workflow.getWorkflowIcons().stream()
-			.filter(WorkflowUtils::isMailingIcon)
-			.filter(icon -> mailingService.exists(WorkflowUtils.getMailingId(icon), companyId))
-			.collect(Collectors.toMap(
-				icon -> getMailingStatUrl(WorkflowUtils.getMailingId(icon), admin, sessionId),
-				WorkflowIcon::getIconTitle)));
-		return urlsMap;
-	}
-
-	private String getMailingStatUrl(int mailingId, Admin admin, String sessionId) {
-		MailingStatisticDto statDto = getMailingStatisticDto(mailingId, admin);
-		return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, statDto);
-	}
-
 	public String getWorkflowStatUrl(Workflow workflow, Admin admin, String sessionId, MailingStatisticForm form) {
 		int companyId = admin.getCompanyID();
 		if (!isTotalStatisticAvailable(workflow, companyId)) {
-			if (!admin.isRedesignedUiUsed()) {
-				WorkflowStatisticDto statistic = new WorkflowStatisticDto();
-
-				statistic.setCompanyId(admin.getCompanyID());
-				statistic.setFormat("html");
-				statistic.setWorkflowId(workflow.getWorkflowId());
-				statistic.setDateMode(DateMode.NONE);
-
-				return birtStatisticsService.getWorkflowStatisticUrl(admin, statistic);
-			}
-
 			return getWorkflowStatUrl(workflow.getWorkflowId(), admin, form);
 		}
 
 		int finalMailingId = optimizationService.getFinalMailingId(companyId, workflow.getWorkflowId());
-
 		MailingStatisticDto statDto = getMailingStatisticDto(finalMailingId, admin);
 		statDto.setType(StatisticType.SUMMARY_AUTO_OPT);
 		statDto.setOptimizationId(optimizationService.getOptimizationIdByFinalMailing(finalMailingId, companyId));
-
 		return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, statDto);
 	}
 
@@ -195,45 +162,12 @@ public class WorkflowStatisticsService {
 		);
 	}
 
-	private int getFinalMailingID(Workflow workflow, int companyId){
-		if (isTotalStatisticAvailable(workflow)) {
-			return optimizationService.getFinalMailingId(companyId, workflow.getWorkflowId());
-		}
-
-        return 0;
-    }
-    
-	private boolean isTotalStatisticAvailable(Workflow workflow) {
-		return workflow != null && isTotalStatisticAvailable(workflow.getStatus(), workflow.getWorkflowIcons());
-    }
-
-    private boolean isTotalStatisticAvailable(Workflow.WorkflowStatus status, List<WorkflowIcon> icons) {
-        return status == Workflow.WorkflowStatus.STATUS_COMPLETE &&
-                WorkflowUtils.isAutoOptWorkflow(icons);
-    }
-
 	private boolean isTotalStatisticAvailable(Workflow workflow, int companyId) {
 		return workflow != null
 			   && workflow.getStatus() == Workflow.WorkflowStatus.STATUS_COMPLETE
 			   && WorkflowUtils.isAutoOptWorkflow(workflow.getWorkflowIcons())
 			   && mailingService.exists(
-			optimizationService.getFinalMailingId(companyId, workflow.getWorkflowId()),
-			companyId);
-	}
-
-	public void setMailingService(MailingService mailingService) {
-		this.mailingService = mailingService;
-	}
-
-	public void setWorkflowService(WorkflowService workflowService) {
-		this.workflowService = workflowService;
-	}
-
-    public void setOptimizationService(OptimizationService optimizationService) {
-        this.optimizationService = optimizationService;
+				   optimizationService.getFinalMailingId(companyId, workflow.getWorkflowId()),
+			       companyId);
     }
-
-	public void setBirtStatisticsService(BirtStatisticsService birtStatisticsService) {
-		this.birtStatisticsService = birtStatisticsService;
-	}
 }

@@ -19,7 +19,7 @@ import com.agnitas.reporting.birt.external.beans.RecipientMailtypeRow;
 import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -85,14 +85,6 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 			query.append(" AND bind.mailinglist_id = ?");
 			parameters.add(mailinglistID);
 		}
-
-		// Ignore mediaType parameter by now. This may change in near future and is therefore not removed entirely.
-//		if (mediaType == 0) {
-//			query.append(" AND (bind.mediatype = 0 OR bind.mediatype IS NULL)");
-//		} else {
-//			query.append(" AND bind.mediatype = ?");
-//			parameters.add(mediaType);
-//		}
 
 		query.append(" GROUP BY bind.user_status");
 
@@ -233,7 +225,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
     		parameters.add(endDate);
     	}
 
-    	if (isOracleDB()) {
+    	if (isOracleDB() || isPostgreSQL()) {
 	    	if (hourScale) {
 	    		dateSelectPart = "TO_CHAR(bind.timestamp, 'HH24')";
 	    	} else {
@@ -335,7 +327,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
     private class RecipientStatusesMapCallback implements RowCallbackHandler {
 
-		private Map<UserStatus, Integer> map;
+		private final Map<UserStatus, Integer> map;
 
 		public RecipientStatusesMapCallback(Map<UserStatus, Integer> map) {
 			this.map = Objects.requireNonNull(map);
@@ -354,8 +346,9 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	}
 
 	private class RecipientDetailsMapCallback implements RowCallbackHandler {
-        private Map<String, RecipientDetailRow> dateMap;
-        private RecipientMaxValues recipientMaxValues;
+
+        private final Map<String, RecipientDetailRow> dateMap;
+        private final RecipientMaxValues recipientMaxValues;
 
         public RecipientDetailsMapCallback(Map<String, RecipientDetailRow> dateMap, RecipientMaxValues recipientMaxValues) {
             this.dateMap = Objects.requireNonNull(dateMap);

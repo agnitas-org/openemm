@@ -11,16 +11,15 @@
 package com.agnitas.emm.core.recipientsreport.service;
 
 import java.io.File;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface RecipientsReportService {
@@ -33,20 +32,14 @@ public interface RecipientsReportService {
 
     String getImportReportZipFileContent(Admin admin, int reportId);
 
-    @Deprecated
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-    PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
-
     @Transactional
-    PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin);
+    PaginatedList<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin);
 
     RecipientsReport getReport(int companyId, int reportId);
     
     DownloadRecipientReport getRecipientReportForDownload(int reportId, Admin admin);
 
-    void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception;
-
-	byte[] getImportReportFileData(int companyId, int reportId);
+    void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile);
 
     File getZipToDownload(Set<Integer> ids, Admin admin);
 }

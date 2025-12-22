@@ -163,7 +163,7 @@ public class ImportProfileMappingsReadServiceImpl implements ImportProfileMappin
                         true,
                         null);
             default:
-                throw new RuntimeException("Invalid import datatype: " + importProfile.getDatatype());
+                throw new UnsupportedOperationException("Invalid import datatype: " + importProfile.getDatatype());
         }
     }
 

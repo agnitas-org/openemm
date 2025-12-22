@@ -26,21 +26,28 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingBase;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.MailingSendStatus;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.MediaTypeStatus;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.UndoDynContent;
 import com.agnitas.beans.UndoMailing;
 import com.agnitas.beans.UndoMailingComponent;
+import com.agnitas.beans.factory.DynamicTagContentFactory;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.RecipientDao;
@@ -51,14 +58,16 @@ import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonFilter;
 import com.agnitas.emm.core.components.service.MailingComponentsService;
 import com.agnitas.emm.core.components.service.MailingSendService;
+import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetService;
@@ -67,26 +76,13 @@ import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.Span;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.MailingSendStatus;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.beans.factory.DynamicTagContentFactory;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
-import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import com.agnitas.util.DynTagException;
 import com.agnitas.util.FulltextSearchInvalidQueryException;
 import com.agnitas.util.SafeString;
+import com.agnitas.util.Span;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -104,7 +100,6 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     private MailingDao mailingDao;
     private GridServiceWrapper gridServiceWrapper;
     protected RecipientDao recipientDao;
-    protected ExecutorService workerExecutorService;
     private UndoMailingDao undoMailingDao;
     private UndoMailingComponentDao undoMailingComponentDao;
     private UndoDynContentDao undoDynContentDao;
@@ -116,7 +111,6 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     private DynamicTagContentFactory dynamicTagContentFactory;
     private DynamicTagContentDao dynamicTagContentDao;
     private AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
-    private MailinglistApprovalService mailinglistApprovalService;
     private ConfigService configService;
     private MailingSendService mailingSendService;
     private MailingService mailingService;
@@ -311,9 +305,9 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props) {
+    public PaginatedList<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props) {
         if (admin == null || Objects.isNull(props)) {
-            return new PaginatedListImpl<>();
+            return new PaginatedList<>();
         }
 
         try {
@@ -322,12 +316,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
             e.printStackTrace();
         }
 
-        return new PaginatedListImpl<>(new ArrayList<>(), 0, props.getRownums(), props.getPage(), "senddate", true);
-    }
-
-    @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) {
-        return recipientDao.getMailingRecipients(mailingId, companyId, filterType, pageNumber, rowsPerPage, sortCriterion, sortAscending, columns);
+        return new PaginatedList<>(new ArrayList<>(), 0, props.getRownums(), props.getPage(), "senddate", true);
     }
 
     @Override
@@ -397,26 +386,6 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     @Override
     public boolean isAdvertisingContentType(int companyId, int mailingId) {
         return mailingDao.isAdvertisingContentType(companyId, mailingId);
-    }
-
-    @Override
-    public boolean isLimitedRecipientOverview(Admin admin, int mailingId) {
-        try {
-            int companyId = admin.getCompanyID();
-            Mailing mailing = mailingDao.getMailing(mailingId, companyId);
-
-            boolean isSentStatus;
-
-            if (mailing.getMailingType() == MailingType.INTERVAL) {
-                MailingStatus workStatus = mailingDao.getStatus(companyId, mailingId);
-                isSentStatus = (workStatus == MailingStatus.ACTIVE);
-            } else {
-                isSentStatus = maildropService.isActiveMailing(mailingId, companyId);
-            }
-            return isSentStatus && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
-        } catch (MailingNotExistException ex) {
-            return false;
-        }
     }
 
     @Override
@@ -588,7 +557,7 @@ public class MailingBaseServiceImpl implements MailingBaseService {
     }
 
     @Override
-    public PaginatedListImpl<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
+    public PaginatedList<MailingBase> getMailingsForComparison(MailingComparisonFilter filter, Admin admin) {
         return mailingDao.getMailingsForComparison(filter, admin);
     }
 
@@ -702,20 +671,12 @@ public class MailingBaseServiceImpl implements MailingBaseService {
         this.mailingDao = mailingDao;
     }
 
-    public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
-        this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
-    }
-
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
     }
 
     public void setRecipientDao(RecipientDao recipientDao) {
         this.recipientDao = recipientDao;
-    }
-
-    public void setWorkerExecutorService(ExecutorService workerExecutorService) {
-        this.workerExecutorService = workerExecutorService;
     }
 
     public void setUndoMailingDao(UndoMailingDao undoMailingDao) {

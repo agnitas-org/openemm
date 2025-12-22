@@ -10,15 +10,33 @@
 
 package com.agnitas.emm.restful.binding;
 
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.BindingEntry.UserType;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.impl.BindingEntryImpl;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -32,29 +50,13 @@ import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.Tuple;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.BindingEntry.UserType;
-import com.agnitas.beans.impl.BindingEntryImpl;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.Constants;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * This restful service is available at:
@@ -64,31 +66,22 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	
 	public static final String NAMESPACE = "binding";
 
-	private RestfulUserActivityLogDao userActivityLogDao;
-	private RecipientDao recipientDao;
-	private BindingEntryDao bindingEntryDao;
-	private MailinglistDao mailinglistDao;
-	private EmmActionService emmActionService;
-	private ConfigService configService;
+	private final RestfulUserActivityLogDao userActivityLogDao;
+	private final RecipientDao recipientDao;
+	private final BindingEntryDao bindingEntryDao;
+	private final MailinglistDao mailinglistDao;
+	private final EmmActionService emmActionService;
+	private final ConfigService configService;
 
-	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
+	public BindingRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, RecipientDao recipientDao,
+										BindingEntryDao bindingEntryDao, MailinglistDao mailinglistDao,
+										EmmActionService emmActionService, ConfigService configService) {
 		this.userActivityLogDao = userActivityLogDao;
-	}
-	
-	public void setRecipientDao(RecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
-	}
-	
-	public void setBindingEntryDao(BindingEntryDao bindingEntryDao) {
 		this.bindingEntryDao = bindingEntryDao;
-	}
-	
-	public void setMailinglistDao(MailinglistDao mailinglistDao) {
 		this.mailinglistDao = mailinglistDao;
-	}
-	
-	public void setEmmActionService(EmmActionService emmActionService) {
 		this.emmActionService = emmActionService;
+		this.configService = configService;
 	}
 
 	@Override
@@ -97,14 +90,10 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		return this;
 	}
 
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
 	@Override
 	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getBindingEntry(request, admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getBindingData(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteBindingEntry(request, requestData, requestDataFile, admin)));
 		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
@@ -122,12 +111,16 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	 * Return a single or multiple binding data sets
 	 * 
 	 */
-	private Object getBindingEntry(HttpServletRequest request, Admin admin) throws Exception {
+	private Object getBindingData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_SHOW)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_SHOW.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_SHOW + "'");
 		}
 		
-		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 2);
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 2);
+
+		if (restfulContext.length == 0) {
+			return getBindings(request, admin);
+		}
 
 		int requestedCustomerID;
 		if (AgnUtils.isNumber(restfulContext[0])) {
@@ -155,30 +148,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			JsonArray bindingsJsonArray = new JsonArray();
 			
 			for (BindingEntry bindingEntry : bindingEntryDao.getBindings(admin.getCompanyID(), requestedCustomerID)) {
-				JsonObject bindingJsonObject = new JsonObject();
-				bindingJsonObject.add("mailinglist_id", bindingEntry.getMailinglistID());
-				if (bindingEntry.getUserType() != RecipientType.NORMAL_RECIPIENT.getLetter()) {
-					bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).getLetter());
-				}
-				if (bindingEntry.getMediaType() != MediaTypes.EMAIL.getMediaCode()) {
-					bindingJsonObject.add("mediatype", MediaTypes.getMediaTypeForCode(bindingEntry.getMediaType()).name());
-				}
-				bindingJsonObject.add("user_status", UserStatus.getUserStatusByID(bindingEntry.getUserStatus()).name());
-				if (StringUtils.isNotBlank(bindingEntry.getUserRemark())) {
-					bindingJsonObject.add("user_remark", bindingEntry.getUserRemark());
-				}
-				if (StringUtils.isNotBlank(bindingEntry.getReferrer())) {
-					bindingJsonObject.add("referrer", bindingEntry.getReferrer());
-				}
-				if (bindingEntry.getEntryMailingID() > 0) {
-					bindingJsonObject.add("entry_mailing_id", bindingEntry.getEntryMailingID());
-				}
-				if (bindingEntry.getExitMailingID() > 0) {
-					bindingJsonObject.add("exit_mailing_id", bindingEntry.getExitMailingID());
-				}
-				bindingJsonObject.add("creation_date", bindingEntry.getCreationDate());
-				bindingJsonObject.add("change_date", bindingEntry.getChangeDate());
-				bindingsJsonArray.add(bindingJsonObject);
+				bindingsJsonArray.add(mapToJson(bindingEntry));
 			}
 				
 			return bindingsJsonArray;
@@ -198,36 +168,81 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			
 			for (BindingEntry bindingEntry : bindingEntryDao.getBindings(admin.getCompanyID(), requestedCustomerID)) {
 				if (requestedMailinglistID == bindingEntry.getMailinglistID()) {
-					JsonObject bindingJsonObject = new JsonObject();
-					bindingJsonObject.add("mailinglist_id", bindingEntry.getMailinglistID());
-					if (bindingEntry.getUserType() != RecipientType.NORMAL_RECIPIENT.getLetter()) {
-						bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).getLetter());
-					}
-					bindingJsonObject.add("mediatype", bindingEntry.getUserType());
-					if (bindingEntry.getMediaType() != MediaTypes.EMAIL.getMediaCode()) {
-						bindingJsonObject.add("mediatype", MediaTypes.getMediaTypeForCode(bindingEntry.getMediaType()).name());
-					}
-					bindingJsonObject.add("user_status", UserStatus.getUserStatusByID(bindingEntry.getUserStatus()).name());
-					if (StringUtils.isNotBlank(bindingEntry.getUserRemark())) {
-						bindingJsonObject.add("user_remark", bindingEntry.getUserRemark());
-					}
-					if (StringUtils.isNotBlank(bindingEntry.getReferrer())) {
-						bindingJsonObject.add("referrer", bindingEntry.getReferrer());
-					}
-					if (bindingEntry.getEntryMailingID() > 0) {
-						bindingJsonObject.add("entry_mailing_id", bindingEntry.getEntryMailingID());
-					}
-					if (bindingEntry.getExitMailingID() > 0) {
-						bindingJsonObject.add("exit_mailing_id", bindingEntry.getExitMailingID());
-					}
-					bindingJsonObject.add("creation_date", bindingEntry.getCreationDate());
-					bindingJsonObject.add("change_date", bindingEntry.getChangeDate());
-					bindingsJsonArray.add(bindingJsonObject);
+					bindingsJsonArray.add(mapToJson(bindingEntry));
 				}
 			}
 				
 			return bindingsJsonArray;
 		}
+	}
+
+	private Object getBindings(HttpServletRequest request, Admin admin) throws Exception {
+		Integer mailinglistId = null;
+
+		String mailinglistIdParam = request.getParameter("mailinglistId");
+		if (mailinglistIdParam != null) {
+			if (!AgnUtils.isNumber(mailinglistIdParam)) {
+				throw new RestfulClientException("Invalid parameter mailinglistId: '%s'".formatted(mailinglistIdParam));
+			}
+
+			mailinglistId = Integer.parseInt(mailinglistIdParam);
+
+			if (!mailinglistDao.exist(mailinglistId, admin.getCompanyID())) {
+				throw new RestfulNoDataFoundException("Mailinglist not found!");
+			}
+		}
+
+		UserStatus userStatus = null;
+
+		String statusParam = request.getParameter("status");
+		if (StringUtils.isNotBlank(statusParam)) {
+			if (!AgnUtils.isNumber(statusParam) || !UserStatus.existsWithId(Integer.parseInt(statusParam))) {
+				throw new RestfulClientException("Invalid parameter status: '%s'".formatted(statusParam));
+			}
+
+			userStatus = UserStatus.getByCode(Integer.parseInt(statusParam));
+		}
+
+		Tuple<Integer, Integer> paginationParams = parsePaginationParams(request);
+
+		PaginatedList<BindingEntry> bindings = bindingEntryDao.getBindings(
+				mailinglistId,
+				admin.getCompanyID(),
+				userStatus,
+				request.getParameter("timestamp"),
+				paginationParams.getFirst(),
+				paginationParams.getSecond()
+		);
+
+		return toPaginatedJson(bindings, this::mapToJson);
+	}
+
+	private JsonObject mapToJson(BindingEntry entry) {
+		JsonObject json = new JsonObject();
+		json.add("mailinglist_id", entry.getMailinglistID());
+		if (entry.getUserType() != RecipientType.NORMAL_RECIPIENT.getLetter()) {
+			json.add("user_type", RecipientType.getRecipientTypeByLetter(entry.getUserType()).getLetter());
+		}
+		if (entry.getMediaType() != MediaTypes.EMAIL.getMediaCode()) {
+			json.add("mediatype", MediaTypes.getMediaTypeForCode(entry.getMediaType()).name());
+		}
+		json.add("user_status", UserStatus.getByCode(entry.getUserStatus()).name());
+		if (StringUtils.isNotBlank(entry.getUserRemark())) {
+			json.add("user_remark", entry.getUserRemark());
+		}
+		if (StringUtils.isNotBlank(entry.getReferrer())) {
+			json.add("referrer", entry.getReferrer());
+		}
+		if (entry.getEntryMailingID() > 0) {
+			json.add("entry_mailing_id", entry.getEntryMailingID());
+		}
+		if (entry.getExitMailingID() > 0) {
+			json.add("exit_mailing_id", entry.getExitMailingID());
+		}
+		json.add("creation_date", entry.getCreationDate());
+		json.add("change_date", entry.getChangeDate());
+
+		return json;
 	}
 
 	/**
@@ -451,12 +466,11 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid request body JSON data for status. String or Integer expected");
 								} else {
 									Object userStatusValue = jsonReader.getCurrentObject();
-									if (userStatusValue != null && userStatusValue instanceof Integer) {
-										try {
-											userStatusToSet = UserStatus.getUserStatusByID((Integer) userStatusValue);
-										} catch (UnknownUserStatusException e) {
+									if (userStatusValue instanceof Integer userStatusCode) {
+										if (!UserStatus.existsWithId(userStatusCode)) {
 											throw new RestfulClientException("Invalid userstatus value : " + userStatusValue);
 										}
+										userStatusToSet = UserStatus.getByCode(userStatusCode);
 									} else if (userStatusValue != null && userStatusValue instanceof String) {
 										try {
 											userStatusToSet = UserStatus.getUserStatusByName((String) userStatusValue);
@@ -560,34 +574,25 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
 								}
 							} else if ("mediatype".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									int mediaType = (Integer) entry.getValue();
+								if (entry.getValue() instanceof Integer mediaType) {
 									if (MediaTypes.getMediaTypeForCode(mediaType) == null) {
 										throw new RestfulClientException("Invalid value for 'mediatype'");
 									} else {
 										newBindingEntry.setMediaType(mediaType);
 									}
-								} else if (entry.getValue() != null && entry.getValue() instanceof String) {
-									MediaTypes mediaTypeValue = MediaTypes.getMediatypeByName((String) entry.getValue());
-									if (mediaTypeValue == null) {
-										throw new RestfulClientException("Invalid value for 'mediatype': " + entry.getValue());
-									} else {
-										newBindingEntry.setMediaType(mediaTypeValue.getMediaCode());
-									}
+								} else if (entry.getValue() instanceof String mediaTypeName) {
+                                    newBindingEntry.setMediaType(MediaTypes.getMediatypeByName(mediaTypeName).getMediaCode());
 								} else {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 								}
 							} else if ("user_status".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									int userStatus = (Integer) entry.getValue();
-									try {
-										UserStatus.getUserStatusByID(userStatus);
-									} catch(Exception e) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer userStatus) {
+									if (!UserStatus.existsWithId(userStatus)) {
 										throw new RestfulClientException("Invalid value for 'user_status'");
 									}
 									newBindingEntry.setUserStatus(userStatus);
-								} else if (entry.getValue() != null && entry.getValue() instanceof String) {
-									UserStatus userStatusValue = UserStatus.getUserStatusByName((String) entry.getValue());
+								} else if (entry.getValue() instanceof String userStatusName) {
+									UserStatus userStatusValue = UserStatus.getUserStatusByName(userStatusName);
 									if (userStatusValue == null) {
 										throw new RestfulClientException("Invalid value for 'user_status': " + entry.getValue());
 									} else {
@@ -620,26 +625,26 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'referrer'. String expected");
 								}
 							} else if ("entry_mailing_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									newBindingEntry.setEntryMailingID((Integer) entry.getValue());
+								if (entry.getValue() instanceof Integer entryMailingId) {
+									newBindingEntry.setEntryMailingID(entryMailingId);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'entry_mailing_id'. Integer expected");
 								}
 							} else if ("exit_mailing_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									newBindingEntry.setExitMailingID((Integer) entry.getValue());
+								if (entry.getValue() instanceof Integer exitMailingId) {
+									newBindingEntry.setExitMailingID(exitMailingId);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'exit_mailing_id'. Integer expected");
 								}
 							} else if ("action_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									actionID = (Integer) entry.getValue();
+								if (entry.getValue() instanceof Integer actionId) {
+									actionID = actionId;
 								} else {
 									throw new RestfulClientException("Invalid data type for 'action_id'. Integer expected");
 								}
 							} else if ("runActionAsynchronous".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
-									runActionAsynchronous = (Boolean) entry.getValue();
+								if (entry.getValue() instanceof Boolean runActionAsync) {
+									runActionAsynchronous = runActionAsync;
 								} else {
 									throw new RestfulClientException("Invalid data type for 'runActionAsynchronous'. Integer expected");
 								}
@@ -765,12 +770,11 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid request body JSON data for status. String or Integer expected");
 								} else {
 									Object userStatusValue = jsonReader.getCurrentObject();
-									if (userStatusValue != null && userStatusValue instanceof Integer) {
-										try {
-											userStatusToSet = UserStatus.getUserStatusByID((Integer) userStatusValue);
-										} catch (UnknownUserStatusException e) {
+									if (userStatusValue instanceof Integer userStatusCode) {
+										if (!UserStatus.existsWithId(userStatusCode)) {
 											throw new RestfulClientException("Invalid userstatus value : " + userStatusValue);
 										}
+										userStatusToSet = UserStatus.getByCode(userStatusCode);
 									} else if (userStatusValue != null && userStatusValue instanceof String) {
 										try {
 											userStatusToSet = UserStatus.getUserStatusByName((String) userStatusValue);
@@ -881,34 +885,25 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
 								}
 							} else if ("mediatype".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									int mediaType = (Integer) entry.getValue();
+								if (entry.getValue() instanceof Integer mediaType) {
 									if (MediaTypes.getMediaTypeForCode(mediaType) == null) {
 										throw new RestfulClientException("Invalid value for 'mediatype'");
 									} else {
 										newBindingEntry.setMediaType(mediaType);
 									}
-								} else if (entry.getValue() != null && entry.getValue() instanceof String) {
-									MediaTypes mediaTypeValue = MediaTypes.getMediatypeByName((String) entry.getValue());
-									if (mediaTypeValue == null) {
-										throw new RestfulClientException("Invalid value for 'mediatype': " + entry.getValue());
-									} else {
-										newBindingEntry.setMediaType(mediaTypeValue.getMediaCode());
-									}
+								} else if (entry.getValue() instanceof String mediaTypeName) {
+                                    newBindingEntry.setMediaType(MediaTypes.getMediatypeByName(mediaTypeName).getMediaCode());
 								} else {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 								}
 							} else if ("user_status".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									int userStatus = (Integer) entry.getValue();
-									try {
-										UserStatus.getUserStatusByID(userStatus);
-									} catch(Exception e) {
+								if (entry.getValue() instanceof Integer userStatus) {
+									if (!UserStatus.existsWithId(userStatus)) {
 										throw new RestfulClientException("Invalid value for 'user_status'");
 									}
 									newBindingEntry.setUserStatus(userStatus);
-								} else if (entry.getValue() != null && entry.getValue() instanceof String) {
-									UserStatus userStatusValue = UserStatus.getUserStatusByName((String) entry.getValue());
+								} else if (entry.getValue() instanceof String userStatusName) {
+									UserStatus userStatusValue = UserStatus.getUserStatusByName(userStatusName);
 									if (userStatusValue == null) {
 										throw new RestfulClientException("Invalid value for 'user_status': " + entry.getValue());
 									} else {
@@ -918,7 +913,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'user_status'. Integer or String expected");
 								}
 							} else if ("user_type".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof String userType) {
+								if (entry.getValue() instanceof String userType) {
 									try {
 										UserType.getUserTypeByString(userType);
 									} catch(Exception e) {
@@ -941,26 +936,26 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'referrer'. String expected");
 								}
 							} else if ("entry_mailing_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									newBindingEntry.setEntryMailingID((Integer) entry.getValue());
+								if (entry.getValue() instanceof Integer entryMailingId) {
+									newBindingEntry.setEntryMailingID(entryMailingId);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'entry_mailing_id'. Integer expected");
 								}
 							} else if ("exit_mailing_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									newBindingEntry.setExitMailingID((Integer) entry.getValue());
+								if (entry.getValue() instanceof Integer exitMailingId) {
+									newBindingEntry.setExitMailingID(exitMailingId);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'exit_mailing_id'. Integer expected");
 								}
 							} else if ("action_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									actionID = (Integer) entry.getValue();
+								if (entry.getValue() instanceof Integer actionId) {
+									actionID = actionId;
 								} else {
 									throw new RestfulClientException("Invalid data type for 'action_id'. Integer expected");
 								}
 							} else if ("runActionAsynchronous".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
-									runActionAsynchronous = (Boolean) entry.getValue();
+								if (entry.getValue() instanceof Boolean runActionAsync) {
+									runActionAsynchronous = runActionAsync;
 								} else {
 									throw new RestfulClientException("Invalid data type for 'runActionAsynchronous'. Integer expected");
 								}

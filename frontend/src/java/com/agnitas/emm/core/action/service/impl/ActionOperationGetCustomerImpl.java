@@ -14,9 +14,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationGetCustomerParameters;

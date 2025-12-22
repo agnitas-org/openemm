@@ -1,303 +1,282 @@
-AGN.Lib.Controller.new('action-view', function() {
-  var activeModules = [];
-  var moduleList;
-  var operationTypes = {};
+AGN.Lib.Controller.new('action-view', function () {
+
+  const Form = AGN.Lib.Form;
+  const Template = AGN.Lib.Template;
   const Select = AGN.Lib.Select;
 
-  function ModuleList() {
-    var self = this;
-    self.$container = $('#module-list');
+  let moduleList;
+  let operationTypes = {};
 
-    self.$container.on('remove-module', function() {
-      var list = self.$container.find('[data-action-module] .headline span.module-count');
-      $.each(list, function(index, el) {
-        $(el).html((index + 1) + '.');
+  class ModuleList {
+    constructor($container) {
+      this.$container = $container;
+      this.activeModules = [];
+
+      $container.on('remove-module', () => {
+        const $list = $container.find('[data-action-module] [data-module-index]');
+        $.each($list, (index, el) => $(el).html((index + 1) + '.'));
       });
-    });
 
-    self.$container.on('add-new-module', function() {
-      var allModules = self.$container.find('[data-action-module]');
-      var lastModule = allModules.last();
-      lastModule.find('.headline span.module-count').html(allModules.length + '.');
-    });
-  }
-
-  ModuleList.prototype.clean = function () {
-    this.$container.empty();
-  };
-
-  ModuleList.prototype.getNextIndex = function() {
-    var list = this.$container.find('[data-module-content');
-    var index = 0;
-    if (list.length > 0) {
-      var lastIndex = list.last().data('module-content');
-      index = lastIndex + 1;
-    }
-    return index;
-  };
-
-  ModuleList.prototype.addModule = function (module) {
-    if (module && module.type) {
-      var self = this;
-      module.index = self.getNextIndex();
-
-      var moduleTile = AGN.Lib.Template.dom('common-module-data',
-        {moduleName: t('triggerManager.operation.' + module.type)});
-
-      var moduleContent = AGN.Lib.Template.text('module-' + module.type, module.getParameters());
-      moduleTile.filter('.inline-tile').append(moduleContent);
-
-      self.$container.append(moduleTile);
-      AGN.runAll(moduleTile);
-      self.$container.trigger('add-new-module');
-    }
-  };
-
-  ModuleList.prototype.deleteModule = function (index) {
-    if (index >= 0) {
-      var content = this.$container.find("[data-module-content=" + index + "]");
-      var module = content.parent('[data-action-module]');
-      var separator = module.next('.tile-separator');
-      module.remove();
-      separator.remove();
-      this.$container.trigger("remove-module");
-
-      activeModules = activeModules.filter(function (module) {
-        return module.index !== index;
+      $container.on('add-new-module', () => {
+        const allModules = $container.find('[data-action-module]');
+        allModules.last().find('[data-module-index]').html(allModules.length + '.');
       });
     }
-  };
 
-  ModuleList.prototype.toJson = function() {
-    var json = [];
-    this.$container.find('[data-module-content]').each(function(index, m){
-      json.push(Module.toJson($(m), index));
-    });
-    return json;
-  };
-
-  ModuleList.prototype.getSubmissionJson = function() {
-    var self = this;
-    return JSON.stringify(self.toJson());
-  };
-
-  function Module(type, data, count) {
-    this.type = type;
-    this.index = count || 0;
-    this.id = data.id || 0;
-    this.data = $.extend(Module.defaults(type), data);
-  }
-
-  Module.defaults = function(type) {
-    var data = {};
-    switch (type) {
-      case 'ActivateDoubleOptIn':
-        data.forAllLists = false;
-        data.mediaTypeCode = 0;
-        break;
-      case 'ContentView':
-        data.tagName = '';
-        break;
-      case 'ExecuteScript':
-        data.script = '';
-        break;
-      case 'GetArchiveList':
-        data.campaignID = 0;
-        break;
-      case 'GetArchiveMailing':
-        data.expireDate = null;
-        break;
-      case 'GetCustomer':
-        data.loadAlways = false;
-        break;
-      case 'IdentifyCustomer':
-        data.keyColumn = '';
-        data.passColumn = '';
-        break;
-      case 'SendMailing':
-        data.mailingID = 0;
-        data.delayMinutes = 0;
-        data.bcc = '';
-        data.userStatusesOption = 1;
-        break;
-      case 'ServiceMail':
-        data.toAddress = '';
-        data.fromAddress = '';
-        data.replyAddress = '';
-        data.subjectLine = '';
-        data.mailtype = 0;
-        data.textMail = '';
-        data.htmlMail = '';
-        break;
-      case 'SubscribeCustomer':
-        data.doubleCheck = false;
-        data.keyColumn = '';
-        data.doubleOptIn = false;
-        break;
-      case 'UnsubscribeCustomer':
-        data.mailinglistIds = [];
-        data.allMailinglistsSelected = false;
-        data.additionalMailinglists = false;
-        break;
-      case 'UpdateCustomer':
-        data.useTrack = false;
-        data.columnName = '';
-        data.updateValue = '';
-        data.updateType = 1;
-        data.trackingPointId = -1;
-        break;
+    clean() {
+      this.$container.empty();
     }
-    data.readonly = false;
-    return data;
-  };
 
-  Module.toJson = function($module, index) {
-    var moduleJson = {};
-    moduleJson.index = index;
-    $module.find('[name^="modules[]"]').each(function (i, field) {
-      var $field = $(field);
-      var name = $field.prop('name') || '';
+    addModule(module) {
+      if (module && module.type) {
+        module.index = this._getNextIndex();
 
-      var fieldName = name.replace('modules[].', '');
+        const $moduleBlock = Template.dom('common-module-data',
+          {moduleName: t(`triggerManager.operation.${module.type}`)});
 
-      var value = '';
+        const moduleContent = Template.text(`module-${module.type}`, module.getParameters());
+        $moduleBlock.find('.tile').append(moduleContent);
 
-      if ($field.is('select')) {
-        value = Select.get($field).getSelectedValue();
-      } else if ($field.is('input') && $field.prop('type') === 'checkbox') {
-        value = $field.prop('checked');
-      } else {
-        value = $field.val();
+        this.$container.append($moduleBlock);
+        AGN.runAll($moduleBlock);
+        this.$container.trigger('add-new-module');
+        this.activeModules.push(module);
       }
+    }
 
-      moduleJson[fieldName] = value;
-    });
-    return $.extend(Module.defaults(moduleJson.type), moduleJson);
-  };
+    deleteModule(index) {
+      if (index >= 0) {
+        const $content = this.$container.find(`[data-module-content="${index}"]`);
+        $content.closest('[data-action-module]').remove();
+        this.$container.trigger("remove-module");
 
-  Module.prototype.getParameters = function() {
-      var extraData = {
-          type: this.type,
-          index: this.index,
-          id: this.id
+        this.activeModules = this.activeModules.filter(module => module.index !== index);
+      }
+    }
+
+    toJson() {
+      const json = [];
+      this.$container.find('[data-module-content]').each(function (index, m) {
+        json.push(Module.toJson($(m), index));
+      });
+      return json;
+    }
+
+    getSubmissionJson() {
+      return JSON.stringify(this.toJson());
+    }
+
+    getModulesByType(type) {
+      return this.activeModules.filter(module => module.type === type);
+    }
+
+    _getNextIndex() {
+      const list = this.$container.find('[data-module-content]');
+      let index = 0;
+      if (list.length > 0) {
+        const lastIndex = list.last().data('module-content');
+        index = lastIndex + 1;
+      }
+      return index;
+    }
+  }
+
+  class Module {
+    constructor(type, data, count) {
+      this.type = type;
+      this.index = count || 0;
+      this.id = data.id || 0;
+      this.data = $.extend(Module.defaults(type), data);
+    }
+
+    static defaults(type) {
+      const data = {};
+      switch (type) {
+        case 'ActivateDoubleOptIn':
+          data.forAllLists = false;
+          data.mediaTypeCode = 0;
+          break;
+        case 'ContentView':
+          data.tagName = '';
+          break;
+        case 'ExecuteScript':
+          data.script = '';
+          break;
+        case 'GetArchiveList':
+          data.campaignID = 0;
+          data.limitType = null;
+          data.limitValue = null;
+          break;
+        case 'GetArchiveMailing':
+          data.expireDate = null;
+          break;
+        case 'GetCustomer':
+          data.loadAlways = false;
+          break;
+        case 'IdentifyCustomer':
+          data.keyColumn = '';
+          data.passColumn = '';
+          break;
+        case 'SendMailing':
+          data.mailingID = 0;
+          data.delayMinutes = 0;
+          data.bcc = '';
+          data.userStatusesOption = 1;
+          break;
+        case 'ServiceMail':
+          data.toAddress = '';
+          data.fromAddress = '';
+          data.replyAddress = '';
+          data.subjectLine = '';
+          data.mailtype = 0;
+          data.textMail = '';
+          data.htmlMail = '';
+          break;
+        case 'SubscribeCustomer':
+          data.doubleCheck = false;
+          data.keyColumn = '';
+          data.doubleOptIn = false;
+          break;
+        case 'UnsubscribeCustomer':
+          data.mailinglistIds = [];
+          data.allMailinglistsSelected = false;
+          data.additionalMailinglists = false;
+          break;
+        case 'UpdateCustomer':
+          data.useTrack = false;
+          data.columnName = '';
+          data.updateValue = '';
+          data.updateType = 1;
+          data.trackingPointId = -1;
+          break;
+      }
+      data.readonly = false;
+      return data;
+    }
+
+    static create(type) {
+      return new Module(type, {});
+    }
+
+    static deserialize(object, count) {
+      const type = operationTypes[object.operationType];
+      return new Module(type, object, count);
+    }
+
+    static toJson($module, index) {
+      const moduleJson = {};
+      moduleJson.index = index;
+      $module.find('[name^="modules[]"]:not(:disabled)').each(function (i, field) {
+        const $field = $(field);
+        const name = $field.prop('name') || '';
+
+        const fieldName = name.replace('modules[].', '');
+
+        let value = '';
+
+        if ($field.is('select')) {
+          value = Select.get($field).getSelectedValue();
+        } else if ($field.is('input') && $field.prop('type') === 'checkbox') {
+          value = $field.prop('checked');
+        } else {
+          value = $field.val();
+        }
+
+        moduleJson[fieldName] = value;
+      });
+      return $.extend(Module.defaults(moduleJson.type), moduleJson);
+    }
+
+    getParameters() {
+      const extraData = {
+        type: this.type,
+        index: this.index,
+        id: this.id
       };
       return _.merge({}, this.data, extraData);
-  };
-
-    Module.create = function(type) {
-    return new Module(type, {});
-  };
-
-  Module.deserialize = function(object, count) {
-    var type = operationTypes[object.operationType];
-    return new Module(type, object, count);
-  };
-
-  this.addDomInitializer('action-view', function () {
-    var $form = $(this.el);
-    var form = AGN.Lib.Form.get($form);
-    form.loader().show();
-
-    var config = this.config;
-    operationTypes = this.config.operationTypes;
-
-    moduleList = new ModuleList();
-    moduleList.clean();
-
-    var modules = [];
-
-    if (config.modules) {
-      modules = JSON.parse(config.modules).map(function (object, count) {
-        return Module.deserialize(object, count);
-      });
     }
-
-    modules.forEach(function (elem) {
-      moduleList.addModule(elem);
-    });
-
-    form.initFields();
-
-    $form.removeClass('hidden');
-    form.loader().hide();
-  });
-
-  function getModulesByType(targetType) {
-    return activeModules.filter(function (module) {
-      return module.type === targetType;
-    });
   }
 
-  this.addAction({click: 'add-new-module'}, function() {
-    var $elem = $(this.el);
-    var config = _.merge({}, {}, AGN.Lib.Helpers.objFromString($elem.data('config')));
-    var typeSelector = $(config.moduleTypeSelector);
+  this.addDomInitializer('action-view', function () {
+    const form = Form.get(this.el);
 
-    var module = Module.create(typeSelector.val());
+    operationTypes = this.config.operationTypes;
+
+    moduleList = new ModuleList($('#module-list'));
+    moduleList.clean();
+
+    let modules = [];
+
+    if (this.config.modules) {
+      modules = JSON.parse(this.config.modules).map((object, count) => Module.deserialize(object, count));
+    }
+
+    modules.forEach(mod => moduleList.addModule(mod));
+    form.initFields();
+  });
+
+  this.addAction({click: 'add-new-module'}, function () {
+    const moduleType = $('#moduleName').val();
+    const module = Module.create(moduleType);
 
     if (module.type === 'SendMailing') {
-      if (getModulesByType('ActivateDoubleOptIn').length > 0) {
+      if (moduleList.getModulesByType('ActivateDoubleOptIn').length > 0) {
         module.data.userStatusesOption = 0;
       }
     }
 
     moduleList.addModule(module);
-    activeModules.push(module);
-
-    AGN.Lib.Form.get($elem).initFields();
+    Form.get(this.el).initFields();
 
     if (module.type === 'ActivateDoubleOptIn') {
-      const sendMailingModules = getModulesByType('SendMailing');
+      const sendMailingModules = moduleList.getModulesByType('SendMailing');
 
       sendMailingModules.forEach(function (module) {
-        const idSelector = '#module-' + module.index + '-userStatusesOption';
-        const $userStatusesSelect = $(idSelector);
+        const $userStatusesSelect = $(`#module-${module.index}-userStatusesOption`);
         Select.get($userStatusesSelect).selectFirstValue();
       });
     }
   });
 
-  this.addAction({click: 'action-delete-module'}, function() {
-    var $elem = $(this.el);
-    moduleList.deleteModule($elem.data('property-id'));
+  this.addAction({click: 'action-delete-module'}, function () {
+    const index = this.el.closest('.tile')
+      .find('[data-module-content]')
+      .data('module-content');
+
+    moduleList.deleteModule(index);
   });
 
-  this.addAction({submission: 'save-action-data'}, function() {
-    var form = AGN.Lib.Form.get($(this.el));
+  this.addAction({submission: 'save-action-data'}, function () {
+    const form = Form.get(this.el);
     form.setValueOnce("modulesSchema", moduleList.getSubmissionJson());
     form.submit();
   });
 
-  this.addDomInitializer('update-customer-module', function() {
-    var $el = $(this.el);
-    var checkedUseTrack = $el.find('[data-action="toggle-if-first"]:checked');
-    toggleTrackingPointData($el, checkedUseTrack.exists());
+  this.addDomInitializer('update-customer-module', function () {
+    const $el = $(this.el);
+    const $checkedUseTrack = $el.find('[data-action="toggle-if-first"]:checked');
+    toggleTrackingPointData($el, $checkedUseTrack.exists());
   });
 
-  this.addAction({click: 'toggle-if-first'}, function() {
-    var $el = $(this.el);
+  this.addAction({click: 'toggle-if-first'}, function () {
+    const $el = $(this.el);
     toggleTrackingPointData($el, $el.prop('checked'));
   });
 
   function toggleTrackingPointData($el, isEnabled) {
-    var $elModule = $($el.closest('[data-action-module]'));
+    const $elModule = $el.closest('[data-action-module]');
 
-    var trackingPointField = $elModule.find('[data-useTrack-trackingPointId]');
-    var updateValueField = $elModule.find('[data-useTrack-updateValue]');
+    const $trackingPointField = $elModule.find('[data-useTrack-trackingPointId]');
+    const $updateValueField = $elModule.find('[data-useTrack-updateValue]');
 
-    if (!trackingPointField.exists()) {
-      updateValueField.show();
+    if (!$trackingPointField.exists()) {
+      $updateValueField.removeClass('hidden');
       return;
     }
 
     if ($elModule.index() === 0) {
-      if (isEnabled) {
-        trackingPointField.show();
-        updateValueField.hide();
-      } else {
-        trackingPointField.hide();
-        updateValueField.show();
-      }
+      $trackingPointField.toggleClass('hidden', !isEnabled);
+      $updateValueField.toggleClass('hidden', isEnabled);
     }
   }
 });

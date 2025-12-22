@@ -1,113 +1,70 @@
 
-@mixin border-image($color) {
-  border-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 10px, $color 10px, $color 100%) 1 100%;
-}
-
 .query-builder {
+  --qb-group-bg: rgba(26, 50, 88, 0.2);
+  --qb-group-nested-bg: var(--qb-group-bg);
+  --qb-rule-bg: #{$gray-100};
+  --qb-rule-error-bg: #F9DCDD;
+  --qb-error-icon-color: #{$danger-var};
 
   dd {
     margin-left: 0;
   }
 
+  .form-check {
+    margin: 0;
+  }
+
+  .switch {
+    height: 30px;
+  }
+
+  .drag-handle {
+    display: flex;
+    margin: 0;
+    order: -2;
+  }
+
   .rules-group-header {
-    margin-bottom: 10px;
-    @include clearfix();
+    @include flex-row($gap-sm);
+    justify-content: space-between;
+
+    .group-conditions {
+      margin-right: auto;
+    }
   }
 
   .rules-group-container {
-    background-color: #f9f9f9;
-    border-color: transparent;
-    @include box-shadow($shadow-soft);
+    border: $border-default;
+    border-radius: $border-radius;
+    padding: $gap-md;
+    background: inherit;
 
     .rules-group-container {
-      background-color: #f3f3f3;
-    }
-  }
-
-  .rule-container {
-    background-color: #fefefe;
-    border-color: transparent;
-    @include box-shadow($shadow-soft);
-
-    &.has-error {
-      background-color: #f9dcdd;
+      background: var(--qb-group-bg);
       border-color: transparent;
-      @include box-shadow(inset 0 0 1px 1px #f09796);
-    }
-  }
 
-  // added small button
-  .btn-xs {
-    padding: 1px 5px;
-    font-size: 12px;
-    line-height: 1.5;
-    font-weight: 400;
-    border-radius: 3px;
-    z-index: 2;
-  }
-
-  // overwrite group button to grey
-  .group-conditions {
-    .btn-xs {
-      background-color: $c-gray-44;
-
-      &.active, &:hover {
-        background-color: $c-blue-56;
+      &--nested {
+        background: var(--qb-group-nested-bg);
       }
     }
   }
 
-  // fix btn groups 
-  .btn-group {
-
-    & > .btn {
-      float: left;
-      border-radius: 0;
-    }
-
-    & > .btn:first-child {
-      border-top-left-radius: 3px;
-      border-bottom-left-radius: 3px;
-    }
-
-    & > .btn:last-child {
-      border-top-right-radius: 3px;
-      border-bottom-right-radius: 3px;
-    }
-
-    & > .btn:first-child {
-      margin-left: 0;
-    }
-
-    & .btn + .btn,
-    & .btn + .btn-group{
-      margin-left: -1px;
-    }
-
+  .group-actions {
+    @include flex-row($gap-sm);
   }
 
   // adapt vertical container spacing
   .rule-container, .rule-placeholder, .rules-group-container {
-    margin: 10px 0;
+    margin: $gap-sm 0;
   }
 
-  // adapt connecting lines to spacing
-  .rules-list > ::after, .rules-list > ::before {
-    height: calc(50% + 10px);
-    width: 9px;
-  }
+  .rules-list {
+    padding: 0;
 
-  .rules-list > :first-child::before {
-    top: -11px;
-  }
-
-  // Flex Layout
-  .rule-container {
-    display: flex;
-    flex: 1 0 auto;
-    flex-flow: row nowrap;
-    justify-content: left;
-    align-items: center;
+    // hide connection lines
+    > ::before, > ::after, > :first-child::before {
+      display: none;
+    }
   }
 
   // Flex Children
@@ -115,162 +72,258 @@
     order: 99;
     flex-grow: 0;
     margin-left: auto;
+    @include flex-row($gap-sm);
+    align-items: center;
+    overflow: hidden;
+    min-width: $btn-icon-size;
+  }
+
+  .rule-actions {
+    order: 1;
   }
 
   .error-container {
     flex-grow: 0;
-
-    padding: 7px;
+    margin: 0;
+    color: var(--qb-error-icon-color);
   }
 
-  .rule-filter-container {
-    flex-grow: 0;
-  }
-
-  .rule-operator-container {
-    flex-grow: 0;
-
-    &:empty {
-      margin: 0;
-    }
-  }
-
-  // Flex Layout for value Elements
-  .rule-container .rule-value-container {
+  .rule-container {
+    background: var(--qb-rule-bg);
     display: flex;
-    flex-direction: row;
-    flex: 0 1 auto;
-    flex-wrap: wrap;
+    gap: $gap-sm;
+    flex: 1 0 auto;
+    flex-flow: row nowrap;
+    justify-content: left;
+    align-items: center;
 
-    padding-left: 0;
+    border: $border-default;
+    border-radius: $border-radius;
+    padding: $gap-sm;
 
-    // fix alignment
-    margin-bottom: -10px;
-    @include border-image(#DDD);
-  }
+    &.has-error {
+      background-color: var(--qb-rule-error-bg);
+    }
 
-  .rule-container .rule-operator-conditions-container {
-    margin: 0 50px 0 0;
+    .rule-operator-container, .rule-filter-container {
+      flex-grow: 1;
+      margin: 0;
 
-    &:empty {
-      display: none;
+      &:empty {
+        display: none;
+      }
+    }
+
+    .rule-value-container {
+      @include flex-row($gap-sm);
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      margin: 0;
+      padding-left: 0;
+      border: none;
+
+      overflow: hidden;
+
+      .form-label {
+        font-weight: $font-weight-semibold;
+      }
+
+      .form-control {
+        @extend .form-control;
+      }
+
+      input:not([type="checkbox"]) {
+        max-width: 100%;
+      }
+    }
+
+    .rule-operator-conditions-container {
+      overflow: hidden;
+
+      &:empty {
+        display: none;
+      }
+    }
+
+    .input-group {
+      width: auto;
+      flex-wrap: nowrap;
+      flex: 1;
+
+      &:has(.input-group-text:not(.hidden)) {
+        .form-control {
+          min-width: 50px;
+        }
+      }
     }
   }
 
-  // Flex value children
-  .qb-input-element {
-    flex-grow: 0;
+  .qb-dateformat-block {
+    @include flex-row($gap-sm);
+    align-items: center;
+    flex: 1;
 
-    display: inline-block;
-    margin-left: 7px;
-    margin-bottom: 10px; 
-  }
-
-  .qb-input-element-select, .rule-value-container > .form-control {
-    width: auto;
-    flex-grow: 1;
-
-    display: inline-block;
-    margin-left: 7px;
-    margin-bottom: 10px; 
-  }
-
-  .qb-input-negate {
-    flex-grow: 0;
-
-    display: inline-block;
-    margin-left: 7px;
-    margin-bottom: 10px; 
-  }
-
-  .qb-input-label {
-    flex-grow: 0;
-
-    display: inline-block;
-    margin-left: 7px;
-    margin-bottom: 10px; 
-
-    .text {
-      color: $c-black;
-    }
-
-    .qb-input-inner {
-      margin-top: 6px;
+    .form-label {
+      @include flex-row($gap-x-sm);
+      align-items: center;
       white-space: nowrap;
     }
   }
 
-  @media screen and (max-width: $screen-sm-min) {
+  .rule-value-container > .form-control {
+    width: auto;
+    flex-grow: 1;
+  }
+
+  .rule-value-container {
+    > input[type="number"].form-control {
+      -moz-appearance: textfield;
+    }
+  }
+
+  .qb-select-container {
+    min-width: 0;
+    flex: 1;
+  }
+
+  @include mobile {
     .rule-container {
-      display: block;
-
-      .rule-header, .rule-filter-container, .rule-operator-container, .rule-value-container  {
-        display: block;
-        margin: 10px 0;
-      }
+      flex-wrap: wrap;
     }
 
-    .rule-container .rule-value-container{
-      display: block;
-      border: 0;
-      margin: 0;
-      border-top: 1px solid #DDD;
-
-      > * {
-        display: block;
-        margin: 10px 0;
-      }
+    .rule-filter-container, .rule-operator-container, .rule-value-container {
+      width: 100%;
     }
-  }
-
-}
-
-body.dark-theme .query-builder {
-  .rules-group-container {
-    background-color: $c-dt-qb-background;
-    @include box-shadow(inset $shadow-hardest);
-
-    .rules-group-container {
-      background-color: darken($c-dt-qb-background, 3%);
-    }
-  }
-
-  .rule-container {
-    background-color: $c-dt-qb-rule-container-background;
 
     .rule-value-container {
-      border-color: $c-dt-qb-border;
-      @include border-image($c-dt-qb-border);
+      .input-group {
+        min-width: 0;
+      }
+    }
+
+    .rule-header {
+      order: 0
+    }
+
+    .group-conditions {
+      order: -1;
+    }
+
+    .error-container {
+      order: -2;
+    }
+
+    .qb-select-container {
+      width: 100%;
+      flex-basis: auto;
     }
   }
-
-  .group-conditions .btn-xs {
-    background-color: $c-dt-btn-secondary;
-
-    &:hover,
-    &:focus,
-    &.active {
-      background-color: $c-dt-btn-primary;
-    }
-
-    &:active {
-      background-color: darken($c-dt-btn-primary, 5%);
-    }
-  }
-
-  .qb-input-label {
-    color: $c-dt-qb-secondary-text;
-
-    .text {
-      color: $c-dt-qb-secondary-text;
-    }
-  }
-
-  @media screen and (max-width: $screen-sm-min) {
-    .rule-container .rule-value-container{
-      border: 0;
-      border-top: 1px solid $c-dt-qb-border;
-    }
-  }
-
 }
+
+@include color-mode(dark) {
+  .query-builder {
+    --qb-group-bg: rgba(255, 255, 255, 0.2);
+    --qb-rule-bg: #{$grey-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .query-builder {
+    --qb-group-bg: #{$white};
+    --qb-group-nested-bg: #{$con-dark-blue};
+    --qb-rule-bg: transparent;
+    --qb-rule-error-bg: #FD9481;
+    --qb-error-icon-color: #{$con-dark-blue};
+
+    .rules-group-container--nested {
+      & > .rules-group-header {
+        --bs-border-color: var(--qb-group-bg);
+
+        > .switch {
+          --switch-active-bg: #{$white};
+          --switch-inactive-bg: #{$con-dark-blue};
+          --switch-color: #{$white};
+          --switch-selected-color: #{$con-dark-blue};
+        }
+
+        .btn-secondary {
+          --bs-btn-border-color: #{$white};
+        }
+      }
+
+      & > .rules-group-body > .rules-list > .rule-container {
+        --bs-border-color: #{$white};
+        --bs-body-bg: #{$con-dark-blue};
+        --bs-body-color: #{$white};
+        --input-focus-border-color: #{$border-color-var};
+        --label-color: #{$white};
+
+        .select2-container {
+          --select2-icon-color: #{$white};
+          --select2-selected-item-bg: #{$white};
+          --select2-selected-item-color: #{$con-dark-blue};
+        }
+
+        .form-switch {
+          --slider-bg: #{$con-dark-blue};
+          --slider-circle-bg: #{switch-toggle-variant($white)};
+          --slider-checked-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+          --slider-checked-bg: #{$white};
+          --slider-disabled-checked-circle-bg: #{switch-toggle-variant($dark-grey)};
+          --slider-disabled-checked-bg: #{$con-grey};
+          --slider-disabled-bg: #{$dark-grey};
+          --slider-disabled-circle-bg: #{switch-toggle-variant($con-grey)};
+        }
+
+        .btn-secondary {
+          --bs-btn-border-color: #{$white};
+        }
+      }
+    }
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .query-builder {
+    --qb-group-bg: #{$con-dark-blue};
+    --qb-group-nested-bg: #{$white};
+    --qb-rule-bg: transparent;
+    --qb-rule-error-bg: #FD9481;
+    --qb-error-icon-color: #{$con-dark-blue};
+
+    .rules-group-container--nested {
+      & > .rules-group-header > .switch {
+        --bs-border-color: var(--qb-group-bg);
+        --switch-active-bg: #{$con-dark-blue};
+        --switch-inactive-bg: #{$white};
+        --switch-color: #{$con-dark-blue};
+        --switch-selected-color: #{$white};
+      }
+
+      & > .rules-group-body > .rules-list > .rule-container {
+        --bs-border-color: #{$con-dark-blue};
+        --bs-body-bg: #{$white};
+        --bs-body-color: #{$con-dark-blue};
+        --input-focus-border-color: #{$border-color-var};
+        --label-color: #{$con-dark-blue};
+
+        .select2-container {
+          --select2-icon-color: #{$con-dark-blue};
+          --select2-selected-item-bg: #{$con-dark-blue};
+        }
+
+        .form-switch {
+          --slider-circle-bg: #{switch-toggle-variant($con-dark-blue)};
+          --slider-checked-bg: #{$con-dark-blue};
+          --slider-disabled-checked-circle-bg: #{switch-toggle-variant($con-grey)};
+          --slider-disabled-bg: #{$con-grey};
+          --slider-disabled-checked-bg: #{$dark-grey};
+          --slider-bg: #{$white};
+          --slider-checked-circle-bg: #{switch-toggle-variant($white)};
+          --slider-disabled-circle-bg: #{switch-toggle-variant($dark-grey)};
+        }
+      }
+    }
+  }
+}
+

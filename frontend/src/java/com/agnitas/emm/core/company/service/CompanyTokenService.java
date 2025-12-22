@@ -13,16 +13,15 @@ package com.agnitas.emm.core.company.service;
 import java.util.Optional;
 
 import com.agnitas.beans.Company;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public interface CompanyTokenService {
 
-	Company findCompanyByToken(final String token) throws UnknownCompanyTokenException;
+	Optional<Company> findCompanyByToken(String token);
 
-	Integer findCompanyIdToken(String token);
+	Optional<Integer> findCompanyIdByToken(String token);
 
-	Optional<String> getCompanyToken(final int companyID) throws UnknownCompanyIdException;
+	Optional<String> getCompanyToken(int companyID);
 
-	void assignRandomToken(final int companyID, final boolean overwriteExisting) throws UnknownCompanyIdException, FailedToAssignCompanyTokenException;
+	void assignRandomToken(int companyID);
 	
 }

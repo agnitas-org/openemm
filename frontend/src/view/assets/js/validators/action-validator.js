@@ -3,7 +3,7 @@ AGN.Lib.Validator.new('action', {
     return isFieldsValid && !this.errors($e, options).length;
   },
   errors: function ($e, options) {
-    var errors = [];
+    const errors = [];
     if ($('#serviceMailOperation').length) this.validateSendServiceOperation(errors);
 
     return errors;
@@ -18,9 +18,9 @@ AGN.Lib.Validator.new('action', {
 
 function validateEmailList($fields, errors, errorCode) {
   $fields.each(function (i, field) {
-    var $field = $(field);
-    var emails = getEmailsFromField($field);
-    if (!emails || !isValidEmailList(emails)) {
+    const $field = $(field);
+    const emails = getEmailsFromField($field);
+    if (!emails || !AGN.Lib.Helpers.isValidEmails(emails)) {
       errors.push({field: $field, msg: t(errorCode)});
     } else {
       $field.val(emails.join(","));
@@ -30,9 +30,9 @@ function validateEmailList($fields, errors, errorCode) {
 
 function validateEmail($fields, errors, errorCode) {
   $fields.each(function (i, field) {
-    var $field = $(field);
-    var value = $field.val().trim();
-    if (!isValidEmail(value)) {
+    const $field = $(field);
+    const value = $field.val().trim();
+    if (!AGN.Lib.Helpers.isValidEmail(value)) {
       errors.push({field: $field, msg: t(errorCode)});
     } else {
       $field.val(value);
@@ -42,8 +42,8 @@ function validateEmail($fields, errors, errorCode) {
 
 function validateSubject($fields, errors) {
   $fields.each(function (i, field) {
-    var $field = $(field);
-    var value = $field.val().trim();
+    const $field = $(field);
+    const value = $field.val().trim();
     if (!value || value.length < 3) {
       errors.push({field: $field, msg: t('triggerManager.operation.serviceMail.error.subjectToShort')});
     } else if (value && value.length > 200) {
@@ -55,22 +55,8 @@ function validateSubject($fields, errors) {
 }
 
 function getEmailsFromField($field) {
-  var value = $field.val();
-  var emails = value.trim() && value.trim().split(/[ ,|]+/);
+  const value = $field.val();
+  let emails = value.trim() && value.trim().split(/[ ,|]+/);
   _.map(emails, _.trim);
   return emails;
-}
-
-function isValidEmailList(list) {
-  for (var i = 0; i < list.length; i++) {
-    if (!isValidEmail(list[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-//TODO replace with AGN.Lib.Helpers.isValidEmail(email)
-function isValidEmail(email) {
-  var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(String(email).toLowerCase());
 }

@@ -62,10 +62,7 @@ public class HttpUtils {
 	public static final String SECURE_HTTP_PROTOCOL_SIGN = "https://";
 	public static final String HTTP_PROTOCOL_SIGN = "http://";
 
-	// TODO: EMMGUI-714: Replace with IMAGE_PATH_NO_PREVIEW_NEW after remove of old design
-	public static final String IMAGE_PATH_NO_PREVIEW = "/assets/core/images/facelift/no_preview_old.png";
-	public static final String IMAGE_PATH_NO_PREVIEW_NEW = "/assets/core/images/facelift/no_preview.svg";
-
+	public static final String IMAGE_PATH_NO_PREVIEW = "/assets/core/images/facelift/no_preview.svg";
 	public static final String IMAGE_PATH_ERROR_LINK = "/assets/core/images/grid_expire_image.png";
 
 	public static final String CONTENT_ENCODING = "UTF-8";

@@ -54,9 +54,9 @@ public final class ObjectUsages implements Iterable<ObjectUsage> {
 	 * 
 	 * @return list of object usages for given user types
 	 */
-	public List<ObjectUsage> getUsagesByUserType(final ObjectUserType type) {
+	public List<ObjectUsage> getUsagesByUserType(final ObjectUsageType type) {
 		return this.usages.stream()
-				.filter(u -> u.getObjectUserType() == type)
+				.filter(u -> u.getType() == type)
 				.toList();
 	}
 

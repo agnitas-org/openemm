@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.widget.beans;
 
+import java.util.Objects;
+
 public abstract class WidgetSettingsBase {
 
     private String companyToken;
@@ -22,4 +24,16 @@ public abstract class WidgetSettingsBase {
         this.companyToken = companyToken;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WidgetSettingsBase that = (WidgetSettingsBase) o;
+        return Objects.equals(companyToken, that.companyToken);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(companyToken);
+    }
 }

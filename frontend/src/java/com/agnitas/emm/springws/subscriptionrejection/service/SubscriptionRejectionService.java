@@ -11,7 +11,7 @@
 
 package com.agnitas.emm.springws.subscriptionrejection.service;
 
-import org.agnitas.emm.core.recipient.service.RecipientModel;
+import com.agnitas.emm.core.recipient.service.RecipientModel;
 
 import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRejectedException;
 

@@ -19,27 +19,27 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.mailing.forms.SplitSettings;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
 import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
-import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
-import com.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
+import com.agnitas.emm.core.target.exception.TargetGroupNotFoundException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.forms.PaginationForm;
+import org.springframework.ui.Model;
 
 /**
  * Service for target groups.
@@ -51,7 +51,6 @@ public interface TargetService {
 	 * 
 	 * @param targetGroupID target group ID to be deleted
 	 */
-	
 	SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin);
 	
 	boolean deleteTargetGroupByCompanyID(int companyID);
@@ -65,16 +64,10 @@ public interface TargetService {
     SimpleServiceResult canBeDeleted(int targetId, Admin admin);
 
     boolean hasMailingDeletedTargetGroups(Mailing mailing);
+
     Set<Integer> getTargetIdsFromExpression(Mailing mailing);
 	
-	/**
-	 * Do bulk delete on target groups.
-	 * 
-	 * @param targetIds target IDs to delete
-	 */
-	// TODO: EMMGUI-714: Check usages and remove when removing old design
-	ServiceResult<List<Integer>> bulkDelete(Set<Integer> targetIds, Admin admin);
-	List<Integer> bulkDeleteRedesigned(Set<Integer> ids, Admin admin);
+	List<Integer> bulkDelete(Set<Integer> ids, Admin admin);
 
 	/**
 	 * Method generates SQL expression from mailing target expression.
@@ -107,7 +100,9 @@ public interface TargetService {
 	 * @see #getTargetGroup(int, int)
 	 */
     Target getTargetGroupOrNull(int targetId, int companyId);
-	
+
+    Target getTargetGroupOrNull(int targetId, int companyId, int adminId);
+
 	/**
 	 * Returns target group for given ID.
 	 * 
@@ -116,11 +111,11 @@ public interface TargetService {
 	 * 
 	 * @return target group
 	 * 
-	 * @throws UnknownTargetGroupIdException if target group ID is unknown
+	 * @throws TargetGroupNotFoundException if target group not found
 	 */
-	Target getTargetGroup(int targetId, int companyId) throws UnknownTargetGroupIdException;
+	Target getTargetGroup(int targetId, int companyId);
 
-	Target getTargetGroup(int targetId, int companyId, int adminId) throws UnknownTargetGroupIdException;
+	Target getTargetGroup(int targetId, int companyId, int adminId);
 
 	Optional<Integer> getNumberOfRecipients(int targetId, int companyId);
 
@@ -155,26 +150,12 @@ public interface TargetService {
 	 */
 	List<TargetLight> getTargetLights(Admin admin);
 
-	List<TargetLight> getTargetLights(int adminId, int companyID, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+	List<TargetLight> getTargetLights(Admin admin, boolean content, TargetGroupDeliveryOption delivery);
 
-	List<TargetLight> getTargetLights(Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+	PaginatedList<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexityGrade);
 
-	List<TargetLight> getTargetLights(TargetLightsOptions options);
-
-	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options, TargetComplexityGrade complexityGrade);
-
-	/**
-	 * Get all the valid list split targets represented as {@link com.agnitas.beans.ListSplit}.
-	 *
-	 * @param companyId an identifier of the company that owns retrieved entities.
-	 * @return a list of valid {@link com.agnitas.beans.ListSplit} entities sorted by parts count (primarily) and part number (secondarily).
-     */
-	List<ListSplit> getListSplits(int companyId);
-    
     int getTargetListSplitId(String splitBase, String splitPart, boolean isWmSplit);
     
-	String getTargetSplitName(int splitId);
-
 	/**
 	 * Lists all target groups of the given company ID that reference the given profile field.
 	 * 
@@ -199,22 +180,16 @@ public interface TargetService {
  	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
 
 	List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted);
+	
+	List<TargetLight> getSplitTargetLights(int companyId, String splitType);
 
-    List<TargetLight> getTargetLights(Admin admin, boolean content, TargetGroupDeliveryOption delivery);
-
-    List<TargetLight> getSplitTargetLights(int companyId, String splitType);
-
-    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
-
-    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int targetId, int companyId, PaginationForm filter);
+    PaginatedList<Dependent<TargetGroupDependentType>> getDependents(int targetId, int companyId, PaginationForm filter);
 
     Map<Integer, TargetComplexityGrade> getTargetComplexities(int companyId);
 
 	TargetComplexityGrade getTargetComplexityGrade(int companyId, int targetId);
 
 	int calculateComplexityIndex(String eql, int companyId);
-
-	int calculateComplexityIndex(String eql, int companyId, TargetComplexityEvaluationCache cache);
 
 	List<TargetLight> getAccessLimitationTargetLights(int companyId);
 
@@ -228,8 +203,6 @@ public interface TargetService {
 
 	boolean isBasicFullTextSearchSupported();
 
-	boolean isRecipientMatchTarget(Admin admin, int targetGroupId, int customerId);
-
 	void checkRecipientTargetGroupAccess(Admin admin, int customerId) throws RejectAccessByTargetGroupLimit;
 	
 	boolean isAltg(int targetId);
@@ -237,6 +210,8 @@ public interface TargetService {
     boolean isHidden(int targetId, int companyId);
 
     Set<Integer> getAltgIdsWithoutAdminAltgIds(int companyId, Set<Integer> adminAltgIds);
+
+    boolean exist(int targetId, int companyId);
 
     boolean isEqlContainsInvisibleFields(String eql, int companyId, int adminId);
 
@@ -251,6 +226,12 @@ public interface TargetService {
     void removeFromFavorites(int targetId, int companyId);
 
 	void deleteWorkflowTargetConditions(int companyID);
+
+	int getTargetListSplitIdForSave(int splitId, String splitBase, String splitPart);
+
+	void setSplitSettings(SplitSettings split, int splitId, boolean preserveCmListSplit);
+
+	void addSplitTargetModelAttrs(Model model, int companyId, int splitId, String splitBase, String splitPart);
 
 	List<TargetLight> getTargetLights(int fromCompanyID);
 

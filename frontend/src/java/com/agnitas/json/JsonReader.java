@@ -11,10 +11,9 @@
 package com.agnitas.json;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Stack;
 
 import com.agnitas.util.AgnUtils;
@@ -22,6 +21,7 @@ import com.agnitas.util.BasicReader;
 import org.apache.commons.lang3.StringUtils;
 
 public class JsonReader extends BasicReader {
+
 	protected Object currentObject = null;
 	
 	protected Stack<JsonToken> openJsonItems = new Stack<>();
@@ -36,15 +36,15 @@ public class JsonReader extends BasicReader {
 		JsonSimpleValue,
 	}
 
-	public JsonReader(InputStream inputStream) throws Exception {
+	public JsonReader(InputStream inputStream) {
 		super(inputStream, (String) null);
 	}
 	
-	public JsonReader(InputStream inputStream, String encoding) throws Exception {
+	public JsonReader(InputStream inputStream, String encoding) {
 		super(inputStream, encoding);
 	}
 	
-	public JsonReader(InputStream inputStream, Charset encodingCharset) throws Exception {
+	public JsonReader(InputStream inputStream, Charset encodingCharset) {
 		super(inputStream, encodingCharset);
 	}
 	
@@ -73,7 +73,7 @@ public class JsonReader extends BasicReader {
 		Character currentChar = readNextNonWhitespace();
 		if (currentChar == null) {
 			if (openJsonItems.size() > 0) {
-				throw new Exception("Premature end of data");
+				throw new IllegalStateException("Premature end of data");
 			} else {
 				return null;
 			}
@@ -310,14 +310,9 @@ public class JsonReader extends BasicReader {
 	
 	/**
 	 * This method should only be used to read small Json items
-	 * 
-	 * @param data
-	 * @return
-	 * @throws IOException
-	 * @throws UnsupportedEncodingException
 	 */
 	public static JsonNode readJsonItemString(String data) throws Exception {
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes("UTF-8"))) {
+		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {
 			try (JsonReader jsonReader = new JsonReader(inputStream)) {
 				return jsonReader.read();
 			}

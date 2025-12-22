@@ -13,7 +13,7 @@ package com.agnitas.backend.exceptions;
 /**
  * If an invalid target expression is found
  */
-public class InvalidTargetException extends BackendException {
+public class InvalidTargetException extends CancelException {
 	final static long serialVersionUID = 0x145a11d;
 	public InvalidTargetException (String nMessage) {
 		super (nMessage);

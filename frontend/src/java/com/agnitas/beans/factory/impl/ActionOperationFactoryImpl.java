@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.agnitas.beans.factory.ActionOperationFactory;
-
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationContentViewParameters;
@@ -38,10 +37,9 @@ public class ActionOperationFactoryImpl implements ActionOperationFactory {
         return newActionOperation(ActionOperationType.fromTypeName(typeName));
     }
 
-    @Override
-	public AbstractActionOperationParameters newActionOperation(ActionOperationType type) {
+	private AbstractActionOperationParameters newActionOperation(ActionOperationType type) {
 		if (type == null) {
-    		throw new RuntimeException("Unsupported type");
+    		throw new IllegalArgumentException("Unsupported type");
 		}
 
 		switch (type) {
@@ -73,7 +71,7 @@ public class ActionOperationFactoryImpl implements ActionOperationFactory {
 				return new ActionOperationSendLastNewsletterParameters();
 				
 			default:
-				throw new RuntimeException("Unsupported type");
+				throw new UnsupportedOperationException("Unsupported type: " + type);
 		}
     }
 

@@ -29,7 +29,6 @@
 
         init: function (editor) {
             addAgnTagsButton(editor, this.path);
-            addAiTextGenerationButton(editor, this.path);
 
             var HREF = "href";
             var filteringRule = {
@@ -64,7 +63,7 @@
 
         editor.addCommand(commandName, {
             exec: function (editor) {
-                AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/agn-tagsRedesigned.action' : '/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
+                AGN.Lib.Confirm.request(AGN.url('/wysiwyg/dialogs/agn-tags.action')).done(function (code) {
                     if (code) {
                         editor.insertHtml(code);
                     }
@@ -79,46 +78,22 @@
         });
     }
 
-    function addAiTextGenerationButton(editor, path) {
-        const commandName = 'generateAiText';
-
-        editor.addCommand(commandName, {
-            exec: function (editor) {
-                AGN.Lib.Confirm.request(AGN.url(window.isRedesignedUI ? '/wysiwyg/dialogs/aiTextGenerationRedesigned.action' : '/wysiwyg/dialogs/aiTextGeneration.action')).done(function (code) {
-                    if (code) {
-                        editor.insertHtml(code);
-                    }
-                });
-            }
-        });
-
-        editor.ui.addButton('AiTextGeneration', {
-            label: t('ai.textGeneration'),
-            command: commandName,
-            icon: path + 'ai-text-generation.png'
-        });
-    }
-
     function replaceAgnImageTags(editor, data) {
         var imagesUrlsMap = editor.config.emmMailingImages;
         if(!imagesUrlsMap) {
             return data;
         }
-        var imgTags = data.match(/\[agnIMAGE\s+name=(?:(?:'.+\.\w+')|(?:".+\.\w+"))\]/g);
-        if(!imgTags) {
-            return data;
-        }
-        imgTags.forEach(function (tagText) {
-            var imgName = tagText.match(/name=['"](.+\.\w+)['"]/)[1];
-            if(imgName) {
-                var imageUrl = imagesUrlsMap[imgName];
-                if(imageUrl) {
-                    data = data.replace(tagText, encodeURI(imageUrl));
+
+        return AGN.Lib.Helpers.replaceAgnTags(data, (tag, tagHtml) => {
+            if (tag.name === 'agnIMAGE' && tag.attributes['name']) {
+                const imageUrl = imagesUrlsMap[tag.attributes.name];
+                if (imageUrl) {
+                    return encodeURI(imageUrl);
                 }
             }
-        });
 
-        return data;
+            return tagHtml;
+        });
     }
 
     function processUrls(editor, content) {

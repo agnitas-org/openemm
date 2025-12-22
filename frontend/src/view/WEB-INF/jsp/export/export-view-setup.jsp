@@ -1,37 +1,27 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
-
-<emm:CheckLogon/>
-<emm:Permission token="wizard.export"/>
 
 <%--@elvariable id="id" type="java.lang.Integer"--%>
 <%--@elvariable id="isManageAllowed" type="java.lang.Boolean"--%>
 <%--@elvariable id="isOwnColumnsExportAllowed" type="java.lang.Boolean"--%>
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 
-<c:url var="listUrl" value="/export/list.action?restoreSort=true"/>
 <c:url var="evaluateUrl" value="/export/${id}/evaluate.action"/>
 
-<c:set var="agnTitleKey" 			value="export" 				scope="request"/>
-<c:set var="agnSubtitleKey" 		value="export" 				scope="request"/>
-<c:set var="sidemenu_active" 		value="ImportExport" 		scope="request"/>
-<c:set var="sidemenu_sub_active" 	value="export" 				scope="request"/>
-<c:set var="agnHighlightKey" 		value="export" 				scope="request"/>
-<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request"/>
-<c:set var="agnBreadcrumbsRootKey"	value="ImportExport" 		scope="request"/>
-<c:set var="agnHelpKey" 			value="export" 				scope="request"/>
+<c:set  var="agnTitleKey" 			  value="export" 			                    scope="request" />
+<c:set  var="sidemenu_active" 		  value="ImportExport" 		                    scope="request" />
+<c:set  var="sidemenu_sub_active" 	  value="export" 			                    scope="request" />
+<c:set  var="agnHighlightKey" 		  value="export" 			                    scope="request" />
+<c:set  var="agnBreadcrumbsRootKey"  value="manage.tables.exportProfiles" 		    scope="request" />
+<c:url  var="agnBreadcrumbsRootUrl"  value="/export/list.action?restoreSort=true"   scope="request" />
+<c:set  var="agnHelpKey" 			  value="export" 				                scope="request" />
+<c:set  var="agnEditViewKey" 	      value="export-view" 	                        scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-        <c:set target="${agnBreadcrumb}" property="textKey" value="export"/>
-        <c:set target="${agnBreadcrumb}" property="url" value="${listUrl}"/>
-    </emm:instantiate>
-
-    <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-        <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
         <c:choose>
             <c:when test="${id > 0}">
                 <c:set target="${agnBreadcrumb}" property="text" value="${exportForm.shortname}"/>
@@ -44,40 +34,45 @@
 </emm:instantiate>
 
 <c:if test="${isManageAllowed}">
-    <jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">
-        <jsp:useBean id="element0" class="java.util.LinkedHashMap" scope="request">
-            <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
-            <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:choose>
-                <c:when test="${isOwnColumnsExportAllowed}">
-                    <c:set target="${element0}" property="extraAttributes" value="data-form-target='#exportForm' data-form-url='${evaluateUrl}' data-action='evaluate'"/>
-                </c:when>
-                <c:otherwise>
-                    <c:set target="${element0}" property="extraAttributes" value="data-form-target='#exportForm' data-form-url='${evaluateUrl}' data-form-submit"/>
-                </c:otherwise>
-            </c:choose>
-            <c:set target="${element0}" property="iconBefore" value="icon-eye"/>
-            <c:set target="${element0}" property="name">
-                <mvc:message code="Evaluate"/>
-            </c:set>
-        </jsp:useBean>
-        <emm:ShowByPermission token="export.change">
-            <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
-                <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
-                <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-secondary"/>
-                <c:set target="${element1}" property="iconBefore" value="icon-save"/>
+    <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
+        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
+            <c:set target="${element}" property="cls" value="mobile-hidden"/>
+            <c:set target="${element}" property="iconBefore" value="icon-wrench"/>
+            <c:set target="${element}" property="name"><mvc:message code="action.Action"/></c:set>
+            <emm:instantiate var="optionList" type="java.util.LinkedHashMap">
+                <c:set target="${element}" property="dropDownItems" value="${optionList}"/>
+            </emm:instantiate>
+
+            <%-- Items for dropdown --%>
+            <emm:instantiate var="option" type="java.util.LinkedHashMap">
+                <c:set target="${optionList}" property="0" value="${option}"/>
                 <c:choose>
                     <c:when test="${isOwnColumnsExportAllowed}">
-                        <c:set target="${element1}" property="extraAttributes" value="data-form-target='#exportForm' data-action='save'"/>
+                        <c:set target="${option}" property="extraAttributes" value="data-form-target='#exportForm' data-form-url='${evaluateUrl}' data-action='evaluate'"/>
                     </c:when>
                     <c:otherwise>
-                        <c:set target="${element1}" property="extraAttributes" value="data-form-target='#exportForm' data-form-submit"/>
+                        <c:set target="${option}" property="extraAttributes" value="data-form-target='#exportForm' data-form-url='${evaluateUrl}' data-form-submit"/>
                     </c:otherwise>
                 </c:choose>
-                <c:set target="${element1}" property="name">
-                    <mvc:message code="button.Save"/>
-                </c:set>
-            </jsp:useBean>
+                <c:set target="${option}" property="name"><mvc:message code="Evaluate"/></c:set>
+            </emm:instantiate>
+        </emm:instantiate>
+        
+        <emm:ShowByPermission token="export.change">
+            <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+                <c:choose>
+                    <c:when test="${isOwnColumnsExportAllowed}">
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#exportForm' data-action='save'"/>
+                    </c:when>
+                    <c:otherwise>
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#exportForm' data-form-submit"/>
+                    </c:otherwise>
+                </c:choose>
+                <c:set target="${element}" property="iconBefore" value="icon-save"/>
+                <c:set target="${element}" property="name"><mvc:message code="button.Save"/></c:set>
+            </emm:instantiate>
         </emm:ShowByPermission>
-    </jsp:useBean>
+    </emm:instantiate>
 </c:if>

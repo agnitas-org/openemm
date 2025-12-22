@@ -95,13 +95,13 @@ public class DbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl implements
 	}
 	
 	@Override
-	public final void removeExpiredPendingsAuthentications(final int maxPendingHostAuthenticationsAgeMinutes) {
-		getDbBasedImplementation().removeExpiredPendingsAuthentications(maxPendingHostAuthenticationsAgeMinutes);
+	public final void removeExpiredPendingAuthentications(final int maxPendingHostAuthenticationsAgeMinutes) {
+		getDbBasedImplementation().removeExpiredPendingAuthentications(maxPendingHostAuthenticationsAgeMinutes);
 	}
 
 	@Override
-	public void removeAuthentictedHost(String hostId) {
-		getDbBasedImplementation().removeAuthentictedHost(hostId);
+	public void removeAuthenticatedHost(String hostId) {
+		getDbBasedImplementation().removeAuthenticatedHost(hostId);
 	}
 	
 	// ---------------------------------------------------------------------------------------------------- dependency injection

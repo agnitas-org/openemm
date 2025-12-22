@@ -10,11 +10,30 @@
 
 package com.agnitas.taglib.spring;
 
+import java.util.Map;
+
+import jakarta.servlet.jsp.JspException;
+import org.springframework.web.servlet.tags.form.TagWriter;
+
 public class SpringNumberTag extends SpringInputTag {
+
     private static final long serialVersionUID = -246048559009502171L;
 
     @Override
     public String getType() {
         return "number";
     }
+
+    @Override
+    protected void writeOptionalAttributes(TagWriter tagWriter) throws JspException {
+        Map<String, Object> dynamicAttributes = getDynamicAttributes();
+        if (dynamicAttributes == null) {
+            setDynamicAttribute("", "autocomplete", "off");
+        } else {
+            dynamicAttributes.putIfAbsent("autocomplete", "off");
+        }
+
+        super.writeOptionalAttributes(tagWriter);
+    }
+
 }

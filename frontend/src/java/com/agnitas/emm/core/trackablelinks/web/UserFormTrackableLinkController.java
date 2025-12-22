@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.util.Date;
@@ -26,7 +24,6 @@ import com.agnitas.emm.core.trackablelinks.dto.FormTrackableLinkDto;
 import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinkForm;
 import com.agnitas.emm.core.trackablelinks.form.FormTrackableLinksForm;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.emm.core.userform.form.WebFormStatFrom;
 import com.agnitas.emm.core.userform.service.UserformService;
 import com.agnitas.service.ExtendedConversionService;
@@ -36,10 +33,10 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,11 +51,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.request.RequestContextHolder;
 
 @Controller
 @RequestMapping("/webform")
-@PermissionMapping("userform.trackablelink")
 public class UserFormTrackableLinkController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(UserFormTrackableLinkController.class);
@@ -82,6 +77,7 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@GetMapping("/{formId:\\d+}/trackablelink/list.action")
+	@RequiredPermission("forms.change")
 	public String list(Admin admin, Model model, @PathVariable int formId, @ModelAttribute("form") FormTrackableLinksForm form, Popups popups) {
 		try {
 			int companyId = admin.getCompanyID();
@@ -117,12 +113,12 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@PostMapping("/{formId:\\d+}/trackablelink/bulkSave.action")
-	@PermissionMapping("save")
+	@RequiredPermission("forms.change")
 	public String bulkSave(Admin admin, @PathVariable int formId, @ModelAttribute("form") FormTrackableLinksForm form, Popups popups) {
 		try {
 			List<LinkProperty> commonExtensions = conversionService.convert(form.getCommonExtensions(), ExtensionProperty.class, LinkProperty.class);
 			trackableLinkService.bulkUpdateTrackableLinks(admin, formId, form.getLinks(), form.isTrackable(), commonExtensions);
-			popups.success(CHANGES_SAVED_MSG);
+			popups.changesSaved();
 
 			return redirectToList(formId);
 
@@ -139,12 +135,12 @@ public class UserFormTrackableLinkController implements XssCheckAware {
     }
 
 	@PostMapping("/{formId:\\d+}/trackablelink/saveCommonExtensionText.action")
-	@PermissionMapping("save.extension")
+	@RequiredPermission("mailing.extend_trackable_links")
 	public String saveCommonExtensionText(Admin admin, @PathVariable int formId, @RequestParam("linkExtension") String extensionAsText, Popups popups) {
 		try {
 			List<LinkProperty> extensions = LinkUtils.parseLinkExtension(extensionAsText);
 			trackableLinkService.bulkUpdateTrackableLinksExtensions(admin, formId, extensions);
-			popups.success(CHANGES_SAVED_MSG);
+			popups.changesSaved();
 
 			return redirectToList(formId);
 		} catch (Exception e) {
@@ -156,11 +152,11 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@PostMapping("/{formId:\\d+}/trackablelink/bulkSaveUsage.action")
-	@PermissionMapping("save")
+	@RequiredPermission("forms.change")
 	public String bulkSaveUsage(Admin admin, @PathVariable int formId, @RequestParam("trackable") int trackableValue, Popups popups) {
 		try {
 			trackableLinkService.bulkUpdateTrackableLinksUsage(admin, formId, trackableValue);
-			popups.success(CHANGES_SAVED_MSG);
+			popups.changesSaved();
 
 			return redirectToList(formId);
 		} catch (Exception e) {
@@ -172,11 +168,12 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@GetMapping("/{formId:\\d+}/trackablelink/{linkId:\\d+}/view.action")
+	@RequiredPermission("forms.change")
 	public String view(Admin admin, @PathVariable int formId, @PathVariable int linkId, Model model, Popups popups) {
 		FormTrackableLinkDto link = trackableLinkService.getFormTrackableLink(admin, formId, linkId);
 		if (link == null) {
 			logger.error("could not load form/link: {}/{}", formId, linkId);
-			popups.alert(ERROR_MSG);
+			popups.defaultError();
 			return MESSAGES_VIEW;
 		}
 
@@ -188,16 +185,17 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 	}
 
 	@PostMapping("/{formId:\\d+}/trackablelink/save.action")
+	@RequiredPermission("forms.change")
 	public String save(Admin admin, @PathVariable int formId, @ModelAttribute("form") FormTrackableLinkForm form, Popups popups) {
 		FormTrackableLinkDto trackableLinkDto = conversionService.convert(form, FormTrackableLinkDto.class);
 		try {
 			boolean success = trackableLinkService.updateTrackableLink(admin, formId, trackableLinkDto);
 
 			if (success) {
-				popups.success(CHANGES_SAVED_MSG);
+				popups.changesSaved();
 				return redirectToList(formId);
 			} else {
-				popups.alert(ERROR_MSG);
+				popups.defaultError();
 			}
 		} catch (Exception e) {
 			logger.error("Could not save link formID/linkID: {}/{}", formId, trackableLinkDto.getId());
@@ -207,30 +205,13 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		return MESSAGES_VIEW;
 	}
 
-	// TODO remove while removing the old UI design EMMGUI-714
-	@GetMapping("/{formId:\\d+}/trackablelink/statistic.action")
-	public String statistic(Admin admin, @PathVariable int formId, Model model, Popups popups) {
-		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
-		if (userForm != null) {
-			String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
-			String urlWithoutFormat = birtStatisticsService.getUserFormTrackableLinkStatisticUrl(admin, sessionId, formId);
-			model.addAttribute("birtStatisticUrlWithoutFormat", urlWithoutFormat);
-
-			model.addAttribute("userFormName", userForm.getName());
-			model.addAttribute("userFormId", userForm.getId());
-		} else {
-			popups.alert(ERROR_MSG);
-		}
-
-		return "userform_userform_stats";
-	}
-
 	@InitBinder
 	public void initBinder(WebDataBinder binder, Admin admin) {
 		binder.registerCustomEditor(Date.class, new CustomDateEditor(admin.getDateFormat(), true));
 	}
 
 	@GetMapping("/statistic.action")
+	@RequiredPermission("forms.change")
 	public String statistic(WebFormStatFrom form, Admin admin, Model model, HttpSession session, Popups popups) {
 		int formId = form.getFormId();
 		if (form.isAllowedToChoseForm()) { // all forms stat page
@@ -249,4 +230,5 @@ public class UserFormTrackableLinkController implements XssCheckAware {
 		userActivityLogService.writeUserActivityLog(admin, "form statistics", "active submenu - Pages & Forms");
 		return "userform_userform_stats";
 	}
+
 }

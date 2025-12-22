@@ -1,4 +1,5 @@
 DELETE FROM job_queue_result_tbl WHERE job_id = (SELECT id FROM job_queue_tbl WHERE description = 'DBCleaner');
+DELETE FROM job_queue_parameter_tbl WHERE job_id = (SELECT id FROM job_queue_tbl WHERE description = 'DBCleaner');
 DELETE FROM job_queue_tbl WHERE description = 'DBCleaner';
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)

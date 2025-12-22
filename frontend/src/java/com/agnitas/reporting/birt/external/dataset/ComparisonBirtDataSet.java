@@ -12,7 +12,7 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.DateUtilities;
 
 import java.util.ArrayList;

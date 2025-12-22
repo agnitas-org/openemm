@@ -22,11 +22,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class TagDetailsImpl implements TagDetails {
-	private static final transient Logger logger = LogManager.getLogger(TagDetailsImpl.class);
 
-	private static Pattern PATTERN_TAGNAME_AND_PARAMETERS = Pattern.compile("\\[\\s*/?([^\\]/\\s]++)\\s*(.*?)\\s*/?\\s*\\]");
-	private static int PATTERN_GROUP_TAGNAME = 1;
-	private static int PATTERN_GROUP_PARAMETERS = 2;
+	private static final Logger logger = LogManager.getLogger(TagDetailsImpl.class);
+
+	private static final Pattern PATTERN_TAGNAME_AND_PARAMETERS = Pattern.compile("\\[\\s*/?([^\\]/\\s]++)\\s*(.*?)\\s*/?\\s*\\]");
+	private static final int PATTERN_GROUP_TAGNAME = 1;
+	private static final int PATTERN_GROUP_PARAMETERS = 2;
 
 	protected int startPos;
 	protected int endPos;

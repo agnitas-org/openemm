@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.commons.encoder;
 
+import java.nio.charset.StandardCharsets;
+
 import	com.agnitas.util.ByteBuilder;
 
 public class UIDBase64 {
@@ -70,8 +72,8 @@ public class UIDBase64 {
 		return l;
 	}
 
-	public String encodeString( String str) throws Exception {
-		return encodeBytes(str.getBytes("UTF-8"));
+	public String encodeString(String str) {
+		return encodeBytes(str.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	public String encodeBytes( byte[] bytes) {

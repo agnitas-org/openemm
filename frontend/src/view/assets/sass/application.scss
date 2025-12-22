@@ -1,6 +1,17 @@
+$assets-path: 'assets/' !default;
+
+@use "../../WEB-INF/node_modules/ag-grid-community/styles" as ag;
+
+@include ag.grid-styles();
+@import "vendor/perfect-scrollbar";
+@import "../../WEB-INF/node_modules/spectrum-colorpicker/spectrum";
+@import "custom-bootstrap-variables";
+@import "custom-font-awesome-variables";
+
+@import "../../WEB-INF/node_modules/bootstrap/scss/bootstrap";
+@import "../../WEB-INF/node_modules/select2/src/scss/core.scss";
 @import "boot/_.scss";
 
 @import "base/_.scss";
-@import "layout/_.scss";
 @import "modules/_.scss";
-@import "vendor/font-awesome/v5.11.2/fontawesome.scss";
+@import "layout/_.scss";

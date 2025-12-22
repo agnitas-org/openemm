@@ -17,7 +17,8 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.DeviceService;
 
 public class DeviceServiceImpl implements DeviceService {
-	private static final transient Logger logger = LogManager.getLogger(DeviceServiceImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(DeviceServiceImpl.class);
 
 	@Override
 	public int getDeviceId(String userAgent) {

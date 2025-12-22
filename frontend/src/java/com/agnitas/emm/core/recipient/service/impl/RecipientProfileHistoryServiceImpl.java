@@ -20,15 +20,14 @@ import java.util.stream.Collectors;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.RecipientHistory;
 import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.recipient.dao.RecipientProfileHistoryDao;
-import com.agnitas.emm.core.recipient.dao.impl.RecipientProfileHistoryDaoImpl;
+import com.agnitas.emm.core.recipient.exception.ProfileFieldHistoryFeatureNotEnabledException;
+import com.agnitas.emm.core.recipient.exception.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,8 +36,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class RecipientProfileHistoryServiceImpl implements RecipientProfileHistoryService {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(RecipientProfileHistoryDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(RecipientProfileHistoryServiceImpl.class);
 
 	/** Service accessing profile history data. */
 	protected RecipientProfileHistoryDao profileHistoryDao;
@@ -81,9 +79,7 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 		return Optional.ofNullable(allFields).orElse(Collections.emptyList()).stream()
 		.filter(field -> field.getHistorize() || RecipientStandardField.getHistorizedRecipientStandardFieldColumnNames().contains(field.getColumn()))
 		.peek(field -> {
-			if (logger.isDebugEnabled()) {
-				logger.debug(String.format("Included profile field column '%s' in history", field.getColumn()));
-			}
+			logger.debug("Included profile field column '{}' in history", field.getColumn());
 		}).collect(Collectors.toList());
 	}
 
@@ -100,7 +96,7 @@ public class RecipientProfileHistoryServiceImpl implements RecipientProfileHisto
 	@Override
 	public List<RecipientHistory> listProfileFieldHistory(int recipientID, int companyId) throws RecipientProfileHistoryException {
 		if (!isProfileFieldHistoryEnabled(companyId)) {
-			logger.error(String.format("Profile field history not enabled for company %d", companyId));
+			logger.error("Profile field history not enabled for company {}", companyId);
 			
 			throw new ProfileFieldHistoryFeatureNotEnabledException(companyId);
 		}

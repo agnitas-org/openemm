@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
+import java.io.IOException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,7 +20,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -29,28 +30,26 @@ import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.dao.PasswordResetDao;
-import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.password.PasswordCheck;
 import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.loginmanager.service.LoginTrackService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
+import com.agnitas.emm.core.systemmessages.service.SystemMailMessageService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
-import com.agnitas.preview.PreviewFactory;
 import com.agnitas.service.LicenseError;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.Version;
-import org.agnitas.emm.core.commons.password.PasswordCheck;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.logintracking.service.LoginTrackService;
-import com.agnitas.preview.Page;
-import com.agnitas.preview.Preview;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
+import com.agnitas.util.Version;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -70,13 +69,12 @@ public class LogonServiceImpl implements LogonService {
 	protected AdminService adminService;
 	protected LoginTrackService loginTrackService;
 	protected PasswordCheck passwordCheck;
+	protected ConfigService configService;
 	private DataSource dataSource;
-	private ConfigService configService;
 	private AdminPreferencesDao adminPreferencesDao;
 	private EmmLayoutBaseDao emmLayoutBaseDao;
 	private PasswordResetDao passwordResetDao;
-	private JavaMailService javaMailService;
-	private PreviewFactory previewFactory;
+	private SystemMailMessageService systemMailMessageService;
 
 	// ----------------------------------------------------------- Business code
 	
@@ -253,7 +251,7 @@ public class LogonServiceImpl implements LogonService {
 		String token = generatePasswordResetToken(admin, clientIp);
 		String passwordResetLink = getPasswordResetLink(linkPattern, username, token);
 
-		sendPasswordResetMail(admin, passwordResetLink);
+		systemMailMessageService.sendPasswordResetMail(admin, passwordResetLink);
 
 		return SimpleServiceResult.simpleInfo(true, Message.of("info.password.reset.email"));
 	}
@@ -292,8 +290,7 @@ public class LogonServiceImpl implements LogonService {
 		}
 	}
 
-	@Override
-	public String getPasswordResetLink(String linkPattern, String username, String token) {
+	private String getPasswordResetLink(String linkPattern, String username, String token) {
 		String baseUrl = configService.getValue(ConfigValue.SystemUrl);
 		String link = linkPattern.replace("{token}", URLEncoder.encode(token, StandardCharsets.UTF_8))
 				.replace("{username}", URLEncoder.encode(username, StandardCharsets.UTF_8));
@@ -348,33 +345,6 @@ public class LogonServiceImpl implements LogonService {
 		}
 	}
 
-	private void sendPasswordResetMail(Admin admin, String passwordResetLink) {
-		Locale locale = admin.getLocale();
-		
-		final String mailSubject;
-		final String mailContentHtml;
-		final String mailContentText;
-		int resetPasswordMailingID = adminService.getPasswordResetMailingId(admin.getLocale().getLanguage());
-		if (resetPasswordMailingID <= 0 && !"en".equalsIgnoreCase(admin.getLocale().getLanguage())) {
-			resetPasswordMailingID = adminService.getPasswordResetMailingId("en");
-		}
-		if (resetPasswordMailingID > 0) {
-			final Preview preview = previewFactory.createPreview();
-			final Page output = preview.makePreview(resetPasswordMailingID, 0, true);
-			preview.done();
-
-			mailSubject = output.getHeaderField("subject").replace("{0}", admin.getUsername()).replace("{1}", admin.getUsername()).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-			mailContentText = output.getText().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-			mailContentHtml = output.getHTML().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-		} else {
-			mailSubject = I18nString.getLocaleString("passwordReset.mail.subject", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
-			mailContentText = I18nString.getLocaleString("passwordReset.mail.body.text", locale, passwordResetLink, admin.getUsername(), admin.getFirstName(), admin.getFullname());
-			mailContentHtml = I18nString.getLocaleString("passwordReset.mail.body.html", locale, passwordResetLink, admin.getUsername(), admin.getFirstName(), admin.getFullname());
-		}
-		
-		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
-	}
-	
 	private void checkLicense() {
 		// Read license id to check limits
 		configService.getValue(ConfigValue.System_Licence);
@@ -439,82 +409,14 @@ public class LogonServiceImpl implements LogonService {
 			return DEFAULT_HELP_LANGUAGE;
 		}
 	}
-
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
-	public void setAdminPreferencesDao(AdminPreferencesDao dao) {
-		this.adminPreferencesDao = dao;
-	}
-
-	public void setEmmLayoutBaseDao(EmmLayoutBaseDao emmLayoutBaseDao) {
-		this.emmLayoutBaseDao = emmLayoutBaseDao;
-	}
-
-	/**
-	 * Set service for login tracking.
-	 *
-	 * @param service service for login tracking
-	 */
-	public void setLoginTrackService( LoginTrackService service) {
-		this.loginTrackService = service;
-	}
-
-	public void setJavaMailService(JavaMailService javaMailService) {
-		this.javaMailService = javaMailService;
-	}
-
-	public void setAdminService(AdminService adminService) {
-		this.adminService = adminService;
-	}
-
-	public void setPasswordCheck(PasswordCheck passwordCheck) {
-		this.passwordCheck = passwordCheck;
-	}
-
-	public void setPasswordResetDao(PasswordResetDao passwordResetDao) {
-		this.passwordResetDao = passwordResetDao;
-	}
-
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
-
-	public void setPreviewFactory(final PreviewFactory previewFactory) {
-		this.previewFactory = previewFactory;
-	}
 	
 	@Override
-	public SimpleServiceResult sendWelcomeMail(Admin admin, String clientIp, String linkPattern) {
+	public void sendWelcomeMail(Admin admin, String clientIp, String linkPattern) {
 		Date expirationDate = DateUtils.addDays(new Date(), TOKEN_EXPIRATION_DAYS);
 		String token = generatePasswordSetToken(admin, clientIp, expirationDate);
 		String passwordResetLink = getPasswordResetLink(linkPattern, admin.getUsername(), token);
-		Locale locale = admin.getLocale();
-		
-		final String mailSubject;
-		final String mailContentHtml;
-		final String mailContentText;
-		int adminWelcomeMailingID = adminService.getAdminWelcomeMailingId(admin.getLocale().getLanguage());
-		if (adminWelcomeMailingID <= 0 && !"en".equalsIgnoreCase(admin.getLocale().getLanguage())) {
-			adminWelcomeMailingID = adminService.getAdminWelcomeMailingId("en");
-		}
-		if (adminWelcomeMailingID > 0) {
-			final Preview preview = previewFactory.createPreview();
-			final Page output = preview.makePreview(adminWelcomeMailingID, 0, true);
-			preview.done();
 
-			mailSubject = output.getHeaderField("subject").replace("{0}", admin.getUsername()).replace("{1}", admin.getUsername()).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-			mailContentText = output.getText().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-			mailContentHtml = output.getHTML().replace("{0}", admin.getUsername()).replace("{1}", passwordResetLink).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
-		} else {
-			mailSubject = I18nString.getLocaleString("user.welcome.mail.subject", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
-			mailContentText = I18nString.getLocaleString("user.welcome.mail.body.text", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
-			mailContentHtml = I18nString.getLocaleString("user.welcome.mail.body.html", locale, admin.getUsername(), passwordResetLink, admin.getFirstName(), admin.getFullname());
-		}
-		
-		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
-		return new SimpleServiceResult(true);
+		systemMailMessageService.sendWelcomeMail(admin, passwordResetLink);
 	}
 
 	@Override
@@ -552,5 +454,59 @@ public class LogonServiceImpl implements LogonService {
 		return Optional.ofNullable(admin)
 				.map(Admin::getUsername)
 				.orElse("");
+	}
+
+	@Override
+	public String getLoginIframeUrl() {
+		String connectionUrl = AgnUtils.isGerman(LocaleContextHolder.getLocale())
+				? "https://www.agnitas.de/openemm-login/"
+				: "https://www.agnitas.de/en/openemm-login/";
+
+		return checkUrl(connectionUrl) ? connectionUrl : null;
+	}
+
+	protected boolean checkUrl(String url) {
+		try {
+			new URL(url).openConnection().connect();
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	public void setAdminPreferencesDao(AdminPreferencesDao dao) {
+		this.adminPreferencesDao = dao;
+	}
+
+	public void setEmmLayoutBaseDao(EmmLayoutBaseDao emmLayoutBaseDao) {
+		this.emmLayoutBaseDao = emmLayoutBaseDao;
+	}
+
+	public void setLoginTrackService( LoginTrackService service) {
+		this.loginTrackService = service;
+	}
+
+	public void setAdminService(AdminService adminService) {
+		this.adminService = adminService;
+	}
+
+	public void setPasswordCheck(PasswordCheck passwordCheck) {
+		this.passwordCheck = passwordCheck;
+	}
+
+	public void setPasswordResetDao(PasswordResetDao passwordResetDao) {
+		this.passwordResetDao = passwordResetDao;
+	}
+
+	public void setDataSource(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	public void setSystemMailMessageService(SystemMailMessageService systemMailMessageService) {
+		this.systemMailMessageService = systemMailMessageService;
 	}
 }

@@ -22,20 +22,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.util.NetworkUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.emm.core.sessionhijacking.beans.IpSettings;
 import com.agnitas.emm.core.sessionhijacking.beans.ParsedIpSettings;
 import com.agnitas.emm.core.sessionhijacking.dao.SessionHijackingPreventionDataDao;
+import com.agnitas.util.NetworkUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class SessionHijackingPreventionServiceImpl implements SessionHijackingPreventionService {
 
 	/** Default time for caching configuration data. */
-	public static final transient int DEFAULT_CACHE_TIME_SECONDS = 300;
+	public static final int DEFAULT_CACHE_TIME_SECONDS = 300;
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(SessionHijackingPreventionServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(SessionHijackingPreventionServiceImpl.class);
 
 	/** Configured value to refresh cache. */
 	private int cacheTimeSeconds = DEFAULT_CACHE_TIME_SECONDS;
@@ -53,81 +52,88 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 	private Date lastRefresh = null;
 		
 	@Override
-	public final boolean isAddressAllowed(final InetAddress sessionIpAddress, final InetAddress clientIpAddress) {
+	public boolean isAddressAllowed(InetAddress sessionIpAddress, InetAddress clientIpAddress) {
 		if (logger.isDebugEnabled()) {
-			logger.debug(String.format(
-					"IP addresses are: session=%s, client=%s",
+			logger.debug(
+					"IP addresses are: session={}, client={}",
 					sessionIpAddress != null ? sessionIpAddress.getHostAddress() : "<unknown>",
 					clientIpAddress != null ? clientIpAddress.getHostAddress() : "<unknown>"
-							));
+			);
 		}
 		
 		try {
 			refreshCache();
-		} catch (final Exception e) {
+		} catch (Exception e) {
 			logger.error("Unable to refresh cache - using old cache state", e);
 		}
 		
 		// The client IP address is always allowed, if it is the same as the IP address bound to the session
 		if (sessionIpAddress != null && sessionIpAddress.equals(clientIpAddress)) {
-			if (logger.isInfoEnabled()) {
-				logger.info("IP of session equals to IP of client - accepted");
-			}
-			
+			logger.info("IP of session equals to IP of client - accepted");
 			return true;
 		}
 		
 		// Whitelisted IP addresses of client are never checked and always allowed
 		if (whitelist.contains(clientIpAddress)) {
-			if(logger.isInfoEnabled()) {
-				logger.info("IP of client is whitelisted - accepted");
-			}
-			
+			logger.info("IP of client is whitelisted - accepted");
 			return true;
 		}
-		
+
 		final Integer sessionGroup = this.groups.get(sessionIpAddress);
 		final Integer clientGroup = this.groups.get(clientIpAddress);
 
 		// Here, we have a client IP address, that differs from the IP address bound to the session and that is not whitelisted. We need to check group ID.
-		if (sessionGroup != null && clientGroup != null && sessionGroup.equals(clientGroup)) {
-			if(logger.isInfoEnabled()) {
-				logger.info("IP of session and IP of client in same group - accepted");
-			}
-			
+		if (sessionGroup != null && sessionGroup.equals(clientGroup)) {
+			logger.info("IP of session and IP of client in same group - accepted");
 			return true;
-		} else {
-			if(logger.isInfoEnabled()) {
-				logger.info("IP of session and IP of client in different groups or one or both IPs have no group assigned - rejected");
-			}
-			
-			return false;
 		}
+
+		if (isGoogleProxy(clientIpAddress)) {
+			logger.info("IP of client is verified google proxy - accepted");
+			return true;
+		}
+
+		logger.info("IP of session and IP of client in different groups or one or both IPs have no group assigned - rejected");
+		return false;
 	}
 
-	private final void refreshCache() throws Exception {
+	private boolean isGoogleProxy(InetAddress clientIpAddress) {
+		if (clientIpAddress == null) {
+			return false;
+		}
+
+		String hostName = clientIpAddress.getCanonicalHostName();
+		if (!hostName.startsWith("google-proxy-") || !hostName.endsWith(".google.com")) {
+			return false;
+		}
+
+        try {
+            return InetAddress.getByName(hostName)
+					.getHostAddress()
+					.equals(clientIpAddress.getHostAddress());
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
+	private void refreshCache() throws Exception {
 		if (lastRefresh == null || (lastRefresh.getTime() + cacheTimeSeconds * 1000 < (new Date()).getTime())) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Refreshing internal caches");
-			}
-			
-			final Set<InetAddress> newWhitelist = new HashSet<>();
-			
+			logger.debug("Refreshing internal caches");
+
 			// First, mark all local IP addresses (IPs of current machine) as whitelisted
-			newWhitelist.addAll(listLocalIpAddresses());
-			
+			final Set<InetAddress> newWhitelist = new HashSet<>(listLocalIpAddresses());
 			final List<ParsedIpSettings> parsedList = parseSettings(this.sessionHijackingPreventionDao.listIpSettings());
 
 			// Add all IPs with group == null to whitelist
 			parsedList.stream()
 				.filter(ip -> ip.getGroupOrNull() == null)
-				.map(ip -> ip.getIp())
-				.forEach(ip -> newWhitelist.add(ip));
+				.map(ParsedIpSettings::getIp)
+				.forEach(newWhitelist::add);
 			
 			// Add all IPs with group != null to groups
 			final Map<InetAddress, Integer> newGroups = parsedList.stream()
 					.filter(ip -> ip.getGroupOrNull() != null)
-					.collect(Collectors.toMap(ip -> ip.getIp(), ip -> ip.getGroupOrNull()));
+					.collect(Collectors.toMap(ParsedIpSettings::getIp, ParsedIpSettings::getGroupOrNull));
 			
 			// Update caches
 			this.whitelist = newWhitelist;
@@ -137,13 +143,13 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 		}
 	}
 	
-	private static final List<ParsedIpSettings> parseSettings(final List<IpSettings> list) {
+	private static List<ParsedIpSettings> parseSettings(List<IpSettings> list) {
 		final List<ParsedIpSettings> parsedList = new ArrayList<>();
 		
 		for(final IpSettings settings : list) {
 			try {
 				parsedList.add(new ParsedIpSettings(settings));
-			} catch(final UnknownHostException e) {
+			} catch(UnknownHostException e) {
 				logger.warn(String.format("Cannot parse IP settings for hijacking prevention. IP address '%s' ignored and not whitelisted.", settings.getIp()), e);
 			}
 		}
@@ -158,20 +164,16 @@ public final class SessionHijackingPreventionServiceImpl implements SessionHijac
 	 * 
 	 * @throws SocketException on errors retrieving local IP addresses
 	 */
-	private final Set<InetAddress> listLocalIpAddresses() throws SocketException {
-		if(logger.isInfoEnabled()) {
-			logger.info("Listing local IP addresses");
-		}
-
+	private Set<InetAddress> listLocalIpAddresses() throws SocketException {
+		logger.info("Listing local IP addresses");
 		return new HashSet<>(NetworkUtil.listLocalInetAddresses());
 	}
 
-	
-	public final void setCacheTimeSeconds(final int time) {
+	public void setCacheTimeSeconds(int time) {
 		this.cacheTimeSeconds = time;
 	}
 	
-	public final void setSessionHijackingPreventionDao(final SessionHijackingPreventionDataDao dao) {
+	public void setSessionHijackingPreventionDao(SessionHijackingPreventionDataDao dao) {
 		this.sessionHijackingPreventionDao = Objects.requireNonNull(dao, "SessionHijackingPreventionDataDao is null");
 	}
 }

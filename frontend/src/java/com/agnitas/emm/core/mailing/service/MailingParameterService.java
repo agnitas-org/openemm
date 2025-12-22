@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailing.service;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
 import com.agnitas.emm.core.mailing.forms.MailingParamOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 
 import java.util.List;
@@ -23,19 +23,17 @@ public interface MailingParameterService {
 
 	List<MailingParameter> getMailingParameters(int companyId, int mailingId);
 
-	PaginatedListImpl<MailingParameter> getOverview(MailingParamOverviewFilter filter, int companyID);
+	PaginatedList<MailingParameter> getOverview(MailingParamOverviewFilter filter, int companyID);
 
 	MailingParameter getParameter(int mailingInfoID, final Admin admin);
 
 	boolean saveParameter(MailingParameter parameter);
 	
-	boolean deleteParameter(int mailingInfoID, final Admin admin);
-
 	boolean updateParameters(int companyID, int mailingID, List<MailingParameter> parameterList, int adminId);
 
 	boolean updateParameters(int companyID, int mailingID, List<MailingParameter> parameterList, int adminId, List<UserAction> userActions);
 
 	List<String> getNames(Set<Integer> ids, Admin admin);
 
-	void delete(Set<Integer> ids, Admin admin);
+	void delete(Set<Integer> ids);
 }

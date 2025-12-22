@@ -1,99 +1,96 @@
 AGN.Lib.Controller.new('reference-content-settings', function() {
-  var Template = AGN.Lib.Template;
-  var isAvailable = false;
-  var disable = false;
-  var createItemHtml;
-  var items = [];
-  var initialItems = [];
-  var $form;
+  let $container;
+  let isAvailable = false;
+  let isEnabled = false;
+  let initialItems = [];
+  let $form;
 
-  function setEnabled(enabled) {
-    $('#tile-mailingReferenceContent').toggleClass('hidden', !enabled);
-  }
-
-  function selectTable() {
-    var $select = $('#referenceTableSelect');
-    var $option = $select.children('option:selected');
-
+  function selectKeyColumn() {
+    const $select = $('#referenceTableSelect');
+    const $option = $select.children('option:selected');
     $('#keyColumnText').val($option.exists() ? $option.data('key-column') : '');
   }
 
   function createItem(index, value) {
-    return $(createItemHtml({name: 'Item' + index, value: value, disable: disable}));
+    return AGN.Lib.Template.dom('mailing-reference-content-item', {
+      name: getAddonText(index),
+      value: value,
+      disabled: !isEnabled
+    });
+  }
+
+  function getAddonText(index) {
+    return 'Item' + index;
   }
 
   function addItem(value) {
-    var $item = createItem(items.length + 1, value);
-    $('#reference-content-items').append($item);
-    items.push($item);
+    const $item = createItem(getRows$().length + 1, value);
+    $container.append($item);
   }
 
-  this.addDomInitializer('reference-content-settings', function() {
-    $form = $('#mailingSettingsForm');
-    selectTable();
-
-    createItemHtml = Template.prepare('mailing-reference-content-item');
-    isAvailable = this.config.isAvailable;
-    disable = this.config.disable;
-    items = [];
-
-    if (isAvailable) {
-      if ($.isArray(this.config.items)) {
-        this.config.items.forEach(function(value) {
-          addItem(value);
-        });
-
-        initialItems = this.config.items.slice();
-      }
-
-      setEnabled(this.config.isEnabled);
-    } else {
-      setEnabled(false);
+  function renderItems(items) {
+    if (!isEnabled) {
+      addItem('');
+      return;
     }
+     _.each(items, value => addItem(value));
+  }
 
+  function getRows$() {
+    return $('#reference-content-items .row');
+  }
+  this.addDomInitializer('reference-content-settings', function() {
+    $container = $('#reference-content-items');
+    $form = $('#mailingSettingsForm');
+    selectKeyColumn();
+
+    isAvailable = this.config.isAvailable;
+    isEnabled = this.config.isEnabled;
+    renderItems(this.config.items);
+    initialItems = getRows$();
+    controlSelectDisplaying();
     $form.dirty('setAsClean');
     $form.dirty('refreshEvents');
   });
 
-  this.addAction({change: 'enable-reference-content'}, function() {
-    if (isAvailable) {
-      setEnabled(this.el.prop('checked'));
-    } else {
-      AGN.Lib.Messages(t('defaults.warning'), t('mailing.default.item_referencetable_warning'), 'warning');
-      $(this.el).prop('checked', false).trigger('change.dirty');
-    }
-  });
+  function controlSelectDisplaying() {
+    $('#referenceContentEnabled').on('change', function() {
+      $('#referenceTableSelect').prop('disabled', !$(this).prop('checked'));
+    });
+  }
 
   this.addAction({change: 'select-reference-table'}, function() {
-    selectTable();
+    selectKeyColumn();
   });
 
   this.addAction({click: 'add-reference-content-item'}, function() {
+    replaceNewButtonWithDeleteButton();
     addItem('');
     $form.dirty('setAsDirty');
   });
 
+  function replaceNewButtonWithDeleteButton() {
+    const newBtn = $container.find('[data-action="add-reference-content-item"]');
+    newBtn.after(_.template(AGN.Opt.Templates['mailing-reference-content-delete-btn'])({disabled: !isEnabled}));
+    newBtn.remove();
+  }
+
+  function isItemsChanged() {
+    return (initialItems.length !== getRows$().length)
+      || (initialItems.some(value => !getRows$().includes(value)));
+  }
+
+  function updateTextOfAddons() {
+    getRows$().each((index, row) => {
+      $(row).find('.input-group-text').text(getAddonText(index + 1));
+    })
+  }
+
   this.addAction({click: 'delete-reference-content-item'}, function() {
-    var row = this.el.closest('.form-group')[0];
-    var position = items.findIndex(function($row) { return $row[0] == row; });
-
-    while (position + 1 < items.length) {
-      var $input1 = items[position].find('input');
-      var $input2 = items[position + 1].find('input');
-
-      $input1.val($input2.val());
-      position++;
-    }
-
-    items[position].remove();
-    items.pop();
-
-    var isTheSameItems = (initialItems.length === items.length) && (initialItems.every(function (value) {
-      return items.includes(value);
-    }));
-
-    if (!isTheSameItems) {
-      $form.dirty('setAsDirty');
+    this.el.closest('.row').remove();
+    updateTextOfAddons();
+    if (!isItemsChanged()) {
+      $form.dirty('setAsDirty'); // TODO check and check submit values on save
     }
   });
 });

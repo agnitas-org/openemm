@@ -1,126 +1,93 @@
-(function(){
+(() => {
 
-  var Help;
-  var helpPopoverTemplate = '<div class="popover" role="tooltip">' +
-      '<div class="arrow"></div>' +
-      '<h3 class="popover-title"></h3>' +
-      '<div class="popover-content popover-scrollable"></div>' +
-      '</div>';
+  class Help {
+    constructor($element) {
+      this.$el = $element;
+      this.config = null;
 
-  Help = function($element) {
-    var url = AGN.url($element.data('help')),
-        self = this,
-        jqhxr;
+      const url = `help_${window.helpLanguage || 'en'}/${$element.data('help')}`;
 
-    this.el = $element;
-
-    jqhxr = $.get(url);
-    jqhxr.done(function(xml){
-      self.config  = $(xml);
-
-      self.popoverInteractive();
-      self.show();
-    });
-  };
-
-  Help.show = function($element) {
-    var helpObj;
-
-    helpObj = $element.data('_help');
-
-    if (helpObj) {
-      helpObj.show();
-      return
+      $.get(AGN.url(url)).done(xml => {
+        this.config = $(xml);
+        this.popover();
+        this.show();
+      });
     }
 
-    helpObj = new Help($element);
-    $element.data('_help', helpObj);
-  };
-
-  Help.prototype.show = function() {
-    this.el.popover('show');
-  };
-
-  Help.prototype.getConfig = function(key) {
-
-    var val = this.config.find(key).text();
-
-    return val.
-            replace("<![CDATA[", "").
-            replace("]]>", "");
-  };
-
-  Help.prototype.popover = function() {
-    if (!this.config) {
-      return;
+    show() {
+      this.$el.popover('show');
     }
 
-    this.el.popover('destroy');
-
-    AGN.Lib.Popover.new(this.el, {
-      template: helpPopoverTemplate,
-      title:   this.getConfig('title'),
-      content: this.getConfig('content'),
-      html: true,
-      trigger: this.el.data("trigger") || "focus"
-    });
-  };
-
-  Help.prototype.popoverInteractive = function() {
-    if (!this.config) {
-      return;
+    getConfig(key) {
+       const val = this.config.find(key).text().replace("<![CDATA[", "").replace("]]>", "");
+        if (!this.$el.is('[data-help-options]')) {
+          return val;
+        }
+        return _.template(val)(AGN.Lib.Helpers.objFromString(this.$el.data('help-options')));
     }
 
-    this.el.popover('destroy');
-
-    var popover = AGN.Lib.Popover.new(this.el, {
-      template: helpPopoverTemplate,
-      title: this.getConfig("title"),
-      content: this.getConfig("content"),
-      html: true,
-      trigger: 'manual'
-    });
-
-    var elem = this.el;
-    var tip = popover.tip();
-
-    // Made a tip (balloon) focusable
-    tip.attr('tabindex', 0);
-    // Disable an outline when a tip is focused
-    tip.css('outline', 'none');
-
-    // A popup help balloon should stay opened when either a help button or a help balloon has a focus
-    var timeout = null;
-
-    var onFocusLosing = function() {
-      timeout = setTimeout(function() {
-        popover.hide();
-      }, 100);
-    };
-
-    var onFocusObtaining = function() {
-      clearTimeout(timeout);
-    };
-
-    tip.focusout(onFocusLosing);
-    elem.focusout(onFocusLosing);
-    tip.focusin(onFocusObtaining);
-    elem.focusin(onFocusObtaining);
-
-    elem.on('shown.bs.popover', function() {
-      var $content = tip.children('.popover-content');
-
-      var minWidthOld = $content.css('min-width');
-      var oldWidth = $content.outerWidth();
-
-      $content.css('min-width', '100%');
-      $content.css('min-width', $content.outerWidth());
-
-      if (oldWidth > $content.outerWidth()) {
-        $content.css('min-width', minWidthOld || '0px');
+    popover() {
+      if (!this.config) {
+        return;
       }
-    });
-  };
+
+      this.$el.popover('dispose');
+
+      const popover = AGN.Lib.Popover.create(this.$el, {
+        title: this.getConfig('title'),
+        content: this.getConfig('content'),
+        html: true,
+        trigger: 'manual',
+        popperConfig: {
+          placement: 'bottom-start'
+        }
+      });
+
+      const $tip = $(popover.tip);
+
+      // Made a tip (balloon) focusable
+      $tip.attr('tabindex', 0);
+      // Disable an outline when a tip is focused
+      $tip.css('outline', 'none');
+
+      // A popup help balloon should stay opened when either a help button or a help balloon has a focus
+      let timeout = null;
+
+      const onFocusLosing = () => {
+        timeout = setTimeout(() => popover.hide(), 100);
+      };
+
+      const onFocusObtaining = () => clearTimeout(timeout);
+
+      $tip.focusout(onFocusLosing);
+      this.$el.focusout(onFocusLosing);
+      $tip.focusin(onFocusObtaining);
+      this.$el.focusin(onFocusObtaining);
+
+      this.$el.on('shown.bs.popover', function () {
+        const $content = $tip.children('.popover-content');
+
+        const minWidthOld = $content.css('min-width');
+        const oldWidth = $content.outerWidth();
+
+        $content.css('min-width', '100%');
+        $content.css('min-width', $content.outerWidth());
+
+        if (oldWidth > $content.outerWidth()) {
+          $content.css('min-width', minWidthOld || '0px');
+        }
+      });
+    }
+
+    static show($element) {
+      const instance = $element.data('agn:help');
+      if (instance) {
+        instance.show();
+      } else {
+        $element.data('agn:help', new Help($element));
+      }
+    }
+  }
 
   AGN.Lib.Help = Help;
 

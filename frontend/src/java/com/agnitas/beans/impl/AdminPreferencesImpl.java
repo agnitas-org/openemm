@@ -11,6 +11,7 @@
 package com.agnitas.beans.impl;
 
 import com.agnitas.beans.AdminPreferences;
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
 
 public class AdminPreferencesImpl implements AdminPreferences {
 
@@ -20,6 +21,7 @@ public class AdminPreferencesImpl implements AdminPreferences {
     protected int statisticLoadType;
     protected int adminId;
     protected int mailingContentView;
+    private MailingSettingsViewType mailingSettingsViewType = MailingSettingsViewType.getDefault();
 
     @Override
     public int getMailingSettingsView() {
@@ -79,5 +81,15 @@ public class AdminPreferencesImpl implements AdminPreferences {
     @Override
     public void setMailingContentView(int mailingContentView) {
         this.mailingContentView = mailingContentView;
+    }
+
+    @Override
+    public MailingSettingsViewType getMailingSettingsViewType() {
+        return mailingSettingsViewType;
+    }
+
+    @Override
+    public void setMailingSettingsViewType(MailingSettingsViewType mailingSettingsViewType) {
+        this.mailingSettingsViewType = mailingSettingsViewType;
     }
 }

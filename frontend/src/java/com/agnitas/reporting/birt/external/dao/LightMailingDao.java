@@ -10,8 +10,6 @@
 
 package com.agnitas.reporting.birt.external.dao;
 
-
-
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 
 public interface LightMailingDao {

@@ -35,6 +35,7 @@ public final class UIDFactory {
  				customerID,
  				0, 
  				0, 
+				0,
  				NamedUidBit.namedBitsToLong(bits));
  	}
  	
@@ -58,6 +59,7 @@ public final class UIDFactory {
  				customerID,
  				mailingID, 
  				0, 
+				0,
  				NamedUidBit.namedBitsToLong(bits));
  	}
 	
@@ -81,7 +83,34 @@ public final class UIDFactory {
  				companyID, 
  				customerID,
  				mailingID, 
- 				urlID, 
+ 				urlID,
+				1,
+ 				NamedUidBit.namedBitsToLong(bits));
+ 	}
+	
+ 	/**
+ 	 * Creates a UID used to identify customer, mailing and link.
+ 	 * All other properties than given ones are set to 0.
+ 	 * 
+ 	 * @param licenseID license ID (must be <> 0)
+ 	 * @param companyID company ID (must be <> 0)
+ 	 * @param customerID customer ID (must be <> 0)
+ 	 * @param mailingID mailing ID (must be <> 0, if link ID <> 0)
+ 	 * @param urlID URL ID
+	 * @param position position of URL in content
+ 	 * @param bits named control bits
+ 	 * 
+ 	 * @return UID
+ 	 */
+ 	public static final ExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final int position, final NamedUidBit...bits) {
+ 		return new ExtensibleUIDImpl(
+ 				null, 
+ 				licenseID, 
+ 				companyID, 
+ 				customerID,
+ 				mailingID, 
+ 				urlID,
+				position,
  				NamedUidBit.namedBitsToLong(bits));
  	}
 	
@@ -105,6 +134,7 @@ public final class UIDFactory {
  				recipient.getCustomerID(),
  				0, 
  				0, 
+				0,
  				bits);
  	}
 	
@@ -128,7 +158,8 @@ public final class UIDFactory {
  				recipient.getCompanyID(), 
  				recipient.getCustomerID(),
  				mailingID, 
- 				0, 
+ 				0,
+				0,
  				bits);
  	}
 
@@ -150,7 +181,8 @@ public final class UIDFactory {
  				uid.getCompanyID(), 
  				uid.getCustomerID(),
  				mailingId, 
- 				uid.getUrlID(), 
+ 				uid.getUrlID(),
+				uid.getPosition(),
  				uid.getBitField());
 	}
 
@@ -165,12 +197,13 @@ public final class UIDFactory {
  	 * @param customerID customer ID (must be <> 0)
  	 * @param mailingID mailing ID (must be <> 0, if urlID is <> 0)
  	 * @param urlID url ID 
+	 * @param position position of URL in content
  	 * @param bits list of bits set in bitfield
  	 * 
  	 * @return UID
  	 */
 	
-	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
+	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final int position, final NamedUidBit...bits) {
 		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
@@ -178,6 +211,7 @@ public final class UIDFactory {
  				customerID,
  				mailingID, 
  				urlID, 
+				position,
  				NamedUidBit.namedBitsToLong(bits));
 	}
 	
@@ -192,11 +226,12 @@ public final class UIDFactory {
  	 * @param customerID customer ID (must be <> 0)
  	 * @param mailingID mailing ID (must be <> 0, if urlID is <> 0)
  	 * @param urlID url ID 
+	 * @param position position of URL in content
  	 * @param bitfield bit field
  	 * 
  	 * @return UID
  	 */
-	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final long bitfield) {
+	public static final ExtensibleUID from(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final int position, final long bitfield) {
 		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
@@ -204,6 +239,7 @@ public final class UIDFactory {
  				customerID,
  				mailingID, 
  				urlID, 
+				position,
  				bitfield);
 	}
 	
@@ -219,10 +255,11 @@ public final class UIDFactory {
  	 * @param companyID company ID (must be <> 0) 
  	 * @param mailingID mailing ID (must be <> 0, if urlID is <> 0)
  	 * @param urlID url ID 
+	 * @param position position of URL in content
  	 * 
  	 * @return UID
  	 */
-	public static final ExtensibleUID forHeatmapFrom(final String prefix, final int licenseID, final int companyID, final int mailingID, final int urlID) {
+	public static final ExtensibleUID forHeatmapFrom(final String prefix, final int licenseID, final int companyID, final int mailingID, final int urlID, final int position) {
 		return new ExtensibleUIDImpl(
 				prefix,
  				licenseID, 
@@ -230,6 +267,7 @@ public final class UIDFactory {
  				-1,			// The Heatmap is the only exception where customer ID -1 is allowed!
  				mailingID, 
  				urlID, 
+				position,
  				0L);
 	}
 

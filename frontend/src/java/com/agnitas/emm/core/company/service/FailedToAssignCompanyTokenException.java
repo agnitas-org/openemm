@@ -10,18 +10,19 @@
 
 package com.agnitas.emm.core.company.service;
 
-public final class FailedToAssignCompanyTokenException extends CompanyTokenException {
+public class FailedToAssignCompanyTokenException extends RuntimeException {
+
 	private static final long serialVersionUID = -2287513873251091764L;
 	
 	private final int companyID;
 	
-	public FailedToAssignCompanyTokenException(final int companyID, final String message) {
+	public FailedToAssignCompanyTokenException(int companyID, String message) {
 		super(String.format("Failed to assign token to company %d: %s", companyID, message));
-
 		this.companyID = companyID;
 	}
-	
-	public final int getComanyID() {
-		return this.companyID;
+
+	public int getCompanyID() {
+		return companyID;
 	}
+
 }

@@ -135,7 +135,7 @@ public class TableTagHtmlWriter {
     }
 
     public void appendRowsCountSelect(int selectedNumberOfRows) {
-        appendContent("<select name=\"numberOfRows\" class=\"form-control js-select compact\" data-form-submit data-form-change data-select-options=\"width: 'auto', dropdownAutoWidth: true\">");
+        appendContent("<select name=\"numberOfRows\" class=\"form-control compact\" data-form-submit data-form-change data-select-options=\"width: 'auto', dropdownAutoWidth: true\">");
 
         PAGE_SIZE_OPTIONS.forEach(numberOfRows -> {
             appendContent("<option value=\"" + numberOfRows + "\"");

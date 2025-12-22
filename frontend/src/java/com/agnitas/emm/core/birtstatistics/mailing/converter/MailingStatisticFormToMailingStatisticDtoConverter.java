@@ -30,7 +30,6 @@ public class MailingStatisticFormToMailingStatisticDtoConverter implements Conve
         dto.setMaxDomains(form.getMaxDomains());
         dto.setMailingId(form.getMailingID());
         dto.setDescription(form.getDescription());
-        dto.setSector(form.getSector());
         dto.setLinkId(form.getUrlID());
 
         return dto;

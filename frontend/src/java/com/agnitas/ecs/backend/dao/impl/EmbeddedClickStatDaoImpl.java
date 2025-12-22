@@ -34,34 +34,34 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 		List<Object> optionsClicksPerLink = new ArrayList<>();
 
 		if (EcsModeType.GROSS_CLICKS.getId() == mode) {
-			sqlClicksPerMail = "SELECT COUNT(customer_id) clicks"
+			sqlClicksPerMail = "SELECT COUNT(customer_id) AS clicks"
 				+ " FROM rdirlog_" + companyId + "_tbl"
 				+ " WHERE mailing_id = ?";
 			optionsClicksPerMail.add(mailingId);
 
 			sqlClicksPerMail += getDeviceClassClause(deviceClass, optionsClicksPerMail);
 
-			sqlClicksPerLink = "SELECT url_id, COUNT(customer_id) clicks"
+			sqlClicksPerLink = "SELECT url_id, NVL(position, 1) AS position, COUNT(customer_id) AS clicks"
 				+ " FROM rdirlog_" + companyId + "_tbl"
 				+ " WHERE mailing_id = ?";
 			optionsClicksPerLink.add(mailingId);
 
 			sqlClicksPerLink += getDeviceClassClause(deviceClass, optionsClicksPerLink);
-			sqlClicksPerLink += " GROUP BY url_id"
+			sqlClicksPerLink += " GROUP BY url_id, position"
 				+ " ORDER BY clicks DESC";
 		} else if (EcsModeType.NET_CLICKS.getId() == mode) {
-			sqlClicksPerMail = "SELECT COUNT(DISTINCT customer_id) clicks"
+			sqlClicksPerMail = "SELECT COUNT(DISTINCT customer_id) AS clicks"
 				+ " FROM rdirlog_" + companyId + "_tbl"
 				+ " WHERE mailing_id = ?";
 			optionsClicksPerMail.add(mailingId);
 
-			sqlClicksPerLink = "SELECT url_id, COUNT(DISTINCT customer_id) clicks"
+			sqlClicksPerLink = "SELECT url_id, NVL(position, 1) AS position, COUNT(DISTINCT customer_id) AS clicks"
 				+ " FROM rdirlog_" + companyId + "_tbl"
 				+ " WHERE mailing_id = ?";
 			optionsClicksPerLink.add(mailingId);
 
 			sqlClicksPerLink += getDeviceClassClause(deviceClass, optionsClicksPerLink);
-			sqlClicksPerLink += " GROUP BY url_id"
+			sqlClicksPerLink += " GROUP BY url_id, position"
 				+ " ORDER BY clicks DESC";
 		} else {
 			throw new IllegalArgumentException("Invalid mode: " + mode);
@@ -73,12 +73,13 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 		ClickStatInfo clickStatInfo = new ClickStatInfo();
 		for (Map<String, Object> row : resultClicksPerLink) {
 			int urlId = ((Number) row.get("url_id")).intValue();
+			int position = ((Number) row.get("position")).intValue();
 			int clicks = ((Number) row.get("clicks")).intValue();
 			double clicksPercent = 0;
 			if (clicksPerMail > 0) {
 				clicksPercent = ((double) clicks / (double) clicksPerMail) * 100;
 			}
-			clickStatInfo.addURLInfo(urlId, clicks, clicksPerMail, clicksPercent);
+			clickStatInfo.addURLInfo(urlId, position, clicks, clicksPerMail, clicksPercent);
 		}
 
 		return clickStatInfo;

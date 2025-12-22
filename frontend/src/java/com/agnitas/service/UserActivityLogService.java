@@ -10,21 +10,19 @@
 
 package com.agnitas.service;
 
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
 import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
 import com.agnitas.emm.core.useractivitylog.forms.RestfulUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.SoapUserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilter;
 import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogFilterBase;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.SqlPreparedStatementManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,21 +32,19 @@ public interface UserActivityLogService {
 		GUI, SOAP, REST
 	}
 
-	// TODO: EMMGUI-714: Remove when removing old design
-	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins);
-	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilterRedesigned(UserActivityLogFilter filter, List<AdminEntry> admins, Admin admin);
+	void deleteActivity(List<Admin> admins);
 
-	// TODO: EMMGUI-714: Remove when removing old design
-	PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins);
-	PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilterRedesigned(RestfulUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin);
+	void deleteSoapActivity(Set<String> usernames);
 
-	// TODO: EMMGUI-714: Remove when removing old design
-	PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins);
-	PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilterRedesigned(SoapUserActivityLogFilter filter, List<AdminEntry> admins, Admin admin);
+	Set<String> getAvailableUsernames(Admin admin, UserType userType);
 
-	// TODO: EMMGUI-714: Remove when removing old design
-	SqlPreparedStatementManager prepareSqlStatementForDownload(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, UserType userType);
-	SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, List<AdminEntry> visibleAdmins, UserType userType, Admin admin);
+	PaginatedList<LoggedUserAction> getUserActivityLogByFilter(UserActivityLogFilter filter, Admin admin);
+
+	PaginatedList<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(RestfulUserActivityLogFilter filter, Admin admin);
+
+	PaginatedList<SoapUserActivityAction> getSoapUserActivityLogByFilter(SoapUserActivityLogFilter filter, Admin admin);
+
+	SqlPreparedStatementManager prepareSqlStatementForDownload(UserActivityLogFilterBase filter, UserType userType, Admin admin);
 
 	/**
 	 * Write user activity log for given {@link Admin}.

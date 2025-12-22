@@ -16,10 +16,11 @@ import java.util.Set;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
 import com.agnitas.beans.BlackListEntry;
 import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.UserStatus;
 
 public interface BlacklistDao {
+
     /**
      * Adds the given email to the blacklist.
      *
@@ -29,7 +30,6 @@ public interface BlacklistDao {
      * @return true on success.
      */
 	boolean insert(int companyID, String email, String reason);
-
 
     /**
      * Update info for an email in the blacklist.
@@ -49,6 +49,7 @@ public interface BlacklistDao {
      * @return true on success.
      */
 	boolean delete(int companyID, String email);
+
 	boolean delete(Set<String> emails, int companyId);
 
     /**
@@ -59,7 +60,7 @@ public interface BlacklistDao {
      */
     List<BlackListEntry> getBlacklistedRecipients(int companyID);
 
-	PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID);
+	PaginatedList<BlackListEntry> getBlacklistedRecipients(BlacklistOverviewFilter filter, int companyID);
 
     /**.
      * Check the presence given company and email in the blacklist.
@@ -96,7 +97,7 @@ public interface BlacklistDao {
 	 * @param mailinglistIds list of mailinglist ID to update
 	 * @param userStatus new user status
 	 */
-	void updateBlacklistedBindings(int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus);
+	void updateBlacklistedBindings(int companyId, String email, Set<Integer> mailinglistIds, UserStatus userStatus);
 	
 	/**
      * Load set of emails of customers from blacklist for given company
@@ -116,7 +117,6 @@ public interface BlacklistDao {
      * @return true if E-Mail-Adress is blacklisted
      */
 	boolean blacklistCheck(String email, int companyID);
-
 
 	List<BlackListEntry> getBlacklistCheckEntries(int companyID, String email);
 }

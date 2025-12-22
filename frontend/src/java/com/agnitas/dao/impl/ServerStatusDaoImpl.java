@@ -10,16 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.dao.ServerStatusDao;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.CsvWriter;
-import com.agnitas.util.DateUtilities;
-import com.agnitas.util.DbUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DataAccessException;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.sql.Connection;
@@ -31,6 +21,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
+
+import com.agnitas.dao.ServerStatusDao;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.CsvWriter;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DataAccessException;
 
 /**
  * DAO handler for status infos

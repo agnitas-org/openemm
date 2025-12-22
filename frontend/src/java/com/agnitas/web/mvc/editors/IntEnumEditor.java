@@ -37,7 +37,7 @@ public class IntEnumEditor<T extends Enum<T> & IntEnum> extends PropertyEditorSu
     }
 
     @Override
-    public void setAsText(String text) throws IllegalArgumentException {
+    public void setAsText(String text) {
         try {
             setValue(IntEnum.fromId(type, Integer.parseInt(text), false));
         } catch (Exception e) {

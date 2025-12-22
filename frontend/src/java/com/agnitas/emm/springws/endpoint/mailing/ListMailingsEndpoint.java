@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.exception.InvalidFilterSettingsException;
@@ -127,7 +127,7 @@ public class ListMailingsEndpoint extends BaseEndpoint {
 				: new ListMailingFilter(conditions);
 	}
 	
-	private static final MailingStatus convertMailingStatus(final String name) throws InvalidFilterSettingsException {
+	private static MailingStatus convertMailingStatus(String name) {
 		try {
 			return MailingStatus.fromDbKey(name);
 		} catch(final NoSuchElementException e) {
@@ -135,7 +135,7 @@ public class ListMailingsEndpoint extends BaseEndpoint {
 		}
 	}
 	
-	private static final List<MailingStatus> convertMailingStatus(final List<String> names) throws InvalidFilterSettingsException {
+	private static List<MailingStatus> convertMailingStatus(List<String> names) {
 		final List<MailingStatus> list = new ArrayList<>();
 		
 		for(final String name : names) {

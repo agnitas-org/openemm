@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.cache;
 
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 
 public interface SnowflakeMailingCache {
 	LightweightMailing getSnowflakeMailing(int companyId, int mailingId) throws SnowflakeMailingCacheException;

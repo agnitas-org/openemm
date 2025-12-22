@@ -11,13 +11,14 @@
 package com.agnitas.emm.core.birtstatistics.monthly;
 
 public enum MonthlyStatType {
+
     RECIPIENT_NUM(0),
     OPENERS(1),
     CLICKERS(2),
     ANONYMOUS_CLICKS(3),
     ANONYMOUS_OPENINGS(4);
 
-    private int code;
+    private final int code;
 
     MonthlyStatType(int code) {
         this.code = code;

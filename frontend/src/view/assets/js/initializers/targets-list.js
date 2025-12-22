@@ -2,17 +2,16 @@ AGN.Lib.Controller.new('targets-list', function() {
 
   this.addAction({'change': 'check-favorites'}, function() { // favorite for company
     AGN.Lib.Loader.prevent();
-    
-    $.ajax({
-      type: 'GET',
-      url: AGN.url(getFavoritesActionAddress(this.el))
-    });
+    $.post(AGN.url(getFavoritesActionAddress(this.el)));
   });
   
   function getFavoritesActionAddress(el) {
-    var targetId = el.data('target-id');
-    var favorite = el.is(':checked');
-    return '/target/' + targetId + '/' + (favorite ? 'addToFavorites' : 'removeFromFavorites') + '.action';
+    const targetId = el.data('target-id');
+
+    if (el.is(':checked')) {
+      return `/target/${targetId}/addToFavorites.action`;
+    }
+    return `/target/${targetId}/removeFromFavorites.action`;
   }
 
   this.addAction({'change': 'check-admin-favorites'}, function() { // favorite for user
@@ -22,7 +21,7 @@ AGN.Lib.Controller.new('targets-list', function() {
 
     $.ajax({
       type: favorite ? 'POST' : 'DELETE',
-      url: AGN.url('/target/' + targetId + '/favorite.action')
+      url: AGN.url(`/target/${targetId}/favorite.action`)
     });
   });
 });

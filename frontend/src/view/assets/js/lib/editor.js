@@ -1,32 +1,28 @@
-(function(){
+(() => {
 
-  var Editor,
-      EditorHtml,
+  let EditorHtml,
       EditorText,
       EditorEql,
       EditorCss;
 
-  Editor = function(textArea) {
-    var self = this,
-        target,
-        $containerEditor,
-        id,
-        readOnly;
+  const Editor = function(textArea) {
+    const self = this;
+    let id;
 
     this.el = $(textArea);
-    readOnly = !!this.el.attr('readonly');
+    const readOnly = !!this.el.attr('readonly');
     this.isFullHeight = !!this.el.data('full-height-editor');
     this.height = parseInt(this.el.attr('rows') || 15) * 15;
 
-    target = this.el.attr('id') + 'Editor';
-    $containerEditor = $('#' + target);
+    const target = this.el.attr('id') + 'Editor';
+    let $containerEditor = $(`#${target}`);
     if ($containerEditor.length === 1) {
       id = target;
-      var isFullHeightEditor = $containerEditor.data('full-height-editor');
+      const isFullHeightEditor = $containerEditor.data('full-height-editor');
       $containerEditor.css('height', isFullHeightEditor ? '100%' : (this.height + 'px'));
     } else {
       id = _.uniqueId('Editor');
-      $containerEditor = $('<div id="' + id + '" class="form-control"></div>');
+      $containerEditor = $(`<div id="${id}" class="form-control"></div>`);
       $containerEditor.css('height', this.isFullHeight ? '100%' : (this.height + 'px'));
       $containerEditor.insertAfter($(this.el));
     }
@@ -51,11 +47,11 @@
       this.editor.getSession().setUseWrapMode(true);
     }
 
-    self.el.trigger('editor:create');
+    this.el.trigger('editor:create');
   }
 
   Editor.get = function($textArea) {
-    var editor = $textArea.data('_editor');
+    let editor = $textArea.data('_editor');
 
     if (editor) {
       return editor;
@@ -75,15 +71,18 @@
     return editor;
   }
 
-  Editor.all = function() {
-    return _.map($('.js-editor, .js-editor-text, .js-editor-eql, .js-editor-css'), function(editor) {
+  Editor.exists = function ($textArea) {
+    return !!$textArea.data('_editor');
+  }
+
+  Editor.all = function($scope = $(document)) {
+    return _.map($scope.all('.js-editor, .js-editor-text, .js-editor-eql, .js-editor-css'), function(editor) {
       return Editor.get($(editor));
     })
   }
 
-
   Editor.prototype.decorate = function() {
-    if($("body").hasClass("dark-theme")) {
+    if (AGN.Lib.Helpers.isDarkTheme()) {
       this.editor.setTheme("ace/theme/idle_fingers");
     } else {
       this.editor.setTheme("ace/theme/chrome");
@@ -106,12 +105,22 @@
     this.editor.resize();
   }
 
-  Editor.prototype.val = function(val) {
+  Editor.prototype.val = function(val, saveCursorPosition = false) {
     if (typeof(val) !== 'undefined') {
+      const cursor = this.editor.getSelection().getCursor();
       this.editor.getSession().setValue(val);
+
+      if (saveCursorPosition) {
+        this.goToLine(cursor.row + 1, cursor.column);
+      }
     } else {
       return this.editor.getSession().getValue();
     }
+  }
+
+  Editor.prototype.goToLine = function (row, column) {
+    this.editor.focus();
+    this.editor.gotoLine(row, column);
   }
 
   // inherit from Editor
@@ -137,7 +146,7 @@
 
 
   EditorText.prototype.decorate = function() {
-    if($("body").hasClass("dark-theme")) {
+    if(AGN.Lib.Helpers.isDarkTheme()) {
       this.editor.setTheme("ace/theme/idle_fingers");
     } else {
       this.editor.setTheme("ace/theme/chrome");
@@ -166,7 +175,7 @@
   EditorEql.prototype.constructor = EditorEql;
   
   EditorEql.prototype.decorate = function() {
-    if($("body").hasClass("dark-theme")) {
+    if(AGN.Lib.Helpers.isDarkTheme()) {
       this.editor.setTheme("ace/theme/idle_fingers");
     } else {
       this.editor.setTheme("ace/theme/chrome");

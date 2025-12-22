@@ -13,6 +13,7 @@ package com.agnitas.emm.core.account.service;
 import java.util.Map;
 
 public interface DemoAccountService {
+
     //is check for companyID necessary or could it be a problem?
     Map<String, Integer> resetAccount(int companyId) throws Exception;
     
@@ -20,9 +21,9 @@ public interface DemoAccountService {
     
     Map<String, Integer> deleteAccount(int companyId);
        
-    boolean fillAccountFromMaster(int companyId) throws Exception;
+    boolean fillAccountFromMaster(int companyId);
     
-    boolean fillAccountFromCompany(int companyId, int fromCompanyID) throws Exception;
+    boolean fillAccountFromCompany(int companyId, int fromCompanyID);
 
     int checkDB();
     

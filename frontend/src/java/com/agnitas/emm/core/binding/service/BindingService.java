@@ -10,20 +10,18 @@
 
 package com.agnitas.emm.core.binding.service;
 
+import java.util.List;
+
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.binding.service.BindingModel;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-
-import java.util.List;
 
 public interface BindingService {
 
-	boolean setBindingWithActionId(BindingModel model, final boolean runActionInBackground) throws MailinglistException;
+	boolean setBindingWithActionId(BindingModel model, boolean runActionInBackground);
 
 	BindingEntry getBinding(BindingModel model);
 
-	void setBinding(BindingModel model) throws MailinglistException;
+	void setBinding(BindingModel model);
 
 	void deleteBinding(BindingModel model);
 

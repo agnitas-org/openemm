@@ -42,22 +42,13 @@
  * https://lodash.com/
  **/
 
- /**
- * D3.js 3.5.5
+/**
+ * moment.js 2.30.1
  *
- * Licensed under MIT (https://github.com/mbostock/d3/blob/master/LICENSE)
- * (c) 2010-2015, Michael Bostock
+ * (c) Tim Wood, Iskren Chernev, Moment.js contributors
+ * Licensed under MIT
  *
- * http://d3js.org/
- **/
-
-  /**
- * C3.js 0.4.10
- *
- * Licensed under MIT (https://github.com/masayuki0812/c3/blob/master/LICENSE)
- * (c) 2013 Masayuki Tanaka
- *
- * http://c3js.org/
+ * https://momentjs.com/
  **/
 
 /**
@@ -73,86 +64,36 @@
  * (c) 2005, 2013 jQuery Foundation, Inc. and other contributors
  * https://github.com/jquery/jquery-migrate
  *
- * jquery-select2 v3.5.2
- * Licensed under Apache License, Version 2.0 & GNU General Public License version 2
- * (c) 2012 Igor Vaynberg
- * https://ivaynberg.github.io/select2/
- *
  * jquery-mousewheel v3.1.9
  * Licensed under MIT
  * (c) 2013 Brandon Aaron
  * http://brandon.aaron.sh
  *
- * jquery-perfect-scrollbar v0.5.7
- * Licensed under MIT
- * (c) 2012, 2014 Hyunje Alex Jun and other contributors
- * https://noraesae.github.io/perfect-scrollbar/
+ * jquery-inputmask v3.1.63
+ * Licensed under MIT (http://www.opensource.org/licenses/mit-license.php)
+ * (c) 2010 - 2015 Robin Herbots
+ * http://github.com/RobinHerbots/jquery.inputmask
  *
- * jquery DoubleScroll v0.4
- * Dual licensed under the MIT and GPL licenses
- * (c) Pawel Suwala, Antoine Vianey
- * https://github.com/avianey/jqDoubleScroll
+ * jquery-dirty v0.8.3
+ * Licensed under MIT (http://www.opensource.org/licenses/mit-license.php)
+ * (c) 2016 Simon Taite
+ * https://github.com/simon-reynolds/jquery.dirty
  *
  * jquery Endless Scroll
  * Dual licensed under the MIT and GPL licenses
  * (c) 2008-2012 Fred Wu
  * https://github.com/fredwu/jquery-endless-scroll
- *
- * jQuery File Upload Plugin
- * Licensed under the MIT license
- * (c) 2010, Sebastian Tschan
- * https://github.com/blueimp/jQuery-File-Upload
  **/
 
 /**
- * Bootstrap Components v3.4.1
+ * jQuery UI v1.14.1
  *
- * dropdown.js
- * modal.js
- * popover.js
- * tooltip.js
+ * widget.js, position.js, data.js, disable-selection.js, effect.js, effects/effect-blind.js, effects/effect-bounce.js, effects/effect-clip.js, effects/effect-drop.js, effects/effect-explode.js, effects/effect-fade.js, effects/effect-fold.js, effects/effect-highlight.js, effects/effect-puff.js, effects/effect-pulsate.js, effects/effect-scale.js, effects/effect-shake.js, effects/effect-size.js, effects/effect-slide.js, effects/effect-transfer.js, focusable.js, form-reset-mixin.js, jquery-patch.js, keycode.js, labels.js, scroll-parent.js, tabbable.js, unique-id.js, widgets/accordion.js, widgets/autocomplete.js, widgets/button.js, widgets/checkboxradio.js, widgets/controlgroup.js, widgets/datepicker.js, widgets/dialog.js, widgets/draggable.js, widgets/droppable.js, widgets/menu.js, widgets/mouse.js, widgets/progressbar.js, widgets/resizable.js, widgets/selectable.js, widgets/selectmenu.js, widgets/slider.js, widgets/sortable.js, widgets/spinner.js, widgets/tabs.js, widgets/tooltip.js
  *
- * (c) 2011-2019 Twitter, Inc.
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
- *
- * http://getbootstrap.com/
- **/
-
-/**
- * Bootstrap Extensions
- *
- * bootstrap-slider v4.8.1
- * Licensed under MIT
- * (c) 2015 Kyle Kemp, Rohit Kalkur, and contributors
- *
- * bootstrap-colorpicker v2.5.2
- * Licensed under Apache License v2.0
- * (c) 2012 Stefan Petre
- *
- **/
-
-/**
- * jQuery UI v1.13.1
- *
- * core.js, widget.js, mouse.js, position.js, accordion.js, autocomplete.js, button.js, datepicker.js, dialog.js, draggable.js, droppable.js, effect.js, effect-blind.js, effect-bounce.js, effect-clip.js, effect-drop.js, effect-explode.js, effect-fade.js, effect-fold.js, effect-highlight.js, effect-puff.js, effect-pulsate.js, effect-scale.js, effect-shake.js, effect-size.js, effect-slide.js, effect-transfer.js, menu.js, progressbar.js, resizable.js, selectable.js, selectmenu.js, slider.js, sortable.js, spinner.js, tabs.js, tooltip.js
- *
- * (c) 2014 jQuery Foundation and other contributors
+ * (c) OpenJS Foundation and other contributors
  * Licensed under MIT
  *
  * http://jqueryui.com
- **/
-
-/**
- * Pickadate v3.5.6
- *
- * date.js
- * time.js
- * legacy.js
- *
- * (c) 2014 Amsul, http://amsul.ca
- * Licensed under https://github.com/amsul/pickadate.js/blob/3.5.6/LICENSE.md
- *
- * https://amsul.github.io/pickadate.js
  **/
 
 /**
@@ -207,28 +148,101 @@
  **/
 
 /**
- * EmojiOne Area v v3.4.1
+ * perfect-scrollbar v1.5.3
  *
- * EmojiOneArea is released under the MIT license.
+ * Copyright 2021 Hyunje Jun, MDBootstrap and Contributors
+ * Licensed under MIT
  *
- * Copyright (c) 2015-2017 Andrey Izman <izmanw@gmail.com>
+ * https://github.com/mdbootstrap/perfect-scrollbar
+ **/
+
+/**
+ * AGGrid (Community) v33.1.0
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
+ * (c) 2015-2024 AG GRID LTD
+ * Licensed under MIT
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * https://github.com/ag-grid/ag-grid
+ **/
+
+/**
+ * Bootstrap v5.3.3
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+ * (c) 2011-2024 The Bootstrap Authors
+ * Licensed under MIT
+ *
+ * https://getbootstrap.com/
+ **/
+
+/**
+ * ChartJS v4.4.7
+ *
+ * (c) 2014-2024 Chart.js Contributors
+ * Licensed under MIT
+ *
+ * https://github.com/chartjs/Chart.js
+ **/
+
+/**
+ * ChartJS Plugins
+ *
+ * chartjs-adapter-date-fns v3.0.0
+ * Licensed under MIT
+ * (c) 2019 Chart.js Contributors
+ * https://github.com/chartjs/chartjs-adapter-date-fns
+ *
+ * chartjs-plugin-datalabels v2.2.0
+ * Licensed under MIT
+ * (c) 2017-2021 chartjs-plugin-datalabels contributors
+ * https://github.com/chartjs/chartjs-plugin-datalabels
+ *
+ * chartjs-plugin-zoom v2.2.0
+ * Licensed under MIT
+ * (c) 2013-2021 chartjs-plugin-zoom contributors
+ * https://github.com/chartjs/chartjs-plugin-zoom
+ **/
+
+/**
+ * hammer.js v4.4.7
+ *
+ * (c) 2011-2014 by Jorik Tangelder (Eight Media)
+ * Licensed under MIT
+ *
+ * https://github.com/hammerjs/hammer.js
+ **/
+
+/**
+ * Select2 v4.1.0-rc.0
+ *
+ * (c) 2012-2017 Kevin Brown, Igor Vaynberg, and Select2 contributors
+ * Licensed under MIT
+ *
+ * https://github.com/select2/select2
+ **/
+
+/**
+ * Select2 To Tree v1.1.1.
+ *
+ * (c) 2017 clivezhg
+ * Licensed under MIT
+ *
+ * https://github.com/clivezhg/select2-to-tree
+ **/
+
+/**
+ * spectrum-colorpicker v1.8.1
+ *
+ * (c) Brian Grinstead
+ * Licensed under MIT
+ *
+ * https://www.npmjs.com/package/spectrum-colorpicker
+ **/
+
+/**
+ * marked v15.0.12
+ *
+ * (c) 2011-2025, Christopher Jeffrey
+ * Licensed under MIT
+ *
+ * https://github.com/markedjs/marked
+ **/

@@ -26,12 +26,12 @@ import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
+import com.agnitas.emm.core.mailing.service.MailingArchiveService;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
-import org.agnitas.emm.core.mailing.service.MailingArchiveService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

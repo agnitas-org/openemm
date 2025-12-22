@@ -1,0 +1,43 @@
+
+<div class="bordered-box-sm">
+    <div class="row g-2">
+        <div class="col-12">
+            <label class="form-label m-0"><mvc:message code="mailing.send.report" /></label>
+        </div>
+
+        <div class="col-6">
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox path="reportSendAfter24h" id="reportSendAfter24h" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                        <label class="form-label form-check-label text-truncate fw-normal" for="reportSendAfter24h"><mvc:message code="mailing.send.report.24h"/></label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox path="reportSendAfter48h" id="reportSendAfter48h" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                        <label class="form-label form-check-label text-truncate fw-normal" for="reportSendAfter48h"><mvc:message code="mailing.send.report.48h"/></label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <mvc:checkbox path="reportSendAfter1Week" id="reportSendAfter1Week" cssClass="form-check-input" role="switch" disabled="${not canSendOrActivateMailing}" />
+                        <label class="form-label form-check-label text-truncate fw-normal" for="reportSendAfter1Week"><mvc:message code="mailing.send.report.1week"/></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 d-flex align-items-center">
+            <div class="d-flex flex-column gap-1">
+                <p><mvc:message code="report.send.to" /></p>
+
+                <%-- NOTE: <div> is required for error message displaying --%>
+                <div>
+                    <mvc:text path="reportSendEmail" id="report_email" cssClass="form-control" maxlength="199" placeholder="${emailPlaceholder}" disabled="${not canSendOrActivateMailing}" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

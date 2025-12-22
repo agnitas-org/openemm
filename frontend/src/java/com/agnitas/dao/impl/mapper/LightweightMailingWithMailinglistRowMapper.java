@@ -15,7 +15,7 @@ import java.sql.SQLException;
 
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
 import org.springframework.jdbc.core.RowMapper;
 
 public class LightweightMailingWithMailinglistRowMapper implements RowMapper<LightweightMailingWithMailingList> {
@@ -32,17 +32,11 @@ public class LightweightMailingWithMailinglistRowMapper implements RowMapper<Lig
         final int mailingID = resultSet.getInt("mailing_id");
         final String shortname = resultSet.getString("shortname") != null ? resultSet.getString("shortname") : "";
         final String description = resultSet.getString("description") != null ? resultSet.getString("description") : "";
-        MailingType mailingType;
-        try {
-            mailingType = MailingType.fromCode(resultSet.getInt("mailing_type"));
-        } catch (Exception e) {
-            throw new SQLException("Invalid mailingtype code: " + resultSet.getInt("mailing_type"));
-        }
+        final MailingType mailingType = MailingType.getByCode(resultSet.getInt("mailing_type"));
         final String workStatus = resultSet.getString("work_status");
         final String contentTypeString = resultSet.getString("content_type");
 
         final MailingContentType contentType = decodeContentType(contentTypeString);
-
 
         return new LightweightMailingWithMailingList(companyID, mailingID, shortname, description, mailingType, workStatus, contentType, resultSet.getInt("mailinglist_id"));
     }

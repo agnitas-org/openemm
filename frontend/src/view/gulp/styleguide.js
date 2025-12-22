@@ -23,10 +23,7 @@ module.exports = {
       const assets = [
         `${config.assets}/fonts`,
         `${config.assets}/core`,
-        `${config.assets}/icons-defs.svg`,
         `${config.assets}/application.css`,
-        `${config.assets}/application.redesigned.css`,
-        `${config.assets}/application.redesigned.js`,
         `${config.assets}/application.js`
       ];
 

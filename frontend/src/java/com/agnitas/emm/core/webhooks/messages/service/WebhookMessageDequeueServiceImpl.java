@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.webhooks.config.WebhookConfigService;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookMessage;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookMessageStatus;

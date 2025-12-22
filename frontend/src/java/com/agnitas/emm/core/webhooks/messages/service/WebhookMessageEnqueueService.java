@@ -13,6 +13,7 @@ package com.agnitas.emm.core.webhooks.messages.service;
 import java.time.ZonedDateTime;
 
 import com.agnitas.emm.common.UserStatus;
+
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 
@@ -57,7 +58,6 @@ public interface WebhookMessageEnqueueService {
 	 * @param customerID recipient ID
 	 */
 	void enqueueTestMailDeliveredMessage(int companyID, int mailingID, int customerID, ZonedDateTime deliveryTimestamp);
-
 
 	/**
 	 * Enqueues a message for {@link WebhookEventType#HARD_BOUNCE} event.

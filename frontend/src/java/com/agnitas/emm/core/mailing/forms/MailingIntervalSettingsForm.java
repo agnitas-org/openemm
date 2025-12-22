@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.forms;
 
-import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
+import com.agnitas.emm.core.mailing.enums.MailingIntervalType;
 import com.agnitas.util.AgnUtils;
 
 public class MailingIntervalSettingsForm {
@@ -22,7 +22,7 @@ public class MailingIntervalSettingsForm {
     private int numberOfMonth;
     private Integer weekdayOrdinal;
     private String intervalTime;
-    private MailingParameterDao.IntervalType intervalType = MailingParameterDao.IntervalType.None;
+    private MailingIntervalType intervalType = MailingIntervalType.NONE;
 
     public int getDayOfMonth() {
         return dayOfMonth;
@@ -66,11 +66,11 @@ public class MailingIntervalSettingsForm {
         return false;
     }
 
-    public MailingParameterDao.IntervalType getIntervalType() {
+    public MailingIntervalType getIntervalType() {
         return intervalType;
     }
 
-    public void setIntervalType(MailingParameterDao.IntervalType intervalType) {
+    public void setIntervalType(MailingIntervalType intervalType) {
         this.intervalType = intervalType;
     }
 

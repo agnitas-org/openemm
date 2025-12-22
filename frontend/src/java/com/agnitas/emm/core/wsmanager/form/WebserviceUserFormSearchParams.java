@@ -35,11 +35,4 @@ public class WebserviceUserFormSearchParams implements FormSearchParams<Webservi
         filter.setDefaultDataSourceId(this.defaultDataSourceId);
     }
 
-    @Override
-    public void resetParams() {
-        username = null;
-        status = null;
-        companyId = null;
-        defaultDataSourceId = null;
-    }
 }

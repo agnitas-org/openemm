@@ -14,15 +14,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import com.agnitas.messages.I18nString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.messages.I18nString;
-
 public class SafeString {
 	
-	private static final Logger logger = LogManager.getLogger( SafeString.class);
+	private static final Logger logger = LogManager.getLogger(SafeString.class);
 	
 	/**
 	 * Check String to be a safe DbTableName and in case return this String.
@@ -33,7 +32,7 @@ public class SafeString {
 	public static String getSafeDbTableName(String tableName) {
 		if (StringUtils.isBlank(tableName)) {
 			logger.error("Found invalid empty tablename");
-			throw new RuntimeException("Found invalid empty tablename");
+			throw new IllegalArgumentException("Found invalid empty tablename");
 		} else {
 			tableName = tableName.toLowerCase().trim();
 			Pattern tableNamePattern = Pattern.compile("^[a-z0-9_]{1,30}$");
@@ -41,7 +40,7 @@ public class SafeString {
 				return tableName;
 			} else {
 				logger.error("Found invalid tablename '{}'", tableName);
-				throw new RuntimeException("Found invalid tablename '" + tableName + "'");
+				throw new IllegalArgumentException("Found invalid tablename '" + tableName + "'");
 			}
 		}
     }
@@ -55,7 +54,7 @@ public class SafeString {
 	public static String getSafeDbColumnName(String columnName) {
 		if (StringUtils.isBlank(columnName)) {
 			logger.error("Found invalid empty columnname");
-			throw new RuntimeException("Found invalid empty columnname");
+			throw new IllegalArgumentException("Found invalid empty columnname");
 		} else {
 			columnName = columnName.toLowerCase().trim();
 			Pattern tableNamePattern = Pattern.compile("^[a-z0-9_]{1,30}$");
@@ -63,7 +62,7 @@ public class SafeString {
 				return columnName;
 			} else {
 				logger.error("Found invalid columnname '{}'", columnName);
-				throw new RuntimeException("Found invalid columnname '" + columnName + "'");
+				throw new IllegalArgumentException("Found invalid columnname '" + columnName + "'");
 			}
 		}
     }

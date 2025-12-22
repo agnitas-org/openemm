@@ -10,17 +10,17 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
-import com.agnitas.web.CdnImage;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
+import com.agnitas.web.CdnImage;
 
 public interface MailingComponentDao {
 	 /**
@@ -161,15 +161,11 @@ public interface MailingComponentDao {
 
 	Date getComponentTime(int companyID, int mailingID, String name);
 
-	Map<Integer, Date> getImageComponentsTimestamps(int companyID, int mailingID);
-
 	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, int companyID);
 
     Map<Integer, Integer> getImageSizes(int companyID, int mailingID);
 
 	Map<Integer, String> getImageNames(int companyId, int mailingId, boolean includeExternalImages);
-
-	boolean exists(int mailingID, int companyID, int componentID);
 
 	boolean attachmentExists(int companyId, int mailingId, String name, int targetId);
 
@@ -203,7 +199,7 @@ public interface MailingComponentDao {
 
 	List<String> getImagesNames(int mailingId, Set<Integer> ids, int companyID);
 
-	PaginatedListImpl<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter);
+	PaginatedList<MailingComponent> getImagesOverview(int companyID, int mailingID, MailingImagesOverviewFilter filter);
 
 	List<String> getMailingImagesNamesForMobileAlternative(int mailingId, int companyId);
 }

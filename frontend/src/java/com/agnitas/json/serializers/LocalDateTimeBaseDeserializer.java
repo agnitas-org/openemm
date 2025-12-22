@@ -51,7 +51,7 @@ public abstract class LocalDateTimeBaseDeserializer<T> extends StdDeserializer<T
         }
     }
 
-    protected abstract T deserializeOne(JsonParser parser, DeserializationContext context) throws DateTimeException, IOException;
+    protected abstract T deserializeOne(JsonParser parser, DeserializationContext context) throws IOException;
 
     protected int getInt(JsonParser parser, DeserializationContext context) throws IOException {
         return getInt(parser, context, 0, true);

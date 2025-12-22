@@ -2,11 +2,6 @@
     // Defines images to be used for icons (depending on their types) and connection anchors positioning.
     var ICONS_CONFIG = {
         actionbased_mailing: {
-            icons: {
-                inactive: 'icon_actionbased_mailing_g.png',
-                active: 'icon_actionbased_mailing_l.png',
-                dialog: 'icon_actionbased_mailing_s.png'
-            },
             anchors: [
                 [0.07, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -15,11 +10,6 @@
             ]
         },
         mailing_mediatype_sms: {
-            icons: {
-                inactive: 'icon_sms_g.png',
-                active: 'icon_sms_l.png',
-                dialog: 'icon_sms_s.png'
-            },
             anchors: [
                 [0.07, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -28,11 +18,6 @@
             ]
         },
         mailing_mediatype_post: {
-            icons: {
-                inactive: 'icon_post_g.png',
-                active: 'icon_post_l.png',
-                dialog: 'icon_post_s.png'
-            },
             anchors: [
                 [0.07, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -41,11 +26,6 @@
             ]
         },
         archive: {
-            icons: {
-                inactive: 'icon_archive_g.png',
-                active: 'icon_archive_l.png',
-                dialog: 'icon_archive_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -54,11 +34,6 @@
             ]
         },
         datebased_mailing: {
-            icons: {
-                inactive: 'icon_datebased_mailing_g.png',
-                active: 'icon_datebased_mailing_l.png',
-                dialog: 'icon_datebased_mailing_s.png'
-            },
             anchors: [
                 [0.07, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -67,11 +42,6 @@
             ]
         },
         deadline: {
-            icons: {
-                inactive: 'icon_deadline_g.png',
-                active: 'icon_deadline_l.png',
-                dialog: 'icon_deadline_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.05, 0, -1],
@@ -80,11 +50,6 @@
             ]
         },
         decision: {
-            icons: {
-                inactive: 'icon_decision_g.png',
-                active: 'icon_decision_l.png',
-                dialog: 'icon_decision_s.png'
-            },
             anchors: [
                 [0.06, 0.5, -1, 0],
                 [0.5, 0.06, 0, -1],
@@ -93,11 +58,6 @@
             ]
         },
         export: {
-            icons: {
-                inactive: 'icon_export_g.png',
-                active: 'icon_export_l.png',
-                dialog: 'icon_export_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.1, 0, -1],
@@ -106,11 +66,6 @@
             ]
         },
         followup_mailing: {
-            icons: {
-                inactive: 'icon_followup_mailing_g.png',
-                active: 'icon_followup_mailing_l.png',
-                dialog: 'icon_followup_mailing_s.png'
-            },
             anchors: [
                 [0.04, 0.5, -1, 0],
                 [0.5, 0.20, 0, -1],
@@ -119,11 +74,6 @@
             ]
         },
         form: {
-            icons: {
-                inactive: 'icon_form_g.png',
-                active: 'icon_form_l.png',
-                dialog: 'icon_form_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -132,11 +82,6 @@
             ]
         },
         import: {
-            icons: {
-                inactive: 'icon_import_g.png',
-                active: 'icon_import_l.png',
-                dialog: 'icon_import_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.1, 0, -1],
@@ -145,11 +90,14 @@
             ]
         },
         mailing: {
-            icons: {
-                inactive: 'icon_mailing_g.png',
-                active: 'icon_mailing_l.png',
-                dialog: 'icon_mailing_s.png'
-            },
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.22, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.78, 0, 1]
+            ]
+        },
+        split: {
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -158,11 +106,6 @@
             ]
         },
         ownWorkflow: {
-            icons: {
-                inactive: 'icon_ownWorkflow_g.png',
-                active: 'icon_ownWorkflow_l.png',
-                dialog: 'icon_ownWorkflow_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.22, 0, -1],
@@ -171,11 +114,6 @@
             ]
         },
         parameter: {
-            icons: {
-                inactive: 'icon_parameter_g.png',
-                active: 'icon_parameter_l.png',
-                dialog: 'icon_parameter_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.1, 0, -1],
@@ -184,11 +122,6 @@
             ]
         },
         recipient: {
-            icons: {
-                inactive: 'icon_recipient_g.png',
-                active: 'icon_recipient_l.png',
-                dialog: 'icon_recipient_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.1, 0, -1],
@@ -197,11 +130,6 @@
             ]
         },
         scABTest: {
-            icons: {
-                inactive: 'icon_scABTest_g.png',
-                active: 'icon_scABTest_l.png',
-                dialog: 'icon_scABTest_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.15, 0, -1],
@@ -210,11 +138,6 @@
             ]
         },
         scBirthday: {
-            icons: {
-                inactive: 'icon_scBirthday_g.png',
-                active: 'icon_scBirthday_l.png',
-                dialog: 'icon_scBirthday_s.png'
-            },
             anchors: [
                 [0.1, 0.5, -1, 0],
                 [0.5, 0.1, 0, -1],
@@ -223,11 +146,6 @@
             ]
         },
         scDOI: {
-            icons: {
-                inactive: 'icon_scDOI_g.png',
-                active: 'icon_scDOI_l.png',
-                dialog: 'icon_scDOI_s.png'
-            },
             anchors: [
                 [0.3, 0.5, -1, 0],
                 [0.5, 0.04, 0, -1],
@@ -235,12 +153,55 @@
                 [0.5, 0.96, 0, 1]
             ]
         },
+        welcomeTrack: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        welcomeTrackWithIncentive: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        anniversaryMail: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        birthdayWithCoupon: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        shoppingCartAbandonersSmall: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
+        shoppingCartAbandonersLarge: {
+            anchors: [
+                [0.1, 0.5, -1, 0],
+                [0.5, 0.1, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.9, 0, 1]
+            ]
+        },
         start: {
-            icons: {
-                inactive: 'icon_start_g.png',
-                active: 'icon_start_l.png',
-                dialog: 'icon_start_s.png'
-            },
             anchors: [
                 [0, 0.5, -1, 0],
                 [0.5, 0.15, 0, -1],
@@ -249,11 +210,6 @@
             ]
         },
         stop: {
-            icons: {
-                inactive: 'icon_start_g.png',
-                active: 'icon_stop_l.png',
-                dialog: 'icon_start_s.png'
-            },
             anchors: [
                 [0, 0.5, -1, 0],
                 [0.5, 0.15, 0, -1],
@@ -303,7 +259,8 @@
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
-            mailing: true
+            mailing: true,
+            split: true,
         },
         parameter: {
             stop: true,
@@ -332,7 +289,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         recipient: {
             decision: true,
@@ -348,7 +306,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         actionbased_mailing: {
             stop: true,
@@ -394,6 +353,9 @@
             import: true,
             export: true
         },
+        split: {
+            parameter: true
+        },
         mailing_mediatype_sms: {
             stop: true,
             decision: true,
@@ -428,7 +390,8 @@
             followup_mailing: true,
             mailing: true,
             import: true,
-            export: true
+            export: true,
+            split: true,
         },
         form: {
             stop: true,
@@ -467,7 +430,8 @@
             import: true,
             export: true,
             archive: true,
-            form: true
+            form: true,
+            split: true,
         }
     };
 
@@ -543,11 +507,11 @@
 
         MAX_UNDO_STEPS: 17,
 
-        CONNECTION_COLOR: '#61B7CF',
+        CONNECTION_COLOR: 'var(--workflow-connection-color)',
         CONNECTION_THICKNESS: 3,
         CONNECTION_OUTLINE_COLOR: 'transparent',
         CONNECTION_OUTLINE_WIDTH: 4,
-        CONNECTION_HOVER_COLOR: '#216477',
+        CONNECTION_HOVER_COLOR: 'var(--workflow-connection-hover-color)',
         CONNECTION_ARROW_SIZE: 10,
 
         NODE_TYPE_START: 'start',
@@ -560,9 +524,16 @@
         NODE_TYPE_FORM: 'form',
         NODE_TYPE_MAILING: 'mailing',
         NODE_TYPE_OWN_WORKFLOW: 'ownWorkflow',
+        NODE_TYPE_SPLIT: 'split',
         NODE_TYPE_SC_BIRTHDAY: 'scBirthday',
         NODE_TYPE_SC_DOI: 'scDOI',
         NODE_TYPE_SC_ABTEST: 'scABTest',
+        NODE_TYPE_BIRTHDAY_WITH_COUPON: 'birthdayWithCoupon',
+        NODE_TYPE_WELCOME_TRACK: 'welcomeTrack',
+        NODE_TYPE_WELCOME_TRACK_WITH_INCENTIVE: 'welcomeTrackWithIncentive',
+        NODE_TYPE_SHOPPING_CART_ABANDONERS_SMALL: 'shoppingCartAbandonersSmall',
+        NODE_TYPE_SHOPPING_CART_ABANDONERS_LARGE: 'shoppingCartAbandonersLarge',
+        NODE_TYPE_ANNIVERSARY_MAIL: 'anniversaryMail',
         NODE_TYPE_ACTION_BASED_MAILING: 'actionbased_mailing',
         NODE_TYPE_MAILING_MEDIATYPE_SMS: 'mailing_mediatype_sms',
         NODE_TYPE_MAILING_MEDIATYPE_POST: 'mailing_mediatype_post',

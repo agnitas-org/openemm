@@ -13,7 +13,7 @@ package com.agnitas.emm.springws.endpoint.mailinglist;
 import java.util.Objects;
 
 import com.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistModel;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.ListMailinglistsRequest;

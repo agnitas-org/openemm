@@ -15,21 +15,19 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Vector;
 
-import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class ExtensibleUIDStringBuilderChain implements ExtensibleUIDStringBuilder {
 
-	/** Logger. */
-	private static final transient Logger logger = LogManager.getLogger( ExtensibleUIDStringBuilderChain.class);
+	private static final Logger logger = LogManager.getLogger( ExtensibleUIDStringBuilderChain.class);
 	
 	// ------------------------------------------------------------------------------ Dependency Injection
 	

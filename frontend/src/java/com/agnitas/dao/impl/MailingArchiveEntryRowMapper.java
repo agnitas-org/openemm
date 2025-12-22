@@ -15,7 +15,7 @@ import java.sql.SQLException;
 
 import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.emm.core.mailing.beans.MailingArchiveEntry;
+import com.agnitas.emm.core.mailing.bean.MailingArchiveEntry;
 import org.springframework.jdbc.core.RowMapper;
 
 public class MailingArchiveEntryRowMapper implements RowMapper<MailingArchiveEntry> {

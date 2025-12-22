@@ -11,6 +11,7 @@
 package com.agnitas.beans;
 
 public enum ProfileFieldMode {
+
 	/**
 	 * Show this field in GUI for edit (StorageCode 0)
 	 */
@@ -26,7 +27,7 @@ public enum ProfileFieldMode {
 	 */
 	NotVisible(2, "notVisible");
 	
-	private int storageCode;
+	private final int storageCode;
 	private final String messageKey;
 
 	public int getStorageCode() {
@@ -42,21 +43,21 @@ public enum ProfileFieldMode {
 		this.messageKey = messageKey;
 	}
 
-	public static ProfileFieldMode getProfileFieldModeForStorageCode(int storageCode) throws Exception {
+	public static ProfileFieldMode getProfileFieldModeForStorageCode(int storageCode) {
 		for (ProfileFieldMode profileFieldMode : ProfileFieldMode.values()) {
 			if (profileFieldMode.storageCode == storageCode) {
 				return profileFieldMode;
 			}
 		}
-		throw new Exception("Unknown storage code for ProfileFieldMode: " + storageCode);
+		throw new IllegalArgumentException("Unknown storage code for ProfileFieldMode: " + storageCode);
 	}
 
-	public static ProfileFieldMode getProfileFieldModeForName(String name) throws Exception {
+	public static ProfileFieldMode getProfileFieldModeForName(String name) {
 		for (ProfileFieldMode profileFieldMode : ProfileFieldMode.values()) {
 			if (profileFieldMode.name().equalsIgnoreCase(name)) {
 				return profileFieldMode;
 			}
 		}
-		throw new Exception("Unknown name for ProfileFieldMode: " + name);
+		throw new IllegalArgumentException("Unknown name for ProfileFieldMode: " + name);
 	}
 }

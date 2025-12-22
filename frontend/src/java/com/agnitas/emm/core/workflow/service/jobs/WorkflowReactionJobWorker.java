@@ -10,19 +10,21 @@
 
 package com.agnitas.emm.core.workflow.service.jobs;
 
+import java.util.List;
+
+import com.agnitas.beans.CompaniesConstraints;
 import com.agnitas.emm.core.workflow.beans.WorkflowReaction;
 import com.agnitas.emm.core.workflow.dao.WorkflowReactionDao;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
-import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 import org.apache.commons.collections4.CollectionUtils;
-
-import java.util.List;
 
 /**
  * Handles start-icon reactions
  */
-public class WorkflowReactionJobWorker extends JobWorker {
+@JobWorker("WorkflowReactionHandler")
+public class WorkflowReactionJobWorker extends JobWorkerBase {
 
     private WorkflowReactionDao reactionDao;
     private WorkflowService workflowService;

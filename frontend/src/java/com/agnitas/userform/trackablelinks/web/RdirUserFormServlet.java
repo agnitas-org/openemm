@@ -11,43 +11,41 @@
 package com.agnitas.userform.trackablelinks.web;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.beans.BaseTrackableLink;
+import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.RecipientFactory;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
-import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.context.ApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.LinkProperty;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
+import com.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.trackablelinks.bean.TrackableUserFormLink;
+import com.agnitas.util.AgnUtils;
 import com.agnitas.util.LinkUtils;
-
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * redirect servlet for links within a user form
@@ -290,7 +288,7 @@ public class RdirUserFormServlet extends HttpServlet {
 		logger.debug("Finished RdirUserFormServlet");
 	}
 
-	private String createDirectLinkWithOptionalExtensions(final ExtensibleUID uid, final TrackableUserFormLink trackableUserFormLink) throws UnsupportedEncodingException {
+	private String createDirectLinkWithOptionalExtensions(ExtensibleUID uid, TrackableUserFormLink trackableUserFormLink) {
 		String linkString = trackableUserFormLink.getFullUrl();
 		Map<String, Object> cachedRecipientData = null;
 		for (LinkProperty linkProperty : trackableUserFormLink.getProperties()) {
@@ -310,7 +308,7 @@ public class RdirUserFormServlet extends HttpServlet {
                     propertyValue = AgnUtils.replaceHashTags(propertyValue, cachedRecipientData);
 				}
 				// Extend link properly (watch out for html-anchors etc.)
-				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, "UTF-8");
+				linkString = AgnUtils.addUrlParameter(linkString, linkProperty.getPropertyName(), propertyValue == null ? "" : propertyValue, StandardCharsets.UTF_8);
 			}
 		}
 		return linkString;

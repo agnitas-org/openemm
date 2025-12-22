@@ -17,7 +17,7 @@ import com.agnitas.emm.core.mailing.enums.MailingRecipientType;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
 import com.agnitas.beans.BindingEntry;
 import com.agnitas.beans.Recipient;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.impl.RecipientImpl;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements MailingRecipientsDao {
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int maxCompanyRecipients,
+    public PaginatedList<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, Set<String> recipientsFields, int maxCompanyRecipients,
                                                                            int mailingId, int companyId) {
         int pageNumber = filter.getPage();
         int pageSize = filter.getNumberOfRows();
@@ -71,8 +71,8 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
                 selectSql = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectSql + ") selection) WHERE r BETWEEN ? AND ?";
                 params.addAll(List.of((offset - pageSize + 1), offset));
             } else {
-                selectSql = selectSql + " LIMIT ?, ?";
-                params.addAll(List.of((offset - pageSize), pageSize));
+                selectSql = selectSql + " LIMIT ? OFFSET ?";
+                params.addAll(List.of(pageSize, (offset - pageSize)));
             }
         }
 
@@ -82,7 +82,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
         ));
 
         List<MailingRecipientStatRow> recipients = select(selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
-        PaginatedListImpl<MailingRecipientStatRow> list = new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, "", filter.ascending());
+        PaginatedList<MailingRecipientStatRow> list = new PaginatedList<>(recipients, totalRows, pageSize, pageNumber, "", filter.ascending());
 
         if (filter.isUiFiltersSet()) {
             list.setNotFilteredFullListSize(getNumberOfMailingRecipients(companyId, null, mailingId, mailingListId, columns));
@@ -189,7 +189,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
         final boolean sortAscending = filter.ascending();
 
         String sortClause = "ORDER BY ";
-        if (isOracleDB()) {
+        if (isOracleDB() || isPostgreSQL()) {
             sortClause += sortCriterion + " " + (sortAscending ? "ASC" : "DESC") + " NULLS LAST";
         } else {
             // Force MySQL sort null values the same way that Oracle does
@@ -302,7 +302,7 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
             String filteredRowNumSelect = String.format("SELECT s1.customer_id, %s, rownum AS r FROM (%s) s1", s1Columns, filteringQuery);
             limitedFilteredSelect = String.format("SELECT s2.customer_id, %s, s2.r FROM (%s) s2 WHERE s2.r BETWEEN 1 AND ?", s2Columns, filteredRowNumSelect);
         } else {
-            limitedFilteredSelect = filteringQuery + " LIMIT 0, ?";
+            limitedFilteredSelect = filteringQuery + " LIMIT ? OFFSET 0";
         }
 
         params.add(pageSize);
@@ -380,8 +380,9 @@ public class MailingRecipientsDaoImpl extends PaginatedBaseDaoImpl implements Ma
     }
 
     private class MailingRecipientStatRow_RowMapper implements RowMapper<MailingRecipientStatRow> {
-        private int companyId;
-        private List<String> selectedColumns;
+
+        private final int companyId;
+        private final List<String> selectedColumns;
 
         public MailingRecipientStatRow_RowMapper(int companyId, List<String> selectedColumns) {
             this.companyId = companyId;

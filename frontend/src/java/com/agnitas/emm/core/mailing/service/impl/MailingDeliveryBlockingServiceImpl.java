@@ -29,12 +29,6 @@ public class MailingDeliveryBlockingServiceImpl implements MailingDeliveryBlocki
     }
 
     @Override
-    public void blockDeliveryByAutoImport(int autoImportId, int mailingId, int companyId) {
-        int maildropStatusId = maildropService.getLastMaildropEntryId(mailingId, companyId);
-        blockByAutoImport(mailingId, autoImportId, maildropStatusId);
-    }
-
-    @Override
     public void blockByAutoImport(int mailingId, int autoImportId, int maildropStatusId) {
         if (!mailingDeliveryBlockingDao.isAutoImportBlockingEntryExists(mailingId)) {
             mailingDeliveryBlockingDao.createBlocking(mailingId, autoImportId, maildropStatusId);

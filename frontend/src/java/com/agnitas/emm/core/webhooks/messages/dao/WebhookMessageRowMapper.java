@@ -31,7 +31,7 @@ final class WebhookMessageRowMapper implements RowMapper<WebhookMessage> {
 	public static final WebhookMessageRowMapper INSTANCE = new WebhookMessageRowMapper();
 
 	@Override
-	public final WebhookMessage mapRow(final ResultSet resultSet, final int row) throws SQLException {
+	public WebhookMessage mapRow(ResultSet resultSet, int row) throws SQLException {
 		final int companyID = resultSet.getInt("company_ref");
 		final int eventTypeCode = resultSet.getInt("event_type");
 		final Date timestamp = resultSet.getTimestamp("event_timestamp");

@@ -20,7 +20,7 @@ public enum WorkflowReactionType implements IntEnum {
     BOUGHT(5, "icon-shopping-cart", "bought"),
     NOT_BOUGHT(6, "icon-minus", "not_bought"),
     DOWNLOAD(7, "icon-download", "download"),
-    CHANGE_OF_PROFILE(8, "icon-exchange", "change_of_profile"),
+    CHANGE_OF_PROFILE(8, "icon-exchange-alt", "change_of_profile"),
     WAITING_FOR_CONFIRM(9, "icon-history", "waiting_for_confirm"),
     OPT_IN(10, "icon-sign-in", "opt_in"),
     OPT_OUT(11, "icon-sign-out", "opt_out"),

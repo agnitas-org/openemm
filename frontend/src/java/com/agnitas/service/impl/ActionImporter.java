@@ -47,11 +47,11 @@ public class ActionImporter extends BaseImporterExporter {
 	@Resource(name="EmmActionOperationDao")
 	private EmmActionOperationDao actionOperationDao;
 	
-	public int importAction(int companyID, JsonObject actionJsonObject) throws Exception {
+	public int importAction(int companyID, JsonObject actionJsonObject) {
 		return importAction(companyID, actionJsonObject, null);
 	}
 	
-	public int importAction(int companyID, JsonObject actionJsonObject, Map<Integer, Integer> mailingIdReplacements) throws Exception {
+	public int importAction(int companyID, JsonObject actionJsonObject, Map<Integer, Integer> mailingIdReplacements) {
 		String actionName = (String) actionJsonObject.get("name");
 		String actionDescription = (String) actionJsonObject.get("description");
 		String actionType = (String) actionJsonObject.get("type");
@@ -176,7 +176,7 @@ public class ActionImporter extends BaseImporterExporter {
 								break;
 							}
 						} else {
-							throw new Exception("Invalid actionoperation type: " + actionOperationType);
+							throw new UnsupportedOperationException("Invalid actionoperation type: " + actionOperationType);
 						}
 					}
 				}
@@ -272,7 +272,7 @@ public class ActionImporter extends BaseImporterExporter {
 					actionOperationUpdateCustomer.setUseTrack((Boolean) actionOperation.get("useTrack"));
 					newAction.getActionOperations().add(actionOperationUpdateCustomer);
 				} else {
-					throw new Exception("Invalid actionoperation type: " + actionOperationType);
+					throw new UnsupportedOperationException("Invalid actionoperation type: " + actionOperationType);
 				}
 			}
 			

@@ -19,7 +19,7 @@ import java.util.Optional;
 public final class RestfulQuotaDaoImpl extends BaseDaoImpl implements RestfulQuotaDao {
 
 	@Override
-	public final Optional<String> readQuotaSpecs(final String username, final int companyId) {
+	public Optional<String> readQuotaSpecs(String username, int companyId) {
 		final String sql = "SELECT quota FROM restful_quota_tbl q, admin_tbl a WHERE a.company_id=? AND a.username=? AND q.admin_id=a.admin_id";
 		
 		final List<String> list = select(sql, StringRowMapper.INSTANCE, companyId, username);

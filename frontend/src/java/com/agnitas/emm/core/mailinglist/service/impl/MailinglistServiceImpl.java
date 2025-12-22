@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mailinglist.service.impl;
 
 import static com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings.MAILINGLISTS_KEY;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,29 +22,29 @@ import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.MailinglistImpl;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.dao.TargetDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.common.service.BulkActionValidationService;
-import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.BirtReportDao;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.ForbiddenException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.MailinglistImpl;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistApprovalDao;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -103,8 +102,7 @@ public class MailinglistServiceImpl implements MailinglistService {
         this.targetDao = targetDao;
     }
     
-    @Override
-    public void bulkDelete(Collection<Integer> mailinglistIds, int companyId) {
+    protected void bulkDelete(Collection<Integer> mailinglistIds, int companyId) {
         if(mailinglistIds != null) {
             for (int mailinglistId : mailinglistIds) {
                 mailinglistDao.deleteMailinglist(mailinglistId, companyId);
@@ -112,17 +110,11 @@ public class MailinglistServiceImpl implements MailinglistService {
         }
     }
 
-    @Override
-    public List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId) {
+    private List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId) {
         return mailinglistIds
                 .stream()
                 .flatMap(id->mailingDao.getMailingsForMLID(companyId,id).stream())
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public void deleteRecipientBindings(Set<Integer> mailinglistIds, int companyId){
-        bindingEntryDao.deleteRecipientBindingsByMailinglistID(mailinglistIds, companyId);
     }
 
     @Override
@@ -211,7 +203,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     private void validateDeleteOfLastMailinglist(Collection<?> items, int companyId) {
         int mailinglistsCount = mailinglistDao.getCountOfMailinglists(companyId);
         if (mailinglistsCount <= CollectionUtils.size(items)) {
-            throw new RequestErrorException("error.mailinglist.delete.last");
+            throw new ForbiddenException("error.mailinglist.delete.last");
         }
     }
 
@@ -219,7 +211,7 @@ public class MailinglistServiceImpl implements MailinglistService {
         List<Mailing> affectedMailings = getUsedMailings(Set.of(id), companyId);
 
         List<ObjectUsage> usages = affectedMailings.stream()
-                .map(m -> new ObjectUsage(ObjectUserType.MAILING, m.getId(), m.getShortname()))
+                .map(m -> new ObjectUsage(ObjectUsageType.MAILING, m.getId(), m.getShortname()))
                 .toList();
 
         return new ObjectUsages(usages);
@@ -228,34 +220,6 @@ public class MailinglistServiceImpl implements MailinglistService {
     @Override
     public List<Mailinglist> getAllMailingListsNames(int companyId) {
         return mailinglistDao.getMailingListsNames(companyId);
-    }
-
-    @Override
-    public List<LightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId) {
-        List<Map<String, Object>> reportParams = birtReportDao.getReportParamValues(companyId, "selectedMailinglists");
-        List<LightweightBirtReport> allReportslist = birtReportDao.getLightweightBirtReportList(companyId);
-        // Put reports to Map to avoid several iterations on List of all reports
-        Map<Integer, LightweightBirtReport> allReportsMap = new HashMap<>();
-        for (LightweightBirtReport report: allReportslist) {
-            allReportsMap.put(report.getId(), report);
-        }
-        List<LightweightBirtReport> connectedReports = new ArrayList<>();
-        for (Map<String, Object> paramRow : reportParams) {
-            String value = (String) paramRow.get("parameter_value");
-            List<String> mailinglistIds = AgnUtils.splitAndTrimStringlist(value);
-            for (String mailinglistIdParam: mailinglistIds) {
-                try {
-                    if (mailinglistId == Integer.parseInt(mailinglistIdParam)) {
-                        int reportIDFromParam = ((Number) paramRow.get("report_id")).intValue();
-                        connectedReports.add(allReportsMap.get(reportIDFromParam));
-                        break;
-                    }
-                } catch (NumberFormatException e) {
-                    break;
-                }
-            }
-        }
-        return connectedReports;
     }
 
     private void deleteMailinglistFromReports(int mailinglistIdToDelete, int companyId) {
@@ -317,7 +281,7 @@ public class MailinglistServiceImpl implements MailinglistService {
         }
 
         if (!validationErrors.isEmpty()) {
-            throw new RequestErrorException(validationErrors);
+            throw new BadRequestException(validationErrors);
         }
     }
 	
@@ -366,9 +330,7 @@ public class MailinglistServiceImpl implements MailinglistService {
             entry.put("changeDate", DateUtilities.toLong(mailinglist.getChangeDate()));
             entry.put("creationDate", DateUtilities.toLong(mailinglist.getCreationDate()));
             entry.put("isFrequencyCounterEnabled", mailinglist.isFrequencyCounterEnabled());
-            if (admin.isRedesignedUiUsed()) {
-                entry.put("restrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
-            }
+            entry.put("restrictedForSomeAdmins", mailinglist.isRestrictedForSomeAdmins());
 
             mailingListsJson.put(entry);
         }

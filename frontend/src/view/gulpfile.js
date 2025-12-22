@@ -3,32 +3,27 @@ const gulp = require('gulp');
 const {
   buildJs,
   compileJs,
-  buildJsRedesigned,
-  compileJsRedesigned,
   buildBirtJs,
   compileBirtJs
 } = require('./gulp/uglify');
 
 const {
   bannerJs,
-  bannerJsRedesigned,
   bannerBirtJs,
   bannerCss,
-  bannerCssRedesigned,
   bannerLanding
 } = require('./gulp/banner');
 
 const {
   buildCSS,
-  buildRedesignedCSS,
+  buildCssForStyleguide,
   buildFormCSS,
   buildLandingCSS
 } = require('./gulp/sass');
 
 const {
-  compileCss,
-  compileRedesignedCss,
-  compileLanding
+  minifyCss,
+  minifyLanding
 } = require('./gulp/cssmin');
 
 const {
@@ -39,31 +34,27 @@ const {
 } = require('./gulp/styleguide');
 
 const {
-  oldSprite,
   workflow,
   dashboard,
   wysiwyg,
   sprite
 } = require('./gulp/svg_sprite');
 
-gulp.task('compile_js_classic', gulp.series(buildJs, compileJs, bannerJs));
-gulp.task('compile_js_redesigned', gulp.series(buildJsRedesigned, compileJsRedesigned, bannerJsRedesigned));
+gulp.task('build_js', buildJs);
+gulp.task('compile_js', gulp.series(buildJs, compileJs, bannerJs));
 gulp.task('compile_birtjs', gulp.series(bannerBirtJs, compileBirtJs, bannerBirtJs));
-gulp.task('compile_js', gulp.series('compile_js_classic', 'compile_js_redesigned'));
 
-gulp.task('compile_css', gulp.series(buildCSS, compileCss, bannerCss, buildFormCSS));
-gulp.task('compile_css_redesigned', gulp.series(buildRedesignedCSS, compileRedesignedCss, bannerCssRedesigned));
-gulp.task('compile_landing_css', gulp.series(buildLandingCSS, compileLanding, bannerLanding));
+gulp.task('compile_css', gulp.series(buildCSS, minifyCss, bannerCss));
+gulp.task('compile_landing_css', gulp.series(buildLandingCSS, minifyLanding, bannerLanding));
 gulp.task('compile_forms_css', buildFormCSS);
 
-gulp.task('svg_sprite', gulp.series(sprite, oldSprite, workflow, dashboard, wysiwyg));
-gulp.task('docs', require('./gulp/connect'));
+gulp.task('svg_sprite', gulp.series(sprite, workflow, dashboard, wysiwyg));
 
-gulp.task('styleguide', gulp.series('svg_sprite', buildJs, buildBirtJs, buildJsRedesigned, buildRedesignedCSS, cleanStyleguide, copyAssetsForStyleguide, buildStyleguide, cleanStyleguideSourceAssets));
+gulp.task('styleguide', gulp.series('svg_sprite', buildBirtJs, buildJs, buildCssForStyleguide, cleanStyleguide, copyAssetsForStyleguide, buildStyleguide, cleanStyleguideSourceAssets));
 
 gulp.task('watch', () => {
   gulp.watch(`assets/js/**/*.js`, gulp.series('compile_js'));
-  gulp.watch(`assets/sass_redesign/**/*.scss`, gulp.series('compile_css_redesigned', 'compile_landing_css', 'compile_forms_css'));
+  gulp.watch(`assets/sass/**/*.scss`, gulp.series('compile_css', 'compile_landing_css', 'compile_forms_css'));
   gulp.watch(`assets/core/images/**/*`, gulp.series('svg_sprite'));
 });
 

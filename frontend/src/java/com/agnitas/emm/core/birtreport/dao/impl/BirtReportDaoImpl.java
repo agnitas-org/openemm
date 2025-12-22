@@ -19,7 +19,6 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -29,7 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import com.agnitas.dao.impl.mapper.DateRowMapper;
@@ -59,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtReportDao {
 
-	private static final List<String> SORTABLE_FIELDS = Arrays.asList("report_id", "shortname", "description", "change_date", "delivery_date");
+	private static final List<String> SORTABLE_FIELDS = List.of("report_id", "shortname", "description", "change_date", "delivery_date");
 
 	private static final ReportEntryRowMapper REPORT_ENTRY_ROW_MAPPER = new ReportEntryRowMapper();
 
@@ -96,31 +95,9 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 	}
 
 	@Override
-	public List<LightweightBirtReport> getLightweightBirtReportList(int companyID) {
-		String sqlGetReports = "SELECT report_id, shortname, description, hidden FROM birtreport_tbl " +
-				"WHERE company_id = ? AND deleted = 0 ORDER BY LOWER(shortname)";
-		return select(sqlGetReports, new LightweightBirtReportRowMapper(), companyID);
-	}
-
-	@Override
 	public Date getReportActivationDay(int companyId, int reportId) {
 		return selectObjectDefaultNull(
 				"SELECT activation_date FROM birtreport_tbl WHERE report_id = ? AND company_id = ?", DateRowMapper.INSTANCE, reportId, companyId);
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public List<BirtReport> getReportsByIds(List<Integer> reportIds) {
-		List<BirtReport> list = new ArrayList<>();
-		if (CollectionUtils.isNotEmpty(reportIds)) {
-			String query = "SELECT report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, intervalpattern, nextstart, hidden, change_date"
-					+ " FROM birtreport_tbl WHERE deleted = 0 AND " + makeBulkInClauseForInteger("report_id", reportIds);
-			list = select(query, new BirtReportRowMapper());
-			for (BirtReport birtReport : list) {
-				getReportProperties(birtReport);
-			}
-		}
-		return list;
 	}
 
 	@Override
@@ -144,22 +121,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 	}
 
 	@Override
-	// TODO: EMMGUI-714: remove when old design will be removed
-	public PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String direction, int pageNumber, int rownums) {
-		String sql = "SELECT report_id, company_id, shortname, description, hidden, change_date, (SELECT MAX(delivery_date) FROM birtreport_sent_mailings_tbl WHERE birtreport_sent_mailings_tbl.report_id = birtreport_tbl.report_id) AS delivery_date FROM birtreport_tbl WHERE company_id = ? AND hidden = 0 AND deleted = 0";
-
-		if (!SORTABLE_FIELDS.contains(sort)) {
-			sort = "shortname";
-		}
-
-		boolean sortAscending = AgnUtils.sortingDirectionToBoolean(direction, true);
-		String sortTable = "delivery_date".equalsIgnoreCase(sort) ? "birtreport_sent_mailings_tbl" : "birtreport_tbl";
-
-		return selectPaginatedList(sql, sortTable, sort, sortAscending, pageNumber, rownums, REPORT_ENTRY_ROW_MAPPER, companyId);
-	}
-
-	@Override
-	public PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId) {
+	public PaginatedList<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId) {
 		String sort = filter.getSort();
 		StringBuilder query = new StringBuilder("SELECT br.report_id, br.company_id, br.shortname, br.description, br.hidden, br.change_date, MAX(bsm.delivery_date) AS delivery_date FROM birtreport_tbl br LEFT JOIN birtreport_sent_mailings_tbl bsm ON bsm.report_id = br.report_id");
 		List<Object> params = applyOverviewFilter(filter, companyId, query);
@@ -188,7 +150,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		boolean sortAscending = AgnUtils.sortingDirectionToBoolean(filter.getOrder(), true);
 		String sortTable = "delivery_date".equalsIgnoreCase(sort) ? "birtreport_sent_mailings_tbl" : "birtreport_tbl";
 
-		PaginatedListImpl<ReportEntry> list = selectPaginatedList(query.toString(), sortTable, sort, sortAscending,
+		PaginatedList<ReportEntry> list = selectPaginatedList(query.toString(), sortTable, sort, sortAscending,
 				filter.getPage(), filter.getNumberOfRows(), REPORT_ENTRY_ROW_MAPPER, params.toArray());
 
 		if (filter.isUiFiltersSet()) {
@@ -229,8 +191,8 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 
 	@Override
 	public String getReportName(int companyId, int reportId) {
-		return select("SELECT shortname FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND deleted = 0 AND hidden = 0",
-				String.class, reportId, companyId);
+		return selectStringDefaultNull("SELECT shortname FROM birtreport_tbl WHERE report_id = ? AND company_id = ? AND deleted = 0 AND hidden = 0",
+				reportId, companyId);
 	}
 
 	@Override
@@ -306,16 +268,16 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		if (recipientsRequired(report)) {
 			throw new IllegalArgumentException("Recipients for report are empty: " + report.getId());
 		}
-		
+
 		report.calculateSendDate();
-		
+
 		if (isOracleDB()) {
 			int newReportID = selectInt("SELECT birtreport_tbl_seq.NEXTVAL FROM DUAL");
 			report.setId(newReportID);
 			if (report.getId() == 0) {
 				return false;
 			}
-			
+
 			String sql = "INSERT INTO birtreport_tbl (report_id, company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, hidden, intervalpattern, nextstart, change_date)"
 					+ " VALUES (" + AgnUtils.repeatString("?", 16, ", ") + ", CURRENT_TIMESTAMP)";
 			try {
@@ -336,7 +298,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 					BooleanUtils.toInteger(report.isHidden()),
 					report.getIntervalpattern(),
 					report.getNextStart());
-				
+
 				storeBirtReportEmailRecipients(report);
 			} catch (Exception e) {
 				logger.error("Error inserting report", e);
@@ -346,9 +308,9 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		} else {
 			String statement = "INSERT INTO birtreport_tbl (company_id, shortname, description, active, report_type, format, email_subject, email_description, activation_date, end_date, active_tab, language, hidden, intervalpattern, nextstart, change_date)"
 					+ " VALUES (" + AgnUtils.repeatString("?", 15, ", ") + ", CURRENT_TIMESTAMP)";
-			
+
 			try {
-				int reportID = insertIntoAutoincrementMysqlTable("report_id", statement,
+				int reportID = insert("report_id", statement,
 					report.getCompanyID(),
 					report.getShortname(),
 					report.getDescription(),
@@ -367,7 +329,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				);
 
 				report.setId(reportID);
-				
+
 				storeBirtReportEmailRecipients(report);
 			} catch (RuntimeException e) {
 				// logging is already done
@@ -394,16 +356,16 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 	public boolean update(BirtReport report) {
 		return update(report, Collections.emptyList());
 	}
-	
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean update(BirtReport report, List<Integer> justDeactivateSettingTypes) {
 		if (recipientsRequired(report)) {
 			throw new IllegalArgumentException("Recipients for report are empty: " + report.getId());
 		}
-	
+
 		report.calculateSendDate();
-		
+
 		String sql = "UPDATE birtreport_tbl SET shortname = ?, description = ?, active = ?, report_type = ?, format = ?, email_subject = ?, email_description = ?, activation_date = ?, end_date = ?, active_tab = ?, language = ?, intervalpattern = ?, nextstart = ?, change_date = CURRENT_TIMESTAMP WHERE report_id = ? AND company_id = ?";
 
 		try {
@@ -423,7 +385,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				report.getNextStart(),
 				report.getId(),
 				report.getCompanyID());
-			
+
 			deleteReportParameters(report, justDeactivateSettingTypes);
 			deactivateReportSettings(report.getId(), justDeactivateSettingTypes);
 			report.getSettings().stream()
@@ -431,7 +393,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 					.forEach(setting -> insertReportProperties(report.getId(), setting));
 
 			storeBirtReportEmailRecipients(report);
-			
+
 			return true;
 		} catch (Exception e) {
 			logger.error("Error updating report {}", report.getId(), e);
@@ -472,7 +434,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				BirtReportType.TYPE_AFTER_MAILING_48HOURS.getKey(),
 				BirtReportType.TYPE_AFTER_MAILING_WEEK.getKey(),
 				BirtReportSettings.PREDEFINED_ID_KEY,
-				mailingId
+				String.valueOf(mailingId)
 		);
 	}
 
@@ -512,12 +474,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
                 mailinglistIdsString.isEmpty() ? " " : mailinglistIdsString, reportId, reportType, BirtReportSettings.MAILINGLISTS_KEY);
     }
 
-	@DaoUpdateReturnValueCheck
-	public void deleteReportParameters(BirtReport report) {
-		deleteReportParameters(report, Collections.emptyList());
-	}
-
-	public void deleteReportParameters(BirtReport report, List<Integer> skipReportSettings) {
+	protected void deleteReportParameters(BirtReport report, List<Integer> skipReportSettings) {
 		try {
 			String deletionSql = "DELETE FROM birtreport_parameter_tbl WHERE report_id = ?";
 			if (CollectionUtils.isNotEmpty(skipReportSettings)) {
@@ -537,11 +494,11 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		} else {
 			String statement = "INSERT INTO birtreport_sent_mailings_tbl (report_id, company_id, mailing_id, delivery_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
 			List<Object[]> batchArgs = new ArrayList<>();
-	
+
 			for (Integer mailingID : sentMailings) {
 				batchArgs.add(new Object[] { reportId, companyID, mailingID });
 			}
-	
+
 			batchupdate(statement, batchArgs);
 		}
 	}
@@ -569,8 +526,9 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				"AND param.parameter_value NOT IN (' ') " +
 				(isOracleDB() ?
 					"AND INSTR(',' || parameter_value || ',', ',' || ? || ',') <> 0 "
-					:
-					"AND INSTR(CONCAT(',', parameter_value, ','), CONCAT(',', ?, ',')) <> 0 "
+					: isPostgreSQL()
+						? "AND POSITION(',' || ? || ',' IN ',' || parameter_value || ',') > 0 "
+                        : "AND INSTR(CONCAT(',', parameter_value, ','), CONCAT(',', ?, ',')) <> 0 "
 				) +
 				"ORDER BY param.report_id";
 
@@ -582,15 +540,15 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		String statement = "INSERT INTO birtreport_parameter_tbl (report_id, report_type, parameter_name, parameter_value) VALUES (?, ?, ?, ?)";
 		ReportSettingsType type = birtReportSettings.getReportSettingsType();
 		Map<String, Object> settingsMap = birtReportSettings.getSettingsMap();
-		
+
 		List<Object[]> batchArgs = new ArrayList<>();
-		
+
 		settingsMap.entrySet().stream()
 				.filter(pair -> Objects.nonNull(pair.getKey()) && Objects.nonNull(pair.getValue()))
 				.filter(pair -> StringUtils.isNotEmpty(pair.getValue().toString()))
 				.map(entry -> new Object[] {reportId, type.getKey(), entry.getKey(), entry.getValue().toString()})
 				.forEach(batchArgs::add);
-		
+
 		batchupdate(statement, batchArgs);
 	}
 
@@ -658,7 +616,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 		}
 	}
 
-    protected class LightweightBirtReportRowMapper implements RowMapper<LightweightBirtReport> {
+    protected static class LightweightBirtReportRowMapper implements RowMapper<LightweightBirtReport> {
         @Override
         public LightweightBirtReport mapRow(ResultSet resultSet, int row) throws SQLException {
             try {
@@ -674,7 +632,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
             }
         }
     }
-	
+
 	public void setBirtReportFactory(BirtReportFactory birtReportFactory) {
 		this.birtReportFactory = birtReportFactory;
 	}
@@ -686,27 +644,32 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 			"UPDATE birtreport_tbl SET running = 0, nextstart = CURRENT_TIMESTAMP WHERE lasthostname = ? AND running = 1",
 			AgnUtils.getHostName());
 	}
-	
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	@Transactional
-	public final boolean announceStart(final BirtReport birtReport) {
-		if(birtReport.getId() <= 0) {
+	public boolean announceStart(BirtReport birtReport) {
+		if (birtReport.getId() <= 0) {
 			return false;
 		}
-		
-		try {
-			// Lock rows against modification by other sessions
-			final String updateJobStatusSql = "UPDATE birtreport_tbl SET running = 1, nextstart = ?, lasthostname = ?, laststart = CURRENT_TIMESTAMP WHERE report_id = ? AND running <= 0";
-			final Timestamp nextStartTimestamp = birtReport.getNextStart() != null ? new Timestamp(birtReport.getNextStart().getTime()) : null;
-			int touchedLines = update(updateJobStatusSql, nextStartTimestamp, AgnUtils.getHostName(), birtReport.getId());
-			return touchedLines == 1;
-		} catch(final Exception e) {
-			logger.error("Error while setting birtreport status", e);
-			throw new RuntimeException("Error while setting birtreport status", e);
-		}
+
+		// Lock rows against modification by other sessions
+		String updateJobStatusSql = """
+				UPDATE birtreport_tbl
+				SET running      = 1,
+				    nextstart    = ?,
+				    lasthostname = ?,
+				    laststart    = CURRENT_TIMESTAMP
+				WHERE report_id = ?
+				  AND running <= 0
+				""";
+		Timestamp nextStartTimestamp = birtReport.getNextStart() != null
+				? new Timestamp(birtReport.getNextStart().getTime())
+				: null;
+
+        return update(updateJobStatusSql, nextStartTimestamp, AgnUtils.getHostName(), birtReport.getId()) == 1;
 	}
-	
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void announceEnd(BirtReport birtReport) {
@@ -738,7 +701,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 								+ " OR "
 								+ "NOT EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = '" + BirtReportSettings.PREDEFINED_ID_KEY + "')"
 								+ " OR "
-								+ "EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = 'mailingFilter' AND parameter_value = " + FilterType.FILTER_MAILINGLIST.getKey() + ")"
+								+ "EXISTS (SELECT 1 FROM birtreport_parameter_tbl WHERE birtreport_tbl.report_id = birtreport_parameter_tbl.report_id AND parameter_name = 'mailingFilter' AND parameter_value = '" + FilterType.FILTER_MAILINGLIST.getKey() + "')"
 							+ ")"
 						+ ")"
 				+ ")"
@@ -751,13 +714,13 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 				+ (isOracleDB() ? " ORDER BY nextstart" : " ORDER BY nextstart IS NULL, nextstart ASC");
 
 		List<BirtReport> reportList = select(query, new BirtReportRowMapper());
-		
+
 		for (BirtReport report : reportList) {
 			if (report != null) {
 				getReportProperties(report);
 			}
 		}
-		
+
 		return reportList;
 	}
 
@@ -768,10 +731,7 @@ public class BirtReportDaoImpl extends PaginatedBaseDaoImpl implements BirtRepor
 
 	@Override
 	public List<BirtReport> selectErroneousReports() {
-		try {
-			return select("SELECT * FROM birtreport_tbl WHERE active > 0 AND deleted = 0 AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP) AND ((lastresult IS NOT NULL AND lastresult != 'OK') OR (nextstart IS NOT NULL AND nextstart < ?))", new BirtReportRowMapper(), DateUtilities.getDateOfHoursAgo(1));
-		} catch (Exception e) {
-			throw new RuntimeException("Error while reading erroneous reports from database", e);
-		}
+		return select("SELECT * FROM birtreport_tbl WHERE active > 0 AND deleted = 0 AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP) AND ((lastresult IS NOT NULL AND lastresult != 'OK') OR (nextstart IS NOT NULL AND nextstart < ?))", new BirtReportRowMapper(), DateUtilities.getDateOfHoursAgo(1));
 	}
+
 }

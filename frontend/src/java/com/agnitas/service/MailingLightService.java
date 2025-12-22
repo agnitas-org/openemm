@@ -15,7 +15,7 @@ import java.util.List;
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
 
 /**
  * This service class has following task:

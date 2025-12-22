@@ -1,0 +1,37 @@
+<%@ page import="com.agnitas.util.AgnUtils" %>
+
+<%--@elvariable id="recipient" type="com.agnitas.emm.core.recipient.dto.RecipientDto"--%>
+
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
+
+<c:forEach var="field" items="${fieldsMap}">
+    <c:set var="column" value="${field.key}"/>
+
+    <c:if test="${not listForm.isDefaultColumn(column)}">
+        <c:set var="colHidden" value="${listForm.isSelectedColumn(column) ? '' : 'hidden'}" />
+
+        <c:choose>
+            <c:when test="${fn:toLowerCase(column) eq 'gender'}">
+                <c:set var="value" value="${recipient.getValue(column)}"/>
+                <mvc:message var="title" code="Gender" />
+                <mvc:message var="text" code="recipient.gender.${value}.short"/>
+            </c:when>
+
+            <c:otherwise>
+                <c:set var="formattedValue" value="${recipient.getColumnFormattedValue(admin, column)}"/>
+                <c:set var="text" value="${fn:escapeXml(formattedValue)}"/>
+
+                <c:set var="titleKey" value="${titles.get(column)}"/>
+                <c:set var="title" value="${field.value}"/>
+                <c:if test="${not empty titleKey}">
+                    <mvc:message var="title" code="${titleKey}"/>
+                </c:if>
+            </c:otherwise>
+        </c:choose>
+
+        <emm:column headerClass="${colHidden}" title="${title}" cssClass="${colHidden}" sortable="true" sortProperty="${column}" data-table-column="${column}">
+            <span>${text}</span>
+        </emm:column>
+    </c:if>
+</c:forEach>

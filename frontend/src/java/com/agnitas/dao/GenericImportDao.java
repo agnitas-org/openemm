@@ -23,7 +23,7 @@ public interface GenericImportDao {
 
 	String createTemporaryImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description);
 
-	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
+	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName);
 
 	void dropTemporaryImportTable(int companyID, String tempTableName);
 
@@ -33,11 +33,11 @@ public interface GenericImportDao {
 
 	int markDuplicatesEntriesSingleTable(int companyID, String temporaryImportTableName, List<String> keyColumns, String importIndexColumn, String duplicateIndexColumn);
 	
-	int removeNewEntriesWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateInDestinationTableColumn);
+	int removeNewEntriesWithInvalidNullValues(int companyID, String temporaryImportTableName, String destinationTableName, String duplicateInDestinationTableColumn);
 
 	int insertNewEntries(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, String duplicateInDestinationTableColumn);
 
-	int updateAllExistingEntriesByKeyColumnImproved(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, String duplicateIndexColumn, String duplicateInDestinationTableColumn, UpdateMethod updateMethod, int datasourceId, int companyID);
+	int updateAllExistingEntriesByKeyColumnImproved(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, String duplicateIndexColumn, String duplicateInDestinationTableColumn, UpdateMethod updateMethod, int companyID);
 
 	String createTemporaryImportErrorTable(int companyId, int adminId, int datasourceId, List<String> columns, String sessionId);
 

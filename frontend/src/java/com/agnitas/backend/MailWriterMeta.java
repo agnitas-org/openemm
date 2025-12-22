@@ -78,6 +78,10 @@ public class MailWriterMeta extends MailWriter {
 	 */
 	private int blockID;
 	/**
+	 * use local temp.directory, if available
+	 */
+	private File tempDirectory;
+	/**
 	 * if we should keep admin/test mails for debug purpose
 	 */
 	private boolean keepATmails;
@@ -110,12 +114,17 @@ public class MailWriterMeta extends MailWriter {
 			blockSize = data.mailing.blockSize();
 		}
 		blockID = 1;
+		
+		tempDirectory = null;
+		String	tempDirectoryPath = Str.makePath ("$home", "var", "tmp");
+		if (Data.isDirectory (tempDirectoryPath)) {
+			tempDirectory = new File (tempDirectoryPath);
+		}
+		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
+		keepPreviewMails = Str.atob (data.company.info ("keep-preview-files"), false);
 		multi = null;
 		mailkeys = null;
 		setup();
-
-		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
-		keepPreviewMails = Str.atob (data.company.info ("keep-preview-files"), false);
 	}
 
 	/**
@@ -141,7 +150,7 @@ public class MailWriterMeta extends MailWriter {
 			}
 		} else if (data.maildropStatus.isPreviewMailing()) {
 			if (pathname != null) {
-				File output = File.createTempFile("preview", ".xml");
+				File output = File.createTempFile("preview", ".xml", tempDirectory);
 				String path = output.getAbsolutePath();
 				String opts = previewOutputOptions(path);
 				String error = null;
@@ -229,6 +238,12 @@ public class MailWriterMeta extends MailWriter {
 			out = new GZIPOutputStream(new FileOutputStream(pathname));
 		}
 		writer = new XMLWriter(out);
+		if (data.conditionalFlushSize () > 0) {
+			writer.conditionalFlush (data.conditionalFlushSize ());
+		}
+		if (data.outputBlockSize () > 0) {
+			writer.outputBlockSize (data.outputBlockSize ());
+		}
 		writer.start();
 		writer.opennode("blockmail");
 		writer.opennode("description");
@@ -252,7 +267,6 @@ public class MailWriterMeta extends MailWriter {
 		writer.single("attachboundary", attachBoundary);
 		writer.close("mailcreation");
 		writer.empty();
-		writer.cflush();
 
 		writer.open(data.media().size() == 0, "mediatypes", "count", data.media().size());
 		if (data.media().size() > 0) {
@@ -276,7 +290,6 @@ public class MailWriterMeta extends MailWriter {
 			writer.close("mediatypes");
 		}
 		writer.empty();
-		writer.cflush();
 		tracker();
 
 		writer.opennode("blocks", "count", allBlocks.getTotalNumberOfBlocks());
@@ -484,7 +497,6 @@ public class MailWriterMeta extends MailWriter {
 		}
 		writer.close("types");
 		writer.empty();
-		writer.cflush();
 
 		layout();
 
@@ -504,7 +516,6 @@ public class MailWriterMeta extends MailWriter {
 			writer.comment("no taglist");
 		}
 		writer.empty();
-		writer.cflush();
 
 		found = false;
 		for (EMMTag tag : tagNames.values()) {
@@ -540,19 +551,15 @@ public class MailWriterMeta extends MailWriter {
 			writer.comment("no global_tags");
 		}
 		writer.empty();
-		writer.cflush();
 
 		dynamics();
 		writer.empty();
-		writer.cflush();
 
 		urls();
 		writer.empty();
-		writer.cflush();
 		
 		virtuals();
 		writer.empty();
-		writer.cflush();
 		
 		writer.opennode("receivers");
 	}
@@ -572,7 +579,6 @@ public class MailWriterMeta extends MailWriter {
 		if (out != null) {
 			writer.close("receivers");
 			writer.close("blockmail");
-			writer.flush();
 			writer.end();
 			writer = null;
 			out.close();
@@ -605,7 +611,6 @@ public class MailWriterMeta extends MailWriter {
 	public void writeMailDone() throws Exception {
 		if (pending) {
 			writer.close("receiver");
-			writer.cflush();
 			if ((data.mailing.maxBytesPerOutputFile() > 0) && (writer.outputSize() > data.mailing.maxBytesPerOutputFile()) && (data.maildropStatus.isWorldMailing() || data.maildropStatus.isRuleMailing() || data.maildropStatus.isOnDemandMailing())) {
 				data.forceNewBlock = true;
 				data.logging(Log.VERBOSE, "write/meta", "Force new block due to current file size of " + writer.outputSize() + " exceeding limit of " + data.mailing.maxBytesPerOutputFile());
@@ -782,7 +787,7 @@ public class MailWriterMeta extends MailWriter {
 		int rc;
 
 		try {
-			efile = File.createTempFile("error", null);
+			efile = File.createTempFile("error", null, tempDirectory);
 		} catch (Exception e) {
 			String javaTemp = System.getProperty("java.io.tmpdir");
 			data.logging(Log.ERROR, "write/meta", "Failed to create temp.file due to: " + e.toString() + " (missing temp.directory '" + javaTemp + "'?)", e);
@@ -1103,7 +1108,6 @@ public class MailWriterMeta extends MailWriter {
 		emitBlockContent(b);
 		emitBlockTags(b, isHeader);
 		writer.close(c.name);
-		writer.cflush();
 	}
 
 	/**
@@ -1225,7 +1229,6 @@ public class MailWriterMeta extends MailWriter {
 			}
 			writer.close("trackers");
 			writer.empty();
-			writer.cflush();
 		}
 	}
 
@@ -1282,7 +1285,6 @@ public class MailWriterMeta extends MailWriter {
 		} else {
 			writer.comment("no target_groups");
 		}
-		writer.cflush();
 	}
 
 	private void dynamics() throws IOException {
@@ -1337,31 +1339,54 @@ public class MailWriterMeta extends MailWriter {
 				writer.openclose(cr);
 			}
 			writer.close("urls");
+			if (data.extendURL != null) {
+				boolean first = true;
+
+				for (long urlID : data.extendURL.getURLIDs()) {
+					for (URLExtension.URLEntry entry : data.extendURL.getParameter(urlID)) {
+						if (first) {
+							writer.opennode("url-extension", "count", data.extendURL.count());
+							first = false;
+						}
+						XMLWriter.Creator cr = writer.create("entry", "id", urlID, "key", entry.getKey(), "value", entry.getValue());
+
+						cr.add("columns", entry.getStaticValueColumns(data));
+						writer.openclose(cr);
+					}
+				}
+				if (!first) {
+					writer.close("url-extension");
+				} else {
+					writer.comment("no url-extension");
+				}
+			}
+			if (data.hashtagCache != null) {
+				boolean	first = true;
+				
+				for (Entry <String, Hashtag> entry : data.hashtagCache.entrySet ()) {
+					Hashtag	hashtag = entry.getValue ();
+					
+					if (hashtag.isStatic ()) {
+						String	value = hashtag.value ();
+						
+						if (first) {
+							writer.opennode ("hashtag-static");
+							first = false;
+						}
+						writer.single ("hashtag", value, "name", entry.getKey ());
+					}
+				}
+				if (! first) {
+					writer.close ("hashtag-static");
+				} else {
+					writer.comment ("no hashtag static");
+				}
+			} else {
+				writer.comment("no hashtag-static");
+			}
 		} else {
 			writer.comment("no urls");
 		}
-		if (data.extendURL != null) {
-			boolean first = true;
-
-			for (long urlID : data.extendURL.getURLIDs()) {
-				for (URLExtension.URLEntry entry : data.extendURL.getParameter(urlID)) {
-					if (first) {
-						writer.opennode("url-extension", "count", data.extendURL.count());
-						first = false;
-					}
-					XMLWriter.Creator cr = writer.create("entry", "id", urlID, "key", entry.getKey(), "value", entry.getValue());
-
-					cr.add("columns", entry.getStaticValueColumns(data));
-					writer.openclose(cr);
-				}
-			}
-			if (!first) {
-				writer.close("url-extension");
-			} else {
-				writer.comment("no url-extension");
-			}
-		}
-		writer.cflush();
 	}
 
 	private void virtuals () throws IOException {
@@ -1378,7 +1403,6 @@ public class MailWriterMeta extends MailWriter {
 		} else {
 			writer.comment ("no virtuals");
 		}
-		writer.cflush ();
 	}
 
 	/**

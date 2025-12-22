@@ -29,10 +29,4 @@ public class BounceFilterSearchParams extends BounceFilterListForm implements Fo
         form.setFilterAddress(this.getFilterAddress());
     }
 
-    @Override
-    public void resetParams() {
-        this.setName("");
-        this.setDescription("");
-        this.setFilterAddress("");
-    }
 }

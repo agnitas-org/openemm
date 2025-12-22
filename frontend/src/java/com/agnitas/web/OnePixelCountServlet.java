@@ -14,17 +14,30 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
 
-import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.MailingDao;
-import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
-import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.commons.daocache.CompanyDaoCache;
+import com.agnitas.emm.core.commons.uid.ExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
+import com.agnitas.emm.core.commons.uid.ExtensibleUIDService;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.mobile.service.AccessDataService;
+import com.agnitas.emm.core.mobile.service.ClientService;
+import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.util.AgnUtils;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -33,28 +46,12 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.Company;
-import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
-import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.commons.uid.ExtensibleUID;
-import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.ClientService;
-import com.agnitas.emm.core.mobile.service.AccessDataService;
-import com.agnitas.emm.core.mobile.service.DeviceService;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 public class OnePixelCountServlet extends HttpServlet {
 	
 	/** Serial version UID. */
 	private static final long serialVersionUID = 9217593068580606726L;
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(OnePixelCountServlet.class);
+	private static final Logger logger = LogManager.getLogger(OnePixelCountServlet.class);
 
 	/** Raw GIF data for 1x1 pixel transparent image. */
 	public static final byte[] ONEPIXELGIF_DATA = { 71, 73, 70, 56, 57, 97, 1, 0, 1, 0, -128, -1, 0, -64, -64, -64, 0, 0, 0, 33, -7, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 68, 1, 0, 59 };

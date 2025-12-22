@@ -40,12 +40,4 @@ public class RecipientsReportSearchParams implements FormSearchParams<Recipients
         filter.setReportDate(reportDate);
     }
 
-    @Override
-    public void resetParams() {
-        adminId = 0;
-        datasourceId = null;
-        fileName = null;
-        types = null;
-        reportDate = new DateRange();
-    }
 }

@@ -90,7 +90,7 @@ public class ModelValidator {
     	checkResults(violations);
 	}
 
-	private void checkResults(Set<ConstraintViolation<Object>> violations) throws IllegalArgumentException {
+	private void checkResults(Set<ConstraintViolation<Object>> violations) {
     	final Pattern pattern = Pattern.compile("([.|\\w]+)(\\{.+})*");
     	for (ConstraintViolation<Object> violation : violations) {
     		final String messageTemplate = violation.getMessageTemplate();

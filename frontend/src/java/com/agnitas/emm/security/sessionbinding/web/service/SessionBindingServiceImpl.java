@@ -10,35 +10,25 @@
 
 package com.agnitas.emm.security.sessionbinding.web.service;
 
+import java.util.Base64;
+import java.util.UUID;
+
 import com.agnitas.emm.security.sessionbinding.common.SessionBindingConstants;
 import com.agnitas.emm.security.sessionbinding.common.SessionBindingData;
 import com.agnitas.emm.security.sessionbinding.web.CookieUtils;
+import com.agnitas.util.AgnUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.UUID;
 
 public final class SessionBindingServiceImpl implements SessionBindingService {
 
-    private static final transient Logger LOGGER = LogManager.getLogger(SessionBindingServiceImpl.class);
-
-    private final SecureRandom random;
-
-    public SessionBindingServiceImpl() {
-        this.random = new SecureRandom();
-    }
-
     @Override
-    public final void bindSession(final HttpServletRequest request, final HttpServletResponse response) {
+    public void bindSession(HttpServletRequest request, HttpServletResponse response) {
         final HttpSession session = request.getSession(false);
 
-        if(session != null) {
+        if (session != null && AgnUtils.getAdmin(session) != null) {
             final String nameSuffix = createNameSuffix();
             final String securityToken = createSecurityToken();
 
@@ -50,15 +40,15 @@ public final class SessionBindingServiceImpl implements SessionBindingService {
         }
     }
 
-    private final String createNameSuffix() {
+    private String createNameSuffix() {
         return randomUuidBytesBase64();
     }
 
-    private final String createSecurityToken() {
+    private String createSecurityToken() {
         return randomUuidBytesBase64();
     }
 
-    private final String randomUuidBytesBase64() {
+    private String randomUuidBytesBase64() {
         final byte[] data = randomUuidBytes();
 
         assert data.length == 16;   // UUIDs are 128 bits long
@@ -66,7 +56,7 @@ public final class SessionBindingServiceImpl implements SessionBindingService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
     }
 
-    private final byte[] randomUuidBytes() {
+    private byte[] randomUuidBytes() {
         final UUID uuid = UUID.randomUUID();
         final long hi = uuid.getMostSignificantBits();
         final long lo = uuid.getLeastSignificantBits();

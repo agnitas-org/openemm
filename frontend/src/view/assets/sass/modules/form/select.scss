@@ -1,0 +1,601 @@
+/*doc
+---
+title: Selects
+name: selects
+category: Components - Selects
+---
+
+Use the default or add the `[multiple]` attribute for multiple options.
+When setting the `.js-select` search field will be enabled if there are at least 10 options present.
+
+<small class="text-muted">You can apply a <a href="components_-_show%7Chide_by_checkbox%7Cselect.html#select-hider"><i>show|hide by select</i></a> component to this.</small>
+
+```htmlexample
+<div class="d-flex gap-1">
+    <select class="form-control js-select">
+        <option>Pikachu</option>
+        <option>Bulbasaur</option>
+        <option>Charmander</option>
+        <option>Butterfree</option>
+    </select>
+    <select multiple class="form-control js-select">
+        <option>Leonardo</option>
+        <option>Donatello</option>
+        <option data-url="#select-directive">Raphael</option>
+        <option>Michelangelo</option>
+    </select> 
+</div>
+```
+*/
+
+/*doc
+---
+title: Select `+` button
+name: selects_01_plus_btn
+parent: selects
+---
+
+Use `[data-show-create-btn="button-extra-attributes..."]` in order to display `+` button.
+It be used to perform some action (e.g. create a new entry).
+
+```htmlexample
+<label for="jupiter-moons" class="form-label">Jupiter moons</label>
+<select for="jupiter-moons" class="form-control" multiple data-show-create-btn="data-action='add-new-moon'">
+    <option selected>Io</option>
+    <option selected>Europa</option>
+    <option>Ganymede</option>
+    <option>Callisto</option>
+</select>
+```
+*/
+
+/*doc
+---
+title: Select dynamic tags
+name: selects_02_dynamic_tags
+parent: selects
+---
+
+Use the class `.dynamic-tags` in order to allow user to enter own options.
+
+```htmlexample
+<label for="email-addresses" class="form-label">E-mails</label>
+<select for="email-addresses" class="form-control dynamic-tags" multiple></select>
+```
+*/
+
+/*doc
+---
+title: Select with arrows
+name: selects_03_with_arrows
+parent: selects
+---
+
+Use `.has-arrows` in order to display arrows at left and right of the dropdown.
+By clicking on the `<` or `>` the previous or next option selected accordingly.
+
+```htmlexample
+<label for="years" class="form-label">Years</label>
+<select for="years" class="form-control has-arrows">
+    <option>2001</option>
+    <option>2002</option>
+    <option>2003</option>
+    <option>2004</option>
+    <option>2005</option>
+</select>
+```
+*/
+
+/*doc
+---
+title: Select with customizable options
+name: selects_04_with_custom_options
+parent: selects
+---
+
+Use `[data-selection-template="mustache-template-name"]` to specify <a href="javascripts_-_templates.html"><i>template</i></a> name of the option.
+
+Use `[data-selection-template="mustache-template-name"]` to specify <a href="javascripts_-_templates.html"><i>template</i></a> name of the selected result`.
+
+```htmlexample
+<label for="years" class="form-label">Select something</label>
+<select for="years" class="form-control" data-selection-template="selection-template" data-result-template="option-template">
+    <option value="cog" data-color="text-bg-success">Cog</option>
+    <option value="ruler-combined" data-color="text-bg-primary">Ruler</option>
+    <option value="wrench" data-color="text-bg-warning">Wrench</option>
+</select>
+
+<script id="selection-template" type="text/x-mustache-template">
+    <div class="d-flex align-items-center gap-1">
+        <span>Your selection is {{- text }}</span>
+        <span class="icon-badge {{- element.getAttribute('data-color')}}"><i class="icon icon-{{- value }}"></i></span>
+    </div>
+</script>
+
+<script id="option-template" type="text/x-mustache-template">
+    <div class="d-flex align-items-center gap-1">
+        <span class="icon-badge {{- element.getAttribute('data-color')}}"><i class="icon icon-{{- value }}"></i></span>
+        <span>{{- text }}</span>
+    </div>
+</script>
+```
+*/
+
+/*doc
+---
+title: Select with dropdown aligned right
+name: selects_05_aligned_right
+parent: selects
+---
+
+Use `[data-select-options="alignDropdownRight:true, dropdownParent:#select-parent]` in order to display select dropdown to be aligned right.
+
+<small class="text-muted">Another select2 option `dropdownParent` is mandatory.</small>
+
+```htmlexample
+<div class="tile" style="max-width:400px; margin-left:auto">
+    <div class="tile-header border-bottom">
+        <h1 class="tile-title">Select dropdown example</h1>
+        <div id="select-parent" class="tile-controls flex-grow-1">
+            <select class="form-control js-select"
+                    data-select-options="dropdownParent:#select-parent, alignDropdownRight:true, dropdownAutoWidth: true, width: 'auto'">
+                <option>one</option>
+                <option>two</option>
+            </select>
+        </div>
+    </div>
+    <div class="tile-body js-scrollable">
+        Can be used when the starting selection position is close to the right edge of the viewport.
+    </div>
+</div>
+*/
+
+$select2-dropdown-gap: $dropdown-spacer;
+$select2-icon-color: var(--select2-icon-color);
+$select-height-regular: $input-height;
+
+.select2-container {
+  --selection-choise-remove-color: #{$dark-grey};
+  --selection-choise-bg: #{$x-light-grey};
+  --select-dropdown-bg: #{$body-bg-var};
+  --select2-selection-color: #{$body-color-var};
+  --select2-icon-color: #{$dark-grey};
+  --select2-selected-item-bg: #{$blue};
+  --select2-selected-item-color: #{$white};
+  --select2-hovered-item-bg: #{$light-blue};
+  --select2-hovered-item-color: #{$body-color-var};
+
+  max-width: 100%;
+
+  .select2-selection.form-control {
+    border: $border-default;
+    border-radius: $border-radius;
+    display: flex;
+
+    &.select2-selection--multiple {
+      background-color: var(--select-dropdown-bg);
+      flex-direction: column-reverse;
+      padding: $dropdown-spacer;
+      border: $border-default;
+      border-radius: $border-radius;
+
+      &[aria-expanded="false"] .select2-search::after {
+        transform: rotate(0deg);
+      }
+
+      &[aria-expanded="true"] .select2-search::after {
+        transform: rotate(180deg);
+      }
+
+      &.dynamic-tags {
+        .select2-search::after {
+          display: none;
+        }
+      }
+
+      .select2-search {
+        position: relative;
+        padding-block: 4px;
+        padding-left: $dropdown-spacer - 1;
+        padding-right: $gap;
+        border: $border-default;
+        border-radius: $border-radius;
+
+        &::after { // arrow
+          @include fa-content($fa-var-caret-down);
+          position: absolute;
+          top: $gap-x-sm;
+          right: $gap-sm;
+          transform: translateY(-50%);
+          color: $select2-icon-color;
+          font-size: $font-size-base;
+        }
+
+        .select2-search__field {
+          font-family: "Poppins", sans-serif;
+          margin: 0 0 0 $gap-x-sm;
+          color: $body-color-var;
+          &::placeholder {
+            color: var(--input-placeholder-color);
+          }
+        }
+      }
+
+      .select2-selection__rendered:empty {
+        display: none;
+      }
+
+      .select2-selection__choice {
+        display: inline-flex;
+        align-items: center;
+        gap: $dropdown-spacer;
+        padding: $dropdown-spacer $dropdown-spacer * 2 $dropdown-spacer $dropdown-spacer;
+        border: $border-default;
+        border-radius: 20px;
+        margin: $dropdown-spacer $dropdown-spacer 0 0;
+        background-color: var(--selection-choise-bg);
+        color: $body-color-var;
+
+        span {
+          @include text-truncate;
+        }
+
+        .select2-selection__choice__remove {
+          position: relative;
+          min-width: unset;
+
+          @include size(1em);
+          border: none;
+          color: var(--selection-choise-remove-color);
+
+          &:hover, &:focus {
+            background-color: transparent;
+            filter: brightness(60%);
+          }
+
+          &::before {
+            @include fa-content($fa-var-times-circle);
+            @include center-absolute;
+          }
+
+          span {
+            display: none;
+          }
+        }
+
+        .select2-selection__choice__display {
+          padding: 0;
+        }
+      }
+    }
+
+    &.select2-selection--single {
+      background-color: var(--select-dropdown-bg);
+      align-items: center;
+      justify-content: space-between;
+      height: $select-height-regular;
+      border-radius: $border-radius;
+      padding-inline: $dropdown-spacer * 2;
+
+      .table-wrapper__header .input-group & {
+        @include border-end-radius($table-control-radius);
+      }
+
+      &.compact {
+        padding-inline: $dropdown-spacer;
+        border-radius: $border-radius-sm;
+        height: 28px;
+        font-weight: $font-weight-semibold;
+      }
+
+      &[aria-expanded="false"] {
+        .select2-selection__arrow {
+          transform: rotate(0deg);
+        }
+      }
+
+      &[aria-expanded="true"] {
+        .select2-selection__arrow {
+          transform: rotate(180deg);
+        }
+      }
+
+      .select2-selection__rendered {
+        padding: 0;
+        color: var(--select2-selection-color);
+        flex-grow: 1;
+      }
+
+      .select2-selection__arrow {
+        flex-shrink: 0;
+        position: relative;
+        width: 10px;
+        top: initial;
+        right: initial;
+        margin-left: 5px;
+        color: $select2-icon-color;
+
+        &:before {
+          @include fa-content($fa-var-caret-down);
+          @include center-absolute;
+        }
+
+        b {
+          display: none;
+        }
+      }
+    }
+  }
+
+  &.select2-container--disabled {
+    .select2-selection.form-control {
+      &.select2-selection--single {
+        background-color: var(--base-disabled-bg);
+        cursor: not-allowed;
+
+        .select2-selection__rendered {
+          color: var(--base-disabled-color);
+        }
+      }
+    }
+  }
+
+  .select2-dropdown.form-control {
+    background: $body-bg-var;
+    height: auto;
+    z-index: 1056;
+    padding: 0;
+
+    border: $border-default;
+    border-radius: $border-radius;
+
+    &:not(.select2-dropdown--above) {
+      margin-top: $dropdown-spacer;
+    }
+
+    &.select2-dropdown--above {
+      margin-top: -$dropdown-spacer;
+    }
+
+    &.dynamic-tags {
+      display: none;
+    }
+
+    .select2-results__options {
+      // NOTE: Do not replace it to 'border' cuz perfect scrollbar continues scroll after content end in this case.
+      // Link to issue: https://github.com/mdbootstrap/perfect-scrollbar/issues/51
+      outline: $border-default;
+      border-radius: $border-radius;
+      margin: $select2-dropdown-gap;
+      position: relative; // for perfect scrollbar and for sortable options in LB
+
+      > .ps__rail-y {
+        opacity: 1; // always visible scrollbar rail (without hover)
+      }
+
+      @include hide-scroll;
+
+      .select2-results__option {
+        padding: $select2-dropdown-gap;
+        text-align: left;
+        color: $body-color-var;
+        overflow-wrap: anywhere;
+      }
+
+      .select2-results__option--selectable.select2-results__option--highlighted:not(.select2-results__option--selected) {
+        background-color: var(--select2-hovered-item-bg);
+        color: var(--select2-hovered-item-color);
+      }
+
+      .select2-results__option--selected {
+        background-color: var(--select2-selected-item-bg);
+        color: var(--select2-selected-item-color);
+      }
+
+      .select2-results__option--disabled {
+        cursor: not-allowed;
+        background-color: var(--dropdown-disabled-item-bg);
+        color: var(--dropdown-disabled-item-color);
+      }
+    }
+
+    &.compact .select2-results__options .select2-results__option {
+      text-align: center;
+    }
+
+    .select2-search {
+      padding: 0;
+      margin: $select2-dropdown-gap $select2-dropdown-gap 0 $select2-dropdown-gap;
+
+      .select2-search__field {
+        border: $border-default;
+        border-radius: $border-radius;
+        background-color: var(--select-dropdown-bg);
+        color: $body-color-var;
+
+        &:focus-visible {
+          outline: none;
+          border: 1px solid var(--input-focus-border-color);
+        }
+
+        &::placeholder {
+          color: var(--input-placeholder-color);
+        }
+      }
+
+      &:has(> .icon-search) {
+        position: relative;
+
+        .select2-search__field {
+          padding-right: 23px;
+        }
+      }
+
+      .select2-search-icon {
+        position: absolute;
+        top: 50%;
+        right: $dropdown-spacer * 2;
+        transform: translateY(-50%);
+        color: $select2-icon-color;
+      }
+    }
+  }
+
+  .input-group & {
+    flex: 1;
+  }
+
+  .input-group &:nth-child(3) {
+    overflow: hidden;
+  }
+}
+
+.has-arrows {
+  --select2-icon-color: #{$dark-grey};
+  --select2-button-hover-color: #{$white};
+
+  &.select2-selection {
+    min-width: 0;
+    border-radius: 0 !important;
+  }
+
+  & + .select2 {
+    .selection {
+      display: flex;
+    }
+
+    .btn-select-control {
+      @include flex-center;
+      height: $select-height-regular;
+
+      border: $border-default;
+      color: $select2-icon-color;
+
+      &:hover {
+        color: var(--select2-button-hover-color);
+      }
+
+      &:first-child {
+        border-radius: $border-radius 0 0 $border-radius;
+        border-right: none;
+      }
+
+      &:last-child {
+        border-radius: 0 $border-radius $border-radius 0;
+        border-left: none;
+      }
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .has-arrows {
+    --select2-icon-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .has-arrows {
+    --select2-icon-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .has-arrows {
+    --select2-icon-color: #{$white};
+    --select2-button-hover-color: #{$con-dark-blue};
+  }
+}
+
+.select-dropdown {
+  &--long {
+    .select2-results__options {
+      max-height: 500px !important;
+    }
+  }
+}
+
+@include color-mode(dark) {
+  .select2-container {
+    --selection-choise-remove-color: #{$white};
+    --selection-choise-bg: #{$gray-600};
+    --select2-icon-color: #{$light-grey};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .select2-container {
+    --selection-choise-remove-color: #{$con-dark-blue};
+    --selection-choise-bg: #{$con-grey};
+    --select2-icon-color: #{$con-dark-blue};
+    --select2-selected-item-bg: #{$con-dark-blue};
+    --select2-hovered-item-bg: #{$con-light-blue};
+    --select2-hovered-item-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .select2-container {
+    --selection-choise-remove-color: #{$white};
+    --selection-choise-bg: #{$dark-grey};
+    --select2-icon-color: #{$white};
+    --select2-selected-item-bg: #{$white};
+    --select2-selected-item-color: #{$con-dark-blue};
+    --select2-hovered-item-bg: #{$con-light-blue};
+    --select2-hovered-item-color: #{$con-dark-blue};
+  }
+}
+
+.align-dropdown-right-container {
+  direction: rtl;
+  position: relative;
+  .select2-container--open {
+    right: 0;
+    width: 100%;
+  }
+}
+
+.s2-to-tree {
+  li.select2-results__option {
+    &[data-pup]:not([data-pup="parent"]) {
+      .item-label {
+        @include flex-row($dropdown-spacer);
+        align-items: center;
+        font-style: italic;
+
+        &::before {
+          @include fa-content($fa-var-angle-right);
+          font-size: 10px;
+          line-height: 1;
+        }
+      }
+    }
+
+    &[data-pup="parent"] {
+      font-weight: $font-weight-semibold !important;
+    }
+  }
+}
+
+// Workaround to make select 2 readonly https://github.com/select2/select2/issues/3387
+select[readonly].select2-hidden-accessible + .select2-container {
+  pointer-events: none;
+  touch-action: none;
+
+  .select2-selection {
+    background: var(--base-disabled-bg);
+    box-shadow: none;
+  }
+
+  .select2-selection__clear {
+    display: none;
+  }
+  
+  a {
+    pointer-events: auto;
+  }
+
+  .select2-selection__choice__remove {
+    display: none;
+  }
+}

@@ -18,10 +18,8 @@ import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_M
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.isUnpausing;
 import static com.agnitas.util.Const.Mvc.ERROR_MSG;
-import static java.text.MessageFormat.format;
 
 import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -64,18 +62,27 @@ import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.TargetDao;
-import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.auto_import.service.AutoImportService;
+import com.agnitas.emm.core.autoexport.beans.AutoExport;
+import com.agnitas.emm.core.autoexport.service.AutoExportService;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import com.agnitas.emm.core.reminder.service.ReminderService;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetService;
@@ -132,23 +139,11 @@ import com.agnitas.messages.Message;
 import com.agnitas.reporting.birt.external.dao.BirtCompanyDao;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.userform.bean.UserForm;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.EmmCalendar;
 import com.agnitas.util.SafeString;
 import jakarta.mail.internet.InternetAddress;
-import com.agnitas.emm.core.maildrop.dao.MaildropStatusDao;
-import com.agnitas.emm.common.MailingStatus;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -172,11 +167,10 @@ public class WorkflowServiceImpl implements WorkflowService {
     private MaildropStatusDao maildropStatusDao;
 
     private ProfileFieldDao profileFieldDao;
-	protected WorkflowDao workflowDao;
+    private WorkflowDao workflowDao;
 	private MailingDao mailingDao;
 	private TargetDao targetDao;
     private TargetService targetService;
-    private UserFormDao userFormDao;
     private BirtCompanyDao birtCompanyDao;
 	private WorkflowReactionDao reactionDao;
 	private WorkflowStartStopReminderDao reminderDao;
@@ -187,7 +181,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     private WorkflowDataParser workflowDataParser;
     private CampaignDao campaignDao;
     private MediatypesDao mediatypesDao;
-    protected AdminService adminService;
+    private AdminService adminService;
     private MailingService mailingService;
     private WorkflowActivationService workflowActivationService;
     private BulkActionValidationService<Integer, Workflow> bulkActionValidationService;
@@ -352,8 +346,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     private void setSenderAdminId(List<WorkflowIcon> icons, int adminId) {
         for (WorkflowIcon icon : icons) {
             switch (icon.getType()) {
-                case WorkflowIconType.Constants.START_ID:
-                case WorkflowIconType.Constants.STOP_ID:
+                case WorkflowIconType.Constants.START_ID, WorkflowIconType.Constants.STOP_ID:
                     ((WorkflowStartStop) icon).setSenderAdminId(adminId);
                     break;
 				default:
@@ -581,8 +574,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     public List<WorkflowIcon> getIconsForClone(Admin admin, int workflowId, boolean isWithContent) {
         List<WorkflowIcon> icons = getIcons(workflowId, admin.getCompanyID());
 
-        if (icons == null) {
-            return null;
+        if (CollectionUtils.isEmpty(icons)) {
+            return Collections.emptyList();
         }
 
         return cloneIcons(admin, icons, isWithContent);
@@ -601,9 +594,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     public <T extends WorkflowMailingAware> Optional<T> findMailingIcon(int workflowId, int mailingId, Class<T> mailingIconClass) {
         return getIcons(workflowDao.getSchema(workflowId))
                 .stream()
-                .filter(i -> mailingIconClass.equals(i.getClass()))
+                .filter(i -> mailingIconClass.equals(i.getClass()) && WorkflowUtils.getMailingId(i) == mailingId)
                 .map(mailingIconClass::cast)
-                .filter(i -> i.getMailingId() == mailingId)
                 .findFirst();
     }
 
@@ -613,8 +605,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         switch (dependency.getType()) {
             // Extend on demand.
-            case AUTO_IMPORT:
-            case AUTO_EXPORT:
+            case AUTO_IMPORT, AUTO_EXPORT:
                 strict = true;
                 break;
 			default:
@@ -624,8 +615,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return workflowDao.validateDependency(companyId, workflowId, dependency, strict);
     }
 
-    @Override
-    public void deleteWorkflow(int workflowId, int companyId) {
+    private void deleteWorkflow(int workflowId, int companyId) {
         reminderDao.deleteReminders(companyId, workflowId);
         reactionDao.deleteWorkflowReactions(workflowId, companyId);
         workflowDao.deleteDependencies(companyId, workflowId, true);
@@ -677,18 +667,13 @@ public class WorkflowServiceImpl implements WorkflowService {
             int mailingId = ((Number) mailing.get("MAILING_ID")).intValue();
             int companyId = ((Number) mailing.get("COMPANY_ID")).intValue();
 
-            try {
-                Map<Integer, Mediatype> activeMediatypes = mediatypesDao.loadMediatypesByStatus(MediaTypeStatus.Active, mailingId, companyId);
+            Map<Integer, Mediatype> activeMediatypes = mediatypesDao.loadMediatypesByStatus(MediaTypeStatus.Active, mailingId, companyId);
 
-                boolean atLeastOneMediatypeExists = mediaTypes.stream()
-                        .anyMatch(activeMediatypes::containsKey);
+            boolean atLeastOneMediatypeExists = mediaTypes.stream()
+                    .anyMatch(activeMediatypes::containsKey);
 
-                if (atLeastOneMediatypeExists) {
-                    mailingsWithMediatypes.add(mailing);
-                }
-
-            } catch (MediatypesDaoException e) {
-                logger.error(format("Error occurred during load of mailing (ID - {0}) mediatypes!", mailingId), e);
+            if (atLeastOneMediatypeExists) {
+                mailingsWithMediatypes.add(mailing);
             }
         }
 
@@ -714,11 +699,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<AdminEntry> getAdmins(int companyId) {
 		return adminService.listAdminsByCompanyID(companyId);
 	}
-
-	@Override
-    public List<UserForm> getAllUserForms(int companyId) {
-        return userFormDao.getUserForms(companyId);
-    }
 
 	@Override
     public Mailing getMailing(int mailingId, int companyId) {
@@ -763,7 +743,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 chainMap.forEach((icon, chains) -> updateEntities(icon, chains, admin, entitiesSupplier, onPause));
             }
         } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error("Error occurred: {}", e.getMessage(), e);
         }
     }
 
@@ -780,8 +760,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                         return true;
                     }
 
+                    // if icon is new or in case if another mailing was selected
                     return mailingId != existingWorkflow.getWorkflowIcons()
-                            .stream().filter(ei -> ei.getId() == i.getId())
+                            .stream()
+                            .filter(ei -> ei.getId() == i.getId())
                             .map(WorkflowUtils::getMailingId)
                             .findAny()
                             .orElse(0);
@@ -991,11 +973,10 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
     }
 
-    private void populateMailingByDataFromFoundChain(String timeZone, boolean withOwnNodes, List<WorkflowNode> foundNodes, Mailing mailing) {
+    private void populateMailingByDataFromFoundChain(String timeZone, List<WorkflowNode> foundNodes, Mailing mailing) {
         TimeZone aZone = TimeZone.getTimeZone(timeZone);
         Calendar aCalendar = Calendar.getInstance();
         boolean haveStartingTime = false;
-        boolean isOwnIconProcessed = false;
 
         for (WorkflowNode workflowNode : foundNodes) {
             WorkflowIcon workflowIcon = workflowNode.getNodeIcon();
@@ -1042,9 +1023,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                                             aCalendar.add(Calendar.MINUTE, deadlineIcon.getMinute());
                                         }
                                         break;
-									case TIME_UNIT_MONTH:
-										break;
-									case TIME_UNIT_WEEK:
+									case TIME_UNIT_MONTH, TIME_UNIT_WEEK:
 										break;
 									default:
 										break;
@@ -1058,19 +1037,16 @@ public class WorkflowServiceImpl implements WorkflowService {
 						default:
 							break;
                     }
-                    isOwnIconProcessed = true;
                     break;
 
                 case WorkflowIconType.Constants.ARCHIVE_ID:
-                    if (!isOwnIconProcessed || !withOwnNodes) {
-                        WorkflowArchive archiveIcon = (WorkflowArchive) workflowIcon;
-                        mailing.setCampaignID(archiveIcon.getCampaignId());
-                        mailing.setArchived(archiveIcon.isArchived() ? 1 : 0);
-                    }
+                    WorkflowArchive archiveIcon = (WorkflowArchive) workflowIcon;
+                    mailing.setCampaignID(archiveIcon.getCampaignId());
+                    mailing.setArchived(archiveIcon.isArchived() ? 1 : 0);
                     break;
 
                 case WorkflowIconType.Constants.RECIPIENT_ID:
-                    if (mailing.getMailingType() != MailingType.DATE_BASED && (!isOwnIconProcessed || !withOwnNodes)) { // GWUA-6439: Do not lose date-based target 'start by event date'. Correct target expression should be specified during campaign activation.
+                    if (mailing.getMailingType() != MailingType.DATE_BASED) { // GWUA-6439: Do not lose date-based target 'start by event date'. Correct target expression should be specified during campaign activation.
                         WorkflowRecipient recipientIcon = (WorkflowRecipient) workflowIcon;
                         mailing.setMailinglistID(recipientIcon.getMailinglistId());
                         if (CollectionUtils.isNotEmpty(recipientIcon.getAltgs())) {
@@ -1308,7 +1284,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             foundNodes.add(graph.getNodeByIcon(parameterIcon));
         }
 
-        populateMailingByDataFromFoundChain(admin.getAdminTimezone(), false, foundNodes, mailing);
+        populateMailingByDataFromFoundChain(admin.getAdminTimezone(), foundNodes, mailing);
 
         return true;
     }
@@ -1316,32 +1292,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 	@Override
     public boolean hasCompanyDeepTrackingTables(int companyId) {
         return birtCompanyDao.hasDeepTrackingTables(companyId);
-    }
-
-    @Override
-    public Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId) {
-        final Map<Integer, ChangingWorkflowStatusResult> results = new HashMap<>();
-        for (int workflowId : workflowIds) {
-            Workflow workflow = getWorkflow(workflowId, companyId);
-
-            final ChangingWorkflowStatusResult changingResult;
-            switch (workflow.getStatus()) {
-                case STATUS_ACTIVE:
-                    changingResult = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_INACTIVE);
-                    break;
-
-                case STATUS_TESTING:
-                    changingResult = changeWorkflowStatus(workflow, WorkflowStatus.STATUS_OPEN);
-                    break;
-
-                default:
-                    changingResult = ChangingWorkflowStatusResult.notChanged();
-                    break;
-            }
-
-            results.put(workflowId, changingResult);
-        }
-        return results;
     }
 
     @Override
@@ -1377,7 +1327,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
             return new ServiceResult<>(changeWorkflowStatus(workflow, WorkflowStatus.STATUS_FAILED), false, activationErrors);
         } catch (Exception e) {
-            logger.error("Error occurred while activating the workflow! ID: " + workflow.getWorkflowId(), e);
+            logger.error("Error occurred while activating the workflow! ID: {}", workflow.getWorkflowId(), e);
             return new ServiceResult<>(ChangingWorkflowStatusResult.notChanged(Message.of(ERROR_MSG)), false);
         }
     }
@@ -1554,7 +1504,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                             }
                         }
                     } else {
-                        logger.debug("Unable to retrieve a mailingId for the mailing icon #" + icon.getId());
+                        logger.debug("Unable to retrieve a mailingId for the mailing icon #{}", icon.getId());
                     }
                     sentMailings.put(mailingId, sent);
                 }
@@ -1588,7 +1538,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         optimizationCommonService.unscheduleOptimization(optimization, isTestRun);
                     }
                 } catch (MaildropDeleteException e) {
-                    logger.error("Error occurred during optimization un-scheduling: " + optimization.getId(), e);
+                    logger.error("Error occurred during optimization un-scheduling: {}", optimization.getId(), e);
                 }
             }
 
@@ -1629,7 +1579,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 
             if (newStatus == WorkflowStatus.STATUS_TESTING_FAILED) {
                 newStatus = WorkflowStatus.STATUS_OPEN ;
-
             }
         }
 
@@ -1656,9 +1605,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
 
         switch (oldStatus) {
-            case STATUS_ACTIVE:
-            case STATUS_PAUSED:
-            case STATUS_TESTING:
+            case STATUS_ACTIVE, STATUS_PAUSED, STATUS_TESTING:
                 return oldStatus != newStatus;
 
             default:
@@ -1756,7 +1703,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     .date(date)
                     .build();
         } catch (Exception e) {
-            logger.error("Cannot create reminder: " + e.getMessage(), e);
+            logger.error("Cannot create reminder: {}", e.getMessage(), e);
         }
 
         return null;
@@ -1783,7 +1730,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     recipientsBuilder.recipient(address.getAddress());
                 }
             } catch (Exception e) {
-                logger.error("Error occurred: " + e.getMessage(), e);
+                logger.error("Error occurred: {}", e.getMessage(), e);
             }
             recipientsBuilder.end();
         }
@@ -1895,8 +1842,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return getMaxPossibleDate(chains);
     }
 
-    @Override
-    public Date getMaxPossibleDate(List<List<WorkflowNode>> chains) {
+    private Date getMaxPossibleDate(List<List<WorkflowNode>> chains) {
         Date maxDate = null;
         if (CollectionUtils.isNotEmpty(chains)) {
             for (List<WorkflowNode> chain : chains) {
@@ -1980,11 +1926,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
     @Override
-    public List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, int companyId) {
-        return workflowDao.getWorkflows(workflowIds, companyId);
-    }
-
-    @Override
     public List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId) {
         return workflowDao.getWorkflowIdsByAssignedMailingId(companyId, mailingId);
     }
@@ -2020,7 +1961,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     @Override
-    public boolean isAdditionalRuleDefined(int companyId, int mailingId, int workflowId) {
+    public boolean isAdditionalRuleDefined(int companyId, int workflowId) {
         boolean result = false;
         Workflow workflow = getWorkflow(workflowId, companyId);
         List<WorkflowIcon> icons = workflow.getWorkflowIcons();
@@ -2048,8 +1989,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Override
     public boolean checkReactionNeedsActiveBinding(WorkflowReaction reaction) {
         switch (reaction.getReactionType()) {
-            case OPT_OUT:
-            case WAITING_FOR_CONFIRM:
+            case OPT_OUT, WAITING_FOR_CONFIRM:
                 return false;
             default: return true;
         }
@@ -2072,8 +2012,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Override
     public List<Integer> getReactedRecipients(WorkflowReaction reaction, boolean excludeLoggedReactions) {
         switch (reaction.getReactionType()) {
-            case CLICKED:
-            case CLICKED_LINK:
+            case CLICKED, CLICKED_LINK:
                 return reactionDao.getClickedRecipients(reaction, excludeLoggedReactions);
 
             case OPENED:
@@ -2082,9 +2021,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             case CHANGE_OF_PROFILE:
                 return reactionDao.getRecipientsWithChangedProfile(reaction, excludeLoggedReactions);
 
-            case OPT_IN:
-            case OPT_OUT:
-            case WAITING_FOR_CONFIRM:
+            case OPT_IN, OPT_OUT, WAITING_FOR_CONFIRM:
                 return reactionDao.getRecipientsWithChangedBinding(reaction, excludeLoggedReactions);
             default:
                 return Collections.emptyList();
@@ -2136,7 +2073,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         if (workflow.getWorkflowIcons() == null) {
             List<WorkflowIcon> icons = getIcons(workflow.getWorkflowSchema());
             workflow.setWorkflowIcons(icons);
-            return icons.size() > 0;
+            return !icons.isEmpty();
         }
 
         return true;
@@ -2188,32 +2125,24 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Override
     public JSONArray getWorkflowListJson(Admin admin) {
         JSONArray mailingListsJson = new JSONArray();
-        String dateTimePattern = admin.getDateTimeFormat().toPattern();
 
         for (Workflow workflow : getWorkflowsOverview(admin)) {
-            mailingListsJson.put(getWorkflowListJsonEntry(dateTimePattern, workflow, admin.isRedesignedUiUsed()));
+            mailingListsJson.put(getWorkflowListJsonEntry(workflow));
         }
         return mailingListsJson;
     }
 
-    private JSONObject getWorkflowListJsonEntry(String dateTimePattern, Workflow workflow, boolean redesign) {
+    private JSONObject getWorkflowListJsonEntry(Workflow workflow) {
         JSONObject entry = new JSONObject();
         List<WorkflowIcon> icons = workflowDataParser.deSerializeWorkflowIconsList(workflow.getWorkflowSchema());
 
         entry.put("id", workflow.getWorkflowId());
-        if (redesign) {
-            entry.put("status", WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString()).getName());
-        } else {
-            entry.put("status", getWorkflowStatusJson(workflow));
-        }
+        entry.put("status", WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString()).getName());
         entry.put("shortname", workflow.getShortname());
         entry.put("description", workflow.getDescription());
-        entry.put("startDate", getWorkflowDateJson(workflow.getGeneralStartEvent(), icons, dateTimePattern, true, redesign));
-        entry.put("stopDate", getWorkflowDateJson(workflow.getEndType(), icons, dateTimePattern, false, redesign));
+        entry.put("startDate", getWorkflowDateJson(workflow.getGeneralStartEvent(), icons, true));
+        entry.put("stopDate", getWorkflowDateJson(workflow.getEndType(), icons, false));
         entry.put("reaction", getWorkflowReactionJson(workflow));
-        if (!redesign) {
-            entry.put("readonly", icons.stream().anyMatch(icon -> icon.getType() == WorkflowIconType.SPLIT.getId()));
-        }
         return entry;
     }
 
@@ -2230,40 +2159,14 @@ public class WorkflowServiceImpl implements WorkflowService {
         return reactionJson;
     }
 
-    // TODO: EMMGUI-714: Check usages and remove when removing old design
-    private JSONObject getWorkflowStatusJson(Workflow workflow) {
-        JSONObject statusJson = new JSONObject();
-        WorkflowForm.WorkflowStatus status = WorkflowForm.WorkflowStatus.valueOf(workflow.getStatusString());
-        statusJson.put("name", status.getName());
-        statusJson.put("messageKey", status.getMessageKey());
-        return statusJson;
-    }
-
-    private JSONObject getWorkflowDateJson(IntEnum type, List<WorkflowIcon> icons, String dateTimePattern, boolean start, boolean redesign) {
+    private JSONObject getWorkflowDateJson(IntEnum type, List<WorkflowIcon> icons, boolean start) {
         JSONObject dateJson = new JSONObject();
-        dateJson.put("date", redesign
-                ? getDateStrFromIconsRedesigned(icons, start)
-                : getDateStrFromIcons(icons, dateTimePattern, start));
-        if (redesign) {
-            dateJson.put("type", type);
-        } else {
-            dateJson.put((start ? "start" : "end") + "TypeId", type != null ? type.getId() : -1);
-        }
+        dateJson.put("date", getDateStrFromIcons(icons, start));
+        dateJson.put("type", type);
         return dateJson;
     }
 
-    private String getDateStrFromIcons(List<WorkflowIcon> icons, String pattern, boolean start) {
-        Optional<WorkflowIcon> iconOptional = icons.stream()
-                .filter(i -> i.getType() == (start ? WorkflowIconType.START.getId() : WorkflowIconType.STOP.getId()))
-                .findFirst();
-        if (iconOptional.isPresent()) {
-            Date date = ((WorkflowStartStop) iconOptional.get()).getDate();
-            return date != null ? new SimpleDateFormat(pattern).format(date.getTime()) : "";
-        }
-        return "";
-    }
-
-    private Object getDateStrFromIconsRedesigned(List<WorkflowIcon> icons, boolean start) {
+    private Object getDateStrFromIcons(List<WorkflowIcon> icons, boolean start) {
         Optional<WorkflowIcon> iconOptional = icons.stream()
                 .filter(i -> i.getType() == (start ? WorkflowIconType.START.getId() : WorkflowIconType.STOP.getId()))
                 .findFirst();
@@ -2280,7 +2183,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         // Process steps, apply filters (decisions + mailing target expression + mailing list + list split) and collect mailings (and recipients) to send.
         Map<Integer, List<Integer>> schedule = processReactionSteps(reaction, steps);
 
-        if (schedule.size() > 0) {
+        if (!schedule.isEmpty()) {
             // List of binding statuses (or empty list for default behavior defined by back-end) that the recipient binding
             // should have (otherwise recipient won't receive mails).
             List<UserStatus> userStatuses = getProperUserStatusList(reaction);
@@ -2312,7 +2215,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 sqlStepTargetExpression = targetService.getTargetSQL(step.getTargetId(), step.getCompanyId(), step.isTargetPositive());
                 // If specified target group doesn't exist then campaign "stops" at this step (no recipients).
                 if (sqlStepTargetExpression == null) {
-                    logger.error("The target group #" + step.getTargetId() + " is invalid or missing, required at step #" + step.getStepId() + " (reactionId:" + step.getReactionId() + ")");
+                    logger.error("The target group #{} is invalid or missing, required at step #{} (reactionId: {})", step.getTargetId(), step.getStepId(), step.getReactionId());
                     sqlStepTargetExpression = "1=0";
                 }
             }
@@ -2327,7 +2230,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 // Retrieve all the recipients who reached this step.
                 List<Integer> recipientIds = reactionDao.getStepRecipients(step);
 
-                if (recipientIds.size() > 0) {
+                if (!recipientIds.isEmpty()) {
                     // Schedule mailing to be sent.
                     schedule.computeIfAbsent(step.getMailingId(), mailingId -> new ArrayList<>())
                         .addAll(recipientIds);
@@ -2371,7 +2274,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         	sendActionbasedMailingService.sendActionbasedMailing(reaction.getCompanyId(), mailingId, recipientId, 0, options);
         } catch (SendActionbasedMailingException e) {
             // todo #monitor?
-            logger.error("WM Reaction: error (reactionId: " + reaction.getReactionId() + ", workflowId: " + reaction.getWorkflowId() + "): " + e.getMessage(), e);
+            logger.error("WM Reaction: error (reactionId: {}, workflowId: {}): {}", reaction.getReactionId(), reaction.getWorkflowId(), e.getMessage(), e);
         }
     }
 
@@ -2381,8 +2284,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         if (mailingId > 0) {
             switch (WorkflowIconType.fromId(icon.getType(), false)) {
-                case MAILING:
-                case FOLLOWUP_MAILING:
+                case MAILING, FOLLOWUP_MAILING:
                     tryDeactivateMailing(mailingId, companyId, errors);
 
                     // Leave status "test" for mailing if that was the test run.
@@ -2391,8 +2293,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     }
                     break;
 
-                case ACTION_BASED_MAILING:
-                case DATE_BASED_MAILING:
+                case ACTION_BASED_MAILING, DATE_BASED_MAILING:
                     deactivateMailing(mailingId, companyId);
 
                     // Leave status "test" for mailing if that was the test run.
@@ -2400,25 +2301,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         deactivated = mailingDao.updateStatus(companyId, mailingId, MailingStatus.DISABLE, null);
                     }
                     break;
-				case ARCHIVE:
-					break;
-				case DEADLINE:
-					break;
-				case DECISION:
-					break;
-				case EXPORT:
-					break;
-				case FORM:
-					break;
-				case IMPORT:
-					break;
-				case PARAMETER:
-					break;
-				case RECIPIENT:
-					break;
-				case START:
-					break;
-				case STOP:
+				case ARCHIVE, DEADLINE, DECISION, EXPORT, FORM, IMPORT, PARAMETER, RECIPIENT, START, STOP:
 					break;
 				default:
 					break;
@@ -2481,10 +2364,6 @@ public class WorkflowServiceImpl implements WorkflowService {
 
     public void setTargetService(TargetService targetService) {
         this.targetService = targetService;
-    }
-
-    public void setUserFormDao(UserFormDao userFormDao) {
-        this.userFormDao = userFormDao;
     }
 
     public void setBirtCompanyDao(BirtCompanyDao birtCompanyDao) {
@@ -2567,7 +2446,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         this.campaignDao = campaignDao;
     }
 
-    public final void setSelfReference(final WorkflowService service) {
+    public void setSelfReference(WorkflowService service) {
     	this.selfReference = Objects.requireNonNull(service, "Self reference is null");
     }
 
@@ -2576,8 +2455,9 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     private static class ReactionId {
-        private int companyId;
-        private int reactionId;
+
+        private final int companyId;
+        private final int reactionId;
 
         public ReactionId(WorkflowReactionStep step) {
             this.companyId = step.getCompanyId();
@@ -2613,6 +2493,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     private static class Chain {
+
         private WorkflowStart start;
         private List<WorkflowRecipient> recipients;
         private List<WorkflowDeadline> deadlines;
@@ -2736,8 +2617,9 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     private class MailingTargetCachingSupplier implements MailingTargetSupplier {
-        private Map<Integer, String> sqlCodeMap = new HashMap<>();
-        private Map<Integer, Integer> mailingListMap = new HashMap<>();
+
+        private final Map<Integer, String> sqlCodeMap = new HashMap<>();
+        private final Map<Integer, Integer> mailingListMap = new HashMap<>();
 
         @Override
         public String getTargetAndListSplitSqlCode(int mailingId, int companyId) {
@@ -2748,6 +2630,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public int getMailingListId(int mailingId, int companyId) {
             return mailingListMap.computeIfAbsent(mailingId, id -> mailingDao.getMailinglistId(id, companyId));
         }
+
     }
 
     private interface AdminTimezoneSupplier {
@@ -2755,6 +2638,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     private class AdminTimezoneCachingSupplier implements AdminTimezoneSupplier {
+
         private final int companyId;
         private final Map<Integer, TimeZone> timezoneMap = new HashMap<>();
 
@@ -2782,9 +2666,10 @@ public class WorkflowServiceImpl implements WorkflowService {
     }
 
     private class CachingEntitiesSupplier implements EntitiesSupplier, AutoCloseable {
+
         private final int companyId;
-        private Map<Integer, Mailing> mailingMap = new HashMap<>();
-        private Map<Integer, AutoImport> autoImportMap = new HashMap<>();
+        private final Map<Integer, Mailing> mailingMap = new HashMap<>();
+        private final Map<Integer, AutoImport> autoImportMap = new HashMap<>();
 
         public CachingEntitiesSupplier(int companyId) {
             this.companyId = companyId;
@@ -2915,4 +2800,5 @@ public class WorkflowServiceImpl implements WorkflowService {
     public boolean isAutoImportManagedByWorkflow(int autoImportId) {
         return workflowDao.isDependencyExists(autoImportId, WorkflowDependencyType.AUTO_IMPORT);
     }
+
 }

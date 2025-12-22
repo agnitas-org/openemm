@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.userform.dto;
 
-import org.agnitas.emm.core.velocity.VelocityDirectiveScriptUtil;
+import com.agnitas.emm.core.velocity.VelocityDirectiveScriptUtil;
 
 public class ResultSettings {
 	

@@ -11,34 +11,40 @@
 package com.agnitas.beans.impl;
 
 import java.sql.Timestamp;
-
-import com.agnitas.beans.AdminEntry;
+import java.util.Locale;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
+import org.apache.commons.lang3.StringUtils;
 
 public class AdminEntryImpl implements AdminEntry {
-    private int companyID;
-    private String shortname;
-    private String username;
-    private String firstname;
-    private String fullname;
-    private String email;
-    private int id;
-    private Timestamp changeDate;
-    private Timestamp creationDate;
-    private Timestamp loginDate;
-    private boolean passwordExpired;
+
+	private final int id;
+	private final String shortname;
+	private final String username;
+	private final String fullname;
+	private final String language;
+	private final String country;
+	private int companyID;
+	private String firstname;
+	private String email;
+	private Timestamp changeDate;
+	private Timestamp creationDate;
+	private Timestamp loginDate;
+	private boolean passwordExpired;
 	private String companyName;
 
     public AdminEntryImpl(Admin admin) {
-        this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail(), admin.getCompanyName());
+        this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(),
+				admin.getShortname(), admin.getEmail(), admin.getCompanyName());
     }
 
-    public AdminEntryImpl(int companyID, int id, String username, String fullname, String firstname, String shortname) {
-		this(companyID, id, username, fullname, firstname, shortname, null, null);
+    public AdminEntryImpl(int companyID, int id, String username, String fullname, String firstname, String shortname, String language, String country) {
+		this(companyID, id, username, fullname, firstname, shortname, null, null, language, country);
     }
 
-    public AdminEntryImpl(int companyID, int id, String userName, String fullName, String firstName, String shortName, String email, String companyName) {
+    public AdminEntryImpl(int companyID, int id, String userName, String fullName, String firstName, String shortName,
+						  String email, String companyName, String language, String country) {
     	this.companyID = companyID;
         this.username = userName;
         this.fullname = fullName;
@@ -47,6 +53,8 @@ public class AdminEntryImpl implements AdminEntry {
         this.id = id;
         this.email = email;
 		this.companyName = companyName;
+		this.language = language;
+		this.country = country;
     }
 
     @Override
@@ -152,4 +160,14 @@ public class AdminEntryImpl implements AdminEntry {
 	public String getCompanyName() {
 		return companyName;
 	}
+
+	@Override
+	public Locale getLocale() {
+		if (StringUtils.isBlank(language)) {
+			return null;
+		}
+
+		return new Locale(language, country);
+	}
+
 }

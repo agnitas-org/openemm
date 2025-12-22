@@ -252,7 +252,7 @@ public class TagSyntaxChecker {
 	 * Scann for name attributes of occurences of a defined list of agnTag
 	 * names.
 	 */
-	public static List<String> scanForAgnTags(String contentText, String... tagNames) throws Exception {
+	public static List<String> scanForAgnTags(String contentText, String... tagNames) {
 		if (contentText == null) {
 			return new ArrayList<>();
 		}
@@ -284,7 +284,7 @@ public class TagSyntaxChecker {
 			}
 			return tagContents;
 		} catch (Exception e) {
-			throw new Exception("Error in scanForAgnTagNameValues at position " + searchIndex + ": " + e.getMessage(), e);
+			throw new RuntimeException("Error in scanForAgnTagNameValues at position " + searchIndex + ": " + e.getMessage(), e);
 		}
 	}
 

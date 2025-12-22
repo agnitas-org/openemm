@@ -10,40 +10,14 @@
 
 package com.agnitas.emm.core.recipientsreport.forms;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.util.AgnUtils;
-import com.agnitas.web.forms.FormDateTime;
 import com.agnitas.web.forms.PaginationForm;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 public class RecipientsReportForm extends PaginationForm {
-
-    // TODO: EMMGUI-714: remove this old fields when old design will be removed
-    private RecipientsReport.RecipientReportType[] filterTypes;
-
-    // TODO: EMMGUI-714: remove this old fields when old design will be removed
-    private FormDateTime filterDateStart = new FormDateTime();
-
-    // TODO: EMMGUI-714: remove this old fields when old design will be removed
-    private FormDateTime filterDateFinish = new FormDateTime();
-
-    public RecipientsReport.RecipientReportType[] getFilterTypes() {
-        return filterTypes;
-    }
-
-    public void setFilterTypes(RecipientsReport.RecipientReportType[] filterTypes) {
-        this.filterTypes = filterTypes;
-    }
-
-    public FormDateTime getFilterDateStart() {
-        return filterDateStart;
-    }
-
-    public FormDateTime getFilterDateFinish() {
-        return filterDateFinish;
-    }
 
     private Integer datasourceId;
     private int adminId;

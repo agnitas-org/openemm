@@ -1,177 +1,131 @@
-AGN.Lib.Controller.new('ai-text-generation', function() {
+AGN.Lib.Controller.new('ai-text-generation', function () {
 
   const Form = AGN.Lib.Form;
-  const Select = AGN.Lib.Select;
-  var $modal;
-  var lastGeneratedText;
+  const Messaging = AGN.Lib.Messaging;
+  let lastGeneratedText;
 
   this.addDomInitializer('ai-text-generation', function () {
-    $modal = this.el.closest('.modal');
-    initListeners();
-
-    const languageSelect = Select.get(this.el.find("[id^='ai-language']"));
+    const languageSelect = AGN.Lib.Select.get(this.el.find('[data-ai-language]'));
     if (languageSelect.hasOption(window.adminLocale)) {
       languageSelect.selectValue(window.adminLocale);
     }
   });
 
-  function initListeners() {
-    $modal.on('modal:enlarged', function (e, $enlargedModal) {
-      syncSettings($modal, $enlargedModal);
-    });
-
-    $modal.on('modal:enlarged:apply', function (e, $enlargedModal) {
-      syncSettings($enlargedModal, $modal);
-    });
-
-    $modal.on('saveDynTag', function (e, currentDynTag) {
-      const $aiTextGenerationBlock = $('#tab-content-ai-text-generation');
-
-      if ($aiTextGenerationBlock.is(":visible")) {
-        if (lastGeneratedText) {
-          const promise = AGN.Lib.Confirm.createFromTemplate(
-            {dynTagName: currentDynTag.name},
-            'mailing-ai-text-generation-apply-question'
-          );
-          promise.done(function () {
-            const event = $.Event('saveDynTagContent');
-            $modal.trigger(event, [lastGeneratedText]);
-            lastGeneratedText = null;
-          });
-        } else {
-          $modal.modal('toggle')
-        }
-
-        e.preventDefault();
-      }
-    });
-  }
-
-  this.addAction({
-    enterdown: 'skip-form-submit'
-  }, function () {
+  this.addAction({enterdown: 'skip-form-submit'}, function () {
     this.event.preventDefault();
   });
 
-  this.addAction({click: 'generateText'}, function() {
-    const form = Form.get(this.el);
-    const $scope = this.el.closest('.tile, .modal');
-    const $el = this.el;
+  this.addAction({click: 'generateText'}, function () {
+    const $scope = getParentScope$(this.el);
 
-    if (validateSettings(form, $scope)) {
+    if (validateSettings($scope)) {
       const settings = getSettingsFromUi($scope);
 
-      $.post(AGN.url("/mailing/content/generateText.action"), settings).done(function(resp) {
+      $.post(AGN.url('/mailing/content/generateText.action'), settings).done(resp => {
         lastGeneratedText = resp.data;
         displayGeneratedText(resp.data, $scope);
-        $el.find('.text').text(t('ai.regenerateText'));
-      }).fail(function() {
-        AGN.Lib.Messages(t("Error"), t("defaults.error"), "alert");
+        this.el.find('.text').text(t('ai.regenerateText'));
       });
     }
   });
 
-  function validateSettings(form, $scope) {
-    var isValid = true;
-    var $numberOfWords = $scope.find("[id^='ai-numberOfWords']");
-    var $contentDescription = $scope.find("[id^='ai-content-description']");
+  function validateSettings($scope) {
+    let isValid = true;
+    const $numberOfWords = $scope.find('[data-ai-numberOfWords]');
+    const $contentDescription = $scope.find('[data-ai-contentDescription]');
 
     const numberOfWordsErrors = AGN.Lib.Validator.get('number').errors($numberOfWords, {min: 1, required: true});
     if (numberOfWordsErrors.length > 0) {
       isValid = false;
-
-      numberOfWordsErrors.forEach(function(error, index) {
-        form.showFieldError($numberOfWords.attr('name'), error.msg);
-      });
+      numberOfWordsErrors.forEach(error => Form.showFieldError$($numberOfWords, error.msg));
     } else {
-      form.cleanFieldError($numberOfWords.attr('name'));
+      Form.cleanFieldFeedback$($numberOfWords);
     }
 
     if (!$.trim($contentDescription.val())) {
       isValid = false;
-      form.showFieldError($contentDescription.attr('name'), t('fields.required.errors.missing'));
+      Form.showFieldError$($contentDescription, t('fields.required.errors.missing'));
     } else {
-      form.cleanFieldError($contentDescription.attr('name'));
+      Form.cleanFieldFeedback$($contentDescription);
     }
 
     return isValid;
   }
 
-  this.addAction({click: 'assumeGeneratedText'}, function() {
-    const $scope = this.el.closest('.tile, .modal');
-    const text = $scope.find('.ai-generated-text').val();
+  function applyGeneratedText($el) {
+    const $scope = getParentScope$($el);
+    const text = getAiResult$($scope).val();
+    const tabId = $el.closest('[data-tab-id]').data('tab-id');
+    openEditorTab(tabId);
+    setEditorContent(text, $scope, tabId);
+  }
 
-    if ($scope.is('.modal')) {
-      AGN.Lib.Confirm.get(this.el).positive(text);
-    } else {
-      const tabId = $scope.data('tab-id');
-      openEditorTab(tabId);
-      setEditorContent(text, $scope, tabId);
-    }
+  this.addAction({click: 'applyGeneratedText'}, function () {
+    applyGeneratedText(this.el);
   });
 
+  Messaging.subscribe('mailing-content:applyGeneratedText', applyGeneratedText);
+
   function openEditorTab(tabId) {
-    const $wysiwygTab = $('[data-toggle-tab*="wysiwyg' + tabId + '"]');
+    const $wysiwygTab = $(`[data-toggle-tab*="wysiwyg${tabId}"]`);
     if ($wysiwygTab.exists()) {
       $wysiwygTab.trigger('click');
       return;
     }
 
-    const $htmlTab = $('[data-toggle-tab*="html' + tabId + '"]');
+    const $htmlTab = $(`[data-toggle-tab*="html${tabId}"]`);
     if ($htmlTab.exists()) {
       $htmlTab.trigger('click');
     }
   }
 
-  function setEditorContent(content, $tile, tabId) {
-    const $textArea = $tile.parent().parent().find('.js-wysiwyg');
+  function setEditorContent(content, $scope, tabId) {
+    const $textArea = $scope.find('.js-wysiwyg');
 
-    if ($('#tab-content-wysiwyg').is(":visible") || $("[id^='tab-grid-wysiwyg" + tabId + "']").is(":visible")) {
-      var editor = CKEDITOR.instances[$textArea.attr('id')];
-      if (editor.status === 'ready') {
-        editor.setData(content)
+    if ($('#tab-content-wysiwyg').is(":visible") || $(`[id^='tab-grid-wysiwyg${tabId}']`).is(":visible")) {
+      if (window.Jodit) {
+        const jodit = Jodit.instances[$textArea.attr('id')];
+        if (jodit.o.editHTMLDocumentMode) {
+          const doc = new DOMParser().parseFromString(jodit.value, "text/html");
+          doc.body.innerHTML = content;
+
+          content = `${jodit.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
+        }
+
+        jodit.value = content;
       } else {
-        editor.on("instanceReady", function (event) {
-          event.editor.setData(content);
-        });
+        const editor = CKEDITOR.instances[$textArea.attr('id')];
+        if (editor.status === 'ready') {
+          editor.setData(content)
+        } else {
+          editor.on("instanceReady", event => event.editor.setData(content));
+        }
       }
     }
-    if ($('#contentEditor').is(":visible") || $("[id^='tab-grid-html" + tabId + "']").is(":visible")) {
-      ace.edit($textArea.attr('name') + 'Editor').setValue(content);
-    }
-  };
-
-  function syncSettings($srcModal, $destModal) {
-    const settings = getSettingsFromUi($srcModal);
-    displaySettings($destModal, settings);
-
-    const generatedText = $srcModal.find('.ai-generated-text').val();
-    if (generatedText) {
-      displayGeneratedText(generatedText, $destModal);
+    if ($('#contentEditor').is(":visible") || $(`[id^='tab-grid-html${tabId}']`).is(":visible")) {
+      ace.edit(`${$textArea.attr('name')}Editor`).setValue(content);
     }
   }
 
   function getSettingsFromUi($scope) {
     return {
-      language: $scope.find('[id^="ai-language"]').val(),
-      numberOfWords: $scope.find('[id^="ai-numberOfWords"]').val(),
-      tonality: $scope.find('[id^="ai-tonality"]').val(),
-      contentDescription: $scope.find('[id^="ai-content-description"]').val()
+      language: $scope.find('[data-ai-language]').val(),
+      numberOfWords: $scope.find('[data-ai-numberOfWords]').val(),
+      tonality: $scope.find('[data-ai-tonality]').val(),
+      contentDescription: $scope.find('[data-ai-contentDescription]').val()
     }
   }
 
   function displayGeneratedText(text, $scope) {
-    $scope.find('.ai-generated-text').val(text);
-    $scope.find('#ai-assume-generated-text').removeClass('hidden');
+    getAiResult$($scope).val(text).trigger('change');
+    $scope.find('#ai-apply-text-btn').removeClass('hidden');
   }
 
-  function displaySettings($modal, settings) {
-    if (settings) {
-      Select.get($modal.find('#ai-language')).selectValue(settings.language);
-      $modal.find('#ai-numberOfWords').val(settings.numberOfWords);
-      Select.get($modal.find('#ai-tonality')).selectValue(settings.tonality);
-      $modal.find('#ai-content-description').val(settings.contentDescription);
-    }
+  function getAiResult$($scope) {
+    return $scope.find('[data-ai-result]');
   }
 
+  function getParentScope$($el) {
+    return $el.closest('.tile');
+  }
 });

@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.recipient.service.RecipientsModel;
-import org.agnitas.emm.core.recipient.service.impl.RecipientWrongRequestException;
-import org.agnitas.emm.core.recipient.service.impl.RecipientsSizeLimitExceededExeption;
+import com.agnitas.emm.core.recipient.service.RecipientService;
+import com.agnitas.emm.core.recipient.service.RecipientsModel;
+import com.agnitas.emm.core.recipient.exception.RecipientWrongRequestException;
+import com.agnitas.emm.core.recipient.exception.RecipientsSizeLimitExceededExeption;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.Criteria;
@@ -31,7 +31,7 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.recipient.RecipientException;
+import com.agnitas.emm.core.recipient.exception.RecipientException;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
@@ -120,7 +120,7 @@ public class ListSubscribersEndpoint extends BaseEndpoint {
 		}
 	}
 
-	private void checkResultListSize(final String username, final int listSize) throws RecipientsSizeLimitExceededExeption {
+	private void checkResultListSize(String username, int listSize) {
 		final OptionalInt resultListSizeOpt = readMaxResultListSize(username);
 		
         if(resultListSizeOpt.isPresent() && resultListSizeOpt.getAsInt() > 0 && resultListSizeOpt.getAsInt() < listSize) {

@@ -31,7 +31,7 @@ public class ActionOperationUnsubscribeCustomerDaoImpl
     protected void processSaveOperation(ActionOperationUnsubscribeCustomerParameters operation) {
         update("INSERT INTO actop_unsubscribe_customer_tbl " +
                         "(action_operation_id, all_mailinglists_selected) VALUES (?,?)",
-                operation.getId(), operation.isAdditionalMailinglists() && operation.isAllMailinglistsSelected());
+                operation.getId(), operation.isAdditionalMailinglists() && operation.isAllMailinglistsSelected() ? 1 : 0);
         if (operation.isAdditionalMailinglists() && !operation.isAllMailinglistsSelected()) {
             saveSelectedMailinglistsToOperation(operation);
         }

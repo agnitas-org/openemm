@@ -14,26 +14,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.factory.BindingEntryFactory;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
+import com.agnitas.emm.core.binding.exception.BindingNotExistException;
+import com.agnitas.emm.core.binding.service.BindingModel;
 import com.agnitas.emm.core.binding.service.BindingService;
-import com.agnitas.exception.InvalidUserStatusException;
-import jakarta.annotation.Resource;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.factory.BindingEntryFactory;
+import com.agnitas.emm.core.binding.service.validation.BindingModelValidator;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.binding.service.BindingModel;
-import org.agnitas.emm.core.binding.service.BindingNotExistException;
-import org.agnitas.emm.core.binding.service.validation.BindingModelValidator;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.mailinglist.exception.MailinglistNotExistException;
+import com.agnitas.emm.core.recipient.exception.RecipientNotExistException;
+import jakarta.annotation.Resource;
+import com.agnitas.emm.core.velocity.Constants;
 import org.springframework.transaction.annotation.Transactional;
 
 public class BindingServiceImpl implements BindingService {
@@ -48,7 +46,7 @@ public class BindingServiceImpl implements BindingService {
 	private MailingDao mailingDao;
 	
 	@Override
-	public final boolean setBindingWithActionId(final BindingModel model, final boolean runActionInBackground) throws MailinglistException {
+	public boolean setBindingWithActionId(BindingModel model, boolean runActionInBackground) {
 	    bindingModelValidator.assertIsValidToSet(model);
 		setBindingInTransaction(model);  // Need this method call to set bindings (and only bindings) within transaction
 
@@ -77,7 +75,7 @@ public class BindingServiceImpl implements BindingService {
 	}
 	
 	@Transactional
-	protected void setBindingInTransaction(final BindingModel model) throws MailinglistException {
+	protected void setBindingInTransaction(BindingModel model) {
 		setBinding(model);
 	}
 
@@ -94,7 +92,7 @@ public class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	public void setBinding(BindingModel model) throws MailinglistException {
+	public void setBinding(BindingModel model) {
 		bindingModelValidator.assertIsValidToSet(model);
 		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
 			throw new MailinglistNotExistException(model.getMailinglistId(), model.getCompanyId());
@@ -107,11 +105,7 @@ public class BindingServiceImpl implements BindingService {
 		}
 
 		// Check, that user status has valid value
-		try {
-			UserStatus.getUserStatusByID(model.getStatus());
-		} catch(final Exception e) {
-			throw new InvalidUserStatusException(model.getStatus());
-		}
+		UserStatus.getByCode(model.getStatus());
 
 		BindingEntry binding = bindingEntryDao.get(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype());
 		if(binding == null) {

@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.recipientsreport.web;
 
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,24 +18,22 @@ import java.util.Set;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.recipientsreport.RecipientReportDownloadException;
-import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportSearchParams;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.messages.I18nString;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -62,7 +58,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/recipientsreport")
-@PermissionMapping("recipientsreport")
+@RequiredPermission("wizard.import|wizard.export")
 @SessionAttributes(types = RecipientsReportSearchParams.class)
 public class RecipientsReportController implements XssCheckAware {
 	
@@ -98,25 +94,10 @@ public class RecipientsReportController implements XssCheckAware {
     public String list(@RequestParam(required = false) Boolean restoreSort, RecipientsReportForm reportForm, RecipientsReportSearchParams searchParams,
                        Admin admin, Model model) {
         FormUtils.syncPaginationData(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm, restoreSort);
-        FormUtils.syncSearchParams(searchParams, reportForm, true);
+        searchParams.restoreParams(reportForm);
 
-        Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
-        Date finishDate = reportForm.getFilterDateFinish().get(admin.getDateFormat());
-
-        PaginatedListImpl<RecipientsReport> reports = admin.isRedesignedUiUsed()
-                ? recipientsReportService.deleteOldReportsAndGetReports(reportForm, admin)
-                : recipientsReportService.deleteOldReportsAndGetReports(admin,
-                        reportForm.getPage(), reportForm.getNumberOfRows(),
-                        reportForm.getSort(), reportForm.getDir(),
-                        startDate, finishDate,
-                        reportForm.getFilterTypes());
-
-        model.addAttribute("reportsList", reports);
-
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("users", adminService.listAdminsByCompanyID(admin.getCompanyID()));
-        }
-
+        model.addAttribute("reportsList", recipientsReportService.deleteOldReportsAndGetReports(reportForm, admin));
+        model.addAttribute("users", adminService.listAdminsByCompanyID(admin.getCompanyID()));
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         
         writeUserActivityLog(admin, "Import/Export logs", "active tab - overview");
@@ -126,7 +107,7 @@ public class RecipientsReportController implements XssCheckAware {
 
     @GetMapping("/search.action")
     public String search(RecipientsReportForm filter, RecipientsReportSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
+        searchParams.storeParams(filter);
         ra.addFlashAttribute("recipientsReportForm", filter);
         return REDIRECT_TO_OVERVIEW;
     }
@@ -161,7 +142,7 @@ public class RecipientsReportController implements XssCheckAware {
     public Object download(@PathVariable int reportId, Admin admin, Popups popups) {
         DownloadRecipientReport file = recipientsReportService.getRecipientReportForDownload(reportId, admin);
         if (file == null) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return REDIRECT_TO_OVERVIEW;
         }
         writeDownloadUserActivityLog(admin, reportId, file);
@@ -198,6 +179,7 @@ public class RecipientsReportController implements XssCheckAware {
         if (report.getType() == null) {
             return "Unknown report type";
         }
+
         switch (report.getType()) {
             case EXPORT:
                 return "Export report";
@@ -210,4 +192,5 @@ public class RecipientsReportController implements XssCheckAware {
                 return report.getType().name();
         }
     }
+
 }

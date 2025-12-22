@@ -12,7 +12,7 @@ package com.agnitas.emm.springws.endpoint.binding;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.binding.service.BindingModel;
+import com.agnitas.emm.core.binding.service.BindingModel;
 import com.agnitas.emm.core.binding.service.BindingService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;

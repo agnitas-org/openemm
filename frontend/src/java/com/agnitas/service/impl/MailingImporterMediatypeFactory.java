@@ -21,7 +21,7 @@ import com.agnitas.json.JsonObject;
 
 public class MailingImporterMediatypeFactory {
 
-	public Mediatype createMediatypeFromJson(final JsonObject mediatypeJsonObject) throws Exception {
+	public Mediatype createMediatypeFromJson(final JsonObject mediatypeJsonObject) {
 		final MediaTypes mediaType = MediaTypes.getMediatypeByName((String) mediatypeJsonObject.get("type"));
 		
 		switch(mediaType) {
@@ -55,7 +55,7 @@ public class MailingImporterMediatypeFactory {
 		}
 
 		default:
-			throw new Exception("Invalid mediatype code: " + mediaType);
+			throw new RuntimeException("Invalid mediatype code: " + mediaType);
 		}
 	}
 	

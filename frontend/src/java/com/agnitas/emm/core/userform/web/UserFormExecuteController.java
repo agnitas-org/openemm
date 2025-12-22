@@ -20,14 +20,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.web.UserFormSupportForm;
+import com.agnitas.beans.Company;
+import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.beans.impl.CompanyStatus;
 import com.agnitas.beans.impl.ViciousFormDataException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.web.ParameterOverwritingHttpServletRequestWrapper;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.components.service.ComponentService;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.emm.core.mobile.service.DeviceService;
+import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
+import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
+import com.agnitas.emm.core.userform.service.UserFormExecutionService;
+import com.agnitas.emm.core.userform.util.WebFormUtils;
 import com.agnitas.exception.FormNotFoundException;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.userform.bean.UserForm;
 import com.agnitas.util.AgnUtils;
+import com.agnitas.util.ImageUtils;
+import com.agnitas.web.UserFormSupportForm;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.text.StringEscapeUtils;
@@ -37,27 +54,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.Company;
-import com.agnitas.beans.FormComponent.FormComponentType;
-import com.agnitas.dao.CompanyDao;
-import com.agnitas.emm.core.commons.web.ParameterOverwritingHttpServletRequestWrapper;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.company.service.UnknownCompanyTokenException;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.mobile.service.DeviceService;
-import com.agnitas.emm.core.userform.exception.BlacklistedDeviceException;
-import com.agnitas.emm.core.userform.service.UserFormExecutionResult;
-import com.agnitas.emm.core.userform.service.UserFormExecutionService;
-import com.agnitas.emm.core.userform.util.WebFormUtils;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.userform.bean.UserForm;
-import com.agnitas.util.ImageUtils;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 public class UserFormExecuteController {
+
+	private static final Logger logger = LogManager.getLogger(UserFormExecuteController.class);
+
 	/** Name of request parameter containing company ID. */
 	public static final String COMPANY_ID_PARAMETER_NAME = "agnCI";
 	
@@ -70,9 +70,6 @@ public class UserFormExecuteController {
 	public static final String FORM_NAME_PARAMETER_NAME = "agnFN";
 	
 	public static final String USE_SESSION_PARAMETER_NAME = "agnUseSession";
-
-	/** The logger. */
-	private static final Logger logger = LogManager.getLogger(UserFormExecuteController.class);
 
 	protected ConfigService configService;
 	protected UserFormExecutionService userFormExecutionService;
@@ -94,11 +91,6 @@ public class UserFormExecuteController {
 		this.componentService = componentService;
 	}
 
-	/**
-	 * This method is always allowed by exclude entry in "spring-mvc-servlet.xml"
-	 * 
-	 * @throws IOException
-	 */
 	@RequestMapping({"/form.action", "/form.do"})
 	public String executeForm(HttpServletRequest originalRequest, @RequestParam(value = "file", required = false) MultipartFile file, HttpServletResponse response) throws IOException {
 		final ParameterOverwritingHttpServletRequestWrapper request = new ParameterOverwritingHttpServletRequestWrapper(originalRequest);
@@ -116,29 +108,17 @@ public class UserFormExecuteController {
 		try {
 			final String companyToken = request.getParameter(COMPANY_TOKEN_PARAMETER_NAME);
 			if (companyToken != null) {
-				company = companyTokenService.findCompanyByToken(companyToken);
+				company = companyTokenService.findCompanyByToken(companyToken).orElse(null);
 				if (company == null) {
-					if (logger.isInfoEnabled()) {
-						logger.info(String.format("Company token '%s' not found", companyToken));
-					}
+					logger.info("Company token '{}' not found", companyToken);
 				}
 			} else {
 				int companyID = Integer.parseInt(request.getParameter(COMPANY_ID_PARAMETER_NAME));
 				company = companyDao.getCompany(companyID);
 				if (company == null) {
-					if (logger.isInfoEnabled()) {
-						logger.info(String.format("Company id '%s' not found", companyID));
-					}
+					logger.info("Company id '{}' not found", companyID);
 				}
 			}
-		} catch(final UnknownCompanyTokenException e) {
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Company token '%s' not found", e.getToken()));
-			}
-			
-			// We could not determine company ID from token, so we cannot determine if support button should be shown.
-			request.setAttribute("SHOW_SUPPORT_BUTTON", false);
-			return "form_not_found";
 		} catch (Exception e) {
 			logger.warn("Error viewing user form", e);
 			return null;

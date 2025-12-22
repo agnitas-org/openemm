@@ -8,16 +8,14 @@ import com.agnitas.emm.core.db_schema.service.DbSchemaSnapshotService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.serverstatus.forms.JobQueueFormSearchParams;
 import com.agnitas.emm.core.serverstatus.service.ServerStatusService;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.service.JobQueueService;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 @Controller
-@PermissionMapping("server.status")
 @RequestMapping("/serverstatus")
 @SessionAttributes(types = JobQueueFormSearchParams.class)
 public class ServerStatusControllerOpenemm extends ServerStatusController {

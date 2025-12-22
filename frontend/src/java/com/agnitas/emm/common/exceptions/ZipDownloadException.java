@@ -10,9 +10,10 @@
 
 package com.agnitas.emm.common.exceptions;
 
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.UiMessageException;
 
-public class ZipDownloadException extends RequestErrorException {
+public class ZipDownloadException extends UiMessageException {
+
     private static final long serialVersionUID = -7572097116055777913L;
 
 	public ZipDownloadException(String... keys) {

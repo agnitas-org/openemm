@@ -10,10 +10,7 @@
 
 package com.agnitas.beans;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
-
-import com.agnitas.beans.LinkProperty;
 
 public interface BaseTrackableLink {
 	
@@ -184,11 +181,8 @@ public interface BaseTrackableLink {
      *
      * Caution:
      * This is used by JSP-Files
-     *
-     * @return
-     * @throws UnsupportedEncodingException
      */
-    String createDirectLinkWithOptionalExtensionsWithoutUserData() throws UnsupportedEncodingException;
+    String createDirectLinkWithOptionalExtensionsWithoutUserData();
     
     /**
 	 * Method that count number of links with type {@link LinkProperty.PropertyType#LinkExtension }

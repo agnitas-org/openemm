@@ -17,49 +17,40 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
-import com.agnitas.beans.impl.MaildropDeleteException;
-import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.mailing.MailingAllReadySentException;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.Tuple;
-import org.apache.commons.lang3.StringUtils;
-import com.agnitas.beans.Target;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendingProperties;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.Target;
+import com.agnitas.beans.impl.MaildropDeleteException;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.dao.TargetDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.exception.MailingAlreadySentException;
 import com.agnitas.mailing.autooptimization.beans.Optimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.service.OptimizationCommonService;
-import com.agnitas.mailing.autooptimization.service.OptimizationScheduleService;
 import com.agnitas.mailing.autooptimization.service.OptimizationIsFinishedException;
+import com.agnitas.mailing.autooptimization.service.OptimizationScheduleService;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.Tuple;
+import org.apache.commons.lang3.StringUtils;
 
 public class OptimizationScheduleServiceImpl implements OptimizationScheduleService {
-	/** DAO accessing mailings. */
+
 	private MailingDao mailingDao;
-	
-	/** DAO accessing target groups. */
 	private TargetDao targetDao;
 	private OptimizationCommonService optimizationCommonService;
 	private MaildropService maildropService;
 
 	@Override
-	public void scheduleOptimization(Optimization optimization) throws MailingAllReadySentException,
-			OptimizationIsFinishedException, MaildropDeleteException {
-		scheduleOptimization(optimization, null);
-	}
-
-	@Override
 	public void scheduleOptimization(Optimization optimization, Map<Integer, MailingSendingProperties> properties)
-			throws MailingAllReadySentException,
-			OptimizationIsFinishedException, MaildropDeleteException {
+			throws MailingAlreadySentException, OptimizationIsFinishedException, MaildropDeleteException {
 
 		if (optimization.getStatus() == AutoOptimizationStatus.SCHEDULED.getCode()) { // re-schedule an
 															// existing
@@ -95,7 +86,7 @@ public class OptimizationScheduleServiceImpl implements OptimizationScheduleServ
 			// if it has been sent throw an Exception
 			if (testMailing.getMailingType() != MailingType.NORMAL
 					|| this.maildropService.isActiveMailing(testMailing.getId(), testMailing.getCompanyID())) {
-				throw new MailingAllReadySentException(
+				throw new MailingAlreadySentException(
 						"Mailing has allready been sent ! Mailing-ID: "
 								+ testMailing.getId());
 			}

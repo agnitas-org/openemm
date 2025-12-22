@@ -39,8 +39,8 @@ import com.agnitas.service.SimpleServiceResult;
 @Component
 public class UpdateCustomerValidator implements ActionOperationValidator {
 
-    private RecipientDao recipientDao;
-    private TrackpointDao trackpointDao;
+    private final RecipientDao recipientDao;
+    private final TrackpointDao trackpointDao;
 
     public UpdateCustomerValidator(RecipientDao recipientDao, @Autowired(required = false) TrackpointDao trackpointDao) {
         this.recipientDao = recipientDao;
@@ -53,7 +53,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
     }
 
     @Override
-    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) throws Exception {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) {
         ActionOperationUpdateCustomerParameters operation = (ActionOperationUpdateCustomerParameters) target;
         List<Message> errors = new ArrayList<>();
         boolean valid;
@@ -70,7 +70,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
         return new SimpleServiceResult(valid, errors);
     }
 
-    private boolean validateColumnName(Admin admin, ActionOperationUpdateCustomerParameters operation, List<Message> errors, DbColumnType.SimpleDataType simpleDataType) throws Exception {
+    private boolean validateColumnName(Admin admin, ActionOperationUpdateCustomerParameters operation, List<Message> errors, DbColumnType.SimpleDataType simpleDataType) {
         List<Message> errorMessages = new ArrayList<>();
 
         String columnName = operation.getColumnName();
@@ -81,8 +81,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
                 case Blob:
                     errorMessages.add(Message.of("error.updatecustomer.invalidFieldType", columnName));
                     break;
-                case Date:
-                case DateTime:
+                case Date, DateTime:
                     boolean valid = true;
                     if (updateType == ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY) {
                         try {
@@ -130,7 +129,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
                         }
 
                     } else {
-                        throw new Exception("Invalid update value type");
+                        throw new RuntimeException("Invalid update value type");
                     }
 
                     if (!valid) {
@@ -140,8 +139,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
                                 updateValueStr));
                     }
                     break;
-                case Numeric:
-                case Float:
+                case Numeric, Float:
                     if (!AgnUtils.isDouble(updateValueStr)) {
                         errorMessages.add(Message.of("error.updatecustomer.invalidFieldType",
                                 columnName,
@@ -153,7 +151,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
                     // No special conditions for characters
                     break;
                 default:
-                    throw new Exception("Unknown db field type");
+                    throw new RuntimeException("Unknown db field type");
             }
         }
 

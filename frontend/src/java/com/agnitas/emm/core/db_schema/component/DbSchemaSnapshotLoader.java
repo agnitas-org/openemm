@@ -37,9 +37,9 @@ public class DbSchemaSnapshotLoader implements InitializingBean {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         // hack for junit tests
-        if (servletContext == null) {
+        if (servletContext == null || servletContext.getClass().getName().equals("org.springframework.mock.web.MockServletContext")) {
             return;
         }
 

@@ -10,18 +10,29 @@
 
 package com.agnitas.emm.core.sessionhijacking.dao;
 
-import com.agnitas.emm.core.sessionhijacking.beans.IpSettings;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
 import java.util.List;
+
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.sessionhijacking.beans.IpSettings;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * DAO accessing configuration of {@link com.agnitas.emm.core.sessionhijacking.web.GroupingSessionHijackingPreventionFilter}.
  */
-public final class SessionHijackingPreventionDataDaoImpl extends BaseDaoImpl implements SessionHijackingPreventionDataDao {
-	
-	@Override
-	public final List<IpSettings> listIpSettings() {
-    	return select("SELECT ip, ip_group FROM sessionhijackingprevention_tbl", new IpSettingsRowMapper());
-	}
+public class SessionHijackingPreventionDataDaoImpl extends BaseDaoImpl implements SessionHijackingPreventionDataDao {
+
+    private static final RowMapper<IpSettings> ROW_MAPPER = (rs, rowNum) -> {
+        String ip = rs.getString("ip");
+        int group = rs.getInt("ip_group");
+        boolean groupIsNull = rs.wasNull();
+
+        return new IpSettings(ip, groupIsNull ? null : group);
+    };
+
+
+    @Override
+    public List<IpSettings> listIpSettings() {
+        return select("SELECT ip, ip_group FROM sessionhijackingprevention_tbl", ROW_MAPPER);
+    }
+
 }

@@ -31,23 +31,23 @@ import com.agnitas.emm.core.mailing.dao.MailingParameterDao;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.web.MailingSettingsOptions;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.web.mvc.Popups;
-import jakarta.mail.internet.InternetAddress;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.exception.CharacterEncodingValidationExceptionMod;
+import com.agnitas.service.AgnTagService;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.CharacterEncodingValidator;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DynTagException;
 import com.agnitas.util.HtmlUtils;
+import com.agnitas.web.mvc.Popups;
+import jakarta.mail.internet.InternetAddress;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -133,7 +133,7 @@ public class MailingSettingsFormValidator {
     private boolean isNoTargets(MailingSettingsOptions options, MailingSettingsForm form) {
         int workflowId = options.getWorkflowId();
         return workflowId > 0
-                ? !workflowService.isAdditionalRuleDefined(options.getCompanyId(), options.getMailingId(), workflowId)
+                ? !workflowService.isAdditionalRuleDefined(options.getCompanyId(), workflowId)
                 : CollectionUtils.isEmpty(form.getTargetGroupIds());
     }
 

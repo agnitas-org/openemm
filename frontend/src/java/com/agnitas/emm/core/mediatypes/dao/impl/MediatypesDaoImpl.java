@@ -10,21 +10,6 @@
 
 package com.agnitas.emm.core.mediatypes.dao.impl;
 
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.util.SpecialCharactersWorker;
-import com.agnitas.beans.MediaTypeStatus;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
-import com.agnitas.util.AgnUtils;
-import org.springframework.jdbc.core.RowCallbackHandler;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -32,7 +17,19 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static java.text.MessageFormat.format;
+import com.agnitas.beans.MediaTypeStatus;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import com.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.SpecialCharactersWorker;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.springframework.jdbc.core.RowCallbackHandler;
 
 public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
 
@@ -86,31 +83,21 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
     }
 
     @Override
-    public Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId) throws MediatypesDaoException {
+    public Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId) {
         Map<Integer, Mediatype> mediatypes = new HashMap<>();
 
         String sql = "SELECT mediatype, priority, status, param FROM mailing_mt_tbl WHERE mailing_id = ?";
-        try {
-            query(sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId);
-        } catch (Exception e) {
-            logger.error(format("Error reading media types for mailing {0}, company ID {1}", mailingId, companyId), e);
-            throw new MediatypesDaoException("Error reading media types for mailing " + mailingId + ", company ID " + companyId, e);
-        }
+        query(sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId);
 
         return mediatypes;
     }
 
     @Override
-    public Map<Integer, Mediatype> loadMediatypesByStatus(MediaTypeStatus status, int mailingId, int companyId) throws MediatypesDaoException {
+    public Map<Integer, Mediatype> loadMediatypesByStatus(MediaTypeStatus status, int mailingId, int companyId) {
         Map<Integer, Mediatype> mediatypes = new HashMap<>();
 
         String sql = "SELECT mediatype, priority, status, param FROM mailing_mt_tbl WHERE mailing_id = ? AND status = ?";
-        try {
-            query(sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId, status.getCode());
-        } catch (Exception e) {
-            logger.error(format("Error reading media types for mailing {0}, company ID {1}", mailingId, companyId), e);
-            throw new MediatypesDaoException("Error reading media types for mailing " + mailingId + ", company ID " + companyId, e);
-        }
+        query(sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId, status.getCode());
 
         return mediatypes;
     }

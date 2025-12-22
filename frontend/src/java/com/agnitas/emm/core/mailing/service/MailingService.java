@@ -18,33 +18,29 @@ import java.util.Map;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
-import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.service.ServiceResult;
 import com.agnitas.beans.MailingBase;
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.Mailinglist;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailingWithMailingList;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
+import com.agnitas.emm.core.mailing.forms.MailingTemplateSelectionFilter;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.service.ServiceResult;
 import org.springframework.context.ApplicationContext;
 
 public interface MailingService {
 	
-	int addMailing(MailingModel model) throws MailinglistNotExistException;
+	int addMailing(MailingModel model);
 	
 	int addMailingFromTemplate(MailingModel model);
 
@@ -54,7 +50,7 @@ public interface MailingService {
 
     int getFollowUpFor(int mailingId);
 	
-	void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException;
+	void updateMailing(MailingModel model, List<UserAction> userActions);
 
 	MailingStatus getMailingStatus(MailingModel model);
 
@@ -66,7 +62,7 @@ public interface MailingService {
 
 	List<Mailing> listMailings(final int companyId, final ListMailingFilter filter);
 
-	List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException;
+	List<Mailing> getMailingsForMLID(MailingModel model);
 
 	void sendMailing(MailingModel model, List<UserAction> userActions);
 
@@ -97,18 +93,19 @@ public interface MailingService {
 	 * 
 	 * @throws MailingNotExistException if mailing ID is unknown
 	 */
-	boolean isMailingWorldSent(int mailingID, int companyID) throws MailingNotExistException;
+	boolean isMailingWorldSent(int mailingID, int companyID);
 
-	boolean isActiveIntervalMailing(final int mailingID);
+	boolean isActiveIntervalMailing(int mailingId);
+
 	boolean isActiveIntervalMailing(int mailingID, int companyId);
 
-	int copyMailing(int mailingId, int companyId, String newMailingNamePrefix) throws Exception;
+	int copyMailing(int mailingId, int companyId, String newMailingNamePrefix);
 
-	int copyMailing(int newCompanyId, int mailinglistID, int fromCompanyID, int fromMailingID, boolean isTemplate) throws Exception;
+	int copyMailing(int newCompanyId, int mailinglistID, int fromCompanyID, int fromMailingID, boolean isTemplate);
 
 	List<LightweightMailing> getAllMailingNames(Admin admin);
 
-    List<MailingComponent> getMailingComponents(int mailingID, int companyID) throws MailingNotExistException;
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID);
 
     List<Mailing> getDuplicateMailing(List<WorkflowIcon> icons, int companyId);
 
@@ -129,9 +126,9 @@ public interface MailingService {
 
 	List<LightweightMailingWithMailingList> listAllActionBasedMailingsForMailinglist(final int companyID, final int mailinglistID);
 
-	LightweightMailing getLightweightMailing(final int companyID, final int mailingId) throws MailingNotExistException;
+	LightweightMailing getLightweightMailing(int companyID, int mailingId);
 
-	List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException;
+	List<TargetLight> listTargetGroupsOfMailing(int companyID, int mailingID);
 
 	boolean containsInvalidTargetGroups(int companyID, int mailingId);
 
@@ -142,6 +139,7 @@ public interface MailingService {
 	Admin getMailingLockingAdmin(int mailingId, int companyId);
 
 	boolean isDeliveryComplete(final int companyID, final int mailingID);
+
 	boolean isDeliveryComplete(final LightweightMailing mailing);
 
 	void updateStatus(int companyID, int mailingID, MailingStatus status);
@@ -163,21 +161,20 @@ public interface MailingService {
 	boolean isThresholdClearanceExceeded(int companyId, int mailingId);
 
 	int saveMailingWithNewContent(Mailing mailing) throws Exception;
+
 	int saveMailingWithNewContent(Mailing mailing, Admin admin) throws Exception;
-	int saveMailingWithNewContent(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
+
+	int saveMailingWithNewContent(Mailing mailing, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
+
 	int saveMailing(final Mailing mailing, final boolean preserveTrackableLinks);
 
     List<UserAction> deleteMailing(int mailingId, Admin admin);
-
-    boolean usedInRunningWorkflow(int mailingId, int companyId);
 
     void updateMailingsWithDynamicTemplate(Mailing mailing, ApplicationContext applicationContext);
 
 	Date getMailingLastSendDate(int mailingId);
 
     boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin);
-
-    boolean checkMailingReferencesTemplate(int templateId, int companyId);
 
     boolean isDynamicTemplateCheckboxVisible(Mailing mailing);
 
@@ -195,7 +192,7 @@ public interface MailingService {
 
     boolean isContentFullTextSearchSupported();
 
-    ServiceResult<PaginatedListImpl<Map<String, Object>>> getOverview(Admin admin, MailingsListProperties props);
+    ServiceResult<PaginatedList<Map<String, Object>>> getOverview(Admin admin, MailingsListProperties props);
 
     List<Map<String, String>> listTriggers(int mailingId, int companyId);
 
@@ -204,8 +201,6 @@ public interface MailingService {
     ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> ids, Admin admin);
 
     void bulkRestore(Collection<Integer> mailingIds, Admin admin);
-
-    ServiceResult<Mailing> getMailingForDeletion(int mailingId, Admin admin);
 
     void restoreMailing(int mailingId, Admin admin);
 
@@ -217,7 +212,7 @@ public interface MailingService {
 
     Mailing getMailing(int mailingId, int companyId, boolean includeDependencies);
 
-    Map<Integer, Mediatype> getMediatypes(int mailingId, int companyId) throws MediatypesDaoException;
+    Map<Integer, Mediatype> getMediatypes(int mailingId, int companyId);
 
     boolean isDateBasedMailingWasSentToday(int mailingId);
 
@@ -240,9 +235,14 @@ public interface MailingService {
 	MailingType getMailingType(int mailingID);
 
 	boolean isSettingsReadonly(Admin admin, int mailingId);
+
 	boolean isSettingsReadonly(Admin admin, boolean isTemplate);
 
 	boolean isMarkedAsDeleted(int mailingId, int companyID);
 
+	String getJoinedContent(Mailing mailing);
+
 	boolean isTemplate(int mailingId, int companyId);
+
+    Map<Integer, String> getMailingNames(Admin admin);
 }

@@ -62,8 +62,6 @@ public class WebStorageImpl implements WebStorage {
         dataMap.clear();
     }
 
-    // TODO: check usage and rempve when EMMGUI-714 will be finished and old design will be removed
-    @SuppressWarnings("unchecked")
     @Override
     public <T extends WebStorageEntry> T get(WebStorageBundle<T> key) {
         Objects.requireNonNull(key, NULL_KEY_MSG);
@@ -84,15 +82,6 @@ public class WebStorageImpl implements WebStorage {
 
         synchronized (key) {
             consumer.accept(access(key));
-        }
-    }
-
-    @Override
-    public <T extends WebStorageEntry> boolean isPresented(final WebStorageBundle<T> key) {
-        Objects.requireNonNull(key, NULL_KEY_MSG);
-
-        synchronized (key) {
-            return dataMap.containsKey(key.getName());
         }
     }
 

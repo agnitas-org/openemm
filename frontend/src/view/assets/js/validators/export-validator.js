@@ -1,36 +1,41 @@
-(function () {
+(() => {
   AGN.Lib.Validator.new('export/form', {
     valid: function ($e, options) {
       return !this.errors($e, options).length;
     },
     errors: function ($e, options) {
-      var errors = [];
+      const errors = [];
       validateColumnMappings(errors);
       return errors;
     }
   });
 
   function validateColumnMappings(errors) {
-    var allCustomColumnNames = [];
-    _.each($('#columnMappings tbody').find('[data-column-mapping-row]'), function (row) {
-      var $row = $(row);
-      var $columnNameField = $row.find('[data-column-name]');
-      var name = getColumnName($columnNameField);
-      checkColumnNameValid($columnNameField, errors);
+    const allCustomColumnNames = [];
+    _.each($('#custom-column-mappings tbody').find('tr'), row => {
+      const $row = $(row);
+      const $columnNameField = $row.find('[data-name="dbColumn"]');
+      const name = getColumnName($columnNameField);
+      checkColumnNameValid($row, $columnNameField, errors);
       checkColumnNameUnique(name, allCustomColumnNames, errors, $columnNameField);
       allCustomColumnNames.push(name.toLowerCase());
     });
   }
 
-  function checkColumnNameValid($columnNameField, errors) {
-    var name = getColumnName($columnNameField);
-    if ((!$columnNameField.is(':last-child') && name.length < 3) 
-      || ($columnNameField.is(':last-child') && name && name.length < 3)) {
-      errors.push({field: $columnNameField, msg: t('export.columnMapping.error.nameToShort')});
+  function checkColumnNameValid($row, $columnNameField, errors) {
+    const name = getColumnName($columnNameField);
+    const isLastRow = $row.is(':last-child');
+
+    if (!isLastRow && name.length === 0) {
+      errors.push({field: $columnNameField, msg: t('export.columnMapping.error.nameEmpty')});
       return;
     }
-    if ((!$columnNameField.is(":last-child") && !/^[a-zA-Z0-9_]{3,}$/.test(name))
-      || ($columnNameField.is(":last-child") && name && !/^[a-zA-Z0-9_]{3,}$/.test(name))) {
+
+    if ((!isLastRow && name.length < 3) || (isLastRow && name && name.length < 3)) {
+      errors.push({field: $columnNameField, msg: t('export.columnMapping.error.nameTooShort')});
+      return;
+    }
+    if ((!isLastRow && !/^[a-zA-Z0-9_]{3,}$/.test(name)) || (isLastRow && name && !/^[a-zA-Z0-9_]{3,}$/.test(name))) {
       errors.push({field: $columnNameField, msg: t('export.columnMapping.error.invalidColName')});
     }
   }
@@ -49,7 +54,7 @@
   }
   
   function getProfileFieldColumnNames() {
-    return $.map($('select[name="userColumns"] option') ,function(option) {
+    return $.map($('select[name="userColumns"] option'), function(option) {
       return option.value.toLowerCase();
     });
   }

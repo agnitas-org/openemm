@@ -1,19 +1,20 @@
-(function() {
-  var LOCKING_UPDATE_INTERVAL_MILLISECONDS =  45000;  // 45 seconds
-  var LOCKING_MAX_DURATION_MILLISECONDS = 3 * 60 * 60000;  // 3 hours
+(() => {
+
+  const LOCKING_UPDATE_INTERVAL_MILLISECONDS =  45000;  // 45 seconds
+  const LOCKING_MAX_DURATION_MILLISECONDS = 3 * 60 * 60000;  // 3 hours
 
   AGN.Opt.Components.MailingContentLock = {
     manageLock: function (mailingId, isMailingExclusiveLockingAcquired, anotherLockingUserName) {
       if (mailingId > 0 && isMailingExclusiveLockingAcquired) {
-        var ajaxLockingBeginTimestamp = Date.now();
-        var ajaxLockingUpdateIntervalId;
+        const ajaxLockingBeginTimestamp = Date.now();
+        let ajaxLockingUpdateIntervalId;
 
-        var ajaxUpdateLocking = function() {
+        const ajaxUpdateLocking = function() {
           if (ajaxLockingBeginTimestamp + LOCKING_MAX_DURATION_MILLISECONDS > Date.now()) {
             $.ajax({
-              url: AGN.url('/mailing/ajax/' + mailingId + '/lock.action'),
+              url: AGN.url(`/mailing/ajax/${mailingId}/lock.action`),
               type: 'POST',
-              success: function(resp) {
+              success: resp => {
                 // If locking prolongation is failed for some reason (normally should never happen), just ignore that.
                 if (resp.success !== true) {
                   clearInterval(ajaxLockingUpdateIntervalId);
@@ -34,8 +35,9 @@
             $.ajax({
               url: AGN.url('/logout.action'),
               type: 'POST',
-              success: function() {
-                $('body').append(AGN.Lib.Template.text('session-expired'));
+              success: () => {
+                const $modal = AGN.Lib.Modal.fromTemplate('session-expired');
+                $modal.on('modal:close', () => AGN.Lib.Page.reload(AGN.url('/logon.action')));
               }
             });
           }
@@ -43,15 +45,10 @@
 
         ajaxLockingUpdateIntervalId = setInterval(ajaxUpdateLocking, LOCKING_UPDATE_INTERVAL_MILLISECONDS);
         return true;
-      } else {
-        AGN.Lib.Modal.createFromTemplate({
-          modalClass: '',
-          title: t('defaults.warning'),
-          content: t('error.mailing.exclusiveLockingFailed', anotherLockingUserName)
-        }, 'modal');
-
-        return false;
       }
+
+      AGN.Lib.Modal.fromTemplate('mailing-locked', {username: anotherLockingUserName})
+      return false;
     }
   };
 })();

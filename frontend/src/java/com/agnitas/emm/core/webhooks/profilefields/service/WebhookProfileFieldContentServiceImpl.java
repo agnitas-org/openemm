@@ -18,10 +18,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Recipient;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.messages.common.WebhookRecipientData;
 import com.agnitas.emm.core.webhooks.profilefields.dao.WebhookProfileFieldDao;
-import org.agnitas.emm.core.recipient.service.RecipientService;
 
 public final class WebhookProfileFieldContentServiceImpl implements WebhookProfileFieldContentService {
 

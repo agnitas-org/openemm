@@ -10,13 +10,12 @@
 
 package com.agnitas.emm.core.serverstatus.web;
 
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,8 +32,15 @@ import com.agnitas.dao.ServerMessageDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaCheckResult;
 import com.agnitas.emm.core.db_schema.bean.DbSchemaSnapshot;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotMissingException;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotReadException;
+import com.agnitas.emm.core.db_schema.exception.DbSchemaSnapshotWriteException;
+import com.agnitas.emm.core.db_schema.exception.InvalidDbSchemaSnapshotFormatException;
 import com.agnitas.emm.core.db_schema.service.DbSchemaSnapshotService;
 import com.agnitas.emm.core.logon.service.LogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
@@ -54,7 +60,6 @@ import com.agnitas.json.JsonWriter;
 import com.agnitas.messages.Message;
 import com.agnitas.service.JobDto;
 import com.agnitas.service.JobQueueService;
-import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.AgnUtils;
@@ -63,20 +68,17 @@ import com.agnitas.util.HttpUtils;
 import com.agnitas.util.ServerCommand;
 import com.agnitas.util.ServerCommand.Command;
 import com.agnitas.util.ServerCommand.Server;
-import com.agnitas.util.TarGzUtilities;
 import com.agnitas.util.TextTableBuilder;
 import com.agnitas.util.Version;
 import com.agnitas.util.ZipUtilities;
-import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.Anonymous;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -85,10 +87,12 @@ import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -98,6 +102,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
@@ -105,8 +110,6 @@ public class ServerStatusController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(ServerStatusController.class);
 	
-	private static final String TEMP_LICENSE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "License";
-
 	private static final String FILE_NAME_DATE_FORMAT = DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES;
 
 	protected final LogonService logonService;
@@ -146,22 +149,43 @@ public class ServerStatusController implements XssCheckAware {
 		}
 	}
 
-	@ModelAttribute
-	public JobQueueFormSearchParams getSearchParams() {
-		return new JobQueueFormSearchParams();
+	@ExceptionHandler(DbSchemaSnapshotReadException.class)
+	public ModelAndView onDbSchemaSnapshotReadException(DbSchemaSnapshotReadException e, Popups popups) {
+		logger.error("Error while reading DB schema snapshot", e);
+		popups.exactAlert(e.getMessage());
+		return new ModelAndView(MESSAGES_VIEW, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@ExceptionHandler(InvalidDbSchemaSnapshotFormatException.class)
+	public ModelAndView onInvalidDbSchemaSnapshotFormatException(Popups popups) {
+		popups.alert("server.status.db.schema.parse.fail");
+		return new ModelAndView(MESSAGES_VIEW, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(DbSchemaSnapshotMissingException.class)
+	public ModelAndView onDbSchemaSnapshotMissingException(DbSchemaSnapshotMissingException e, Popups popups) {
+		popups.exactAlert(e.getMessage());
+		return new ModelAndView(MESSAGES_VIEW, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(DbSchemaSnapshotWriteException.class)
+	public String onDbSchemaSnapshotWriteException(DbSchemaSnapshotWriteException e, Popups popups) {
+		logger.error("Error while writing DB schema snapshot to file!", e);
+		popups.exactAlert(e.getMessage());
+		return "redirect:/serverstatus/view.action";
 	}
 
 	@RequestMapping(value = "/view.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String view(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form) {
 		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
-		if (admin.isRedesignedUiUsed()) {
-			model.addAttribute("checkDbSchemaAllowed", dbSchemaSnapshotService.exists());
-		}
+		model.addAttribute("checkDbSchemaAllowed", dbSchemaSnapshotService.exists());
 
 		return "server_status_view";
 	}
 
 	@PostMapping("/config/save.action")
+	@RequiredPermission("server.status")
 	public String saveConfig(Admin admin, ServerStatusForm form, Popups popups) {
 		if (!configFormValidator.validate(form.getConfigForm(), popups)) {
 			return MESSAGES_VIEW;
@@ -173,14 +197,15 @@ public class ServerStatusController implements XssCheckAware {
 		if (saved) {
 			userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "change server configuration: "));
 		} else {
-			popups.alert(ERROR_MSG);
+			popups.defaultError();
 		}
 
 		return String.format("redirect:/serverstatus/config/view.action?configForm.companyId=%d&configForm.name=%s", configForm.getCompanyId(),
-				UriUtils.encodeQueryParam(configForm.getName(), "UTF-8"));
+				UriUtils.encodeQueryParam(configForm.getName(), StandardCharsets.UTF_8));
 	}
 
 	@RequestMapping(value = "/config/view.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String viewConfig(Admin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		ServerConfigForm configForm = form.getConfigForm();
 
@@ -209,7 +234,8 @@ public class ServerStatusController implements XssCheckAware {
 	}
 	
 	@RequestMapping(value = "/config/download.action", method = { RequestMethod.GET, RequestMethod.POST}, produces = "application/zip")
-	public Object downloadConfig() throws Exception {
+	@RequiredPermission("server.status")
+	public Object downloadConfig() {
 		File configFile = null;
 		try {
 			// get file
@@ -226,22 +252,21 @@ public class ServerStatusController implements XssCheckAware {
 	}
 	
 	@RequestMapping(value = "/job/start.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String startJob(Admin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		if (!statusFormValidator.validateJobDescription(form, popups)) {
 			return MESSAGES_VIEW;
 		}
 
-		Message message;
 		String description = form.getJobStart();
 		try {
 			jobQueueService.startSpecificJobQueueJob(description);
-			message = Message.exact("Job " + description + " started on " + AgnUtils.getHostName() + ". See DB data for results");
-			popups.success(message);
+            popups.success(Message.exact("Job %s started on %s. See DB data for results".formatted(description, AgnUtils.getHostName())));
 
 			userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "started job '" + description + "'"), logger);
 		} catch (Exception e) {
-			logger.error("Error while starting job queue by description " + description, e);
-			popups.alert(ERROR_MSG);
+			logger.error("Error while starting job queue by description %s".formatted(description), e);
+			popups.defaultError();
 		}
 
 		model.addFlashAttribute(form);
@@ -250,6 +275,7 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/testemail/send.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String sendTestEmail(Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if(!statusFormValidator.validateTestEmail(form, popups)) {
 			return MESSAGES_VIEW;
@@ -268,6 +294,7 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/diagnosis/show.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String diagnosisView(HttpServletRequest request, Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if (!statusFormValidator.validateDiagnosticEmail(form, popups)) {
 			return MESSAGES_VIEW;
@@ -284,6 +311,7 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/logfile/download.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@RequiredPermission("server.status")
 	public @ResponseBody FileSystemResource logFileDownload(Admin admin, HttpServletResponse response) throws IOException {
 		String logFilePath = AgnUtils.getUserHomeDir() + "/logs/webapps/emm.log";
 		File zippedLogFile = ZipUtilities.zipFile(new File(logFilePath));
@@ -298,14 +326,15 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/logfile/view.action", method = { RequestMethod.GET, RequestMethod.POST })
+	@RequiredPermission("server.status")
 	public String logFileView(Admin admin, Model model) {
 		String logFilePath = AgnUtils.getUserHomeDir() + "/logs/webapps/emm.log";
 
 		String logFileContent = "";
 		try {
-			logFileContent = FileUtils.readFileToString(new File(logFilePath), "UTF-8");
+			logFileContent = FileUtils.readFileToString(new File(logFilePath), StandardCharsets.UTF_8);
 		} catch (Exception e) {
-			logger.error("Cannot read log file " + logFilePath, e);
+			logger.error("Cannot read log file %s".formatted(logFilePath), e);
 		}
 
 		userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "view log file"), logger);
@@ -316,24 +345,24 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/jobqueue/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String jobQueueView(@ModelAttribute("filter") JobQueueOverviewFilter filter, @ModelAttribute JobQueueFormSearchParams searchParams, Admin admin, Model model) {
-		if (admin.isRedesignedUiUsed()) {
-			FormUtils.syncSearchParams(searchParams, filter, true);
-		}
-		model.addAttribute("activeJobQueueList", jobQueueService.getOverview(filter));
-		if (admin.isRedesignedUiUsed()) {
-			model.addAttribute("notFilteredFullListSize", filter.isUiFiltersSet() ? jobQueueService.getCountForOverview() : -1);
-		}
+	@RequiredPermission("server.status")
+	public String jobQueueView(@ModelAttribute("filter") JobQueueOverviewFilter filter, JobQueueFormSearchParams searchParams, Admin admin, Model model) {
+        searchParams.restoreParams(filter);
+
+        model.addAttribute("activeJobQueueList", jobQueueService.getOverview(filter));
+		model.addAttribute("notFilteredFullListSize", filter.isUiFiltersSet() ? jobQueueService.getCountForOverview() : -1);
 		model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
+
 		userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "job queue view"), logger);
 
 		return "server_job_queue_view";
 	}
 
 	@GetMapping("/jobqueue/search.action")
-	public String jobQueueSearch(@ModelAttribute JobQueueOverviewFilter filter, @ModelAttribute JobQueueFormSearchParams searchParams) {
-		FormUtils.syncSearchParams(searchParams, filter, false);
-		return "redirect:/serverstatus/jobqueue/view.action";
+	@RequiredPermission("server.status")
+	public String jobQueueSearch(@ModelAttribute JobQueueOverviewFilter filter, JobQueueFormSearchParams searchParams) {
+        searchParams.storeParams(filter);
+        return "redirect:/serverstatus/jobqueue/view.action";
 	}
 
 	@Anonymous
@@ -344,7 +373,9 @@ public class ServerStatusController implements XssCheckAware {
 
 	@Anonymous
 	@RequestMapping(value = "/release.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
-	public @ResponseBody Object showReleaseVersions(@RequestParam(value = "hostname", required = false) String hostName, @RequestParam(value = "application", required = false) String application, @RequestParam(value = "format", required = false) String outputFormat) throws Exception {
+	public @ResponseBody Object showReleaseVersions(@RequestParam(value = "hostname", required = false) String hostName,
+													@RequestParam(value = "application", required = false) String application,
+													@RequestParam(value = "format", required = false) String outputFormat) {
 		List<Map<String, Object>> data = configService.getReleaseData(hostName, application);
 		SimpleDateFormat format = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS);
 		
@@ -370,15 +401,15 @@ public class ServerStatusController implements XssCheckAware {
 		if ("html".equalsIgnoreCase(outputFormat)) {
 			return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/html"))
-                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toHtmlString(headText).getBytes("UTF-8"))));
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toHtmlString(headText).getBytes(StandardCharsets.UTF_8))));
 		} else if ("csv".equalsIgnoreCase(outputFormat)) {
 			return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/comma-separated-values"))
-                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toCsvString().getBytes("UTF-8"))));
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toCsvString().getBytes(StandardCharsets.UTF_8))));
 		} else {
 			return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/plain"))
-                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toString().getBytes("UTF-8"))));
+                .body(new InputStreamResource(new ByteArrayInputStream(textTable.toString().getBytes(StandardCharsets.UTF_8))));
 		}
 	}
 
@@ -529,7 +560,7 @@ public class ServerStatusController implements XssCheckAware {
 		boolean foundErroneousDbVersion = false;
 		for (VersionStatus versionItem : serverStatusService.getLatestDBVersionsAndErrors()) {
 			if (!versionItem.getStatus()) {
-				result += "\n\t" + versionItem.toString();
+				result += "\n\t" + versionItem.getVersion();
 				foundErroneousDbVersion = true;
 			}
 		}
@@ -566,7 +597,7 @@ public class ServerStatusController implements XssCheckAware {
 		boolean foundError = false;
 		for (VersionStatus versionItem : serverStatusService.getLatestDBVersionsAndErrors()) {
 			if (!versionItem.getStatus()) {
-				result += "\nDB is missing version " + versionItem.toString();
+				result += "\nDB is missing version " + versionItem.getVersion();
 				foundError = true;
 			}
 		}
@@ -580,7 +611,7 @@ public class ServerStatusController implements XssCheckAware {
 		} else if (!serverStatusService.isJobQueueStatusOK()) {
 			result = "\nSome jobqueue jobs have errors";
 			foundError = true;
-		} else if (stallingAutoImports != null && stallingAutoImports.size() > 0) {
+		} else if (CollectionUtils.isNotEmpty(stallingAutoImports)) {
 			result = "\nSome auto import job is stalling";
 			foundError = true;
 		} else if (stallingImports > 0) {
@@ -601,130 +632,84 @@ public class ServerStatusController implements XssCheckAware {
 	}
 	
     @RequestMapping(value = "/licensedata/licenseupload.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE, consumes = {"multipart/form-data"})
-    public String licenseFileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
-    	Admin admin = AgnUtils.getAdmin(request);
-		if (admin == null) {
-			try {
-				admin = loginAdminByRequestParameters(request, admin);
+	@RequiredPermission("server.status")
+	public String licenseFileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Admin admin) {
+		if (file.isEmpty()) {
+			redirectAttributes.addFlashAttribute("message", "Please select a file to upload");
+			return "redirect:/serverstatus/view.action";
+		}
 
-				if (admin == null) {
-					throw new Exception("Access denied");
+		File unzippedLicenseDataDirectory = null;
+		try {
+			unzippedLicenseDataDirectory = serverStatusService.unzipLicenseFile(file);
+
+			File licenseDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml");
+			File licenseSignatureDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml.sig");
+            Version currentVersion = new Version(configService.getValue(ConfigValue.ApplicationVersion));
+			String majorMinorVersion = String.format("%d.%02d", currentVersion.getMajorVersion(), currentVersion.getMinorVersion());
+			Matcher licenseVersionMatcher = Pattern.compile(".*?([0-9]+[.][0-9]+).*").matcher(file.getOriginalFilename());
+
+			if (!licenseDataFile.exists() || !licenseSignatureDataFile.exists()) {
+				throw new Exception("Unknown license data content");
+			}
+
+			byte[] licenseDataArray = FileUtils.readFileToByteArray(licenseDataFile);
+			byte[] licenseSignatureDataArray = FileUtils.readFileToByteArray(licenseSignatureDataFile);
+			String licenseContent = new String(licenseDataArray);
+			boolean hasUnlimited = licenseContent.contains("<maximumVersion>Unlimited</maximumVersion>");
+
+			if (licenseDataArray.length == 0) {
+				throw new Exception("Missing license data content");
+			}
+
+			if (licenseSignatureDataArray == null || licenseSignatureDataArray.length == 0) {
+				throw new Exception("Missing license data signature content");
+			}
+
+			if (!hasUnlimited && (!licenseVersionMatcher.find() || !majorMinorVersion.equals(licenseVersionMatcher.group(1))
+					|| !licenseContent.contains("<maximumVersion>" + licenseVersionMatcher.group(1) + "</maximumVersion>")) ) {
+				logger.error(majorMinorVersion.equals(licenseVersionMatcher.group(1)));
+				throw new Exception("License version does not match maximum version or application version");
+			}
+
+			if (hasUnlimited && !(licenseContent.contains("<licenseID>1</licenseID>") || licenseContent.contains("<licenseID>1000</licenseID>"))) {
+				throw new Exception("For this license, maximum version 'Unlimited' is not allowed");
+			}
+
+			if (!licenseContent.contains("<licenseID>" + configService.getLicenseID() + "</licenseID>")) {
+				throw new Exception("Wrong license id in license data content. Expected license id: " + configService.getLicenseID());
+			}
+
+			licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, new Date());
+			userActivityLogService.writeUserActivityLog(admin, "license update", "License update");
+			redirectAttributes.addFlashAttribute("message", "You successfully uploaded new license data '" + file.getOriginalFilename() + "'");
+			reloadLicenseData(admin);
+		} catch (Exception e) {
+			logger.error("Cannot update license data: %s".formatted(e.getMessage()), e);
+			redirectAttributes.addFlashAttribute("message", "Upload of license data was not successful for '%s': %s".formatted(file.getOriginalFilename(), e.getMessage()));
+		} finally {
+			if (unzippedLicenseDataDirectory != null) {
+				try {
+					FileUtils.deleteDirectory(unzippedLicenseDataDirectory);
+				} catch (Exception e) {
+					logger.error("Error deleting temporary directory", e);
 				}
-			} catch (Exception e) {
-				return "ACCESS DENIED";
 			}
 		}
-		if (!admin.permissionAllowed(Permission.SERVER_STATUS)) {
-			return "PERMISSION DENIED";
-		} else {
-	    	if (file.isEmpty()) {
-	            redirectAttributes.addFlashAttribute("message", "Please select a file to upload");
-	            return "redirect:/serverstatus/view.action";
-	        } else {
-        		String currentTimeString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
-        		File unzippedLicenseDataDirectory = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString);
-	        	try {
-	        		if (!new File(TEMP_LICENSE_DIRECTORY).exists()) {
-	        			new File(TEMP_LICENSE_DIRECTORY).mkdirs();
-	        		}
-	        		if (file.getOriginalFilename().toLowerCase().endsWith(".zip")) {
-		        		File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".zip");
-		        		try {
-							file.transferTo(uploadedLicenseDataFile);
-							ZipUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
-						} finally {
-							if (uploadedLicenseDataFile.exists()) {
-								uploadedLicenseDataFile.delete();
-							}
-						}
-	        		} else if (file.getOriginalFilename().toLowerCase().endsWith(".tar.gz")) {
-		        		File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".tar.gz");
-		        		try {
-			        		file.transferTo(uploadedLicenseDataFile);
-			        		TarGzUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
-						} finally {
-							if (uploadedLicenseDataFile.exists()) {
-								uploadedLicenseDataFile.delete();
-							}
-						}
-	        		} else if (file.getOriginalFilename().toLowerCase().endsWith(".tgz")) {
-		        		File uploadedLicenseDataFile = new File(TEMP_LICENSE_DIRECTORY + "/" + currentTimeString + ".tgz");
-		        		try {
-			        		file.transferTo(uploadedLicenseDataFile);
-			        		TarGzUtilities.decompress(uploadedLicenseDataFile, unzippedLicenseDataDirectory);
-						} finally {
-							if (uploadedLicenseDataFile.exists()) {
-								uploadedLicenseDataFile.delete();
-							}
-						}
-	        		} else {
-	        			throw new Exception("Unknown license data format");
-	        		}
-	        		
-	        		File licenseDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml");
-	        		File licenseSignatureDataFile = new File(unzippedLicenseDataDirectory + "/" + "emm.license.xml.sig");
-					String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
-					Version currentVersion = new Version(currentVersionString);
-					String majorMinorVersion = String.format("%d.%02d", currentVersion.getMajorVersion(), currentVersion.getMinorVersion());
-					Matcher licenseVersionMatcher = Pattern.compile(".*?([0-9]+[.][0-9]+).*").matcher(file.getOriginalFilename());
 
-					if (licenseDataFile.exists() && licenseSignatureDataFile.exists()) {
-	        			byte [] licenseDataArray = FileUtils.readFileToByteArray(licenseDataFile);
-	    	        	byte [] licenseSignatureDataArray = FileUtils.readFileToByteArray(licenseSignatureDataFile);
-						Boolean hasUnlimited = new String(licenseDataArray).contains("<maximumVersion>Unlimited</maximumVersion>");
-
-	    	        	if (licenseDataArray == null || licenseDataArray.length == 0) {
-	    	        		throw new Exception("Missing license data content");
-	    	        	} else if (licenseSignatureDataArray == null || licenseSignatureDataArray.length == 0) {
-	    	        		throw new Exception("Missing license data signature content");
-	    	        	}else if (!hasUnlimited && (!licenseVersionMatcher.find() || !new String(majorMinorVersion).equals(licenseVersionMatcher.group(1))  || !new String(licenseDataArray).contains("<maximumVersion>" + licenseVersionMatcher.group(1) + "</maximumVersion>")) ) {
-							logger.error(new String(majorMinorVersion).equals(licenseVersionMatcher.group(1)));
-							throw new Exception("License version does not match maximum version or application version");
-						}else if (hasUnlimited && !(new String(licenseDataArray).contains("<licenseID>" + 1 + "</licenseID>") || new String(licenseDataArray).contains("<licenseID>" + 1000 + "</licenseID>"))) {
-							throw new Exception("For this license, maxium version 'Unlimited' is not allowed");
-						}else if (!new String(licenseDataArray).contains("<licenseID>" + configService.getLicenseID() + "</licenseID>")) {
-	    	        		throw new Exception("Wrong license id in license data content. Expected license id: " + configService.getLicenseID());
-	    	        	} else {
-							licenseDao.storeLicense(licenseDataArray, licenseSignatureDataArray, new Date());
-							userActivityLogService.writeUserActivityLog(admin, "license update", "License update");
-				            redirectAttributes.addFlashAttribute("message", "You successfully uploaded new license data '" + file.getOriginalFilename() + "'");
-				            serverMessageDao.pushCommand(new ServerCommand(Server.ALL, Command.RELOAD_LICENSE_DATA, new Date(), admin.getAdminID(), "New license data uploaded"));
-				            configService.enforceExpiration();
-	    	        	}
-	        		} else {
-	        			throw new Exception("Unknown license data content");
-	        		}
-		        } catch (Exception e) {
-		        	logger.error("Cannot update license data: " + e.getMessage(), e);
-		            redirectAttributes.addFlashAttribute("message", "Upload of license data was not successful for '" + file.getOriginalFilename() + "': " + e.getMessage());
-		        } finally {
-		        	try {
-						FileUtils.deleteDirectory(unzippedLicenseDataDirectory);
-					} catch (Exception e) {
-						logger.error("Error deleting temporary directory", e);
-
-						// do nothing else
-					}
-		        }
-	        	
-	    		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
-
-	    		return "redirect:/serverstatus/view.action";
-	        }
-		}
+		return "redirect:/serverstatus/view.action";
     }
 
+	private void reloadLicenseData(Admin admin) {
+		serverMessageDao.pushCommand(new ServerCommand(Server.ALL, Command.RELOAD_LICENSE_DATA, new Date(), admin.getAdminID(), "New license data uploaded"));
+		configService.enforceExpiration();
+	}
+
 	@PostMapping(value = "/db-schema/upload.action")
+	@RequiredPermission("server.status")
 	public String uploadDbSchemaSnapshot(@RequestParam MultipartFile file, @RequestParam(required = false) Boolean overwrite,
 										 Popups popups, Model model) {
-		ServiceResult<DbSchemaSnapshot> result = dbSchemaSnapshotService.read(file);
-		popups.addPopups(result);
-
-		if (!result.isSuccess()) {
-			return MESSAGES_VIEW;
-		}
-
-		DbSchemaSnapshot snapshot = result.getResult();
+		DbSchemaSnapshot snapshot = dbSchemaSnapshotService.read(file);
 
 		if (!Boolean.TRUE.equals(overwrite) && dbSchemaSnapshotService.exists(snapshot.getVersionNumber())) {
 			model.addAttribute("snapshotVersion", snapshot.getVersionNumber());
@@ -732,21 +717,17 @@ public class ServerStatusController implements XssCheckAware {
 		}
 
 		dbSchemaSnapshotService.save(snapshot);
-		popups.success(CHANGES_SAVED_MSG);
+		popups.changesSaved();
 
 		return "redirect:/serverstatus/view.action";
 	}
-    
-    @GetMapping("/serverstatus/view.action")
-    public String uploadStatus() {
-        return "server_status_view";
-    }
 
 	@RequestMapping(value = "/updatecheck.action", method = { RequestMethod.GET, RequestMethod.POST })
-    public String updateCheck(Popups popups) throws Exception {
+	@RequiredPermission("server.status")
+	public String updateCheck(Popups popups) throws Exception {
 		String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
 		Version currentVersion = new Version(currentVersionString);
-		if(currentVersion.getHotfixVersion() != 0){
+		if (currentVersion.getHotfixVersion() != 0){
 			Version availableVersion = serverStatusService.getAvailableUpdateVersion(currentVersion);
 
 			if (availableVersion.compareTo(currentVersion) >= 1) {
@@ -754,22 +735,19 @@ public class ServerStatusController implements XssCheckAware {
 			} else {
 				popups.success("server.current_version.uptodate", currentVersionString);
 			}
-		}else {
-				popups.success("server.current_version.uptodate", currentVersionString);
+		} else {
+			popups.success("server.current_version.uptodate", currentVersionString);
 		}
 
         return MESSAGES_VIEW;
     }
 
 	@GetMapping("/schema/check.action")
+	@RequiredPermission("server.status")
 	public String checkDbSchema(Model model, Popups popups) {
-		if (!dbSchemaSnapshotService.exists()) {
-			throw new IllegalStateException("DB schema can't be checked due to missing snapshot file!");
-		}
-
 		DbSchemaCheckResult result = dbSchemaSnapshotService.check();
 		if (result.isSuccessful()) {
-			popups.success("GWUA.checkDbSchema.success");
+			popups.success("server.status.db.schema.uptodate");
 			return MESSAGES_VIEW;
 		}
 
@@ -778,8 +756,9 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@GetMapping("/schema/diff/download.action")
+	@RequiredPermission("server.status")
 	public ResponseEntity<DeleteFileAfterSuccessReadResource> downloadDbSchemaDifferences() {
-		File file = dbSchemaSnapshotService.getFileWithDifferences();
+		File file = dbSchemaSnapshotService.createDiffFile();
 		return ResponseEntity.ok()
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"db-schema-diff.json\"")
 				.contentLength(file.length())
@@ -812,23 +791,15 @@ public class ServerStatusController implements XssCheckAware {
 	}
 
 	@Anonymous
-	@RequestMapping(value = "/externalView.action", method = { RequestMethod.GET, RequestMethod.POST })
-	// TODO: EMMGUI-714: remove when old design will be removed
-	public String externalView(HttpServletRequest request, Model model, ServerStatusForm form) {
+	@GetMapping(value = "/externalView.action")
+	public String externalView(HttpServletRequest request, Model model) {
 		model.addAttribute("serverStatus", serverStatusService.getAnonymousServerStatus(request.getServletContext()));
 		model.addAttribute("appVersion", configService.getValue(ConfigValue.ApplicationVersion));
 		return "server_status_external_view";
 	}
 
-	@Anonymous
-	@GetMapping(value = "/externalViewRedesigned.action")
-	public String externalViewRedesigned(HttpServletRequest request, Model model) {
-		model.addAttribute("serverStatus", serverStatusService.getAnonymousServerStatus(request.getServletContext()));
-		model.addAttribute("appVersion", configService.getValue(ConfigValue.ApplicationVersion));
-		return "server_status_external_view_redesigned";
-	}
-
 	@GetMapping(value = "/db-schema/download.action")
+	@RequiredPermission("master.dbschema.snapshot.create")
 	public ResponseEntity<DeleteFileAfterSuccessReadResource> downloadDbSchemaSnapshot() {
 		File file = dbSchemaSnapshotService.create();
 		String filename = dbSchemaSnapshotService.generateFileName();
@@ -839,4 +810,5 @@ public class ServerStatusController implements XssCheckAware {
 				.header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(filename))
 				.body(new DeleteFileAfterSuccessReadResource(file));
 	}
+
 }

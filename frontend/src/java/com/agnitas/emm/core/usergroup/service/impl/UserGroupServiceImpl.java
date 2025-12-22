@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.Permission;
@@ -43,11 +45,9 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -55,17 +55,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class UserGroupServiceImpl implements UserGroupService {
+
 	private static final Logger logger = LogManager.getLogger(UserGroupServiceImpl.class);
 
 	private static final int USER_FORM_NAME_MAX_LENGTH = 99;
 
-	private ConfigService configService;
-	private AdminGroupDao userGroupDao;
-	private CompanyService companyService;
-	private ExtendedConversionService conversionService;
-	private PermissionFilter permissionFilter;
-	protected PermissionService permissionService;
-	private BulkActionValidationService<Integer, UserGroupDto> bulkActionValidationService;
+	private final ConfigService configService;
+	private final AdminGroupDao userGroupDao;
+	private final CompanyService companyService;
+	private final ExtendedConversionService conversionService;
+	private final PermissionFilter permissionFilter;
+	private final PermissionService permissionService;
+	private final BulkActionValidationService<Integer, UserGroupDto> bulkActionValidationService;
 	
 	public UserGroupServiceImpl(
             ConfigService configService,
@@ -84,30 +85,20 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
 
 	@Override
-	public PaginatedListImpl<UserGroupDto> overview(UserGroupOverviewFilter filter) {
+	public PaginatedList<UserGroupDto> overview(UserGroupOverviewFilter filter) {
 		return userGroupDao.getAdminGroupsByCompanyIdInclCreator(filter);
 	}
 
 	@Override
-	public PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(Admin admin, String sort, String sortDirection, int page, int rownumber) {
-		PaginatedListImpl<AdminGroup> userGroups = userGroupDao.getAdminGroupsByCompanyIdInclCreator(admin.getCompanyID(), admin.getAdminID(), sort, sortDirection, page, rownumber);
-		return conversionService.convertPaginatedList(userGroups, AdminGroup.class, UserGroupDto.class);
-	}
-	
-	@Override
 	public UserGroupDto getUserGroup(Admin admin, int userGroupId) {
-		AdminGroup adminGroup = admin.isRedesignedUiUsed()
-				? userGroupDao.getUserGroup(userGroupId, admin.getCompanyID())
-				: userGroupDao.getAdminGroup(userGroupId, admin.getCompanyID());
+		AdminGroup adminGroup = userGroupDao.getUserGroup(userGroupId, admin.getCompanyID());
 		if (adminGroup == null) {
 			return null;
 		}
 
 		LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
 		UserGroupDto userGroupDto = conversionService.convert(adminGroup, UserGroupDto.class);
-		if (admin.isRedesignedUiUsed()) {
-			userGroupDto.setUsersCount(userGroupDao.getUsersCount(userGroupId, admin.getCompanyID()));
-		}
+		userGroupDto.setUsersCount(userGroupDao.getUsersCount(userGroupId, admin.getCompanyID()));
 		List<String> allowedPermissionsCategories = getUserGroupPermissionCategories(userGroupDto.getUserGroupId(), userGroupDto.getCompanyId(), admin);
 		if (!allowedPermissionsCategories.isEmpty()) {
 			Set<Permission> groupPermissions = adminGroup.getGroupPermissions();
@@ -188,8 +179,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 				|| !userGroupDao.adminGroupExists(companyId, newShortname);
 	}
 	
-	@Override
-	public List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, Admin admin) {
+	private List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, Admin admin) {
 		if (groupId == ROOT_GROUP_ID || groupCompanyId == admin.getCompanyID() || groupCompanyId == admin.getCompany().getCreatorID() || admin.getAdminID() == ROOT_ADMIN_ID) {
 			List<String> permissionCategories = new ArrayList<>(permissionService.getAllCategoriesOrdered());
 	
@@ -203,8 +193,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 		}
 	}
 	
-	@Override
-	public boolean isUserGroupPermissionChangeable(Admin admin, Permission permission, Set<Permission> companyPermissions) {
+	private boolean isUserGroupPermissionChangeable(Admin admin, Permission permission, Set<Permission> companyPermissions) {
 		if (permission.getPermissionType() == PermissionType.Premium) {
 			return companyPermissions.contains(permission);
 		} else if (permission.getPermissionType() == PermissionType.System) {
@@ -219,8 +208,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 		}
 	}
 	
-	@Override
-	public List<String> getAdminNamesOfGroup(int userGroupId, int companyId) {
+	protected List<String> getAdminNamesOfGroup(int userGroupId, int companyId) {
 		if (userGroupId > -1 && companyId > 0) {
 			return userGroupDao.getAdminsOfGroup(companyId, userGroupId);
 		} else {
@@ -228,24 +216,12 @@ public class UserGroupServiceImpl implements UserGroupService {
 		}
 	}
 	
-	@Override
-	public List<String> getGroupNamesUsingGroup(int userGroupId, int companyId) {
+	private List<String> getGroupNamesUsingGroup(int userGroupId, int companyId) {
 		if (userGroupId > -1 && companyId > 0) {
 			return userGroupDao.getGroupNamesUsingGroup(companyId, userGroupId);
 		} else {
 			return new ArrayList<>();
 		}
-	}
-	
-	@Override
-	public boolean deleteUserGroup(int userGroupId, Admin admin) {
-		int companyId = admin.getCompanyID();
-		AdminGroup adminGroup = userGroupDao.getAdminGroup(userGroupId, companyId);
-		if (adminGroup == null || (adminGroup.getCompanyID() != companyId && admin.getAdminID() != ROOT_ADMIN_ID)) {
-			return false;
-		}
-		
-		return userGroupDao.delete(adminGroup.getCompanyID(), userGroupId) > 0;
 	}
 	
 	@Override

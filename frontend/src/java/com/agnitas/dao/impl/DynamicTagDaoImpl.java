@@ -10,22 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.impl.DynamicTagImpl;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.dao.DynamicTagDao;
-import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagContentRowMapper;
-import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagRowMapper;
-import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
-import com.agnitas.beans.DynamicTagContent;
-import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -40,6 +24,21 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.DynamicTagContent;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.impl.DynamicTagImpl;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.DynamicTagDao;
+import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagContentRowMapper;
+import com.agnitas.dao.impl.MailingDaoImpl.DynamicTagRowMapper;
+import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
+import com.agnitas.emm.core.mailingcontent.dto.ContentBlockAndMailingMetaData;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
 
 public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
@@ -91,16 +90,6 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         setDynNameDeletionMark(mailingID, true, names);
     }
 
-    @Override
-    public void markNameAsUsed(int mailingID, String name) {
-        setDynNameDeletionMark(mailingID, false, Collections.singletonList(name));
-    }
-
-    @Override
-    public void markNamesAsUsed(int mailingID, List<String> names) {
-        setDynNameDeletionMark(mailingID, false, names);
-    }
-
     @DaoUpdateReturnValueCheck
     protected void setDynNameDeletionMark(int mailingID, boolean setDeleted, List<String> nameList) {
         if (nameList.isEmpty()) {
@@ -144,11 +133,6 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     }
 
     @Override
-    public String getDynamicTagInterestGroup(int companyId, int mailingId, int dynTagId) {
-        return select("SELECT interest_group FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?", String.class, mailingId, companyId, dynTagId);
-    }
-
-    @Override
     public int getId(int companyId, int mailingId, String dynTagName) {
         String sqlGetId = "SELECT dyn_name_id FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name = ?";
         return selectInt(sqlGetId, companyId, mailingId, dynTagName);
@@ -156,20 +140,8 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     public String getDynamicTagName(int companyId, int mailingId, int dynTagId) {
-        String sqlGetDynName = "SELECT dyn_name FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name_id = ?";
-        if (isOracleDB()) {
-            sqlGetDynName += " AND ROWNUM = 1";
-        } else {
-            sqlGetDynName += " LIMIT 1";
-        }
-
-        List<String> nameResults = select(sqlGetDynName, StringRowMapper.INSTANCE, companyId, mailingId, dynTagId);
-
-        if (!nameResults.isEmpty()) {
-            return nameResults.get(0);
-        } else {
-            return null;
-        }
+        String query = "SELECT dyn_name FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name_id = ?";
+        return selectStringDefaultNull(addRowLimit(query, 1), companyId, mailingId, dynTagId);
     }
 
     @Override
@@ -186,7 +158,8 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     }
 
     private static class DynNamesMapCallback implements RowCallbackHandler {
-        private Map<String, Integer> dynNamesIdsMap;
+
+        private final Map<String, Integer> dynNamesIdsMap;
 
         public DynNamesMapCallback(Map<String, Integer> dynNamesIdsMap) {
             this.dynNamesIdsMap = Objects.requireNonNull(dynNamesIdsMap);
@@ -221,7 +194,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     }
 
     @Override
-    public List<DynamicTag> getDynamicTags(final int mailingId, final int companyId, final boolean includeDeletedDynTags) {
+    public List<DynamicTag> getDynamicTags(int mailingId, int companyId, boolean includeDeletedDynTags) {
         final String sqlGetTags = "SELECT company_id, mailing_id, dyn_name_id, dyn_name, dyn_group, interest_group, no_link_extension " +
                 "FROM dyn_name_tbl " +
                 "WHERE company_id = ? AND mailing_id = ? AND (deleted = 0 OR 1 = ?) " +
@@ -253,7 +226,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteAllDynTags(final int mailingId) {
+    public void deleteAllDynTags(int mailingId) {
         update("DELETE FROM dyn_content_tbl WHERE mailing_id = ?", mailingId);
         update("DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
     }
@@ -321,7 +294,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags) {
+    public void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags) {
         saveDynamicTags(mailing, dynTags, false);
     }
 
@@ -383,47 +356,47 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     public void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) {
         if (CollectionUtils.isEmpty(dynamicTags)) {
             return;
-        } else {
-            for (DynamicTag tag : dynamicTags) {
-                validateDynName(tag.getDynName());
-            }
-
-            if (isOracleDB()) {
-                dynamicTags.forEach(tag -> tag.setId(selectInt("SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
-
-                List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
-                        mailingID,
-                        companyID,
-                        tag.getId(),
-                        tag.getGroup(),
-                        tag.getDynName(),
-                        tag.getDynInterestGroup(),
-                        tag.isDisableLinkExtension() ? 1 : 0
-                }).collect(Collectors.toList());
-                batchupdate(
-                        "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_name_id, dyn_group, dyn_name, interest_group, no_link_extension) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        parameterList);
-            } else {
-                List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
-                        mailingID,
-                        companyID,
-                        tag.getGroup(),
-                        tag.getDynName(),
-                        tag.getDynInterestGroup(),
-                        tag.isDisableLinkExtension() ? 1 : 0
-                }).collect(Collectors.toList());
-
-                int[] generatedKeys = batchInsertIntoAutoincrementMysqlTable("dyn_name_id",
-                        "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_group, dyn_name, interest_group, no_link_extension, creation_date) VALUES (?, ?, ?, ?, ?, ?, current_timestamp)",
-                        parameterList);
-
-                for (int i = 0; i < generatedKeys.length && i < dynamicTags.size(); i++) {
-                    dynamicTags.get(i).setId(generatedKeys[i]);
-                }
-            }
-
-            dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags);
         }
+
+        for (DynamicTag tag : dynamicTags) {
+            validateDynName(tag.getDynName());
+        }
+
+        if (isOracleDB()) {
+            dynamicTags.forEach(tag -> tag.setId(selectInt("SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
+
+            List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
+                    mailingID,
+                    companyID,
+                    tag.getId(),
+                    tag.getGroup(),
+                    tag.getDynName(),
+                    tag.getDynInterestGroup(),
+                    tag.isDisableLinkExtension() ? 1 : 0
+            }).collect(Collectors.toList());
+            batchupdate(
+                    "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_name_id, dyn_group, dyn_name, interest_group, no_link_extension) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    parameterList);
+        } else {
+            List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
+                    mailingID,
+                    companyID,
+                    tag.getGroup(),
+                    tag.getDynName(),
+                    tag.getDynInterestGroup(),
+                    tag.isDisableLinkExtension() ? 1 : 0
+            }).collect(Collectors.toList());
+
+            int[] generatedKeys = batchInsertWithAutoincrement("dyn_name_id",
+                    "INSERT INTO dyn_name_tbl (mailing_id, company_id, dyn_group, dyn_name, interest_group, no_link_extension, creation_date) VALUES (?, ?, ?, ?, ?, ?, current_timestamp)",
+                    parameterList);
+
+            for (int i = 0; i < generatedKeys.length && i < dynamicTags.size(); i++) {
+                dynamicTags.get(i).setId(generatedKeys[i]);
+            }
+        }
+
+        dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags);
     }
 
     @Override
@@ -443,21 +416,32 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                 .map(DynamicTagContent::getId)
                 .collect(Collectors.toSet());
 
-        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).collect(Collectors.toList());
+        return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).toList();
     }
 
     private void validateDynName(String dynName) {
         if (dynName != null && dynName.length() > 100) {
-            throw new RuntimeException("Value for dyn_name_tbl.dyn_name is to long (Maximum: 100, Current: " + dynName.length() + ")");
+            throw new IllegalArgumentException("Value for dyn_name_tbl.dyn_name is to long (Maximum: 100, Current: " + dynName.length() + ")");
         }
     }
 
 	@Override
 	public List<ContentBlockAndMailingMetaData> listContentBlocksUsingTargetGroup(int targetId, int companyID) {
-		final String sql = "SELECT c.dyn_content_id AS contentblock_id, n.dyn_name as contentblock_name, c.mailing_id AS mailing_id, m.shortname AS mailing_name FROM dyn_content_tbl c, dyn_name_tbl n, mailing_tbl m WHERE c.company_id=? AND c.target_id=? AND n.dyn_name_id=c.dyn_name_id AND m.mailing_id=c.mailing_id";
+		String sql = """
+                SELECT c.dyn_content_id AS contentblock_id,
+                       n.dyn_name       as contentblock_name,
+                       c.mailing_id     AS mailing_id,
+                       m.shortname      AS mailing_name
+                FROM dyn_content_tbl c,
+                     dyn_name_tbl n,
+                     mailing_tbl m
+                WHERE c.company_id = ?
+                  AND c.target_id = ?
+                  AND n.dyn_name_id = c.dyn_name_id
+                  AND m.mailing_id = c.mailing_id
+                """;
 
 		return select(sql, new ContentBlockAndMailingMetaDataRowMapper(), companyID, targetId);
 	}
-    
-    
+
 }

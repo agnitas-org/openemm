@@ -25,14 +25,14 @@ import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.impl.DynamicTagContentImpl;
 import com.agnitas.emm.core.dyncontent.dao.DynamicTagContentDao;
 import com.agnitas.emm.common.MailingStatus;
-import org.agnitas.emm.core.dyncontent.service.ContentModel;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentInvalid;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentNotExistException;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentWithSameOrderAlreadyExist;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentWithSameTargetIdAlreadyExist;
-import org.agnitas.emm.core.dynname.service.DynamicTagNameNotExistException;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import com.agnitas.emm.core.dyncontent.entity.ContentModel;
+import com.agnitas.emm.core.dyncontent.exception.DynamicTagContentInvalid;
+import com.agnitas.emm.core.dyncontent.exception.DynamicTagContentNotExistException;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.exception.DynamicTagContentWithSameOrderAlreadyExist;
+import com.agnitas.emm.core.dyncontent.exception.DynamicTagContentWithSameTargetIdAlreadyExist;
+import com.agnitas.emm.core.dynname.exception.DynamicTagNameNotExistException;
+import com.agnitas.emm.core.mailing.exception.MailingNotExistException;
 import com.agnitas.emm.core.target.exception.TargetNotExistException;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import org.apache.commons.lang3.StringUtils;
@@ -131,7 +131,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
         }
 
 		try {
-			mailingService.saveMailingWithNewContent(mailing, false, false, false);
+			mailingService.saveMailingWithNewContent(mailing, false, false);
 		} catch (Exception e) {
         	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
         	
@@ -254,7 +254,7 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 		logTimePoint("updateContentImpl -> before // Save changes");
 		// Save changes
 		try {
-			mailingService.saveMailingWithNewContent(mailing, false, false, false);
+			mailingService.saveMailingWithNewContent(mailing, false, false);
 		} catch (Exception e) {
         	LOGGER.error(String.format("Error saving mailing %d", mailing.getId()), e);
         	

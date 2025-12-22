@@ -10,23 +10,24 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.beans.Target;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.beans.TrackableLink;
-import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
-import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
-import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.Target;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.beans.Dependent;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
+import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
+import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
+import com.agnitas.emm.core.target.service.TargetLightsOptions;
+
 public interface TargetDao {
+
     /**
      * Marks target group as "deleted" in the database.
      *
@@ -108,16 +109,6 @@ public interface TargetDao {
     int saveHiddenTarget(Target target) throws TargetGroupPersistenceException;
     
     /**
-     * Loads all target groups allowed for given company.
-     * Uses JdbcTemplate.
-     *
-     * @param companyID
-     *      The companyID for the target groups.
-     * @return List of Targets or empty list.
-     */
-	Map<Integer, Target>	getAllowedTargets(int companyID);
-
-    /**
      * Get a shortname of the target referenced by {@code targetId}.
      * @param targetId an identifier of a target.
      * @param companyId an identifier of a company.
@@ -153,10 +144,6 @@ public interface TargetDao {
 
 	String getTargetSQL(int targetId, int companyId);
 
-	List<String> getSplitNames(int companyID);
-	
-	int getSplits(int companyID, String shortName);
-
 	/**
 	 * Safely copy sample target groups from company 1 to selected company.
 	 * @param companyID more than 1
@@ -178,17 +165,11 @@ public interface TargetDao {
 
 	List<TargetLight> getTargetLightsBySearchParameters(TargetLightsOptions options);
 
-	List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds);
-	
-	List<TargetLight> getChoosenTargetLights(String targetExpression, final int companyID);
-	
-	List<TargetLight> getTestAndAdminTargetLights(int companyId);
-
 	List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId);
 
     List<TargetLight> getSplitTargetLights(int companyID, String splitType);
 
-	PaginatedListImpl<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options);
+	PaginatedList<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options);
 
 	boolean isBasicFullTextSearchSupported();
     
@@ -209,9 +190,9 @@ public interface TargetDao {
 	 */
 	List<Target> listRawTargetGroups(int companyId, String ...eqlRawFragments);
 	
-	List<Target> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
+	List<Target> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted);
 
-    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
+    PaginatedList<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
 
 	Map<Integer, Integer> getTargetComplexityIndices(int companyId);
 
@@ -242,4 +223,6 @@ public interface TargetDao {
     void restore(Set<Integer> ids, int companyID);
 
     List<Integer> getMarkedAsDeletedBefore(Date date, int companyID);
+
+    boolean exist(int targetId, int companyId);
 }

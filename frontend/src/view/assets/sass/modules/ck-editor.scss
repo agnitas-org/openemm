@@ -1,0 +1,75 @@
+
+.cke_chrome {
+  border: 0 !important;
+}
+
+.full-height-ck-editor {
+  .cke {
+    height: 100%;
+  }
+
+  .cke_editor_content {
+    height: 100%;
+    width: 100% !important;
+  }
+
+  .ace_editor {
+    height: 100% !important;
+  }
+
+  .cke_inner {
+    display: table;
+    width: 100%;
+  }
+
+  .cke_inner {
+    display: table;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cke_contents {
+    height: 100% !important;
+    display: table-row;
+  }
+}
+
+.modal-editors-container {
+  .cke_chrome {
+    height: 100%;
+    > * { height: 100%; }
+
+    border-radius: 0;
+    padding: 0;
+
+    box-sizing: border-box;
+  }
+
+  .cke_wrapper {
+    height: 100%;
+  }
+
+  .cke_editor {
+    height: 100%;
+
+    tbody {
+      tr:nth-child(2) {
+        height: 100%;
+      }
+    }
+  }
+
+  .cke_inner {
+    display: table;
+    width: 100%;
+  }
+
+  .cke_contents {
+    height: 100% !important;
+    display: table-row;
+  }
+
+  .cke_wysiwyg_frame {
+    height: 100%;
+  }
+}

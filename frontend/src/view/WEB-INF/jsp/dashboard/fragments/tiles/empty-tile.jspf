@@ -1,0 +1,15 @@
+
+<script id="dashboard-tile-empty" type="text/x-mustache-template">
+    <div class="tile draggable-tile dashboard-plus-tile">
+        {{= overlay }}
+    </div>
+</script>
+
+<script id="dashboard-tile-empty-overlay" type="text/x-mustache-template">
+    <div class="tile-overlay tile-overlay--hidden">
+        <button type="button" class="btn btn-lg btn-sm-horizontal tile-overlay__btn" data-action="select-tile">
+            <i class="icon icon-plus"></i>
+            <span class="text"><mvc:message code="default.tile.add" /></span>
+        </button>
+    </div>
+</script>

@@ -31,18 +31,12 @@ public class TargetLightsOptions {
 
     private int adminId;
     private int companyId;
-    private boolean worldDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean adminTestDelivery; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private TargetGroupDeliveryOption deliveryOption;
     private boolean content;
     private DateRange creationDate;
     private DateRange changeDate;
     private IntRange complexity;
     private int recipientCountBasedComplexityAdjustment;
-    private boolean isSearchName; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean isSearchDescription; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private String searchText = ""; // TODO: remove after EMMGUI-714 will be finished and old design will removed
-    private boolean isRedesignedUiUsed; // TODO: remove after EMMGUI-714 will be finished and old design will removed
     private String searchName;
     private String searchDescription;
     private boolean deleted;
@@ -60,28 +54,8 @@ public class TargetLightsOptions {
         return companyId;
     }
 
-    public boolean isWorldDelivery() {
-        return worldDelivery;
-    }
-
-    public boolean isAdminTestDelivery() {
-        return adminTestDelivery;
-    }
-
     public boolean isContent() {
         return content;
-    }
-
-    public boolean isSearchName() {
-        return isSearchName;
-    }
-
-    public boolean isSearchDescription() {
-        return isSearchDescription;
-    }
-
-    public String getSearchText() {
-        return searchText;
     }
 
     public AltgMode getAltgMode() {
@@ -136,18 +110,6 @@ public class TargetLightsOptions {
         return searchDescription;
     }
 
-    public void setSearchName(boolean searchName) {
-        isSearchName = searchName;
-    }
-
-    public void setSearchDescription(boolean searchDescription) {
-        isSearchDescription = searchDescription;
-    }
-
-    public boolean isRedesignedUiUsed() {
-        return isRedesignedUiUsed;
-    }
-
     public boolean isDeleted() {
         return deleted;
     }
@@ -166,35 +128,55 @@ public class TargetLightsOptions {
         return new ToStringBuilder(this)
                 .append("adminId", adminId)
                 .append("companyId", companyId)
-                .append("worldDelivery", worldDelivery)
-                .append("adminTestDelivery", adminTestDelivery)
+                .append("deliveryOption", deliveryOption)
                 .append("content", content)
-                .append("isSearchName", isSearchName)
-                .append("isSearchDescription", isSearchDescription)
-                .append("searchText", searchText)
                 .append("altgMode", altgMode)
+                .append("creationDate", creationDate)
+                .append("changeDate", changeDate)
+                .append("changeDate", changeDate)
+                .append("complexity", complexity)
+                .append("recipientCountBasedComplexityAdjustment", recipientCountBasedComplexityAdjustment)
+                .append("searchName", searchName)
+                .append("searchDescription", searchDescription)
+                .append("deleted", deleted)
+                .append("pageNumber", pageNumber)
+                .append("pageSize", pageSize)
+                .append("sorting", sorting)
+                .append("direction", direction)
                 .toString();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TargetLightsOptions that = (TargetLightsOptions) o;
-        return adminId == that.adminId &&
-                companyId == that.companyId &&
-                worldDelivery == that.worldDelivery &&
-                adminTestDelivery == that.adminTestDelivery &&
-                content == that.content &&
-                isSearchName == that.isSearchName &&
-                isSearchDescription == that.isSearchDescription &&
-                Objects.equals(searchText, that.searchText) &&
-                altgMode == that.altgMode;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TargetLightsOptions that)) {
+            return false;
+        }
+        return adminId == that.adminId
+               && companyId == that.companyId
+               && content == that.content
+               && recipientCountBasedComplexityAdjustment == that.recipientCountBasedComplexityAdjustment
+               && deleted == that.deleted
+               && pageNumber == that.pageNumber
+               && pageSize == that.pageSize
+               && deliveryOption == that.deliveryOption
+               && altgMode == that.altgMode
+               && Objects.equals(creationDate, that.creationDate)
+               && Objects.equals(changeDate, that.changeDate)
+               && Objects.equals(complexity, that.complexity)
+               && Objects.equals(searchName, that.searchName)
+               && Objects.equals(searchDescription, that.searchDescription)
+               && Objects.equals(sorting, that.sorting)
+               && Objects.equals(direction, that.direction);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(adminId, companyId, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
+        return Objects.hash(adminId, companyId, deliveryOption, content, creationDate, changeDate, complexity,
+            recipientCountBasedComplexityAdjustment, searchName, searchDescription, deleted, altgMode, pageNumber,
+            pageSize, sorting, direction);
     }
 
     public static class Builder {
@@ -210,33 +192,8 @@ public class TargetLightsOptions {
             return this;
         }
 
-        public Builder setWorldDelivery(boolean worldDelivery) {
-            options.worldDelivery = worldDelivery;
-            return this;
-        }
-
-        public Builder setAdminTestDelivery(boolean adminTestDelivery) {
-            options.adminTestDelivery = adminTestDelivery;
-            return this;
-        }
-
         public Builder setContent(boolean content) {
             options.content = content;
-            return this;
-        }
-
-        public Builder setSearchName(boolean searchName) {
-            options.isSearchName = searchName;
-            return this;
-        }
-
-        public Builder setSearchDescription(boolean searchDescription) {
-            options.isSearchDescription = searchDescription;
-            return this;
-        }
-
-        public Builder setSearchText(String searchText) {
-            options.searchText = searchText;
             return this;
         }
 
@@ -277,11 +234,6 @@ public class TargetLightsOptions {
 
         public Builder setSearchDescription(String description) {
             options.searchDescription = description;
-            return this;
-        }
-
-        public Builder setRedesignedUiUsed(boolean value) {
-            options.isRedesignedUiUsed = value;
             return this;
         }
 

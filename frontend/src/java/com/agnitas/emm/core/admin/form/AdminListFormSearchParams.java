@@ -53,17 +53,4 @@ public class AdminListFormSearchParams implements FormSearchParams<AdminListForm
         form.setFilterLastLoginDate(this.lastLoginDate);
     }
 
-    @Override
-    public void resetParams() {
-        firstName = null;
-        lastName = null;
-        email = null;
-        companyId = null;
-        mailinglistId = null;
-        adminGroupId = null;
-        language = null;
-        username = null;
-        creationDate = new DateRange();
-        lastLoginDate = new DateRange();
-    }
 }

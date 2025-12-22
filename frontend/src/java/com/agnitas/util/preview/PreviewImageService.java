@@ -14,15 +14,10 @@ package com.agnitas.util.preview;
 import com.agnitas.beans.Admin;
 
 public interface PreviewImageService {
-    int VIEWPORT_WIDTH = 800;
-    int VIEWPORT_HEIGHT = 600;
-    int IMAGE_LOADING_TIMEOUT = 15;
 
     /**
      * Generate and store a thumbnail for the mailing.
      *
-     * @param admin
-     * @param sessionId
      * @param mailingId an identifier of the mailing to generate a thumbnail for.
      * @param async whether ({@code true}) or not ({@code false}) run in separate thread.
      */
@@ -31,8 +26,6 @@ public interface PreviewImageService {
     /**
      * Generate and store a thumbnail for the div child.
      *
-     * @param companyId  an identifier of the company.
-     * @param sessionId
      * @param divChildId an identifier of the div child to generate a thumbnail for.
      * @param async      whether ({@code true}) or not ({@code false}) run in separate thread.
      */

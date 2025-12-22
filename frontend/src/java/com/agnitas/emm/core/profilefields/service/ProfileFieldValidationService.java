@@ -44,8 +44,6 @@ public interface ProfileFieldValidationService {
 
     boolean mayAddNewColumn(int companyId);
 
-    boolean hasNotAllowedNumberOfEntries(int companyId);
-
     SimpleServiceResult isValidToDelete(String column, Admin admin);
 
     ServiceResult<Object> validateNewProfileFieldValue(Admin admin, String fieldName, SimpleDataType newSimpleDataType, String newValue, boolean clearThisField);

@@ -37,10 +37,8 @@ public class DashboardCalendarWebStorageEntry implements WebStorageEntry {
     }
 
     @Override
-    public DashboardCalendarWebStorageEntry clone() throws CloneNotSupportedException {
-        DashboardCalendarWebStorageEntry entry = (DashboardCalendarWebStorageEntry) super.clone();
-        entry.setShowUnsentList(showUnsentList);
-        entry.setShowUnsentPlanned(showUnsentPlanned);
-        return entry;
+    public WebStorageEntry clone() {
+        throw new UnsupportedOperationException();
     }
+
 }

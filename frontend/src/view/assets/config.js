@@ -49,6 +49,8 @@ window.aceEditorPath = '${aceEditorPath}';
 
 window.helpLanguage = `${helplanguage}`;
 
+window.isOpenEmm = !!`<c:out value="${initParam.isOpenEMM}" />`;
+
 /* <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
    <c:set var="adminLocale" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].locale}" />*/
 /* <c:choose>

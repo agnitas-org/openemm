@@ -10,18 +10,13 @@
 
 package com.agnitas.emm.core.action.web;
 
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +25,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.LightProfileField;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.factory.ActionOperationFactory;
+import com.agnitas.emm.core.action.bean.EmmAction;
+import com.agnitas.emm.core.action.bean.EmmActionImpl;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.form.EmmActionForm;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -38,33 +37,26 @@ import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationParametersParser;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.action.service.impl.EmmActionValidationServiceImpl;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.userform.service.UserformService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.workflow.service.WorkflowService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.exception.ForbiddenException;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.dto.DataResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.emm.core.action.bean.EmmAction;
-import com.agnitas.emm.core.action.bean.EmmActionImpl;
-import com.agnitas.beans.LightProfileField;
-import com.agnitas.beans.factory.ActionOperationFactory;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.MvcUtils;
 import com.agnitas.util.UserActivityUtil;
-import com.agnitas.web.forms.ActivenessPaginationForm;
-import com.agnitas.web.forms.BulkActionForm;
-import com.agnitas.web.forms.SimpleActionForm;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +71,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 public class EmmActionController implements XssCheckAware {
 
@@ -98,11 +89,15 @@ public class EmmActionController implements XssCheckAware {
 	private final ActionOperationParametersParser actionOperationParametersParser;
 	private final EmmActionValidationServiceImpl validationService;
 	private final ActionOperationFactory actionOperationFactory;
-	private final UserformService userFormService;
 	private final MailinglistApprovalService mailinglistApprovalService;
 	private final ColumnInfoService columnInfoService;
 
-	public EmmActionController(EmmActionService emmActionService, MailingService mailingService, ConfigService configService, WorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, UserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ColumnInfoService columnInfoService) {
+	public EmmActionController(EmmActionService emmActionService, MailingService mailingService, ConfigService configService,
+							   WorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService,
+							   ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService,
+							   ActionOperationFactory actionOperationFactory, MailinglistApprovalService mailinglistApprovalService,
+							   ColumnInfoService columnInfoService) {
+
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
 		this.configService = configService;
@@ -112,12 +107,12 @@ public class EmmActionController implements XssCheckAware {
 		this.actionOperationParametersParser = actionOperationParametersParser;
 		this.validationService = validationService;
 		this.actionOperationFactory = actionOperationFactory;
-		this.userFormService = userFormService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.columnInfoService = Objects.requireNonNull(columnInfoService, "columnInfoService");
     }
 
 	@RequestMapping("/list.action")
+	@RequiredPermission("actions.show")
 	public String list(Admin admin, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
@@ -132,6 +127,7 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@PostMapping("/changeActiveness.action")
+	@RequiredPermission("actions.change")
 	public Object changeActiveness(@RequestParam(required = false) Set<Integer> ids, Admin admin, Popups popups,
 								   @RequestParam boolean activate, @RequestParam(defaultValue = "false") boolean fromOverview) {
 		validateSelectedIds(ids);
@@ -147,7 +143,7 @@ public class EmmActionController implements XssCheckAware {
 		if (result.isSuccess()) {
 			writeChangeActivenessToUAL(affectedIds, activate, admin);
 			if (popups.isEmpty()) {
-				popups.success(CHANGES_SAVED_MSG);
+				popups.changesSaved();
 			}
 		}
 
@@ -156,94 +152,9 @@ public class EmmActionController implements XssCheckAware {
 				: redirectToView(ids.iterator().next());
 	}
 
-	@PostMapping("/saveActiveness.action")
-	// TODO: EMMGUI-714: Remove after remove of old design
-	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, ActivenessPaginationForm form, Popups popups) {
-		List<UserAction> userActions = new ArrayList<>();
-		boolean result = emmActionService.setActiveness(form.getActiveness(), admin.getCompanyID(), userActions);
-		if (result) {
-			for (UserAction action : userActions) {
-				writeUserActivityLog(admin, action);
-			}
-			popups.success(CHANGES_SAVED_MSG);
-		} else {
-			popups.alert(ERROR_MSG);
-		}
-
-		return new BooleanResponseDto(popups, result);
-	}
-
-	@PostMapping("/confirmBulkDelete.action")
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
-		if (CollectionUtils.isEmpty(form.getBulkIds())) {
-			popups.alert("bulkAction.nothing.action");
-			return MESSAGES_VIEW;
-		}
-		return "action_bulk_delete_ajax";
-	}
-
-	@RequestMapping(value = "/bulkDelete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
-        if (form.getBulkIds().isEmpty()) {
-            popups.alert("bulkAction.nothing.action");
-            return MESSAGES_VIEW;
-        }
-
-		try {
-			Map<Integer, String> descriptions = new HashMap<>();
-			for (int actionId : form.getBulkIds()) {
-				descriptions.put(actionId, emmActionService.getEmmActionName(actionId, admin.getCompanyID()));
-			}
-
-			emmActionService.bulkDelete(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
-
-			for (int actionId : form.getBulkIds()) {
-				writeUserActivityLog(admin, "delete action", descriptions.get(actionId));
-			}
-
-			popups.success(SELECTION_DELETED_MSG);
-			return REDIRECT_TO_OVERVIEW;
-		} catch (Exception e) {
-			logger.error("Bulk deletion failed: {}", e.getMessage(), e);
-		}
-
-        popups.alert(ERROR_MSG);
-        return MESSAGES_VIEW;
-    }
-
-    @GetMapping("/{id:\\d+}/confirmDelete.action")
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String confirmDelete(Admin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
-		EmmAction emmAction = emmActionService.getEmmAction(id, admin.getCompanyID());
-		if (emmAction != null) {
-			form.setId(emmAction.getId());
-			form.setShortname(emmAction.getShortname());
-
-			return "action_delete_ajax";
-		}
-
-		popups.alert(ERROR_MSG);
-		return MESSAGES_VIEW;
-	}
-
-	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String delete(Admin admin, SimpleActionForm form, Popups popups) {
-        if (emmActionService.deleteEmmAction(form.getId(), admin.getCompanyID())) {
-			writeUserActivityLog(admin, "delete action", String.format("%s (ID: %d)", form.getShortname(), form.getId()));
-			popups.success(SELECTION_DELETED_MSG);
-			return REDIRECT_TO_OVERVIEW;
-		}
-
-        popups.alert(ERROR_MSG);
-        return MESSAGES_VIEW;
-    }
-
-	@GetMapping(value = "/deleteRedesigned.action")
-	@PermissionMapping("confirmDelete")
-	public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
+	@GetMapping(value = "/delete.action")
+	@RequiredPermission("actions.delete")
+	public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model) {
 		validateSelectedIds(bulkIds);
 		List<String> items = emmActionService.getActionsNames(bulkIds, admin.getCompanyID());
 		MvcUtils.addDeleteAttrs(model, items,
@@ -252,9 +163,9 @@ public class EmmActionController implements XssCheckAware {
 		return DELETE_VIEW;
 	}
 
-	@RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-	@PermissionMapping("delete")
-	public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+	@RequiredPermission("actions.delete")
+	public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
 		validateSelectedIds(bulkIds);
 
 		Map<Integer, String> descriptions = bulkIds.stream()
@@ -263,26 +174,27 @@ public class EmmActionController implements XssCheckAware {
 		emmActionService.bulkDelete(bulkIds, admin.getCompanyID());
 		bulkIds.forEach(id -> writeUserActivityLog(admin, "delete action", descriptions.get(id)));
 
-		popups.success(SELECTION_DELETED_MSG);
+		popups.selectionDeleted();
 		return REDIRECT_TO_OVERVIEW;
 	}
 
 	@PostMapping("/restore.action")
-	@ResponseBody
-	public BooleanResponseDto restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+	@RequiredPermission("actions.change")
+	public ResponseEntity<BooleanResponseDto> restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
 		validateSelectedIds(bulkIds);
 		emmActionService.restore(bulkIds, admin.getCompanyID());
-		popups.success(CHANGES_SAVED_MSG);
-		return new BooleanResponseDto(popups, true);
+		popups.changesSaved();
+		return ResponseEntity.ok(new BooleanResponseDto(popups, true));
 	}
 
 	private void validateSelectedIds(Set<Integer> bulkIds) {
 		if (CollectionUtils.isEmpty(bulkIds)) {
-			throw new RequestErrorException(NOTHING_SELECTED_MSG);
+			throw new BadRequestException(NOTHING_SELECTED_MSG);
 		}
 	}
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
+	@RequiredPermission("actions.show")
 	public String create(Admin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
 		loadViewData(admin, model, 0);
 
@@ -290,6 +202,7 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@GetMapping("/{id:\\d+}/view.action")
+	@RequiredPermission("actions.show")
 	public String view(Admin admin, @PathVariable int id, @ModelAttribute("form") EmmActionForm form, Model model) {
 		EmmAction emmAction = emmActionService.getEmmAction(id, admin.getCompanyID());
 		if (emmAction == null) {
@@ -302,14 +215,13 @@ public class EmmActionController implements XssCheckAware {
 
 		model.addAttribute("form", conversionService.convert(emmAction, EmmActionForm.class));
 		loadViewData(admin, model, id);
-		if (admin.isRedesignedUiUsed()) {
-			model.addAttribute("isActive", emmAction.getIsActive());
-		}
+		model.addAttribute("isActive", emmAction.getIsActive());
 
 		return ACTIONS_VIEW;
 	}
 
     @PostMapping("/save.action")
+	@RequiredPermission("actions.change")
 	public String save(Admin admin, @ModelAttribute("form") EmmActionForm form, Popups popups) {
 		try {
 			List<AbstractActionOperationParameters> parameters = actionOperationParametersParser.deSerializeActionModulesList(form.getModulesSchema());
@@ -320,11 +232,7 @@ public class EmmActionController implements XssCheckAware {
 				action.setType(form.getType());
 				action.setShortname(form.getShortname());
 				action.setDescription(form.getDescription());
-				if (admin.isRedesignedUiUsed()) {
-					action.setIsActive(emmActionService.isActive(form.getId()));
-				} else {
-					action.setIsActive(form.isActive());
-				}
+				action.setIsActive(emmActionService.isActive(form.getId()));
 				action.setAdvertising(form.isAdvertising());
 
 				if (parameters == null) {
@@ -340,13 +248,13 @@ public class EmmActionController implements XssCheckAware {
 					writeUserActivityLog(admin, userAction);
 				}
 
-				popups.success(CHANGES_SAVED_MSG);
+				popups.changesSaved();
 
 				return redirectToView(actionId);
 			}
 		} catch (Exception e) {
 			logger.error("Saving action data failed: {}", e.getMessage(), e);
-			popups.alert(ERROR_MSG);
+			popups.defaultError();
 		}
 
 		return MESSAGES_VIEW;
@@ -358,8 +266,9 @@ public class EmmActionController implements XssCheckAware {
 
 	private boolean isValidAction(Admin admin, EmmActionForm form, List<AbstractActionOperationParameters> params, Popups popups) {
         if (emmActionService.containsReadonlyOperations(form.getId(), admin)) {
-            throw new RequestErrorException(ERROR_MSG);
+            throw new ForbiddenException();
         }
+
 		String shortname = form.getShortname();
 
 		if (StringUtils.trimToNull(shortname) == null) {
@@ -371,16 +280,11 @@ public class EmmActionController implements XssCheckAware {
 		}
 		
 		if (CollectionUtils.isNotEmpty(params)) {
-			try {
-				for (ActionOperationParameters action : params) {
-					SimpleServiceResult result = validationService.validate(admin, action);
-					if (!result.isSuccess()) {
-						result.getErrorMessages().forEach(popups::alert);
-					}
+			for (ActionOperationParameters action : params) {
+				SimpleServiceResult result = validationService.validate(admin, action);
+				if (!result.isSuccess()) {
+					result.getErrorMessages().forEach(popups::alert);
 				}
-			} catch (Exception e) {
-				logger.error("Action operation validation failed: {}", e.getMessage(), e);
-				popups.alert(ERROR_MSG);
 			}
 		}
 
@@ -388,6 +292,7 @@ public class EmmActionController implements XssCheckAware {
     }
 
 	@GetMapping("/{id:\\d+}/clone.action")
+	@RequiredPermission("actions.change")
 	public String clone(Admin admin, @PathVariable("id") int originId, Model model) {
 		EmmActionDto copyOfAction = emmActionService.getCopyOfAction(admin, originId);
 
@@ -399,21 +304,8 @@ public class EmmActionController implements XssCheckAware {
 		return ACTIONS_VIEW;
 	}
 
-	@GetMapping("/{id:\\d+}/usage.action")
-	// TODO: remove after EMMGUI-714 will be finished and old design will be removed
-	public String usagesView(Admin admin, @PathVariable int id, Model model) {
-		model.addAttribute("actionId", id);
-		model.addAttribute(SHORTNAME, emmActionService.getEmmActionName(id, admin.getCompanyID()));
-		model.addAttribute("webFormsByActionId", userFormService.getUserFormNamesByActionID(admin.getCompanyID(), id));
-		model.addAttribute("dependentMailings", mailingService.getMailingsUsingEmmAction(id, admin.getCompanyID()));
-		return "actions_view_forms";
-	}
-
 	protected void loadViewData(Admin admin, Model model, int actionId) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
-		if (!admin.isRedesignedUiUsed()) {
-			model.addAttribute("isUnsubscribeExtended", true);
-		}
 	    model.addAttribute("allowedMailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
 
 		// Some deserialized Actions need the mailings to show their configuration data
@@ -435,7 +327,7 @@ public class EmmActionController implements XssCheckAware {
 		
 		model.addAttribute("ACTION_READONLY", emmActionService.containsReadonlyOperations(actionId, admin));
 
-		if (admin.isRedesignedUiUsed() && actionId > 0) {
+		if (actionId > 0) {
 			model.addAttribute("dependencies", emmActionService.getDependencies(actionId, admin.getCompanyID()));
 		}
 	}
@@ -463,4 +355,5 @@ public class EmmActionController implements XssCheckAware {
 		String idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(", "));
 		writeUserActivityLog(admin, (activeness ? "activate" : "deactivate") + " actions", "IDs: " + idsStr);
 	}
+
 }

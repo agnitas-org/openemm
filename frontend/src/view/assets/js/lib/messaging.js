@@ -111,31 +111,35 @@ AGN.Lib.Messaging.send('abc:xyz', 111, 222, 333);
 ```
 */
 
-(function() {
-  var map = {};
+(() => {
+
+  const map = {};
 
   function send(topic) {
-    var k = 'key#' + topic;
-    var callbacks = map[k];
-    var args = Array.prototype.slice.call(arguments, 1);
+    const k = `key#${topic}`;
+    const callbacks = map[k];
+    const args = Array.prototype.slice.call(arguments, 1);
 
     if (callbacks) {
       // Unsubscribe all callbacks that returned false.
-      map[k] = callbacks.filter(function(callback) {
-        return callback.apply(this, args) !== false;
-      });
+      map[k] = callbacks.filter(callback => callback.apply(this, args) !== false);
     }
   }
 
+  function resubscribe(topic, callback) {
+    unsubscribe(topic);
+    subscribe(topic, callback);
+  }
+
   function subscribe(topic, callback) {
-    var k = 'key#' + topic;
+    const key = `key#${topic}`;
 
     if ($.isFunction(callback)) {
-      if (!map[k]) {
-        map[k] = [];
+      if (!map[key]) {
+        map[key] = [];
       }
 
-      map[k].push(callback);
+      map[key].push(callback);
     } else {
       console.error('Callback must be a function');
     }
@@ -143,14 +147,12 @@ AGN.Lib.Messaging.send('abc:xyz', 111, 222, 333);
 
   function unsubscribe(topic, /* optional */ callback) {
     if (arguments.length) {
-      var k = 'key#' + topic;
+      const key = `key#${topic}`;
 
       if (arguments.length > 1) {
-        map[k] = map[k].filter(function(c) {
-          return c !== callback;
-        });
+        map[key] = map[key].filter(c => c !== callback);
       } else {
-        map[k] = [];
+        map[key] = [];
       }
     }
   }
@@ -158,6 +160,8 @@ AGN.Lib.Messaging.send('abc:xyz', 111, 222, 333);
   AGN.Lib.Messaging = {
     send: send,
     subscribe: subscribe,
+    resubscribe: resubscribe,
     unsubscribe: unsubscribe
   };
+
 })();

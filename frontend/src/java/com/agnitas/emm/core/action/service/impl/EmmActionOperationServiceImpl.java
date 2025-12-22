@@ -46,14 +46,9 @@ public class EmmActionOperationServiceImpl implements EmmActionOperationService,
 		final boolean result = executor.execute(operation, params, errors);
 
 		if(!result || !errors.isEmpty()) {
-			LOGGER.error(String.format(
-					"Action operation %d (type %s, company %d, action %d) returned result %b and action errors %s",
-					operation.getId(),
-					operation.getOperationType(),
-					operation.getCompanyId(),
-					operation.getActionId(),
-					result,
-					errors));
+			LOGGER.error("Action operation {} (type {}, company {}, action {}) returned result {} and action errors {}",
+					operation.getId(), operation.getOperationType(), operation.getCompanyId(), operation.getActionId(),
+					result, errors);
 		}
 		
 		return result && errors.isEmpty();

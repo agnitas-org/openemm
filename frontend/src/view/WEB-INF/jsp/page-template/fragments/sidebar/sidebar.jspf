@@ -1,0 +1,96 @@
+
+<%--@elvariable id="firstName" type="java.lang.String"--%>
+<%--@elvariable id="fullName" type="java.lang.String"--%>
+<%--@elvariable id="sidemenuExtraActions" type="java.lang.String"--%>
+
+<div class="sidebar__block sidebar__block--logo">
+    <a href="<c:url value="/dashboard.action" />" class="sidebar__logo-link">
+        <img class="sidebar__logo-img" src="<c:url value="/layout/${companyID}/logo.svg" />">
+        <span class="sidebar__logo-title"><mvc:message code="Dashboard" /></span>
+    </a>
+</div>
+
+<div class="sidebar__block sidebar__block--nav js-scrollable">
+    <ul class="sidebar__list" data-controller="side-menu">
+        <tiles:insertAttribute name="sidemenu"/>
+    </ul>
+</div>
+
+<%@ include file="session-timer.jspf" %>
+
+<div class="sidebar__actions">
+    <div class="sidebar__block sidebar__block--expand" data-action="display-tooltip">
+        <a href="#" class="sidebar__action" data-action="expand">
+            <span class="sidebar__icon">
+                <i class="icon icon-expand-alt"></i>
+            </span>
+
+            <div class="sidebar__tooltip">
+                <p class="sidebar__tooltip-text"><mvc:message code="GWUA.expandNavBar" /></p>
+            </div>
+        </a>
+    </div>
+
+    <div class="sidebar__block sidebar__block--collapse" data-action="display-tooltip">
+        <a href="#" class="sidebar__action" data-action="expand">
+            <span class="sidebar__icon">
+                <i class="icon icon-compress-alt"></i>
+            </span>
+
+            <div class="sidebar__tooltip">
+                <p class="sidebar__tooltip-text"><mvc:message code="GWUA.collapseNavBar" /></p>
+            </div>
+        </a>
+    </div>
+
+    <c:if test="${not empty sidemenuExtraActions}">
+        ${sidemenuExtraActions}
+    </c:if>
+
+    <div class="sidebar__block" data-action="display-tooltip">
+        <a href="#" class="sidebar__action" data-action="open-help" data-help-key="${not empty agnHelpKey ? agnHelpKey : ""}">
+            <span class="sidebar__icon">
+                <i class="icon icon-question-circle"></i>
+            </span>
+            <div class="sidebar__tooltip">
+                <p class="sidebar__tooltip-text"><mvc:message code="help" /></p>
+            </div>
+        </a>
+    </div>
+
+    <div class="sidebar__block" data-action="display-tooltip">
+        <mvc:form id="logoutForm" servletRelativeAction="/logout.action" cssClass="hidden" />
+
+        <a href="#" class="sidebar__action" data-action="logout">
+            <span class="sidebar__icon">
+                <i class="icon icon-sign-out-alt"></i>
+            </span>
+            <div class="sidebar__tooltip">
+                <p class="sidebar__tooltip-text"><mvc:message code='default.Logout'/></p>
+            </div>
+        </a>
+    </div>
+
+    <div class="sidebar__block sidebar__block--account" data-action="display-tooltip">
+        <c:set var="selfViewUrl" value="/user/self/view.action" />
+        <a href="<c:url value="${selfViewUrl}" />" data-url="${selfViewUrl}" class="sidebar__action" data-action="open-account-data">
+            <span class="sidebar__icon sidebar__account-avatar">
+                <c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}
+            </span>
+
+            <div class="sidebar__tooltip">
+                <span class="sidebar__account-title">
+                    <c:if test="${not empty firstName}">${firstName} </c:if>${fullName}
+                </span>
+                <span class="sidebar__account-label">
+                    ${userName}<c:if test="${not empty supervisorUsername}">/${supervisorUsername}</c:if>
+                </span>
+                <span class="sidebar__account-label">${companyShortName} (${companyID})</span>
+
+                <c:if test="${versionNumber ne null}">
+                    <span class="sidebar__account-label">${versionNumber}</span>
+                </c:if>
+            </div>
+        </a>
+    </div>
+</div>

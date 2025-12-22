@@ -10,12 +10,9 @@
 
 package com.agnitas.emm.core.usergroup.web;
 
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,26 +25,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminGroup;
 import com.agnitas.dao.PermissionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionInfo;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupForm;
 import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import com.agnitas.emm.core.usergroup.form.UserGroupSearchParams;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.MvcUtils;
-import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +67,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/administration/usergroup")
-@PermissionMapping("user.group")
 @SessionAttributes(types = UserGroupSearchParams.class)
 public class UserGroupController implements XssCheckAware {
 
@@ -98,34 +95,32 @@ public class UserGroupController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
+    @RequiredPermission("role.show")
     public String list(Admin admin, @ModelAttribute("userGroupListForm") UserGroupOverviewFilter form, UserGroupSearchParams searchParams,
                        @RequestParam(required = false) Boolean restoreSort, Model model) {
-        if (admin.isRedesignedUiUsed()) {
-            form.setCurrentAdminId(admin.getAdminID());
-            form.setCurrentAdminCompanyId(admin.getCompanyID());
-            FormUtils.syncSearchParams(searchParams, form, true);
-        }
+        form.setCurrentAdminId(admin.getAdminID());
+        form.setCurrentAdminCompanyId(admin.getCompanyID());
 
+        searchParams.restoreParams(form);
         FormUtils.syncPaginationData(webStorage, WebStorage.USER_GROUP_OVERVIEW, form, restoreSort);
 
-        model.addAttribute("userGroupList", admin.isRedesignedUiUsed()
-                ? userGroupService.overview(form)
-                : userGroupService.getUserGroupPaginatedList(admin, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows())
-        );
+        model.addAttribute("userGroupList", userGroupService.overview(form));
 
         userActivityLogService.writeUserActivityLog(admin, "user group", "active tab - user groups", logger);
         return "settings_usergroup_list";
     }
 
     @PostMapping("/restore.action")
+    @RequiredPermission("role.change")
     public String restore(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
         validateSelectedIds(bulkIds);
         userGroupService.restore(bulkIds, admin.getCompanyID());
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         return REDIRECT_TO_OVERVIEW + "&showDeleted=true";
     }
 
     @RequestMapping("/{id:-?[0-9]\\d*}/view.action")
+    @RequiredPermission("admin.show")
     public String view(Admin admin, @PathVariable("id") int userGroupId, Model model) {
         if (userGroupId == NEW_USER_GROUP_ID) {
             return "redirect:/administration/usergroup/create.action";
@@ -159,13 +154,15 @@ public class UserGroupController implements XssCheckAware {
     }
 
     @GetMapping("/search.action")
+    @RequiredPermission("role.show")
     public String search(UserGroupOverviewFilter listForm, UserGroupSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, listForm, false);
+        searchParams.storeParams(listForm);
         ra.addFlashAttribute("userGroupListForm", listForm);
         return REDIRECT_TO_OVERVIEW;
     }
 
     @GetMapping("/create.action")
+    @RequiredPermission("role.change")
     public String create(Admin admin, UserGroupForm form, Model model) {
         int companyId = admin.getCompanyID();
 
@@ -178,6 +175,7 @@ public class UserGroupController implements XssCheckAware {
     }
 
     @PostMapping("/save.action")
+    @RequiredPermission("role.change")
     public String save(Admin admin, UserGroupForm form, Popups popups) {
         int userGroupId = form.getId();
         boolean isNew = userGroupId == NEW_USER_GROUP_ID;
@@ -203,7 +201,7 @@ public class UserGroupController implements XssCheckAware {
             if (savedUserGroupId > 0) {
                 form.setId(savedUserGroupId);
 
-                popups.success("default.changes_saved");
+                popups.changesSaved();
                 userActivityLogService.writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "user group", getDescription(form), logger);
 
                 UserGroupDto userGroup = userGroupService.getUserGroup(admin, savedUserGroupId);
@@ -224,52 +222,8 @@ public class UserGroupController implements XssCheckAware {
         return REDIRECT_TO_OVERVIEW;
     }
 
-    @GetMapping("/{id:-?[0-9]\\d*}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String confirmDelete(Admin admin, @PathVariable("id") int userGroupId, Model model, Popups popups) {
-        UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
-        boolean hasError = false;
-        if (userGroup != null && userGroup.getUserGroupId() > NEW_USER_GROUP_ID) {
-            model.addAttribute("userGroupForm", conversionService.convert(userGroup, UserGroupForm.class));
-        } else {
-            popups.alert(ERROR_MSG);
-            hasError = true;
-        }
-
-        model.addAttribute("excludeDialog", hasError);
-
-        return "settings_usergroup_delete";
-    }
-
-    @PostMapping("/delete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String delete(Admin admin, UserGroupForm form, Popups popups) {
-        int userGroupId = form.getId();
-
-        List<String> adminNames = userGroupService.getAdminNamesOfGroup(userGroupId, admin.getCompanyID());
-        List<String> groupNames = userGroupService.getGroupNamesUsingGroup(userGroupId, admin.getCompanyID());
-
-        if (!adminNames.isEmpty()) {
-            String adminNamesString = StringUtils.abbreviate(StringUtils.join(adminNames, ", "), 64);
-            popups.alert("error.group.delete.hasAdmins", adminNamesString);
-        } else if (!groupNames.isEmpty()) {
-            String groupNamesString = StringUtils.abbreviate(StringUtils.join(groupNames, ", "), 64);
-            popups.alert("error.group.delete.hasGroups", groupNamesString);
-
-        } else if (userGroupService.deleteUserGroup(userGroupId, admin)) {
-            popups.success(SELECTION_DELETED_MSG);
-
-            userActivityLogService.writeUserActivityLog(admin, "delete user group", getDescription(form), logger);
-            logger.info("UserGroup " + userGroupId + " deleted");
-
-        } else {
-            popups.alert(ERROR_MSG);
-        }
-
-        return REDIRECT_TO_OVERVIEW;
-    }
-
-    @GetMapping(value = "/deleteRedesigned.action")
+    @GetMapping(value = "/delete.action")
+    @RequiredPermission("role.delete")
     public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
         validateSelectedIds(bulkIds);
 
@@ -285,30 +239,32 @@ public class UserGroupController implements XssCheckAware {
         return DELETE_VIEW;
     }
 
-    @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @RequiredPermission("role.delete")
     public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
         validateSelectedIds(bulkIds);
 
         List<UserGroupDto> userGroups = userGroupService.markDeleted(bulkIds, admin);
         writeUserActivityLog(admin, getDeleteUserActionLog(userGroups));
         logger.info("User groups {} deleted", bulkIds);
-        popups.success(SELECTION_DELETED_MSG);
+        popups.selectionDeleted();
         return REDIRECT_TO_OVERVIEW;
     }
 
     private static void validateSelectedIds(Collection<Integer> bulkIds) {
         if (CollectionUtils.isEmpty(bulkIds)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+            throw new BadRequestException(NOTHING_SELECTED_MSG);
         }
     }
 
     @GetMapping("/{id:\\d+}/copy.action")
+    @RequiredPermission("role.change")
     public String copy(@PathVariable int id, Admin admin, Popups popups) {
         int copiedGroupId = tryCopyUserGroup(id, admin);
 
         if (copiedGroupId < 0) {
-            logger.error("Couldn't copy user group ID:" + id);
-            popups.alert(ERROR_MSG);
+            logger.error("Couldn't copy user group ID: {}", id);
+            popups.defaultError();
             return "redirect:/administration/usergroup/" + id + "/view.action";
         }
         userActivityLogService.writeUserActivityLog(admin, "copied user group",
@@ -421,13 +377,7 @@ public class UserGroupController implements XssCheckAware {
     }
 
     private void writeUserActivityLog(Admin admin, UserAction userAction) {
-        if (Objects.nonNull(userActivityLogService)) {
-            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-        } else {
-            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-            logger.info(String.format("Userlog: %s %s %s", admin.getUsername(), userAction.getAction(),
-                    userAction.getDescription()));
-        }
+        UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
     }
 
     private int tryCopyUserGroup(int id, Admin admin) {

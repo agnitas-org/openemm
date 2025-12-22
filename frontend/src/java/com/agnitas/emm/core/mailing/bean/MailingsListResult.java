@@ -11,21 +11,21 @@
 package com.agnitas.emm.core.mailing.bean;
 
 import com.agnitas.messages.Message;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 
 import java.util.Map;
 
 public class MailingsListResult {
 
-    private PaginatedListImpl<Map<String, Object>> mailingsList;
+    private PaginatedList<Map<String, Object>> mailingsList;
     private Message errorMessage;
 
-    public MailingsListResult(PaginatedListImpl<Map<String, Object>> mailingsList, Message errorMessage) {
+    public MailingsListResult(PaginatedList<Map<String, Object>> mailingsList, Message errorMessage) {
         this.mailingsList = mailingsList;
         this.errorMessage = errorMessage;
     }
 
-    public PaginatedListImpl<Map<String, Object>> getMailingsList() {
+    public PaginatedList<Map<String, Object>> getMailingsList() {
         return mailingsList;
     }
 

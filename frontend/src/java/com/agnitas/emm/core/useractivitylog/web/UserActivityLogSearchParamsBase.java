@@ -35,9 +35,4 @@ public class UserActivityLogSearchParamsBase implements FormSearchParams<UserAct
         filter.setUsername(this.username);
     }
 
-    @Override
-    public void resetParams() {
-        timestamp = new DateRange();
-        username = null;
-    }
 }

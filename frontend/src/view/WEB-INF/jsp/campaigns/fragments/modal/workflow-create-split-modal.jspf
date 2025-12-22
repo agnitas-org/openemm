@@ -1,0 +1,29 @@
+
+<script id="create-split-modal" type="text/x-mustache-template">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" data-initializer="own-workflow-expanding-modal">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="mailing.listsplit"/></h1>
+                    <button type="button" class="btn-close js-confirm-negative" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="modal-split-type"><mvc:message code="mailing.listsplit.question"/></label>
+                    <select id="modal-split-type" name="confirm-choice" class="form-control">
+                        <c:forEach var="type" items="${splitTypes}">
+                            <option value="${type}"><mvc:message code="listsplit.${type}"/></option>
+                        </c:forEach>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-confirm-positive>
+                        <i class="icon icon-check"></i>
+                        <mvc:message code="button.Apply"/>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

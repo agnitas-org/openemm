@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
@@ -38,7 +38,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		// Nothing to do
 	}
 
-	public <T> PaginatedListImpl<T> selectPaginatedList(String query, String sortTable, PaginationForm paginationOptions, RowMapper<T> rowMapper, Object... parameters) {
+	public <T> PaginatedList<T> selectPaginatedList(String query, String sortTable, PaginationForm paginationOptions, RowMapper<T> rowMapper, Object... parameters) {
 		return selectPaginatedList(
 				query,
 				sortTable,
@@ -51,7 +51,11 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		);
 	}
 
-	public <T> PaginatedListImpl<T> selectPaginatedList(String selectStatement, String sortTable, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
+	public <T> PaginatedList<T> selectPaginatedList(String selectStatement, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
+		return selectPaginatedList(selectStatement, null, null, true, pageNumber, pageSize, rowMapper, parameters);
+	}
+
+	public <T> PaginatedList<T> selectPaginatedList(String selectStatement, String sortTable, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
 		if (StringUtils.isNotBlank(sortTable)) {
 			sortTable = SafeString.getSafeDbTableName(sortTable);
 		}
@@ -62,14 +66,16 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		// Only alphanumeric values may be sorted with upper or lower,
 		// which always returns a string value.
 		// For selecting ordered numeric values use without lower
-		String sortClause;
+		String sortClause = "";
 		try {
-			if (StringUtils.isNotBlank(sortTable) && DbUtilities.getColumnDataType(getDataSource(), sortTable, sortColumn).getSimpleDataType() == SimpleDataType.Characters) {
-				sortClause = "ORDER BY LOWER(" + sortColumn + ")";
-			} else {
-				sortClause = "ORDER BY " + sortColumn;
+			if (StringUtils.isNotBlank(sortColumn)) {
+				if (StringUtils.isNotBlank(sortTable) && DbUtilities.getColumnDataType(getDataSource(), sortTable, sortColumn).getSimpleDataType() == SimpleDataType.Characters) {
+					sortClause = "ORDER BY LOWER(" + sortColumn + ")";
+				} else {
+					sortClause = "ORDER BY " + sortColumn;
+				}
+				sortClause = sortClause + " " + (sortDirectionAscending ? "asc" : "desc");
 			}
-			sortClause = sortClause + " " + (sortDirectionAscending ? "asc" : "desc");
 		} catch (Exception e) {
 			sortClause = "";
 		}
@@ -77,7 +83,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		return selectPaginatedListWithSortClause(selectStatement, sortClause, sortColumn, sortDirectionAscending, pageNumber, pageSize, rowMapper, parameters);
 	}
 
-	public <T> PaginatedListImpl<T> selectPaginatedListWithSortClause(String query, String sortClause, PaginationForm paginationOptions, RowMapper<T> rowMapper, Object... params) {
+	public <T> PaginatedList<T> selectPaginatedListWithSortClause(String query, String sortClause, PaginationForm paginationOptions, RowMapper<T> rowMapper, Object... params) {
 		return selectPaginatedListWithSortClause(
 				query,
 				sortClause,
@@ -90,7 +96,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 		);
 	}
 
-	public <T> PaginatedListImpl<T> selectPaginatedListWithSortClause(String selectStatement, String sortClause, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
+	public <T> PaginatedList<T> selectPaginatedListWithSortClause(String selectStatement, String sortClause, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
 		// Get number of available items to show
 		String countQuery;
 		if (isOracleDB()) {
@@ -106,7 +112,7 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 	 * Parameter "selectCountStatement" may differ from parameter "selectDataStatement" to improve db performace.
 	 * Especially "LEFT OUTER JOIN" statement parts do not need to be included in "selectCountStatement".
 	 */
-	public <T> PaginatedListImpl<T> selectPaginatedListWithSortClause(String selectCountStatement, String selectDataStatement, String sortClause, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
+	public <T> PaginatedList<T> selectPaginatedListWithSortClause(String selectCountStatement, String selectDataStatement, String sortClause, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize, RowMapper<T> rowMapper, Object... parameters) {
 		int totalRows = selectInt(selectCountStatement, parameters);
 
 		// Check pageSize validity
@@ -128,23 +134,24 @@ public abstract class PaginatedBaseDaoImpl extends BaseDaoImpl {
 					pageNumber = 1;
 				}
 			}
-	
+
 			if (isOracleDB()) {
 				// Borders in oracle dbstatement "between" are included in resultset
 				int rowStart = (pageNumber - 1) * pageSize + 1;
-				int rowEnd_inclusive = rowStart + pageSize - 1;
+				int rowEndInclusive = rowStart + pageSize - 1;
+
 				selectDataStatement = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectDataStatement + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
-				parameters = AgnUtils.extendObjectArray(parameters, rowStart, rowEnd_inclusive);
+				parameters = AgnUtils.extendObjectArray(parameters, rowStart, rowEndInclusive);
 			} else {
 				int rowStart = (pageNumber - 1) * pageSize;
-				selectDataStatement = selectDataStatement + " " + sortClause + " LIMIT ?, ?";
-				parameters = AgnUtils.extendObjectArray(parameters, rowStart, pageSize);
+				selectDataStatement = selectDataStatement + " " + sortClause + " LIMIT ? OFFSET ?";
+				parameters = AgnUtils.extendObjectArray(parameters, pageSize, rowStart);
 			}
-	
+
 			List<T> resultList = select(selectDataStatement, rowMapper, parameters);
-			return new PaginatedListImpl<>(resultList, totalRows, pageSize, pageNumber, sortColumn, sortDirectionAscending);
+			return new PaginatedList<>(resultList, totalRows, pageSize, pageNumber, sortColumn, sortDirectionAscending);
 		} else {
-			return new PaginatedListImpl<>(new ArrayList<>(), 0, pageSize, 1, sortColumn, sortDirectionAscending);
+			return new PaginatedList<>(new ArrayList<>(), 0, pageSize, 1, sortColumn, sortDirectionAscending);
 		}
 	}
 }

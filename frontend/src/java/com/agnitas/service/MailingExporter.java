@@ -14,5 +14,6 @@ import java.io.OutputStream;
 
 public interface MailingExporter {
 	
-	void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying) throws Exception;
+	void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages, boolean isForCopying);
+
 }

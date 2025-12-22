@@ -67,8 +67,9 @@ public class RecipientFieldDescription {
 	
 	public RecipientFieldDescription setColumnName(String columnName) {
 		if (columnName == null) {
-			throw new RuntimeException("Invalid empty column name for recipient field");
+			throw new IllegalArgumentException("Invalid empty column name for recipient field");
 		}
+
 		this.columnName = columnName.toLowerCase();
 		return this;
 	}
@@ -106,8 +107,9 @@ public class RecipientFieldDescription {
 	
 	public RecipientFieldDescription setDatabaseDataType(String databaseDataType) {
 		if (databaseDataType == null) {
-			throw new RuntimeException("Invalid empty databaseDataType for recipient field");
+			throw new IllegalArgumentException("Invalid empty databaseDataType for recipient field");
 		}
+
 		this.databaseDataType = databaseDataType.toUpperCase();
 		return this;
 	}

@@ -10,27 +10,18 @@
 
 package com.agnitas.emm.core.mailing.forms;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.web.forms.PaginationForm;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 public class MailingParamOverviewFilter extends PaginationForm {
 
     private Integer mailingId;
-    private String paramQuery; // TODO: EMMGUI-714: remove after old design will be removed
     private String name;
     private String description;
     private DateRange changeDate = new DateRange();
-
-    public String getParamQuery() {
-        return paramQuery;
-    }
-
-    public void setParamQuery(String paramQuery) {
-        this.paramQuery = paramQuery;
-    }
 
     public String getName() {
         return name;

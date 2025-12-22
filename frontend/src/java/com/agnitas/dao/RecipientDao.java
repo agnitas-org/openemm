@@ -19,24 +19,23 @@ import java.util.TimeZone;
 import javax.sql.DataSource;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.BindingEntry;
+import com.agnitas.beans.Recipient;
 import com.agnitas.beans.RecipientHistory;
 import com.agnitas.beans.RecipientMailing;
 import com.agnitas.beans.RecipientReaction;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.WebtrackingHistoryEntry;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.beans.impl.RecipientLiteImpl;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.recipient.RecipientException;
-import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
-import com.agnitas.emm.core.recipient.service.RecipientType;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
-import com.agnitas.beans.BindingEntry;
-import com.agnitas.beans.Recipient;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.dto.RecipientSalutationDto;
+import com.agnitas.emm.core.recipient.exception.RecipientException;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.util.CsvColInfo;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.SqlPreparedStatementManager;
@@ -74,13 +73,9 @@ public interface RecipientDao {
 
     List<RecipientReaction> getRecipientReactionsHistory(int recipientID, int companyID);
 
-    List<Recipient> getDuplicateRecipients(int companyId, String email, String select, Object[] queryParams);
+    PaginatedList<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums);
 
-    PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums);
     int getIntResult(SqlPreparedStatementManager statementManager);
-
-    // TODO: EMMGUI-714: remove when old design will be removed
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns);
 
     int getNumberOfRecipients(int companyId);
 
@@ -97,14 +92,6 @@ public interface RecipientDao {
 
 	int getNumberOfRecipients(int companyId, int mailingListId, List<MediaTypes> mediaTypes, String sqlConditions, Object... sqlConditionParameters);
 
-	/**
-	 * For bulk insert of new recipients only.
-	 * There is no check for CompanyId == 0 and different CompanyId inside.
-	 * 
-	 * @param custParameters
-	 * @param companyID CompanyId should be the same for all recipients in list.
-	 * @return list of recipient ID's or empty list in case of errors
-	 */
 	void checkParameters(CaseInsensitiveMap<String, Object> custParameters, int companyID);
 
 	List<Object> updateCustomers(int companyID, List<Recipient> recipients);
@@ -121,10 +108,8 @@ public interface RecipientDao {
      * @param cust recipient to insert
      *
      * @return true on success
-     * 
-     * @throws Exception on errors writing data
      */
-    int insertNewCustWithException(Recipient cust) throws Exception;
+    int insertNewCustWithException(Recipient cust);
 	
 	/**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData
@@ -133,10 +118,8 @@ public interface RecipientDao {
      * @param cust customer data to be saved to database
      * 
      * @return true on success
-     * 
-     * @throws Exception on errors writing data
      */
-	boolean updateInDbWithException(final Recipient cust) throws Exception;
+	boolean updateInDbWithException(Recipient cust);
 
 	/**
      * Updates Customer in DB. customerID must be set to a valid id, customer-data is taken from this.customerData
@@ -148,10 +131,8 @@ public interface RecipientDao {
      * @param missingFieldsToNull control flag for handling profile fields that are not listed in given customer
 
      * @return true on success
-     * 
-     * @throws Exception on errors writing data
      */
-	boolean updateInDbWithException(final Recipient cust, final boolean missingFieldsToNull) throws Exception;
+	boolean updateInDbWithException(Recipient cust, boolean missingFieldsToNull);
 
     Map<String, Object> getRecipientData(int companyId, int recipientId, boolean respectHideSignIfSet);
 
@@ -223,7 +204,6 @@ public interface RecipientDao {
      * @return Map with key/value-pairs as combinations of mailinglist-id and BindingEntry-Objects
      */
     Map<Integer, Map<Integer, BindingEntry>> loadAllListBindings(int companyID, int customerID);
-    
 
     /**
      * Loads value of given column for given recipient
@@ -267,7 +247,6 @@ public interface RecipientDao {
      *
      * @param companyID the id of the company
      * @param list the list of customer id
-     * @return 
      */
     int deleteRecipients(int companyID, List<Integer> list);
 
@@ -341,6 +320,7 @@ public interface RecipientDao {
 	String selectCustomerValue(String selectValue, int companyID, int customerId);
 
     int bulkUpdateEachRecipientsFields(int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception;
+
     int getAffectedRecipientsForBulkUpdateFields(int companyId, int adminId, int mailingListId, String targetExpression, Map<String, Object> updateValues) throws Exception;
 
     int getRecipientsAmountForTargetGroup(int companyId, int adminId, int mailingListId, String sqlTargetExpression);
@@ -351,7 +331,7 @@ public interface RecipientDao {
 	
 	boolean isOracleDB();
 
-    List<Integer> insertTestRecipients(int companyId, int mailingListId, UserStatus userStatus, String remark, List<String> addresses) throws Exception;
+    List<Integer> insertTestRecipients(int companyId, int mailingListId, UserStatus userStatus, String remark, List<String> addresses);
 
     String getEmail(int companyId, int customerId);
 
@@ -387,7 +367,7 @@ public interface RecipientDao {
 
     List<Integer> listRecipientIdsByTargetGroup(final int companyId, final Target target);
 
-    int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues) throws Exception;
+    int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues);
 
 	List<Recipient> findByData(int companyID, Map<String, Object> searchDataMap);
 
@@ -418,7 +398,7 @@ public interface RecipientDao {
 
 	int getSizeOfCustomerDataFromDbList(int companyId, String eql);
 
-    int getOrCreateRecipientOfAdmin(Admin admin) throws Exception;
+    int getOrCreateRecipientOfAdmin(Admin admin);
 
 	List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
 

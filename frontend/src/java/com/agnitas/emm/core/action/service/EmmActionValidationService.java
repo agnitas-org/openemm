@@ -16,5 +16,5 @@ import com.agnitas.service.SimpleServiceResult;
 
 public interface EmmActionValidationService {
 
-	SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) throws Exception;
+	SimpleServiceResult validate(Admin admin, ActionOperationParameters operation);
 }

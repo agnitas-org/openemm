@@ -10,12 +10,10 @@
 
 package com.agnitas.emm.core.salutation.web;
 
-import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static com.agnitas.util.Const.Mvc.DELETE_VIEW;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
 
 import java.util.List;
 import java.util.Set;
@@ -23,26 +21,26 @@ import java.util.concurrent.Callable;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.impl.TitleImpl;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.salutation.form.SalutationForm;
 import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import com.agnitas.emm.core.salutation.form.SalutationSearchParams;
 import com.agnitas.emm.core.salutation.service.SalutationService;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
+import com.agnitas.exception.BadRequestException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
-import com.agnitas.beans.Title;
-import com.agnitas.beans.impl.TitleImpl;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.util.MvcUtils;
-import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -69,7 +67,6 @@ public class SalutationController implements XssCheckAware {
 
     private static final String PERMISSION_ERROR_MSG_KEY = "error.salutation.change.permission";
     private static final String REDIRECT_TO_LIST = "redirect:/salutation/list.action";
-    private static final String REDIRECT_TO_LIST_REDESIGNED = "redirect:/salutation/listRedesigned.action";
 
     private final SalutationService salutationService;
     private final ConversionService conversionService;
@@ -86,44 +83,16 @@ public class SalutationController implements XssCheckAware {
         this.recipientService = recipientService;
     }
 
-    @RequestMapping(value = "/list.action")
-    // TODO: EMMGUI-714: remove when removing old design
-    public Pollable<ModelAndView> list(@ModelAttribute("form") SalutationForm form, @RequestParam(required = false) Boolean restoreSort,
-                                       Admin admin, Model model, HttpSession session) {
-        FormUtils.syncPaginationData(webStorage, WebStorage.SALUTATION_OVERVIEW, form, restoreSort);
-
-        return new Pollable<>(getPollingUid(form, session), DEFAULT_TIMEOUT,
-                new ModelAndView(redirectToList(admin), model.asMap()),
-                getListWorker(admin.getCompanyID(), form, model));
-    }
-
-    private Callable<ModelAndView> getListWorker(int companyId, SalutationForm form, Model model) {
-        return () -> {
-            model.addAttribute("salutations", salutationService.paginatedList(
-                    companyId, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows()));
-            return new ModelAndView("salutation_list", model.asMap());
-        };
-    }
-
-    private PollingUid getPollingUid(SalutationForm form, HttpSession session) {
-        return PollingUid.builder(session.getId(), "salutations")
-                .arguments(form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows())
-                .build();
-    }
-
-    @GetMapping("/listRedesigned.action")
-    public Pollable<ModelAndView> listRedesigned(@RequestParam(required = false) Boolean restoreSort,
+    @GetMapping("/list.action")
+    @RequiredPermission("salutation.show")
+    public Pollable<ModelAndView> list(@RequestParam(required = false) Boolean restoreSort,
                                                  SalutationOverviewFilter filter,
                                                  Admin admin, Model model, HttpSession session) {
         FormUtils.syncPaginationData(webStorage, WebStorage.SALUTATION_OVERVIEW, filter, restoreSort);
         filter.setCompanyId(admin.getCompanyID());
-        return new Pollable<>(getPollingUidRedesigned(filter, session), DEFAULT_TIMEOUT,
-            new ModelAndView(redirectToList(admin), model.asMap()),
+        return new Pollable<>(getPollingUid(filter, session), DEFAULT_TIMEOUT,
+            new ModelAndView(REDIRECT_TO_LIST, model.asMap()),
             getListWorker(filter, model));
-    }
-
-    private static String redirectToList(Admin admin) {
-        return admin.isRedesignedUiUsed() ? REDIRECT_TO_LIST_REDESIGNED : REDIRECT_TO_LIST;
     }
 
     private Callable<ModelAndView> getListWorker(SalutationOverviewFilter filter, Model model) {
@@ -133,36 +102,39 @@ public class SalutationController implements XssCheckAware {
         };
     }
 
-    private PollingUid getPollingUidRedesigned(SalutationOverviewFilter filter, HttpSession session) {
+    private PollingUid getPollingUid(SalutationOverviewFilter filter, HttpSession session) {
         return PollingUid.builder(session.getId(), "salutations")
             .arguments(filter.getSort(), filter.getOrder(), filter.getPage(), filter.getNumberOfRows())
             .build();
     }
 
     @GetMapping("/search.action")
+    @RequiredPermission("salutation.show")
     public String search(SalutationOverviewFilter form, SalutationSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, form, false);
+        searchParams.storeParams(form);
         ra.addFlashAttribute("salutationOverviewFilter", form);
-        return "redirect:/salutation/listRedesigned.action?restoreSort=true";
+        return "redirect:/salutation/list.action?restoreSort=true";
     }
 
     @RequestMapping("{id:\\d+}/view.action")
+    @RequiredPermission("salutation.show")
     public String view(@PathVariable int id, Admin admin, Model model, Popups popups) {
         Title title = salutationService.get(id, admin.getCompanyID());
         if (title == null) {
             logger.error("Could not delete salutation id: {} not exist", id);
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return MESSAGES_VIEW;
         }
+
         model.addAttribute("salutationCompanyId", title.getCompanyID());
         model.addAttribute("form", conversionService.convert(title, SalutationForm.class));
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("recipients", recipientService.getAdminAndTestRecipientsSalutation(admin));
-        }
+        model.addAttribute("recipients", recipientService.getAdminAndTestRecipientsSalutation(admin));
+
         return "salutation_view";
     }
 
     @PostMapping("/{salutationId:\\d+}/save.action")
+    @RequiredPermission("salutation.change")
     public String save(@PathVariable int salutationId, Admin admin, SalutationForm form, Popups popups) {
         Title salutationToSave = getSalutationToSave(form, salutationId, admin.getCompanyID());
         if (!isAllowedToChange(salutationToSave, admin.getCompanyID(), popups)) {
@@ -170,12 +142,12 @@ public class SalutationController implements XssCheckAware {
         }
 
         salutationService.save(salutationToSave);
-        popups.success(CHANGES_SAVED_MSG);
-        return redirectToListWithRestoreSort(admin);
+        popups.changesSaved();
+        return redirectToListWithRestoreSort();
     }
 
-    private static String redirectToListWithRestoreSort(Admin admin) {
-        return redirectToList(admin) + "?restoreSort=true";
+    private static String redirectToListWithRestoreSort() {
+        return REDIRECT_TO_LIST + "?restoreSort=true";
     }
 
     private Title getSalutationToSave(SalutationForm form, int salutationId, int companyId) {
@@ -197,7 +169,7 @@ public class SalutationController implements XssCheckAware {
 
     private boolean isAllowedToChange(Title title, int companyId, Popups popups) {
         if (title == null) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return false;
         }
         if (title.getCompanyID() == 0 && companyId != 1) {
@@ -221,17 +193,16 @@ public class SalutationController implements XssCheckAware {
     }
 
     @RequestMapping(value = {"/create.action", "/0/view.action"})
+    @RequiredPermission("salutation.change")
     public String create(@ModelAttribute("form") SalutationForm form, Admin admin, Model model) {
         form.setDescription(I18nString.getLocaleString("default.salutation.shortname", admin.getLocale()));
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("recipients", recipientService.getAdminAndTestRecipientsSalutation(admin));
-        }
+        model.addAttribute("recipients", recipientService.getAdminAndTestRecipientsSalutation(admin));
         return "salutation_view";
     }
 
-    @GetMapping(value = "/deleteRedesigned.action")
-    @PermissionMapping("confirmDelete")
-    public String confirmDeleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
+    @GetMapping(value = "/delete.action")
+    @RequiredPermission("salutation.delete")
+    public String confirmDelete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Model model, Popups popups) {
         validateDeletion(bulkIds);
 
         ServiceResult<List<Title>> result = salutationService.getAllowedForDeletion(bulkIds, admin.getCompanyID());
@@ -247,76 +218,36 @@ public class SalutationController implements XssCheckAware {
         return DELETE_VIEW;
     }
 
-    @RequestMapping(value = "/deleteRedesigned.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    @PermissionMapping("delete")
-    public String deleteRedesigned(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
+    @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
+    @RequiredPermission("salutation.delete")
+    public String delete(@RequestParam(required = false) Set<Integer> bulkIds, Admin admin, Popups popups) {
         validateDeletion(bulkIds);
         ServiceResult<UserAction> result = salutationService.bulkDelete(bulkIds, admin.getCompanyID());
 
         popups.addPopups(result);
         userActivityLogService.writeUserActivityLog(admin, result.getResult());
 
-        return redirectToListWithRestoreSort(admin);
+        return redirectToListWithRestoreSort();
     }
 
     private void validateDeletion(Set<Integer> bulkIds) {
         if (CollectionUtils.isEmpty(bulkIds)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
-        }
-    }
-
-    @GetMapping("/{salutationId:\\d+}/confirmDelete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String confirmDelete(@PathVariable int salutationId, Admin admin, Model model, Popups popups) {
-        Title title = salutationService.get(salutationId, admin.getCompanyID());
-        if (title == null || (title.getCompanyID() < 1 && admin.getCompanyID() != 1)) {
-            popups.alert(PERMISSION_ERROR_MSG_KEY);
-            return MESSAGES_VIEW;
-        }
-        model.addAttribute("id", salutationId);
-        model.addAttribute("shortname", title.getDescription());
-        return "salutation_delete";
-    }
-
-    @PostMapping("{salutationId:\\d+}/delete.action")
-    // TODO: EMMGUI-714: remove when old design will be removed
-    public String delete(@PathVariable int salutationId, Admin admin, Popups popups) {
-        deleteSalutation(salutationId, admin.getCompanyID(), popups);
-        if (popups.hasAlertPopups()) {
-            return MESSAGES_VIEW;
-        }
-        return redirectToListWithRestoreSort(admin);
-    }
-
-    // TODO: EMMGUI-714: remove when old design will be removed
-    private void deleteSalutation(int salutationId, int companyId, Popups popups) {
-        Title title = salutationService.get(salutationId, companyId);
-        if (title != null) {
-            if (title.getCompanyID() == companyId) {
-                if (salutationService.delete(salutationId, companyId)) {
-                    popups.success("default.selection.deleted");
-                } else {
-                    logger.error("Could not delete salutation: {}", salutationId);
-                    popups.alert(ERROR_MSG);
-                }
-            } else {
-                popups.alert(PERMISSION_ERROR_MSG_KEY);
-            }
-        } else {
-            logger.error("Could not delete salutation id: {} not exist", salutationId);
-            popups.alert(ERROR_MSG);
+            throw new BadRequestException(NOTHING_SELECTED_MSG);
         }
     }
 
     @GetMapping(value = "/list/json.action")
+    @RequiredPermission("salutation.show")
     public ResponseEntity<List<Title>> getListAsJson(Admin admin) {
         return ResponseEntity.ok(salutationService.getAll(admin.getCompanyID(), true));
     }
 
     @GetMapping(value = "/{salutationId:\\d+}/resolve.action")
+    @RequiredPermission("salutation.show")
     public ResponseEntity<String> resolve(@PathVariable int salutationId,
                                           @RequestParam int recipientId,
                                           @RequestParam int type, Admin admin) {
         return ResponseEntity.ok(salutationService.resolve(salutationId, recipientId, type, admin));
     }
+
 }

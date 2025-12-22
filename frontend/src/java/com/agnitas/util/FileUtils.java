@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
@@ -31,8 +31,7 @@ import org.springframework.http.MediaType;
  */
 public class FileUtils {
 	
-	/** Logger used by this class. */
-	private static final Logger logger = LogManager.getLogger( FileUtils.class);
+	private static final Logger logger = LogManager.getLogger(FileUtils.class);
 	
 	private static final String INVALID_FILENAME_PATTERN = "^.*[\\,%\\&/\\?\\*#:].*$";
 	

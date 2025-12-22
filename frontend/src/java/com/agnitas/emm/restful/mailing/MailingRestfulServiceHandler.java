@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -38,8 +37,11 @@ import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.mailing.service.CopyMailingService;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
@@ -66,9 +68,6 @@ import com.agnitas.util.HttpUtils.RequestMethod;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -544,25 +543,13 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 								}
 							} else if ("mailingtype".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof String) {
-									MailingType mailingType;
-									try {
-										mailingType = MailingType.fromName((String) entry.getValue());
-									} catch (Exception e) {
-										throw new RestfulClientException("Invalid value for 'mailingtype': " + entry.getValue());
-									}
-									mailing.setMailingType(mailingType);
+                                    mailing.setMailingType(MailingType.fromName((String) entry.getValue()));
 								} else {
 									throw new RestfulClientException("Invalid data type for 'mailingtype'. String expected");
 								}
 							} else if ("mailing_content_type".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof String) {
-									MailingContentType mailingContentType;
-									try {
-										mailingContentType = MailingContentType.getFromString((String) jsonObject.get("mailing_content_type"));
-									} catch (Exception e) {
-										throw new RestfulClientException("Invalid value for 'mailing_content_type': " + entry.getValue());
-									}
-									mailing.setMailingContentType(mailingContentType);
+                                    mailing.setMailingContentType(MailingContentType.getFromString((String) jsonObject.get("mailing_content_type")));
 								} else {
 									throw new RestfulClientException("Invalid data type for 'mailing_content_type'. String expected");
 								}
@@ -632,6 +619,17 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 								} else {
 									throw new RestfulClientException("Invalid data type for 'click_action_id'. Integer expected");
 								}
+							} else if ("preHeader".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String preHeader) {
+									mailing.getEmailParam().setPreHeader(preHeader);
+									try {
+										HtmlChecker.checkForUnallowedHtmlTags(preHeader, false);
+									} catch (HtmlCheckerException e) {
+										throw new RestfulClientException("Mailing pre-header contains forbidden HTML tags", e);
+									}
+								} else {
+									throw new RestfulClientException("Invalid data type for 'preHeader'. String expected");
+								}
 							} else if ("campaign_id".equals(entry.getKey())) {
 								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
 									int campaignId;
@@ -670,8 +668,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'parameters'. JsonArray expected");
 								}
 							} else if ("links".equals(entry.getKey())) {
-								Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
-								String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+                                String companyToken = companyTokenService.getCompanyToken(admin.getCompanyID()).orElse(null);
 								
 								Map<String, TrackableLink> trackableLinks = new HashMap<>();
 								for (Object linkObject : (JsonArray) jsonObject.get("links")) {

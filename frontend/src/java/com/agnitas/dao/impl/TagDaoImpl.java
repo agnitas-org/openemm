@@ -10,13 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import com.agnitas.beans.TagDefinition;
-import com.agnitas.dao.TagDao;
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -27,7 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.text.MessageFormat.format;
+import com.agnitas.beans.TagDefinition;
+import com.agnitas.dao.TagDao;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 
@@ -38,7 +36,6 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 
     @Override
     public Set<String> extractDeprecatedTags(int companyID, Set<String> tagNames) {
-
         if (CollectionUtils.isEmpty(tagNames)) {
             return Collections.emptySet();
         } else if (tagNames.size() > 800) {
@@ -55,8 +52,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
         return new HashSet<>(deprecatedTags);
     }
 
-    @Override
-    public List<TagDefinition> getTagDefinitions(int companyID) {
+    private List<TagDefinition> getTagDefinitions(int companyID) {
 		return select("SELECT tagname, type, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) ORDER BY tagname", new TagRowMapper(), companyID);
 	}
 	
@@ -66,6 +62,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 			return false;
 		} else {
 			update("DELETE FROM tag_tbl WHERE company_id = ?", companyId);
+			update("DELETE FROM tag_function_tbl WHERE company_id = ?", companyId);
 			return selectInt("SELECT COUNT(*) FROM tag_tbl WHERE company_id = ?", companyId) == 0;
 		}
     }
@@ -95,23 +92,19 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 				result.put(tagName, selectValue);
 			}
 		} catch (Exception e) {
-			logger.error(format("getTags: {0}", e.getMessage()), e);
+			logger.error("getTags: {}", e.getMessage(), e);
 		}
 
 		return result;
 	}
 
-	protected static class TagRowMapper implements RowMapper<TagDefinition> {
+	private static class TagRowMapper implements RowMapper<TagDefinition> {
 		@Override
 		public TagDefinition mapRow(ResultSet resultSet, int row) throws SQLException {
 			TagDefinition readObject = new TagDefinition();
 
 			readObject.setName(resultSet.getString("tagname"));
-			try {
-				readObject.setTypeString(resultSet.getString("type"));
-			} catch (Exception e) {
-				throw new SQLException("Error in TagDefinitionType", e);
-			}
+			readObject.setTypeString(resultSet.getString("type"));
 			readObject.setSelectValue(resultSet.getString("selectvalue"));
 			
 			return readObject;

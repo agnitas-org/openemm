@@ -10,27 +10,23 @@
 
 package com.agnitas.emm.core.recipientsreport.dao.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import com.agnitas.beans.IntEnum;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import com.agnitas.dao.impl.mapper.BlobRowMapper;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
@@ -38,15 +34,6 @@ import org.springframework.jdbc.core.RowMapper;
 public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements RecipientsReportDao {
 
     private static final ReportRowsMapper REPORT_ROWS_MAPPER = new ReportRowsMapper();
-
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    private static final Map<String, String> SORTABLE_COLUMNS = new CaseInsensitiveMap<>(Map.of(
-            "report_date", "report_date",
-            "type", "type",
-            "filename", "filename",
-            "datasource_id", "datasource_id",
-            "username", "username"
-    ));
 
     @Override
     public List<DashboardRecipientReport> getReportsForDashboard(int companyId) {
@@ -98,28 +85,19 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         params.add(report.getEntityData().getId());
         params.add(report.getEntityId());
 
-        // TODO: EMMGUI-714: remove when removing old design if not backward compatibilities problems will be found
-        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
-            params.add(RecipientsReport.RecipientReportType.IMPORT_REPORT.name());
-        } else if (report.getEntityType() == RecipientsReport.EntityType.EXPORT) {
-            params.add(RecipientsReport.RecipientReportType.EXPORT_REPORT.name());
-        } else {
-            throw new IllegalStateException("Can't create new report with type " + report.getEntityType().getId());
-        }
-
         if (isOracleDB()) {
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             update(sql, params.toArray());
         } else {
-            String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            reportId = insertIntoAutoincrementMysqlTable("recipients_report_id", sql, params.toArray());
+            String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            reportId = insert("recipients_report_id", sql, params.toArray());
         }
 
         report.setId(reportId);
     }
 
     @Override
-    public void createNewSupplementalReport(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception {
+    public void createNewSupplementalReport(int companyId, RecipientsReport report, byte[] content, String textContent) {
         int reportId = 0;
         List<Object> params = new ArrayList<>();
         if (isOracleDB()) {
@@ -131,7 +109,6 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         params.add(report.getFilename());
         params.add(report.getDatasourceId());
         params.add(report.getAdminId());
-        params.add(RecipientsReport.RecipientReportType.IMPORT_REPORT.name());
         params.add(companyId);
         params.add(textContent);
         params.add(report.getFileId());
@@ -142,107 +119,53 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         params.add(report.getEntityId());
 
         if (isOracleDB()) {
-            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             update(sql, params.toArray());
         } else {
-            String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            reportId = insertIntoAutoincrementMysqlTable("recipients_report_id", sql, params.toArray());
+            String sql = "INSERT INTO recipients_report_tbl (report_date, filename, datasource_id, admin_id, company_id, report, download_id, error, entity_type, entity_execution, entity_data, entity_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            reportId = insert("recipients_report_id", sql, params.toArray());
         }
 
         report.setId(reportId);
-
-        try (FileInputStream inputStream = new FileInputStream(temporaryDataFile)) {
-            updateBlob("UPDATE recipients_report_tbl SET content = ? WHERE recipients_report_id = ?", inputStream, report.getId());
-        }
+        updateBlob("UPDATE recipients_report_tbl SET content = ? WHERE recipients_report_id = ?", content, report.getId());
     }
 
     @Override
     public String getReportTextContent(int companyId, int reportId) {
-        if (companyId > 0 && reportId > 0) {
-            String sql = "SELECT report FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
-            Map<String, Object> result = selectSingleRow(sql, companyId, reportId);
-            return (String) result.get("report");
-        } else {
-            logger.error("RecipientsReportDaoImpl: getReportFileContent failed. companyID: {}, reportID: {}", companyId, reportId);
-            return null;
-        }
+        String sql = "SELECT report FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
+        return selectStringDefaultNull(sql, companyId, reportId);
     }
 
     @Override
     public byte[] getReportFileData(int companyId, int reportId) {
-        if (companyId > 0 && reportId > 0) {
-            String sql = "SELECT content FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
-            Map<String, Object> result = selectSingleRow(sql, companyId, reportId);
-	
-            return (byte[]) result.get("content");
-        } else {
-            logger.error("RecipientsReportDaoImpl: getReportFileContent failed. companyID: {}, reportID: {}", companyId, reportId);
-            return null;
-        }
+        String sql = "SELECT content FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
+        return selectObjectDefaultNull(sql, BlobRowMapper.INSTANCE, companyId, reportId);
     }
     
     @Override
     public RecipientsReport.EntityType getReportType(int companyId, int reportId) {
-        RecipientsReport.EntityType entityType = IntEnum.fromId(RecipientsReport.EntityType.class, selectInt(
+        return IntEnum.fromId(RecipientsReport.EntityType.class, selectInt(
                 "SELECT entity_type FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?",
                 companyId, reportId));
-        if (entityType != null && entityType != RecipientsReport.EntityType.UNKNOWN) {
-            return entityType;
-        }
-        String typeValue = selectObjectDefaultNull(
-                "SELECT type FROM recipients_report_tbl ir WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
-                StringRowMapper.INSTANCE, companyId, reportId);
-        
-        // TODO: remove in future after removing of 'type' column. for backward compatibility only
-        if (RecipientsReport.RecipientReportType.EXPORT_REPORT.name().equalsIgnoreCase(typeValue)) {
-            return RecipientsReport.EntityType.EXPORT;
-        }
-        if (RecipientsReport.RecipientReportType.IMPORT_REPORT.name().equalsIgnoreCase(typeValue)) {
-            return RecipientsReport.EntityType.IMPORT;
-        }
-        return RecipientsReport.EntityType.UNKNOWN;
     }
 
     @Override
-    public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types) {
-        sortProperty = SORTABLE_COLUMNS.getOrDefault(sortProperty, "report_date");
-        boolean direction = "ASC".equalsIgnoreCase(dir);
-        List<Object> parameters = new ArrayList<>();
-        
-        String sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.download_id, ir.error, NVL(a.username, 'AutoImport / AutoExport') AS username"
-    		+ " FROM recipients_report_tbl ir LEFT JOIN admin_tbl a ON a.admin_id = ir.admin_id"
-    		+ " WHERE ir.company_id = ?";        
-
-        if (types != null && types.length > 0) {
-        	sql += " AND type IN " + DbUtilities.joinForIN(types, RecipientsReport.RecipientReportType::name);
-        }
-        
-        String dateClause = DbUtilities.getDateConstraint("REPORT_DATE", startDate, finishDate, isOracleDB());
-        if (StringUtils.isNotBlank(dateClause)) {
-            sql += " AND " + dateClause;
-        }
-        parameters.add(companyId);
-        return selectPaginatedList(sql, "recipients_report_tbl", sortProperty, direction, pageNumber, pageSize, REPORT_ROWS_MAPPER, parameters.toArray());
-    }
-    
-    @Override
-    public PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId) {
+    public PaginatedList<RecipientsReport> getReports(RecipientsReportForm filter, int companyId) {
         String sql = "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.entity_data," +
                 " ir.admin_id, ir.entity_type, ir.download_id, ir.error," +
-                " NVL(a.username, 'AutoImport / AutoExport') AS username" +
+                " COALESCE(a.username, 'AutoImport / AutoExport') AS username" +
                 " FROM recipients_report_tbl ir LEFT JOIN admin_tbl a ON a.admin_id = ir.admin_id" +
                 " WHERE ir.company_id = ?";
         List<Object> params = new ArrayList<>(List.of(companyId));
         sql += applyOverviewFilters(filter, params);
 
-        PaginatedListImpl<RecipientsReport> list = selectPaginatedList(sql, "recipients_report_tbl",
+        PaginatedList<RecipientsReport> list = selectPaginatedList(sql, "recipients_report_tbl",
                 filter.getSortOrDefault("report_date"), filter.ascending(),
                 filter.getPage(), filter.getNumberOfRows(), REPORT_ROWS_MAPPER, params.toArray());
 
         if (filter.isUiFiltersSet()) {
-            int unfilteredTotalCount = selectIntWithDefaultValue(
+            int unfilteredTotalCount = selectInt(
                     "SELECT COUNT(*) FROM recipients_report_tbl WHERE company_id = ?",
-                    0,
                     companyId
             );
 
@@ -259,7 +182,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
             params.addAll(Arrays.stream(filter.getTypes()).map(RecipientsReport.EntityType::getId).toList());
         }
 
-        String dateClause = DbUtilities.getDateConstraint("REPORT_DATE", filter.getReportDate().getFrom(), filter.getReportDate().getTo(), isOracleDB());
+        String dateClause = DbUtilities.getDateConstraint("REPORT_DATE", filter.getReportDate().getFrom(), filter.getReportDate().getTo(), isOracleDB() || isPostgreSQL());
         if (StringUtils.isNotBlank(dateClause)) {
             filterSql += " AND " + dateClause;
         }
@@ -278,17 +201,11 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
 
     @Override
     public RecipientsReport getReport(int companyId, int reportId) {
-        return selectObjectDefaultNull("SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.entity_type, ir.download_id, ir.error, NVL(a.username, 'AutoImport / AutoExport') AS username"
+        return selectObjectDefaultNull("SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.entity_type, ir.download_id, ir.error, COALESCE(a.username, 'AutoImport / AutoExport') AS username"
         	+ " FROM recipients_report_tbl ir LEFT JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
         	REPORT_ROWS_MAPPER, companyId, reportId);
     }
 
-    @Override
-    public int deleteOldReports(int companyId, Date oldestReportDate) {
-        String sql = "DELETE FROM recipients_report_tbl WHERE report_date < ? AND company_id = ?";
-        return update(sql, oldestReportDate, companyId);
-    }
-    
     @Override
     public boolean deleteReportsByCompany(int companyId) {
         update("DELETE FROM recipients_report_tbl WHERE company_id = ?", companyId);
@@ -306,9 +223,6 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
             report.setDatasourceId(resultSet.getObject("datasource_id") == null ? null : resultSet.getInt("datasource_id"));
             report.setAdminId(resultSet.getInt("admin_id"));
             report.setUsername(resultSet.getString("username"));
-            if (DbUtilities.resultsetHasColumn(resultSet, "type")) {
-                report.setType(RecipientsReport.RecipientReportType.valueOf(resultSet.getString("type")));
-            }
 
             if (DbUtilities.resultsetHasColumn(resultSet, "entity_type")) {
                 report.setEntityType(IntEnum.fromId(RecipientsReport.EntityType.class, resultSet.getInt("entity_type")));

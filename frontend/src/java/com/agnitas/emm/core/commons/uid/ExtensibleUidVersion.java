@@ -40,7 +40,7 @@ public enum ExtensibleUidVersion {
 		this.versionCode = versionCode;
 	}
 	
-	public static final ExtensibleUidVersion fromVersionNumber(final int version) throws NoSuchElementException {
+	public static ExtensibleUidVersion fromVersionNumber(int version) {
 		for(final ExtensibleUidVersion uidVersion : values()) {
 			if(uidVersion.versionCode == version) {
 				return uidVersion;

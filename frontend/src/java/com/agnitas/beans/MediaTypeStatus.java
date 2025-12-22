@@ -11,13 +11,14 @@
 package com.agnitas.beans;
 
 public enum MediaTypeStatus {
+
 	NotUsed(0),
 	Inactive(1),
 	Active(2);
 	
 	private final int code;
 	
-	private MediaTypeStatus(int code) {
+	MediaTypeStatus(int code) {
 		this.code = code;
 	}
 	
@@ -25,21 +26,23 @@ public enum MediaTypeStatus {
 		return code;
 	}
 	
-	public static MediaTypeStatus getMediaTypeStatusTypeByCode(int code) throws Exception {
+	public static MediaTypeStatus getMediaTypeStatusTypeByCode(int code) {
 		for (MediaTypeStatus type : values()) {
 			if (type.code == code) {
 				return type;
 			}
 		}
-		throw new Exception("Invalid MediaTypeStatus code: " + code);
+
+		throw new IllegalArgumentException("Invalid MediaTypeStatus code: " + code);
 	}
 	
-	public static MediaTypeStatus getMediaTypeStatusByName(String name) throws Exception {
+	public static MediaTypeStatus getMediaTypeStatusByName(String name) {
 		for (MediaTypeStatus type : values()) {
 			if (type.name().equalsIgnoreCase(name)) {
 				return type;
 			}
 		}
-		throw new Exception("Invalid MediaTypeStatus name: " + name);
+
+		throw new IllegalArgumentException("Invalid MediaTypeStatus name: " + name);
 	}
 }

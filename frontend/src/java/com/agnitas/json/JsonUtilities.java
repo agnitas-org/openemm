@@ -16,15 +16,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
+import java.util.function.Function;
 
+import com.agnitas.util.DateUtilities;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -161,4 +164,25 @@ public class JsonUtilities {
             return "";
         }
     }
+
+	public static <T> List<T> collectJsonValues(Object node, Function<Object, T> mapper) {
+		List<T> values = new ArrayList<>();
+		collectJsonValues(node, values, mapper);
+		return values;
+	}
+
+	private static <T> void collectJsonValues(Object node, List<T> values, Function<Object, T> mapper) {
+		if (node instanceof JSONObject jsonObject) {
+			for (String key : jsonObject.keySet()) {
+				collectJsonValues(jsonObject.get(key), values, mapper);
+			}
+		} else if (node instanceof JSONArray array) {
+			for (Object arrayNode : array) {
+				collectJsonValues(arrayNode, values, mapper);
+			}
+		} else if (node != JSONObject.NULL) {
+			values.add(mapper.apply(node));
+		}
+	}
+
 }

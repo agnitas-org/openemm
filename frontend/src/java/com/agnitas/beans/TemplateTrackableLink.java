@@ -10,8 +10,6 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.beans.AbstractTrackableLink;
-
 public interface TemplateTrackableLink extends AbstractTrackableLink {
 
     int getTemplateId();

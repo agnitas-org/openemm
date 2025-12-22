@@ -13,18 +13,20 @@ package com.agnitas.emm.core.recipientsreport.service.impl;
 import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.common.exceptions.ZipDownloadException;
 import com.agnitas.emm.common.service.BulkFilesDownloadService;
 import com.agnitas.emm.core.Permission;
@@ -38,7 +40,6 @@ import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.MimeTypeService;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.Tuple;
 import com.agnitas.util.ZipUtilities;
@@ -80,8 +81,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         return recipientsReportDao.getReportTextContent(companyId, reportId);
     }
 
-    @Override
-    public byte[] getImportReportFileData(int companyId, int reportId) {
+    private byte[] getImportReportFileData(int companyId, int reportId) {
         return recipientsReportDao.getReportFileData(companyId, reportId);
     }
 
@@ -98,40 +98,10 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
 
     @Override
     @Transactional
-    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
-        int companyId = admin.getCompanyID();
-
-        RecipientsReport.RecipientReportType[] allowedTypes;
-        if (types == null) {
-            allowedTypes = RecipientsReport.RecipientReportType.values();
-        } else {
-            Map<RecipientsReport.RecipientReportType, Permission> TYPE_PERMISSIONS = Map.of(
-                    RecipientsReport.RecipientReportType.IMPORT_REPORT, Permission.WIZARD_IMPORT,
-                    RecipientsReport.RecipientReportType.EXPORT_REPORT, Permission.WIZARD_EXPORT
-            );
-            allowedTypes = Arrays.stream(types)
-                    .filter(Objects::nonNull)
-                    .filter(type -> admin.permissionAllowed(TYPE_PERMISSIONS.get(type)))
-                    .toList()
-                    .toArray(new RecipientsReport.RecipientReportType[]{});
-        }
-
-        PaginatedListImpl<RecipientsReport> returnList = recipientsReportDao.getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, allowedTypes);
-        DateTimeFormatter formatter = admin.getDateTimeFormatter();
-        ZoneId dbTimezone = ZoneId.systemDefault();
-        for (RecipientsReport item : returnList.getList()) {
-    		ZonedDateTime dbZonedDateTime = ZonedDateTime.ofInstant(item.getReportDate().toInstant(), dbTimezone);
-        	item.setReportDateFormatted(formatter.format(dbZonedDateTime));
-        }
-        return returnList;
-    }
-
-    @Override
-    @Transactional
-    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin){
+    public PaginatedList<RecipientsReport> deleteOldReportsAndGetReports(RecipientsReportForm filter, Admin admin){
         int companyId = admin.getCompanyID();
         filter.setTypes(getAllowedReportTypes(filter.getTypes(), admin));
-        PaginatedListImpl<RecipientsReport> returnList = recipientsReportDao.getReports(filter, companyId);
+        PaginatedList<RecipientsReport> returnList = recipientsReportDao.getReports(filter, companyId);
         DateTimeFormatter formatter = admin.getDateTimeFormatter();
         ZoneId dbTimezone = ZoneId.systemDefault();
         for (RecipientsReport item : returnList.getList()) {
@@ -238,9 +208,16 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception {
+    public void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) {
+        byte[] blobContent;
+        try {
+            blobContent = Files.readAllBytes(temporaryDataFile.toPath());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         report.setAdminId(admin != null ? admin.getAdminID() : 0);
-        recipientsReportDao.createNewSupplementalReport(companyId, report, temporaryDataFile, content);
+        recipientsReportDao.createNewSupplementalReport(companyId, report, blobContent, content);
     }
 
     private EntityType[] getAllowedReportTypes(EntityType[] types, final Admin admin) {

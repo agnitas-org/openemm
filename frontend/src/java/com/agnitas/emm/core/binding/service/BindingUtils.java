@@ -10,20 +10,18 @@
 
 package com.agnitas.emm.core.binding.service;
 
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 
 public class BindingUtils {
 
     public static String getUserRemarkForStatusByAdmin(Admin admin, int newUserStatus) {
-        try {
-            return getUserRemarkForStatusByAdmin(admin, UserStatus.getUserStatusByID(newUserStatus));
-        } catch (UnknownUserStatusException e) {
+        if (!UserStatus.existsWithId(newUserStatus)) {
             return "Unknown status " + newUserStatus + " by ADMIN (" + admin.getUsername() + ")";
         }
+
+        return getUserRemarkForStatusByAdmin(admin, UserStatus.getByCode(newUserStatus));
 	}
 
 	public static String getUserRemarkForStatusByAdmin(Admin admin, UserStatus userStatus) {

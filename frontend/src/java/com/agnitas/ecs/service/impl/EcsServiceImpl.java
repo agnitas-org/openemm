@@ -11,7 +11,6 @@
 package com.agnitas.ecs.service.impl;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +18,8 @@ import com.agnitas.beans.Admin;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.ecs.backend.beans.ClickStatColor;
 import com.agnitas.ecs.service.EcsService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.service.PdfService;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.lang3.StringUtils;
 
 public class EcsServiceImpl implements EcsService {
@@ -51,7 +50,7 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File generatePDF(Admin admin, String url, String title) throws Exception {
+    public File generatePDF(Admin admin, String url, String title) {
         return pdfService.generatePDF(
                 admin,
                 url,

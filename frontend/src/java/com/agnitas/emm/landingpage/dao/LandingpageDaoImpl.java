@@ -10,16 +10,22 @@
 
 package com.agnitas.emm.landingpage.dao;
 
-import com.agnitas.emm.landingpage.beans.RedirectSettings;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
 import java.util.List;
 import java.util.Optional;
 
-public final class LandingpageDaoImpl extends BaseDaoImpl implements LandingpageDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.landingpage.beans.RedirectSettings;
+import org.springframework.jdbc.core.RowMapper;
+
+public class LandingpageDaoImpl extends BaseDaoImpl implements LandingpageDao {
+
+	private static final RowMapper<RedirectSettings> ROW_MAPPER = (rs, rowNum) -> new RedirectSettings(
+			rs.getString("landingpage"),
+			rs.getInt("http_code")
+	);
 
 	@Override
-	public final Optional<RedirectSettings> getLandingPageRedirectionForDomain(final String domain) {
+	public Optional<RedirectSettings> getLandingPageRedirectionForDomain(String domain) {
 		if(domain == null) {
 			return Optional.empty();
 		} else {
@@ -27,7 +33,7 @@ public final class LandingpageDaoImpl extends BaseDaoImpl implements Landingpage
 					? "SELECT * FROM landingpage_tbl WHERE LOWER(domain) = ? OR ? LIKE '%.' || LOWER(domain) ORDER BY LENGTH(domain) DESC"
 					: "SELECT * FROM landingpage_tbl WHERE LOWER(domain) = ? OR ? LIKE CONCAT('%.', LOWER(domain)) ORDER BY LENGTH(domain) DESC";
 			
-			final List<RedirectSettings> result = select(sql, new RedirectSettingsRowMapper(), domain, domain);
+			final List<RedirectSettings> result = select(sql, ROW_MAPPER, domain, domain);
 
 			return !result.isEmpty()
 					? Optional.of(result.get(0))

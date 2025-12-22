@@ -12,6 +12,6 @@ package com.agnitas.emm.core.commons.database;
 
 public interface DatabaseInformation {
 
-	int getColumnStringLength(final String tableName, final String columnName) throws DatabaseInformationException;
+	int getColumnStringLength(String tableName, String columnName);
 	
 }

@@ -11,6 +11,7 @@
 package com.agnitas.post;
 
 public enum VariableType {
+
 	/**
 	 * Free text to the maximum length of 255 characters. The backslash and control characters are not allowed.
 	 */
@@ -74,8 +75,8 @@ public enum VariableType {
 	 */
 	CountryCode("countryCode", 90);
 
-	private String key;
-	private int dataTypeId;
+	private final String key;
+	private final int dataTypeId;
 
 	public String getKey() {
 		return key;
@@ -90,12 +91,12 @@ public enum VariableType {
 		this.dataTypeId = dataTypeId;
 	}
 
-	public static VariableType getByKey(java.lang.String variableTypeString) throws Exception {
+	public static VariableType getByKey(java.lang.String variableTypeString) {
 		for (VariableType variableType : VariableType.values()) {
 			if (variableType.getKey().replace("_", "").equalsIgnoreCase(variableTypeString)) {
 				return variableType;
 			}
 		}
-		throw new Exception("Unknown variableType: " + variableTypeString);
+		throw new IllegalArgumentException("Unknown variableType: " + variableTypeString);
 	}
 }

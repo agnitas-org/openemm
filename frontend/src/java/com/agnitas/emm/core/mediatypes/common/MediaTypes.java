@@ -54,12 +54,6 @@ public enum MediaTypes {
 		this.componentNames = Arrays.copyOf(componentNames, componentNames.length);
 	}
 	
-	public static final MediaTypes[] valuesSortedByCode() {
-		final MediaTypes[] array = MediaTypes.values();
-		Arrays.sort(array, Comparator.comparingInt(a -> a.code));
-		return array;
-	}
-	
 	public static final MediaTypes[] valuesSortedByDefaultValuePriority() {
 		final MediaTypes[] array = MediaTypes.values();
 		
@@ -127,13 +121,13 @@ public enum MediaTypes {
 		return null;
 	}
 	
-	public static MediaTypes getMediatypeByName(String name) throws Exception {
+	public static MediaTypes getMediatypeByName(String name) {
 		for (MediaTypes type : values()) {
 			if (type.name().equalsIgnoreCase(name)) {
 				return type;
 			}
 		}
-		throw new Exception("Invalid MediaTypes name: " + name);
+		throw new IllegalArgumentException("Invalid MediaTypes name: " + name);
 	}
 	
 	public final Permission getRequiredPermission() {

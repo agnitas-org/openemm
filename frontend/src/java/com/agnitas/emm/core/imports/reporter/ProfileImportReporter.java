@@ -10,11 +10,32 @@
 
 package com.agnitas.emm.core.imports.reporter;
 
+import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
+
+import java.io.File;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ColumnMapping;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.dao.ImportRecipientsDao;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.importquota.service.ImportQuotaCheckService;
+import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
@@ -22,13 +43,6 @@ import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.emm.reporter.HtmlReporterHelper;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.DataSourceService;
-import com.agnitas.beans.ColumnMapping;
-import com.agnitas.beans.ImportStatus;
-import com.agnitas.dao.ImportRecipientsDao;
-import com.agnitas.emm.core.mailinglist.dao.MailinglistDao;
-import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.service.ImportException;
 import com.agnitas.service.ProfileImportWorker;
 import com.agnitas.util.AgnUtils;
@@ -48,20 +62,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.File;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-
-import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.TXT_EXTENSION;
 
 public class ProfileImportReporter {
 
@@ -146,7 +146,7 @@ public class ProfileImportReporter {
 			autoImportID = profileImportWorker.getAutoImport().getAutoImportId();
 		}
 		if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null) {
-			createInvalidRecipientsReport(profileImportWorker, admin, companyID, true);
+			createInvalidRecipientsReport(profileImportWorker, admin, companyID);
 		}
 
 		RecipientsReport report = new RecipientsReport();
@@ -164,7 +164,7 @@ public class ProfileImportReporter {
 		return recipientsReportService.saveNewReport(admin, companyID, report, resultFileContent).getId();
 	}
 
-	private void createInvalidRecipientsReport(ProfileImportWorker profileImportWorker, Admin admin, int companyID, boolean isError) throws Exception {
+	private void createInvalidRecipientsReport(ProfileImportWorker profileImportWorker, Admin admin, int companyID){
 		boolean isAutoImport = profileImportWorker.getAutoImport() != null;
 
 		RecipientsReport report = new RecipientsReport();
@@ -172,7 +172,7 @@ public class ProfileImportReporter {
 		report.setDatasourceId(profileImportWorker.getDatasourceId());
 		report.setFilename(RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip");
 		report.setReportDate(profileImportWorker.getEndTime());
-		report.setIsError(isError);
+		report.setIsError(true);
 
 		report.setEntityId(isAutoImport ? profileImportWorker.getAutoImport().getAutoImportId() : profileImportWorker.getImportProfileId());
 		report.setEntityType(RecipientsReport.EntityType.IMPORT);
@@ -261,12 +261,8 @@ public class ProfileImportReporter {
 
 			profileContent += I18nString.getLocaleString("csv.DecimalSeparator", reportLocale) + ": " + profileImportWorker.getImportProfile().getDecimalSeparator() + "\n";
 			
-			try {
-				profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": " + DateFormat.getDateFormatById(profileImportWorker.getImportProfile().getDateFormat()).getValue() + "\n";
-			} catch (Exception e) {
-				profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": Invalid (\"" + e.getMessage() + "\")\n";
-			}
-			
+			profileContent += I18nString.getLocaleString("import.dateFormat", reportLocale) + ": " + DateFormat.getDateFormatById(profileImportWorker.getImportProfile().getDateFormat()).getValue() + "\n";
+
 			profileContent += "HtmlTagCheck: " + (configService.getBooleanValue(ConfigValue.NoHtmlCheckOnReferenceImport, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
 			profileContent += "AllowSimpleHtmlTags: " + (configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, profileImportWorker.getImportProfile().getCompanyId()) ? "yes" : "no") + "\n";
 			
@@ -322,10 +318,7 @@ public class ProfileImportReporter {
 				if (mapping.isMandatory()) {
 					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
 				}
-				if (mapping.isEncrypted()) {
-					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
-				}
-				
+
 				profileContent += "\t" + mappingEntryContent + "\n";
 			}
 			
@@ -408,8 +401,8 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableContentStart(false));
 			
 			String errorMessage;
-			if (importWorker.getError() != null && importWorker.getError() instanceof ImportException) {
-				errorMessage = I18nString.getLocaleString(((ImportException) importWorker.getError()).getErrorMessageKey(), locale, ((ImportException) importWorker.getError()).getAdditionalErrorData());
+			if (importWorker.getError() != null && importWorker.getError() instanceof ImportException importException) {
+				errorMessage = I18nString.getLocaleString(importException.getErrorMessageKey(), locale, importException.getAdditionalErrorData());
 			} else {
 				errorMessage = importWorker.getStatus().getFatalError();
 			}
@@ -429,7 +422,7 @@ public class ProfileImportReporter {
 			}
 		}
 		
-		if(importWorker.getError() == null || ((importWorker.getError() instanceof ImportException) && !((ImportException) importWorker.getError()).getErrorMessageKey().equals("error.import.lineQuotaExceeded"))) {
+		if(importWorker.getError() == null || ((importWorker.getError() instanceof ImportException importException) && !importException.getErrorMessageKey().equals("error.import.lineQuotaExceeded"))) {
 			if(this.importQuotaCheckService.checkWarningLimitReached(importWorker.getImportProfile().getCompanyId(), status.getCsvLines())) {
 				warningMessages.add(I18nString.getLocaleString(
 						"warning.import.lineQuota", 
@@ -466,7 +459,6 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_gender", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.GENDER_ERROR)) > 0));
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.csv_errors_date", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.DATE_ERROR)) > 0));
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("csv_errors_linestructure", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.STRUCTURE_ERROR)) > 0));
-			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("import.encryption_errors", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.ENCRYPTION_ERROR)) > 0));
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.value.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.VALUE_TOO_LARGE_ERROR)) > 0));
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.number.large", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR)) > 0));
 			htmlContent.append(HtmlReporterHelper.getOutputTableSummaryContentLine(I18nString.getLocaleString("error.import.invalidFormat", locale), String.valueOf(importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)), ((Integer) importWorker.getStatus().getError(ImportErrorType.INVALID_FORMAT_ERROR)) > 0));
@@ -581,12 +573,8 @@ public class ProfileImportReporter {
 
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.DecimalSeparator", locale), Character.toString(importWorker.getImportProfile().getDecimalSeparator())));
 			
-			try {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), DateFormat.getDateFormatById(importWorker.getImportProfile().getDateFormat()).getValue()));
-			} catch (Exception e) {
-				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), "Invalid (\"" + e.getMessage() + "\")"));
-			}
-			
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.dateFormat", locale), DateFormat.getDateFormatById(importWorker.getImportProfile().getDateFormat()).getValue()));
+
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("HtmlTagCheck", I18nString.getLocaleString(configService.getBooleanValue(ConfigValue.NoHtmlCheckOnReferenceImport, importWorker.getImportProfile().getCompanyId()) ? "default.Yes" : "No", locale)));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("AllowSimpleHtmlTags", I18nString.getLocaleString(configService.getBooleanValue(ConfigValue.AllowHtmlTagsInReferenceAndProfileFields, importWorker.getImportProfile().getCompanyId()) ? "default.Yes" : "No", locale)));
 			
@@ -643,10 +631,7 @@ public class ProfileImportReporter {
 				if (mapping.isMandatory()) {
 					mappingEntryContent += ", mandatory = " + mapping.isMandatory();
 				}
-				if (mapping.isEncrypted()) {
-					mappingEntryContent += ", encrypted = " + mapping.isEncrypted();
-				}
-				
+
 				htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("", mappingEntryContent));
 			}
 
@@ -715,7 +700,6 @@ public class ProfileImportReporter {
 		reportStatusEntries.add(new ImportReportEntry("import.csv_errors_gender", String.valueOf(customerImportStatus.getError(ImportErrorType.GENDER_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("import.csv_errors_date", String.valueOf(customerImportStatus.getError(ImportErrorType.DATE_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("csv_errors_linestructure", String.valueOf(customerImportStatus.getError(ImportErrorType.STRUCTURE_ERROR))));
-		reportStatusEntries.add(new ImportReportEntry("import.encryption_errors", String.valueOf(customerImportStatus.getError(ImportErrorType.ENCRYPTION_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("error.import.value.large", String.valueOf(customerImportStatus.getError(ImportErrorType.VALUE_TOO_LARGE_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("error.import.number.large", String.valueOf(customerImportStatus.getError(ImportErrorType.NUMBER_TOO_LARGE_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("error.import.invalidFormat", String.valueOf(customerImportStatus.getError(ImportErrorType.INVALID_FORMAT_ERROR))));

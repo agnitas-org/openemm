@@ -7,41 +7,129 @@ category: Components - Progress Bars
 
 A simple progress bar. Current percentage has to applied as inline style (width: xx%)
 
+
 ```htmlexample
 <div class="progress">
-    <div class="progress-bar" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 20%">
-        20%
-    </div>
+    <div class="progress-bar"
+         role="progressbar"
+         aria-valuenow="50"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         style="width: 50%"></div>
+    <div class="percentage">50%</div>
 </div>
 ```
 
+```htmlexample
+<div class="progress">
+    <div class="progress-bar"
+         role="progressbar"
+         aria-valuenow="75"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         style="width: 75%"></div>
+    <div class="progress-fraction">3/4</div>
+</div>
+```
 */
 
+@keyframes progress-looper{0%{left:-100%}to{left:100%}}
+
 .progress {
-  overflow: hidden;
-  height: 20px;
-  margin-bottom: 20px;
-  background-color: $c-gray-11;
-  border-radius: 3px;
-  @include box-shadow(inset 0 1px 2px rgba(0,0,0,.1));
+  --progress-bar-bg: #{$blue};
+
+  position:relative;
+  border: 1px solid var(--progress-bar-bg);
+  height: 30px;
+
+  div {
+    position: absolute;
+    height: 30px;
+  }
+
+  .progress-bar {
+    background: black;
+    width: 50%;
+    z-index: 2;
+  }
+
+  .progress-fraction, .percentage {
+    @include flex-center;
+    font-weight: $font-weight-semibold;
+    color: $white;
+    z-index: 3;
+    mix-blend-mode: difference;
+  }
+
+  .percentage {
+    inset: 0;
+    width: 100%;
+  }
+
+  .progress-fraction {
+    top: 0;
+    bottom: 0;
+    left: $gap-sm;
+  }
+
+  &:after {
+    content: '';
+    @include size(100%);
+    z-index: 4;
+    background-color: var(--progress-bar-bg);
+    mix-blend-mode: screen;
+  }
+
+  &.loop {
+    margin: 0.35em 0;
+
+    &:after {
+      mix-blend-mode: unset;
+      -webkit-animation: 2s ease-in-out infinite progress-looper;
+      animation: 2s ease-in-out infinite progress-looper;
+      content: " ";
+      top: 0;
+      bottom: 0;
+      left: 0;
+      position: absolute;
+      display: block;
+      width: 75%;
+    }
+
+    .percentage {
+      z-index: 5;
+    }
+  }
 }
 
-.progress-bar {
-  float: left;
-  width: 0%;
-  height: 100%;
-  font-size: $fs-small;
-  line-height: 20px;
-  color: $c-white;
-  text-align: center;
-  background-color: $c-blue-27;
-  @include box-shadow(inset 0 -1px 0 rgba(0,0,0,.15));
-  @include transition(width 0.6s ease);
+@include color-mode(dark) {
+ .progress {
+   .percentage, .progress-fraction {
+     mix-blend-mode: unset;
+   }
+ }
 }
 
-.progress-wrapper {
-  padding: 20px;
+@include color-mode(light-contrast) {
   .progress {
-    margin-bottom: 0;
+    --progress-bar-bg: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .progress {
+    --progress-bar-bg: #{$white};
+  }
+}
+
+@include dark-themes {
+  .progress {
+    .progress-bar {
+      background: var(--progress-bar-bg);
+    }
+
+    &:not(.loop):after {
+      display: none;
+    }
   }
 }

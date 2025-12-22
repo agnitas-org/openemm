@@ -30,9 +30,8 @@
 		<property name="passwordCheck" ref="PasswordCheck" />
 		<property name="passwordResetDao" ref="PasswordResetDao" />
 		<property name="loginTrackService" ref="GuiLoginTrackService" />
-		<property name="javaMailService" ref="JavaMailService" />
 		<property name="dataSource" ref="dataSource" />
-		<property name="previewFactory" ref="PreviewFactory" />
+		<property name="systemMailMessageService" ref="SystemMailMessageService" />
 	</bean>
 
 	<bean id="MailingExporter" class="com.agnitas.service.impl.MailingExporterImpl" />
@@ -79,7 +78,6 @@
 	<bean id="MailingBaseService" class="com.agnitas.emm.core.mailing.service.impl.MailingBaseServiceImpl">
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="recipientDao" ref="RecipientDao" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
 		<property name="dynamicTagDao" ref="DynamicTagDao" />
 		<property name="undoMailingDao" ref="UndoMailingDao" />
 		<property name="undoMailingComponentDao" ref="UndoMailingComponentDao" />
@@ -91,7 +89,6 @@
 		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory"/>
 		<property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
 		<property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="gridServiceWrapper" ref="GridServiceWrapper"/>
 		<property name="mailingSendService" ref="MailingSendService" />
@@ -172,7 +169,8 @@
         <property name="bounceFilterService" ref="BounceFilterService"/>
         <property name="companyTokenService" ref="CompanyTokenService" />
         <property name="targetDao" ref="TargetDao" />
-    </bean>
+		<property name="secretKeyGenerator" ref="companySecretKeyGenerator" />
+	</bean>
 
 	<bean id="ProfileImportWorkerFactory" class="com.agnitas.service.ProfileImportWorkerFactory">
 		<property name="configService" ref="ConfigService" />
@@ -221,10 +219,8 @@
 		<property name="mailingService" ref="MailingService" />
 		<property name="dkimDao" ref="DkimDao" />
 		<property name="mediaTypesService" ref="MediaTypesService" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="companyService" ref="CompanyService" />
 		<property name="configService" ref="ConfigService" />
-		<property name="adminService" ref="AdminService" />
+		<property name="systemMailMessageService" ref="SystemMailMessageService" />
 	</bean>
 	
 	<bean id="userformService" class="com.agnitas.emm.core.userform.service.impl.UserformServiceImpl">
@@ -245,6 +241,6 @@
 		<property name="bulkActionValidationService" ref="bulkActionValidationService" />
 	</bean>
 	
-	<bean id="HoneypotLinkService" class="com.agnitas.honeypot.service.NullHoneypotLinkServiceImpl" />
+	<bean id="HoneypotLinkService" class="com.agnitas.honeypot.service.OpenemmHoneypotLinkServiceImpl" />
 	
 </beans>

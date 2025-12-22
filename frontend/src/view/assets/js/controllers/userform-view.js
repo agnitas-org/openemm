@@ -4,7 +4,7 @@ AGN.Lib.Controller.new('userform-view', function () {
     var Confirm = AGN.Lib.Confirm;
 
     var actionURLPattern;
-    var formId = 0;
+    let formId = 0;
 
     this.addDomInitializer('userform-view', function() {
         var config = this.config;
@@ -17,8 +17,8 @@ AGN.Lib.Controller.new('userform-view', function () {
         const $el = this.el;
         const url = $el.attr('href');
 
-        Confirm.createFromTemplate({}, 'userform-activate-and-test').done(function () {
-            $.post(AGN.url('/webform/' + formId + '/activate.action')).done(function(resp) {
+        Confirm.from('userform-activate-and-test').done(() => {
+            $.post(AGN.url(`/webform/${formId}/activate.action`)).done(resp => {
                 AGN.Lib.JsonMessages(resp.popups, true);
                 if (resp.success) {
                     $('#is-active-switch').prop('checked', true);
@@ -41,13 +41,14 @@ AGN.Lib.Controller.new('userform-view', function () {
         changeLinkState($link, actionId);
     });
 
-    this.addAction({click: 'check-velocity-script'}, function() {
-        var $el = $(this.el);
-        var options = AGN.Lib.Helpers.objFromString($el.data("action-options"));
-        checkVelocityScripts(options.type);
+    this.addAction({change: 'check-velocity-script'}, function() {
+        if (this.el.val() !== 'wysiwyg') {
+          return;
+        }
+        checkVelocityScripts(this.el);
     });
 
-    this.addAction({click: 'saveUserForm'}, function () {
+    this.addAction({submission: 'saveUserForm'}, function () {
         var successFBChanged = isFormbuilderChanged('successFormBuilder');
         var errorFBChanged = isFormbuilderChanged('errorFormBuilder');
 
@@ -55,12 +56,12 @@ AGN.Lib.Controller.new('userform-view', function () {
         var isErrorTabsDiffContent = errorFBChanged && isTemplateCodeChanged('errorTemplate');
 
         if (isSuccessTabsDiffContent || isErrorTabsDiffContent) {
-            Confirm.createFromTemplate(
-                {
+            Confirm.from(
+              'warning-save-different-tabs',
+              {
                         needSuccessCodeChoose: isSuccessTabsDiffContent,
                         needErrorCodeChoose: isErrorTabsDiffContent
-                },
-                'warning-save-different-tabs'
+                }
             );
         } else {
             var successMode = successFBChanged ? 'FORM_BUILDER' : 'HTML';
@@ -70,13 +71,13 @@ AGN.Lib.Controller.new('userform-view', function () {
     });
 
     this.addAction({click: 'save-specific-code-mode'}, function () {
-        var $form = $('#choose-code-format-modal-form');
-        var successMode = $form.find('[name="success_template_mode"]:checked').val();
-        var errorMode = $form.find('[name="error_template_mode"]:checked').val();
+        const $form = $('#choose-code-format-modal-form');
+        const successMode = $form.find('[name="success_template_mode"]').val();
+        const errorMode = $form.find('[name="error_template_mode"]').val();
 
         save(successMode, errorMode);
     });
-    
+
     this.addAction({change: 'formTestRecipient'}, function() {
         var $a = $('#formTestLink');
         var $s = $('#formTestRecipient');
@@ -85,12 +86,11 @@ AGN.Lib.Controller.new('userform-view', function () {
     });
 
     function isTemplateCodeChanged(editorId) {
-        var ckeditor = CKEDITOR.instances[editorId];
-        if(ckeditor) {
-            ckeditor.updateElement();
+        if (!window.Jodit) {
+            CKEDITOR.instances[editorId]?.updateElement();
         }
 
-        return $('#userFormForm').dirty('isFieldDirty', $('#' + editorId));
+        return $('#userFormForm').dirty('isFieldDirty', $(`#${editorId}`));
     }
 
     function isFormbuilderChanged(id) {
@@ -136,15 +136,13 @@ AGN.Lib.Controller.new('userform-view', function () {
         }
     }
 
-    function checkVelocityScripts(type) {
-        var text = AGN.Lib.Editor.get($("#" + type + "Template")).val();
+    function checkVelocityScripts($el) {
+        const options = AGN.Lib.Helpers.objFromString($el.data("action-options"));
+        const text = AGN.Lib.Editor.get($("#" + options.type + "Template")).val();
         if (text.match(/#(?:set|include|macro|parse|if|foreach)/gi)) {
-            AGN.Lib.Messages(t("defaults.error"), t("userform.error.velocity_not_allowed"), "alert");
+            AGN.Lib.Messages.alert('userform.error.velocity_not_allowed');
             //switch to previous tab
-            var link = $('[data-toggle-tab="#tab-' + type + '-template-html"]');
-            if (link) {
-                link.trigger('click');
-            }
+            $el.val('html').trigger('change');
         }
     }
 

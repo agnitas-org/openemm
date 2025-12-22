@@ -13,7 +13,7 @@ package com.agnitas.emm.core.target.eql;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.messages.Message;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

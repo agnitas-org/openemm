@@ -10,17 +10,15 @@
 
 package com.agnitas.emm.core.commons.uid.parser.impl;
 
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
-import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
-import org.agnitas.emm.core.commons.uid.parser.impl.BaseExtensibleUIDParser;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
+import com.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
+import com.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Implementation of UID parser for UID version 4.
@@ -107,6 +105,7 @@ public class V4ExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
                 (int) (base64Encoder.decodeLong(correctedParts[CUSTOMER_ID_GROUP])),
                 (int) (base64Encoder.decodeLong(correctedParts[MAILING_ID_GROUP])),
                 (int) (base64Encoder.decodeLong(correctedParts[URL_ID_GROUP])),
+		1,
                 base64Encoder.decodeLong(correctedParts[BITFIELD_GROUP]));
     }
 

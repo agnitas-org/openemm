@@ -12,9 +12,8 @@ package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
 
-import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
-
 import com.agnitas.emm.core.mailing.bean.MailingParameter;
+import com.agnitas.emm.core.workflow.beans.parameters.WorkflowParameters;
 
 public class MailingSettingsOptions {
 

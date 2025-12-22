@@ -59,7 +59,7 @@ public enum JobState {
 	 * 
 	 * @throws NoSuchElementException if numeric code is unknown
 	 */
-	public static final JobState fromCode(final int code) throws NoSuchElementException {
+	public static JobState fromCode(int code) {
 		for(final JobState value : values()) {
 			if(value.code == code) {
 				return value;

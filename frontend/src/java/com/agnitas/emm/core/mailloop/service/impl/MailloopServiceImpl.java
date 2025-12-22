@@ -15,7 +15,7 @@ import java.util.Map;
 import com.agnitas.beans.Mailloop;
 import com.agnitas.dao.MailloopDao;
 import com.agnitas.emm.common.UserStatus;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.MailingDao;

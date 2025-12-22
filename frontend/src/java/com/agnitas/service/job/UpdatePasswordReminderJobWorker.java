@@ -10,9 +10,11 @@
 
 package com.agnitas.service.job;
 
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 
-public class UpdatePasswordReminderJobWorker extends JobWorker { // GWUA-5746
+@JobWorker("UpdatePasswordReminder")
+public class UpdatePasswordReminderJobWorker extends JobWorkerBase { // GWUA-5746
 
     @Override
     public String runJob() {

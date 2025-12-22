@@ -10,17 +10,17 @@
 
 package com.agnitas.service;
 
+import java.util.List;
+import java.util.Set;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.beans.ColumnMapping;
 import com.agnitas.beans.ImportProfile;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.importvalues.ImportMode;
 import com.agnitas.web.forms.PaginationForm;
-
-import java.util.List;
-import java.util.Set;
 
 public interface ImportProfileService {
 
@@ -36,9 +36,7 @@ public interface ImportProfileService {
 
     boolean isColumnWasImported(String columnName, int id);
 
-    void deleteImportProfileById(int id);
-
-    PaginatedListImpl<ImportProfile> getOverview(PaginationForm form, Admin admin);
+    PaginatedList<ImportProfile> getOverview(PaginationForm form, Admin admin);
 
     List<ImportProfile> getAvailableImportProfiles(Admin admin);
 
@@ -64,8 +62,6 @@ public interface ImportProfileService {
 
     boolean isImportModeAllowed(int mode, Admin admin);
 
-    boolean isEncryptedImportAllowed(Admin admin);
-
     Set<ImportMode> getAvailableImportModes(Admin admin);
 
     boolean isManageAllowed(ImportProfile profile, Admin admin);
@@ -77,4 +73,5 @@ public interface ImportProfileService {
     ServiceResult<UserAction> delete(Set<Integer> ids, Admin admin);
 
     List<RecipientFieldDescription> getAvailableFieldsForMappings(ImportProfile profile, Admin admin);
+
 }

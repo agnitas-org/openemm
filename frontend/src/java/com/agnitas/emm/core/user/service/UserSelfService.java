@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.user.service;
 
 import com.agnitas.beans.Admin;
-import org.agnitas.emm.core.logintracking.bean.LoginData;
+import com.agnitas.emm.core.loginmanager.bean.LoginData;
 
 import java.text.SimpleDateFormat;
 import java.util.List;

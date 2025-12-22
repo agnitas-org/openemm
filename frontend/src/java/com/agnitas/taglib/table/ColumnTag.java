@@ -21,12 +21,13 @@ import java.util.Optional;
 import com.agnitas.beans.Admin;
 import com.agnitas.taglib.table.util.TableTagUtils;
 import com.agnitas.taglib.table.writer.TableTagHtmlWriter;
+import com.agnitas.util.AgnUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import jakarta.servlet.jsp.tagext.DynamicAttributes;
-import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.taglibs.standard.functions.Functions;
 
 public class ColumnTag extends BodyTagSupport implements DynamicAttributes {
 
@@ -79,7 +80,7 @@ public class ColumnTag extends BodyTagSupport implements DynamicAttributes {
     }
 
     @Override
-    public int doEndTag() throws JspException {
+    public int doEndTag() {
         if (!tableTag.isHeaderAdded()) {
             appendHeaderCell();
             return EVAL_PAGE;
@@ -93,7 +94,7 @@ public class ColumnTag extends BodyTagSupport implements DynamicAttributes {
                 String propertyValue = getPropertyValue();
 
                 if (StringUtils.isNotBlank(propertyValue)) {
-                    writer.write("span", propertyValue);
+                    writer.write("span", Functions.escapeXml(propertyValue));
                 }
             }
         } else {
@@ -144,7 +145,7 @@ public class ColumnTag extends BodyTagSupport implements DynamicAttributes {
         if (sortable) {
             String href = TableTagUtils.buildUrl(tableTag.getRequestUri(), Map.of(
                     "sort", propertyToSort,
-                    "dir", tableTag.getNextSortDir(propertyToSort)
+                    "dir", tableTag.getNextSortDir(propertyToSort).getId()
             ));
             writer.openTag("a", Map.of("data-table-sort", "", "href", href));
         }

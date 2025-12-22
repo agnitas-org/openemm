@@ -18,47 +18,41 @@ import java.util.Objects;
  */
 public final class ObjectUsage {
 
-	/** Type of object user. */
-	private final ObjectUserType objectUserType;
-	
-	/** ID of object user. */
-	private final int objectUserID;
-	
-	/** Name of object user. */
-	private final String objectUserName;
-
+	private final ObjectUsageType type;
+	private final int id;
+	private final String name;
 	private Map<String, Object> details;
 	
 	/**
 	 * Creates a new instance.
 	 * 
-	 * @param objectUserType type of object user
-	 * @param objectUserID ID of object user
-	 * @param objectUserName name of object user
+	 * @param type type of object user
+	 * @param id ID of object user
+	 * @param usageName name of object user
 	 * 
 	 * @throws NullPointerException if type or name is <code>null</code>
 	 */
-	public ObjectUsage(final ObjectUserType objectUserType, final int objectUserID, final String objectUserName) {
-		this.objectUserType = Objects.requireNonNull(objectUserType, "Object user type is null");
-		this.objectUserID = objectUserID;
-		this.objectUserName = Objects.requireNonNull(objectUserName, "Object user name is null");
+	public ObjectUsage(ObjectUsageType type, int id, String usageName) {
+		this.type = Objects.requireNonNull(type, "Object usage type is null");
+		this.id = id;
+		this.name = Objects.requireNonNull(usageName, "Object usage name is null");
 	}
 
-    public ObjectUsage(ObjectUserType type, int userId, String userName, Map<String, Object> details) {
+    public ObjectUsage(ObjectUsageType type, int userId, String userName, Map<String, Object> details) {
         this(type, userId, userName);
         this.details = details;
   	}
 
-	public ObjectUserType getObjectUserType() {
-		return objectUserType;
+	public ObjectUsageType getType() {
+		return type;
 	}
 
-	public int getObjectUserID() {
-		return objectUserID;
+	public int getId() {
+		return id;
 	}
 	
-	public String getObjectUserName() {
-		return this.objectUserName;
+	public String getName() {
+		return this.name;
 	}
 
     public Map<String, Object> getDetails() {

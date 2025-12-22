@@ -112,12 +112,12 @@ public abstract class BirtReportDateRangedSettings extends BirtReportSettings {
                         calendar.add(EmmCalendar.SECOND, -1);
                         break;
     				default:
-    					throw new RuntimeException("Invalid date range type");
+    					throw new IllegalArgumentException("Invalid date range type");
                 }
                 startDate = reportDateFormat.format(calendar.getTime());
                 break;
 			default:
-				throw new RuntimeException("Invalid date range type");
+				throw new IllegalArgumentException("Invalid date range type");
         }
         dateRange.put(BirtReportSettingsUtils.START_DATE, startDate);
         dateRange.put(BirtReportSettingsUtils.END_DATE, stopDate);

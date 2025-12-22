@@ -1,24 +1,20 @@
-(function() {
-  var History = window.history;
+(()  => {
+
+  const History = window.history;
 
   $(document).on('click', 'a[href^="#"]', function(e) {
     if (e.isDefaultPrevented()) {
       return;
     }
-    e.preventDefault();
 
-    setHash($(this).attr('href'));
-  });
+    const $el = $(this);
 
-  $(document).on('click', '[data-one-time]', function() {
-    var $this = $(this);
+    // Note: fixes navigation in styleguide
+    if (!$el.closest('[bs-scrollspy]').exists()) {
+      e.preventDefault();
 
-    setTimeout(function() {
-      $this.attr('disabled', 'disabled');
-      if ($this.is('a')) {
-        $this.removeAttr('href');
-      }
-    }, 1);
+      setHash($el.attr('href'));
+    }
   });
 
   function setHash(hash) {

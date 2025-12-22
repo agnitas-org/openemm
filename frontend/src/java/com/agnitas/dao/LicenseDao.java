@@ -13,7 +13,8 @@ package com.agnitas.dao;
 import java.util.Date;
 
 public interface LicenseDao {
-	byte[] getLicenseData() throws Exception;
+
+	byte[] getLicenseData();
 	
 	void storeLicense(byte[] licenseData, byte[] licenseSignatureData, Date licenseDate);
 	
@@ -21,13 +22,9 @@ public interface LicenseDao {
 
 	boolean hasLicenseData();
 
-	int getHighestAccessLimitingMailinglistsPerCompany();
-
 	int getHighestAccessLimitingTargetgroupsPerCompany();
 	
 	int getNumberOfAccessLimitingMailinglists(int companyID);
 	
-	int getNumberOfAccessLimitingTargetgroups(int companyID);
-
 	int getNumberOfCompanyReferenceTables(int companyID);
 }

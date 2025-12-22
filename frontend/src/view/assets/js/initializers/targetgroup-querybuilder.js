@@ -1,6 +1,6 @@
-(function() {
+(() => {
 
-  var READ_ONLY_PARAMS = {
+  const READ_ONLY_PARAMS = {
     header_readonly: true,
     filter_readonly: true,
     condition_readonly: true,
@@ -12,90 +12,76 @@
     no_add_group: true
   };
 
-  AGN.Lib.DomInitializer.new('target-group-query-builder', function($needle) {
-    var $form = AGN.Lib.Form.getWrapper($needle);
-    var qbSelector = '#targetgroup-querybuilder';
-    var queryBuilders = $(qbSelector);
+  AGN.Lib.DomInitializer.new('target-group-query-builder', function ($needle) {
+    const config = this.config;
+    const $form = AGN.Lib.Form.getWrapper($needle);
+    const qbSelector = '#targetgroup-querybuilder';
+    const queryBuilders = $(qbSelector);
 
-    var mailTrackingAvailable = this.config.mailTrackingAvailable;
-    var isTargetGroupLocked = this.config.isTargetGroupLocked;
-    var helpLanguage = this.config.helpLanguage;
+    const mailTrackingAvailable = config.mailTrackingAvailable;
+    const isTargetGroupLocked = config.isTargetGroupLocked;
 
-    var isIE10 = navigator.userAgent.match('MSIE 10.0;');
+    _.each(queryBuilders, el => {
+      const $el = $(el);
+      const operator_groups = buildOperatorGroups();
 
-    var self = this;
-    _.each(queryBuilders, function(el) {
-      var $el = $(el);
-      var operator_groups = buildOperatorGroups();
-
-      var qbFilters = readFiltersFromJson(self.config.queryBuilderFilters, {mail_tracking_available: mailTrackingAvailable});
-      var rules = readRulesFromJson(JSON.parse(self.config.queryBuilderRules), isTargetGroupLocked);
+      const qbFilters = readFiltersFromJson(config.queryBuilderFilters, {mail_tracking_available: mailTrackingAvailable});
+      const rules = readRulesFromJson(JSON.parse(config.queryBuilderRules), isTargetGroupLocked);
 
       $el.queryBuilder({
         filters: qbFilters,
         allow_empty: true,
         operators: operator_groups,
-        helpLanguage: helpLanguage,
         readonly: isTargetGroupLocked,
         plugins: {
           'sortable': {
             inherit_no_drop: true,
-            inherit_no_sortable: true,
-            icon: 'icon icon-arrows-alt'
+            inherit_no_sortable: true
           }
         },
         rules: rules
       });
 
-      if (!isIE10) {
-        AGN.Lib.CoreInitializer.run('select', $el);
-      }
+      AGN.Lib.CoreInitializer.run('select', $el);
 
-      $el.on('afterSetRules.queryBuilder afterUpdateRuleFilter.queryBuilder afterCreateRuleFilters.queryBuilder afterAddRule.querybuilder', function(event) {
-        if (!isIE10) {
-          AGN.Lib.CoreInitializer.run('select', $(this));
-        }
+      $el.on('afterSetRules.queryBuilder afterUpdateRuleFilter.queryBuilder afterCreateRuleFilters.queryBuilder afterAddRule.querybuilder', function (event) {
+        AGN.Lib.CoreInitializer.run('select', $(this));
       });
 
-      $el.on('link-values-set', function(e) {
-        if (!isIE10) {
-          AGN.Lib.CoreInitializer.run('select', $(e.target));
-        }
+      $el.on('link-values-set', function (e) {
+        AGN.Lib.CoreInitializer.run('select', $(e.target));
       });
 
-      $el.on('mailing-values-set values-set ', function(e) {
-        if (!isIE10) {
-          AGN.Lib.CoreInitializer.run('select', $(e.target));
-        }
+      $el.on('mailing-values-set values-set ', function (e) {
+        AGN.Lib.CoreInitializer.run('select', $(e.target));
       });
 
-      $el.on('change-date-format', function(e) {
-        if (!isIE10) {
-          AGN.Lib.CoreInitializer.run('select', $(e.target));
-        }
+      $el.on('change-date-format', function (e) {
+        AGN.Lib.CoreInitializer.run('select', $(e.target));
       });
 
       // Prevent form submission on enter press when QB inputs are in focus.
-      $el.on('enterdown', 'input', function(e) {
+      $el.on('enterdown', 'input', function (e) {
         return false;
       });
 
     });
 
-    $form
-      .off()
-      .on('validation', function(e, options) {
+    const validationCallback = function (e, options) {
       // ignore_qb_validation is used to prevent validate QB rules
       // this option prevent update query builder rules field
       options = $.extend({ignore_qb_validation: false, skip_empty: false}, options);
-      _.each($(qbSelector), function(el) {
-        var $el = $(el);
-        var qb = $el.prop('queryBuilder');
+      _.each($(qbSelector), function (el) {
+        const $el = $(el);
+        const qb = $el.prop('queryBuilder');
         if (!validate(e, qb, options, $el)) {
           return false;
         }
       });
-    });
+    }
+
+    queryBuilders.on('qb:validation', validationCallback);
+    $form.off().on('validation', validationCallback);
 
     function validate(e, qb, options, $el) {
       qb.clearInitialRuleSettings();
@@ -118,7 +104,7 @@
     }
 
     function setValue($element, value) {
-      if (!isIE10 && $element.is('select')) {
+      if ($element.is('select')) {
         AGN.Lib.Select.get($element).selectValueOrSelectFirst(value);
       } else {
         $element.val(value);
@@ -133,9 +119,9 @@
           type: 'string'
         }];
       } else {
-        var ids = {};
+        const ids = {};
 
-        filtersJson = filtersJson.filter(function(e) {
+        filtersJson = filtersJson.filter(function (e) {
           if (ids[e.id]) {
             return false;
           }
@@ -151,13 +137,13 @@
     }
 
     function addReadOnlyFlags(options) {
-      if(options) {
+      if (options) {
         options.flags = READ_ONLY_PARAMS;
 
-        _.each(options.rules, function(rule){
+        _.each(options.rules, function (rule) {
           rule.flags = READ_ONLY_PARAMS;
           if (rule.hasOwnProperty('condition')) {
-             addReadOnlyFlags(rule)
+            addReadOnlyFlags(rule)
           }
         });
       }
@@ -168,58 +154,60 @@
       //An additional properties for independent fields
 
       options = $.extend({mail_tracking_available: false}, options);
-      var getEmptyMailingSelect = function(rule) {
-        var $select = $('<select class="form-control qb-input-element-select mailings js-select"></select>');
+      const getEmptyMailingSelect = function (rule) {
+        return $(`
+          <div class="qb-select-container">
+            <select id="${rule.id}" class="form-control mailings" data-select-options="dropdownAutoWidth: true"></select>
+          </div>
+        `);
+      };
+
+      const getEmptyAutoImportSelect = function (rule) {
+        const $select = $('<select class="form-control auto-imports"></select>');
         $select.attr("id", rule.id);
         return $select;
       };
 
-      var getEmptyAutoImportSelect = function(rule) {
-        var $select = $('<select class="form-control qb-input-element-select auto-imports js-select"></select>');
-        $select.attr("id", rule.id);
-        return $select;
-      };
-
-      var mailingsValueGetter = function(rule) {
+      const mailingsValueGetter = function (rule) {
         return rule.$el.find('.mailings :selected').val();
       };
 
-      var autoImportsValueGetter = function(rule) {
+      const autoImportsValueGetter = function (rule) {
         return rule.$el.find('.auto-imports :selected').val();
       };
 
-      var generateValueSetter = function(selector) {
-        var savedValues = {}, savedRules = {}, defaultValue = -1;
+      const generateValueSetter = function (selector) {
+        const savedValues = {}, savedRules = {}, defaultValue = -1;
 
-        $(qbSelector).on('values-set', selector, function(event) {
+        $(qbSelector).on('values-set', selector, function (event) {
           if ($.isEmptyObject(savedRules)) {
             setValue($(event.target), defaultValue);
           } else {
-            var id = $(event.target).attr('id'),
+            const id = $(event.target).attr('id'),
               savedRule = savedRules[id],
               $inputs = savedRule ? savedRule.$el.find(selector) : $(event.target);
             setValue($inputs, savedValues[id] || defaultValue);
           }
         });
 
-        return function(rule, value) {
-          var $inputs = rule.$el.find(selector);
+        return function (rule, value) {
+          const $inputs = rule.$el.find(selector);
           savedValues[rule.id] = value;
           savedRules[rule.id] = rule;
           setValue($inputs, value);
         }
       };
 
-      var mailingValueSetter = generateValueSetter('select.mailings');
-      var autoImportValueSetter = generateValueSetter('select.auto-imports');
+      const mailingValueSetter = generateValueSetter('select.mailings');
+      const autoImportValueSetter = generateValueSetter('select.auto-imports');
 
-      var augmentations = {
+      const augmentations = {
         'finished auto-import': {
           type: 'string',
           input_event: 'values-setup-finished',
           input: getEmptyAutoImportSelect,
-          values: function($ruleInput) {
-            requestAutoImports($ruleInput).done(function() {
+          values: function ($ruleInput) {
+            requestAutoImports($ruleInput).done(function () {
               $ruleInput.trigger('values-setup-finished');
             });
           },
@@ -232,10 +220,9 @@
           type: 'string',
           input_event: 'values-setup-finished',
           input: getEmptyMailingSelect,
-          values: function($ruleInput) {
-            requestMailings($ruleInput).done(function() {
-              $ruleInput.trigger('values-setup-finished');
-            });
+          values: function ($ruleInput) {
+            const $mailings = $ruleInput.find('select.mailings');
+            requestMailings($mailings).done(() => $mailings.trigger('values-setup-finished'));
           },
           valueSetter: mailingValueSetter,
           valueGetter: mailingsValueGetter,
@@ -246,10 +233,9 @@
           type: 'string',
           input_event: 'values-setup-finished',
           input: getEmptyMailingSelect,
-          values: function($ruleInput) {
-            requestMailings($ruleInput).done(function() {
-              $ruleInput.trigger('values-setup-finished');
-            });
+          values: function ($ruleInput) {
+            const $mailings = $ruleInput.find('select.mailings');
+            requestMailings($mailings).done(() => $mailings.trigger('values-setup-finished'));
           },
           valueSetter: mailingValueSetter,
           valueGetter: mailingsValueGetter,
@@ -259,32 +245,32 @@
         'clicked in mailing': {
           type: 'string',
           input_event: 'values-setup-finished',
-          valueSelector: function(ruleId, index) {
-            var ids = ['mailingID', 'linkID'];
+          valueSelector: function (ruleId, index) {
+            const ids = ['mailingID', 'linkID'];
             return ruleId + '_' + ids[index];
           },
-          input: function(rule) {
-            return $('<div class="qb-input-element-select">' +
-              '<select class="form-control js-select mailings" data-rule-id="' + rule.id + '" id="' + rule.filter.valueSelector(rule.id, 0) + '" ></select>' +
-              '</div>' +
-              '<div class="qb-input-label">' +
-              '<div class="qb-input-inner">Links</div>' +
-              '</div>' +
-              '<div class="qb-input-element-select">' +
-              '<select class="form-control js-select links" data-rule-id="' + rule.id + '" id="' + rule.filter.valueSelector(rule.id, 1) + '" ></select>' +
-              '</div>');
+          input: function (rule) {
+            return $(`
+             <div class="qb-select-container">
+               <select id="${rule.filter.valueSelector(rule.id, 0)}" class="form-control mailings" data-rule-id="${rule.id}" data-select-options="dropdownAutoWidth: true"></select>
+             </div>
+             <label class="form-label d-flex align-items-center">Links</label>
+             <div class="qb-select-container">
+               <select id="${rule.filter.valueSelector(rule.id, 1)}" class="form-control links" data-rule-id="${rule.id}" data-select-options="dropdownAutoWidth: true"></select>
+             </div>
+            `);
           },
-          values: function($ruleInput) {
-            var $mailings = $ruleInput.find('.mailings');
-            var mailings = AGN.Lib.Select.get($mailings);
-            $mailings.change(function() {
-              var mailingID = mailings.getSelectedValue();
-              requestMailingLinks(mailingID, function(data) {
-                var $links = $ruleInput.find('.links');
-                var links = AGN.Lib.Select.get($links);
-                var options = [{id: -1, text: t('querybuilder.common.anyLink')}];
+          values: function ($ruleInput) {
+            const $mailings = $ruleInput.find('select.mailings');
+            const mailings = AGN.Lib.Select.get($mailings);
+            $mailings.change(function () {
+              const mailingID = mailings.getSelectedValue();
+              requestMailingLinks(mailingID, function (data) {
+                const $links = $ruleInput.find('select.links');
+                const links = AGN.Lib.Select.get($links);
+                const options = [{id: -1, text: t('querybuilder.common.anyLink')}];
 
-                $.each(data, function(key, value) {
+                $.each(data, function (key, value) {
                   options.push({id: value.id, text: value.url});
                 });
 
@@ -292,9 +278,9 @@
                 $links.trigger('link-values-set');
               });
             });
-            requestMailings($mailings, function(data) {
-              var options = [];
-              data.forEach(function(element) {
+            requestMailings($mailings, function (data) {
+              const options = [];
+              data.forEach(function (element) {
                 options.push({id: element.mailingID, text: element.shortname})
               });
 
@@ -302,28 +288,28 @@
               $mailings.trigger('mailing-values-set');
             });
           },
-          valueGetter: function(rule) {
-            var mailingID = 0, linkID = 1,
+          valueGetter: function (rule) {
+            const mailingID = 0, linkID = 1,
               value = [];
 
             value[mailingID] = rule.$el.find('#' + rule.filter.valueSelector(rule.id, mailingID)).val();
             value[linkID] = rule.$el.find('#' + rule.filter.valueSelector(rule.id, linkID)).val();
             return value;
           },
-          valueSetter: (function() {
-            var mailingID = 0, linkID = 1,
+          valueSetter: (function () {
+            const mailingID = 0, linkID = 1,
               savedValues = {}, savedRules = {};
-            var valueSetter = function(rule, value) {
+            const valueSetter = function (rule, value) {
               savedValues[rule.id] = value;
               savedRules[rule.id] = rule;
             };
             //Optimize
-            $(qbSelector).on('mailing-values-set', function(event) {
-              var $select = $(event.target),
+            $(qbSelector).on('mailing-values-set', function (event) {
+              let $select = $(event.target),
                 id = $select.data('rule-id'),
                 savedRule = savedRules[id], $mailings;
               if (savedRule) {
-                $mailings = savedRule.$el.find('.mailings');
+                $mailings = savedRule.$el.find('select.mailings');
                 setValue($mailings, savedValues[id][mailingID]);
                 $mailings.trigger('change');
               } else {
@@ -331,11 +317,11 @@
                 $select.trigger('change');
               }
             });
-            $(qbSelector).on('link-values-set', function(event) {
-              var id = $(event.target).data('rule-id'),
+            $(qbSelector).on('link-values-set', function (event) {
+              let id = $(event.target).data('rule-id'),
                 savedRule = savedRules[id], $links;
               if (savedRule) {
-                $links = savedRule.$el.find('.links');
+                $links = savedRule.$el.find('select.links');
                 setValue($links, savedValues[id][linkID] || -1);
               } else {
                 $links = $(event.target);
@@ -346,8 +332,10 @@
             return valueSetter;
           })(),
           validation: {
-            callback: function(values) {
-              return values.every(function(v) { return v; }) || ["string_empty"];
+            callback: function (values) {
+              return values.every(function (v) {
+                return v;
+              }) || ["string_empty"];
             }
           },
           canBeNegated: options.mail_tracking_available,
@@ -357,10 +345,9 @@
           type: 'string',
           input_event: 'values-setup-finished',
           input: getEmptyMailingSelect,
-          values: function($ruleInput) {
-            requestMailings($ruleInput).done(function() {
-              $ruleInput.trigger('values-setup-finished');
-            });
+          values: function ($ruleInput) {
+            const $mailings = $ruleInput.find('select.mailings');
+            requestMailings($mailings).done(() => $mailings.trigger('values-setup-finished'));
           },
           valueSetter: mailingValueSetter,
           valueGetter: mailingsValueGetter,
@@ -369,12 +356,12 @@
         }
       };
 
-      if(!options.mail_tracking_available) {
+      if (!options.mail_tracking_available) {
         delete augmentations['received mailing'];
       }
 
-      result.forEach(function(element) {
-        var properties = augmentations[element.id];
+      result.forEach(function (element) {
+        const properties = augmentations[element.id];
         if (properties) {
           $.extend(element, properties);
         }
@@ -382,13 +369,11 @@
     }
 
     function requestMailings($ruleInput, successCallback) {
-      var success = successCallback || function(data) {
-        var rule = AGN.Lib.Select.get($ruleInput);
-        var options = [];
+      const success = successCallback || function (data) {
+        const rule = AGN.Lib.Select.get($ruleInput);
+        const options = [];
 
-        data.forEach(function(element) {
-          options.push({id: element.mailingID, text: element.shortname})
-        });
+        data.forEach((element) => options.push({id: element.mailingID, text: element.shortname}));
 
         rule.setOptions(options);
         $ruleInput.trigger('values-set');
@@ -406,38 +391,26 @@
     }
 
     function requestAutoImports($ruleInput, successCallback) {
-      var success = successCallback || function(data) {
-        data.forEach(function(element) {
+      const success = successCallback || function (data) {
+        Object.keys(data).forEach(id => {
           $ruleInput.append($('<option>', {
-            text: element.shortname,
-            value: element.autoImportId
+            text: data[id],
+            value: id
           }));
         });
         $ruleInput.trigger('values-set');
       };
 
       return $.ajax({
-        type: 'POST',
-        url: AGN.url('/autoimport.do'),
-        data: {
-          method: 'listJson'
-        },
+        type: 'GET',
+        url: AGN.url('/workflow/ajax/getAutoImportNames.action'),
         success: success
-      });
-    }
-
-    function defaultMailingsSuccessCallback(data, $ruleInput) {
-      data.forEach(function(element) {
-        var option = $('<option>');
-        option.text(element.shortname);
-        option.val(element.mailingID);
-        $ruleInput.append(option);
       });
     }
 
     function requestMailingLinks(mailingId, success) {
       $.ajax({
-        url: AGN.url('/mailing/ajax/' + mailingId + '/links.action'),
+        url: AGN.url(`/mailing/ajax/${mailingId}/links.action`),
         success: success
       });
     }
@@ -510,23 +483,23 @@
           nb_inputs: 1,
           apply_to: ['number'],
           valueSelectors: ['#first', '#operator select', '#second'],
-          valueGetter: function(rule) {
-            var values = [];
-            rule.operator.valueSelectors.forEach(function(element) {
+          valueGetter: function (rule) {
+            const values = [];
+            rule.operator.valueSelectors.forEach(function (element) {
               values.push(rule.$el.find(element).val());
             });
             return values;
           },
-          valueSetter: function(rule, value) {
-            rule.operator.valueSelectors.forEach(function(element, index) {
+          valueSetter: function (rule, value) {
+            rule.operator.valueSelectors.forEach(function (element, index) {
               rule.$el.find(element).val(value[index]);
             });
           },
-          input: function(rule) {
-            var operators = this.operators.filter(function(operator) {
+          input: function (rule) {
+            const operators = this.operators.filter(function (operator) {
               return operator.type !== 'mod' && operator.apply_to.includes('number');
             });
-            var operatorSelect = this.getRuleOperatorSelect(rule, operators);
+            const operatorSelect = this.getRuleOperatorSelect(rule, operators);
             return "" +
               "<div class='qb-input-element'>" +
               "<input class='form-control' id='first' type='number'/>" +
@@ -538,8 +511,10 @@
               "<input class='form-control' id='second' type='number'/>" +
               "</div>";
           },
-          validate: function(values) {
-            return values.every(function(v) { return v; }) || ["string_empty"];
+          validate: function (values) {
+            return values.every(function (v) {
+              return v;
+            }) || ["string_empty"];
           }
         },
         {
@@ -565,4 +540,5 @@
       ];
     }
   });
+
 })();

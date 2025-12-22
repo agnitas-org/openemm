@@ -11,7 +11,7 @@
 package com.agnitas.util;
 
 public enum UserActivityLogActions {
-    ANY("UserActivitylog.Any_Action", "any"),
+
     CREATE("UserActivitylog.Action.Create", "create"),
     EDIT("UserActivitylog.Action.Edit", "edit"),
     DELETE("UserActivitylog.Action.Delete", "delete"),
@@ -26,25 +26,24 @@ public enum UserActivityLogActions {
     IMPORT("import.csv_upload", "import"),
     EXPORT("Export", "export"),
     GRANT("UserActivitylog.Action.Grant", "grant"),
-    APPROVAL("default.enabling", "approval");
+    APPROVAL("default.enabling", "approval"),
+    AI_CHAT("GWUA.aiSupportChat", "AI chat");
 
-    // message key in resource bundle to display value on pages
-    private String publicValue;
-    
+    private final String messageKey;
     // action type for log file
-    private String localValues[];
+    private final String[] localValues;
 
     // first parameter of constant is publicValue, second is localValue
-    UserActivityLogActions(String publicValue, String... localValues) {
-        this.publicValue = publicValue;
-        if(localValues == null || localValues.length < 1){
-            throw new RuntimeException("UserActivityLogActions should have at least one localValue");
+    UserActivityLogActions(String messageKey, String... localValues) {
+        this.messageKey = messageKey;
+        if (localValues == null || localValues.length < 1){
+            throw new IllegalArgumentException("UserActivityLogActions should have at least one localValue");
         }
-        this.localValues=localValues;
+        this.localValues = localValues;
     }
 
-    public String getPublicValue() {
-        return publicValue;
+    public String getMessageKey() {
+        return messageKey;
     }
 
     public String getLocalValue() {
@@ -55,32 +54,4 @@ public enum UserActivityLogActions {
         return localValues;
     }
 
-    // Position of constant in Enum
-    public int getIntValue() {
-        return ordinal();
-    }
-
-    public static String getPublicValue(int intValue) {
-        if (intValue < UserActivityLogActions.values().length) {
-            return UserActivityLogActions.values()[intValue].getPublicValue();
-        } else {
-            return null;
-        }
-    }
-
-    public static String getLocalValue(int intValue) {
-        if (intValue < UserActivityLogActions.values().length) {
-            return UserActivityLogActions.values()[intValue].getLocalValue();
-        } else {
-            return null;
-        }
-    }
-
-    public static String[] getLocalValues(int intValue) {
-        if (intValue < UserActivityLogActions.values().length) {
-            return UserActivityLogActions.values()[intValue].getLocalValues();
-        } else {
-            return null;
-        }
-    }
 }

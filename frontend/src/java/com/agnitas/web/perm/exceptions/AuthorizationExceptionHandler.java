@@ -23,6 +23,7 @@ import com.agnitas.web.perm.NotAllowedActionException;
 
 @ControllerAdvice
 public class AuthorizationExceptionHandler {
+
     private static final Logger logger = LogManager.getLogger(AuthorizationExceptionHandler.class);
 
     @ExceptionHandler(AuthorizationException.class)
@@ -35,8 +36,9 @@ public class AuthorizationExceptionHandler {
     @ExceptionHandler(NotAllowedActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String onNotAllowedActionException(NotAllowedActionException e, Admin admin, Model model) {
-        logger.error("Permission denied: user " + e.getUsername() + " does not have sufficient privileges for " + e.getToken());
+        logger.error("Permission denied: user {} does not have sufficient privileges for {}", e.getUsername(), e.getQualifiedMethodName());
         model.addAttribute("email", admin.getEmail());
         return "permission_denied";
     }
+
 }

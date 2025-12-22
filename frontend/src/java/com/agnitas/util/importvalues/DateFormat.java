@@ -16,6 +16,7 @@ import com.agnitas.util.DateUtilities;
  * Values for dateFormat property of import profile
  */
 public enum DateFormat {
+
 	ddMMyyyy("dd.MM.yyyy", 1),
 	ddMMyyyyHHmm("dd.MM.yyyy HH:mm", 0),
 	ddMMyyyyHHmmss("dd.MM.yyyy HH:mm:ss", 5),
@@ -42,12 +43,12 @@ public enum DateFormat {
 	/**
 	 * The value that will be used during csv-file parsing
 	 */
-	private String value;
+	private final String value;
 
 	/**
 	 * Id value used for storage in db
 	 */
-	private int id;
+	private final int id;
 
 	public String getValue() {
 		return value;
@@ -66,21 +67,21 @@ public enum DateFormat {
 		this.id = id;
 	}
 
-	public static DateFormat getDateFormatById(int id) throws Exception {
+	public static DateFormat getDateFormatById(int id) {
 		for (DateFormat item : DateFormat.values()) {
 			if (item.getIntValue() == id) {
 				return item;
 			}
 		}
-		throw new Exception("Invalid DateFormat id: " + id);
+		throw new IllegalArgumentException("Invalid DateFormat id: " + id);
 	}
 
-	public static DateFormat getDateFormatByValue(String value) throws Exception {
+	public static DateFormat getDateFormatByValue(String value) {
 		for (DateFormat item : DateFormat.values()) {
 			if (item.value.equals(value)) {
 				return item;
 			}
 		}
-		throw new Exception("Invalid DateFormat value: " + value);
+		throw new IllegalArgumentException("Invalid DateFormat value: " + value);
 	}
 }

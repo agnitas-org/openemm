@@ -12,38 +12,37 @@ package com.agnitas.emm.springws.endpoint.mailing;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mailing.service.MailingModel;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
+import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.Namespaces;
 import com.agnitas.emm.springws.jaxb.AddMailingRequest;
 import com.agnitas.emm.springws.jaxb.AddMailingRequest.TargetIDList;
 import com.agnitas.emm.springws.jaxb.AddMailingResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
-import com.agnitas.emm.restful.RestfulClientException;
-import com.agnitas.emm.util.html.HtmlChecker;
-import com.agnitas.emm.util.html.HtmlCheckerException;
-
 @Endpoint
 public class AddMailingEndpoint extends BaseEndpoint {
-
-	private static final Logger LOGGER = LogManager.getLogger(AddMailingEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
 	private final SecurityContextAccess securityContextAccess;
 
-	public AddMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
+	public AddMailingEndpoint(
+			@Qualifier("MailingService") MailingService mailingService,
+			ThumbnailService thumbnailService,
+			SecurityContextAccess securityContextAccess
+	) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
 		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
@@ -79,6 +78,7 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		model.setTargetMode(request.getMatchTargetGroups());
 		model.setMailingType(MailingType.fromWebserviceCode(request.getMailingType()));
 		model.setSubject(request.getSubject());
+		model.setPreHeader(request.getPreHeader());
 		model.setSenderName(request.getSenderName());
 		model.setSenderAddress(request.getSenderAddress());
 		model.setReplyToName(request.getReplyToName());
@@ -93,12 +93,8 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		final int mailingID = mailingService.addMailing(model);
 		response.setMailingID(mailingID);
 		
-		try {
-			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, mailingID);
-		} catch(final Exception e) {
-			LOGGER.error(String.format("Error updating thumbnail of mailing %d", mailingID), e);
-		}
-		
+		thumbnailService.tryUpdateMailingThumbnailByWebservice(companyID, mailingID);
+
 		return response;
 	}
 }

@@ -50,7 +50,7 @@ public final class WebhookMessage {
 	 * 
 	 * @throws NullPointerException if <code>eventType</code>, <code>eventTimestamp</code> or <code>payload</code> is <code>null</code>
 	 */
-	public WebhookMessage(final int companyId, final WebhookEventType eventType, final ZonedDateTime eventTimestamp, final int retryCount, final long eventId, final String payload) {
+	public WebhookMessage(int companyId, WebhookEventType eventType, ZonedDateTime eventTimestamp, int retryCount, long eventId, String payload) {
 		this.companyId = companyId;
 		this.eventType = Objects.requireNonNull(eventType, "eventType is null");
 		this.eventTimestamp = Objects.requireNonNull(eventTimestamp, "eventTimestamp is null");
@@ -64,7 +64,7 @@ public final class WebhookMessage {
 	 *
 	 * @return company ID
 	 */
-	public final int getCompanyId() {
+	public int getCompanyId() {
 		return companyId;
 	}
 
@@ -73,7 +73,7 @@ public final class WebhookMessage {
 	 *
 	 * @return the event type
 	 */
-	public final WebhookEventType getEventType() {
+	public WebhookEventType getEventType() {
 		return eventType;
 	}
 
@@ -82,7 +82,7 @@ public final class WebhookMessage {
 	 *
 	 * @return the event timestamp
 	 */
-	public final ZonedDateTime getEventTimestamp() {
+	public ZonedDateTime getEventTimestamp() {
 		return eventTimestamp;
 	}
 
@@ -91,7 +91,7 @@ public final class WebhookMessage {
 	 *
 	 * @return the retry count
 	 */
-	public final int getRetryCount() {
+	public int getRetryCount() {
 		return retryCount;
 	}
 
@@ -100,7 +100,7 @@ public final class WebhookMessage {
 	 *
 	 * @return the event id
 	 */
-	public final long getEventId() {
+	public long getEventId() {
 		return eventId;
 	}
 
@@ -109,7 +109,7 @@ public final class WebhookMessage {
 	 *
 	 * @return the payload
 	 */
-	public final String getPayload() {
+	public String getPayload() {
 		return payload;
 	}
 	

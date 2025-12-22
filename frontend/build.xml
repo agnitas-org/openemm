@@ -347,7 +347,7 @@
 	</target>
 
 	<target name="copyAdditionalPiwikFile" depends="setDeploytarget">
-		<copy file="${emmSourcePath}/view/WEB-INF/jsp/additional.jsp" tofile="${deploydir}${appname}/WEB-INF/jsp/additional.jsp" overwrite="true" />
+		<copy file="${emmSourcePath}/view/WEB-INF/jsp/page-template/additional.jsp" tofile="${deploydir}${appname}/WEB-INF/jsp/page-template/additional.jsp" overwrite="true" />
 	</target>
 
 	<target name="create_web.xml" depends="deploy">
@@ -555,10 +555,9 @@
 			<fileset dir="${emmSourcePath}/view/WEB-INF/conf" />
 		</copy>
 
-        <mergexml source="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" change="${deploydir}${appname}/WEB-INF/tiles-defs-redesigned-basic.xml" dest="${deploydir}${appname}/WEB-INF/tiles-defs.xml" overwrite="true" />
+		<copy file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" tofile="${deploydir}${appname}/WEB-INF/tiles-defs.xml"/>
 		<replace file="${deploydir}${appname}/WEB-INF/tiles-defs.xml" token="src/view/WEB-INF/tiles-config_3_0.dtd" value="http://tiles.apache.org/dtds/tiles-config_3_0.dtd" />
 		<delete file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" />
-        <delete file="${deploydir}${appname}/WEB-INF/tiles-defs-redesigned-basic.xml" />
 
 		<chmod file="${deploydir}${appname}/WEB-INF/sql/mariadb/*.sh" perm="ugo+x"/>
 

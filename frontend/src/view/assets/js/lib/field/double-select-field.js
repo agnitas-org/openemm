@@ -37,7 +37,7 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
   <div class="d-flex flex-column gap-2" data-field="double-select" data-provider="opt" data-provider-src="DoubleSelectExample">
     <div>
       <label class="form-label">Parent Control</label>
-      <select class="form-control js-select js-double-select-trigger">
+      <select class="form-control js-double-select-trigger">
         <option value="parentSelectValue1">Parent Select Option 1</option>
         <option value="parentSelectValue2">Parent Select Option 2</option>
         <option value="parentSelectValue3">Parent Select Option 3</option>
@@ -46,7 +46,7 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
 
     <div>
       <label class="form-label">Child/Dependent Control</label>
-      <select class="form-control js-select js-double-select-target">
+      <select class="form-control js-double-select-target">
       </select>
     </div>
   </div>
@@ -62,10 +62,10 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
       super($field);
 
       this.$source = this.el.find('select.js-double-select-trigger');
-      this.$target = this.el.find('select.js-double-select-target');
+      this.$targets = this.el.find('select.js-double-select-target');
 
       const sourceChangeHandler = () => {
-        this.$target.val([])
+        this.$targets.val([])
         this.update();
       };
 
@@ -80,13 +80,17 @@ For reading the values and titles for the options from a hash in AGN.Opt just se
 
     update() {
       const valueSource = this.$source.find('option:selected').val();
-      const valueTarget = this.$target.find('option:selected').val();
 
-      this.$target.html(AGN.Lib.Template.text(
-        'double-select-options',
-        {opts: this.options[valueSource], valueSelected: valueTarget}
-      ));
-      AGN.Lib.CoreInitializer.run('select', this.$target);
+      this.$targets.each((i, target) => {
+        const $target = $(target);
+        const targetValue = $target.val();
+
+        $target.html(AGN.Lib.Template.text(
+          'double-select-options',
+          {opts: this.options[valueSource], valueSelected: targetValue}
+        ));
+        AGN.Lib.CoreInitializer.run('select', $target);
+      })
     }
   }
 

@@ -14,7 +14,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.web.forms.PaginationForm;
 
@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Set;
 
 public interface CampaignService {
-    PaginatedListImpl<Campaign> getOverview(Admin admin, PaginationForm form);
+    PaginatedList<Campaign> getOverview(Admin admin, PaginationForm form);
 
     List<Campaign> getCampaigns(int companyID);
     
     Campaign getCampaign(int campaignId, int companyID);
 
-    PaginatedListImpl<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin);
+    PaginatedList<MailingBase> getCampaignMailings(int campaignId, PaginationForm form, Admin admin);
 
     int save(Campaign campaign);
 

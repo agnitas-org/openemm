@@ -1,0 +1,188 @@
+
+#mailing-content-blocks {
+  #content-blocks-tab {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: $gap-sm;
+
+    @include mobile {
+      @include flex-column($gap-sm);
+    }
+  }
+
+  #multi-editor {
+    @include mobile {
+      .tile-body {
+        min-height: 350px;
+      }
+    }
+  }
+
+  #content-block-selection {
+    display: flex;
+    width: 100%;
+
+    .input-group {
+      min-width: 0;
+      flex-wrap: nowrap;
+
+      .select2-container {
+        min-width: 0;
+      }
+
+      .select2-selection {
+        @include border-end-radius(0);
+
+        @include mobile {
+          @include border-end-radius;
+        }
+      }
+    }
+
+    button {
+      white-space: nowrap;
+      @include border-start-radius(0);
+
+      @include mobile {
+        @include border-start-radius;
+      }
+    }
+
+    @include mobile {
+      @include flex-column($gap-sm);
+    }
+  }
+
+  #dyn-tag-list {
+    @include flex-column($gap-sm);
+    @include min-size(0);
+
+    .list-group {
+      @include border;
+      @include hide-scroll;
+    }
+  }
+
+  #dyn-tags-container {
+    flex-grow: 1;
+    position: relative;
+
+    @include perfect-scrollbar(var(--scrollbar-color), 5px, 3px);
+
+    .ps__rail-y {
+      z-index: 10;
+    }
+  }
+
+  #dyn-tag-settings {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .select2-container {
+    min-width: 0;
+  }
+}
+
+.dyn-tag {
+  --dyn-tag-name-color: #{$dark-grey};
+  --dyn-tag-content-color: #{$gray-600};
+  --dyn-tag-active-color: #{$white};
+  --dyn-tag-hover-color: #{$black};
+
+  @include flex-column($gap-x-sm);
+  border: none;
+  padding: $gap-sm;
+  border-radius: 0 !important;
+  color: var(--dyn-tag-name-color);
+
+  &:not(:last-child) {
+    border-bottom: $border-default;
+  }
+
+  &.disabled {
+    color: var(--base-disabled-color);
+    background-color: var(--base-disabled-bg);
+    opacity: 1;
+  }
+
+  > span {
+    @include flex-row($gap-x-sm);
+    align-items: center;
+    font-size: $font-size-x-sm;
+
+    i {
+      text-align: center;
+      width: 18px;
+    }
+  }
+
+  span {
+    color: var(--dyn-tag-content-color);
+  }
+
+  &.active, .select2-results__option--selected &, .select2-results__option--highlighted & {
+    small, span, i {
+      color: var(--dyn-tag-active-color) !important;
+    }
+  }
+
+  &:hover {
+    small, span, i {
+      color: var(--dyn-tag-hover-color);
+    }
+  }
+
+  .dyn-tag__preview {
+    @include text-truncate-lines;
+  }
+}
+
+@include color-mode(dark) {
+  .dyn-tag {
+    --dyn-tag-name-color: #{$light-grey};
+    --dyn-tag-content-color: #{$light-grey};
+    --dyn-tag-hover-color: #{$white};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .dyn-tag {
+    --dyn-tag-name-color: #{$con-dark-blue};
+    --dyn-tag-content-color: #{$con-dark-blue};
+    --dyn-tag-hover-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .dyn-tag {
+    --dyn-tag-name-color: #{$white};
+    --dyn-tag-content-color: #{$con-grey};
+    --dyn-tag-active-color: #{$con-dark-blue};
+    --dyn-tag-hover-color: #{$con-dark-blue};
+  }
+}
+
+#manage-targets-modal {
+  .target-row {
+    &:only-of-type {
+      [data-action="delete-content-block"], .target-row-handle { // hide 'drag' and 'remove' buttons for the last remaining target
+        display: none;
+      }
+    }
+
+    &:has(option:not([value="0"][selected]):only-of-type) { // hide 'drag'
+      display: none;
+    }
+
+    &:has(option[value="0"][selected]) { // hide 'drag' button for 'all recipients' target
+      .target-row-handle {
+        display: none;
+      }
+    }
+
+    > .select2-container {
+      min-width: 0;
+    }
+  }
+}

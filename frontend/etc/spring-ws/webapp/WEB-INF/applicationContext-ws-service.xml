@@ -36,7 +36,7 @@
 		</property>
 	</bean>
 
-	<bean id="WsLoginTrackService" class="org.agnitas.emm.core.logintracking.service.impl.LoginTrackServiceImpl">
+	<bean id="WsLoginTrackService" class="com.agnitas.emm.core.loginmanager.service.impl.LoginTrackServiceImpl">
 		<property name="loginTrackDao" ref="WsLoginTrackDao" />
 
 		<property name="loginTrackSettingsDao">

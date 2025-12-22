@@ -10,27 +10,22 @@
 
 package com.agnitas.beans.factory.impl;
 
-import com.agnitas.dao.impl.DaoLookupFactory;
 import com.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
+import com.agnitas.dao.impl.DaoLookupFactory;
 import com.agnitas.service.ActivityLogExportWorker;
-import com.agnitas.service.UserActivityLogExportWorker;
 import org.springframework.stereotype.Component;
 
 @Component("userActivityLogExportWorkerFactory")
 public class UserActivityLogExportWorkerFactoryImpl implements UserActivityLogExportWorkerFactory {
-    private DaoLookupFactory daoLookupFactory;
+
+    private final DaoLookupFactory daoLookupFactory;
 
     public UserActivityLogExportWorkerFactoryImpl(DaoLookupFactory daoLookupFactory) {
         this.daoLookupFactory = daoLookupFactory;
     }
 
-	@Override
-    public UserActivityLogExportWorker.Builder getBuilderInstance() {
-        return UserActivityLogExportWorker.getBuilder(daoLookupFactory.getBeanDataSource());
-    }
-
     @Override
-    public ActivityLogExportWorker.Builder getBuilderInstanceRedesigned() {
+    public ActivityLogExportWorker.Builder getBuilderInstance() {
         return ActivityLogExportWorker.getBuilder(daoLookupFactory.getBeanDataSource());
     }
 }

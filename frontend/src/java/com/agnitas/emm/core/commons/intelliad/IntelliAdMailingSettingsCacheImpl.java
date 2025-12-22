@@ -10,24 +10,19 @@
 
 package com.agnitas.emm.core.commons.intelliad;
 
-import java.util.Map;
-
 import com.agnitas.beans.Mediatype;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.beans.MediatypeEmail;
 
 public class IntelliAdMailingSettingsCacheImpl implements IntelliAdMailingSettingsCache {
 	
-	// ----------------------------------------------------------------------------------------------- business code
-	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger( IntelliAdMailingSettingsCacheImpl.class);
+	private static final Logger logger = LogManager.getLogger( IntelliAdMailingSettingsCacheImpl.class);
 	
 	private MediatypesDao mediatypesDao;
 	private ConfigService configService;
@@ -54,42 +49,22 @@ public class IntelliAdMailingSettingsCacheImpl implements IntelliAdMailingSettin
 		return cache;
 	}
 
-	private IntelliAdMailingSettings createIntelliAdSettings( int companyId, int mailingId) {
-		try {
-			Map<Integer, Mediatype> map = this.mediatypesDao.loadMediatypes( mailingId, companyId);
-			Mediatype mediatype = map.get( 0);
-			
-			if( mediatype != null) {
-				if( logger.isInfoEnabled()) {
-					logger.info( "Found media type email for mailing " + mailingId);
-				}
+	private IntelliAdMailingSettings createIntelliAdSettings(int companyId, int mailingId) {
+        Mediatype mediatype = mediatypesDao.loadMediatypes(mailingId, companyId)
+				.get(MediaTypes.EMAIL.getMediaCode());
 
-				boolean enabled = ((MediatypeEmail) mediatype).isIntelliAdEnabled();
-				String trackingString = ((MediatypeEmail) mediatype).getIntelliAdString();
-				
-				return new IntelliAdMailingSettings( enabled, trackingString);
-			} else {
-				if( logger.isInfoEnabled()) {
-					logger.info( "Found no media type email for mailing " + mailingId);
-				}
-				
-				// Return settings saying IntelliAd is disabled, no tracking string
-				return new IntelliAdMailingSettings( false, null);
-			}
-		} catch( MediatypesDaoException e) {
-			logger.error( "Error accessing media types for mailing " + mailingId, e);
-			
-			return null;
+		if (mediatype instanceof MediatypeEmail mediatypeEmail) {
+			logger.info("Found media type email for mailing {}", mailingId);
+            return new IntelliAdMailingSettings(mediatypeEmail.isIntelliAdEnabled(), mediatypeEmail.getIntelliAdString());
 		}
+
+		logger.info("Found no media type email for mailing {}", mailingId);
+		// Return settings saying IntelliAd is disabled, no tracking string
+		return new IntelliAdMailingSettings( false, null);
 	}
 	
 	// ----------------------------------------------------------------------------------------------- dependency injection
 	
-	/**
-	 * Setter for MediatypesDao.
-	 * 
-	 * @param mediatypesDao instance of MediatypesDao
-	 */
 	public void setMediatypesDao(MediatypesDao mediatypesDao) {
 		this.mediatypesDao = mediatypesDao;
 	}

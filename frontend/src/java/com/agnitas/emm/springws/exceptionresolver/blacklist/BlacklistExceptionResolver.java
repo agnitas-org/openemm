@@ -11,7 +11,7 @@
 package com.agnitas.emm.springws.exceptionresolver.blacklist;
 
 
-import org.agnitas.emm.core.blacklist.service.BlacklistAlreadyExistException;
+import com.agnitas.emm.core.blacklist.exception.BlacklistAlreadyExistException;
 import com.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 

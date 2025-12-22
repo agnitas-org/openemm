@@ -1,163 +1,71 @@
+
 .tooltip {
-  position: absolute;
-  z-index: 10070;
-  display: block;
-  visibility: visible;
-  font-size: 12px;
+  --tooltip-color: #{$white};
+  --tooltip-bg: #{$black};
+
+  font-size: $font-size-sm;
   line-height: 1.4;
-  opacity: 0;
-  filter: alpha(opacity=0);
 }
-.tooltip.in {
-  opacity: 0.9;
-  filter: alpha(opacity=90);
+
+@include color-mode(light-contrast) {
+  .tooltip {
+    --tooltip-bg: #{$con-dark-blue};
+  }
 }
-.tooltip.top {
-  margin-top: -3px;
-  padding: 5px 0;
+
+@include color-mode(dark-contrast) {
+  .tooltip {
+    --tooltip-bg: #{$white};
+    --tooltip-color: #{$con-dark-blue};
+  }
 }
-.tooltip.right {
-  margin-left: 3px;
-  padding: 0 5px;
-}
-.tooltip.bottom {
-  margin-top: 3px;
-  padding: 5px 0;
-}
-.tooltip.left {
-  margin-left: -3px;
-  padding: 0 5px;
-}
-.tooltip-inner {
-  max-width: 200px;
-  padding: 3px 8px;
-  color: #ffffff;
-  text-align: center;
-  text-decoration: none;
-  background-color: #000000;
-  border-radius: 4px;
-}
-.tooltip.wide .tooltip-inner {
-    max-width: none;
-}
-.tooltip-arrow {
+
+.chart-tooltip {
+  --chart-tooltip-header-color: #{$dark-grey};
+  --chart-tooltip-header-bg: #{$gray-100};
+
+  background: $body-bg-var;
+  opacity: 1;
+  pointer-events: none;
   position: absolute;
-  width: 0;
-  height: 0;
-  border-color: transparent;
-  border-style: solid;
-}
-.tooltip.top .tooltip-arrow {
-  bottom: 0;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px 5px 0;
-  border-top-color: #000000;
-  top: auto !important;
-}
-.tooltip.top-left .tooltip-arrow {
-  bottom: 0;
-  left: 5px;
-  border-width: 5px 5px 0;
-  border-top-color: #000000;
-}
-.tooltip.top-right .tooltip-arrow {
-  bottom: 0;
-  right: 5px;
-  border-width: 5px 5px 0;
-  border-top-color: #000000;
-}
-.tooltip.right .tooltip-arrow {
-  top: 50%;
-  left: 0;
-  margin-top: -5px;
-  border-width: 5px 5px 5px 0;
-  border-right-color: #000000;
-}
-.tooltip.left .tooltip-arrow {
-  top: 50%;
-  right: 0;
-  margin-top: -5px;
-  border-width: 5px 0 5px 5px;
-  border-left-color: #000000;
-}
-.tooltip.bottom .tooltip-arrow {
-  top: 0;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 0 5px 5px;
-  border-bottom-color: #000000;
-}
-.tooltip.bottom-left .tooltip-arrow {
-  top: 0;
-  left: 5px;
-  border-width: 0 5px 5px;
-  border-bottom-color: #000000;
-}
-.tooltip.bottom-right .tooltip-arrow {
-  top: 0;
-  right: 5px;
-  border-width: 0 5px 5px;
-  border-bottom-color: #000000;
-}
+  transition: all .1s ease;
+  border: $border-default;
+  @include border-radius;
+  overflow: hidden;
 
-.helper-popup {
-  width: 200px;
-  background-color: $c-white;
-  border-radius: 3px;
+  .tooltip-header {
+    padding: $gap-x-sm $gap-sm;
+    color: var(--chart-tooltip-header-color);
+    background-color: var(--chart-tooltip-header-bg);
+    border-bottom: $border-default;
+    font-weight: $font-weight-medium;
+  }
 
-  @include shadow-variant(hard);
-}
+  .tooltip-body {
+    padding: $gap-x-sm $gap-sm;
+    @include flex-column($gap-sm);
 
-.tooltip.top .helper-popup-arrow {
-  border-width: 11px;
-  left: 50%;
-  margin-left: -11px;
-  border-bottom-width: 0;
-  border-top-color: $c-gray-11;
-  bottom: -6px;
-  &:after {
-    content: " ";
-    bottom: 1px;
-    margin-left: -10px;
-    border-bottom-width: 0;
-    border-top-color: $c-white;
+    > div {
+      @include flex-row($gap-x-sm);
+      align-items: center;
+
+      i {
+        font-size: $font-size-lg;
+      }
+    }
   }
 }
 
-.tooltip.bottom .helper-popup-arrow {
-  border-width: 11px;
-  left: 50%;
-  margin-left: -11px;
-  border-top-width: 0;
-  border-bottom-color: $c-white;
-  top: -6px;
-  &:after {
-    content: " ";
-    top: 1px;
-    margin-left: -10px;
-    border-top-width: 0;
-    border-bottom-color: $c-white;
+@include color-mode(dark) {
+  .chart-tooltip {
+    --chart-tooltip-header-color: #{$light-grey};
+    --chart-tooltip-header-bg: #{$grey-blue};
   }
 }
 
-.helper-popup-header {
-  padding: 10px;
-  color: $c-black-85;
-  font-size: $fs-large;
-  font-weight: $fw-semi;
-  line-height: 1;
-  word-break: break-all;
-
-  .icon {
-    background-color: $c-transparent;
-    border: none;
+@include contrast-themes {
+  .chart-tooltip {
+    --chart-tooltip-header-color: #{$con-dark-blue};
+    --chart-tooltip-header-bg: #{$con-light-blue};
   }
-
-}
-
-.helper-popup-content {
-  padding: 10px;
-  color: $c-black-85;
-  text-align: start;
 }

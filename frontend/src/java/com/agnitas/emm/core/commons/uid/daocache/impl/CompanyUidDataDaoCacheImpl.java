@@ -12,14 +12,13 @@ package com.agnitas.emm.core.commons.uid.daocache.impl;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.daocache.AbstractDaoCache;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.TimeoutLRUMap;
-
 import com.agnitas.beans.Company;
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.commons.daocache.AbstractDaoCache;
 import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class CompanyUidDataDaoCacheImpl extends AbstractDaoCache<CompanyUidData> implements CompanyUidDataDaoCache {
 

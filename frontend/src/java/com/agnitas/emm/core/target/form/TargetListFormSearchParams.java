@@ -44,13 +44,4 @@ public class TargetListFormSearchParams implements FormSearchParams<TargetForm> 
         form.setSearchComplexity(complexity);
     }
 
-    @Override
-    public void resetParams() {
-        name = null;
-        description = null;
-        deliveryOption = null;
-        complexity = null;
-        creationDate = new DateRange();
-        changeDate = new DateRange();
-    }
 }

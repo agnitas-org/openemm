@@ -12,7 +12,7 @@ package com.agnitas.emm.core.target.component;
 
 import com.agnitas.emm.core.target.beans.TargetGroupDependencyType;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

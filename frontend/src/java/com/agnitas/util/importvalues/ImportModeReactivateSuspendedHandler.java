@@ -19,18 +19,17 @@ import com.agnitas.beans.ImportProfile;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.dao.ImportRecipientsDao;
 import com.agnitas.emm.common.UserStatus;
-import com.agnitas.util.DbColumnType;
-
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.DbColumnType;
 
 public class ImportModeReactivateSuspendedHandler implements ImportModeHandler {
     
-    private ImportRecipientsDao importRecipientsDao;
-    
-	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
-		this.importRecipientsDao = importRecipientsDao;
-	}
+    private final ImportRecipientsDao importRecipientsDao;
+
+    public ImportModeReactivateSuspendedHandler(ImportRecipientsDao importRecipientsDao) {
+        this.importRecipientsDao = importRecipientsDao;
+    }
 
 	@Override
 	public void checkPreconditions(ImportProfile importProfile) {
@@ -71,6 +70,15 @@ public class ImportModeReactivateSuspendedHandler implements ImportModeHandler {
 		    		mailinglistAssignStatistics.get(mediatype).put(mailingListId, changed);
 	    		}
 	    	}
+
+			boolean changesExist = mailinglistAssignStatistics.values().stream()
+					.flatMap(m -> m.values().stream())
+					.mapToInt(Integer::intValue)
+					.sum() > 0;
+			if (changesExist) {
+				importRecipientsDao.updateLatestDataSourceId(datasourceId, temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId());
+			}
+
 			return mailinglistAssignStatistics;
 		} else {
 			return null;

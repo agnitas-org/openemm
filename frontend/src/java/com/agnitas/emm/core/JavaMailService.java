@@ -38,6 +38,8 @@ public interface JavaMailService {
 	 */
 	boolean sendEmail(int dkimCompanyID, String toAddressList, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments);
 
+	boolean sendReplyEmail(int dkimCompanyID, String toAddressList, String subject, String bodyText, String bodyHtml, String replyEmail);
+
 	/**
 	 * Sends an email via Java (not via EMM Backend)
 	 * 

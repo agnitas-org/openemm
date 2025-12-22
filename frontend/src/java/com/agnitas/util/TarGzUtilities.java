@@ -29,11 +29,15 @@ import org.apache.commons.lang3.StringUtils;
 
 public class TarGzUtilities {
 
-	public static int getFilesCount(final File tarGzFile) throws Exception {
+	private TarGzUtilities() {
+
+	}
+
+	public static int getFilesCount(File tarGzFile) throws Exception {
 		if (!tarGzFile.exists()) {
-			throw new Exception("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
 		} else if (!tarGzFile.isFile()) {
-			throw new Exception("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
 		} else {
 			try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new GzipCompressorInputStream(new BufferedInputStream(new FileInputStream(tarGzFile))))) {
 				TarArchiveEntry entry;
@@ -44,19 +48,19 @@ public class TarGzUtilities {
 					}
 				}
 				return count;
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				throw new Exception("Cannot read '" + tarGzFile + "'", e);
 			}
 		}
 	}
 
-	public static void decompress(final File tarGzFile, final File decompressToPath) throws Exception {
+	public static void decompress(File tarGzFile, File decompressToPath) throws Exception {
 		if (!tarGzFile.exists()) {
-			throw new Exception("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
 		} else if (!tarGzFile.isFile()) {
-			throw new Exception("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
 		} else if (decompressToPath.exists()) {
-			throw new Exception("Destination path already exists: " + decompressToPath.getAbsolutePath());
+			throw new IllegalArgumentException("Destination path already exists: " + decompressToPath.getAbsolutePath());
 		} else {
 			try (TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(new GzipCompressorInputStream(new BufferedInputStream(new FileInputStream(tarGzFile))))) {
 				decompressToPath.mkdirs();
@@ -84,7 +88,7 @@ public class TarGzUtilities {
 						IOUtils.copy(tarArchiveInputStream, fileOutputStream);
 					}
 				}
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				try {
 					if (decompressToPath.exists()) {
 						FileUtils.delete(decompressToPath);
@@ -98,11 +102,11 @@ public class TarGzUtilities {
 		}
 	}
 
-	public static void compress(final File tarGzFile, final File fileToCompress) throws IOException {
+	public static void compress(File tarGzFile, File fileToCompress) throws IOException {
 		compress(tarGzFile, fileToCompress, null);
 	}
 
-	public static void compress(final File tarGzFile, final File fileToCompress, String filePathInTarGzFile) throws IOException {
+	public static void compress(File tarGzFile, File fileToCompress, String filePathInTarGzFile) throws IOException {
 		if (tarGzFile.exists()) {
 			throw new IOException("TarGz file already exists: " + tarGzFile.getAbsolutePath());
 		} else if (!tarGzFile.getParentFile().exists()) {
@@ -119,7 +123,7 @@ public class TarGzUtilities {
 			IOUtils.copy(fileInputStream, tarArchiveOutputStream);
 			tarArchiveOutputStream.closeArchiveEntry();
 			tarArchiveOutputStream.finish();
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			if (tarGzFile.exists()) {
 				tarGzFile.delete();
 			}
@@ -127,15 +131,15 @@ public class TarGzUtilities {
 		}
 	}
 
-	public static InputStream openCompressedFile(final File tarGzFile) throws Exception {
+	public static InputStream openCompressedFile(File tarGzFile) throws Exception {
 		return openCompressedFile(tarGzFile, null);
 	}
 
-	public static InputStream openCompressedFile(final File tarGzFile, final String filePathInTarGzFile) throws Exception {
+	public static InputStream openCompressedFile(File tarGzFile, String filePathInTarGzFile) throws Exception {
 		if (!tarGzFile.exists()) {
-			throw new Exception("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file does not exist: " + tarGzFile.getAbsolutePath());
 		} else if (!tarGzFile.isFile()) {
-			throw new Exception("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
+			throw new IllegalArgumentException("TarGz file path is not a file: " + tarGzFile.getAbsolutePath());
 		} else {
 			TarArchiveInputStream tarArchiveInputStream = null;
 			try {
@@ -162,7 +166,7 @@ public class TarGzUtilities {
 				} else {
 					throw new Exception("TarGz file does not contain file '" + filePathInTarGzFile + "'");
 				}
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				try {
 					if (tarArchiveInputStream != null) {
 						tarArchiveInputStream.close();

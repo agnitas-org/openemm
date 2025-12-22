@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.agnitas.backend.DBase;
@@ -298,26 +299,24 @@ public class MailingDAO {
 	/**
 	 * set the working status for this mailing
 	 */
-	public boolean workStatus (DBase dbase, MailingStatus newWorkStatus, MailingStatus oldWorkStatus) throws SQLException {
+	public boolean workStatus (DBase dbase, MailingStatus newWorkStatus, MailingStatus[] oldWorkStatuses) throws SQLException {
 		int	count = 0;
 		
 		try (DBase.With with = dbase.with ()) {
-			if (oldWorkStatus != null) {
-				count = dbase.update (with.cursor (),
-						      "UPDATE mailing_tbl " +
-						      "SET work_status = :newWorkStatus " +
-						      "WHERE mailing_id = :mailingID AND (work_status IS NULL OR work_status = :oldWorkStatus)",
-						      "oldWorkStatus", oldWorkStatus.getDbKey (),
-						      "newWorkStatus", newWorkStatus.getDbKey (),
-						      "mailingID", mailingID);
-			} else {
-				count = dbase.update (with.cursor (),
-						      "UPDATE mailing_tbl " +
-						      "SET work_status = :workStatus " +
-						      "WHERE mailing_id = :mailingID",
-						      "workStatus", newWorkStatus.getDbKey (),
-						      "mailingID", mailingID);
+			String	query =
+			      "UPDATE mailing_tbl " +
+			      "SET work_status = :workStatus " +
+			      "WHERE mailing_id = :mailingID";
+			if ((oldWorkStatuses != null) && (oldWorkStatuses.length > 0)) {
+				query += " AND (work_status IS NULL OR work_status ";
+				if (oldWorkStatuses.length == 1) {
+					query += "= '" + oldWorkStatuses[0].getDbKey () + "'";
+				} else {
+					query += "IN (" + Stream.of (oldWorkStatuses).map (ws -> "'" + ws.getDbKey () + "'").reduce ((s, e) -> s + ", " + e).orElse (null) + ")";
+				}
+				query += ")";
 			}
+			count = dbase.update (with.cursor (), query, "mailingID", mailingID, "workStatus", newWorkStatus.getDbKey ());
 			if (count > 0) {
 				workStatus = newWorkStatus.getDbKey ();
 			} else {
@@ -331,11 +330,20 @@ public class MailingDAO {
 				if (row == null) {
 					reason = "mailing not existing";
 				} else {
-					String work_status = dbase.asString (row.get ("work_status"));
+					workStatus = dbase.asString (row.get ("work_status"));
 					
-					reason = "current work status is " + (work_status == null ? "unset" : "\"" + work_status + "\"");
+					reason = "current work status is " + (workStatus == null ? "unset" : "\"" + workStatus + "\"");
 				}
-				dbase.logging (Log.WARNING, "mailing", "failed to update workstatus for mailing " + mailingID + ": " + reason);
+				if ((oldWorkStatuses == null) ||
+				    (oldWorkStatuses.length == 0) ||
+				    (workStatus == null) ||
+				    (Stream.of (oldWorkStatuses).filter (ws -> workStatus.equals (ws.getDbKey ())).count () > 0)) {
+					dbase.logging (Log.WARNING, "mailing", "failed to update workstatus for mailing " + mailingID + ": " + reason);
+				} else if (workStatus.equals (newWorkStatus.getDbKey ())) {
+					dbase.logging (Log.DEBUG, "mailling", "work status not changed as it is already \"" + workStatus + "\"");
+				} else {
+					dbase.logging (Log.DEBUG, "mailing", "work status not changed from \"" + workStatus + "\" to \"" + newWorkStatus.getDbKey () + "\" as old work status did not match any of " + Stream.of (oldWorkStatuses).map (ws -> "\"" + ws.getDbKey () + "\"").reduce ((s, e) -> s + ", " + e).orElse ("-none-"));
+				}
 			}
 		}
 		return count > 0;

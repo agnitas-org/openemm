@@ -79,6 +79,23 @@ public class PuppeteerServiceManager implements SmartLifecycle {
         return isPuppeteerProcessRunning();
     }
 
+    public boolean isInstalled() {
+        if (getPath() == null) {
+            return false;
+        }
+
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("node", "-e", "require.resolve('puppeteer')")
+                    .directory(new File(servletContext.getRealPath("WEB-INF")))
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD);
+
+            return processBuilder.start().waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String getPath() {
         String path = Optional.ofNullable(servletContext)
                 .map(s -> s.getRealPath("WEB-INF/puppeteer/puppeteer-service.js"))

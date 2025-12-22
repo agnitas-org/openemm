@@ -24,12 +24,8 @@ import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.SendStatWithMailingIdRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class MailingStatisticDataSet extends BIRTDataSet {
-
-	private static final Logger logger = LogManager.getLogger(MailingStatisticDataSet.class);
 
     private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
     private final MailingURLClicksDataSet mailingURLClicksDataSet = new MailingURLClicksDataSet();

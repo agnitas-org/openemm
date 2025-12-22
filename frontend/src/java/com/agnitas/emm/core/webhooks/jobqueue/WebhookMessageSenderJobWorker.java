@@ -12,19 +12,19 @@ package com.agnitas.emm.core.webhooks.jobqueue;
 
 import java.util.Date;
 
-import com.agnitas.service.JobWorker;
+import com.agnitas.emm.core.webhooks.sender.WebhookMessageSender;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.core.webhooks.sender.WebhookMessageSender;
 
 /**
  * Job worker for sending webhook messages.
  */
-public final class WebhookMessageSenderJobWorker extends JobWorker {
+@JobWorker("WebhookMessageDelivery")
+public final class WebhookMessageSenderJobWorker extends JobWorkerBase {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(WebhookMessageSenderJobWorker.class);
+	private static final Logger LOGGER = LogManager.getLogger(WebhookMessageSenderJobWorker.class);
 	
 	@Override
 	public final String runJob() throws Exception {
@@ -33,17 +33,13 @@ public final class WebhookMessageSenderJobWorker extends JobWorker {
 		Date limitDate = job.getLastStart();
 		
 		while (sender.sendNextMessagePackage(limitDate)) {
-			if (LOGGER.isInfoEnabled()) {
-				LOGGER.info("Found webhook messages to send. Looking for next block.");
-			}
+			LOGGER.info("Found webhook messages to send. Looking for next block.");
 			// Repeat until no more messages found
 			
 			checkForPrematureEnd();
 		}
 
-		if (LOGGER.isInfoEnabled()) {
-			LOGGER.info("No more webhook messages to send. Going to sleep.");
-		}
+		LOGGER.info("No more webhook messages to send. Going to sleep.");
 
 		return null;
 	}

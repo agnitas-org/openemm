@@ -10,12 +10,11 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import org.springframework.stereotype.Component;
-
 import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DefaultCalculation implements CalculationRecipients<CalculationRecipientsConfig> {
@@ -31,7 +30,7 @@ public class DefaultCalculation implements CalculationRecipients<CalculationReci
     @Override
     public int calculate(CalculationRecipientsConfig config) {
         if (config.getFollowUpMailing() > 0) {
-            return mailingStatisticsDao.getFollowUpStat(config.getMailingId(), config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), true);
+            return mailingStatisticsDao.getFollowUpRecipientsCount(config.getMailingId(), config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId());
         }
         return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingId());
     }

@@ -10,19 +10,18 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.exception.UnknownUserStatusException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import com.agnitas.emm.common.UserStatus;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 
@@ -43,17 +42,10 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	}
 	
     protected UserStatus getUserStatus(int statusCode) {
-		try {
-			return UserStatus.getUserStatusByID(statusCode);
-		} catch (UnknownUserStatusException e) {
-			logger.error("User status code (" + statusCode + ") is invalid. Available statuses are [" +
-					StringUtils.join(UserStatus.getAvailableStatusCodeList(), ", ") + "] "
-			);
-		}
-		return null;
+		return UserStatus.findByCode(statusCode)
+				.orElse(null);
     }
-	
-	
+
     protected Map<Integer, String> mailinglistNamesById = new HashMap<>();
     
 	@Override
@@ -112,8 +104,7 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 			case Bounce:
 				row.countBounced += amount;
 				break;
-			case AdminOut:
-			case UserOut:
+			case AdminOut, UserOut:
 				row.countOptout += amount;
 				break;
 			case WaitForConfirm:

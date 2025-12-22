@@ -1,17 +1,16 @@
-(function() {
-    var Def = AGN.Lib.WM.Definitions,
-        Select = AGN.Lib.Select;
+(() => {
 
-    var EditorsHelper = function() {
+    const Def = AGN.Lib.WM.Definitions;
+    const Utils = AGN.Lib.WM.Utils;
+    const Node = AGN.Lib.WM.Node;
+    const Select = AGN.Lib.Select;
+
+    const EditorsHelper = function() {
         var options = {};
 
         this.editors = [];
         this.curEditor;
         this.curEditingNode;
-
-        this.getCurrentNode = function() {
-            return this.curEditingNode;
-        };
 
         this.getCurrentNodeId = function() {
             return this.curEditingNode.getId();
@@ -37,62 +36,65 @@
             return this.editors[name] = editor;
         };
 
-        this.isPausedWorkflow = function() {
-            return $('#workflow-status').val() === Def.constants.statusPaused;
-        }
-
         this._notAllowedToChangeDuringPause = function(node) {
-            return this.isPausedWorkflow()
+            return Utils.isPausedWorkflow()
                 && !_.union(Def.NODE_TYPES_MAILING, [Def.NODE_TYPE_STOP]).includes(node.getType());
         }
 
-        this.showEditDialog = function(node, isActivatedWorkflow) {
-            var self = this;
-            var nodeType = node.getType();
+        this.hideNodeEditors = function () {
+          $('#node-editor > [id$="-editor"]').hide();
+        }
 
-            this.curEditingNode = node;
-            this.curEditor = this.editors[nodeType];
-            this.curEditor.fillEditor(node);
+        this.activeNodeIcon = function (node) {
+          $('.node').removeClass('under-edit');
+          node.$element.addClass('under-edit');
+        }
 
-            this.getEditorPanel(nodeType).dialog({
-                open: function(event) {
-                    var $panel = $(this);
-                    var title = $panel.parent().find('.ui-dialog-title');
+        this.toggleSelectNodeInfoMsg = function (show) {
+          $('#select-node-notification').toggle(show);
+        }
 
-                    title.empty();
-                    title.append($('<span class="dialog-title-image">' + self.curEditor.getTitle() + '</span>'));
-                    title.find('.dialog-title-image').attr('data-type', nodeType);
+        this.exitNodeEditorIfActive = function (node) {
+          if (this.curEditingNode !== node) {
+            return;
+          }
+          this.hideNodeEditors();
+          this.toggleSelectNodeInfoMsg(true);
+        }
 
-                    if (nodeType == Def.NODE_TYPE_RECIPIENT) {
-                        // Only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
-                        $panel.parent().find('.recipient-editor-select').prop('disabled', node.isDependent() || node.isInRecipientsChain());
-                    }
+        this.showEditDialog = function(node) {
+          const nodeType = node.getType();
+          this.curEditingNode = node;
+          this.curEditor = this.editors[nodeType];
+          this.curEditor.fillEditor(node);
 
-                    // Re-init date pickers.
-                    $(event.target).find('.js-datepicker').each(function(index, element) {
-                        var $datepicker = $(element).pickadate('picker');
-                        $datepicker.set('select', $datepicker.get('select'));
-                    });
+          this.activeNodeIcon(node);
+          this.toggleSelectNodeInfoMsg(false);
+          this.hideNodeEditors();
+          const $editor = this.getEditorPanel(nodeType);
+          AGN.runAll($editor.find('form'));
+          $('#node-editor').scrollTop(0)
+          $editor.show();
 
-                    if (isActivatedWorkflow || self._notAllowedToChangeDuringPause(self.curEditingNode)) {
-                        disableDialogItems($(event.target));
-                    }
-                },
-                close: function() {
-                    if (self.curEditor.closeEditor) {
-                        self.curEditor.closeEditor();
-                    }
-                },
-                width: 650,
-                height: 'auto',
-                minHeight: 'auto',
-                modal: true,
-                resizable: false
-            });
+          if (nodeType === Def.NODE_TYPE_RECIPIENT) {
+              // Only one mailinglist allowed per campaign. That's why we disable editing for the second and others recipient icons.
+            $editor.parent().find('.recipient-editor-select').prop('disabled', node.isDependent() || node.isInRecipientsChain());
+          }
+          if (this.isReadOnlyMode() || this.curEditor.alwaysReadonly(node)) {
+              disableDialogItems($editor);
+          }
+          if (this.curEditor.saveOnOpen && !this.isReadOnlyMode() && !this.curEditor.alwaysReadonly(node)) {
+            this.curEditor.save();
+          }
         };
 
+        this.isReadOnlyMode = function () {
+          return Utils.checkActivation(!Node.isMailingNode(this.curEditingNode))
+            || this._notAllowedToChangeDuringPause(this.curEditingNode);
+        }
+
         this.showIconCommentDialog = function(node) {
-            var self = this;
+            const self = this;
 
             this.curEditingNode = node;
             this.curEditor = this.editors['icon-comment'];
@@ -113,30 +115,23 @@
         };
 
         this.saveIconComment = function(iconComment) {
-            var self = this;
+            const node = this.curEditingNode;
             options.getUndoManager().transaction(function() {
-                var node = self.curEditingNode;
                 options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node));
-
                 node.setComment(iconComment);
                 options.onChange(node);
             });
+            node.nodePopover?.update();
         };
 
-        this.saveCurrentEditorWithUndo = function(leaveOpen, mailingEditorBase) {
-            var self = this;
-
-            _.defer(function() {
+        this.saveCurrentEditorWithUndo = function(mailingEditorBase) {
+            _.defer(() => {
                 options.getUndoManager().startTransaction();
-
-                self.saveCurrentEditor(leaveOpen, mailingEditorBase, function() {
-                    options.getUndoManager().endTransaction();
-                });
+                this.saveCurrentEditor(mailingEditorBase, () => options.getUndoManager().endTransaction());
             });
-
         };
 
-        this.saveCurrentEditor = function(leaveOpen, mailingEditorBase, undoCallback) {
+        this.saveCurrentEditor = function(mailingEditorBase, undoCallback) {
             undoCallback = _.isFunction(undoCallback) ? undoCallback : _.noop;
 
             var self = this;
@@ -145,22 +140,18 @@
             options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node), self.curEditor);
             var editorData = self.curEditor.saveEditor();
 
-            // check to close editor dialog
-            if (!leaveOpen) {
-                self.cancelEditor();
-            }
-
             if (self.isNodeIsMailing(node)) {
                 var mailingId = editorData.mailingId;
                 if (mailingEditorBase) {
-                    mailingEditorBase.checkDifferentMailingLists(mailingId, function(mailingContent) {
-                        self.mailingSpecificSave(leaveOpen, mailingContent, editorData, mailingEditorBase);
+                    mailingEditorBase.checkDifferentMailingLists(mailingId,
+                      function(mailingContent) {
+                        self.mailingSpecificSave(mailingContent, editorData, mailingEditorBase);
 
                         undoCallback();
-                    }, function(mailingContent) {
+                    },
+                      function(mailingContent) {
                         self.curEditor.storedMailingContent = mailingContent;
                         self.curEditor.storedMailingId = mailingId;
-                        self.curEditor.storedLeaveOpen = leaveOpen;
                         self.curEditor.storedEditorData = editorData;
                         mailingEditorBase.initOneMailinglistWarningDialog(mailingEditorBase);
 
@@ -223,20 +214,18 @@
         /**
          * Save changes in mailing node of any type (normal, follow-up, action-based, date-based).
          *
-         * @param leaveOpen
          * @param mailingContent
          * @param editorData
          * @param mailingEditorBase
          */
-        this.mailingSpecificSave = function(leaveOpen, mailingContent, editorData, mailingEditorBase) {
-            var self = this;
-            var node = this.curEditingNode;
-            var data = node.getData();
+        this.mailingSpecificSave = function(mailingContent, editorData, mailingEditorBase) {
+            const node = this.curEditingNode;
+            const data = node.getData();
 
             $.extend(data, editorData);
 
-            if (node.isFilled() && _.isFunction(self.curEditor.isSetFilledAllowed)) {
-                if (!self.curEditor.isSetFilledAllowed()) {
+            if (node.isFilled() && _.isFunction(this.curEditor.isSetFilledAllowed)) {
+                if (!this.curEditor.isSetFilledAllowed()) {
                     node.setFilled(false);
                 }
             }
@@ -248,6 +237,8 @@
             if (options.onChange) {
                 options.onChange(node);
             }
+            node.nodePopover.update();
+            node.toggleInUseBadge();
         };
 
         /**
@@ -255,26 +246,37 @@
          */
         this.mailingSpecificSaveAfterMailinglistCheckModal = function(mailingEditorBase) {
             this.curEditor.storedMailingContent.mailinglistId = mailingEditorBase.configuredMailingData.mailinglistId;
-            this.mailingSpecificSave(this.curEditor.storedLeaveOpen, this.curEditor.storedMailingContent, this.curEditor.storedEditorData, mailingEditorBase);
-        };
-
-        this.cancelEditor = function() {
-            var nodeType = this.curEditingNode.getType();
-            var $panel = this.getEditorPanel(nodeType);
-
-            if ($panel.dialog('instance')) {
-                $panel.dialog('close');
-            }
+            this.mailingSpecificSave(this.curEditor.storedMailingContent, this.curEditor.storedEditorData, mailingEditorBase);
         };
 
         this.getEditorPanel = function(type) {
-            var editorType = (type == 'stop') ? 'start' : type;
-            return $('#' + editorType + '-editor');
+            const editorType = (type === 'stop') ? 'start' : type;
+            return $(`#${editorType}-editor`);
         };
 
         this.formToObject = function(formName) {
-            var formData = $('form[name="' + formName + '"]').serializeArray();
-            var result = {};
+          const $form = $(`form[name="${formName}"]`);
+          const groupedFormData = _.groupBy($form.serializeArray(), 'name');
+
+          const multiValueNames = new Set(
+            $form.find('select.dynamic-tags')
+              .map((_, el) => el.name)
+              .get()
+          );
+
+          /*
+             Explanation: Only fields associated with <select class="dynamic-tags"> are allowed
+             to have multiple values. This precaution prevents unexpected behavior caused by
+             other repeated input fields (e.g., checkboxes or hidden fields with the same name).
+             It ensures that only intentionally multi-valued fields are grouped into arrays.
+           */
+          const formData = Object.entries(groupedFormData)
+            .map(([name, items]) => ({
+              name,
+              value: multiValueNames.has(name) ? items.map(i => i.value) : items[items.length - 1].value
+            }));
+
+            let result = {};
 
             $.each(formData, function() {
                 if (this.name.indexOf('[') != -1) {
@@ -298,8 +300,15 @@
             });
 
             // Handle unselected checkboxes.
-            $('form[name="' + formName + '"] [type="checkbox"]').each(function() {
+            $(`form[name="${formName}"] [type="checkbox"]`).each(function() {
                 result[this.name] = $(this).prop('checked');
+            });
+
+            // Handle multi-selects without selected options
+            $(`form[name="${formName}"] select.dynamic-tags`).each(function() {
+                if (!result[this.name]) {
+                    result[this.name] = [];
+                }
             });
 
             return result;
@@ -322,27 +331,43 @@
         };
 
         this.fillFormFromObjectItem = function(formName, namePrefix, name, val) {
-            if (Object.prototype.toString.call(val) === '[object Array]') {
-                for (var i = 0; i < val.length; i++) {
-                    this.fillFormFromObject(formName, val[i], name + '[' + i + ']' + '.');
+            const $el = $(`form[name="${formName}"] [name="${namePrefix}${name}"]`);
+
+            if (Object.prototype.toString.call(val) === '[object Array]' && !$el.is('select.dynamic-tags')) {
+                for (let i = 0; i < val.length; i++) {
+                    this.fillFormFromObject(formName, val[i], `${name}[${i}].`);
                 }
             } else {
-                var $el = $('form[name="' + formName + '"] [name="' + namePrefix + name + '"]');
-                var type = $el.attr('type');
-                switch (type) {
+                switch ($el.attr('type')) {
                     case 'checkbox':
                         $el.prop('checked', Boolean(val));
                         break;
                     case 'radio':
-                        $el.filter('[value="' + val + '"]').prop('checked', true);
+                        $el.filter(`[value="${val}"]`).prop('checked', true);
                         break;
                     default:
-                        var tagName = $el.prop('tagName');
-                        switch (tagName) {
+                        switch ($el.prop('tagName')) {
                             //since we started using select2 we should perform such initialization
-                            case 'SELECT' :
-                                $el.val(val);
-                                this.initSelectWithValueOrChooseFirst($el, val);
+                            case 'SELECT':
+                                if ($el.hasClass('dynamic-tags')) {
+                                    if (val instanceof Array) {
+                                        const select = Select.get($el);
+
+                                        val.forEach(_val => {
+                                            select.addOptionIfMissing(_val);
+                                            select.selectOption(_val);
+                                        })
+                                    } else if (typeof val === 'string') {
+                                        const values = $.trim(val)
+                                          .split(/[,;\s\n\r]+/)
+                                          .filter(address => !!address);
+
+                                        this.fillFormFromObjectItem(formName, namePrefix, name, values);
+                                    }
+                                } else {
+                                    $el.val(val);
+                                    this.initSelectWithValueOrChooseFirst($el, val);
+                                }
                                 break;
                             default:
                                 $el.val(val);
@@ -358,7 +383,7 @@
             if (!!extraForwardParams) {
                 forwardParams.push(extraForwardParams);
             }
-            var options = {
+            const options = {
                 forwardName: forwardName,
                 forwardParams: forwardParams.join(';')
             }
@@ -445,27 +470,19 @@
     };
 
     function disableDialogItems($target) {
-        $target.find('.disable-for-active').each(function(index, element) {
-            $(element).attr('disabled', true);
+        $target.find('.disable-for-active').each((i, element) => $(element).attr('disabled', true));
+
+        $target.find('.hide-for-active').each((index, element) => $(element).hide());
+
+        $target.find(':input:enabled[type!="hidden"]').not(':button, .select2, select, .js-datepicker').each((i, element) => {
+            $(element).attr(['radio', 'checkbox'].includes($(element).prop('type')) ? 'disabled' : 'readonly', true);
         });
 
-        $target.find('.hide-for-active').each(function(index, element) {
-            $(element).hide();
-        });
-
-        $target.find(':input:enabled[type!="hidden"]').not(':button, .select2, .js-select, .js-datepicker').each(function(index, element) {
-            if ($(element).prop('type') == 'radio' || $(element).prop('type') == 'checkbox') {
+        $target.find(':input:enabled.select2, .select2 .btn, select').not('.disabled, :disabled').each(function(index, element) {
+            if ($(element).prop('type') === 'text' || $(element).is('input, select')) {
                 $(element).attr('disabled', true);
             } else {
-                $(element).attr('readonly', true);
-            }
-        });
-
-        $target.find(':input:enabled.select2, :input:enabled.js-select, .select2-container').not('.disabled, :disabled').each(function(index, element) {
-            if ($(element).prop('type') == 'text' || $(element).is('input, select')) {
-                $(element).attr('disabled', true);
-            } else {
-                $(element).select2('disable');
+                $(element).prop('disabled', true);
             }
         });
 

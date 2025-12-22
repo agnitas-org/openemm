@@ -102,12 +102,17 @@ public class N8nController {
 
     @GetMapping("/mailings/{mailingId:\\d+}/contents/names.action")
     public Map<Integer, String> getMailingContentNames(@PathVariable int mailingId, HttpServletRequest req) {
-        return mailingContentService.getMailingContentNames(mailingId, tryGetAdmin(req));
+        return mailingContentService.getMailingContentNames(mailingId, tryGetAdmin(req).getCompanyID());
     }
 
     @GetMapping("/content-targets/names.action")
     public Map<Integer, String> getTargetNamesForContent(HttpServletRequest req) {
         return mailingContentService.getNamesOfAvailableTargetsForContent(tryGetAdmin(req));
+    }
+
+    @GetMapping("/mailings/names.action")
+    public Map<Integer, String> getMailingNames(HttpServletRequest req) {
+        return mailingService.getMailingNames(tryGetAdmin(req));
     }
 
     @GetMapping("/templates.action")

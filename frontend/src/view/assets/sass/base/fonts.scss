@@ -1,43 +1,20 @@
-// /* Regular */
-// @font-face {
-//   font-family: 'TheSansPlain';
-//   src: url('fonts/TheSans_B2_500_.eot');
-//   src: url('fonts/TheSans_B2_500_.eot?#iefix') format('embedded-opentype'),
-//        url('fonts/TheSans_B2_500_.woff') format('woff'),
-//        url('fonts/TheSans_B2_500_.svg#TheSans_B2_500_')  format('svg');
-//   font-weight: $cpl-fw-regular;
-//   font-style: normal;
-// }
+@font-face {
+  font-family: 'Poppins';
+  src: url('#{$assets-path}fonts/poppins/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
 
-// /* Italic */
-// @font-face {
-//   font-family: 'TheSansPlain';
-//   src: url('fonts/TheSans_B2_500i.eot');
-//   src: url('fonts/TheSans_B2_500i.eot?#iefix') format('embedded-opentype'),
-//        url('fonts/TheSans_B2_500i.woff') format('woff'),
-//        url('fonts/TheSans_B2_500i.svg#TheSans_B2_500i')  format('svg');
-//   font-weight: $cpl-fw-regular;
-//   font-style: italic;
-// }
+@font-face {
+  font-family: 'Poppins';
+  src: url('#{$assets-path}fonts/poppins/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
 
-// /* Bold */
-// @font-face {
-//   font-family: 'TheSansPlain';
-//   src: url('fonts/TheSans_B2_700_.eot');
-//   src: url('fonts/TheSans_B2_700_.eot?#iefix') format('embedded-opentype'),
-//        url('fonts/TheSans_B2_700_.woff') format('woff'),
-//        url('fonts/TheSans_B2_700_.svg#TheSans_B2_700_')  format('svg');
-//   font-weight: $cpl-fw-bold;
-//   font-style: normal;
-// }
-
-// /* Bold Italic */
-// @font-face {
-//   font-family: 'TheSansPlain';
-//   src: url('fonts/TheSans_B2_700i.eot');
-//   src: url('fonts/TheSans_B2_700i.eot?#iefix') format('embedded-opentype'),
-//        url('fonts/TheSans_B2_700i.woff') format('woff'),
-//        url('fonts/TheSans_B2_700i.svg#TheSans_B2_700i')  format('svg');
-//   font-weight: $cpl-fw-bold;
-//   font-style: italic;
-// }
+@font-face {
+  font-family: 'Poppins';
+  src: url('#{$assets-path}fonts/poppins/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}

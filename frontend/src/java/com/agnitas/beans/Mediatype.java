@@ -10,10 +10,8 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.beans.MediaTypeStatus;
-import org.springframework.context.ApplicationContext;
-
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.springframework.context.ApplicationContext;
 
 public interface Mediatype {
 

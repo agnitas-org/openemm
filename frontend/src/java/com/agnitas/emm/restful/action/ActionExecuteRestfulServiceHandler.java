@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.Map.Entry;
 
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
-import org.agnitas.emm.core.velocity.Constants;
+import com.agnitas.emm.core.velocity.Constants;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;

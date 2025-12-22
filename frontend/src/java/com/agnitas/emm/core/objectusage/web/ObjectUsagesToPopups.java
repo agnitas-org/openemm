@@ -14,7 +14,7 @@ import java.util.Locale;
 
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.web.mvc.Popups;
 
 /**
@@ -72,7 +72,7 @@ public final class ObjectUsagesToPopups {
 		
 		int count = 0;
 		
-		for(final ObjectUserType userType : ObjectUserType.values()) {
+		for(final ObjectUsageType userType : ObjectUsageType.values()) {
 			for(final ObjectUsage usage : usages.getUsagesByUserType(userType)) {
 				count++;
 				

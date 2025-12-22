@@ -8,12 +8,13 @@
 
 */
 
-
 package com.agnitas.beans;
 
 import java.sql.Timestamp;
+import java.util.Locale;
 
 public interface AdminEntry {
+
 	int getCompanyID();
 	
 	void setCompanyID(int companyID);
@@ -51,5 +52,7 @@ public interface AdminEntry {
 	void setCompanyName(String companyName);
 
 	String getCompanyName();
+
+	Locale getLocale();
 	
 }

@@ -10,29 +10,37 @@
 
 package com.agnitas.emm.core.globalblacklist.web;
 
+import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistDeleteForm;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistForm;
 import com.agnitas.emm.core.globalblacklist.forms.BlacklistOverviewFilter;
-import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistDeleteFormValidator;
 import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistFormValidator;
 import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.exception.RequestErrorException;
+import com.agnitas.exception.BadRequestException;
+import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.NotAllowedActionException;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.annotations.RequiredPermission;
 import jakarta.servlet.http.HttpSession;
-import com.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import com.agnitas.service.UserActivityLogService;
-import com.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,27 +61,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
-import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
-import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
-
 @Controller
 @RequestMapping("/recipients/blacklist")
-@PermissionMapping("blacklist")
+@RequiredPermission("blacklist")
 public class BlacklistController implements XssCheckAware {
 
     private static final String BLACKLIST_LIST_FORM_KEY = "blacklistListForm";
@@ -89,7 +82,6 @@ public class BlacklistController implements XssCheckAware {
     private final TableGenerator csvTableGenerator;
     private final WebStorage webStorage;
 
-    private final BlacklistDeleteFormValidator deleteFormValidator = new BlacklistDeleteFormValidator();
     private final BlacklistFormValidator blacklistFormValidator = new BlacklistFormValidator();
 
     public BlacklistController(@Qualifier("BlacklistService") BlacklistService blacklistService, UserActivityLogService userActivityLogService,
@@ -146,7 +138,7 @@ public class BlacklistController implements XssCheckAware {
         }
 
         blacklistService.add(companyId, adminId, email, saveForm.getReason());
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         // UAL
         String activityLogAction = "create blacklist entry";
@@ -157,7 +149,7 @@ public class BlacklistController implements XssCheckAware {
     }
 
     @PostMapping("/update.action")
-    public @ResponseBody BooleanResponseDto update(Admin admin, BlacklistForm saveForm, Popups popups) throws NotAllowedActionException {
+    public @ResponseBody BooleanResponseDto update(Admin admin, BlacklistForm saveForm, Popups popups) {
         if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
             throw new NotAllowedActionException();
         }
@@ -172,11 +164,11 @@ public class BlacklistController implements XssCheckAware {
         final boolean isSuccessUpdate = blacklistService.update(companyId, email, saveForm.getReason());
         if (!isSuccessUpdate) {
             logger.error("Could not update blacklisted recipient with email: {} for company with id: {}", email, companyId);
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return new BooleanResponseDto(popups, false);
         }
 
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         // UAL
         final String activityLogDescription = "Updated blacklist entry: " + email;
@@ -186,50 +178,9 @@ public class BlacklistController implements XssCheckAware {
 
     }
 
-    @PermissionMapping("confirm.delete")
-    @GetMapping("/confirmDelete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String confirmDelete(Admin admin, @RequestParam(value = "email") String email, Model model, @ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm blacklistDeleteForm) {
-        int companyId = admin.getCompanyID();
-
-        List<Mailinglist> mailingLists = blacklistService.getBindedMailingLists(companyId, email);
-        model.addAttribute(MAILING_LISTS_KEY, mailingLists);
-
-        List<Integer> mailingListIds = mailingLists.stream().map(Mailinglist::getId).collect(Collectors.toList());
-        blacklistDeleteForm.setMailingListIds(mailingListIds);
-        blacklistDeleteForm.setEmails(Set.of(email));
-
-        return "settings_blacklist_delete_ajax";
-    }
-
-    @PostMapping("/delete.action")
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    public String delete(Admin admin, BlacklistDeleteForm deleteForm, Popups popups) throws NotAllowedActionException {
-        if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
-            throw new NotAllowedActionException();
-        }
-
-        if (deleteFormValidator.validate(deleteForm, popups)) {
-            int companyID = admin.getCompanyID();
-            String email = deleteForm.getEmail();
-            if (blacklistService.delete(companyID, email, deleteForm.getMailingListIdSet())) {
-                popups.success(SELECTION_DELETED_MSG);
-
-                // UAL
-                String activityLogAction = "delete from blacklist";
-                String activityLogDescription = "Deleted blacklist entry: " + email;
-                userActivityLogService.writeUserActivityLog(admin, activityLogAction, activityLogDescription);
-            } else {
-                popups.alert(ERROR_MSG);
-            }
-        }
-        return MESSAGES_VIEW;
-    }
-
-    @GetMapping("/deleteRedesigned.action")
-    @PermissionMapping("confirm.delete")
-    public String confirmDeleteRedesigned(@ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm form,
-                                          Admin admin, Model model) {
+    @GetMapping("/delete.action")
+    public String delete(@ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm form,
+                                Admin admin, Model model) {
         validateSelectedEntries(form.getEmails());
 
         int companyId = admin.getCompanyID();
@@ -242,24 +193,23 @@ public class BlacklistController implements XssCheckAware {
         return "settings_blacklist_delete_ajax";
     }
 
-    @PostMapping("/deleteRedesigned.action")
-    @PermissionMapping("delete")
-    public String deleteRedesigned(BlacklistDeleteForm deleteForm, Admin admin, Popups popups) throws NotAllowedActionException {
+    @PostMapping("/delete.action")
+    public String delete(BlacklistDeleteForm deleteForm, Admin admin, Popups popups) {
         if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
             throw new NotAllowedActionException();
         }
 
         validateSelectedEntries(deleteForm.getEmails());
 
-        if (blacklistService.delete(deleteForm.getEmails(), deleteForm.getMailingListIdSet(), admin.getCompanyID())) {
-            popups.success(SELECTION_DELETED_MSG);
+        if (blacklistService.delete(deleteForm.getEmails(), Set.copyOf(deleteForm.getMailingListIds()), admin.getCompanyID())) {
+            popups.selectionDeleted();
             userActivityLogService.writeUserActivityLog(
                     admin,
                     "delete from blacklist",
                     String.format("Deleted blacklist entries: (%s)", StringUtils.join(deleteForm.getEmails(), ","))
             );
         } else {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
         }
 
         return "redirect:/recipients/blacklist/list.action";
@@ -267,7 +217,7 @@ public class BlacklistController implements XssCheckAware {
 
     private void validateSelectedEntries(Set<?> items) {
         if (CollectionUtils.isEmpty(items)) {
-            throw new RequestErrorException(NOTHING_SELECTED_MSG);
+            throw new BadRequestException(NOTHING_SELECTED_MSG);
         }
     }
 
@@ -296,4 +246,5 @@ public class BlacklistController implements XssCheckAware {
                 .contentType(MediaType.parseMediaType(mediaType))
                 .body(resource);
     }
+
 }

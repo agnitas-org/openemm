@@ -17,35 +17,22 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.Permission;
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.beans.impl.PaginatedListImpl;
 
 public interface UserGroupService {
 
-    PaginatedListImpl<UserGroupDto> overview(UserGroupOverviewFilter filter);
-    // TODO: EMMGUI-714: remove when old design will be removed
-    PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(Admin admin, String sort, String sortDirection, int page, int rownumber);
-    
+    PaginatedList<UserGroupDto> overview(UserGroupOverviewFilter filter);
+
     UserGroupDto getUserGroup(Admin admin, int userGroupId);
     
     int saveUserGroup(Admin admin, UserGroupDto userGroupDto);
     
     boolean isShortnameUnique(String shortname, int userGroupId, int companyId);
-    
-    boolean isUserGroupPermissionChangeable(Admin admin, Permission permission, Set<Permission> companyPermissions);
-    
-    List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, Admin admin);
-    
-    List<String> getAdminNamesOfGroup(int userGroupId, int companyId);
-    
-    List<String> getGroupNamesUsingGroup(int userGroupId, int companyId);
-    
-    boolean deleteUserGroup(int userGroupId, Admin admin);
     
     Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(Admin admin, int groupId, int groupCompanyId);
 
@@ -62,4 +49,5 @@ public interface UserGroupService {
     void restore(Set<Integer> ids, int companyId);
 
     void removeMarkedAsDeletedBefore(Date date, int companyId);
+
 }

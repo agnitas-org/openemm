@@ -15,7 +15,7 @@ import java.util.Objects;
 
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 
-public final class WebhookBackendData {
+public class WebhookBackendData {
 
 	private final long id;
 	private final ZonedDateTime timestamp;
@@ -25,7 +25,7 @@ public final class WebhookBackendData {
 	private final int mailingID;
 	private final int recipientID;
 
-	public WebhookBackendData(final long id, final ZonedDateTime timestamp, final ZonedDateTime eventTimestamp, final WebhookEventType eventType, final int companyID, final int mailingID, final int recipientID) {
+	public WebhookBackendData(long id, ZonedDateTime timestamp, ZonedDateTime eventTimestamp, WebhookEventType eventType, int companyID, int mailingID, int recipientID) {
 		this.id = id;
 		this.timestamp = Objects.requireNonNull(timestamp, "Record timetamp is null");
 		this.eventTimestamp = Objects.requireNonNull(eventTimestamp, "Event timestamp is null");
@@ -35,31 +35,31 @@ public final class WebhookBackendData {
 		this.recipientID = recipientID;
 	}
 
-	public final long getId() {
+	public long getId() {
 		return id;
 	}
 
-	public final ZonedDateTime getTimestamp() {
+	public ZonedDateTime getTimestamp() {
 		return timestamp;
 	}
 
-	public final ZonedDateTime getEventTimestamp() {
+	public ZonedDateTime getEventTimestamp() {
 		return eventTimestamp;
 	}
 
-	public final WebhookEventType getEventType() {
+	public WebhookEventType getEventType() {
 		return eventType;
 	}
 
-	public final int getCompanyID() {
+	public int getCompanyID() {
 		return companyID;
 	}
 
-	public final int getMailingID() {
+	public int getMailingID() {
 		return mailingID;
 	}
 
-	public final int getRecipientID() {
+	public int getRecipientID() {
 		return recipientID;
 	}
 

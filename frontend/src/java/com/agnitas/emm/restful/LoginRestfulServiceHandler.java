@@ -13,8 +13,8 @@ package com.agnitas.emm.restful;
 import java.io.File;
 import java.util.Date;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;

@@ -13,12 +13,13 @@ package com.agnitas.emm.core.objectusage.service.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ExportPredef;
 import com.agnitas.beans.Mailinglist;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.emm.core.objectusage.common.ObjectUserType;
+import com.agnitas.emm.core.objectusage.common.ObjectUsageType;
 import com.agnitas.emm.core.workflow.beans.Workflow;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 
 /**
  * Utility methods used by {@link ObjectUsageServiceImpl} and {@link ObjectUsageServiceImplExtended}.
@@ -38,7 +39,7 @@ final class ObjectUsageServiceHelper {
 	 */
 	public static List<ObjectUsage> targetGroupsToObjectUsage(final List<TargetLight> targetGroups) {
 		return targetGroups.stream()
-				.map(targetGroup -> new ObjectUsage(ObjectUserType.TARGET_GROUP, targetGroup.getId(), targetGroup.getTargetName()))
+				.map(targetGroup -> new ObjectUsage(ObjectUsageType.TARGET_GROUP, targetGroup.getId(), targetGroup.getTargetName()))
 				.collect(Collectors.toList());
 	}
 
@@ -51,19 +52,25 @@ final class ObjectUsageServiceHelper {
 	 */
 	public static List<ObjectUsage> mailingsToObjectUsage(final List<LightweightMailing> mailings) {
 		return mailings.stream()
-				.map(mailing -> new ObjectUsage(ObjectUserType.MAILING, mailing.getMailingID(), mailing.getShortname()))
+				.map(mailing -> new ObjectUsage(ObjectUsageType.MAILING, mailing.getMailingID(), mailing.getShortname()))
 				.collect(Collectors.toList());
 	}
 
 	public static List<ObjectUsage> mailingsDtoToObjectUsage(final List<LightweightMailing> mailings) {
 		return mailings.stream()
-				.map(mailing -> new ObjectUsage(ObjectUserType.MAILING, mailing.getMailingID(),mailing.getShortname()))
+				.map(mailing -> new ObjectUsage(ObjectUsageType.MAILING, mailing.getMailingID(),mailing.getShortname()))
 				.collect(Collectors.toList());
 	}
 
 	public static List<ObjectUsage> mailinglistsToObjectUsage(final List<Mailinglist> mailinglists) {
 		return mailinglists.stream()
-				.map(ml -> new ObjectUsage(ObjectUserType.MAILINGLIST, ml.getId(), ml.getShortname()))
+				.map(ml -> new ObjectUsage(ObjectUsageType.MAILINGLIST, ml.getId(), ml.getShortname()))
+				.collect(Collectors.toList());
+	}
+
+	public static List<ObjectUsage> exportProfilesToObjectUsage(List<ExportPredef> exportProfiles) {
+		return exportProfiles.stream()
+				.map(ml -> new ObjectUsage(ObjectUsageType.EXPORT_PROFILE, ml.getId(), ml.getShortname()))
 				.collect(Collectors.toList());
 	}
 
@@ -76,7 +83,7 @@ final class ObjectUsageServiceHelper {
    	 */
    	public static List<ObjectUsage> workflowToObjectUsage(List<Workflow> workflows) {
    		return workflows.stream()
-   				.map(workflow -> new ObjectUsage(ObjectUserType.WORKFLOW, workflow.getWorkflowId(), workflow.getShortname()))
+   				.map(workflow -> new ObjectUsage(ObjectUsageType.WORKFLOW, workflow.getWorkflowId(), workflow.getShortname()))
    				.collect(Collectors.toList());
    	}
 }

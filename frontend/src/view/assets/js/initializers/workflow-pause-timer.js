@@ -28,22 +28,23 @@ AGN.Lib.DomInitializer.new('workflow-pause-timer', function() {
       return '<i class="icon icon-refresh icon-spin"></i> ' + t('workflow.activating.auto');
     }
     const time = new Date(timeLeftMs);
-    return (time.getHours() > 0 ? d3.format('01')(time.getUTCHours()) + ':' : '')
-      + (time.getMinutes() > 0 ? d3.format('02')(time.getUTCMinutes()) + ':' : '00:')
-      + (time.getSeconds() > 0 ? d3.format('02')(time.getUTCSeconds()) : '00');
+    return formatTimeComponent(time.getUTCHours()) + ':'
+      + formatTimeComponent(time.getUTCMinutes()) + ':'
+      + formatTimeComponent(time.getUTCSeconds());
+  }
+
+  function formatTimeComponent(component) {
+    return component > 0 ? (component < 10 ? '0' + component : component) : '00';
   }
 
   function autoUnpause() {
-    return $.post(AGN.url('/workflow/' + WORKFLOW_ID + '/autoUnpause.action'))
-      .done(function(resp) {
+    return $.post(AGN.url(`/workflow/${WORKFLOW_ID}/autoUnpause.action`))
+      .done(resp => {
         if (resp.success === true) {
-          AGN.Lib.Page.reload(AGN.url('/workflow/' + WORKFLOW_ID + '/view.action'));
+          AGN.Lib.Page.reload(AGN.url(`/workflow/${WORKFLOW_ID}/view.action`));
         } else {
           AGN.Lib.JsonMessages(resp.popups);
         }
-      })
-      .fail(function() {
-        AGN.Lib.Messages(t("Error"), t("defaults.error"), "alert");
       });
   }
   return false;

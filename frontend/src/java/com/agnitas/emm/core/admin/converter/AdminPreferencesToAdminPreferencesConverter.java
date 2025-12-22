@@ -27,6 +27,7 @@ public final class AdminPreferencesToAdminPreferencesConverter implements Conver
         adminPreferences.setMailingSettingsView(preferences.getMailingSettingsView());
         adminPreferences.setLivePreviewPosition(preferences.getLivePreviewPosition());
         adminPreferences.setStatisticLoadType(preferences.getStatisticLoadType());
+        adminPreferences.setMailingSettingsViewType(preferences.getMailingSettingsViewType());
         return adminPreferences;
     }
 }

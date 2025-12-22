@@ -23,18 +23,17 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -55,11 +54,6 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 								 ConfigService configService) {
 		super(dataSource, javaMailService);
 		this.configService = configService;
-	}
-
-	@Override
-	public List<String> getFieldNames(int companyId) {
-		return select("SELECT col_name FROM customer_field_tbl WHERE company_id = ?", StringRowMapper.INSTANCE, companyId);
 	}
 
 	@Override
@@ -147,18 +141,14 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			}
 			readRecipientFieldDescription.setDescription(resultSet.getString("description"));
 			
-			try {
-				ProfileFieldMode defaultPermission = ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit"));
+			ProfileFieldMode defaultPermission = ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit"));
 
-				// Some fields are read only
-				if (defaultPermission != ProfileFieldMode.NotVisible && RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(columnName)) {
-					defaultPermission = ProfileFieldMode.ReadOnly;
-				}
-
-				readRecipientFieldDescription.getPermissions().put(0, defaultPermission);
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage(), e);
+			// Some fields are read only
+			if (defaultPermission != ProfileFieldMode.NotVisible && RecipientStandardField.getReadOnlyRecipientStandardFieldColumnNames().contains(columnName)) {
+				defaultPermission = ProfileFieldMode.ReadOnly;
 			}
+
+			readRecipientFieldDescription.getPermissions().put(0, defaultPermission);
 
 			readRecipientFieldDescription.setHistorized(resultSet.getBoolean("historize"));
 
@@ -218,12 +208,7 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			RecipientFieldDescription readRecipientFieldDescription = recipientFieldsMap.get(columnName);
 
 			int adminID = ((Number) resultSet.getObject("admin_id")).intValue();
-			ProfileFieldMode profileFieldMode;
-			try {
-				profileFieldMode = ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit"));
-			} catch (Exception e) {
-				throw new SQLException("Invalid profilemode value for adminid " + adminID + " for column '" + columnName + "'", e);
-			}
+			ProfileFieldMode profileFieldMode = ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit"));
 
 			readRecipientFieldDescription.getPermissions().put(adminID, profileFieldMode);
 			
@@ -261,7 +246,7 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 				!recipientFieldDescription.isNullable());
 			
 			if (!success) {
-				throw new Exception("Creation of new database profilefield failed");
+				throw new IllegalStateException("Creation of new database profilefield failed");
 			}
 
 			// Create description data entry
@@ -287,9 +272,9 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 		} else {
 			// Update column in database table
 			if (dbColumnType.getSimpleDataType() != recipientFieldDescription.getSimpleDataType()) {
-				throw new Exception("Modification of recipient field type is not supported");
+				throw new IllegalArgumentException("Modification of recipient field type is not supported");
 			} else if (dbColumnType.getSimpleDataType() == SimpleDataType.Characters && dbColumnType.getCharacterLength() > recipientFieldDescription.getCharacterLength()) {
-				throw new Exception("Decrease of recipient field type length is not supported");
+				throw new IllegalArgumentException("Decrease of recipient field type length is not supported");
 			}
 			
 			String defaultValue = DbUtilities.getColumnDefaultValue(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName());

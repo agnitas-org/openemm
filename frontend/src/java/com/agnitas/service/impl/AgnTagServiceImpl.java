@@ -19,14 +19,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.agnitas.backend.AgnTag;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AgnTagAttributeDto;
+import com.agnitas.beans.AgnTagDto;
+import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.TagDetails;
 import com.agnitas.beans.factory.DynamicTagFactory;
+import com.agnitas.beans.factory.TagDetailsFactory;
 import com.agnitas.dao.TagDao;
+import com.agnitas.service.AgnDynTagGroupResolver;
+import com.agnitas.service.AgnTagAttributeResolverRegistry;
+import com.agnitas.service.AgnTagResolver;
+import com.agnitas.service.AgnTagResolverFactory;
+import com.agnitas.service.AgnTagService;
 import com.agnitas.util.AgnTagUtils;
 import com.agnitas.util.DynTagException;
 import com.agnitas.util.MissingEndTagException;
@@ -34,18 +46,9 @@ import com.agnitas.util.UnclosedTagException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.agnitas.beans.AgnTagAttributeDto;
-import com.agnitas.beans.AgnTagDto;
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.factory.TagDetailsFactory;
-import com.agnitas.service.AgnDynTagGroupResolver;
-import com.agnitas.service.AgnTagAttributeResolverRegistry;
-import com.agnitas.service.AgnTagResolver;
-import com.agnitas.service.AgnTagResolverFactory;
-import com.agnitas.service.AgnTagService;
 
 public class AgnTagServiceImpl implements AgnTagService {
+
     private static final Logger logger = LogManager.getLogger(AgnTagServiceImpl.class);
 
     private static final Pattern dynTagInQuotesPattern = Pattern.compile("\\[(?<type>agnDYN|agnDVALUE|gridPH)\\s+name='(?<name>.*)'\\s+/]");
@@ -85,12 +88,38 @@ public class AgnTagServiceImpl implements AgnTagService {
             return getDynTags(content, resolver)
                     .stream()
                     .map(DynamicTag::getDynName)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (DynTagException e) {
             logger.error("Error occurred while get of dyn tags!", e);
         }
 
         return new ArrayList<>();
+    }
+
+    @Override
+    public List<TagDetails> collectTags(String content, AgnTag... tags) {
+        return collectTags(content, List.of(tags));
+    }
+
+    @Override
+    public List<TagDetails> collectTags(String content, List<AgnTag> tags) {
+        if (tags.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> tagNames = tags.stream().map(AgnTag::getName).toList();
+        return collectTags(content, tag -> tagNames.contains(tag.getTagName()));
+    }
+
+    @Override
+    public Map<String, TagDetails> collectAgnTags(String content) {
+        return collectTags(content, tag -> true)
+                .stream()
+                .collect(Collectors.toMap(
+                        TagDetails::getFullText,
+                        Function.identity(),
+                        (a, b) -> b)
+                );
     }
 
     @Override
@@ -107,10 +136,8 @@ public class AgnTagServiceImpl implements AgnTagService {
             while ((tag = nextTag(content, position, "agn*")) != null) {
                 int end = tag.getEndPos();
 
-                if (!isDynamicTagName(tag.getTagName())) {
-                    if (tag.getTagParameters() != null && predicate.test(tag)) {
-                        tags.add(tag);
-                    }
+                if (predicate.test(tag)) {
+                    tags.add(tag);
                 }
 
                 position = end + 1;
@@ -154,9 +181,7 @@ public class AgnTagServiceImpl implements AgnTagService {
                     position = end + 1;
                 } else {
                     output.replace(begin, end, value);
-                    if (logger.isInfoEnabled()) {
-                        logger.info("resolveTags: " + name + " value '" + value + "'");
-                    }
+                    logger.info("resolveTags: {} value '{}'", name, value);
 
                     if (recursive) {
                         position = begin;
@@ -254,9 +279,7 @@ public class AgnTagServiceImpl implements AgnTagService {
         }
 
         switch (name) {
-            case "agnDYN":
-            case "agnDVALUE":
-            case "gridPH":
+            case "agnDYN", "agnDVALUE", "gridPH":
                 return true;
             default:
                 return false;

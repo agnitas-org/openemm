@@ -3,11 +3,12 @@ package com.agnitas.reporting.birt.external.dataset;
 
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.CompanyInfoDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.CompanyInfoDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
 
 import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.CompanyDao;
+import com.agnitas.web.perm.LicenseSignatureVerifier;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.impl.AdminDaoImpl;
@@ -35,11 +36,8 @@ public class BIRTDataSetHelper {
         javaMailservice = new JavaMailServiceImpl();
         ((JavaMailServiceImpl) javaMailservice).setConfigService(newConfigService);
 
-        ConfigTableDao configTableDao = new ConfigTableDaoImpl();
-        ((ConfigTableDaoImpl) configTableDao).setDataSource(dataSource);
-        ((ConfigTableDaoImpl) configTableDao).setJavaMailService(javaMailservice);
-        newConfigService.setConfigTableDao(configTableDao);
-        
+        newConfigService.setConfigTableDao(new ConfigTableDaoImpl(dataSource, javaMailservice, newConfigService));
+
         CompanyInfoDao companyInfoDao = new CompanyInfoDao();
         companyInfoDao.setDataSource(dataSource);
         companyInfoDao.setJavaMailService(javaMailservice);
@@ -54,6 +52,8 @@ public class BIRTDataSetHelper {
         ((LicenseDaoImpl) licenseDao).setDataSource(dataSource);
         ((LicenseDaoImpl) licenseDao).setJavaMailService(javaMailservice);
         newConfigService.setLicenseDao(licenseDao);
+
+        newConfigService.setLicenseSignatureVerifier(new LicenseSignatureVerifier(licenseDao));
         
         AdminDao adminDao = new AdminDaoImpl();
         ((AdminDaoImpl) adminDao).setDataSource(dataSource);

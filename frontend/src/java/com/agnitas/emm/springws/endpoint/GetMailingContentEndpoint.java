@@ -13,8 +13,10 @@ package com.agnitas.emm.springws.endpoint;
 import java.util.Objects;
 
 import com.agnitas.beans.MailingComponent;
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.springws.jaxb.extended.GetMailingContentRequest;
+import com.agnitas.emm.springws.jaxb.extended.GetMailingContentResponse;
+import com.agnitas.emm.springws.jaxb.extended.MailingContent;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,21 +26,18 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.springws.jaxb.extended.GetMailingContentRequest;
-import com.agnitas.emm.springws.jaxb.extended.GetMailingContentResponse;
-import com.agnitas.emm.springws.jaxb.extended.MailingContent;
-
 @Endpoint
 public class GetMailingContentEndpoint extends BaseEndpoint {
 	
-	/** The logger. */
 	private static final Logger classLogger = LogManager.getLogger(GetMailingContentEndpoint.class);
 
-	private MailingService mailingService;
-	private SecurityContextAccess securityContextAccess;
+	private final MailingService mailingService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public GetMailingContentEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+	public GetMailingContentEndpoint(
+			@Qualifier("MailingService") MailingService mailingService,
+			SecurityContextAccess securityContextAccess
+	) {
 		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}

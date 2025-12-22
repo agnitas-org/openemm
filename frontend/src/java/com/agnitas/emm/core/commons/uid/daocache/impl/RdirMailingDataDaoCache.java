@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.commons.uid.daocache.impl;
 
-import org.agnitas.emm.core.commons.daocache.AbstractDaoCache;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.TimeoutLRUMap;
 import com.agnitas.beans.RdirMailingData;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.core.commons.daocache.AbstractDaoCache;
+import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 
 public class RdirMailingDataDaoCache extends AbstractDaoCache<RdirMailingData> {
 

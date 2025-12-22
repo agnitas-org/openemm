@@ -1,0 +1,8 @@
+<HelpBalloon>
+    <title><![CDATA[Page interm&eacute;diaire du bot]]></title>
+    <content><![CDATA[Cette notification vous informe si la page interm&eacute;diaire de protection EMM Bot contre les clics automatis&eacute;s sur les liens est activ&eacute;e ou non.
+Afin d'&eacute;viter les clics multiples effectu&eacute;s par des bots automatis&eacute;s dans les mailings, EMM propose une page interm&eacute;diaire int&eacute;gr&eacute;e.
+Si un clic sur un lien est identifi&eacute; comme provenant potentiellement d’un bot, EMM redirige automatiquement vers cette page interm&eacute;diaire. Pour acc&eacute;der &agrave; la destination r&eacute;elle du lien, un second clic est alors n&eacute;cessaire sur cette page.
+Un destinataire l&eacute;gitime, en revanche, est directement redirig&eacute; vers la destination du lien sans passer par cette &eacute;tape.
+Ce m&eacute;canisme vise &agrave; emp&ecirc;cher les bots de d&eacute;clencher des clics et actions sur les liens, ce qui pourrait fausser les statistiques dans EMM.]]></content>
+</HelpBalloon>

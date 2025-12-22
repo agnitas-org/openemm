@@ -10,24 +10,24 @@
 
 package com.agnitas.emm.core.webhooks.registry.dao;
 
+import java.util.List;
+import java.util.Objects;
+
+import com.agnitas.dao.impl.BaseDaoImpl;
 import com.agnitas.emm.core.webhooks.common.WebhookEventType;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookAlreadyRegisteredException;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookNotRegisteredException;
 import com.agnitas.emm.core.webhooks.registry.common.WebhookRegistryEntry;
-import com.agnitas.dao.impl.BaseDaoImpl;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Implementation of {@link WebhookRegistrationDao} interface.
  */
-public final class WebhookRegistrationDaoImpl extends BaseDaoImpl implements WebhookRegistrationDao {
+public class WebhookRegistrationDaoImpl extends BaseDaoImpl implements WebhookRegistrationDao {
 
 	@Transactional
 	@Override
-	public final void registerWebhookUrl(final int companyId, final WebhookEventType eventType, final String url) throws WebhookAlreadyRegisteredException {
+	public void registerWebhookUrl(int companyId, WebhookEventType eventType, String url) throws WebhookAlreadyRegisteredException {
 		Objects.requireNonNull(eventType, "WebhookEventType is null");
 		Objects.requireNonNull(url, "Webhook URL is null");
 		
@@ -36,7 +36,7 @@ public final class WebhookRegistrationDaoImpl extends BaseDaoImpl implements Web
 			findWebhookEntry(companyId, eventType);
 			
 			throw new WebhookAlreadyRegisteredException(companyId, eventType);
-		} catch(final WebhookNotRegisteredException e) {
+		} catch (WebhookNotRegisteredException e) {
 			final String sql = "INSERT INTO webhook_url_tbl (company_ref, event_type, webhook_url) VALUES (?,?,?)";
 			
 			this.update(sql, companyId, eventType.getEventCode(), url);
@@ -44,7 +44,7 @@ public final class WebhookRegistrationDaoImpl extends BaseDaoImpl implements Web
 	}
 
 	@Override
-	public final void unregisterWebhookUrl(final int companyId, final WebhookEventType eventType) throws WebhookNotRegisteredException {
+	public void unregisterWebhookUrl(int companyId, WebhookEventType eventType) throws WebhookNotRegisteredException {
 		Objects.requireNonNull(eventType, "WebhookEventType is null");
 		
 		// Check that entry exists
@@ -56,36 +56,35 @@ public final class WebhookRegistrationDaoImpl extends BaseDaoImpl implements Web
 	}
 	
 	@Override
-	public final boolean deleteWebhookUrlByCompany(final int companyId)  {
+	public boolean deleteWebhookUrlByCompany(int companyId)  {
 		int touchedLines = update("DELETE FROM webhook_url_tbl WHERE company_ref=?", companyId);
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		int remaining = selectInt("SELECT COUNT(*) FROM webhook_url_tbl WHERE company_ref = ?", companyId);
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_url_tbl WHERE company_ref = ?", companyId);
+		return remaining == 0;
 	}
 
 	@Override
-	public final List<WebhookRegistryEntry> listAllRegisteredWebhookUrls(final WebhookEventType eventType) {
+	public List<WebhookRegistryEntry> listAllRegisteredWebhookUrls(WebhookEventType eventType) {
 		final String sql = "SELECT * FROM webhook_url_tbl WHERE event_type=?";
-		
 		return select(sql, WebhookRegistrationEntryRowMapper.INSTANCE, eventType.getEventCode());
 	}
 
 	@Override
-	public final WebhookRegistryEntry findWebhookEntry(final int companyId, final WebhookEventType eventType) throws WebhookNotRegisteredException {
+	public WebhookRegistryEntry findWebhookEntry(int companyId, WebhookEventType eventType) throws WebhookNotRegisteredException {
 		Objects.requireNonNull(eventType, "WebhookEventType is null");
 
 		final String sql = "SELECT * FROM webhook_url_tbl WHERE company_ref=? AND event_type=?";
-		
-		final List<WebhookRegistryEntry> result = select(sql, WebhookRegistrationEntryRowMapper.INSTANCE, companyId, eventType.getEventCode());
-		
-		if(result.isEmpty()) {
+
+		WebhookRegistryEntry entry = selectObjectDefaultNull(sql, WebhookRegistrationEntryRowMapper.INSTANCE, companyId, eventType.getEventCode());
+
+		if (entry == null) {
 			throw new WebhookNotRegisteredException(companyId, eventType);
 		} 
 		
-		return result.get(0);
+		return entry;
 	}
 
 }

@@ -16,7 +16,6 @@ public class AdminRightsForm {
 
     private String username;
     private int adminID = 0;
-    private Set<String> userRights;
     private Set<String> grantedPermissions;
 
     public String getUsername() {
@@ -33,14 +32,6 @@ public class AdminRightsForm {
 
     public void setAdminID(int adminID) {
         this.adminID = adminID;
-    }
-
-    public Set<String> getUserRights() {
-        return userRights;
-    }
-
-    public void setUserRights(Set<String> userRights) {
-        this.userRights = userRights;
     }
 
     public Set<String> getGrantedPermissions() {

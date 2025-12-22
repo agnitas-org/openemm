@@ -16,15 +16,16 @@ import java.nio.charset.Charset;
 import org.apache.commons.lang3.StringUtils;
 
 public class SqlScriptReader extends BasicReader {
-	public SqlScriptReader(InputStream inputStream) throws Exception {
+
+	public SqlScriptReader(InputStream inputStream) {
 		super(inputStream, (String) null);
 	}
 	
-	public SqlScriptReader(InputStream inputStream, String encoding) throws Exception {
+	public SqlScriptReader(InputStream inputStream, String encoding) {
 		super(inputStream, encoding);
 	}
 	
-	public SqlScriptReader(InputStream inputStream, Charset encodingCharset) throws Exception {
+	public SqlScriptReader(InputStream inputStream, Charset encodingCharset) {
 		super(inputStream, encodingCharset);
 	}
 	

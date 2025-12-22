@@ -1,33 +1,33 @@
-(function() {
-  var Confirm = AGN.Lib.Confirm,
-      Page  = {};
+(() => {
 
-  function getValidMethod(method) {
-    if (method) {
-      method = method.toUpperCase();
+  const Confirm = AGN.Lib.Confirm;
 
-      switch (method) {
-        case 'CONNECT':
-        case 'DELETE':
-        case 'GET':
-        case 'HEAD':
-        case 'OPTIONS':
-        case 'POST':
-        case 'PUT':
-          return method;
+  class Page {
+
+    static render(resp, address) {
+      if (/<\s*\/\s*body\s*>/i.test(resp)) {
+        Page.#renderBody(resp, address);
+        return;
+      }
+
+      const $resp = $(resp);
+      AGN.Lib.RenderMessages($resp);
+
+      if ($resp.filter('.modal').exists()) {
+        const deferred = $.Deferred();
+
+        Confirm.create($resp);
+        deferred.resolve(Confirm.get($resp));
+
+        return deferred.promise();
       }
     }
 
-    return 'GET';
-  }
-
-  Page.render = function(resp, address) {
-    if (/<\s*\/\s*body\s*>/i.test(resp)) {
-      var parser = new DOMParser();
-      var doc = parser.parseFromString(resp, 'text/html');
+    static #renderBody(resp, address) {
+      const doc = new DOMParser().parseFromString(resp, 'text/html');
 
       if (address !== false && doc.head) {
-        var uri = $(doc.head).data('origin-uri');
+        const uri = $(doc.head).data('origin-uri');
         if (uri) {
           address = uri;
         }
@@ -37,7 +37,7 @@
         window.history.pushState({}, '', address);
       }
 
-      var posY = $(document).scrollTop();
+      const posY = $(document).scrollTop();
       setTimeout(function () {
         AGN.Lib.Controller.init();
         AGN.runAll();
@@ -47,13 +47,13 @@
       document.body = doc.body;
       document.title = doc.title;
 
-      var $body = $(document.body);
+      const $body = $(document.body);
 
       $body.find('script').each(function(index, e) {
-        var $e = $(e);
+        const $e = $(e);
 
         if ($e.attr('src')) {
-          var $script = $('<script></script>');
+          const $script = $('<script></script>');
 
           $.each(e.attributes, function() {
             if (this.specified) {
@@ -74,65 +74,59 @@
           }
         }
       });
-    } else {
-      var $resp = $(resp);
-      var $e = $resp.filter('.modal');
+    }
 
-      if ($e.exists()) {
-        var deferred = $.Deferred();
+    static reload(address, ajax, method) {
+      if (ajax) {
+        address = address || window.location.href;
 
-        AGN.Lib.RenderMessages($resp);
+        const deferred = $.Deferred();
 
-        Confirm.create($resp);
-        deferred.resolve(Confirm.get($resp));
+        $.ajax(address, {
+          method: Page.#getValidMethod(method)
+        }).done(resp => {
+          const promise = Page.render(resp, address);
+          if (promise) {
+            promise
+              .done(deferred.resolve)
+              .fail(deferred.reject);
+          } else {
+            deferred.resolve();
+          }
+        }).fail(() => deferred.reject());
 
         return deferred.promise();
       } else {
-        $e = $resp.all('script[data-load]');
-
-        if ($e.exists()) {
-          return Page.reload($e.data('load'), true)
-            .done(function() {
-              AGN.Lib.RenderMessages($resp);
-            });
+        if (address && address != window.location.href) {
+          window.location.assign(address);
         } else {
-          AGN.Lib.RenderMessages($resp);
+          window.location.reload(true);
         }
+        return null;
       }
     }
-  };
 
-  Page.reload = function(address, ajax, method) {
-    if (ajax) {
-      address = address || window.location.href;
+    static #getValidMethod(method) {
+      if (method) {
+        method = method.toUpperCase();
 
-      var deferred = $.Deferred();
-
-      $.ajax(address, {
-        method: getValidMethod(method)
-      }).done(function(resp) {
-        var promise = Page.render(resp, address);
-        if (promise) {
-          promise
-            .done(deferred.resolve)
-            .fail(deferred.reject);
-        } else {
-          deferred.resolve();
+        switch (method) {
+          case 'CONNECT':
+          case 'DELETE':
+          case 'GET':
+          case 'HEAD':
+          case 'OPTIONS':
+          case 'POST':
+          case 'PUT':
+            return method;
         }
-      }).fail(function() {
-        deferred.reject();
-      });
-
-      return deferred.promise();
-    } else {
-      if (address && address != window.location.href) {
-        window.location.assign(address);
-      } else {
-        window.location.reload(true);
       }
-      return null;
+
+      return 'GET';
     }
-  };
+
+  }
 
   AGN.Lib.Page = Page;
+
 })();

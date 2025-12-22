@@ -11,7 +11,6 @@
 package com.agnitas.ecs.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -41,5 +40,6 @@ public interface EcsService {
      * Generate a PDF representation of the heat map by url.
      * @return a generated document.
      */
-    File generatePDF(Admin admin, String url, String title) throws Exception;
+    File generatePDF(Admin admin, String url, String title);
+
 }

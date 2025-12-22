@@ -49,8 +49,6 @@ public interface OptimizationDao {
 	
 	int countByCompanyID(int companyID);
 
-	List<Optimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate);
-
     List<Optimization> getAutoOptimizations(int companyId, Date startDate, Date endDate);
 
     int getOptimizationByFinalMailingId(int finalMailingId, int companyId);

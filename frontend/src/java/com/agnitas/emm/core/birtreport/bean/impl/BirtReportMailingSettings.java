@@ -32,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 
 public class BirtReportMailingSettings extends BirtReportSettings {
 
-    public static final String ACTION_MAILING_ID_KEY = "actionMailingId";
     public static final String MAILINGS_TO_SEND_KEY = "mailingsToSend";
     public static final String MAILING_GENERAL_TYPES_KEY = "mailingGeneralType";
     
@@ -185,7 +184,7 @@ public class BirtReportMailingSettings extends BirtReportSettings {
                     stopDate = getReportSettingAsString(BirtReportSettingsUtils.END_DATE);
                     break;
 				default:
-					throw new RuntimeException("Invalid period type");
+					throw new IllegalArgumentException("Invalid period type");
             }
         }
         dateRange.put(BirtReportSettingsUtils.START_DATE, startDate);

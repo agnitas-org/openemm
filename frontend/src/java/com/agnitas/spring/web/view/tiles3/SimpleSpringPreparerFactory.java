@@ -13,11 +13,9 @@ package com.agnitas.spring.web.view.tiles3;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tiles.TilesException;
 import org.apache.tiles.preparer.PreparerException;
 import org.apache.tiles.preparer.ViewPreparer;
 import org.apache.tiles.preparer.factory.NoSuchPreparerException;
-
 import org.springframework.util.ClassUtils;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -28,7 +26,7 @@ public class SimpleSpringPreparerFactory extends AbstractSpringPreparerFactory {
 
 
     @Override
-    protected ViewPreparer getPreparer(String name, WebApplicationContext context) throws TilesException {
+    protected ViewPreparer getPreparer(String name, WebApplicationContext context) {
         // Quick check on the concurrent map first, with minimal locking.
         ViewPreparer preparer = this.sharedPreparers.get(name);
         if (preparer == null) {

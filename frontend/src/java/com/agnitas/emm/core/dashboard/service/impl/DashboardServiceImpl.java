@@ -22,7 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import com.agnitas.emm.core.dashboard.bean.ScheduledMailing;
@@ -34,13 +36,11 @@ import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.factory.MailingSummaryDataSetFactory;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
-import org.json.JSONObject;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.SafeString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 public class DashboardServiceImpl implements DashboardService {
 	
     private static final Logger logger = LogManager.getLogger(DashboardServiceImpl.class);
@@ -77,7 +77,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums) {
+    public PaginatedList<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums) {
         return mailingDao.getDashboardMailingList(admin, sort, direction, rownums);
     }
 
@@ -120,24 +120,18 @@ public class DashboardServiceImpl implements DashboardService {
 
         Map<Integer, Integer> data = getReportData(mailingId, admin.getCompanyID());
 
-        int clickerTracked = data.getOrDefault(CommonKeys.CLICKER_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
         int openersTracked = data.getOrDefault(CommonKeys.OPENERS_TRACKED_INDEX, DEFAULT_STATISTIC_VALUE);
         int deliveredEmails = data.getOrDefault(CommonKeys.DELIVERED_EMAILS_INDEX, DEFAULT_STATISTIC_VALUE);
 
-        double clickerPercent = 0.0;
         double openersPercent = 0.0;
 
         if (openersTracked != 0 && deliveredEmails != 0) {
-            clickerPercent = (double) clickerTracked / openersTracked;
             openersPercent = (double) openersTracked / deliveredEmails;
         }
 
         statData.put("common", getCommonStat(data, locale));
         statData.put("clickers", getClickersStat(data, locale));
         statData.put("openers", getOpenersStat(data, locale));
-        if (!admin.isRedesignedUiUsed()) {
-            statData.put("clickersPercent", Collections.singletonList(clickerPercent));
-        }
         statData.put("openersPercent", Collections.singletonList(openersPercent));
 
         return statData;

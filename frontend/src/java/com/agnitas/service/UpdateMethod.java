@@ -11,10 +11,11 @@
 package com.agnitas.service;
 
 public enum UpdateMethod {
+
 	UpdateAll("updateMethod.updateAll"),
 	DontUpdateWithEmptyData("updateMethod.dontUpdateWithEmptyData");
 	
-	private String messageKey;
+	private final String messageKey;
 	
 	UpdateMethod(String messageKey) {
 		this.messageKey = messageKey;
@@ -24,12 +25,13 @@ public enum UpdateMethod {
 		return messageKey;
 	}
 
-	public static UpdateMethod getUpdateMethodFromString(String value) throws Exception {
+	public static UpdateMethod getUpdateMethodFromString(String value) {
 		for (UpdateMethod method : UpdateMethod.values()) {
 			if (method.toString().equalsIgnoreCase(value) || method.messageKey.equalsIgnoreCase(value)) {
 				return method;
 			}
 		}
-		throw new Exception("Invalid UpdateMethod: " + value);
+
+		throw new IllegalArgumentException("Invalid UpdateMethod: " + value);
 	}
 }

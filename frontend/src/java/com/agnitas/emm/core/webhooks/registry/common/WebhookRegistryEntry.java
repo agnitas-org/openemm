@@ -37,7 +37,7 @@ public final class WebhookRegistryEntry {
 	 * 
 	 * @throws NullPointerException if <code>eventType</code> or <code>url</code> is <code>null</code>
 	 */
-	public WebhookRegistryEntry(final int companyId, final WebhookEventType eventType, final String url) {
+	public WebhookRegistryEntry(int companyId, WebhookEventType eventType, String url) {
 		this.companyId = companyId;
 		this.eventType = Objects.requireNonNull(eventType, "WebhookEventType is null");
 		this.url = Objects.requireNonNull(url, "Webhook URL is null");
@@ -48,7 +48,7 @@ public final class WebhookRegistryEntry {
 	 * 
 	 * @return company ID
 	 */
-	public final int getCompanyId() {
+	public int getCompanyId() {
 		return companyId;
 	}
 
@@ -57,7 +57,7 @@ public final class WebhookRegistryEntry {
 	 * 
 	 * @return event type.
 	 */
-	public final WebhookEventType getEventType() {
+	public WebhookEventType getEventType() {
 		return eventType;
 	}
 
@@ -66,7 +66,7 @@ public final class WebhookRegistryEntry {
 	 * 
 	 * @return configured webhook URL
 	 */
-	public final String getUrl() {
+	public String getUrl() {
 		return url;
 	}
 	

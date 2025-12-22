@@ -25,27 +25,29 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.Target;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.factory.TargetFactory;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.TargetDao;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
 import com.agnitas.dao.impl.mapper.TargetRowMapper;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.target.TargetUtils;
+import com.agnitas.emm.core.target.beans.TargetGroupDeliveryOption;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
-import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.emm.core.target.exception.TargetGroupLockedException;
 import com.agnitas.emm.core.target.exception.TargetGroupPersistenceException;
 import com.agnitas.emm.core.target.exception.TargetGroupTooLargeException;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.beans.factory.TargetFactory;
+import com.agnitas.emm.core.target.service.TargetLightsOptions;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.agnitas.emm.util.html.HtmlChecker;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
@@ -53,7 +55,6 @@ import com.agnitas.util.DbUtilities;
 import com.agnitas.util.FulltextSearchInvalidQueryException;
 import com.agnitas.util.FulltextSearchQueryException;
 import com.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -154,41 +155,6 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	}
 
 	@Override
-	public Map<Integer, Target> getAllowedTargets(int companyID) {
-		Map<Integer, Target> targets = new HashMap<>();
-		String sql = "SELECT target_id, target_shortname, target_description, target_sql FROM dyn_target_tbl WHERE company_id = ? ORDER BY target_id";
-
-		try {
-			List<Map<String, Object>> list = select(sql, companyID);
-
-			for (Map<String, Object> map : list) {
-				int id = ((Number) map.get("target_id")).intValue();
-				String shortname = (String) map.get("target_shortname");
-				String description = (String) map.get("target_description");
-				String targetsql = (String) map.get("target_sql");
-				Target target = targetFactory.newTarget();
-
-				target.setCompanyID(companyID);
-				target.setId(id);
-				if (shortname != null) {
-					target.setTargetName(shortname);
-				}
-				if (description != null) {
-					target.setTargetDescription(description);
-				}
-				if (targetsql != null) {
-					target.setTargetSQL(targetsql);
-				}
-				targets.put(id, target);
-			}
-		} catch (Exception e) {
-			logger.error("getAllowedTargets (sql: " + sql + ")", e);
-			return null;
-		}
-		return targets;
-	}
-
-	@Override
 	public Map<Integer, TargetLight> getAllowedTargetLights(int companyID) {
 		Map<Integer, TargetLight> targets = new HashMap<>();
 		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
@@ -232,7 +198,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 		if (target == null) {
 			return 0;
 		} else if (StringUtils.isBlank(target.getTargetName())) {
-			throw new RuntimeException("Target is missing target name");
+			throw new IllegalArgumentException("Target is missing target name");
 		}
 
 		try {
@@ -246,7 +212,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 			target.setValid(true);
 
 		} catch(Exception e) {
-			logger.error("Error converting target group " + target.getId() + " to EQL", e);
+			logger.error("Error converting target group {} to EQL", target.getId(), e);
 
 			// In case of an error, make target group selecting no recipients
 			target.setTargetSQL("1=0");
@@ -256,13 +222,13 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 		/*
 		 *  This check is only used to check, if SQL got too large and make valid SQL returning no recipients.
 		 *  The exception itself is thrown after saving the target group.
-		 *  When throwing exception here, neither EQL nor other properties are udpated in / inserted to DB
+		 *  When throwing exception here, neither EQL nor other properties are updated in / inserted to DB
 		 *  so the user will loose any modifications done in UI.
 		 *
 		 *  This is done to get EQL saved to DB.
 		 */
 		if(StringUtils.length(target.getTargetSQL()) > TARGET_GROUP_SQL_MAX_LENGTH) {
-			logger.warn("Target group is too large: " + target.getId());
+			logger.warn("Target group is too large: {}", target.getId());
 
 			target.setTargetSQL("1=0");
 			target.setValid(false);
@@ -308,7 +274,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 					update("INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 				} else {
-                    int targetID = insertIntoAutoincrementMysqlTable("target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
+                    int targetID = insert("target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 					target.setId(targetID);
 				}
@@ -357,16 +323,12 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 
 	@Override
 	public Target getTarget(int targetID, int companyID) {
-		final String sqlGetTarget = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
+		String query = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
 				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, favorite, " +
 				"invalid, component_hide " + getTargetExtendedColumnsAsString()
 				+ " FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
 
-		if (isOracleDB()) {
-			return selectObjectDefaultNull("SELECT * FROM (" + sqlGetTarget + ") WHERE ROWNUM = 1", getTargetRowMapper(), targetID, companyID);
-		} else {
-			return selectObjectDefaultNull(sqlGetTarget + " LIMIT 1", getTargetRowMapper(), targetID, companyID);
-		}
+		return selectObjectDefaultNull(addRowLimit(query, 1), getTargetRowMapper(), targetID, companyID);
 	}
 
 	/**
@@ -399,11 +361,6 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 				"eql"
 		), getTargetLightsExtendedColumns());
 
-		if (isOracleDB()) {
-			// Using "SELECT * ...", because of subselect
-			sqlQueryBuilder.append("SELECT * FROM (");
-		}
-
 		sqlQueryBuilder.append("SELECT ")
 				.append(StringUtils.join(columns, ", "))
 				.append(" FROM dyn_target_tbl")
@@ -411,13 +368,12 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 				// Prefer valid one if available
 				.append(" ORDER BY invalid");
 
-		if (isOracleDB()) {
-			sqlQueryBuilder.append(") WHERE ROWNUM = 1");
-		} else {
-			sqlQueryBuilder.append(" LIMIT 1");
-		}
-
-		return selectObjectDefaultNull(sqlQueryBuilder.toString(), getTargetRowMapper(), companyID, targetName);
+		return selectObjectDefaultNull(
+				addRowLimit(sqlQueryBuilder.toString(), 1),
+				getTargetRowMapper(),
+				companyID,
+				targetName
+		);
 	}
 
 	@Override
@@ -500,13 +456,8 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 
 	@Override
 	public int getTargetSplitID(String name) {
-		String sqlGetTargetId = "SELECT target_id FROM dyn_target_tbl WHERE target_shortname = ?";
-		if (isOracleDB()) {
-			// Using "SELECT * ...", because of subselect
-			return selectIntWithDefaultValue("SELECT * FROM (" + sqlGetTargetId + ") WHERE ROWNUM = 1", -1, name);
-		} else {
-			return selectIntWithDefaultValue(sqlGetTargetId + " LIMIT 1", -1, name);
-		}
+		String query = "SELECT target_id FROM dyn_target_tbl WHERE target_shortname = ?";
+		return selectIntWithDefaultValue(addRowLimit(query, 1), -1, name);
 	}
 
 	@Override
@@ -516,64 +467,20 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	}
 
 	@Override
-	public List<String> getSplitNames(int companyID) {
-		StringBuilder sqlQueryBuilder = new StringBuilder();
-		List<Object> sqlParameters = new ArrayList<>();
-
-		sqlQueryBuilder.append("SELECT DISTINCT target_shortname ")
-				.append("FROM dyn_target_tbl ")
-				.append("WHERE (company_id = ? OR company_id = 0) ");
-		sqlParameters.add(companyID);
-
-		sqlQueryBuilder.append("AND (")
-				.append(makeShortNameMatchConditionClause(sqlParameters))
-				.append(") AND admin_test_delivery = 0 ")
-				.append("ORDER BY target_shortname");
-
-		List<Map<String, Object>> result = select(sqlQueryBuilder.toString(), sqlParameters.toArray());
-
-		List<String> splitNames = new ArrayList<>();
-		for (Map<String, Object> row : result) {
-			splitNames.add((String) row.get("target_shortname"));
-		}
-
-		return splitNames;
-	}
-
-	@Override
-	public int getSplits(int companyID, String splitType) {
-		StringBuilder sqlQueryBuilder = new StringBuilder();
-		List<Object> sqlParameters = new ArrayList<>();
-
-		sqlQueryBuilder.append("SELECT COUNT(target_id) ")
-				.append("FROM dyn_target_tbl ")
-				.append("WHERE (company_id = ? OR company_id = 0) ");
-		sqlParameters.add(companyID);
-
-		sqlQueryBuilder.append("AND (")
-				.append(makeShortNameMatchConditionClause(splitType, sqlParameters))
-				.append(") AND admin_test_delivery = 0 ")
-				.append("ORDER BY target_shortname");
-
-		return selectInt(sqlQueryBuilder.toString(), sqlParameters.toArray());
-	}
-
-	@Override
 	public List<TargetLight> getTargetLights(int companyID) {
-		return getTargetLights(0, companyID, true);
+		return getTargetLights(0, companyID, null);
 	}
 
 	@Override
 	public List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId) {
-		return getTargetLights(adminId, companyId, false);
+		return getTargetLights(adminId, companyId, TargetGroupDeliveryOption.ADMIN_AND_TEST);
 	}
 
-	private List<TargetLight> getTargetLights(int adminId, int companyID, boolean worldDelivery) {
+	private List<TargetLight> getTargetLights(int adminId, int companyID, TargetGroupDeliveryOption deliveryOption) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
                 .setAdminId(adminId)
 				.setCompanyId(companyID)
-				.setWorldDelivery(worldDelivery)
-				.setAdminTestDelivery(true)
+				.setDeliveryOption(deliveryOption)
 				.build();
 		return getTargetLightsBySearchParameters(options);
 	}
@@ -585,12 +492,12 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	}
 
 	@Override
-	public PaginatedListImpl<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options) {
+	public PaginatedList<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options) {
 		SqlPreparedStatementManager sqlPreparedStatementManager = preparePaginatedSelectStatement(options);
 
-		PaginatedListImpl<TargetLight> list = getPaginatedList(options, sqlPreparedStatementManager);
+		PaginatedList<TargetLight> list = getPaginatedList(options, sqlPreparedStatementManager);
 
-		if (options.isRedesignedUiUsed() && options.isUiFiltersSet()) {
+		if (options.isUiFiltersSet()) {
 			String countQuery = "SELECT COUNT(*) FROM dyn_target_tbl WHERE company_id = ? AND (hidden IS NULL or hidden = 0) AND deleted = 0";
 			list.setNotFilteredFullListSize(selectInt(countQuery, options.getCompanyId()));
 		}
@@ -598,7 +505,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 		return list;
 	}
 
-	protected PaginatedListImpl<TargetLight> getPaginatedList(TargetLightsOptions options, SqlPreparedStatementManager statementManager) {
+	protected PaginatedList<TargetLight> getPaginatedList(TargetLightsOptions options, SqlPreparedStatementManager statementManager) {
 		boolean sortDirectionAscending = isSortDirectionAscending(options.getDirection());
 
 		if (StringUtils.isBlank(options.getSorting())) {
@@ -660,104 +567,69 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 			preparedStatementManager.addWhereClause("component_hide = 0");
 		}
 		
-		if (options.isRedesignedUiUsed()) {
-			if (options.getDeliveryOption() != null) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = ?", options.getDeliveryOption().getStorageCode());
-			}
-		} else {
-			// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
-			if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = 0");
-			} else if (!options.isWorldDelivery() && options.isAdminTestDelivery()) {
-				preparedStatementManager.addWhereClause("admin_test_delivery = 1");
-			}
+		if (options.getDeliveryOption() != null) {
+			preparedStatementManager.addWhereClause("admin_test_delivery = ?", options.getDeliveryOption().getStorageCode());
 		}
 
-		if (options.isRedesignedUiUsed()) {
-			if (options.getComplexity() != null) {
-				if (options.getComplexity().getFrom() != null) {
-					preparedStatementManager.addWhereClause(
-							"complexity + ? >= ?",
-							options.getRecipientCountBasedComplexityAdjustment(),
-							options.getComplexity().getFrom()
-					);
-				}
-
-				if (options.getComplexity().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"complexity + ? < ?",
-							options.getRecipientCountBasedComplexityAdjustment(),
-							options.getComplexity().getTo()
-					);
-				}
-			}
-			if (options.getCreationDate() != null) {
-				if (options.getCreationDate().getFrom() != null) {
-					preparedStatementManager.addWhereClause("creation_date >= ?", options.getCreationDate().getFrom());
-				}
-				if (options.getCreationDate().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"creation_date < ?",
-							DateUtilities.addDaysToDate(options.getCreationDate().getTo(), 1)
-					);
-				}
+		if (options.getComplexity() != null) {
+			if (options.getComplexity().getFrom() != null) {
+				preparedStatementManager.addWhereClause(
+						"complexity + ? >= ?",
+						options.getRecipientCountBasedComplexityAdjustment(),
+						options.getComplexity().getFrom()
+				);
 			}
 
-			if (options.getChangeDate() != null) {
-				if (options.getChangeDate().getFrom() != null) {
-					preparedStatementManager.addWhereClause("change_date >= ?", options.getChangeDate().getFrom());
-				}
-				if (options.getChangeDate().getTo() != null) {
-					preparedStatementManager.addWhereClause(
-							"change_date < ?",
-							DateUtilities.addDaysToDate(options.getChangeDate().getTo(), 1)
-					);
-				}
+			if (options.getComplexity().getTo() != null) {
+				preparedStatementManager.addWhereClause(
+						"complexity + ? < ?",
+						options.getRecipientCountBasedComplexityAdjustment(),
+						options.getComplexity().getTo()
+				);
+			}
+		}
+		if (options.getCreationDate() != null) {
+			if (options.getCreationDate().getFrom() != null) {
+				preparedStatementManager.addWhereClause("creation_date >= ?", options.getCreationDate().getFrom());
+			}
+			if (options.getCreationDate().getTo() != null) {
+				preparedStatementManager.addWhereClause(
+					"creation_date < ?",
+					DateUtilities.addDaysToDate(options.getCreationDate().getTo(), 1)
+				);
+			}
+		}
+		if (options.getChangeDate() != null) {
+			if (options.getChangeDate().getFrom() != null) {
+				preparedStatementManager.addWhereClause("change_date >= ?", options.getChangeDate().getFrom());
+			}
+			if (options.getChangeDate().getTo() != null) {
+				preparedStatementManager.addWhereClause(
+						"change_date < ?",
+						DateUtilities.addDaysToDate(options.getChangeDate().getTo(), 1)
+				);
 			}
 		}
 
 		// Check supported search modes by available db indices
-		String searchQuery = options.getSearchText();
 		if (isBasicFullTextSearchSupported()) {
 			List<String> searchClauses = new ArrayList<>();
 			List<java.lang.Object> properties = new ArrayList<>();
 
-			String fullTextSearchNameQuery = options.getSearchName();
-			String fullTextSearchDescriptionQuery = options.getSearchDescription();
+			String fullTextSearchNameQuery = generateFullTextSearchQuery(options.getSearchName());
+			String fullTextSearchDescriptionQuery = generateFullTextSearchQuery(options.getSearchDescription());
 
-			if (!options.isRedesignedUiUsed()) {
-				if (StringUtils.isNotBlank(searchQuery)) {
-					String fullTextSearchClause = searchQuery;
-					if (options.isSearchName() || options.isSearchDescription()) {
-						try {
-							fullTextSearchClause = fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
-						} catch (FulltextSearchQueryException | FulltextSearchInvalidQueryException e) {
-							logger.error("Cannot transform full text search query: {}", searchQuery);
-						}
-
-                        fullTextSearchNameQuery = fullTextSearchClause;
-						fullTextSearchDescriptionQuery = fullTextSearchClause;
-					}
-				} else {
-					options.setSearchName(false);
-					options.setSearchDescription(false);
-				}
-			} else {
-				fullTextSearchNameQuery = generateFullTextSearchQuery(fullTextSearchNameQuery);
-				fullTextSearchDescriptionQuery = generateFullTextSearchQuery(fullTextSearchDescriptionQuery);
-			}
-
-			if ((!options.isRedesignedUiUsed() && options.isSearchName()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchNameQuery))) {
-				searchClauses.add(isOracleDB() ? "CONTAINS(target_shortname, ?) > 0" : "MATCH(target_shortname) AGAINST(? IN BOOLEAN MODE) > 0");
+			if (StringUtils.isNotBlank(fullTextSearchNameQuery)) {
+				searchClauses.add(getFullTextSearchMatchFilter("target_shortname"));
 				properties.add(fullTextSearchNameQuery);
 			}
 
-			if ((!options.isRedesignedUiUsed() && options.isSearchDescription()) || (options.isRedesignedUiUsed() && StringUtils.isNotBlank(fullTextSearchDescriptionQuery))) {
-				searchClauses.add(isOracleDB() ? "CONTAINS(target_description, ?) > 0" : "MATCH(target_description) AGAINST(? IN BOOLEAN MODE) > 0");
+			if (StringUtils.isNotBlank(fullTextSearchDescriptionQuery)) {
+				searchClauses.add(getFullTextSearchMatchFilter("target_description"));
 				properties.add(fullTextSearchDescriptionQuery);
 			}
 
-			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(options.isRedesignedUiUsed() ? " AND " : " OR "));
+			String searchClause = searchClauses.stream().map(StringUtils::trimToNull).filter(Objects::nonNull).collect(Collectors.joining(" AND "));
 			if (StringUtils.isNotBlank(searchClause)) {
 				preparedStatementManager.addAndClause();
 				preparedStatementManager.appendOpeningParenthesis();
@@ -768,6 +640,10 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	}
 
 	private String generateFullTextSearchQuery(String searchQuery) {
+		if (searchQuery == null) {
+			return "";
+		}
+
 		try {
 			return fulltextSearchQueryGenerator.generateSpecificQuery(searchQuery);
 		} catch (FulltextSearchQueryException | FulltextSearchInvalidQueryException e) {
@@ -816,7 +692,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 					"             OR LOWER(target_shortname) LIKE '%emm target group%')";
 			return update(sql, companyID);
 		} catch (Exception e){
-			logger.error("Error occurred during creating sample target groups for company: "+companyID, e);
+			logger.error("Error occurred during creating sample target groups for company: {}", companyID, e);
 			return 0;
 		}
 	}
@@ -824,10 +700,8 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
     /**
 	 * Checks, if target group is locked (unmodifiable).
 	 *
-	 * @param targetID
-	 *            ID of target group
-	 * @param companyID
-	 *            ID of company
+	 * @param targetID  ID of target group
+	 * @param companyID ID of company
 	 *
 	 * @return true if locked, otherwise false
 	 */
@@ -860,38 +734,6 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 		return select("SELECT target_id, company_id, target_description, target_shortname, locked, " +
 				" creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
 				"FROM dyn_target_tbl WHERE (company_id = ? OR company_id = 0)" + deleted + " AND target_id IN (" + StringUtils.join(targetIds, ", ") + ") ORDER BY favorite DESC, target_shortname", getTargetLightRowMapper(), companyID);
-	}
-
-	@Override
-	public List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds) {
-		if (CollectionUtils.isNotEmpty(targetIds)) {
-			String sqlGetTargetsExceptIds = "SELECT target_id, company_id, target_description, " +
-					"target_shortname, locked, creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
-					"FROM dyn_target_tbl " +
-					"WHERE company_id = ? AND COALESCE(deleted, 0) = 0 AND COALESCE(hidden, 0) = 0 AND admin_test_delivery = 0 " +
-					"AND target_id NOT IN (" + StringUtils.join(targetIds, ", ") + ") " +
-					"ORDER BY favorite DESC, LOWER(target_shortname)";
-
-			return select(sqlGetTargetsExceptIds, getTargetLightRowMapper(), companyID);
-		} else {
-			return getTargetLights(companyID);
-		}
-	}
-
-	@Override
-	public List<TargetLight> getChoosenTargetLights(String targetExpression, int companyID) {
-		if (StringUtils.isNotEmpty(targetExpression)) {
-			return select("SELECT target_id, company_id, target_description, target_shortname, locked, " +
-					" creation_date, change_date, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
-					"FROM dyn_target_tbl WHERE deleted = 0 AND admin_test_delivery = 0 AND target_id IN (" + targetExpression + ") ORDER BY favorite DESC, target_shortname", getTargetLightRowMapper());
-		} else {
-			return new ArrayList<>();
-		}
-	}
-
-	@Override
-	public List<TargetLight> getTestAndAdminTargetLights(int companyId) {
-		return getTestAndAdminTargetLights(0, companyId);
 	}
 
 	@Override
@@ -930,10 +772,6 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
         parameters.addValue("companyId", companyId);
         return new HashSet<>(new NamedParameterJdbcTemplate(getDataSource()).query(query, parameters, IntegerRowMapper.INSTANCE));
     }
-
-	private String makeShortNameMatchConditionClause(List<Object> sqlParameters) {
-		return makeShortNameMatchConditionClause(null, sqlParameters);
-	}
 
 	private String makeShortNameMatchConditionClause(String splitType, List<Object> sqlParameters) {
 		return makeShortNameMatchConditionClause(splitType, sqlParameters, TargetLight.LIST_SPLIT_PREFIXES);
@@ -1003,7 +841,7 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 	}
 
 	@Override
-	public List<Target> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
+	public List<Target> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted) {
 		List<Object> selectParameter = new ArrayList<>();
 		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, deleted, " +
 				"creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide, COALESCE(complexity, -1) AS complexity, favorite " + getTargetExtendedColumnsAsString() +
@@ -1017,43 +855,35 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 			selectSql += " AND deleted = 0";
 		}
 
-		// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
-		if (worldDelivery && !adminTestDelivery) {
-			selectSql += " AND admin_test_delivery = 0";
-		} else if (!worldDelivery && adminTestDelivery) {
-			selectSql += " AND admin_test_delivery = 1";
-		}
-
-		return select(selectSql, getTargetRowMapper(),  selectParameter.toArray());
+        return select(selectSql, getTargetRowMapper(),  selectParameter.toArray());
 	}
 
 	@Override
-	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
+	public PaginatedList<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
 																				Set<TargetGroupDependentType> allowedTypes, int pageNumber,
 																				int pageSize, String sortColumn, String order) {
-		final boolean isOracle = isOracleDB();
-		final boolean isFilterDisabled = CollectionUtils.isEmpty(allowedTypes);
+        final boolean isFilterDisabled = CollectionUtils.isEmpty(allowedTypes);
 		final boolean sortAscending = AgnUtils.sortingDirectionToBoolean(order, true);
 
 		List<String> sqlSubQueries = new ArrayList<>();
 		List<Object> sqlParameters = new ArrayList<>();
 
 		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.MAILING)) {
-			sqlSubQueries.add(getSqlDependentMailings(isOracle));
+			sqlSubQueries.add(getSqlDependentMailings());
 			sqlParameters.add(TargetGroupDependentType.MAILING.getId());
 			sqlParameters.add(companyId);
 			sqlParameters.add(targetId);
 		}
 
 		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.MAILING_CONTENT)) {
-			sqlSubQueries.add(getSqlDependentMailingContents(isOracle));
+			sqlSubQueries.add(getSqlDependentMailingContents());
 			sqlParameters.add(TargetGroupDependentType.MAILING_CONTENT.getId());
 			sqlParameters.add(companyId);
 			sqlParameters.add(targetId);
 		}
 
 		if (isFilterDisabled || allowedTypes.contains(TargetGroupDependentType.REPORT)) {
-			sqlSubQueries.add(getSqlDependentReports(isOracle));
+			sqlSubQueries.add(getSqlDependentReports());
 			sqlParameters.add(TargetGroupDependentType.REPORT.getId());
 			sqlParameters.add(companyId);
 			sqlParameters.add(targetId);
@@ -1149,20 +979,21 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 		return targetFactory;
 	}
 
-	private static String getSqlDependentMailings(boolean isOracle) {
+	private String getSqlDependentMailings() {
 		return "SELECT ? AS type, mailing_id AS id, shortname AS name FROM mailing_tbl " +
-				"WHERE company_id = ? AND deleted = 0 AND (" + DbUtilities.createTargetExpressionRestriction(isOracle) + ")";
+				"WHERE company_id = ? AND deleted = 0 AND (" + DbUtilities.createTargetExpressionRestriction(dataSource) + ")";
 	}
 
-	private static String getSqlDependentReports(boolean isOracle) {
+	private String getSqlDependentReports() {
 		return "SELECT DISTINCT ? AS type, rep.report_id AS id, rep.shortname AS name " +
 				"FROM birtreport_parameter_tbl param INNER JOIN birtreport_tbl rep ON rep.report_id = param.report_id " +
 				"WHERE rep.company_id = ? AND param.parameter_name = 'selectedTargets' " +
 				"AND param.parameter_value NOT IN (' ') " +
-				(isOracle ?
+				(isOracleDB() ?
 						"AND INSTR(',' || parameter_value || ',', ',' || ? || ',') <> 0 "
-						:
-						"AND INSTR(CONCAT(',', parameter_value, ','), CONCAT(',', ?, ',')) <> 0 "
+						: isPostgreSQL()
+							? "AND POSITION(',' || ? || ',' IN ',' || parameter_value || ',') > 0 "
+							: "AND INSTR(CONCAT(',', parameter_value, ','), CONCAT(',', ?, ',')) <> 0 "
 				);
 	}
 
@@ -1171,10 +1002,10 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 				"WHERE deleted = 0 AND company_id = ? AND target_id = ?";
 	}
 
-	private static String getSqlDependentMailingContents(boolean isOracle) {
+	private String getSqlDependentMailingContents() {
 		String sql;
 
-		if (isOracle) {
+		if (isOracleDB()) {
 			sql = "SELECT DISTINCT ? AS type, m.mailing_id AS id, m.shortname || ' (' || n.dyn_name || ')' AS name ";
 		} else {
 			sql = "SELECT DISTINCT ? AS type, m.mailing_id AS id, CONCAT(m.shortname, ' (' , n.dyn_name , ')') AS name ";
@@ -1256,9 +1087,9 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
 
     @Override
     public boolean isLinkUsedInTarget(TrackableLink link) {
-        return selectInt("SELECT 1 FROM dyn_target_tbl " +
+        return selectInt("SELECT COUNT(*) FROM dyn_target_tbl " +
                 "WHERE eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%' " +
-                "AND deleted <= 0 AND hidden = 0 " + (isOracleDB() ? "AND rownum < 2" : "LIMIT 1")) == 1;
+                "AND deleted <= 0 AND hidden = 0") > 0;
     }
 
     @Override
@@ -1266,7 +1097,13 @@ public class TargetDaoImpl extends PaginatedBaseDaoImpl implements TargetDao, In
         return target.isFavorite(); // overridden in extended class
     }
 
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
-    }
+	@Override
+	public boolean exist(int targetId, int companyId) {
+		return selectInt("SELECT COUNT(*) FROM dyn_target_tbl WHERE target_id = ? AND company_id = ? AND deleted = 0",
+			targetId, companyId) > 0;
+	}
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
 }

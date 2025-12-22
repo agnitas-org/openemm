@@ -12,8 +12,11 @@ package com.agnitas.emm.springws.endpoint;
 
 import java.util.Objects;
 
-import com.agnitas.emm.springws.endpoint.BaseEndpoint;
-import com.agnitas.emm.springws.endpoint.Namespaces;
+import com.agnitas.beans.Target;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
+import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupRequest;
+import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupResponse;
 import com.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -21,19 +24,13 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.Target;
-import com.agnitas.emm.core.target.service.TargetService;
-import com.agnitas.emm.springws.exception.WebServiceInvalidFieldsException;
-import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupRequest;
-import com.agnitas.emm.springws.jaxb.extended.UpdateTargetGroupResponse;
-
 @Endpoint
 public class UpdateTargetGroupEndpoint extends BaseEndpoint {
 
     private final TargetService targetService;
     private final SecurityContextAccess securityContextAccess;
 
-    public UpdateTargetGroupEndpoint(final TargetService targetService, final SecurityContextAccess securityContextAccess) {
+    public UpdateTargetGroupEndpoint(TargetService targetService, SecurityContextAccess securityContextAccess) {
         this.targetService = Objects.requireNonNull(targetService, "targetService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }

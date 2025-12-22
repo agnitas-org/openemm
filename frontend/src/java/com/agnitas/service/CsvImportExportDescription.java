@@ -562,7 +562,6 @@ public class CsvImportExportDescription {
 			for (ColumnMapping mapping : columnMapping) {
 				output.append("\t" + mapping.getDatabaseColumn() + " = \"" + mapping.getFileColumn() + "\""
 					+ (mapping.isKeyColumn() ? " keycolumn" : "")
-					+ (mapping.isEncrypted() ? " encrypted" : "")
 					+ (mapping.isMandatory() ? " mandatory" : "")
 					+ (StringUtils.isNotEmpty(mapping.getFormat()) ? " Format: \"" + mapping.getFormat() + "\"" : "")
 					+ (StringUtils.isNotEmpty(mapping.getDefaultValue()) ? " Default: \"" + mapping.getDefaultValue() + "\"" : "")

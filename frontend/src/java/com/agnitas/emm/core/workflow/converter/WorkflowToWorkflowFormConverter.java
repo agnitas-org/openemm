@@ -22,6 +22,7 @@ import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatu
 
 @Component
 public class WorkflowToWorkflowFormConverter implements Converter<Workflow, WorkflowForm> {
+
     @Override
     public WorkflowForm convert(Workflow workflow) {
         WorkflowForm workflowForm = new WorkflowForm();
@@ -31,9 +32,6 @@ public class WorkflowToWorkflowFormConverter implements Converter<Workflow, Work
         workflowForm.setDescription(workflow.getDescription());
         workflowForm.setStatus(WorkflowForm.WorkflowStatus.valueOf(workflow.getStatus().name()));
         workflowForm.setStatusMaybeChangedTo(calculateNewStatus(workflowForm.getStatus()));
-        workflowForm.setEditorPositionTop(workflow.getEditorPositionTop());
-        workflowForm.setEditorPositionLeft(workflow.getEditorPositionLeft());
-        workflowForm.setInner(workflow.isInner());
         workflowForm.setGeneralStartDate(workflow.getGeneralStartDate());
         workflowForm.setGeneralEndDate(workflow.getGeneralEndDate());
         workflowForm.setEndType(workflow.getEndType());
@@ -52,10 +50,7 @@ public class WorkflowToWorkflowFormConverter implements Converter<Workflow, Work
                 result = STATUS_INACTIVE;
                 break;
 
-            case STATUS_OPEN:
-            case STATUS_INACTIVE:
-            case STATUS_TESTED:
-            case STATUS_PAUSED:
+            case STATUS_OPEN, STATUS_INACTIVE, STATUS_TESTED, STATUS_PAUSED:
                 result = STATUS_ACTIVE;
                 break;
 

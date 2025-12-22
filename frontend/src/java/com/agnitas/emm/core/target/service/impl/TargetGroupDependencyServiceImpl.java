@@ -25,7 +25,7 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
+import com.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;

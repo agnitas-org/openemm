@@ -1,0 +1,130 @@
+*, *:before, *:after {
+  @include box-sizing(border-box);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: $ff-regular;
+  font-size: $fs-small;
+  line-height: 1.5;
+  background-color: $c-gray-11;
+}
+
+// Note: Possibly unused
+/*body.dark-theme {
+  background-color: $c-dt-main-background;
+  color: $c-dt-primary-text;
+}*/
+
+img {
+  outline: none;
+  text-decoration: none;
+  -ms-interpolation-mode: bicubic;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+p {
+  margin: 0;
+}
+
+dl {
+  margin: 0;
+}
+
+dt, dd {
+  font-weight: normal;
+}
+
+h1, h2 {
+  line-height: 1.2;
+  font-weight: $fw-semi;
+  margin: 0;
+}
+
+h1, .h1 {
+  font-size: $fs-xxlarge;
+  color: $c-white;
+
+  a {
+    font-size: $fs-xxlarge;
+    color: $c-white;
+  }
+}
+
+h2, .h2 {
+  font-size: $fs-xlarge;
+  color: $c-black-85;
+
+  a {
+    font-size: $fs-xlarge;
+    color: $c-black-85;
+  }
+}
+
+h3, h4, h5, h6 {
+  color: $c-black-85;
+  margin: 0;
+}
+
+// Note: Possibly unused
+/*body.dark-theme {
+  .l-header, .l-sidebar, .l-main-view {
+    h2, h3, h4, h5, h6 {
+      color: $c-dt-primary-text;
+    }
+  }
+}*/
+
+small, .small {
+  font-size: $fs-tiny;
+}
+
+hr {
+  border: 0;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+// Note: Possibly unused
+/*body.dark-theme hr {
+  border-bottom-color: $c-dt-border;
+}*/
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+ol {
+  // padding: 0;
+  margin: 0;
+}
+
+i { font-style: normal; }
+
+a { text-decoration: none; }
+
+// Note: Possibly unused
+/*body.dark-theme a {
+  color: $c-blue-27;
+}*/
+
+// reset default webkit button styles
+button {
+  padding: 0;
+  border: 0;
+  background-color: inherit;
+
+  &:focus {
+    outline: 0;
+  }
+}
+
+.hidden {
+  display: none !important;
+}

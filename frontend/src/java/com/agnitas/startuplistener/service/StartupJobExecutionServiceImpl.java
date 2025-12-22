@@ -20,22 +20,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.startuplistener.api.JobContext;
 import com.agnitas.startuplistener.api.StartupJob;
 import com.agnitas.startuplistener.common.JobState;
 import com.agnitas.startuplistener.common.StartupJobEntry;
 import com.agnitas.startuplistener.common.StartupJobEntryByVersionComparator;
 import com.agnitas.startuplistener.dao.StartupJobEntryDao;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 public final class StartupJobExecutionServiceImpl implements StartupJobExecutionService, ApplicationContextAware {
 
@@ -171,7 +168,7 @@ public final class StartupJobExecutionServiceImpl implements StartupJobExecution
 	}
 
 	@Override
-	public final void setApplicationContext(final ApplicationContext context) throws BeansException {
+	public void setApplicationContext(ApplicationContext context) {
 		this.applicationContext = Objects.requireNonNull(context, "Application context is null");
 	}
 

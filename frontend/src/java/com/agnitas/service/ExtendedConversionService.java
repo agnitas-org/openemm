@@ -12,7 +12,7 @@ package com.agnitas.service;
 
 import java.util.List;
 
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 
@@ -30,16 +30,18 @@ public interface ExtendedConversionService extends ConversionService {
 		}
     }
 
-    default <T, S> PaginatedListImpl<T> convertPaginatedList(PaginatedListImpl<S> paginatedList, Class<S> sourceType, Class<T> targetType) {
+    default <T, S> PaginatedList<T> convertPaginatedList(PaginatedList<S> paginatedList, Class<S> sourceType, Class<T> targetType) {
         List<S> list = paginatedList.getList();
         List<T> convertedList = convert(list, sourceType, targetType);
 
-        PaginatedListImpl<T> result = new PaginatedListImpl<>(convertedList,
+        PaginatedList<T> result = new PaginatedList<>(
+                convertedList,
                 paginatedList.getFullListSize(),
-                paginatedList.getObjectsPerPage(),
+                paginatedList.getPageSize(),
                 paginatedList.getPageNumber(),
                 paginatedList.getSortCriterion(),
-                paginatedList.getSortDirection().getName());
+                paginatedList.getSortDirection().getId()
+        );
 
         result.setNotFilteredFullListSize(paginatedList.getNotFilteredFullListSize());
         return result;

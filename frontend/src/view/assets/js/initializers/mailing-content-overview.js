@@ -1,6 +1,7 @@
 AGN.Lib.DomInitializer.new( 'mailing-content-overview', function($elem, $scope) {
-
-  var config = this.config;
+  const config = this.config;
+  const $datePicker = $('#myDatePicker');
+  const $timePicker = $('#myTimePicker');
 
   if (!$scope) {
     var data = AGN.Lib.Storage.get('mailings-content-dynNameID');
@@ -16,25 +17,14 @@ AGN.Lib.DomInitializer.new( 'mailing-content-overview', function($elem, $scope) 
     }
   }
 
-  var $datePicker = $('#myDatePicker');
   if ($datePicker.exists()) {
-    $datePicker.pickadate('picker')
-      .on({
-        set: function(thingSet) {
-          if ('select' in thingSet) {
-            var d = new Date(thingSet.select);
-            $('#startDay').val(d.getDate());
-            $('#startMonth').val(d.getMonth() + 1);
-            $('#startYear').val(d.getFullYear());
-          } else {
-            $('#startDay').val(0);
-            $('#startMonth').val(0);
-            $('#startYear').val(0);
-          }
-        }
-      });
+    $datePicker.on('change', function(){
+      const d = $datePicker.datepicker("getDate");
+      $('#startDay').val(d ? d.getDate() : 0);
+      $('#startMonth').val(d ? d.getMonth() + 1 : 0);
+      $('#startYear').val(d ? d.getFullYear() : 0);
+    });
 
-    var $timePicker = $('#myTimePicker');
 
     $timePicker.on('timepicker:complete', function() {
       var time = $timePicker.val();

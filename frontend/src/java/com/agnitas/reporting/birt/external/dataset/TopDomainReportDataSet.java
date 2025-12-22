@@ -10,20 +10,9 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.messages.I18nString;
-import com.agnitas.reporting.birt.external.beans.LightMailingList;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
-import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
-import com.agnitas.util.Tuple;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.jdbc.core.RowMapper;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,9 +27,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
-import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.impl.mapper.IntegerRowMapper;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.messages.I18nString;
+import com.agnitas.reporting.birt.external.beans.LightMailingList;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.SendPerDomainStatRow;
+import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import com.agnitas.util.Tuple;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.jdbc.core.RowMapper;
 
 public class TopDomainReportDataSet extends TopDomainsDataSet {
     
@@ -994,25 +994,27 @@ public class TopDomainReportDataSet extends TopDomainsDataSet {
 	 */
 	private int createTopDomainsTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
-		executeEmbedded(
-			"CREATE TABLE " + getTemporaryTableName(tempTableID) + " ("
-				+ "category_name VARCHAR(200),"
-				+ " category_index INTEGER,"
-				+ " domainname VARCHAR(200),"
-				+ " domainname_index INTEGER,"
-				+ " targetgroup_id INTEGER,"
-				+ " targetgroup VARCHAR(200),"
-				+ " targetgroup_index INTEGER,"
-				+ " mailinglist_name VARCHAR(200),"
-				+ " mailinglist_id INTEGER,"
-				+ " value INTEGER,"
-				+ " rate DOUBLE"
-			+ ")");
+		executeEmbedded("""
+				CREATE TABLE %s
+				(
+				    category_name     VARCHAR(200),
+				    category_index    INTEGER,
+				    domainname        VARCHAR(200),
+				    domainname_index  INTEGER,
+				    targetgroup_id    INTEGER,
+				    targetgroup       VARCHAR(200),
+				    targetgroup_index INTEGER,
+				    mailinglist_name  VARCHAR(200),
+				    mailinglist_id    INTEGER,
+				    value             INTEGER,
+				    rate              DOUBLE
+				)
+				""".formatted(getTemporaryTableName(tempTableID)));
 		return tempTableID;
 	}
-
     
     public static class DomainSendStatRow extends SendPerDomainStatRow {
+
         private String mailinglist;
         private int mailinglistId;
     

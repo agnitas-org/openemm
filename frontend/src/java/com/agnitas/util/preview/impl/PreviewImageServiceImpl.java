@@ -33,6 +33,9 @@ import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MailingComponentImpl;
 import com.agnitas.dao.MailingComponentDao;
 import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.mailing.service.MailingModel;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
@@ -42,9 +45,6 @@ import com.agnitas.util.AgnUtils;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +66,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 
     private static final int MAX_RETRIES_COUNT = 3;
 
-    private static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
+	private static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
 
     protected static final int PUPPETEER_VIEWPORT_WIDTH = 1024;
     private static final int PUPPETEER_TIMEOUT = 60_000; // 1 minute
@@ -179,9 +179,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     }
 
     private BufferedImage resizePreview(BufferedImage image, Dimension maxSize) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Preview image rescaling started");
-        }
+        logger.info("Preview image rescaling started");
 
         Dimension sourceSize = new Dimension(image.getWidth(), image.getHeight());
 
@@ -215,9 +213,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
             graphics.dispose();
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Preview image rescaling is done");
-        }
+        logger.info("Preview image rescaling is done");
 
         return image;
     }

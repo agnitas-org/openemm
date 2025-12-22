@@ -11,60 +11,54 @@
 package com.agnitas.emm.responseheaders.web;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import com.agnitas.util.ServerCommand.Server;
-
+import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.responseheaders.common.HttpHeaderConfig;
 import com.agnitas.emm.responseheaders.common.UsedFor;
 import com.agnitas.emm.responseheaders.service.HttpResponseHeaderService;
-
+import com.agnitas.util.ServerCommand.Server;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public final class HttpResponseHeaderApplierImpl implements HttpResponseHeaderApplier {
 
-    private static final Map<String, Set<String>> clientCachedResources = Map.of(
-            "contains", Set.of(
-                    "/application.min.css.action",
-                    "/assets/application.redesigned.min.js",
-                    "/translations.js.action",
-                    "/assets/config.js"),
-            "startsWith", Set.of(
-                    "/assets/fonts/"
-            ));
+	private static final List<Pattern> CLIENT_CACHED_PATTERNS = Stream.of(
+					"^/application\\.min\\.css\\.action$",
+					"^/assets/application\\.min\\.js$",
+					"^/assets/jodit\\.css$",
+					"^/js/lib/jodit/[^/]+/emoji\\.json$",
+					"^/translations\\.js\\.action$",
+					"^/assets/config\\.js$",
+					"^/assets/fonts/.*"
+			).map(Pattern::compile)
+			.toList();
     
 	private final HttpResponseHeaderService headerService;
 	private final ConfigService configService;
     
-	public HttpResponseHeaderApplierImpl(final HttpResponseHeaderService headerService, final ConfigService configService) {
+	public HttpResponseHeaderApplierImpl(HttpResponseHeaderService headerService, ConfigService configService) {
 		this.headerService = Objects.requireNonNull(headerService, "httpResponseHeaderService");
 		this.configService = Objects.requireNonNull(configService, "configService");
 	}
 
 	@Override
-	public void applyHeadersToFilterResponse(final HttpServletRequest request, final HttpServletResponse response) {
+	public void applyHeadersToFilterResponse(HttpServletRequest request, HttpServletResponse response) {
 		final List<HttpHeaderConfig> headers = headerService.listHeaderConfigsForFilter();	
 
 		applyHeaders(headers, request, response);
 	}
 
 	@Override
-	public void applyHeadersToResponse(final UsedFor usedFor, final int companyID, final HttpServletRequest request, final HttpServletResponse response) {
-		
-		final List<HttpHeaderConfig> headers = headerService
-				.listHeaderConfigs(usedFor, companyID)
-				.stream()
-				.collect(Collectors.toList());
-
+	public void applyHeadersToResponse(UsedFor usedFor, int companyID, HttpServletRequest request, HttpServletResponse response) {
+		List<HttpHeaderConfig> headers = headerService.listHeaderConfigs(usedFor, companyID);
 		applyHeaders(headers, request, response);
 	}
 
-	private final void applyHeaders(final List<HttpHeaderConfig> headers, final HttpServletRequest request, final HttpServletResponse response) {
+	private void applyHeaders(List<HttpHeaderConfig> headers, HttpServletRequest request, HttpServletResponse response) {
 		final String remoteHostname = request.getRemoteHost();
 		final String queryString = request.getServletPath();
 		final Server applicationType = this.configService.getApplicationType();
@@ -101,8 +95,9 @@ public final class HttpResponseHeaderApplierImpl implements HttpResponseHeaderAp
                 && isClientCachedResource(resource);
     }
 
-    private static boolean isClientCachedResource(String resource) {
-        return clientCachedResources.get("contains").contains(resource)
-                || clientCachedResources.get("startsWith").stream().anyMatch(resource::startsWith);
-    }
+	private static boolean isClientCachedResource(String resource) {
+		return CLIENT_CACHED_PATTERNS.stream()
+				.anyMatch(p -> p.matcher(resource).matches());
+	}
+
 }

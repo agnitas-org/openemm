@@ -23,10 +23,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import com.agnitas.emm.core.commons.dto.FileDto;
-import com.agnitas.messages.Message;
 import com.agnitas.beans.ImportStatus;
 import com.agnitas.beans.Recipient;
+import com.agnitas.emm.core.commons.dto.FileDto;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.messages.Message;
 import com.agnitas.service.ImportWizardHelper;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.Blacklist;
@@ -37,8 +38,6 @@ import com.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 /**
  * Holds the parsed data for ImportWizard
@@ -132,13 +131,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 */
 	private Map<String, CsvColInfo> columnMapping;
 
-//	/**
-//	 * Holds value of property blacklist.
-//	 */
-//	protected HashSet blacklist;
-	
 	private Blacklist blacklistHelper;
-	
 
 	protected int csvMaxUsedColumn = 0;
 
@@ -410,13 +403,13 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 				if (addErrors){
 				    setError(ImportErrorType.STRUCTURE_ERROR, StringUtils.join(inputData, " ") + "\n");
 	            }
-				logger.info("Structure error, missing header info: " + StringUtils.join(inputData, " "));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+				logger.info("Structure error, missing header info: {}", StringUtils.join(inputData, " "));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 				return null;
 			} else if (inputData.size() != csvMaxUsedColumn) {
 	            if (addErrors) {
 				    setError(ImportErrorType.STRUCTURE_ERROR, StringUtils.join(inputData, " ") + "\n");
 	            }
-				logger.error("MaxUsedColumn: " + csvMaxUsedColumn + ", " + inputData.size());
+				logger.error("MaxUsedColumn: {}, {}", csvMaxUsedColumn, inputData.size());
 				return null;
 			}
 			
@@ -439,7 +432,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
                             if (addErrors) {
 							    setError(ImportErrorType.KEYDOUBLE_ERROR, StringUtils.join(inputData, ";") + "\n");
                             }
-							logger.info("Duplicate email: " + StringUtils.join(inputData, ";"));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+							logger.info("Duplicate email: {}", StringUtils.join(inputData, ";"));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							return null;
 						}
 					}
@@ -448,27 +441,27 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
                             if(addErrors) {
 								setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
 							}
-							logger.info("Empty email: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+							logger.info("Empty email: {}", StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							return null;
 						}
 						if (aValue.indexOf('@') == -1) {
                             if(addErrors) {
 								setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
 							}
-							logger.info("No @ in email: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+							logger.info("No @ in email: {}", StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							return null;
 						}
 
 						try {
 							if (!AgnUtils.isEmailValid(aValue)) {
-								throw new Exception("Invalid email address");
+								throw new IllegalArgumentException("Invalid email address");
 							}
 						} catch (Exception e) {
                             if(addErrors) {
 							    setError(ImportErrorType.EMAIL_ERROR, StringUtils.join(inputData, " ") + "\n");
                             }
                             if(logger.isInfoEnabled()) {
-                            	logger.info("InternetAddress error: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+                            	logger.info("InternetAddress error: {}", StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
                             }
 							return null;
 						}
@@ -478,7 +471,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 							    setError(ImportErrorType.BLACKLIST_ERROR, StringUtils.join(inputData, " ") + "\n");
                             }
 							if(logger.isInfoEnabled()) {
-								logger.info("Blacklisted: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+								logger.info("Blacklisted: {}", StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 							}
 							return null;
 						}
@@ -498,7 +491,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 									    setError(ImportErrorType.MAILTYPE_ERROR, StringUtils.join(inputData, " ") + "\n");
                                     }
                                     if(logger.isInfoEnabled()) {
-                                    	logger.info("Invalid mailtype: " + StringUtils.join(inputData, " "));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+                                    	logger.info("Invalid mailtype: {}", StringUtils.join(inputData, " "));		// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
                                     }
 									return null;
 								}
@@ -508,7 +501,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 						try {
 							tmp = Integer.parseInt(aValue);
 							if (tmp < 0 || tmp > 5) {
-								throw new Exception("Invalid gender");
+								throw new IllegalArgumentException("Invalid gender");
 							}
 						} catch (Exception e) {
 							if (aInfo.getName().equalsIgnoreCase(GENDER_KEY)) {
@@ -520,9 +513,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
                                     if(addErrors) {
                                         setError(ImportErrorType.GENDER_ERROR, StringUtils.join(inputData, " ") + ";" + SafeString.getLocaleString("import.error.GenderFormat",locale) + aInfo.getName() + "\n");
                                     }
-                                    if(logger.isInfoEnabled()) {
-                                    	logger.info("Invalid gender: " + aValue);			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
-                                    }
+									logger.info("Invalid gender: {}", aValue); // That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 									return null;
 								}
 							}
@@ -563,7 +554,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	                                                            + aInfo.getName() + "\n");
 	                                        }
 	                                        if(logger.isInfoEnabled()) {
-	                                        	logger.info("Numberformat error: " + StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+	                                        	logger.info("Numberformat error: {}", StringUtils.join(inputData, " "));			// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 	                                        }
 											return null;
 										}
@@ -582,7 +573,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	                                        setError(ImportErrorType.DATE_ERROR, StringUtils.join(inputData, " ") + ";" + SafeString.getLocaleString("import.error.DateFormat", locale) + aInfo.getName() + "\n");
 	                                    }
 	                                    if(logger.isInfoEnabled()) {
-	                                    	logger.info("Dateformat error: " + StringUtils.join(inputData, " "));						// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
+	                                    	logger.info("Dateformat error: {}", StringUtils.join(inputData, " "));						// That's not ERROR level. We detected it, we reported it, we skipped that line => write at INFO level!
 	                                    }
 										return null;
 									}

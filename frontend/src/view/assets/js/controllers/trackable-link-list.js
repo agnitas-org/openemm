@@ -1,77 +1,88 @@
-AGN.Lib.Controller.new('trackable-link-list', function () {
-  var scrollToElemId;
-  var KEEP_UNCHANGED;
-  AGN.Opt.DefaultExtensions = {};
-  var TrackableLinkExtensions = new AGN.Lib.TrackableLinkExtensions();
-  var SAVE_ALL_URL;
+AGN.Lib.Controller.new('mailing-trackable-links', function () {
+  const self = this;
+  const Form = AGN.Lib.Form;
+  let scrollToElemId;
+  let KEEP_UNCHANGED;
+  let SAVE_ALL_URL;
+  
 
-  this.addDomInitializer('trackable-link-list', function () {
+  this.addDomInitializer('mailing-trackable-links', function () {
     KEEP_UNCHANGED = this.config.KEEP_UNCHANGED;
     SAVE_ALL_URL = this.config.SAVE_ALL_URL;
-    AGN.Opt.DefaultExtensions = this.config.defaultExtensions;
     if (this.config.scrollToLinkId) {
-      scrollTo($('#link-' + this.config.scrollToLinkId));
+      scrollTo($(`#link-${this.config.scrollToLinkId}`));
     }
-  });
-
-  this.addDomInitializer('trackable-link-extensions', function () {
-    TrackableLinkExtensions.load(this.config.extensions, getExtensionsTable());
   });
 
   AGN.Lib.Action.new({change: '[id^=link-], #tile-trackableLinkEditAll'}, function () {
     scrollToElemId = this.el.attr('id');
   });
 
-  this.addAction({scrollTo: 'scroll-to'}, function () {
-    if (scrollToElemId) {
-      scrollTo($(this.el).find('#' + scrollToElemId));
-    }
-  });
-
-  this.addAction({
-    click: 'save-bulk-actions',
-    enterdown: 'description-enterdown, bulkActionExtensionsEnterdown'
-  }, function () {
-    var form = AGN.Lib.Form.get($("#trackableLinkForm"));
-    var bulkActionsFormData = $('#bulkActionsForm').serializeFormDataObject();
+  this.addAction({click: 'save-bulk-actions'}, function () {
+    const form = Form.get($("#trackableLinksForm"));
+    const bulkActionsFormData = $('#bulkActionsForm').serializeFormDataObject();
     form._data = {}
 
     $.each(bulkActionsFormData, function (k, v) {
       form.setValue(k, v);
     });
     form.setValue('modifyAllLinksExtensions', false);
-    setExtensionsToForm(form);
+    setExtensionsToForm(AGN.Lib.InputTable.get('#bulkActionExtensions').collect(), form);
     form.setActionOnce(SAVE_ALL_URL);
     form.submit();
     AGN.Lib.Modal.getWrapper(this.el).modal('hide');
   });
 
-  this.addAction({click: 'save', enterdown: 'settingsExtensionsEnterdown'}, function () {
+  this.addAction({submission: 'save-all'}, function () {
     this.event.preventDefault();
-    var form = AGN.Lib.Form.get($('#trackableLinkForm'));
+    const form = Form.get($('#trackableLinksForm'));
     form._data = {}
 
     form.setValue('modifyBulkLinksExtensions', false);
     keepBulkSettingsUnchanged(form);
-    setExtensionsToForm(form);
+    setExtensionsToForm(AGN.Lib.InputTable.get('#link-common-extensions').collect(), form);
     form.setActionOnce(SAVE_ALL_URL);
     form.submit();
+  });
+  
+  this.addAction({scrollTo: 'scroll-to'}, function () {
+    if (scrollToElemId) {
+      scrollTo($(this.el).find('#' + scrollToElemId));
+    }
   });
 
   function scrollTo($target) {
     if ($target && $target.length > 0) {
-      var $scrollContainer = $target.closest('[data-sizing="scroll"]');
-      if ($scrollContainer.length > 0) {
-        var highestOffsetTop = $scrollContainer.find(':first-child').offset().top;
-        var targetOffsetTop = $target.offset().top;
+      const $scrollContainer = $target.closest('.table-wrapper__body');
+      if ($scrollContainer.exists()) {
+        const highestOffsetTop = $scrollContainer.find(':first-child').offset().top;
+        const targetOffsetTop = $target.offset().top;
         $scrollContainer.scrollTop(0);
         $scrollContainer.scrollTop(targetOffsetTop - highestOffsetTop);
       }
     }
   }
+  
+  this.addAction({click: 'save-individual'}, function () {
+    this.event.preventDefault();
+    const form = Form.get($('#trackableLinkForm'));
+    const extensions = AGN.Lib.InputTable.get("#individual-extensions").collect();
+    setExtensionsToForm(extensions, form);
+    form.submit();
+  });
 
-  function setExtensionsToForm(form) {
-    _.each(TrackableLinkExtensions.collect(), function (extension, index) {
+  this.addAction({'change': 'link-details-trackable'}, function () {
+    self.runInitializer('trackableAction');
+  });
+
+  this.addInitializer('trackableAction', function () {
+    const $trigger = $('[data-action="link-details-trackable"] :selected');
+    const $linkAction = $('#linkAction');
+    $linkAction.prop('disabled', $linkAction.prop('disabled') || $trigger.val() == 0);
+  })
+
+  function setExtensionsToForm(extensions, form) {
+    _.each(extensions, function (extension, index) {
       form.setValue('extensions[' + index + '].name', extension.name);
       form.setValue('extensions[' + index + '].value', extension.value);
     })
@@ -82,13 +93,5 @@ AGN.Lib.Controller.new('trackable-link-list', function () {
     form.setValue('bulkAction', KEEP_UNCHANGED);
     form.setValue('bulkDeepTracking', KEEP_UNCHANGED);
     form.setValue('bulkStatic', KEEP_UNCHANGED);
-  }
-
-  function getExtensionsTable() {
-    return isModalOpened() ? $('#bulkActionExtensions tbody') : $('#settingsExtensions tbody');
-  }
-
-  function isModalOpened() {
-    return $('.modal').is(':visible');
   }
 });

@@ -1,10 +1,8 @@
-(function(){
+(() => {
 
-  var Controller;
-
-  Controller = function(func) {
+  const Controller = function(func) {
     func = _.bind(func, this);
-    func();
+    func(this);
   };
 
   Controller.prototype.addAction = function(events, action) {
@@ -23,25 +21,31 @@
     AGN.Lib.CoreInitializer.run(name);
   };
 
-
   Controller.new = function(name, func) {
     AGN.Opt.Controllers[name] = func;
   };
 
-  Controller.init = function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
+  Controller.newExtended = function (name, baseName, func) {
+    Controller.new(name, instance => {
+      const baseController = AGN.Opt.Controllers[baseName];
+      if (baseController) {
+        new Controller(baseController);
+      }
 
+      _.bind(func, instance)(instance);
+    })
+  }
+
+  Controller.init = function($scope = $(document)) {
     $scope.all('[data-controller]').each(function() {
-      var $controller = $(this),
-          init = AGN.Opt.Controllers[$controller.data('controller')];
+      const name = $(this).data('controller');
+      const init = AGN.Opt.Controllers[name];
 
       if (init) {
         new AGN.Lib.Controller(init);
 
         // slated for removal
-        AGN.Opt.Controllers[$controller.data('controller')] = undefined;
+        AGN.Opt.Controllers[name] = undefined;
       }
     });
   };

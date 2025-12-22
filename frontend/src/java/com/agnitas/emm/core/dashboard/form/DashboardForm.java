@@ -14,23 +14,13 @@ import com.agnitas.emm.core.dashboard.enums.DashboardMode;
 import com.agnitas.web.forms.PaginationForm;
 
 public class DashboardForm extends PaginationForm {
-    private static final int ROWNUMS = 20;
-    
-    public DashboardForm() {
-        setNumberOfRows(ROWNUMS);
-    }
-    
-    private int lastSentMailingId; //TODO check usage and remove after EMMGUI-953 has been successfully tested
+
     private DashboardMode mode;
 
-    public int getLastSentMailingId() {
-        return lastSentMailingId;
+    public DashboardForm() {
+        setNumberOfRows(20);
     }
-
-    public void setLastSentMailingId(int lastSentMailingId) {
-        this.lastSentMailingId = lastSentMailingId;
-    }
-
+    
     public DashboardMode getMode() {
         return mode;
     }

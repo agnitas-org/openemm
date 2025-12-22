@@ -11,18 +11,17 @@
 package com.agnitas.dao;
 
 import java.util.List;
-import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.MailingBase;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.web.forms.PaginationForm;
 
 public interface CampaignDao {
 
 	Campaign getCampaign(int campaignID, int companyID);
-	List<Map<String, Object>> getMailingNames(Campaign campaign, String mailingSelection);
+
 	int deleteByCompanyID(int companyID);
 	 /**
      *  Saves campaign data
@@ -47,7 +46,7 @@ public interface CampaignDao {
      *                The id of the campaign company
      * @return  List of MailingBase bean objects or empty list
      */
-	PaginatedListImpl<MailingBase> getCampaignMailings(int campaignID, PaginationForm form, Admin admin);
+	PaginatedList<MailingBase> getCampaignMailings(int campaignID, PaginationForm form, Admin admin);
 
     /**
      * Loads list of campaigns for certain company; sort and order criteria are used for getting sorted selection from database
@@ -67,8 +66,9 @@ public interface CampaignDao {
 
 	boolean isDefinedForAutoOptimization(int campaignId, Admin admin);
 
-	PaginatedListImpl<Campaign> getOverview(int companyId, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize);
+	PaginatedList<Campaign> getOverview(int companyId, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize);
 	
 	List<Integer> getSampleCampaignIDs(int companyID);
+
 	List<Campaign> getCampaigns(int companyID);
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.Mailing;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 
 public interface TriggerdialogService {
 
@@ -27,12 +27,6 @@ public interface TriggerdialogService {
 	boolean isPostMailing(Mailing mailing);
 
 	boolean existsCampaign(int companyID, int mailingID, String shortname);
-
-	void createExternalMailing(Mailing mailing) throws Exception;
-
-	void updateExternalMailing(Mailing mailing) throws Exception;
-
-	void createTriggerdialogDelivery(int companyID, int mailingID, Date sendDate);
 
 	boolean createPostTrigger(Mailing mailing, Date sendDate);
 
@@ -47,8 +41,6 @@ public interface TriggerdialogService {
 	List<String> getReferenceFields(int companyId, int mailingId);
 
 	void updatePostalMailing(Mailing mailing, int companyID, String genderLang, Map<String, String[]> variableTypes, String salutationType, String salutationTagType) throws Exception;
-
-	void storeExternalMailingFields(int companyID, int mailingID, List<TriggerdialogField> fields);
 
 	void storeExternalMailingField(TriggerdialogField field);
 
@@ -65,8 +57,6 @@ public interface TriggerdialogService {
 	void createMappingsForCustomAddressFields(int mailingId, int companyId);
 
 	List<String> getDefaultAddressFields(int companyId);
-
-	void storeNewExternalFields(List<TriggerdialogField> fields);
 
 	List<String> getExternalFieldsNames(List<TriggerdialogField> externalFields);
 

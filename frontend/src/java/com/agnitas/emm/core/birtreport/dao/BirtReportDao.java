@@ -10,18 +10,18 @@
 
 package com.agnitas.emm.core.birtreport.dao;
 
-import com.agnitas.emm.core.birtreport.bean.BirtReport;
-import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
-import com.agnitas.emm.core.birtreport.bean.ReportEntry;
-import com.agnitas.emm.core.birtreport.dto.BirtReportType;
-import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.birtreport.bean.BirtReport;
+import com.agnitas.emm.core.birtreport.bean.LightweightBirtReport;
+import com.agnitas.emm.core.birtreport.bean.ReportEntry;
+import com.agnitas.emm.core.birtreport.dto.BirtReportType;
+import com.agnitas.emm.core.birtreport.forms.BirtReportOverviewFilter;
 
 public interface BirtReportDao {
 
@@ -36,8 +36,6 @@ public interface BirtReportDao {
     boolean update(BirtReport report);
     
     boolean update(BirtReport report, List<Integer> justDeactivateSettingTypes);
-
-    List<LightweightBirtReport> getLightweightBirtReportList(int companyID);
 
     void deactivateReportSettings(int reportId, Collection<Integer> settingsTypes);
 
@@ -71,10 +69,7 @@ public interface BirtReportDao {
 
     Date getReportActivationDay(int companyId, int reportId);
 
-    List<BirtReport> getReportsByIds(List<Integer> reportIds);
-
-    PaginatedListImpl<ReportEntry> getPaginatedReportList(int companyId, String sort, String order, int pageNumber, int rownums);
-    PaginatedListImpl<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
+    PaginatedList<ReportEntry> getPaginatedReportList(BirtReportOverviewFilter filter, int companyId);
 
     List<BirtReport> getAllReportsByCompanyID(int companyId);
 
@@ -87,6 +82,7 @@ public interface BirtReportDao {
     List<Integer> getSampleReportIds(int companyId);
 
     List<ReportEntry> findAllByEmailPart(String email, int companyID);
+
     List<ReportEntry> findAllByEmailPart(String email);
 
     void storeBirtReportEmailRecipients(List<String> emails, int reportId);

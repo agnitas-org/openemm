@@ -10,8 +10,24 @@
 
 package com.agnitas.emm.core.address_management.service.impl;
 
+import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static com.agnitas.util.Const.Mvc.ERROR_MSG;
+import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminEntry;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.ImportProfile;
+import com.agnitas.beans.Recipient;
 import com.agnitas.emm.core.address_management.dto.AddressManagementDTOBase;
 import com.agnitas.emm.core.address_management.dto.AddressManagementEntry;
 import com.agnitas.emm.core.address_management.dto.BirtReportAddressManagementDTO;
@@ -27,37 +43,19 @@ import com.agnitas.emm.core.birtreport.bean.ReportEntry;
 import com.agnitas.emm.core.birtreport.service.BirtReportService;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.company.service.CompanyService;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ImportProfileService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.beans.AdminEntry;
-import com.agnitas.beans.ImportProfile;
-import com.agnitas.beans.Recipient;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.service.ImportProfileService;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
-import static com.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Service("AddressManagementService")
 public class AddressManagementServiceImpl implements AddressManagementService {
 
-    private static final Logger logger = LogManager.getLogger(AddressManagementServiceImpl.class);
     protected static final int ROOT_COMPANY_ID = 1;
     private static final List<AddressManagementCategory> CATEGORIES = List.of(AddressManagementCategory.values());
     private static final List<AddressManagementCategory> FORBIDDEN_CATEGORIES = List.of(
@@ -107,7 +105,7 @@ public class AddressManagementServiceImpl implements AddressManagementService {
             return findReports(email, companyId);
         }
 
-        if (AddressManagementCategory.TECHNICAL_CONTACTS.equals(category)) {
+        if (AddressManagementCategory.CLIENTS.equals(category)) {
             return findClients(email, companyId);
         }
 
@@ -244,8 +242,8 @@ public class AddressManagementServiceImpl implements AddressManagementService {
             return replaceEmailForBirtReport(oldEmail, newEmail, entry.getId(), entry.getCompanyId());
         }
 
-        if (AddressManagementCategory.TECHNICAL_CONTACTS.equals(entry.getCategory())) {
-            return replaceTechnicalContactEmail(oldEmail, newEmail, entry.getId());
+        if (AddressManagementCategory.CLIENTS.equals(entry.getCategory())) {
+            return replaceEmailForClient(oldEmail, newEmail, entry.getId());
         }
 
         return SimpleServiceResult.simpleError(Message.of(ERROR_MSG));
@@ -287,16 +285,18 @@ public class AddressManagementServiceImpl implements AddressManagementService {
                 .toList();
     }
 
-    private SimpleServiceResult replaceTechnicalContactEmail(String oldEmail, String newEmail, int id) {
+    private SimpleServiceResult replaceEmailForClient(String oldEmail, String newEmail, int id) {
         Company company = companyService.getCompany(id);
         if (company == null) {
             return SimpleServiceResult.simpleError(Message.of(ERROR_MSG));
         }
 
-        companyService.updateTechnicalContact(
+        companyService.updateEmails(
                 replaceEmail(company.getContactTech(), oldEmail, newEmail, " "),
+                Set.copyOf(replaceEmail(company.getSystemMessageEmails(), oldEmail, newEmail)),
                 company.getId()
         );
+
         return SimpleServiceResult.simpleSuccess();
     }
 

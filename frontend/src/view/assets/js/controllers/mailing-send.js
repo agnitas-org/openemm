@@ -1,219 +1,36 @@
-AGN.Lib.Controller.new('mailing-send', function() {
-    const Form = AGN.Lib.Form,
-        Modal = AGN.Lib.Modal,
-        Confirm = AGN.Lib.Confirm,
-        Page = AGN.Lib.Page,
-        Template = AGN.Lib.Template;
+AGN.Lib.Controller.new('mailing-send', function () {
 
-    const RECIPIENT_TEST_RUN_OPTION = 'RECIPIENT';
-    const TARGET_TEST_RUN_OPTION = 'TARGET';
-    const SEND_TO_SELF_TEST_RUN_OPTION = 'SEND_TO_SELF';
+  const Form = AGN.Lib.Form,
+    Confirm = AGN.Lib.Confirm,
+    Page = AGN.Lib.Page,
+    Template = AGN.Lib.Template,
+    Messages = AGN.Lib.Messages;
 
-    const Helpers = {
-        disableSendButtons: function () {
-            $('#test-send-controls-group #adminSendButton').addClass('disabled');
-            $('#test-send-controls-group #testSendButton').addClass('disabled');
-        },
-        enableSendButtons: function () {
-            $('#test-send-controls-group #adminSendButton').removeClass('disabled');
-            $('#test-send-controls-group #testSendButton').removeClass('disabled');
-        },
-        hideGreenMarks: function () {
-            $('.transmission-mark').remove();
-            $('#recipient-add-btn, .recipient-remove-btn').removeClass('hidden');
-        },
-        updateWorkStatus: function (workStatus, tooltip) {
-            const $statusIcon = $(Template.text('mailing-workstatus-icon', {workstatus: workStatus, tooltip: tooltip}));
-            $('#workstatus-icon').replaceWith($statusIcon);
-        }
-    };
+  const RECIPIENT_TEST_RUN_OPTION = 'RECIPIENT';
+  const TARGET_TEST_RUN_OPTION = 'TARGET';
+  const SEND_TO_SELF_TEST_RUN_OPTION = 'SEND_TO_SELF';
 
-    this.addAction({
-        'click': 'configure-delivery-mailing-size-warning'
-    }, function() {
-        const $e = this.el;
+  let $testRecipientsTable;
+  let approvalOptions;
+  let config;
 
-        Confirm.createFromTemplate({}, 'warning-mailing-size-modal').done(function() {
-            $e.prop('disabled', true);
-            Page.reload($e.data('url'));
-        });
-    });
+  const Helpers = {
+    hideGreenMarks: function () {
+      const $transmissionMark = $('.transmission-mark');
+      $transmissionMark.parent().find('button').removeClass('hidden');
+      $transmissionMark.remove();
+    },
+    updateWorkStatus: function (workStatus, tooltip) {
+      const $statusIcon = Template.dom('mailing-workstatus-icon', {workStatus, tooltip});
+      $('#workstatus-icon').replaceWith($statusIcon);
+      AGN.Lib.CoreInitializer.run('tooltip', $statusIcon);
+    }
+  };
 
-    this.addAction({
-        'click': 'configure-delivery-mailing-size-error'
-    }, function() {
-        Modal.createFromTemplate({}, 'error-mailing-size-modal');
-    });
+  this.addDomInitializer("test-mailing", function () {
+    $testRecipientsTable = $('#test-recipients-table');
+    drawTestRecipientsTable(this.config.testRecipients);
 
-    this.addAction({
-        'click': 'resume-sending'
-    }, function() {
-        const $e = this.el;
-        const link = $e.data("link");
-
-        const jqxhr = $.post(link);
-        jqxhr.done(function (resp) {
-            Page.render(resp);
-            $e.closest('.form-group').remove();
-        });
-    });
-
-    this.addAction({
-        'click': 'configure-delivery'
-    }, function() {
-        this.el.prop('disabled', true);
-        Page.reload(this.el.data('url'), true);
-        this.el.prop('disabled', false);
-    });
-
-    this.addAction({
-        'click': 'start-delivery'
-    }, function() {
-        if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION) {
-            var isTestRecipientsRequired = true;
-
-            $('input[name="mailingTestRecipients"]').each(function() {
-                const address = $(this).val();
-                if (address && address.trim()) {
-                    isTestRecipientsRequired = false;
-                }
-            });
-
-            if (isTestRecipientsRequired) {
-                AGN.Lib.Messages(t('defaults.error'), t('error.enterEmailAddresses'), 'alert');
-                return;
-            }
-        }
-
-        Helpers.disableSendButtons();
-
-        const form = Form.get(this.el);
-        form.setActionOnce(this.el.data('url'));
-        form.submit();
-    });
-
-    this.addAction({
-        'click': 'recipients-row-remove'
-    }, function() {
-        var emailAddresses,
-            $emailAddressFields,
-            $row = this.el.closest('tr'),
-            $emailAddresses = $('[name="statusmailRecipients"]');
-
-        $row.remove();
-        $emailAddressFields = $('[name^="statusmailRecipient_"]');
-
-        emailAddresses = _.map( $emailAddressFields, function(field) {
-            return $(field).val();
-        });
-
-        $emailAddresses.val(emailAddresses.join(' '));
-        Form.get(this.el).submit();
-    });
-
-    this.addAction({
-        'click': 'recipients-row-add',
-        'keydown': 'recipients-row-field'
-    }, function() {
-
-        if (this.event.type == 'keydown' && this.event.keyCode != 13) {
-            return;
-        }
-
-        var emailAddresses,
-            $email = $('#newStatusMail'),
-            $emailAddressFields = $('[name^="statusmailRecipient_"]'),
-            $emailAddresses = $('[name="statusmailRecipients"]');
-
-        emailAddresses = _.map( $emailAddressFields, function(field) {
-            return $(field).val();
-        });
-
-        emailAddresses.push($email.val());
-        $emailAddresses.val(emailAddresses.join(' '));
-        Form.get(this.el).submit().done(function() {
-            $('#newStatusMail').trigger("focus");
-        });
-    });
-
-    this.addInitializer('statusmailRecipients', function($scope) {
-        var emailAddresses,
-            $emailAddresses = $('[name="statusmailRecipients"]'),
-            $target = $('#statusEmailContainer');
-
-        $('.js-recipients-row').remove();
-
-        if ($emailAddresses.val() == "") {
-            return;
-        }
-
-        emailAddresses = $emailAddresses.val() || "";
-        emailAddresses = emailAddresses.split(' ');
-
-        _.each(emailAddresses, function(email) {
-            if (email == "") {
-                return;
-            }
-
-            $target.prepend(Template.text('recipients-row', { email: email }));
-        })
-    });
-
-    this.addDomInitializer('delivery-status-view', function() {
-        if (!this.config.isTransmissionRunning) {
-            Helpers.hideGreenMarks();
-        }
-
-        const workStatus = this.config.workStatus;
-        const workStatusTooltip = this.config.workStatusTooltip;
-        if (workStatus && workStatusTooltip) {
-            Helpers.updateWorkStatus(workStatus, workStatusTooltip);
-        }
-    });
-
-    this.addAction({click: 'add-test-recipient', enterdown: 'new-test-recipient'}, function() {
-        this.event.preventDefault();
-
-        const $currentRow = this.el.closest('tr');
-        const $currentInput = this.el.is('input') ? this.el : $currentRow.find('input');
-        const $newRow = Template.dom('test-recipient-row', {value: $currentInput.val() || ''});
-
-        $currentRow.before($newRow);
-        $currentInput.val('');
-
-        AGN.runAll($newRow);
-
-        $currentInput.focus();
-        changeSaveTestRunTargetBtnState(false);
-    });
-
-    this.addAction({input: 'new-test-recipient'}, function() {
-        changeSaveTestRunTargetBtnState(false);
-    });
-    
-    this.addAction({input: 'edit-test-recipient', enterdown: 'edit-test-recipient'}, function() {
-        this.event.preventDefault();
-        changeSaveTestRunTargetBtnState(false);
-    });
-    
-    this.addAction({input: 'edit-test-run-target-name'}, function() {
-        changeSaveTestRunTargetBtnState(false);
-    });
-    
-    this.addAction({enterdown: 'edit-test-run-target-name'}, function() {
-        this.event.preventDefault();
-    });
-
-    this.addAction({click: 'remove-test-recipient'}, function() {
-        const $tr = this.el.closest('tr');
-        $tr.remove();
-        changeSaveTestRunTargetBtnState(false);
-    });
-
-
-  var approvalOptions;
-
-  this.addDomInitializer("test-run-recipients", function () {
     approvalOptions = JSON.parse(this.config ? this.config.approvalOptions : '[]');
     controlTestRunOptionsDisplaying();
     $('#get-approval-switch').on('change', function () {
@@ -237,178 +54,365 @@ AGN.Lib.Controller.new('mailing-send', function() {
 
   function controlTestRunRecipientsDisplaying() {
     const $testRunDropdown = $('#test-run-options');
-    if (!$testRunDropdown.length) {
+    if (!$testRunDropdown.exists()) {
       return;
     }
     const isSingleRecipientOption = $testRunDropdown.val() == RECIPIENT_TEST_RUN_OPTION;
     const isTargetIdRunOption = $testRunDropdown.val() == TARGET_TEST_RUN_OPTION;
     const isSendToSelfRunOption = $testRunDropdown.val() == SEND_TO_SELF_TEST_RUN_OPTION;
     const newTargetElementsHidden = !isSingleRecipientOption || !$('#save-target-toggle').prop('checked');
-    $('#test-recipients-table').toggleClass('hidden', (!isSingleRecipientOption));
-    $('#adminSendButton').toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
-    $('#testTargetSaveButton').toggleClass('hidden', newTargetElementsHidden);
+
+    $testRecipientsTable.parent().toggleClass('hidden', (!isSingleRecipientOption));
+    $('#adminSendButton').parent().toggleClass('hidden', isSingleRecipientOption || isTargetIdRunOption || isSendToSelfRunOption);
+    $('#testTargetSaveButton').parent().toggleClass('hidden', newTargetElementsHidden);
     $('#test-run-target-name-input').toggleClass('hidden', newTargetElementsHidden);
     // prevent hidden fields submit
-    $('#adminTargetGroupSelect').prop('disabled', !isTargetIdRunOption);
-    $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
+    $('#testRunOptionSelect').prop('disabled', !isTargetIdRunOption);
+    $testRecipientsTable.find('input').prop('disabled', !isSingleRecipientOption);
   }
 
-    function changeSaveTestRunTargetBtnState(saved) {
-        const $testRunTargetBtn = $('#testTargetSaveButton');
-        const $btnIcon = $testRunTargetBtn.find('i');
-        if (saved) {
-            $btnIcon.hide();
-        }
-        $testRunTargetBtn.toggleClass('btn-primary', !saved, 500);
-        $testRunTargetBtn.toggleClass('btn-success', saved, 500);
-        if (saved) {
-            $testRunTargetBtn.css({'cursor': 'not-allowed', 'pointer-events': 'none'});
-        } else {
-            $testRunTargetBtn.css({'cursor': '', 'pointer-events': ''});
-        }
-        $btnIcon.toggleClass('icon-save', !saved);
-        $btnIcon.toggleClass('icon-check', saved);
-        $btnIcon.show(500);
-    }
+  this.addDomInitializer("send-mailing", function () {
+    config = this.config;
+    const decimalSeparator = window.adminLocale === 'en-US' ? ',' : '.';
 
-    function isValidTestTargetNameField() {
-        const $targetName = $('input[name="targetName"]');
-        const errors = AGN.Lib.Validator.get('length').errors($targetName, {min: 3, required: true});
-        const form = Form.get($targetName);
-        if (!errors.length) {
-            form.cleanErrors();
-            return true;
-        }
-        errors.forEach(function(error) {
-            form.showFieldError$($targetName, error.msg);
-        })
-        return false;
-    }
+    _.each($('.commaSplitInput'), e => {
+      const $e = $(e);
+      const separatedText = $e.val().replace(/\B(?=(\d{3})+(?!\d))/g, decimalSeparator);
 
-    function saveTargetName() {
-        $.ajax({
-            type: 'POST',
-            url: AGN.url("/mailing/send/test/saveTarget.action"),
-            data: {
-                'mailingTestRecipients': collectTestRunEmails(),
-                'targetName': $('input[name="targetName"]').val().trim()
-            }
-        }).done(function(resp) {
-            if (resp.success === true) {
-                changeSaveTestRunTargetBtnState(true);
-            } else {
-                AGN.Lib.JsonMessages(resp.popups);
-            }
-        });
-    }
-
-    this.addAction({click: 'save-target-for-test-run'}, function() {
-        if (!isValidTestTargetNameField()) {
-            return;
-        }
-        saveTargetName();
+      $e.val(separatedText);
     });
 
-    function collectTestRunEmails() {
-        return $('input[name="mailingTestRecipients"]')
-            .map(function() {
-                return this.value.trim();
-            }).get()
-            .filter(function(email) {
-                return email
-            });
+    clearMaxRecipientsValueIfZero();
+
+    if (config.approximateMaxDeliverySize > config.errorSizeThreshold) {
+      Messages.warnText(Template.text('delivery-size-error-msg'));
+    }
+  });
+
+  this.addAction({click: 'check-links'}, function () {
+    $.post(config.urls.CHECK_LINKS).done(resp => AGN.Lib.RenderMessages($(resp)));
+  });
+
+  this.addAction({click: 'send-world'}, function () {
+    if (config.approximateMaxDeliverySize > config.errorSizeThreshold) {
+      Messages.alertText(Template.text('delivery-size-error-msg'));
+      return;
     }
 
-    function initializeFormFields($form) {
-        const form = AGN.Lib.Form.get($form);
-        form.initFields();
+    const formSubmissionCallback = () => {
+      const form = Form.get(this.el);
+      form.setActionOnce(AGN.url('/mailing/send/confirm-send-world.action'));
+      form.submit('confirm').done(resp => {
+        Confirm.create(resp)
+          .done(resp => form.updateHtml(resp));
+      });
+    };
+
+    if (config.approximateMaxDeliverySize > config.warningSizeThreshold) {
+      Confirm.from('warning-mailing-size-modal').done(formSubmissionCallback);
+      return;
     }
 
-    this.addAction({change: 'prioritization-toggle'}, function() {
-        toggleButton($(this.el), 'isPrioritizationDisallowed')
+    formSubmissionCallback();
+  });
+
+  const drawTestRecipientsTable = function (recipients) {
+    if (!recipients.length) {
+      const $row = Template.dom('test-recipient-row', {value: '', newRow: true, sent: false});
+      $testRecipientsTable.append($row);
+      AGN.runAll($row);
+
+      return;
+    }
+
+    for (let i = 0; i < recipients.length; i++) {
+      const isLastRow = i === recipients.length - 1;
+      const $row = Template.dom('test-recipient-row', {value: recipients[i], newRow: isLastRow, sent: true});
+      $testRecipientsTable.append($row);
+      AGN.runAll($row);
+    }
+  }
+
+  this.addAction({change: 'save-interval-settings'}, function () {
+    const form = Form.get(this.el);
+    form.setActionOnce(AGN.url('/mailing/send/interval.action'));
+    form.submit();
+  });
+
+  this.addAction({'click': 'resume-sending'}, function () {
+    const $el = this.el;
+    const link = $el.data("link");
+
+    $.post(link).done(resp => {
+      Page.render(resp);
+      $el.parent().remove();
     });
+  });
 
-    this.addAction({change: 'encrypted-send-toggle'}, function() {
-        toggleButton($(this.el), 'isEncryptedSend')
-    });
+  this.addDomInitializer("status-mail-recipients", function () {
+    const recipients = this.config.recipients || '';
+    const $container = $('#status-emails-block');
 
-    this.addAction({change: 'sendStatusOnErrorOnly-toggle'}, function() {
-        toggleButton($(this.el), 'statusOnErrorEnabled')
-    });
+    recipients.split(' ')
+      .filter(email => email)
+      .forEach(email => $container.append(Template.text('status-mail-recipient-row', {email, newRow: false})));
 
-    function toggleButton($toggle, propertyName) {
-        const isChecked = $toggle.prop('checked');
+    $container.append(Template.text('status-mail-recipient-row', {email: '', newRow: true}));
+  });
 
-        // Disable toggle button until changes are saved.
-        $toggle.prop('disabled', true);
+  this.addAction({
+    click: 'status-mail-recipient-row-delete'
+  }, function () {
+    const $row = this.el.closest('[data-status-mail-recipient-row]');
+    const mailingId = $row.data('mailing-id');
 
-        function failed() {
-            // Failed to save changes, revert initial toggle button state.
-            $toggle.prop('checked', !isChecked);
-            AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
+    $row.remove();
+    saveStatusEmails(mailingId, collectStatusEmails());
+  });
+
+  this.addAction({
+    click: 'status-mail-recipient-row-add',
+    enterdown: 'status-mail-recipient-change'
+  }, function () {
+    this.event.preventDefault();
+
+    const $row = this.el.closest('[data-status-mail-recipient-row]');
+    const $emailInput = $row.find('input');
+    const email = $emailInput.val();
+
+    if (email) {
+      saveStatusEmails($row.data('mailing-id'), collectStatusEmails(true), () => {
+        $row.before(Template.text('status-mail-recipient-row', {email: email, newRow: false}));
+        $emailInput.val('');
+      });
+    }
+  });
+
+  this.addAction({enterdown: 'send-mailing'}, function () {
+    this.event.preventDefault();
+    $('#send-btn').trigger('click');
+  });
+
+  const collectStatusEmails = (includeNewRow = false) => {
+    let $inputs = $('[data-status-mail-recipient-row]').find('input');
+
+    if (!includeNewRow) {
+      $inputs = $inputs.not(':last');
+    }
+
+    return $inputs.map(function () {
+      return $(this).val().trim();
+    }).get().join(' ');
+  }
+
+  const saveStatusEmails = (mailingId, emails, callback) => {
+    $.post(AGN.url(`/mailing/send/${mailingId}/save-statusmail-recipients.action`), {emails})
+      .done(resp => {
+        if (resp.success && callback) {
+          callback();
         }
+        AGN.Lib.JsonMessages(resp.popups);
+      });
+  }
 
-        const data = {};
-        data[propertyName] = $toggle.is(':checked')
-
-        $.ajax({
-            type: 'POST',
-            url: $toggle.data('url'),
-            data: data
-        }).done(function(resp) {
-            if (resp && resp.success) {
-                AGN.Lib.Messages(t('defaults.success'), t('defaults.saved'), 'success');
-            } else {
-                failed();
-            }
-        }).fail(failed).always(function() {
-            // Enable toggle button back.
-            $toggle.prop('disabled', false);
-        });
+  this.addDomInitializer('delivery-status-view', function () {
+    if (!this.config.isTransmissionRunning) {
+      Helpers.hideGreenMarks();
     }
 
-    AGN.Lib.Controller.new('mailing-deletion-modal', function() {
-        this.addDomInitializer('mailing-deletion-modal', function() {
-            this.el.find('.js-confirm-positive').on("click", function () {
-                const $deliveryStatusBox = $('#delivery-status-box');
-                if ($deliveryStatusBox.exists()) {
-                    AGN.Lib.Load.get($deliveryStatusBox).stop();
-                }
-            });
-        });
+    const workStatus = this.config.workStatus;
+    const workStatusTooltip = this.config.workStatusTooltip;
+    if (workStatus && workStatusTooltip) {
+      Helpers.updateWorkStatus(workStatus, workStatusTooltip);
+    }
+
+    if (this.config.deliveryStat) {
+      const config = _.extend(this.config.deliveryStat, this.config.deliveryStatExtraInfo);
+      renderButtonsBasedOnDeliveryStatus(config);
+    }
+  });
+
+  function renderButtonsBasedOnDeliveryStatus(config) {
+    const $buttons = Template.dom('delivery-status-buttons', config);
+    $('.delivery-status-action').remove();
+    $('.header__actions').append($buttons);
+  }
+
+  this.addAction({'click': 'start-delivery'}, function () {
+    if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION) {
+      const existsAnyEmailAddress = $('input[name="mailingTestRecipients"]')
+        .get()
+        .some(input => $(input).val().trim());
+
+      if (!existsAnyEmailAddress) {
+        Messages.alert('error.enterEmailAddresses');
+        return;
+      }
+    }
+
+    $('#adminSendButton').addClass('disabled');
+    $('#testSendButton').addClass('disabled');
+
+    const form = Form.get(this.el);
+    form.setActionOnce(this.el.data('url'));
+    form.submit();
+  });
+
+  this.addAction({click: 'add-test-recipient', enterdown: 'new-test-recipient'}, function () {
+    this.event.preventDefault();
+
+    const $currentRow = this.el.closest('[data-test-recipient-row]');
+    const $currentInput = this.el.is('input') ? this.el : $currentRow.find('input');
+    const $newRow = Template.dom('test-recipient-row', {value: $currentInput.val() || '', newRow: false, sent: false});
+
+    $currentRow.before($newRow);
+    $currentInput.val('');
+
+    AGN.runAll($newRow);
+
+    $currentInput.focus();
+    changeSaveTestRunTargetBtnState(false);
+  });
+
+  this.addAction({click: 'remove-test-recipient'}, function () {
+    const $tr = this.el.closest('[data-test-recipient-row]');
+    $tr.remove();
+    changeSaveTestRunTargetBtnState(false);
+  });
+
+  this.addAction({input: 'new-test-recipient'}, function () {
+    changeSaveTestRunTargetBtnState(false);
+  });
+
+  this.addAction({input: 'edit-test-recipient', enterdown: 'edit-test-recipient'}, function () {
+    this.event.preventDefault();
+    changeSaveTestRunTargetBtnState(false);
+  });
+
+  this.addAction({input: 'edit-test-run-target-name'}, function () {
+    changeSaveTestRunTargetBtnState(false);
+  });
+
+  this.addAction({enterdown: 'edit-test-run-target-name'}, function () {
+    this.event.preventDefault();
+  });
+
+  function changeSaveTestRunTargetBtnState(saved) {
+    const $testRunTargetBtn = $('#testTargetSaveButton');
+    const $btnIcon = $testRunTargetBtn.find('i');
+    if (saved) {
+      $btnIcon.hide();
+    }
+    $testRunTargetBtn.toggleClass('btn-primary', !saved, 500);
+    $testRunTargetBtn.toggleClass('btn-success', saved, 500);
+    if (saved) {
+      $testRunTargetBtn.css({'cursor': 'not-allowed', 'pointer-events': 'none'});
+    } else {
+      $testRunTargetBtn.css({'cursor': '', 'pointer-events': ''});
+    }
+    $btnIcon.toggleClass('icon-save', !saved);
+    $btnIcon.toggleClass('icon-check', saved);
+    $btnIcon.show(500);
+  }
+
+  this.addAction({click: 'save-target-for-test-run'}, function () {
+    if (!isValidTestTargetNameField()) {
+      return;
+    }
+    saveTargetName();
+  });
+
+  function isValidTestTargetNameField() {
+    const $targetName = $('input[name="targetName"]');
+    const form = Form.get($targetName);
+    const errors = AGN.Lib.Validator.get('length').errors($targetName, {min: 3, required: true});
+
+    if (!errors.length) {
+      form.cleanFieldFeedback();
+      return true;
+    }
+
+    errors.forEach(error => form.showFieldError$($targetName, error.msg));
+    return false;
+  }
+
+  function saveTargetName() {
+    $.ajax({
+      type: 'POST',
+      url: AGN.url("/mailing/send/test/saveTarget.action"),
+      data: {
+        'mailingTestRecipients': collectTestRunEmails(),
+        'targetName': $('input[name="targetName"]').val().trim()
+      }
+    }).done(resp => {
+      if (resp.success === true) {
+        changeSaveTestRunTargetBtnState(true);
+      } else {
+        AGN.Lib.JsonMessages(resp.popups);
+      }
     });
-});
+  }
 
-AGN.Lib.Controller.new('delivery-settings-view', function() {
-    this.addDomInitializer('delivery-settings-view', function() {
-        var decimalSeparator;
+  function collectTestRunEmails() {
+    return $('input[name="mailingTestRecipients"]')
+      .map(function () {
+        return this.value.trim();
+      })
+      .get()
+      .filter(email => email);
+  }
 
-        if (this.config.adminLocale === 'en_US') {
-            decimalSeparator = ",";
-        } else {
-            decimalSeparator = ".";
-        }
+  this.addAction({focusout: 'max-recipients-change'}, function () {
+    clearMaxRecipientsValueIfZero();
+  });
 
-        const $maxRecipients = $('#maxRecipients');
-        $maxRecipients.val('');
+  function clearMaxRecipientsValueIfZero() {
+    const $maxRecipients = $('#maxRecipients');
 
-        $maxRecipients.focusout(function(){
-            if ($(this).val() === '0') {
-                $maxRecipients.val('');
-            }
-        });
+    if ($maxRecipients.exists() && $maxRecipients.val() === '0') {
+      $maxRecipients.val('');
+    }
+  }
 
-        $('#sendBtn').mousedown(function() {
-            if ($maxRecipients.val() === '') {
-                $maxRecipients.val('0');
-            }
-        });
+  this.addAction({change: 'prioritization-toggle'}, function () {
+    toggleButton($(this.el), 'isPrioritizationDisallowed')
+  });
 
-        _.each($('.commaSplitLabel'), function(elem) {
-            const $e = $(elem);
-            const separatedText = $e.text().replace(/\B(?=(\d{3})+(?!\d))/g, decimalSeparator);
+  this.addAction({change: 'encrypted-send-toggle'}, function () {
+    toggleButton($(this.el), 'isEncryptedSend')
+  });
 
-            $e.text(separatedText);
-        });
-    });
+  this.addAction({change: 'sendStatusOnErrorOnly-toggle'}, function () {
+    toggleButton($(this.el), 'statusOnErrorEnabled')
+  });
+
+  function toggleButton($toggle, propertyName) {
+    const isChecked = $toggle.prop('checked');
+
+    // Disable toggle button until changes are saved.
+    $toggle.prop('disabled', true);
+
+    const failed = () => {
+      // Failed to save changes, revert initial toggle button state.
+      $toggle.prop('checked', !isChecked);
+      Messages.defaultError();
+    }
+
+    const data = {};
+    data[propertyName] = $toggle.is(':checked')
+
+    $.ajax({
+      type: 'POST',
+      url: $toggle.data('url'),
+      data: data
+    }).done(resp => {
+      if (resp && resp.success) {
+        Messages.defaultSaved();
+      } else {
+        failed();
+      }
+    })
+      .fail(failed)
+      .always(() => $toggle.prop('disabled', false));
+  }
 });

@@ -10,9 +10,8 @@
 
 package com.agnitas.beans;
 
-import com.agnitas.beans.AbstractTrackableLink;
-
 public interface TrackableLink extends AbstractTrackableLink {
+
     /**
      * Getter for property mailingID.
      * 

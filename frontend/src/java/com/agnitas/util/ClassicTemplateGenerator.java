@@ -13,16 +13,13 @@ package com.agnitas.util;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingComponent;
 import com.agnitas.beans.MailingComponentType;
 import com.agnitas.dao.MailingDao;
-import com.agnitas.util.AgnUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -30,7 +27,8 @@ import org.springframework.context.ApplicationContextAware;
  * This class bind template and content modules with emm`s mailings dyn tag content.
  */
 public class ClassicTemplateGenerator implements ApplicationContextAware {
-	private static final transient Logger logger = LogManager.getLogger(ClassicTemplateGenerator.class);
+
+	private static final Logger logger = LogManager.getLogger(ClassicTemplateGenerator.class);
 
 	private ApplicationContext applicationContext;
 	private MailingDao mailingDao;
@@ -102,7 +100,7 @@ public class ClassicTemplateGenerator implements ApplicationContextAware {
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 

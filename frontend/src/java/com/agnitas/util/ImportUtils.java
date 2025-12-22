@@ -10,15 +10,6 @@
 
 package com.agnitas.util;
 
-import com.agnitas.beans.Admin;
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.model.FileHeader;
-import com.agnitas.service.FileCompressionType;
-import com.agnitas.service.ImportException;
-import org.apache.commons.compress.utils.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,6 +21,15 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.service.FileCompressionType;
+import com.agnitas.service.ImportException;
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.FileHeader;
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ImportUtils {
 
@@ -50,7 +50,6 @@ public class ImportUtils {
 		MAILTYPE_ERROR("mailtype"),
 		GENDER_ERROR("gender"),
 		DATE_ERROR("date"),
-    	ENCRYPTION_ERROR("encryption"),
     	DBINSERT_ERROR("dbinsert"),
     	ACTION_ERROR("action"),
 		VALUE_TOO_LARGE_ERROR("valueTooLarge"),
@@ -60,7 +59,7 @@ public class ImportUtils {
 		
 		UNKNOWN_ERROR("unknown");
     	
-    	private String idString;
+    	private final String idString;
     	
     	ImportErrorType(String idString) {
     		this.idString = idString;

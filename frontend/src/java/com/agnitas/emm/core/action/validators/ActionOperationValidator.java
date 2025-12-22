@@ -18,5 +18,5 @@ public interface ActionOperationValidator {
 
      boolean supports(Class<?> clazz);
 
-     SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) throws Exception;
+     SimpleServiceResult validate(Admin admin, ActionOperationParameters operation);
 }

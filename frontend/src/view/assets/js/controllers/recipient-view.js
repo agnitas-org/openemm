@@ -1,39 +1,24 @@
-AGN.Lib.Controller.new('recipient-view', function() {
-  var RESULT_OK = 'OK';
-  var RESULT_USED = 'USED';
-  var RESULT_BLACKLISTED = 'BLACKLISTED';
+AGN.Lib.Controller.new('recipient-view', function () {
 
-  var Form = AGN.Lib.Form,
-    Confirm = AGN.Lib.Confirm,
-    Template = AGN.Lib.Template,
-    Tile = AGN.Lib.Tile;
+  const RESULT_OK = 'OK';
+  const RESULT_USED = 'USED';
+  const RESULT_BLACKLISTED = 'BLACKLISTED';
 
-  var checker;
-  var isActiveSaveSubmenu = false;
-  var config;
+  const Form = AGN.Lib.Form;
 
-  this.addDomInitializer('recipient-view', function($e) {
-    var form = Form.get($e);
-    var self = this;
+  let checker;
 
-    config = this.config;
+  this.addDomInitializer('recipient-view', function () {
+    const form = Form.get(this.el);
 
-    checker = new AddressChecker(self.config.urls.CHECK_ADDRESS, function(result) {
-      var status = result.status;
-      switch (status) {
+    checker = new AddressChecker(AGN.url(`/recipient/${this.config.id}/checkAddress.action`), result => {
+      switch (result.status) {
         case RESULT_OK:
           form.cleanFieldError('email');
           break;
 
         case RESULT_USED:
-          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace(':recipientID:', result.recipientID);
-          var messageErrorInUseUser =
-          '<div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">' +
-            t('error.inUse') +
-            '<a href="' + btnUrl + '" class="btn btn-regular btn-inverse">' + t('recipient.existing.btn') + '</a>' +
-          '</div>';
-
-          form.showFieldError('email', messageErrorInUseUser, true);
+          form.showFieldError('email', AGN.Lib.Template.text('duplicated-email-block', result), true);
           break;
 
         case RESULT_BLACKLISTED:
@@ -42,93 +27,11 @@ AGN.Lib.Controller.new('recipient-view', function() {
       }
     });
 
-    $('#recipient-email').on('change input', _.debounce(function() {
+    $('#recipient-email').on('change input', _.debounce(function () {
       checker.check($(this).val());
     }, 300));
 
     updateBindingsUserTypesProps();
-  });
-
-  this.addAction({
-    mouseleave: 'toggleSaveAndBack'
-  }, function() {
-    var $el = this.el;
-    var parent = $el.parent();
-    setTimeout(function() {
-      if (!isActiveSaveSubmenu && !$el.is(':hover')) {
-        parent.removeClass('open');
-      }
-    }, 400);
-  });
-
-  this.addAction({
-    mouseenter: 'toggleSaveAndBack'
-  }, function() {
-    this.el.parent().addClass('open');
-  });
-
-  this.addAction({
-    mouseenter: 'toggleSubmenuSaveAndBack'
-  }, function() {
-    isActiveSaveSubmenu = true;
-  });
-
-  this.addAction({
-    mouseleave: 'toggleSubmenuSaveAndBack'
-  }, function() {
-    isActiveSaveSubmenu = false;
-    this.el.closest(".dropdown").removeClass('open');
-  });
-
-  this.addAction({
-    submission: 'recipient-save'
-  }, function() {
-    var form = Form.get(this.el);
-    var address = $('#recipient-email').val();
-    this.event.preventDefault();
-    var checkAltgMatchCallback = function() {
-      $.post(config.urls.CHECK_MATCH_ALTG, form.params())
-        .done(function(response) {
-          if (response.popups && response.popups.alert && response.popups.alert.length > 0) {
-            AGN.Lib.JsonMessages(response.popups);
-          } else if (!response.success || response.success.length === 0) {
-            Confirm.create(Template.text('hide-recipient-confirmation-modal'))
-              .done(function () {
-                form.setActionOnce(config.urls.SAVE_AND_BACK_TO_LIST);
-                form.submit();
-              })
-          } else {
-            form.submit();
-          }
-        })
-        .fail(function() {
-          form.submit();
-        })
-    }
-
-    if (checker && address && address.trim()) {
-      checker.jqxhr(address.trim())
-        .done(function(resp) {
-          if (resp.isBlacklisted === true) {
-            Confirm.create(Template.text('email-confirmation-modal', {question: t('recipient.blacklisted.question')}))
-              .done(function() {
-                if (resp.inUse === true) {
-                  Confirm.create(Template.text('email-confirmation-modal', {question: t('recipient.duplicate.question')}))
-                    .done(checkAltgMatchCallback);
-                } else {
-                  checkAltgMatchCallback();
-                }
-              });
-          } else if (resp.inUse === true) {
-            Confirm.create(Template.text('email-confirmation-modal', {question: t('recipient.duplicate.question')}))
-              .done(checkAltgMatchCallback);
-          } else {
-            checkAltgMatchCallback();
-          }
-        }).fail(checkAltgMatchCallback);
-    } else {
-      checkAltgMatchCallback();
-    }
   });
 
   function updateBindingsUserTypesProps() {
@@ -143,73 +46,131 @@ AGN.Lib.Controller.new('recipient-view', function() {
     });
   }
 
-  function AddressChecker(url, callback) {
-    this.url = url;
-    this.running = false;
-    this.callback = $.isFunction(callback) ? callback : $.noop;
-    this.lastAddress = null;
-    this.lastResult = null;
-    this.scheduledCheck = null;
+  this.addAction({submission: 'recipient-save'}, function () {
+    const form = Form.get(this.el);
+    const address = $('#recipient-email').val();
+
+    this.event.preventDefault();
+
+    const checkAltgMatchCallback = () => {
+      $.post(AGN.url('/recipient/checkAltgMatch.action'), form.params())
+        .done(response => {
+          if (response.popups && response.popups.alert && response.popups.alert.length > 0) {
+            AGN.Lib.JsonMessages(response.popups);
+          } else if (!response.success || response.success.length === 0) {
+            showConfirmModal(t('recipient.hide.question'), () => {
+              form.setActionOnce(AGN.url('/recipient/saveAndBackToList.action'));
+              form.submit();
+            })
+          } else {
+            form.submit();
+          }
+        })
+        .fail(() => form.submit())
+    }
+
+    if (checker && address && address.trim()) {
+      checker.jqxhr(address.trim())
+        .done(resp => {
+          if (resp.isBlacklisted === true) {
+            showConfirmModal(t('recipient.blacklisted.question'), () => {
+              if (resp.inUse === true) {
+                showConfirmModal(t('recipient.duplicate.question'), checkAltgMatchCallback);
+              } else {
+                checkAltgMatchCallback();
+              }
+            });
+          } else if (resp.inUse === true) {
+            showConfirmModal(t('recipient.duplicate.question'), checkAltgMatchCallback);
+          } else {
+            checkAltgMatchCallback();
+          }
+        }).fail(checkAltgMatchCallback);
+    } else {
+      checkAltgMatchCallback();
+    }
+  });
+
+  function showConfirmModal(question, callback) {
+    return AGN.Lib.Confirm.from('recipient-confirmation-modal', {question}).done(callback);
   }
 
-  AddressChecker.prototype.jqxhr = function(address) {
-    return $.get(this.url, {email: address});
-  };
+  this.addAction({change: 'activate-mediatype'}, function () {
+    const mediatypeCode = this.el.data('mediatype');
+    const isChecked = this.el.is(":checked");
 
-  AddressChecker.prototype.scheduleCheck = function(address) {
-    var self = this;
+    this.el.closest('[data-mailinglist-tile]').find(`.icon-mediatype-${mediatypeCode}`).toggleClass('icon-mediatype--active', isChecked);
+    this.el.closest('.tile').find('[data-binding-usertype]').prop('disabled', !isChecked);
+  });
 
-    if (self.scheduledCheck) {
-      clearTimeout(self.scheduledCheck);
+  this.addAction({focusout: 'hide-datasource-popover'}, function () {
+    AGN.Lib.Popover.hide(this.el);
+  });
+
+  class AddressChecker {
+    constructor(url, callback) {
+      this.url = url;
+      this.running = false;
+      this.callback = $.isFunction(callback) ? callback : $.noop;
+      this.lastAddress = null;
+      this.lastResult = null;
+      this.scheduledCheck = null;
     }
 
-    if (self.running) {
-      // Simply make the same call later — prevent ajax mess.
-      self.scheduledCheck = setTimeout(function() { self.scheduleCheck(address); }, 300);
-    } else {
-      self.running = true;
-      self.lastAddress = null;
-      self.lastResult = null;
+    jqxhr(address) {
+      return $.get(this.url, {email: address});
+    }
 
-      try {
-        self.jqxhr(address)
-          .always(function() {
-            self.running = false;
-          }).done(function(resp) {
-            self.lastAddress = address;
-            self.lastResult = {
-              status: (resp.isBlacklisted === true ? RESULT_BLACKLISTED : (resp.inUse === true ? RESULT_USED : RESULT_OK)),
-              recipientID: resp.existingRecipientId || 0
-            };
-            self.report();
-          });
-      } catch (e) {
-        self.running = false;
+    scheduleCheck(address) {
+      if (this.scheduledCheck) {
+        clearTimeout(this.scheduledCheck);
+      }
+
+      if (this.running) {
+        // Simply make the same call later — prevent ajax mess.
+        this.scheduledCheck = setTimeout(() => this.scheduleCheck(address), 300);
+      } else {
+        this.running = true;
+        this.lastAddress = null;
+        this.lastResult = null;
+
+        try {
+          this.jqxhr(address)
+            .always(() => this.running = false)
+            .done(resp => {
+              this.lastAddress = address;
+              this.lastResult = {
+                status: (resp.isBlacklisted === true ? RESULT_BLACKLISTED : (resp.inUse === true ? RESULT_USED : RESULT_OK)),
+                recipientID: resp.existingRecipientId || 0
+              };
+              this.report();
+            });
+        } catch (e) {
+          this.running = false;
+        }
       }
     }
-  };
 
-  AddressChecker.prototype.check = function(address) {
-    address = address ? address.trim() : '';
+    check(address) {
+      address = address?.trim() || '';
 
-    if (address) {
-      if (this.lastAddress == address) {
+      if (!address) {
+        this.report(RESULT_OK);
+      } else if (this.lastAddress === address) {
         this.report();
       } else {
         this.scheduleCheck(address);
       }
-    } else {
-      this.report(RESULT_OK);
     }
-  };
 
-  AddressChecker.prototype.report = function(result) {
-    if (arguments.length) {
-      this.callback.call(null, result);
-    } else {
-      if (this.lastAddress) {
-        this.report(this.lastResult);
+    report(result) {
+      if (arguments.length) {
+        this.callback.call(null, result);
+      } else {
+        if (this.lastAddress) {
+          this.report(this.lastResult);
+        }
       }
     }
-  };
+  }
 });

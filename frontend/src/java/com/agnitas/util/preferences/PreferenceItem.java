@@ -10,15 +10,18 @@
 
 package com.agnitas.util.preferences;
 
+import com.agnitas.emm.core.mailing.enums.MailingSettingsViewType;
+
 public enum PreferenceItem {
 
     CONTENTBLOCKS(0),
     DASHBOARD_MAILING(0),
     MAILING_LIVE_PREVIEW(0),
     MAILING_SETTINGS(0),
+    MAILING_SETTINGS_VIEW_TYPE(MailingSettingsViewType.getDefault().getId()),
     STATISTIC_LOADTYPE(1);
 
-    private int defaultValue;
+    private final int defaultValue;
 
     PreferenceItem(int defaultValue) {
         this.defaultValue = defaultValue;

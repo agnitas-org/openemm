@@ -19,6 +19,16 @@ public class SoapUserActivityAction {
     private String username;
     private String clientIp;
 
+    public SoapUserActivityAction() {
+    }
+
+    public SoapUserActivityAction(String username, String endpoint, String clientIp, Date timestamp) {
+        this.timestamp = timestamp;
+        this.endpoint = endpoint;
+        this.username = username;
+        this.clientIp = clientIp;
+    }
+
     public Date getTimestamp() {
         return timestamp;
     }

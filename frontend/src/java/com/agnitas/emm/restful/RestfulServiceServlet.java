@@ -30,12 +30,26 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.logon.service.LogonService;
+import com.agnitas.emm.core.logon.web.LogonFailedException;
+import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
+import com.agnitas.emm.util.quota.api.QuotaService;
+import com.agnitas.emm.util.quota.api.QuotaServiceException;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.HttpUtils;
 import com.agnitas.util.HttpUtils.RequestMethod;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadBase.SizeLimitExceededException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -47,22 +61,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.logon.service.LogonService;
-import com.agnitas.emm.core.logon.web.LogonFailedException;
-import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
-import com.agnitas.emm.util.quota.api.QuotaService;
-import com.agnitas.emm.util.quota.api.QuotaServiceException;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Restful services are available at:
@@ -592,8 +590,6 @@ public class RestfulServiceServlet extends HttpServlet {
 						}
 					}
 				}
-			} catch (SizeLimitExceededException e) {
-				throw e;
 			} catch (IOException e) {
 				throw new Exception("Error while reading request data: " + e.getMessage(), e);
 			}

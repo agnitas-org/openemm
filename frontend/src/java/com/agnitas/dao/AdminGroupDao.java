@@ -14,10 +14,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.beans.AdminGroup;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupOverviewFilter;
-import com.agnitas.beans.AdminGroup;
-import com.agnitas.beans.impl.PaginatedListImpl;
 
 public interface AdminGroupDao {
 	/**
@@ -42,11 +42,8 @@ public interface AdminGroupDao {
 
     int getUsersCount(int groupId, int companyId);
 
-    PaginatedListImpl<UserGroupDto> getAdminGroupsByCompanyIdInclCreator(UserGroupOverviewFilter filter);
+    PaginatedList<UserGroupDto> getAdminGroupsByCompanyIdInclCreator(UserGroupOverviewFilter filter);
 
-    // TODO: EMMGUI-714: Removed when removing old design
-    PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sort, String direction, int page, int rownums);
-    
     int saveAdminGroup(AdminGroup adminGroup);
     
     int delete(int companyId, int adminGroupId);
@@ -62,10 +59,6 @@ public interface AdminGroupDao {
     Set<String> getGroupPermissionsTokens(int adminGroupId);
 
 	AdminGroup getAdminGroupByName(String adminGroupName, int companyID);
-
-	Set<String> getParentGroupsPermissionTokens(int adminGroupId);
-
-	List<Integer> getParentGroupIds(int adminGroupId);
 
 	List<String> getGroupNamesUsingGroup(int companyId, int groupId);
 

@@ -1,0 +1,32 @@
+
+<script id="dyn-tag-btn" type="text/x-mustache-template">
+    <button type="button" class="dyn-tag list-group-item list-group-item-action"
+            value="{{- id }}" data-action="switch-dyn-tag" data-dyn-tag="{{- id }}">
+    </button>
+</script>
+
+<script id="dyn-tag-preview" type="text/x-mustache-template">
+    <small>{{- name }}</small>
+    <span>
+        <i class="icon icon-file-alt"></i>
+        <p class="dyn-tag__preview" style="--text-truncate-lines: 2">
+            {{ if (hasEmptyContent) { }}
+                <mvc:message code="mailing.content.missing" />
+            {{ } else { }}
+                {{= content.replace(/<\/?[^>]+(>|$)/g, "") }}
+            {{ } }}
+        </p>
+    </span>
+    {{ if (targets) { }}
+        <span>
+            <i class="icon icon-users"></i>
+            <p>{{- targets }}</p>
+        </span>
+    {{ } }}
+</script>
+
+<script id="dyntag-option-template" type="text/x-mustache-template">
+    <button type="button" class="dyn-tag list-group-item list-group-item-action p-0" value="{{- element.dataset.id }}" data-action="switch-dyn-tag" style="background-color: unset">
+        {{= AGN.Lib.Template.text('dyn-tag-preview', JSON.parse(element.dataset['dynTagData'])) }}
+    </button>
+</script>

@@ -14,6 +14,10 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.reporting.birt.external.exception.BirtSecurityTokenCreationException;
+import com.agnitas.reporting.birt.util.RSACryptUtil;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -21,18 +25,13 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.reporting.birt.util.RSACryptUtil;
-
 public class BirtInterceptingFilter implements Filter {
-	/** Logger. */
-	private static final transient Logger logger = LogManager.getLogger(BirtInterceptingFilter.class);
+
+	private static final Logger logger = LogManager.getLogger(BirtInterceptingFilter.class);
 	
 	protected ConfigService configService;
 
@@ -82,40 +81,45 @@ public class BirtInterceptingFilter implements Filter {
 			logger.warn("Birt private key is missing");
 			return false;
 		}
+
 		String securityTokenContent;
 		try {
 			securityTokenContent = RSACryptUtil.decrypt(securityTokenString, privateKeyString);
 		} catch (Exception e) {
-			logger.warn("Could not decrpyt securityToken(sec):" + securityTokenString, e);
+			logger.warn("Could not decrpyt securityToken(sec): %s".formatted(securityTokenString), e);
 			return false;
 		}
 		if (StringUtils.isBlank(securityTokenContent) ) {
-			logger.warn("Empty securityToken:" + securityTokenString);
+			logger.warn("Empty securityToken: {}", securityTokenString);
 			return false;
 		}
 		int companyIdFromSecurityToken;
 		try {
 			companyIdFromSecurityToken = Integer.parseInt(securityTokenContent);
 		} catch (Exception e) {
-			logger.warn("Could not read securityToken(sec):" + securityTokenContent, e);
+			logger.warn("Could not read securityToken(sec):%s".formatted(securityTokenContent), e);
 			return false;
 		}
 		if (companyIdFromSecurityToken != companyID) {
-			logger.warn("Invalid companyID in securityToken(sec). Expected: " + companyID + " Actually: " + companyIdFromSecurityToken);
+			logger.warn("Invalid companyID in securityToken(sec). Expected: {} Actually: {}", companyID, companyIdFromSecurityToken);
 			return false;
 		} else {
 			return true;
 		}
 	}
 	
-	public static String createSecurityToken(ConfigService configService, int companyID) throws Exception {
+	public static String createSecurityToken(ConfigService configService, int companyID) {
 		String publicKeyString = configService.getValue(ConfigValue.BirtPublicKey, companyID);
         if (StringUtils.isBlank(publicKeyString)) {
-            throw new Exception("Parameter 'birt.publickey' is missing");
-        } else {
-        	return RSACryptUtil.encryptUrlSafe(Integer.toString(companyID), publicKeyString);
+            throw new BirtSecurityTokenCreationException("Parameter 'birt.publickey' is missing");
         }
-	}
+
+        try {
+            return RSACryptUtil.encryptUrlSafe(Integer.toString(companyID), publicKeyString);
+        } catch (Exception e) {
+            throw new BirtSecurityTokenCreationException("Failed creating security token", e);
+        }
+    }
 
     private ConfigService getConfigService() {
 		if (configService == null) {

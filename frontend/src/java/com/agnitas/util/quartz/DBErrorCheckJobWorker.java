@@ -12,11 +12,10 @@ package com.agnitas.util.quartz;
 
 import java.util.List;
 import java.util.Map;
-
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.service.JobWorker;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.service.JobWorkerBase;
 import com.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +27,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.util.quartz.DBErrorCheckJobWorker', 1);
  */
-public class DBErrorCheckJobWorker extends JobWorker {
+@JobWorker("DBErrorCheck")
+public class DBErrorCheckJobWorker extends JobWorkerBase {
 
 	private static final Logger logger = LogManager.getLogger(DBErrorCheckJobWorker.class);
 	

@@ -1,11 +1,12 @@
-(function () {
+(() => {
+
     AGN.Lib.CoreInitializer.new('target-group-query-builder-extend', function() {
         if(window.queryBuilderIsExtended){
             return;
         }
         window.queryBuilderIsExtended = true;
-        var MIN_EXPECTED_SIZE = 2;
-        var Utils = {};
+        const MIN_EXPECTED_SIZE = 2;
+        let Utils = {};
 
         function addOperator(value, dateValue) {
             if (Math.sign(value) === -1) {
@@ -27,15 +28,15 @@
             rule.$el.find('#date-filter').val(value);
         }
 
-        var QueryBuilder = $.fn.queryBuilder;
-        var QueryBuilderConstructor = QueryBuilder.constructor;
-        var originalInit = QueryBuilderConstructor.prototype.init;
-        var originalValidate = QueryBuilderConstructor.prototype.validate;
-        var originalBindEvents = QueryBuilderConstructor.prototype.bindEvents;
+        const QueryBuilder = $.fn.queryBuilder;
+        const QueryBuilderConstructor = QueryBuilder.constructor;
+        const originalInit = QueryBuilderConstructor.prototype.init;
+        const originalValidate = QueryBuilderConstructor.prototype.validate;
+        const originalBindEvents = QueryBuilderConstructor.prototype.bindEvents;
 
         //Unconventional variables to avoid unnecessary OOTB code changes.
         Utils = QueryBuilderConstructor.utils;
-        var Selectors = QueryBuilderConstructor.selectors;
+        const Selectors = QueryBuilderConstructor.selectors;
         Object.assign(Selectors, {
             rule_include_empty:   '.rule-include-empty[name*=_include_empty]',
             rule_operator_conditions_container: '.rule-operator-conditions-container',
@@ -65,6 +66,27 @@
                             method.call(event.builder, rule, options);
                         }
                     }
+                });
+
+                this.on('getGroupTemplate.filter getRuleTemplate.filter', function(h, level) {
+                    const $h = $(h.value);
+                    $h.find(Selectors.drag_handle).replaceWith(`
+                        <button class="btn btn-icon btn-secondary drag-handle" type="button">
+                            <i class="icon icon-arrows-alt"></i>
+                        </button>
+                    `);
+
+                    h.value = $h.prop('outerHTML');
+                });
+
+                this.on('afterAddGroup', function (e, group) {
+                    const $parentGroup = group.$el.parent().closest('.rules-group-container');
+
+                    if ($parentGroup.exists() && !$parentGroup.hasClass('rules-group-container--nested')) {
+                        group.$el.addClass('rules-group-container--nested');
+                    }
+
+                    AGN.Lib.CoreInitializer.run('tooltip', group.$el);
                 });
 
                 this.setupInitialRule(rules);
@@ -102,50 +124,37 @@
                         return ['DD.MM.YYYY', 'YYYYMMDD', 'DDMMYYYY', 'MMDD', 'DDMM', 'DD', 'MM', 'YYYY'];},
                     input: function (rule, options) {
                         // Cannot use default data attributes and AGN.runAll, since runAll is performed on document and this part is detached.
-                        return $(
-                            '<div class="qb-input-label">' +
-                                '<label class="checkbox-inline">' +
-                                    '<input name="today" type="checkbox">' +
-                                    '<span class="text">' +
-                                        t('defaults.today') +
-                                    '</span>' +
-                                '</label>' +
-                            '</div>' +
-                            '<div class="qb-input-element date-filter">' +
-                                '<input class="form-control" type="text" id="date-filter"/>' +
-                            '</div>' +
-                            '<div class="qb-input-label" id="date-offset-label" style="display: none;">' +
-                                '<div class="form-badge qb-input-inner">' +
-                                    t('defaults.days') +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="qb-input-label">' +
-                                '<div class="qb-input-inner">' +
-                                    t('date.formats.label') +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="qb-input-element">' +
-                                '<select class="form-control" id="date-format">' +
-                                    generateDateFormatSelect(options.availableFormats(options.operator)) +
-                                '</select>' +
-                            '</div>' +
-                            '<div class="qb-input-label">' +
-                                '<div class="qb-input-inner">' +
-                                    '<button type="button" class="icon icon-help" data-help="help_' + this.settings.helpLanguage + '/targets/DateFormat.xml"></button>' +
-                                '</div>' +
-                            '</div>'
-                        );
+                        return $(` 
+                            <div class="form-check form-switch">
+                                <input id="${rule.id}-today" name="today" type="checkbox" role="switch" class="form-check-input">
+                                <label class="form-label form-check-label" for="${rule.id}-today">${t('defaults.today')}</label>
+                            </div>
+                            <div class="input-group">
+                                <input class="form-control rounded-2" type="text" id="date-filter"/>
+                                <span id="date-offset-label" class="input-group-text input-group-text--dark hidden">${t('defaults.Days')}</span>
+                            </div>
+                            <div class="qb-dateformat-block">
+                                <label class="form-label">
+                                    <span>${t('date.formats.label')}</span>
+                                    <a href="#" class="icon icon-question-circle" data-help="targets/DateFormat.xml"></a>
+                                </label>
+                                <select class="form-control" id="date-format" data-select-options="dropdownAutoWidth: true">
+                                    ${generateDateFormatSelect(options.availableFormats(options.operator))}
+                                </select>
+                            </div>
+                        `);
                     },
                     postCreate: function(rule) {
-                        var $todayCheckbox = rule.$el.find('input[name=today]');
-                        var $offsetLabel = rule.$el.find('#date-offset-label');
-                        var $dateFilter = rule.$el.find('#date-filter');
-                        var $dateFormat = rule.$el.find('#date-format');
+                        const $todayCheckbox = rule.$el.find('input[name=today]');
+                        const $offsetLabel = rule.$el.find('#date-offset-label');
+                        const $dateFilter = rule.$el.find('#date-filter');
+                        const $dateFormat = rule.$el.find('#date-format');
 
                         var onModeChange = function() {
-                            var isToday = $todayCheckbox.prop('checked');
+                            const isToday = $todayCheckbox.prop('checked');
 
-                            $offsetLabel.toggle(isToday);
+                            $offsetLabel.toggleClass('hidden', !isToday);
+                            $offsetLabel.parent().find('.form-control').toggleClass('rounded-2', !isToday);
                             $dateFilter.off('change.offset keyup.offset');
 
                             if (!rule._updating_input) {
@@ -186,11 +195,11 @@
                         $dateFormat.trigger('change-date-format');
                     },
                     valueSetter: function (rule, values) {
-                        var valuesCopy = values.slice(0);
-                        var $todayCheckbox = rule.$el.find('input[name=today]');
-                        var $offsetLabel = rule.$el.find('#date-offset-label');
-                        var $dateFormat = rule.$el.find('#date-format');
-                        var isToday = false, operator, dateFormat, value;
+                        const valuesCopy = values.slice(0);
+                        const $todayCheckbox = rule.$el.find('input[name=today]');
+                        const $offsetLabel = rule.$el.find('#date-offset-label');
+                        const $dateFormat = rule.$el.find('#date-format');
+                        let isToday = false, operator, dateFormat, value;
 
                         if (values.length > MIN_EXPECTED_SIZE) {
                             if (valuesCopy.shift() === 'today') {
@@ -208,7 +217,8 @@
                             dateFormat = valuesCopy.shift();
                         }
 
-                        $offsetLabel.toggle(isToday);
+                        $offsetLabel.toggleClass('hidden', !isToday);
+                        $offsetLabel.parent().find('.form-control').toggleClass('rounded-2', !isToday);
                         updateValue(rule, value, operator);
                         $dateFormat.val(dateFormat);
 
@@ -412,15 +422,15 @@
                 var operatorConditionsContainer = rule.$el.find(Selectors.rule_operator_conditions_container);
                 if (rule.operator.type === 'not_equal') {
                     rule.includeEmpty = true;
-                    var $condition = $(
-                        '<div class="qb-input-label">' +
-                            '<label class="checkbox-inline">' +
-                                '<input type="checkbox" class="rule-include-empty" name="' + rule.id + '_include_empty" checked="checked"/>' +
-                                '<span class="text">' + t('querybuilder.common.include_empty') + '</span>' +
-                            '</label>' +
-                        '</div>');
+
+                    const $condition = $(`
+                      <div class="form-check form-switch">
+                        <input id="${rule.id}_include_empty" type="checkbox" class="rule-include-empty form-check-input" name="${rule.id}_include_empty" role="switch" checked="checked"/>
+                        <label class="form-label form-check-label text-truncate" for="${rule.id}_include_empty">${t('querybuilder.common.include_empty')}</label>
+                      </div>`);
+
                     operatorConditionsContainer.html($condition);
-                    var $checkbox = $condition.find(Selectors.rule_include_empty);
+                    const $checkbox = $condition.find(Selectors.rule_include_empty);
                     $checkbox.on('change', function() {
                         rule.includeEmpty = self.getRuleIncludeEmptyValue(rule);
                     });
@@ -876,16 +886,14 @@
             },
 
             getNegateInput: function() {
-                var negationSelect =
-                    '<div class="qb-input-negate">' +
-                        '<select class="form-control negate">' +
-                            '<option value="false">' + t('defaults.yes') +
-                            '</option>' +
-                            '<option value="true">' + t('defaults.no') +
-                            '</option>' +
-                        '</select>' +
-                    '</div>';
-                return $(negationSelect);
+                return $(`
+                  <div class="qb-input-negate">
+                    <select class="form-control negate" data-select-options="dropdownAutoWidth: true">
+                      <option value="false">${t('defaults.yes')}</option>
+                      <option value="true">${t('defaults.no')}</option>
+                    </select>
+                  </div>
+                `);
             },
 
             setNegated: function(rule) {

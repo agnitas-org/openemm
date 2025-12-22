@@ -16,14 +16,15 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 public class SqlPreparedInsertStatementManager {
-	private String baseStatement = null;
-	private List<String> insertFieldNames = new ArrayList<>();
-	private List<Object> insertValues = new ArrayList<>();
-	private List<Boolean> specialSqlValueMarkers = new ArrayList<>();
+
+	private String baseStatement;
+	private final List<String> insertFieldNames = new ArrayList<>();
+	private final List<Object> insertValues = new ArrayList<>();
+	private final List<Boolean> specialSqlValueMarkers = new ArrayList<>();
 	
-	public SqlPreparedInsertStatementManager(String baseStatement) throws Exception {
+	public SqlPreparedInsertStatementManager(String baseStatement) {
 		if (baseStatement == null || !baseStatement.toLowerCase().startsWith("insert into ")) {
-			throw new Exception("Invalid baseStatement for insert statement");
+			throw new IllegalArgumentException("Invalid baseStatement for insert statement");
 		}
 		
 		this.baseStatement = baseStatement.trim();
@@ -31,8 +32,6 @@ public class SqlPreparedInsertStatementManager {
 	
 	/**
 	 * Add a Value that will be used as a preparedStatement value (uses ?)
-	 * @param fieldName
-	 * @param value
 	 */
 	public void addValue(String fieldName, Object value) {
 		addValue(fieldName, value, false);
@@ -40,8 +39,6 @@ public class SqlPreparedInsertStatementManager {
 	
 	/**
 	 * Add a Value to the insert statement
-	 * @param fieldName
-	 * @param value
 	 * @param isSpecialSqlValue
 	 * 							if set that value will not be used as a preparedStatement value (no encapsulation by single quote, no use of ?)
 	 * 							if NOT set that value will used as a normal preparedStatement value (uses ?)

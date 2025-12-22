@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.widget.beans;
 
+import java.util.Objects;
+
 public class SubscribeWidgetSettings extends WidgetSettingsBase {
 
     private Integer mailinglistId;
@@ -65,5 +67,21 @@ public class SubscribeWidgetSettings extends WidgetSettingsBase {
 
     public void setReferrer(String referrer) {
         this.referrer = referrer;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        SubscribeWidgetSettings settings = (SubscribeWidgetSettings) o;
+        return Objects.equals(mailinglistId, settings.mailinglistId) && Objects.equals(doiMailingId, settings.doiMailingId)
+                && Objects.equals(successMessage, settings.successMessage) && Objects.equals(errorMessage, settings.errorMessage)
+                && Objects.equals(remoteAddress, settings.remoteAddress) && Objects.equals(referrer, settings.referrer);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), mailinglistId, doiMailingId, successMessage, errorMessage, remoteAddress, referrer);
     }
 }

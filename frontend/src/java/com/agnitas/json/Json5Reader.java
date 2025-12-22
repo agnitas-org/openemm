@@ -11,11 +11,10 @@
 package com.agnitas.json;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 import com.agnitas.util.AgnUtils;
@@ -41,15 +40,16 @@ import com.agnitas.util.AgnUtils;
  * 	Block comment (multi-line)<br />
  */
 public class Json5Reader extends JsonReader {
-	public Json5Reader(InputStream inputStream) throws Exception {
+
+	public Json5Reader(InputStream inputStream) {
 		this(inputStream, (String) null);
 	}
 	
-	public Json5Reader(InputStream inputStream, String encoding) throws Exception {
+	public Json5Reader(InputStream inputStream, String encoding) {
 		super(inputStream, encoding);
 	}
 	
-	public Json5Reader(InputStream inputStream, Charset encodingCharset) throws Exception {
+	public Json5Reader(InputStream inputStream, Charset encodingCharset) {
 		super(inputStream, encodingCharset);
 	}
 
@@ -210,10 +210,6 @@ public class Json5Reader extends JsonReader {
 	 * A valid identifier must
 	 * 	start with a letter (A-Za-z), underscore (_) or dollar sign ($)
 	 * 	subsequent characters can also be digits (0-9)
-	 * 
-	 * @param identifierString
-	 * @return
-	 * @throws Exception
 	 */
 	private String readJsonIdentifier(String identifierString) throws Exception {
 		if (Pattern.matches("[A-Za-z_$]+[A-Za-z_$0-9]*", identifierString)) {
@@ -225,14 +221,9 @@ public class Json5Reader extends JsonReader {
 	
 	/**
 	 * This method should only be used to read small Json items
-	 * 
-	 * @param data
-	 * @return
-	 * @throws IOException
-	 * @throws UnsupportedEncodingException
 	 */
 	public static JsonNode readJsonItemString(String data) throws Exception {
-		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes("UTF-8"))) {
+		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8))) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				return jsonReader.read();
 			}
@@ -251,7 +242,7 @@ public class Json5Reader extends JsonReader {
 		return Pattern.matches("0(x|X)[0-9A-Fa-f]+", numberString);
 	}
 	
-	private static Number parseHexNumber(String hexNumberString) throws NumberFormatException {
+	private static Number parseHexNumber(String hexNumberString) {
 		if (!isHexNumber(hexNumberString)) {
 			throw new NumberFormatException("Not a hex number: '" + hexNumberString + "'");
 		} else {

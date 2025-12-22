@@ -12,6 +12,7 @@ package com.agnitas.emm.core.hashtag;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +38,18 @@ public abstract class AbstractColonHashTag implements HashTag {
 
 	@Override
 	public final String handle(final HashTagContext context, final String tagString) throws HashTagException {
+		if (context != null) {
+			// if an already evaluated result is available from the static value map, just use this
+			Map <String, Object>	staticValueMap = context.getStaticValueMap ();
+		
+			if (staticValueMap != null) {
+				Object value = staticValueMap.get ("##" + tagString + "##");
+				
+				if (value != null) {
+					return value.toString ();
+				}
+			}
+		}
 		final int colonIndex = tagString.indexOf(':');
 		
 		final String tagName = (colonIndex == -1) ? tagString : tagString.substring(0, colonIndex).trim();

@@ -28,7 +28,7 @@ public class SupervisorUtil {
 	 * 
 	 * @return {@code true} if login is supervisor login
 	 */
-	public static boolean isSupervisorLoginName( String username) {
+	public static boolean isSupervisorLoginName(String username) {
 		return username.indexOf(SUPERVISOR_SEPARATOR_CHAR) != -1;
 	}
 
@@ -40,7 +40,7 @@ public class SupervisorUtil {
 	 * 
 	 * @return user name
 	 */
-	public static String getSupervisorNameFromLoginName( String loginName) {
+	public static String getSupervisorNameFromLoginName(String loginName) {
 		int index = loginName.indexOf(SUPERVISOR_SEPARATOR_CHAR);
 		
 		if( index != -1) {
@@ -58,7 +58,7 @@ public class SupervisorUtil {
 	 * 
 	 * @return supervisor name or {@code null}
 	 */
-	public static String getUserNameFromLoginName( String loginName) {
+	public static String getUserNameFromLoginName(String loginName) {
 		int index = loginName.indexOf(SUPERVISOR_SEPARATOR_CHAR);
 		
 		if( index != -1) {
@@ -82,6 +82,14 @@ public class SupervisorUtil {
 		} else { 
 			return username + SUPERVISOR_SEPARATOR_CHAR + supervisorName;
 		}
+	}
+
+	public static String formatCompleteName(Admin admin) {
+		if (!admin.isSupervisor()) {
+			return admin.getUsername();
+		}
+
+		return formatCompleteName(admin.getUsername(), admin.getSupervisor().getSupervisorName());
 	}
 
 	/**

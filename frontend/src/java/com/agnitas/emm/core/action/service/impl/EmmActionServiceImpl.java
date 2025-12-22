@@ -30,6 +30,7 @@ import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.EmmActionDao;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
+import com.agnitas.emm.core.action.EmmActionCopyException;
 import com.agnitas.emm.core.action.bean.EmmAction;
 import com.agnitas.emm.core.action.bean.EmmActionDependency;
 import com.agnitas.emm.core.action.component.EmmActionChangesCollector;
@@ -43,7 +44,6 @@ import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParam
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.emm.core.userform.service.UserformService;
@@ -59,7 +59,6 @@ import com.agnitas.service.impl.ActionImporter;
 import com.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -113,9 +112,10 @@ public class EmmActionServiceImpl implements EmmActionService {
 
     @Override
     @Transactional
-    public int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) throws Exception {
-        File actionTempFile = File.createTempFile("ActionTempFile_", ".json");
+    public int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) {
+        File actionTempFile = null;
         try {
+            actionTempFile = File.createTempFile("ActionTempFile_", ".json");
             try (JsonWriter jsonWriter = new JsonWriter(new FileOutputStream(actionTempFile))) {
                 actionExporter.exportAction(emmAction.getCompanyID(), emmAction.getId(), jsonWriter);
             }
@@ -128,9 +128,9 @@ public class EmmActionServiceImpl implements EmmActionService {
 
             return newActionId;
         } catch (Exception e) {
-            throw new Exception("Could not copy action (" + emmAction.getId() + ") for new company (" + toCompanyId + "): " + e.getMessage(), e);
+            throw new EmmActionCopyException("Could not copy action (" + emmAction.getId() + ") for new company (" + toCompanyId + "): " + e.getMessage(), e);
         } finally {
-            if (actionTempFile.exists()) {
+            if (actionTempFile != null && actionTempFile.exists()) {
                 actionTempFile.delete();
             }
         }
@@ -176,15 +176,6 @@ public class EmmActionServiceImpl implements EmmActionService {
             action.setActionOperations(operations);
         }
         return action;
-    }
-
-    @Override
-    @Transactional
-    public boolean deleteEmmAction(int actionID, int companyID) {
-        // Action operations must not be deleted when action itself is marked as deleted.
-        // emmActionOperationDao.deleteOperations(actionID, companyID);
-
-        return emmActionDao.markAsDeleted(actionID, companyID);
     }
 
     @Override
@@ -241,12 +232,8 @@ public class EmmActionServiceImpl implements EmmActionService {
             entry.put("creationDate", DateUtilities.toLong(action.getCreationDate()));
             entry.put("changeDate", DateUtilities.toLong(action.getChangeDate()));
             entry.put("deleted", action.isDeleted());
-            if (admin.isRedesignedUiUsed()) {
-                entry.put("active", String.valueOf(action.getIsActive()));
-                entry.put("operationTypes", emmActionOperationDao.getOperationsTypes(action.getId(), action.getCompanyID()));
-            } else {
-                entry.put("activeStatus", action.getIsActive() ? ActivenessStatus.ACTIVE : ActivenessStatus.INACTIVE);
-            }
+            entry.put("active", String.valueOf(action.getIsActive()));
+            entry.put("operationTypes", emmActionOperationDao.getOperationsTypes(action.getId(), action.getCompanyID()));
 
             actionsJson.put(entry);
         }
@@ -282,57 +269,6 @@ public class EmmActionServiceImpl implements EmmActionService {
     @Override
     public String getEmmActionName(int actionId, int companyId) {
         return emmActionDao.getEmmActionName(actionId, companyId);
-    }
-
-    @Override
-    @Transactional
-    @Deprecated
-    public boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions) {
-        if (MapUtils.isEmpty(changeMap) || companyId <= 0) {
-            return false;
-        }
-
-        Map<Integer, Boolean> activenessMap = emmActionDao.getActivenessMap(changeMap.keySet(), companyId);
-
-        List<Integer> entriesToActivate = new ArrayList<>();
-        List<Integer> entriesToDeactivate = new ArrayList<>();
-
-        changeMap.forEach((actionId, active) -> {
-            Boolean wasActive = activenessMap.get(actionId);
-
-            // Ensure its exists and should be changed (wasActive != active).
-            if (wasActive != null && !wasActive.equals(active)) {
-                if (active) {
-                    entriesToActivate.add(actionId);
-                } else {
-                    entriesToDeactivate.add(actionId);
-                }
-            }
-        });
-
-        if (entriesToActivate.size() > 0 || entriesToDeactivate.size() > 0) {
-            String description = "";
-
-            if (entriesToActivate.size() > 0) {
-                emmActionDao.setActiveness(entriesToActivate, true, companyId);
-                description += "Made active: " + StringUtils.join(entriesToActivate, ", ");
-
-                if (entriesToDeactivate.size() > 0) {
-                    description += "\n";
-                }
-            }
-
-            if (entriesToDeactivate.size() > 0) {
-                emmActionDao.setActiveness(entriesToDeactivate, false, companyId);
-                description += "Made inactive: " + StringUtils.join(entriesToDeactivate, ", ");
-            }
-
-            userActions.add(new UserAction("edit action activeness", description));
-
-            return true;
-        }
-
-        return false;
     }
 
     @Override

@@ -10,6 +10,7 @@
 
 package com.agnitas.mailing.preview.service;
 
+import com.agnitas.beans.Mailing;
 import com.agnitas.preview.Page;
 
 /**
@@ -26,6 +27,11 @@ public interface MailingPreviewService {
 	 * @return mailing preview
 	 */
 	Page renderPreview(int mailingID, int customerID);
+
+	/**
+	 * Renders the preview for given mailing, that can be not stored in the DB
+	 */
+	Page renderPreview(Mailing mailing, MailingPreviewOptions previewOptions);
 	
 	/**
 	 * Renders the HTML preview for given mailing with default preview options.

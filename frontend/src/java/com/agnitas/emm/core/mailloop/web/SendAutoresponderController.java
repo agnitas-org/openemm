@@ -12,15 +12,14 @@ package com.agnitas.emm.core.mailloop.web;
 
 import java.util.Objects;
 
+import com.agnitas.emm.core.mailloop.MailloopException;
+import com.agnitas.emm.core.mailloop.service.MailloopService;
+import com.agnitas.web.perm.annotations.Anonymous;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import com.agnitas.emm.core.mailloop.MailloopException;
-import com.agnitas.emm.core.mailloop.service.MailloopService;
-import com.agnitas.web.perm.annotations.Anonymous;
 
 /**
  * Controller to trigger sending of mailloop auto-responder mails.
@@ -28,20 +27,11 @@ import com.agnitas.web.perm.annotations.Anonymous;
 @Controller
 public class SendAutoresponderController {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(SendAutoresponderController.class);
+	private static final Logger LOGGER = LogManager.getLogger(SendAutoresponderController.class);
 
-	/** Service dealing with mailloops. */
 	private final MailloopService mailloopService;
 	
-	/**
-	 * Creates a new instance.
-	 * 
-	 * @param mailloopService service dealing with mailloops
-	 * 
-	 * @throws NullPointerException if given mailloopService is <code>null</code>
-	 */
-	public SendAutoresponderController(final MailloopService mailloopService) {
+	public SendAutoresponderController(MailloopService mailloopService) {
 		this.mailloopService = Objects.requireNonNull(mailloopService, "mailloopService");
 	}
 
@@ -54,38 +44,26 @@ public class SendAutoresponderController {
 	 */
 	@Anonymous	// Invoked by backend without authenticated user. Secured by security token.
 	@RequestMapping("/sendMailloopAutoresponder.action")
-	public final ResponseEntity<String> sendAutoresponse(final SendAutoresponderForm autoresponderForm) {
+	public final ResponseEntity<String> sendAutoresponse(SendAutoresponderForm autoresponderForm) {
 		final int mailloopID = autoresponderForm.getMailloopID();
 		final int companyID = autoresponderForm.getCompanyID();
 		final int customerID = autoresponderForm.getCustomerID();
 		final String securityToken = autoresponderForm.getSecurityToken();
 
-		if(LOGGER.isInfoEnabled()) {
-			LOGGER.info(
-					String.format(
-							"Requested sending auto-responder mail - mailloop %d, company %d, customer %d", 
-							mailloopID, 
-							companyID, 
-							customerID));
-		}
+		LOGGER.info("Requested sending auto-responder mail - mailloop {}, company {}, customer {}",
+						mailloopID, companyID, customerID);
 
 		try {
 			this.mailloopService.sendAutoresponderMail(mailloopID, companyID, customerID, securityToken);
 			
-			if(LOGGER.isInfoEnabled()) {
-				LOGGER.info(
-						String.format(
-								"Sent auto-responder mail - mailloop %d, company %d, customer %d", 
-								mailloopID, 
-								companyID, 
-								customerID));
-			}
-			
+			LOGGER.info("Sent auto-responder mail - mailloop {}, company {}, customer {}",
+							mailloopID, companyID, customerID);
+
 			return ResponseEntity.ok().build();
-		} catch(final MailloopException e) {
+		} catch (MailloopException e) {
 			LOGGER.info(
 					String.format(
-							"Error sending auto-responder mail - mailloop %d, company %d, customer %d", 
+							"Error sending auto-responder mail - mailloop %d, company %d, customer %d",
 							mailloopID, 
 							companyID, 
 							customerID), 
@@ -93,7 +71,5 @@ public class SendAutoresponderController {
 
 			return ResponseEntity.internalServerError().build();
 		}
-		
 	}
-	
 }

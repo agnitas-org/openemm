@@ -16,18 +16,17 @@ import java.util.List;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Title;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.dao.TitleDao;
 import com.agnitas.emm.common.service.BulkActionValidationService;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
+import com.agnitas.emm.core.recipient.service.RecipientService;
 import com.agnitas.emm.core.salutation.form.SalutationOverviewFilter;
 import com.agnitas.emm.core.salutation.service.SalutationService;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import com.agnitas.beans.SalutationEntry;
-import com.agnitas.beans.Title;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.recipient.service.RecipientService;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.util.Const;
 import com.agnitas.util.CustomTitle;
 import org.apache.commons.lang3.StringUtils;
@@ -47,12 +46,7 @@ public class SalutationServiceImpl implements SalutationService {
     }
 
     @Override
-    public PaginatedListImpl<SalutationEntry> paginatedList(int companyID, String sort, String order, int page, int rowsCount) {
-        return titleDao.getSalutationList(companyID, sort, order, page, rowsCount);
-    }
-
-    @Override
-    public PaginatedListImpl<Title> overview(SalutationOverviewFilter filter) {
+    public PaginatedList<Title> overview(SalutationOverviewFilter filter) {
         return titleDao.overview(filter);
     }
 
@@ -71,8 +65,7 @@ public class SalutationServiceImpl implements SalutationService {
         titleDao.save(title);
     }
 
-    @Override
-    public boolean delete(int salutationId, int companyId) {
+    private boolean delete(int salutationId, int companyId) {
         return titleDao.delete(salutationId, companyId);
     }
 

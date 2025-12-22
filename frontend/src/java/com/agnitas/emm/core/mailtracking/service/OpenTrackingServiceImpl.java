@@ -20,7 +20,7 @@ import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLeve
 import com.agnitas.emm.core.mailtracking.service.event.OnMailOpenedHandler;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.dao.OnepixelDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

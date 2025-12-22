@@ -39,12 +39,4 @@ public class JobQueueFormSearchParams implements FormSearchParams<JobQueueOvervi
         filter.setSuccessful(successful);
     }
 
-    @Override
-    public void resetParams() {
-        id = null;
-        running = null;
-        name = null;
-        nextStartDate = new DateRange();
-        successful = null;
-    }
 }

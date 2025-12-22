@@ -13,14 +13,13 @@ package com.agnitas.emm.core.workflow.web.forms;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
+import org.apache.commons.lang3.StringUtils;
 
 public class WorkflowForm {
 
@@ -30,9 +29,6 @@ public class WorkflowForm {
     private String description;
     private WorkflowStatus status = WorkflowStatus.STATUS_OPEN;
     private WorkflowStatus statusMaybeChangedTo = WorkflowStatus.STATUS_ACTIVE;
-    private int editorPositionTop;
-    private int editorPositionLeft;
-    private boolean inner;
     private Date generalStartDate;
     private Date generalEndDate;
     private WorkflowStop.WorkflowEndType endType;
@@ -45,7 +41,6 @@ public class WorkflowForm {
     private String usingActivatedWorkflowName = "";
     private String partOfActivatedWorkflow = "";
     private String partOfActivatedWorkflowName = "";
-
 
     public int getWorkflowId() {
         return workflowId;
@@ -93,30 +88,6 @@ public class WorkflowForm {
 
     public void setStatusMaybeChangedTo(WorkflowStatus statusMaybeChangedTo) {
         this.statusMaybeChangedTo = statusMaybeChangedTo;
-    }
-
-    public int getEditorPositionTop() {
-        return editorPositionTop;
-    }
-
-    public void setEditorPositionTop(int editorPositionTop) {
-        this.editorPositionTop = editorPositionTop;
-    }
-
-    public int getEditorPositionLeft() {
-        return editorPositionLeft;
-    }
-
-    public void setEditorPositionLeft(int editorPositionLeft) {
-        this.editorPositionLeft = editorPositionLeft;
-    }
-
-    public boolean isInner() {
-        return inner;
-    }
-
-    public void setInner(boolean inner) {
-        this.inner = inner;
     }
 
     public Date getGeneralStartDate() {

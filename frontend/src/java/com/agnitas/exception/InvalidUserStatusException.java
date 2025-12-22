@@ -8,7 +8,6 @@
 
 */
 
-
 package com.agnitas.exception;
 
 public final class InvalidUserStatusException extends RuntimeException {

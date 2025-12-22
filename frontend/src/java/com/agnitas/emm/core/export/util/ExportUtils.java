@@ -16,23 +16,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.ExportColumnMapping;
+import com.agnitas.beans.ExportPredef;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.service.ColumnInfoService;
-import com.agnitas.beans.ExportColumnMapping;
-import com.agnitas.beans.ExportPredef;
 
-public final class ExportUtils {
-    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, int companyId, Admin admin, ColumnInfoService columnInfoService) {
-    	List<ProfileField> profileFields;
-    	if (admin != null) {
-    		profileFields = columnInfoService.getComColumnInfos(companyId, admin.getAdminID());
-    	} else {
-    		profileFields = columnInfoService.getComColumnInfos(companyId);
-    	}
-    	
+public class ExportUtils {
+
+	private ExportUtils() {
+
+	}
+
+    public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export, Admin admin, ColumnInfoService columnInfoService) {
+    	List<ProfileField> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID());
+
         Set<String> profileFieldNames = profileFields
 			.stream()
 			.map(profileField -> profileField.getColumn().toLowerCase())

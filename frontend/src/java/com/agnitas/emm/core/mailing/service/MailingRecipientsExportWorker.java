@@ -10,30 +10,30 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import com.agnitas.emm.core.components.service.MailingRecipientsService;
-import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import com.agnitas.messages.I18nString;
-import org.agnitas.emm.core.autoimport.service.RemoteFile;
-import com.agnitas.service.GenericExportWorker;
-import com.agnitas.util.SqlPreparedStatementManager;
-import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.agnitas.emm.core.auto_import.bean.RemoteFile;
+import com.agnitas.emm.core.components.service.MailingRecipientsService;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.GenericExportWorker;
+import com.agnitas.util.SqlPreparedStatementManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class MailingRecipientsExportWorker extends GenericExportWorker {
 
     private static final Logger logger = LogManager.getLogger(MailingRecipientsExportWorker.class);
 
-    private int companyID;
-    private int mailingID;
+    private final int companyID;
+    private final int mailingID;
     private RemoteFile remoteFile = null;
-    private MailingRecipientsOverviewFilter filter;
-    private MailingRecipientsService mailingRecipientsService;
+    private final MailingRecipientsOverviewFilter filter;
+    private final MailingRecipientsService mailingRecipientsService;
 
     public RemoteFile getRemoteFile() {
         return remoteFile;
@@ -49,6 +49,10 @@ public class MailingRecipientsExportWorker extends GenericExportWorker {
 
     public void setRemoteFile(RemoteFile remoteFile) {
         this.remoteFile = remoteFile;
+    }
+
+    public MailingRecipientsOverviewFilter getFilter() {
+        return filter;
     }
 
     public MailingRecipientsExportWorker(MailingRecipientsOverviewFilter filter, int mailingID, int companyID, MailingRecipientsService service, Locale locale) {

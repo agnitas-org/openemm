@@ -1,18 +1,68 @@
+
+/*doc
+---
+title: Loaders
+name: loaders
+category: Components - Loaders
+---
+*/
+
+/*doc
+---
+title: Basic Example
+name: loaders_01_example
+parent: loaders
+---
+
+```htmlexample
+<div class="loader">
+  <i class="icon icon-spinner icon-pulse"></i>
+  <span>Loading</span>
+</div>
+```
+
+```htmlexample
+<div class="loader">
+  <i class="icon icon-sync icon-spin"></i>
+  <span>Loading</span>
+</div>
+```
+*/
+
 .loader {
-  position: fixed;
-  top: 15px; left: 50%;
-  margin-left: 45px;
+  --loader-color: #{$dark-blue};
+
   z-index: 1003;
 
-  display: none;
+  color: var(--loader-color);
+  background-color: $body-bg-var;
 
-  height:    30px;
-  padding:   8px;
-  line-height: 15px;
+  border: 1px solid var(--loader-color);
+  border-radius: $border-radius-sm;
 
-  border-radius: 2px;
+  @include flex-center;
+  gap: $gap-x-sm;
+  padding: $gap-x-sm - 2 8px;
+  width: min-content;
 
-  font-size: $fs-small;
-  color:     $c-white;
-  background-color: $c-black;
+  white-space: nowrap;
+  font-weight: $font-weight-semibold;
+}
+
+@include color-mode(dark) {
+  .loader {
+    --loader-color: #{$light-blue};
+  }
+}
+
+@include color-mode(light-contrast) {
+  .loader {
+    --loader-color: #{$con-dark-blue};
+  }
+}
+
+@include color-mode(dark-contrast) {
+  .loader {
+    --loader-color: #{$white};
+  }
 }

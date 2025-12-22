@@ -10,7 +10,8 @@
 
 package com.agnitas.exception;
 
-public class FormNotFoundException extends Exception {
+public class FormNotFoundException extends RuntimeException {
+
 	/** Serial version UID. */
 	private static final long serialVersionUID = -3880039723225788494L;
 	
@@ -19,13 +20,6 @@ public class FormNotFoundException extends Exception {
 
 	public FormNotFoundException(final int companyID, final String formName) {
 		super(String.format("Form '%s' not found for company ID %d", formName, companyID));
-		
-		this.companyID = companyID;
-		this.formName = formName;
-	}
-
-	public FormNotFoundException(final int companyID, final String formName, final Throwable cause) {
-		super(String.format("Form '%s' not found for company ID %d", formName, companyID), cause);
 		
 		this.companyID = companyID;
 		this.formName = formName;

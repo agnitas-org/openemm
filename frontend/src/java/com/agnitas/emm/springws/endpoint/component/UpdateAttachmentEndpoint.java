@@ -13,7 +13,7 @@ package com.agnitas.emm.springws.endpoint.component;
 import java.util.Objects;
 
 import com.agnitas.beans.MailingComponentType;
-import org.agnitas.emm.core.component.service.ComponentModel;
+import com.agnitas.emm.core.components.entity.ComponentModel;
 import com.agnitas.emm.core.components.service.ComponentService;
 import com.agnitas.emm.springws.endpoint.BaseEndpoint;
 import com.agnitas.emm.springws.endpoint.MailingEditableCheck;

@@ -13,15 +13,10 @@ package com.agnitas.emm.core.action.service.impl;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.agnitas.beans.BindingEntry;
-import com.agnitas.emm.common.UserStatus;
-import com.agnitas.util.HttpUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.MailingDao;
+import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -29,19 +24,16 @@ import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.HttpUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperation {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ActionOperationActivateDoubleOptInImpl.class);
 
-	/**
-	 * DAO for accessing mailing data.
-	 */
+	private static final Logger logger = LogManager.getLogger(ActionOperationActivateDoubleOptInImpl.class);
+
 	private MailingDao mailingDao;
-
-	/**
-	 * DAO for accessing subscription/binding data.
-	 */
 	private BindingEntryDao bindingEntryDao;
 
 	public void setMailingDao(MailingDao mailingDao) {
@@ -53,7 +45,7 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 	}
 
 	@Override
-	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> requestParameters, final EmmActionOperationErrors errors) throws Exception {
+	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> requestParameters, EmmActionOperationErrors errors) {
 		final ActionOperationActivateDoubleOptInParameters activateDoiOperation = (ActionOperationActivateDoubleOptInParameters) operation;
 		
 		assert activateDoiOperation.getMediaType() != null;
@@ -94,9 +86,7 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 					}
 					
 					if(!returnValue) {
-						if(logger.isInfoEnabled()) {
-							logger.info(String.format("ActivateDoubleOptIn: No binding status changed (company %d, customer %d)", companyID, customerID));
-						}
+						logger.info("ActivateDoubleOptIn: No binding status changed (company {}, customer {})", companyID, customerID);
 					}
 					
 					return returnValue;
@@ -122,17 +112,12 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
 								final boolean result = changeBindingStatusToConfirmed(bindingEntry, companyID, mailingID, request.getRemoteAddr(), HttpUtils.getReferrer(request));
 
 								if(!result) {
-									if(logger.isInfoEnabled()) {
-										logger.info(String.format("ActivateDoubleOptIn: Binding entry not changed (company %d, customer %d, mailinglist %d, media: %d)", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode()));
-									}
+									logger.info("ActivateDoubleOptIn: Binding entry not changed (company {}, customer {}, mailinglist {}, media: {})", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode());
 								}
 								
 								return result;
 							} else {
-								if(logger.isInfoEnabled()) {
-									logger.info(String.format("ActivateDoubleOptIn: No binding entry found (company %d, customer %d, mailinglist %d, media: %d)", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode()));
-								}
-								
+								logger.info("ActivateDoubleOptIn: No binding entry found (company {}, customer {}, mailinglist {}, media: {})", companyID, customerID, mailinglistID,  activateDoiOperation.getMediaType().getMediaCode());
 								return false;
 							}
 						}
@@ -147,8 +132,8 @@ public class ActionOperationActivateDoubleOptInImpl implements EmmActionOperatio
         return ActionOperationType.ACTIVATE_DOUBLE_OPT_IN;
     }
 
-    private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, int mailingID, String remoteAddr, String referrer) throws Exception {
-        switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
+    private boolean changeBindingStatusToConfirmed(BindingEntry aEntry, int companyID, int mailingID, String remoteAddr, String referrer) {
+        switch (UserStatus.getByCode(aEntry.getUserStatus())) {
             case WaitForConfirm:
                 aEntry.setUserStatus(UserStatus.Active.getStatusCode());
                 aEntry.setUserRemark("Opt-In-IP: " + remoteAddr);

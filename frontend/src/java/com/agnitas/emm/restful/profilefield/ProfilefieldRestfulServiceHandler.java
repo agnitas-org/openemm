@@ -11,8 +11,6 @@
 package com.agnitas.emm.restful.profilefield;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,14 +25,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DbColumnType.SimpleDataType;
-import com.agnitas.util.HttpUtils.RequestMethod;
-import com.agnitas.util.SafeString;
-import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileFieldMode;
@@ -55,10 +45,16 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
-
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DbColumnType.SimpleDataType;
+import com.agnitas.util.HttpUtils.RequestMethod;
+import com.agnitas.util.SafeString;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This restful service is available at:
@@ -495,7 +491,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		return list;
 	}
 
-	private void readJsonData(int companyID, JsonObject jsonObject, RecipientFieldDescription profileField) throws Exception, RestfulClientException, IOException, FileNotFoundException {
+	private void readJsonData(int companyID, JsonObject jsonObject, RecipientFieldDescription profileField) throws Exception {
 		Map<Integer, String> adminNamesMap = null;
 		
 		if (jsonObject.containsPropertyKey("notVisibleUsers") && jsonObject.containsPropertyKey("visibleUsers")) {
@@ -516,7 +512,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 						try {
 							simpleDataType = SimpleDataType.getFromString((String) entry.getValue());
 						} catch (Exception e) {
-							throw new RestfulClientException("Invalid value for property 'type': " + (String) entry.getValue(), e);
+							throw new RestfulClientException("Invalid value for property 'type': " + entry.getValue(), e);
 						}
 						profileField.setSimpleDataType(simpleDataType);
 						if (simpleDataType == SimpleDataType.Characters) {
@@ -533,7 +529,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 						} else if (simpleDataType == SimpleDataType.Blob) {
 							profileField.setDatabaseDataType("DATE");
 						} else {
-							throw new RestfulClientException("Invalid value for property 'type': " + (String) entry.getValue());
+							throw new RestfulClientException("Invalid value for property 'type': " + entry.getValue());
 						}
 					} else if (profileField.getSimpleDataType() != SimpleDataType.getFromString((String) entry.getValue())) {
 						throw new RestfulClientException("Invalid value for property 'type'. Cannot change type of existing profilefield");

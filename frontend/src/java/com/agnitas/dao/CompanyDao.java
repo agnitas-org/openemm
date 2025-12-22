@@ -11,20 +11,15 @@
 package com.agnitas.dao;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
-import com.agnitas.emm.core.company.form.CompanyListForm;
 import com.agnitas.beans.CompaniesConstraints;
-import com.agnitas.beans.impl.CompanyStatus;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.util.Tuple;
-
 import com.agnitas.beans.Company;
+import com.agnitas.beans.impl.CompanyStatus;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.company.form.CompanyListForm;
 
 public interface CompanyDao {
 	
@@ -36,9 +31,8 @@ public interface CompanyDao {
 	 * Writes changes to the given company to the database or creates a new one if needed.
 	 * 
 	 * @param comp the company to save.
-	 * @throws Exception if something went wrong.
 	 */
-	void saveCompany(Company comp) throws Exception;
+	void saveCompany(Company comp);
 	
 	boolean existTrackingTables(int companyID);
 
@@ -62,12 +56,7 @@ public interface CompanyDao {
 
     List<Integer> getAllActiveCompaniesIds(boolean includeMasterCompany);
 	
-	List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany);
-
 	boolean createHistoryTables(int companyID);
-
-	// TODO: check usage and remove after EMMGUI-714 will be finished and old design will be removed
-	PaginatedListImpl<CompanyEntry> getCompanyList(int companyID, String sort, String direction, int page, int rownums);
 
     List<Company> getAllActiveCompanies();
     
@@ -77,24 +66,20 @@ public interface CompanyDao {
     
     int getCompanyDatasource(int companyID);
 
-	int getMaximumNumberOfCustomers();
-	
 	/**
 	 * Get number of active and not deleted companies
 	 */
 	int getNumberOfCompanies();
 	
-	int getNumberOfProfileFields(int companyID);
-	
 	boolean initCustomerTables(int companyID);
 
 	void createRdirValNumTable(int newCompanyId);
 
-	void copySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain) throws Exception;
+	void copySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain);
 
 	boolean addExecutiveAdmin(int companyID, int executiveAdminID);
 
-    PaginatedListImpl<CompanyEntry> getCompanyList(CompanyListForm filter, int companyId);
+    PaginatedList<CompanyEntry> getCompanyList(CompanyListForm filter, int companyId);
 
 	//get all active companies
 	List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus);
@@ -116,12 +101,6 @@ public interface CompanyDao {
 
 	boolean deleteAllCompanyPermission(int companyID);
 
-    List<Tuple<String,String>> getCompanyInfo(int companyID);
-
-    Map<String, Object> getCompanySettings(int companyID);
-
-	List<Map<String, Object>> getReferenceTableSettings(int companyID);
-	
 	void changeFeatureRights(String featureName, int companyID, boolean activate, String comment);
 
 	int getPriorityCount(int companyId);
@@ -152,7 +131,7 @@ public interface CompanyDao {
 
 	void cleanupPremiumFeaturePermissions(int companyID);
 
-	Optional<String> getCompanyToken(int companyID) throws UnknownCompanyIdException;
+	String getCompanyToken(int companyID);
 
     List<Integer> getActiveCompanies(CompaniesConstraints constraints);
 
@@ -161,9 +140,11 @@ public interface CompanyDao {
 	String getSpamCheckAddress(int companyID);
 
     List<CompanyEntry> findAllByEmailPart(String email, int companyID);
+
     List<CompanyEntry> findAllByEmailPart(String email);
 
-	void updateTechnicalContact(String email, int id);
+	void updateEmails(String techContactEmail, Set<String> systemMessageEmails, int id);
 
 	List<Integer> getCompaniesIds();
+
 }

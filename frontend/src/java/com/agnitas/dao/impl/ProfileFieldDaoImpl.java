@@ -24,25 +24,26 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.LightProfileField;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.ProfileFieldPermission;
+import com.agnitas.beans.impl.LightProfileFieldImpl;
 import com.agnitas.beans.impl.ProfileFieldImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
+import com.agnitas.emm.core.profilefields.exception.TooManyRowsForDefaultValueChangeException;
+import com.agnitas.emm.core.recipient.exception.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientStandardField;
-import com.agnitas.beans.LightProfileField;
-import com.agnitas.beans.impl.LightProfileFieldImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.DbColumnType.SimpleDataType;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.TimeoutLRUMap;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -129,8 +130,8 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			if (columnType == null) {
 				return null;
 			} else {
-				List<ProfileField> profileFieldList = select(SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ProfileField_RowMapper(), companyID, columnName);
-				if (profileFieldList == null || profileFieldList.isEmpty()) {
+				ProfileField profileField = selectObjectDefaultNull(SELECT_PROFILEFIELD_BY_COMPANYID_AND_COLUMNNAME, new ProfileField_RowMapper(), companyID, columnName);
+				if (profileField == null) {
 					ProfileField dbOnlyField = new ProfileFieldImpl();
 					dbOnlyField.setCompanyID(companyID);
 					dbOnlyField.setColumn(columnName);
@@ -145,18 +146,15 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 					dbOnlyField.setMaxDataSize(maxDataSize(columnType));
 
 					return dbOnlyField;
-				} else if (profileFieldList.size() > 1) {
-					throw new IllegalStateException("Invalid number of entries found in getProfileField: " + profileFieldList.size());
 				} else {
-					ProfileField profileField = profileFieldList.get(0);
 					profileField.setCompanyID(companyID);
 					profileField.setDataType(columnType.getTypeName());
 					profileField.setDataTypeLength(columnType.getCharacterLength());
 					profileField.setNumericPrecision(columnType.getNumericPrecision());
 					profileField.setNumericScale(columnType.getNumericScale());
 					profileField.setNullable(columnType.isNullable());
-					profileField.setCreationDate(profileFieldList.get(0).getCreationDate());
-					profileField.setChangeDate(profileFieldList.get(0).getChangeDate());
+					profileField.setCreationDate(profileField.getCreationDate());
+					profileField.setChangeDate(profileField.getChangeDate());
 					profileField.setDefaultValue(DbUtilities.getColumnDefaultValue(getDataSource(), "customer_" + companyID + "_tbl", columnName));
 					profileField.setHiddenField(RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(columnName.trim()));
 					profileField.setMaxDataSize(maxDataSize(columnType));
@@ -175,16 +173,14 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
             if (profileField == null) {
             	return null;
             } else {
-            	List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
-            	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
-    				return profileField;
-    			} else if (profileFieldPermissionList.size() > 1) {
-    				throw new RuntimeException("Invalid number of permission entries found in getProfileField: " + profileFieldPermissionList.size());
-    			} else {
-    				profileField.setAdminID(adminID);
-    				profileField.setModeEdit(profileFieldPermissionList.get(0).getModeEdit());
+				ProfileFieldPermission permission = selectObjectDefaultNull(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
+            	if (permission == null) {
     				return profileField;
     			}
+
+				profileField.setAdminID(adminID);
+				profileField.setModeEdit(permission.getModeEdit());
+				return profileField;
             }
 		}
     }
@@ -194,26 +190,23 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		if (companyID <= 0) {
 			return null;
 		} else {
-			List<ProfileField> profileFieldList = select(SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ProfileField_RowMapper(), companyID, shortName);
-			if (profileFieldList == null || profileFieldList.size() < 1) {
+			ProfileField profileField = selectObjectDefaultNull(SELECT_PROFILEFIELD_BY_COMPANYID_AND_SHORTNAME, new ProfileField_RowMapper(), companyID, shortName);
+			if (profileField == null) {
 				return null;
-			} else if (profileFieldList.size() > 1) {
-				throw new RuntimeException("Invalid number of entries found in getProfileFieldByShortname: " + profileFieldList.size());
-			} else {
-				ProfileField profileField = profileFieldList.get(0);
-				DbColumnType columnType = DbUtilities.getColumnDataType(getDataSource(), "customer_" + companyID + "_tbl", profileField.getColumn());
-				if (columnType == null) {
-	            	return null;
-	            } else {
-					profileField.setDataType(columnType.getTypeName());
-					profileField.setDataTypeLength(columnType.getCharacterLength());
-					profileField.setNumericPrecision(columnType.getNumericPrecision());
-					profileField.setNumericScale(columnType.getNumericScale());
-					profileField.setNullable(columnType.isNullable());
-					
-					return profileField;
-	            }
 			}
+
+			DbColumnType columnType = DbUtilities.getColumnDataType(getDataSource(), "customer_" + companyID + "_tbl", profileField.getColumn());
+			if (columnType == null) {
+				return null;
+			}
+
+			profileField.setDataType(columnType.getTypeName());
+			profileField.setDataTypeLength(columnType.getCharacterLength());
+			profileField.setNumericPrecision(columnType.getNumericPrecision());
+			profileField.setNumericScale(columnType.getNumericScale());
+			profileField.setNullable(columnType.isNullable());
+
+			return profileField;
 		}
 	}
 	
@@ -231,18 +224,16 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			ProfileField profileField = getProfileFieldByShortname(companyID, shortName);
             if (profileField == null) {
             	return null;
-            } else {
-            	List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
-            	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
-    				return profileField;
-    			} else if (profileFieldPermissionList.size() > 1) {
-    				throw new IllegalStateException("Invalid number of permission entries found in getProfileFieldByShortname: " + profileFieldPermissionList.size());
-    			} else {
-    				profileField.setAdminID(adminID);
-    				profileField.setModeEdit(profileFieldPermissionList.get(0).getModeEdit());
-    				return profileField;
-    			}
             }
+
+			ProfileFieldPermission permission = selectObjectDefaultNull(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
+			if (permission == null) {
+				return profileField;
+			}
+
+			profileField.setAdminID(adminID);
+			profileField.setModeEdit(permission.getModeEdit());
+			return profileField;
 		}
 	}
 	
@@ -332,22 +323,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
             }
 
 			return comProfileFieldList;
-		}
-	}
-	
-	@Override
-	public CaseInsensitiveMap<String, ProfileField> getProfileFieldsMap(int companyID) {
-		if (companyID <= 0) {
-			return null;
-		} else {
-			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID);
-			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
-
-			for (Entry<String, ProfileField> entry : comProfileFieldMap.entrySet()) {
-				returnMap.put(entry.getKey(), entry.getValue());
-			}
-			
-			return returnMap;
 		}
 	}
 	
@@ -528,12 +503,10 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, noNotNullConstraintCheck);
 			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 			for (ProfileField comProfileField : comProfileFieldMap.values()) {
-				List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
-            	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
-    				throw new RuntimeException("Invalid number of permission entries found in getProfileFields: " + profileFieldPermissionList.size());
-    			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
+				ProfileFieldPermission permission = selectObjectDefaultNull(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
+            	if (permission != null) {
     				comProfileField.setAdminID(adminID);
-    				comProfileField.setModeEdit(profileFieldPermissionList.get(0).getModeEdit());
+    				comProfileField.setModeEdit(permission.getModeEdit());
     				returnMap.put(comProfileField.getColumn(), comProfileField);
     			} else {
     				returnMap.put(comProfileField.getColumn(), comProfileField);
@@ -566,13 +539,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 					comProfileField.setNumericPrecision(columnType.getNumericPrecision());
 					comProfileField.setNumericScale(columnType.getNumericScale());
 					comProfileField.setNullable(columnType.isNullable());
-					
-					List<ProfileFieldPermission> profileFieldPermissionList = select(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
-	            	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
-	    				throw new RuntimeException("Invalid number of permission entries found in getProfileFieldsWithIndividualSortOrder: " + profileFieldPermissionList.size());
-	    			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
+
+					ProfileFieldPermission permission = selectObjectDefaultNull(SELECT_PROFILEFIELDPERMISSION, new ProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
+	            	if (permission != null) {
 	    				comProfileField.setAdminID(adminID);
-	    				comProfileField.setModeEdit(profileFieldPermissionList.get(0).getModeEdit());
+	    				comProfileField.setModeEdit(permission.getModeEdit());
 	    				returnList.add(comProfileField);
 	    			} else {
 	    				returnList.add(comProfileField);
@@ -624,13 +595,13 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		if (previousProfileField == null) {
 			// Check if new shortname already exists before a new column is added to dbtable
 			if (getProfileFieldByShortname(field.getCompanyID(), field.getShortname()) != null) {
-				throw new Exception("New shortname for customerprofilefield already exists");
+				throw new IllegalArgumentException("New shortname for customerprofilefield already exists");
 			}
 
 			// Change DB Structure if needed (throws an Exception if change is not possible)
 			boolean createdDbField = addColumnToDbTable(field.getCompanyID(), field.getColumn(), field.getDataType(), field.getDataTypeLength(), field.getDefaultValue(), admin.getDateFormat(), !field.getNullable());
 			if (!createdDbField) {
-				throw new Exception("DB-field could not be created");
+				throw new IllegalStateException("DB-field could not be created");
 			}
 			
 			// Shift other entries if needed
@@ -640,19 +611,19 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			
 			// Insert new entry
 			String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
+			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize() ? 1 : 0, allowedValuesJson);
 		} else {
 			// Check if new shortname already exists before a new column is added to dbtable
 			if (!previousProfileField.getShortname().equals(field.getShortname())
 					&& existWithExactShortname(field.getCompanyID(), field.getShortname())) {
-				throw new Exception("New shortname for customerprofilefield already exists");
+				throw new IllegalArgumentException("New shortname for customerprofilefield already exists");
 			}
 
 			// Change DB Structure if needed (throws an Exception if change is not possible)
 			if (field.getDataType() != null) {
     			boolean alteredDbField = alterColumnTypeInDbTable(field.getCompanyID(), field.getColumn(), field.getDataType(), field.getDataTypeLength(), field.getDefaultValue(), admin.getDateFormat(), !field.getNullable());
     			if (!alteredDbField) {
-    				throw new Exception("DB-field could not be changed");
+    				throw new IllegalStateException("DB-field could not be changed");
     			}
 			}
 			
@@ -672,11 +643,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			if (selectInt("SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
     			// Insert new entry for some manually by db-support in db added fields
 				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-    			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
+    			update(statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize() ? 1 : 0, allowedValuesJson);
 			} else {
     			// Update existing entry
     			update("UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)",
-   					field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn());
+   					field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize() ? 1 : 0, allowedValuesJson, field.getCompanyID(), field.getColumn());
 			}
 		}
 
@@ -686,60 +657,51 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
     }
 
 	@Override
-	public int getMaximumCompanySpecificFieldCount(int companyID) {
-		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
-		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
-		if (companyMaxFields >= 0 && (companyMaxFields < systemMaxFields || systemMaxFields < 0)) {
-			return companyMaxFields;
-		} else {
-			return systemMaxFields;
-		}
-	}
-	
-	@Override
 	public boolean addColumnToDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
-		if (companyID <= 0) {
+		if (companyID <= 0 || StringUtils.isBlank(fieldname) || StringUtils.isBlank(fieldType)) {
     		return false;
-    	} else if (StringUtils.isBlank(fieldname)) {
-    		return false;
-    	} else if (StringUtils.isBlank(fieldType)) {
-    		return false;
-    	} else if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
+    	}
+
+		if (DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			return false;
-		} else if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
-			throw new Exception("Table has too many entries to add a column with default value (>" + configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID) + ")");
-		} else if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
-			// check for valid numerical default value failed
-			throw new Exception("Invalid non-numerical default value");
-		} else {
-			boolean result = DbUtilities.addColumnToDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldType, length, fieldDefault, fieldDefaultDateFormat, notNull);
-			
-			doPostProcessing(companyID);
-			
-			return result;
 		}
+
+		if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
+			throw new TooManyRowsForDefaultValueChangeException(configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID));
+		}
+
+		if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
+			// check for valid numerical default value failed
+			throw new IllegalArgumentException("Invalid non-numerical default value");
+		}
+
+		boolean result = DbUtilities.addColumnToDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldType, length, fieldDefault, fieldDefaultDateFormat, notNull);
+		doPostProcessing(companyID);
+		return result;
 	}
 	
 	@Override
 	public boolean alterColumnTypeInDbTable(int companyID, String fieldname, String fieldType, long length, String fieldDefault, SimpleDateFormat fieldDefaultDateFormat, boolean notNull) throws Exception {
-		if (companyID <= 0) {
+		if (companyID <= 0 || StringUtils.isBlank(fieldname) || StringUtils.isBlank(fieldType)) {
     		return false;
-    	} else if (StringUtils.isBlank(fieldname)) {
-    		return false;
-    	} else if (StringUtils.isBlank(fieldType)) {
-    		return false;
-    	} else if (!DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
+    	}
+
+		if (!DbUtilities.containsColumnName(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			return false;
-		} else if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
-			throw new Exception("Table has too many entries to add a column with default value (>" + configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID) + ")");
-		} else if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
-			// check for valid numerical default value failed
-			throw new Exception("Invalid non-numerical default value");
-		} else {
-			boolean result = DbUtilities.alterColumnDefaultValueInDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldDefault, fieldDefaultDateFormat, notNull);
-			doPostProcessing(companyID);
-			return result;
 		}
+
+		if (!checkAllowedDefaultValue(companyID, fieldname, fieldDefault)) {
+			throw new TooManyRowsForDefaultValueChangeException(configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID));
+		}
+
+		if (("FLOAT".equalsIgnoreCase(fieldType) || "DOUBLE".equalsIgnoreCase(fieldType) || "NUMBER".equalsIgnoreCase(fieldType) || "INTEGER".equalsIgnoreCase(fieldType)) && StringUtils.isNotBlank(fieldDefault) && !AgnUtils.isDouble(fieldDefault)) {
+			// check for valid numerical default value failed
+			throw new IllegalArgumentException("Invalid non-numerical default value");
+		}
+
+		boolean result = DbUtilities.alterColumnDefaultValueInDbTable(getDataSource(), "customer_" + companyID + "_tbl", fieldname, fieldDefault, fieldDefaultDateFormat, notNull);
+		doPostProcessing(companyID);
+		return result;
 	}
 
 	private <T extends LightProfileField> List<T> sortProfileFields(CaseInsensitiveMap<String, T> map) {
@@ -791,25 +753,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		});
 	}
 	
-	protected String getDateDefaultValue(String fieldDefault) {
-		if (fieldDefault == null) {
-			return "null";
-		} else if (fieldDefault.toLowerCase().equals("sysdate")) {
-			return "CURRENT_TIMESTAMP";
-		} else {
-    		if (isOracleDB()) {
-				// TODO: A fixed date format is not a good solution, should depend on language setting of the user
-				/*
-				 * Here raise a problem: The default value is not only used for the ALTER TABLE statement.
-				 * A problem occurs, when two users with language settings with different date formats edit the profile field.
-				 */
-    			return "to_date('" + fieldDefault + "', 'DD.MM.YYYY HH24:MI:SS')";
-    		} else {
-    			return "'" + fieldDefault + "'";
-    		}
-		}
-	}
-
     private class ProfileField_RowMapper implements RowMapper<ProfileField> {
 		@Override
 		public ProfileField mapRow(ResultSet resultSet, int row) throws SQLException {
@@ -819,11 +762,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			readProfileField.setShortname(resultSet.getString(FIELD_SHORTNAME));
 			readProfileField.setDescription(resultSet.getString(FIELD_DESCRIPTION));
 			readProfileField.setColumn(resultSet.getString(FIELD_COLUMN_NAME));
-			try {
-				readProfileField.setModeEdit(ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit")));
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage(), e);
-			}
+			readProfileField.setModeEdit(ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit")));
 			readProfileField.setCreationDate(resultSet.getTimestamp(FIELD_CREATION_DATE));
 			readProfileField.setChangeDate(resultSet.getTimestamp(FIELD_CHANGE_DATE));
 			readProfileField.setHistorize(resultSet.getBoolean(FIELD_HISTORIZE));
@@ -859,7 +798,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 						allowedValues[i] = array.getString(i);
 					}
 				} catch (JSONException e) {
-					logger.error("Error occurred while parsing allowed values for profile field: '%s' JSON: %s".formatted(readProfileField.getShortname(), allowedValuesJson), e);
+					logger.error("Error occurred while parsing allowed values for profile field: '{}' JSON: {}", readProfileField.getShortname(), allowedValuesJson, e);
 				}
 			}
 			readProfileField.setAllowedValues(allowedValues);
@@ -888,18 +827,13 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			readProfileFieldPermission.setCompanyId(resultSet.getInt("company_id"));
 			readProfileFieldPermission.setColumnName(resultSet.getString("column_name"));
 			readProfileFieldPermission.setAdminId(resultSet.getInt("admin_id"));
-			try {
-				readProfileFieldPermission.setModeEdit(ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit")));
-			} catch (Exception e) {
-				throw new SQLException(e.getMessage(), e);
-			}
-			
+			readProfileFieldPermission.setModeEdit(ProfileFieldMode.getProfileFieldModeForStorageCode(resultSet.getInt("mode_edit")));
+
 			return readProfileFieldPermission;
 		}
 	}
 
-	@Override
-	public boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) {
+	private boolean checkAllowedDefaultValue(int companyID, String fieldname, String fieldDefault) {
 		if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldname)) {
 			// Field already exists, so a new default value will only take effect on newly inserted entries, which should not take too much time
 			return true;
@@ -909,22 +843,9 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		return StringUtils.isEmpty(fieldDefault) || selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl") <= configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyID);
 	}
 	
-	@Override
-	public final boolean checkProfileFieldExists(final int companyID, final String fieldNameOnDatabase) {
-		return DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldNameOnDatabase);
-	}
-	
-	@Override
-	public final int countCustomerEntries(final int companyID) {
-		return selectInt("SELECT COUNT(*) FROM customer_" + companyID + "_tbl");
-	}
-
-	private void doPostProcessing(final int companyID) throws RecipientProfileHistoryException {
+	private void doPostProcessing(int companyID) throws RecipientProfileHistoryException {
 		if (configService.isRecipientProfileHistoryEnabled(companyID)) {
-			if (logger.isInfoEnabled()) {
-				logger.info(String.format("Profile field history is enabled form company %d - starting post-processing of profile field structure modification", companyID));
-			}
-			
+			logger.info("Profile field history is enabled form company {} - starting post-processing of profile field structure modification", companyID);
 			profileHistoryService.afterProfileFieldStructureModification(companyID);
 		}
 
@@ -989,7 +910,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception {
+	public Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) {
 		Map<Integer, ProfileFieldMode> resultMap = new HashMap<>();
 		List<Map<String, Object>> result = select("SELECT admin_id, mode_edit FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 		for (Map<String, Object> row : result) {
@@ -999,7 +920,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
 		boolean profileFieldEntryExists = selectInt("SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", companyID, columnName.toLowerCase()) > 0;
 		if (!profileFieldEntryExists) {
 			update("INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, mode_edit) VALUES (?, ?, ?, ?, ?, ?)",

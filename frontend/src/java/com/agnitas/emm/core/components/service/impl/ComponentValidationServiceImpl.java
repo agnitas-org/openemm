@@ -17,22 +17,21 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
+import com.agnitas.emm.core.components.form.AttachmentType;
+import com.agnitas.emm.core.components.service.ComponentValidationService;
+import com.agnitas.emm.core.components.service.MailingComponentsService;
+import com.agnitas.emm.core.mimetypes.service.MimeTypeWhitelistService;
+import com.agnitas.emm.validator.ApacheTikaUtils;
+import com.agnitas.messages.Message;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
-import com.agnitas.emm.core.components.form.AttachmentType;
-import com.agnitas.emm.core.components.service.MailingComponentsService;
-import com.agnitas.emm.core.components.service.ComponentValidationService;
-import com.agnitas.emm.core.mimetypes.service.MimeTypeWhitelistService;
-import com.agnitas.emm.validator.ApacheTikaUtils;
-import com.agnitas.messages.Message;
 
 @Service("ComponentValidationService")
 public class ComponentValidationServiceImpl implements ComponentValidationService {
@@ -102,23 +101,25 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
                     return false;
                 }
             }
+
+            return true;
         } else if (!mimetypeWhitelistService.isMimeTypeWhitelisted(file.getContentType())) {
             errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));
             return false;
-        } else if (configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection)) {
-        	// Detect mimetype by file content (not file name extension)
-        	String fileContentType;
-        	try (InputStream stream = file.getInputStream()) {
-    	        fileContentType = ApacheTikaUtils.getContentType(stream);
-    		} catch (Exception e) {
-    			errors.add(Message.of("upload.file.mimetyp.detection.error", file.getOriginalFilename()));
-                return false;
-    		}
-        	
-        	if (!fileContentType.equalsIgnoreCase(file.getContentType())) {
-                errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));
-                return false;
-        	}
+        }
+
+        // Detect mimetype by file content (not file name extension)
+        String fileContentType;
+        try (InputStream stream = file.getInputStream()) {
+            fileContentType = ApacheTikaUtils.getContentType(stream);
+        } catch (Exception e) {
+            errors.add(Message.of("upload.file.mimetyp.detection.error", file.getOriginalFilename()));
+            return false;
+        }
+
+        if (!fileContentType.equalsIgnoreCase(file.getContentType()) && !"application/x-zip-compressed".equals(file.getContentType())) {
+            errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));
+            return false;
         }
 
         return true;

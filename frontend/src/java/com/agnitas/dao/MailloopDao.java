@@ -10,15 +10,16 @@
 
 package com.agnitas.dao;
 
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
-import com.agnitas.beans.Mailloop;
-import com.agnitas.beans.MailloopEntry;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
 import java.util.List;
 
+import com.agnitas.beans.Mailloop;
+import com.agnitas.beans.MailloopEntry;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+
 public interface MailloopDao {
+
     /**
      * Deletes mailloop.
      *
@@ -50,35 +51,9 @@ public interface MailloopDao {
      */
     int saveMailloop(Mailloop loop);
     
-    /**
-     * Loads list of mailloops by company id.
-     *
-     * @param companyId
-     *               Id of the company
-     * @return List of mailloops.
-     */
-    List<Mailloop> getMailloops(int companyId);
-
     boolean deleteMailloopByCompany(int companyId);
 
-    /**
-     * Selects all bounce filters of certain company and creates paginated list according to given criteria of sorting and pagination
-     *
-     * @param companyId
-     *              The id of the company for admins
-     * @param sortColumn
-     *              The name of the column for sorting
-     * @param direction
-     *              The sort order
-     * @param pageNumber
-     *              The number of the page
-     * @param pageSize
-     *              The number of rows to be shown on page
-     * @return PaginatedList of MailloopEntry bean objects
-     */
-    PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(int companyId, String sortColumn, String direction, int pageNumber, int pageSize);
-
-    PaginatedListImpl<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter);
+    PaginatedList<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter);
 
     boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     

@@ -10,7 +10,6 @@
 
 package com.agnitas.util;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -21,21 +20,16 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
-
+import bsh.StringUtil;
 import com.agnitas.beans.AbstractTrackableLink;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.Tuple;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
+import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
-
-import bsh.StringUtil;
 
 public class LinkUtils {
 	private static final Logger logger = LogManager.getLogger(LinkUtils.class);
@@ -135,37 +129,29 @@ public class LinkUtils {
      */
 	public static String getFullUrlWithExtensions(String linkString, List<LinkProperty> properties) {
 		String directLink = linkString;
-		try {
-			for (LinkProperty linkProperty : properties) {
-				if (isExtension(linkProperty)) {
-					String propertyValue = replaceHashTagsByEmptyString(linkProperty.getPropertyValue());
 
-					// Extend link properly (watch out for html-anchors etc.)
-					directLink = AgnUtils.addUrlParameter(directLink, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), "UTF-8");
-				}
+		for (LinkProperty linkProperty : properties) {
+			if (isExtension(linkProperty)) {
+				String propertyValue = replaceHashTagsByEmptyString(linkProperty.getPropertyValue());
+
+				// Extend link properly (watch out for html-anchors etc.)
+				directLink = AgnUtils.addUrlParameter(directLink, linkProperty.getPropertyName(), StringUtils.defaultString(propertyValue), StandardCharsets.UTF_8);
 			}
-
-			return StringEscapeUtils.escapeHtml4(directLink);
-		} catch (UnsupportedEncodingException e) {
-			logger.warn("Creating directory link with optional extension without user data failed, cause: " + e.getMessage());
 		}
-		return directLink;
+
+		return StringEscapeUtils.escapeHtml4(directLink);
 	}
 	
     public static String getFullUrlWithDtoExtensions(String linkString, List<ExtensionProperty> extensions) {
   		String directLink = linkString;
-  		try {
-  			for (ExtensionProperty extension : extensions) {
-                String value = replaceHashTagsByEmptyString(extension.getValue());
 
-                // Extend link properly (watch out for html-anchors etc.)
-                directLink = AgnUtils.addUrlParameter(directLink, extension.getName(), StringUtils.defaultString(value), "UTF-8");
-  			}
-  			return StringEscapeUtils.escapeHtml4(directLink);
-  		} catch (UnsupportedEncodingException e) {
-  			logger.warn("Creating directory link with optional extension without user data failed, cause: " + e.getMessage());
-  		}
-  		return directLink;
+		for (ExtensionProperty extension : extensions) {
+			String value = replaceHashTagsByEmptyString(extension.getValue());
+
+			// Extend link properly (watch out for html-anchors etc.)
+			directLink = AgnUtils.addUrlParameter(directLink, extension.getName(), StringUtils.defaultString(value), StandardCharsets.UTF_8);
+		}
+		return StringEscapeUtils.escapeHtml4(directLink);
   	}
 
 	private static String replaceHashTagsByEmptyString(String hashTagString) {

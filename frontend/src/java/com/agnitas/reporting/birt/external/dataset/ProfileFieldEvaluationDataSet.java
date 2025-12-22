@@ -32,10 +32,6 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
     private final RecipientFieldService recipientFieldService;
 
-    public ProfileFieldEvaluationDataSet() { // TODO: EMMGUI-714: remove when old design will be removed
-        this.recipientFieldService = null;
-    }
-
     @Autowired
     public ProfileFieldEvaluationDataSet(RecipientFieldService recipientFieldService) {
         this.recipientFieldService = recipientFieldService;
@@ -46,10 +42,16 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
         rs.getInt("count"));
 
 
-    // TODO: EMMGUI-714: replace with com.agnitas.reporting.birt.external.dataset.ProfileFieldEvaluationDataSet.collect(com.agnitas.emm.core.profilefields.form.ProfileFieldStatForm) when old design will be removed
-    // used in profiledb_evaluation.rptdesign
-    public List<ProfileFieldStatRow> collect(String colName, int companyId, int limit,
-                                             int mailinglistId, int targetId, String hiddenTargetsCsv) {
+    public List<ProfileFieldStatRow> collect(ProfileFieldStatForm form) {
+        String colName = form.getColName();
+        int companyId = form.getCompanyId();
+        if (companyId <= 0) {
+            throw new IllegalArgumentException("Invalid company id");
+        }
+        if (isInvalidColumn(colName, companyId)) {
+            throw new IllegalArgumentException("Invalid column name: " + colName);
+        }
+
         colName = sanitizeColumnName(colName); // guard
 
         List<Object> params = new ArrayList<>();
@@ -60,11 +62,11 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
             GROUP BY %s ORDER BY count DESC
             """.formatted(colName, getCustomerTableName(companyId), colName,
             RecipientStandardField.Bounceload.getColumnName(),
-            applyMailinglistFilter(mailinglistId, companyId, params),
-            applyTargetsFilter(targetId, hiddenTargetsCsv, companyId),
+            applyMailinglistFilter(form.getMailingListId(), companyId, params),
+            applyTargetsFilter(form.getTargetId(), form.getHiddenTargetsCsv(), companyId),
             colName);
 
-        sql = applySqlLimit(limit, sql, params);
+        sql = applySqlLimit(form.getLimit(), sql, params);
         try {
             List<ProfileFieldStatRow> stat = select(sql, ROW_MAPPER, params.toArray());
             addRates(stat);
@@ -76,18 +78,6 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
     }
 
     private String sanitizeColumnName(String columnName) { return columnName.replaceAll("[^a-zA-Z0-9_]", ""); }
-
-    public List<ProfileFieldStatRow> collect(ProfileFieldStatForm form) {
-        final String colName = form.getColName();
-        int companyId = form.getCompanyId();
-        if (companyId <= 0) {
-            throw new IllegalArgumentException("Invalid company id");
-        }
-        if (isInvalidColumn(colName, companyId)) {
-            throw new IllegalArgumentException("Invalid column name: " + colName);
-        }
-        return collect(form.getColName(), form.getCompanyId(), form.getLimit(), form.getMailingListId(), form.getTargetId(), form.getHiddenTargetsCsv());
-    }
 
     public byte[] csv(ProfileFieldStatForm form) throws Exception {
         return CsvWriter.csv(ListUtils.union(
@@ -110,7 +100,6 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
     private void addRates(List<ProfileFieldStatRow> stat) {
         int total = stat.stream().mapToInt(ProfileFieldStatRow::getCount).sum();
-        stat.forEach(row -> row.setRate((float) row.getCount() / total * 100)); // TODO: EMMGUI-714: remove when old design will be removed
         stat.forEach(row -> row.setAmount("%s (%.2f%%)".formatted(
             row.getCount(),
             (float) row.getCount() / total * 100)));
@@ -147,7 +136,6 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
         private final int count;
         private final String value;
-        private float rate; // TODO: EMMGUI-714: remove when old design will be removed
         private String amount;
 
         public ProfileFieldStatRow(String value, int count) {
@@ -169,14 +157,6 @@ public class ProfileFieldEvaluationDataSet extends RecipientsBasedDataSet {
 
         public void setAmount(String amount) {
             this.amount = amount;
-        }
-
-        public float getRate() {
-            return rate;
-        }
-
-        public void setRate(float rate) {
-            this.rate = rate;
         }
     }
 }

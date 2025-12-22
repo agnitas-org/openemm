@@ -15,14 +15,14 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.util.SqlPreparedStatementManager;
 
 import java.util.Map;
 
 public interface MailingRecipientsService {
 
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, Map<String, ProfileField> profileFields, Admin admin);
+    PaginatedList<MailingRecipientStatRow> getMailingRecipients(MailingRecipientsOverviewFilter filter, int mailingId, Map<String, ProfileField> profileFields, Admin admin);
 
     RecipientEmailStatus saveStatusMailRecipients(int mailingId, String statusmailRecipients);
 

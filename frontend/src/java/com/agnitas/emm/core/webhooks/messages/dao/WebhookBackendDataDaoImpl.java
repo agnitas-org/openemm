@@ -10,18 +10,18 @@
 
 package com.agnitas.emm.core.webhooks.messages.dao;
 
-import com.agnitas.emm.core.webhooks.common.WebhookEventType;
-import com.agnitas.emm.core.webhooks.messages.common.WebhookBackendData;
-import com.agnitas.dao.impl.BaseDaoImpl;
-
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 
-public final class WebhookBackendDataDaoImpl extends BaseDaoImpl implements WebhookBackendDataDao {
-	
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.emm.core.webhooks.common.WebhookEventType;
+import com.agnitas.emm.core.webhooks.messages.common.WebhookBackendData;
+
+public class WebhookBackendDataDaoImpl extends BaseDaoImpl implements WebhookBackendDataDao {
+
 	@Override
-	public final List<WebhookBackendData> listUnprocessedData(final int companyID, final WebhookEventType eventType, final ZonedDateTime fromInclusive, final ZonedDateTime toExclusive) {
+	public List<WebhookBackendData> listUnprocessedData(int companyID, WebhookEventType eventType, ZonedDateTime fromInclusive, ZonedDateTime toExclusive) {
 		final String sql = "SELECT * FROM webhook_backend_data_tbl WHERE company_id=? AND event_type=? AND creation_date >= ? AND creation_date < ?";
 		
 		final Date fromTime = Date.from(fromInclusive.toInstant());
@@ -31,21 +31,19 @@ public final class WebhookBackendDataDaoImpl extends BaseDaoImpl implements Webh
 	}
 
 	@Override
-	public final void deleteData(final long dataId) {
-		final String sql = "DELETE FROM webhook_backend_data_tbl WHERE id=?";
-		
-		update(sql, dataId);
+	public void deleteData(long dataId) {
+        update("DELETE FROM webhook_backend_data_tbl WHERE id = ?", dataId);
 	}
 	
 	@Override
-	public final boolean deleteDataByCompanyId(final int companyId) {
+	public boolean deleteDataByCompanyId(int companyId) {
 		int touchedLines = update("DELETE FROM webhook_backend_data_tbl WHERE company_id=?", companyId);
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		int remaining = selectInt("SELECT COUNT(*) FROM webhook_backend_data_tbl WHERE company_id = ?", companyId);
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_backend_data_tbl WHERE company_id = ?", companyId);
+		return remaining == 0;
 	}
 
 }

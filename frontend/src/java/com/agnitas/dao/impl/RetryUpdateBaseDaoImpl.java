@@ -10,8 +10,8 @@
 
 package com.agnitas.dao.impl;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.support.KeyHolder;
 
@@ -186,7 +186,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 		int retryCount = 0;
 		while (true) {
 			try {
-				return super.batchInsertIntoAutoincrementMysqlTable(statement, listOfValueArrays);
+				return super.batchInsertWithAutoincrement(statement, listOfValueArrays);
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
@@ -212,7 +212,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 		int retryCount = 0;
 		while (true) {
 			try {
-				return super.batchInsertIntoAutoincrementMysqlTable(autoincrementColumn, statement, parametersList);
+				return super.batchInsertWithAutoincrement(autoincrementColumn, statement, parametersList);
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
@@ -238,7 +238,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 		int retryCount = 0;
 		while (true) {
 			try {
-				return super.insertIntoAutoincrementMysqlTable(autoincrementColumn, statement, parameter);
+				return super.insert(autoincrementColumn, statement, parameter);
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
@@ -262,7 +262,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 		int retryCount = 0;
 		while (true) {
 			try {
-				return super.insertMultipleIntoAutoincrementMysqlTable(autoincrementColumn, statement, parameter);
+				return super.insertMultiple(autoincrementColumn, statement, parameter);
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				

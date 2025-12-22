@@ -10,16 +10,17 @@
 
 package com.agnitas.emm.core.calendar.service;
 
-import com.agnitas.service.JobWorker;
-
 import com.agnitas.emm.core.reminder.service.ReminderService;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
 
 /**
  * Example Insert in DB:
  *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, deleted)
  *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'CalendarCommentMailingService', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'com.agnitas.emm.core.calendar.service.CalendarCommentMailingServiceJobWorker', 1);
  */
-public class CalendarCommentMailingServiceJobWorker extends JobWorker {
+@JobWorker("CalendarCommentMailingService")
+public class CalendarCommentMailingServiceJobWorker extends JobWorkerBase {
 		
 	@Override
 	public String runJob() {

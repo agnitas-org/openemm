@@ -11,8 +11,6 @@
 package com.agnitas.emm.core.trackablelinks.web;
 
 import static com.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static com.agnitas.util.Const.Mvc.ERROR_MSG;
 import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.util.ArrayList;
@@ -32,8 +30,8 @@ import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.beans.TrackableLink;
-import com.agnitas.beans.impl.PaginatedListImpl;
 import com.agnitas.dao.MailingDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
@@ -43,7 +41,6 @@ import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
 import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
 import com.agnitas.emm.core.trackablelinks.exceptions.TrackableLinkException;
@@ -57,16 +54,18 @@ import com.agnitas.service.LinkcheckService;
 import com.agnitas.service.UserActivityLogService;
 import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
+import com.agnitas.util.UserActivityUtil;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 import com.agnitas.web.forms.BulkActionForm;
 import com.agnitas.web.forms.FormUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.perm.NotAllowedActionException;
+import com.agnitas.web.perm.annotations.RequiredPermission;
+import com.agnitas.web.perm.exceptions.InsufficientPermissionException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -85,7 +84,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/mailing/{mailingId:\\d+}/trackablelink")
-@PermissionMapping("mailing.trackablelink")
+@RequiredPermission("mailing.content.show")
 public class MailingTrackableLinkController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingTrackableLinkController.class);
@@ -135,7 +134,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
     @RequestMapping("/list.action")
     public String list(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Model model,
-                       @RequestParam(required = false) Integer scrollToLinkId, @RequestParam(required = false) boolean restoreSort) throws MediatypesDaoException {
+                       @RequestParam(required = false) Integer scrollToLinkId, @RequestParam(required = false) Boolean restoreSort) {
         syncListForm(form);
         FormUtils.updateSortingState(webStorage, WebStorage.TRACKABLE_LINKS, form, restoreSort);
         Mailing mailing = trackableLinkService.getMailingForLinksOverview(mailingId, admin.getCompanyID(), form.getIncludeDeleted());
@@ -189,7 +188,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
         List<TrackableLinkForm> linkForms = conversionService.convert(sortedLinks, TrackableLink.class, TrackableLinkForm.class);
         form.setLinks(linkForms);
 
-        model.addAttribute("paginatedTrackableLinks", new PaginatedListImpl<>(linkForms, links.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder()));
+        model.addAttribute("paginatedTrackableLinks", new PaginatedList<>(linkForms, links.size(), form.getNumberOfRows(), page, form.getSort(), form.getOrder()));
     }
 
     private void setupFormGlobalSettings(TrackableLinksForm form, Mailing mailing) {
@@ -216,12 +215,9 @@ public class MailingTrackableLinkController implements XssCheckAware {
         model.addAttribute("isTemplate", mailing.isIsTemplate());
         model.addAttribute("mailingShortname", mailing.getShortname());
         model.addAttribute("gridTemplateId", gridService.getGridTemplateIdByMailingId(mailingId));
-        if (admin.isRedesignedUiUsed()) {
-            model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, admin.getCompanyID()));
-            model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
-        } else {
-            model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailingId));
-        }
+        model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailingId, admin.getCompanyID()));
+        model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+
         if (mailingId > 0) {
             model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
             model.addAttribute("workflowId", mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
@@ -249,13 +245,13 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/bulkClearExtensions.action")
     public String bulkClearExtensions(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         try {
             trackableLinkService.bulkClearExtensions(mailingId, admin.getCompanyID(), new HashSet<>(form.getBulkIds()));
             writeUserActivityLog(admin, "edit mailing", "ID = " + mailingId + ". Removed global and individual link extensions");
-            popups.success(CHANGES_SAVED_MSG);
+            popups.changesSaved();
             return String.format(REDIRECT_TO_LIST_STR, mailingId);
         } catch (ClearLinkExtensionsException e) {
             logger.error("Error removing global and individual link extensions (mailing ID: {})", mailingId, e);
@@ -265,10 +261,11 @@ public class MailingTrackableLinkController implements XssCheckAware {
     }
 
     @PostMapping("/check.action")
+    @RequiredPermission("mailing.send.show")
     public String checkLinks(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups) throws Exception {
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
 
-        mailing.buildDependencies(popups, false, null, applicationContext, admin);
+        mailing.buildDependencies(popups, false, null, applicationContext, admin.getLocale());
         popups.addPopups(linkcheckService.checkForUnreachableLinks(mailing));
 
         if (!popups.hasAlertPopups()) {
@@ -299,7 +296,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/activateTrackingLinksOnEveryPosition.action")
     public String activateTrackingLinksOnEveryPosition(@PathVariable int mailingId, Admin admin, Popups popups, HttpServletRequest req) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         try {
@@ -307,24 +304,24 @@ public class MailingTrackableLinkController implements XssCheckAware {
             mailingBaseService.activateTrackingLinksOnEveryPosition(mailing, getApplicationContext(req));
             mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
         } catch (Exception e) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return MESSAGES_VIEW;
         }
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
     @PostMapping("/deactivateTrackingLinksOnEveryPosition.action")
     public String deactivateTrackingLinksOnEveryPosition(@PathVariable int mailingId, Admin admin, Popups popups, HttpServletRequest req) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         mailingBaseService.deactivateTrackingLinksOnEveryPosition(mailing, getApplicationContext(req));
         mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), false);
 
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
@@ -332,14 +329,14 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/saveAll.action")
     public String saveAll(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Popups popups) {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         if (!intelliAdSettingsValid(form, popups)) {
             return MESSAGES_VIEW;
         }
         saveAll(mailingId, form, admin);
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
@@ -419,7 +416,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
         int companyId = admin.getCompanyID();
         TrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
         if (link == null) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             logger.error("could not load link: {}", linkId);
             return MESSAGES_VIEW;
         }
@@ -444,12 +441,12 @@ public class MailingTrackableLinkController implements XssCheckAware {
     @PostMapping("/{linkId:\\d+}/save.action")
     public String save(@PathVariable int mailingId, @PathVariable int linkId, TrackableLinkForm form, Admin admin, Popups popups, HttpServletRequest req, RedirectAttributes redirectAttrs) throws TrackableLinkException {
         if (isSettingsReadonly(admin, mailingId)) {
-            throw new UnsupportedOperationException();
+            throw new NotAllowedActionException();
         }
 
         TrackableLink link = trackableLinkService.getTrackableLink(admin.getCompanyID(), linkId);
         if (link == null) {
-            popups.alert(ERROR_MSG);
+            popups.defaultError();
             return MESSAGES_VIEW;
         }
         if (StringUtils.isNotBlank(form.getUrl()) && !tryUpdateLinkUrl(link, form.getUrl(), admin)) {
@@ -459,7 +456,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
 
         saveLink(link, form, admin, req.getParameter("deepTracking") != null);
         redirectAttrs.addAttribute("scrollToLinkId", linkId);
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
@@ -654,12 +651,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
     }
 
     private void writeUserActivityLog(Admin admin, UserAction userAction) {
-        if (userActivityLogService != null) {
-            userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-        } else {
-            logger.error("Missing userActivityLogService in {}", this.getClass().getSimpleName());
-            logger.info("Userlog: {} {} {}", admin.getUsername(), userAction.getAction(), userAction.getDescription());
-        }
+        UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
     }
 
     private String getUsageName(int type) {
@@ -776,8 +768,7 @@ public class MailingTrackableLinkController implements XssCheckAware {
             }
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("save Trackable links Extensions");
-        }
+        logger.info("save Trackable links Extensions");
     }
+
 }

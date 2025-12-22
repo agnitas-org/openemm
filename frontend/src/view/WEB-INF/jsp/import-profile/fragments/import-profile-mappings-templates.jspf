@@ -1,0 +1,244 @@
+
+<script id="gender-settings-table-row" type="text/x-mustache-template">
+    {{ const isNewMapping = textValues == '' && intValue == ''; }}
+    {{ const disabled = isNewMapping ? '' : 'disabled'; }}
+    {{ const hidden = mappingsCount === 0 ? '' : 'hidden'; }}
+
+    <div class="col-12" data-gender-settings-row>
+        <div class="row g-1">
+            <div class="col min-w-0">
+                <label class="form-label text-truncate {{- hidden}}"><mvc:message code="import.CsvColumn" /></label>
+                <input type="text" class="form-control" name="genderTextValue" data-gender-text-value value="{{- textValues}}" data-action="gender-enterdown" {{- disabled }}>
+            </div>
+
+            <div class="col min-w-0">
+                <label class="form-label text-truncate {{- hidden}}"><mvc:message code="import.DbColumn" /></label>
+
+                <select data-gender-int-value class="form-control" data-select-options="dropdownAutoWidth: true" {{- disabled }}>
+                    {{ _.each(genders, function(gender) { }}
+                        {{ if (gender.selected) { }}
+                            <option value="{{- gender.value }}" selected="selected">{{- gender.value }} ({{-gender.title }})</option>
+                        {{ } else { }}
+                            <option value="{{- gender.value }}">{{- gender.value }} ({{-gender.title }})</option>
+                        {{ } }}
+                    {{ }); }}
+                </select>
+            </div>
+
+            <div class="col-auto d-flex align-items-end">
+                {{ if(isNewMapping) { }}
+                    <button type="button" class="btn btn-primary btn-icon" data-action="add-gender-mapping" data-tooltip="<mvc:message code='button.Add'/>">
+                        <i class="icon icon-plus"></i>
+                    </button>
+                {{ } else { }}
+                    <button type="button" class="btn btn-danger btn-icon" data-action="delete-gender-mapping" data-tooltip="<mvc:message code='button.Delete'/>">
+                        <i class="icon icon-trash-alt"></i>
+                    </button>
+                {{ } }}
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="column-mapping-row" type="text/x-mustache-template">
+    {{ const isNewMapping = fileColumn === '' && databaseColumn === ''}}
+    {{ const hidden = isFirstMapping ? '' : 'hidden'; }}
+
+    <div class="col-12" data-mapping-row="{{= index}}" {{- isNewMapping ? 'data-mapping-new' : ''}}>
+    <input type="hidden" data-mapping-id value="{{= id}}">
+    <input type="hidden" data-mapping-defaultValue value="{{= defaultValue}}">
+
+    {{ if (mandatory) { }}
+        <input type="checkbox" checked="checked" class="hidden" data-mapping-mandatory/>
+    {{ } else { }}
+        <input type="checkbox" class="hidden" data-mapping-mandatory />
+    {{ } }}
+
+    <div class="row g-1">
+        <div class="col min-w-0">
+            <label class="form-label text-truncate {{= hidden }}"><mvc:message code="import.CsvColumn" /></label>
+            <input type="text" class="form-control" value="{{= fileColumn}}" disabled data-mapping-fileColumn>
+        </div>
+
+        <div class="col min-w-0">
+            <label class="form-label text-truncate {{= hidden }}"><mvc:message code="import.DbColumn" /></label>
+            <select class="form-control" data-action="change-database-column" data-mapping-db-column data-select-options="dropdownAutoWidth: true">
+                <option value="${DO_NOT_IMPORT}">
+                    <mvc:message code="import.column.skip"/>
+                </option>
+                <c:forEach var="dbColumn" items="${profileFields.keySet()}">
+                    {{ if (databaseColumn === '${dbColumn}') { }}
+                        <option value="${dbColumn}" selected="selected">${dbColumn}</option>
+                    {{ } else { }}
+                        <option value="${dbColumn}">${dbColumn}</option>
+                    {{ } }}
+                </c:forEach>
+            </select>
+        </div>
+
+        <div data-mappings-actions class="col-auto d-flex align-items-end">
+            {{ if (isNewMapping) { }}
+                <button type="button" class="btn btn-primary btn-icon" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
+                    <i class="icon icon-plus"></i>
+                </button>
+            {{ } else { }}
+                <button type="button" class="btn btn-danger btn-icon" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
+                    <i class="icon icon-trash-alt"></i>
+                </button>
+            {{ } }}
+        </div>
+    </div>
+    </div>
+</script>
+
+<script id="column-mappings-modal" type="text/x-mustache-template">
+    <mvc:form id="column-mappings-edit-modal" cssClass="modal" tabindex="-1" data-validator="import-profile-mappings/form">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title"><mvc:message code="import.ManageColumns"/></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal">
+                        <span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+
+                <div class="modal-body vstack">
+                    <div class="table-wrapper">
+                        <div class="table-wrapper__header justify-content-end">
+                            <div class="table-wrapper__controls">
+                                <div class="bulk-actions hidden">
+                                    <p class="bulk-actions__selected">
+                                        <span><%-- Updates by JS --%></span>
+                                        <mvc:message code="default.list.entry.select" />
+                                    </p>
+                                    <div class="bulk-actions__controls">
+                                        <a href="#" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code="bulkAction.delete.csvColumn" />" data-action="bulk-mappings-delete">
+                                            <i class="icon icon-trash-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <%@include file="../../common/table/toggle-truncation-btn.jspf" %>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper__body">
+                            <table class="table--borderless js-table">
+                                <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-check-input" data-bulk-checkboxes autocomplete="off" /></th>
+                                    <th><mvc:message code="import.CsvColumn"/></th>
+                                    <th><mvc:message code="import.DbColumn"/></th>
+                                    <th class="fit-content"><mvc:message code="import.profile.column.mandatory"/></th>
+                                    <th><mvc:message code="settings.Default_Value"/></th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody id="extended-column-mappings-block">
+                                    <%-- this block load by JS--%>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-wrapper__footer"></div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-action="save-extended-mappings">
+                        <i class="icon icon-save"></i>
+                        <span class="text"><mvc:message code="button.Save"/></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </mvc:form>
+</script>
+
+<script id="column-mapping-row-extended" type="text/x-mustache-template">
+    {{ const isNewMapping = fileColumn === '' && databaseColumn === ''}}
+
+    <tr data-mapping-row="{{= index}}" {{- isNewMapping ? 'data-mapping-new' : ''}}>
+    <td>
+        {{ if (!isNewMapping) { }}
+            <input type="checkbox" class="form-check-input" data-mapping-checkbox autocomplete="off" data-bulk-checkbox />
+        {{ } }}
+    </td>
+
+    <td><span>{{= fileColumn}}</span></td>
+
+    <td>
+        <select class="form-control" data-action="change-database-column" data-mapping-db-column data-select-options="dropdownAutoWidth: true">
+            <option value="${DO_NOT_IMPORT}">
+                <mvc:message code="import.column.skip"/>
+            </option>
+            <c:forEach var="dbColumn" items="${profileFields.keySet()}">
+                {{ if (databaseColumn === '${dbColumn}') { }}
+                    <option value="${dbColumn}" selected="selected">${dbColumn}</option>
+                {{ } else { }}
+                    <option value="${dbColumn}">${dbColumn}</option>
+                {{ } }}
+            </c:forEach>
+        </select>
+    </td>
+
+    <td>
+        <div class="form-check form-switch">
+            {{ if (mandatory) { }}
+                <input type="checkbox" checked="checked" class="form-check-input" role="switch" data-mapping-mandatory/>
+            {{ } else { }}
+                <input type="checkbox" class="form-check-input" role="switch" data-mapping-mandatory />
+            {{ } }}
+        </div>
+    </td>
+
+    <td>
+        <input type="text" class="form-control" value="{{= defaultValue}}" data-mapping-defaultValue data-type="text">
+    </td>
+
+    <td class="table-actions">
+        {{ if (isNewMapping) { }}
+            <a type="button" class="icon-btn icon-btn--primary" data-tooltip="<mvc:message code='button.Add'/>" data-action="add-column-mapping">
+                <i class="icon icon-plus"></i>
+            </a>
+        {{ } else { }}
+            <a type="button" class="icon-btn icon-btn--danger" data-tooltip="<mvc:message code='button.Delete'/>" data-action="delete-column-mapping">
+                <i class="icon icon-trash-alt"></i>
+            </a>
+        {{ } }}
+    </td>
+
+    <input type="hidden" data-mapping-id value="{{= id}}">
+    <input type="hidden" data-mapping-fileColumn value="{{= fileColumn}}">
+    </tr>
+</script>
+
+<script id="date-def-val-input" type="text/x-mustache-template">
+    <div class="hstack gap-1">
+        <div class="form-check form-switch">
+            <input id="today-checkbox" type="checkbox" role="switch" class="form-check-input" data-action="set-today-date">
+            <label class="form-label form-check-label text-nowrap" for="today-checkbox">
+                {{ if (withTime) { }}
+                    <mvc:message code="now"/>
+                {{ } else { }}
+                    <mvc:message code="calendar.today.button"/>
+                {{ } }}
+            </label>
+        </div>
+
+        {{ if (withTime) { }}
+            <div id="dateInput" data-type="datetime" data-field="datetime" data-property="default-value-new" data-field-extra-attributes="data-mapping-defaultValue: ''" data-field-options="value: {{- val}}"></div>
+        {{ } else { }}
+            <div id="dateInput" class="date-picker-container" data-type="date">
+                <input type="text" value="{{- val}}" class="form-control js-datepicker" data-mapping-defaultValue />
+            </div>
+        {{ } }}
+
+        <div id="daysInput" class="input-group hidden">
+            <input class="form-control" type="text" id="daysCount" value="+0">
+            <span id="date-offset-label" class="input-group-text"><mvc:message code="Days"/></span>
+        </div>
+    </div>
+</script>
+
+<script id="text-def-val-input" type="text/x-mustache-template">
+    <input class="form-control" data-mapping-defaultValue data-type="text" />
+</script>

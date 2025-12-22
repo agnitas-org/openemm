@@ -147,7 +147,7 @@ public class Decrypt {
 	public Map <String, Object> decryptAndDecode (String input, long customerID) throws Exception {
 		Map <String, Object>	rc = new HashMap <> ();
 		
-		try (JsonParser parser  = jsonFactory.createParser (decrypt (input, customerID))) {
+		if (input != null) try (JsonParser parser  = jsonFactory.createParser (decrypt (input, customerID))) {
 			String	name = null;
 			
 			while (! parser.isClosed ()) {

@@ -15,14 +15,16 @@ import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 
 public class I18nString {
+
 	public static DBMessagesResource MESSAGE_RESOURCES = null;
 
-    /**
-     * Gets a locale string.
-     */
+	public static String t(String key, Locale locale) {
+		return getLocaleString(key, locale);
+	}
+
 	public static String getLocaleString(String key, Locale locale) {
 		if (MESSAGE_RESOURCES == null) {
-			throw new RuntimeException("DBMessagesResource was not initialized properly");
+			throw new IllegalStateException("DBMessagesResource was not initialized properly");
 		} else {
 			return MESSAGE_RESOURCES.getMessage(locale, key);
 		}

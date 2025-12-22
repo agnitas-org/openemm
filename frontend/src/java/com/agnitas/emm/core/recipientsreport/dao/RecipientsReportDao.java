@@ -10,14 +10,12 @@
 
 package com.agnitas.emm.core.recipientsreport.dao;
 
+import java.util.List;
+
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
-import com.agnitas.beans.impl.PaginatedListImpl;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
 
 public interface RecipientsReportDao {
 
@@ -27,18 +25,13 @@ public interface RecipientsReportDao {
 
     String getReportTextContent(int companyId, int reportId);
 
-    // TODO: remove after EMMGUI-714 will be finished and old design will be removed
-    PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
-
-    PaginatedListImpl<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
+    PaginatedList<RecipientsReport> getReports(RecipientsReportForm filter, int companyId);
 
     RecipientsReport getReport(int companyId, int reportId);
 
-    int deleteOldReports(int companyId, Date oldestReportDate);
-    
     boolean deleteReportsByCompany(int companyId);
 
-	void createNewSupplementalReport(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
+	void createNewSupplementalReport(int companyId, RecipientsReport report, byte[] content, String textContent);
 
 	byte[] getReportFileData(int companyId, int reportId);
     

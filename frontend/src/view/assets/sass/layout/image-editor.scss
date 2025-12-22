@@ -1,60 +1,42 @@
-#l-img-editor-tools {
-  width: 135px;
-  float: left;
+
+#image-editor-modal {
+  .modal-dialog {
+    height: auto;
+  }
+
+  .modal-content {
+    min-width: 80vw;
+    max-height: unset;
+  }
+
+  .modal-body {
+    display: grid;
+    grid-template-columns: minmax(200px, 270px) auto minmax(200px, 270px);
+    gap: $gap-md;
+  }
+
+  #canvas-editor-area {
+    @include flex-center;
+  }
 }
 
-#canvas-editor-area {
-  display: inline-block;
+.jcrop-handle {
+  background-color: var(--resize-handle-bg);
+  border: none;
+  @include size($gap-sm);
+  opacity: 1 !important;
 }
 
-#l-img-editor-tools input {
-  width: 65px;
-  margin-bottom: 10px;
+/* Selection Border */
+.jcrop-vline, .jcrop-hline {
+  background: none;
+  opacity: 1 !important;
 }
 
-#l-img-editor-tools {
-  list-style-type: none;
+.jcrop-vline {
+  border-left: 2px dashed var(--resize-handle-bg);
 }
 
-#l-img-editor-tools  button {
-  width: 35px;
-}
-
-#l-editor-img-width {
-  display: inline;
-  margin-right: 10px;
-}
-
-#l-editor-save-btns {
-  display: block;
-  width: 100%;
-  margin-top:10px;
-  padding-bottom: 10px;
-}
-
-#editor-canvas {
-  padding-left: 0;
-  padding-right: 0;
-  margin-left: auto;
-  margin-right: auto;
-  display: block;
-}
-
-#canvas-editor-area {
-  min-width: 360px;
-  text-align: center;
-}
-
-#l-editor-save-btns button {
-  float: right;
-  margin-left: 5px;
-}
-
-#l-editor-form {
-  min-width: 560px;
-  min-height: 255px;
-}
-
-#l-img-editor {
-  min-height: 240px;
+.jcrop-hline {
+  border-top: 2px dashed var(--resize-handle-bg);
 }

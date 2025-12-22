@@ -21,16 +21,31 @@ public class ClickStatInfo {
 
     private Map<Integer, Double> percentClicks;
 
+    private Map<String, Integer> clicksPerPosition;
+
+    private Map<String, Double> percentClicksPerPosition;
+
     public ClickStatInfo() {
         clicks = new HashMap<>();
         clicksOverall = new HashMap<>();
         percentClicks = new HashMap<>();
+	clicksPerPosition = new HashMap<>();
+	percentClicksPerPosition = new HashMap<>();
     }
 
-    public void addURLInfo(int urlId, int clickNum, int clicksOverallNum, double clickPercent) {
-        clicks.put(urlId, clickNum);
-        clicksOverall.put(urlId, clicksOverallNum);
-        percentClicks.put(urlId, clickPercent);
+    public void addURLInfo(int urlId, int position, int clickNum, int clicksOverallNum, double clickPercent) {
+	if (clicks.containsKey (urlId)) {
+		clicks.put (urlId, clicks.get (urlId) + clickNum);
+	        percentClicks.put(urlId, percentClicks.get (urlId) + clickPercent);
+	} else {
+	        clicks.put(urlId, clickNum);
+	        clicksOverall.put(urlId, clicksOverallNum);
+	        percentClicks.put(urlId, clickPercent);
+	}
+	String	key = String.format ("%d-%d", urlId, position);
+
+	clicksPerPosition.put (key, clickNum);
+	percentClicksPerPosition.put (key, clickPercent);
     }
 
     public Map<Integer, Integer> getClicks() {
@@ -55,5 +70,11 @@ public class ClickStatInfo {
 
     public void setPercentClicks(Map<Integer, Double> percentClicks) {
         this.percentClicks = percentClicks;
+    }
+    public Map<String, Integer> getClicksPerPosition() {
+	return clicksPerPosition;
+    }
+    public Map<String, Double> getPercentClicksPerPosition() {
+	return percentClicksPerPosition;
     }
 }

@@ -47,6 +47,6 @@ public enum CheckForDuplicates {
 				return checkForDuplicates;
 			}
 		}
-		throw new IllegalArgumentException("Invalid int value for CheckForDuplicates");
+		throw new IllegalArgumentException("Invalid int value for CheckForDuplicates: "+ intValue);
 	}
 }

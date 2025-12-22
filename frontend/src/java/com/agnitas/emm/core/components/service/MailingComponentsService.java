@@ -16,20 +16,20 @@ import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MailingComponentType;
+import com.agnitas.beans.PaginatedList;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 import com.agnitas.emm.core.components.form.MailingImagesOverviewFilter;
+import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
-import com.agnitas.beans.MailingComponent;
-import com.agnitas.beans.MailingComponentType;
-import com.agnitas.beans.impl.PaginatedListImpl;
-import com.agnitas.emm.core.useractivitylog.bean.UserAction;
 import com.agnitas.web.forms.PaginationForm;
 
 public interface MailingComponentsService {
@@ -54,10 +54,6 @@ public interface MailingComponentsService {
 
 	Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages);
 
-	MailingComponent getComponent(int componentId, int companyID);
-
-	MailingComponent getComponent(int companyId, int mailingId, int componentId);
-
 	SimpleServiceResult uploadMailingAttachment(Admin admin, int mailingId, UploadMailingAttachmentDto attachment);
 
 	SimpleServiceResult updateMailingAttachments(Admin admin, int mailingId, Map<Integer, UpdateMailingAttachmentDto> attachments);
@@ -72,21 +68,18 @@ public interface MailingComponentsService {
 	List<MailingComponent> getComponents(int companyID, int mailingId, Set<Integer> componentIds);
 
     List<String> getMailingImagesNamesForMobileAlternative(int mailingId, int companyId);
-    PaginatedListImpl<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter);
+
+    PaginatedList<MailingImageDto> getMailingImagesOverview(int companyId, int mailingId, MailingImagesOverviewFilter filter);
 
     ServiceResult<ImportStatistics> uploadImages(Admin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
     
 	List<MailingComponent> getPreviewHeaderComponents(int companyId, int mailingId);
 
-	PaginatedListImpl<MailingAttachmentDto> getAttachmentsOverview(PaginationForm form, int mailingId, int companyId);
+	PaginatedList<MailingAttachmentDto> getAttachmentsOverview(PaginationForm form, int mailingId, int companyId);
 
 	Map<String, String> getUrlsByNamesForEmmImages(Admin admin, int mailingId);
 
     List<MailingComponent> getMailingComponents(int mailingId, int companyId, MailingComponentType componentType, boolean includeContent);
-
-	void deleteComponent(int companyId, int mailingId, int componentId);
-
-	void deleteComponent(MailingComponent component);
 
 	boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds);
 
@@ -114,10 +107,13 @@ public interface MailingComponentsService {
     void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImagesNames);
 
 	List<String> getImagesNames(int mailingId, Set<Integer> ids, Admin admin);
+
 	List<String> getImagesNames(int mailingId, int companyId);
 
 	List<String> getNames(Set<Integer> ids, int mailingId, Admin admin);
+
 	ServiceResult<UserAction> delete(Set<Integer> ids, int mailingId, Admin admin);
+
 	File getZipToDownload(Set<Integer> ids, int mailingId, Admin admin);
 
 }

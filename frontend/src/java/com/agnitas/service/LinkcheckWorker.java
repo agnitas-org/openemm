@@ -19,47 +19,36 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
 import com.agnitas.emm.core.linkcheck.beans.LinkReachability;
 import com.agnitas.util.NetworkUtil;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.ssl.SSLContextBuilder;
+import com.agnitas.util.OneOf;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.cookie.StandardCookieSpec;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.agnitas.util.OneOf;
-
 /**
  * Working for checking availability of link URL.
  */
 public class LinkcheckWorker implements Runnable {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger( LinkcheckWorker.class);
+	private static final Logger logger = LogManager.getLogger( LinkcheckWorker.class);
 	
 	/** Connection time out. 0 = no timeout. */
 	private final int timeout;
@@ -78,7 +67,7 @@ public class LinkcheckWorker implements Runnable {
 	 * @param linkToCheck URL to check
 	 * @param resultList list to add result of link check 
 	 */
-	public LinkcheckWorker(final int timeout, final String linkToCheck, final List<LinkReachability> resultList, final String userAgentString) {
+	public LinkcheckWorker(int timeout, String linkToCheck, List<LinkReachability> resultList, String userAgentString) {
 		this.timeout = timeout;
 		this.linkToCheck = Objects.requireNonNull(linkToCheck, "URL to check is null");
 		this.resultList = Objects.requireNonNull(resultList, "Result list is null");
@@ -92,16 +81,13 @@ public class LinkcheckWorker implements Runnable {
 		boolean dynamic = dynamicLinkCheck();
 		
 		if (dynamic) {
-			if( logger.isInfoEnabled()) {
-				logger.info( "Link is dynamic - no checking for: " + linkToCheck);
-			}
-			
+			logger.info("Link is dynamic - no checking for: {}", linkToCheck);
 			resultList.add(new LinkReachability(this.linkToCheck, LinkReachability.Reachability.OK));
 		} else {
 			LinkReachability availability = netBasedTest();
 			
 			if(logger.isInfoEnabled()) {
-				logger.info("Result of checking link '" + this.linkToCheck + "': " + availability.getReachability());
+				logger.info("Result of checking link '{}': {}", this.linkToCheck, availability.getReachability());
 			}
 			
 			this.resultList.add(availability);
@@ -150,7 +136,7 @@ public class LinkcheckWorker implements Runnable {
 
 				// Execute request
 				try(final CloseableHttpResponse response = httpClient.execute(request)) {
-					final int statusCode = response.getStatusLine().getStatusCode();
+					final int statusCode = response.getCode();
 					
 					if (OneOf.oneIntOf(statusCode, HttpURLConnection.HTTP_NOT_FOUND, HttpURLConnection.HTTP_GONE))  {
 						return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
@@ -159,33 +145,29 @@ public class LinkcheckWorker implements Runnable {
 					return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.OK);
 				}
 			}
-		} catch (final MalformedURLException e) {
+		} catch (MalformedURLException e) {
 			// This is no "real error", this is a test result for the link. So we can log this at INFO level
-			if( logger.isInfoEnabled()) {
-				logger.info( "Link URL malformed: " + linkToCheck);				
-			}
-			
+			logger.info("Link URL malformed: {}", linkToCheck);
+
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
-		} catch (final UnknownHostException e) {
+		} catch (UnknownHostException e) {
 			// This is no "real error", this is a test result for the link. So we can log this at INFO level
-			if( logger.isInfoEnabled()) {
-				logger.info( "Unknown host: " + linkToCheck);					
-			}
-			
+			logger.info("Unknown host: {}", linkToCheck);
+
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
-		} catch (final SocketTimeoutException | ConnectTimeoutException e) {
+		} catch (SocketTimeoutException e) {
 			// This is no "real error", this is a test result for the link. So we can log this at INFO level
 			if(logger.isInfoEnabled()) {
 				logger.info("Timed out: " + linkToCheck, e);
 			}
 			
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.TIMED_OUT);
-		} catch (final IOException e) {
+		} catch (IOException e) {
  			// This is no "real error", this is a test result for the link. Since this could be any IO problem, let us report this at WARN level
 			logger.warn( "I/O error testing URL: " + linkToCheck, e);
 
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
-		} catch (final KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
 			logger.error("Cannot create HTTP client", e);
 			
 			return new LinkReachability(this.linkToCheck, LinkReachability.Reachability.NOT_FOUND);
@@ -201,47 +183,41 @@ public class LinkcheckWorker implements Runnable {
 	 * @throws NoSuchAlgorithmException on errors setting up SSL context
 	 * @throws KeyStoreException on errors setting up SSL context
 	 */
-	private final CloseableHttpClient createHttpClient() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		final CookieStore cookieStore =	new BasicCookieStore();
-		
-		final HostnameVerifier hostnameVerifier = NoopHostnameVerifier.INSTANCE;
-		final SSLContext sslContext = createSSLContext();
-		final SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-		final Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-				.register("http", PlainConnectionSocketFactory.getSocketFactory())
-				.register("https", sslSocketFactory)
+	private CloseableHttpClient createHttpClient() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder
+				.create()
+				.setTlsSocketStrategy(new DefaultClientTlsStrategy(createSSLContext(), NoopHostnameVerifier.INSTANCE))
 				.build();
-		
-		final HttpClientBuilder builder = HttpClientBuilder.create();
-	    builder.setSSLContext(sslContext);	
-	    builder.setConnectionManager(new PoolingHttpClientConnectionManager(socketFactoryRegistry));
-	    builder.setDefaultRequestConfig(createRequestConfig());
-	    builder.setDefaultCookieStore(cookieStore);
 
-	    return builder.build();
+		return HttpClientBuilder
+				.create()
+				.setConnectionManager(connectionManager)
+				.setDefaultRequestConfig(createRequestConfig())
+				.setDefaultCookieStore(new BasicCookieStore())
+				.build();
 	}
 
 	/**
 	 * Configures request settings.
 	 * 
 	 * <ul>
-	 *   <li>Socket timeout</li>
+	 *   <li>Response timeout</li>
 	 *   <li>Connection timeout</li>
 	 *   <li>Proxy</li>
 	 * </ul>
 	 * 
 	 * @return request settings
 	 */
-	private final RequestConfig createRequestConfig() {
-	    final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT);
-	    configBuilder.setConnectTimeout(timeout);
-	    configBuilder.setSocketTimeout(timeout);
-	    configBuilder.setCookieSpec(CookieSpecs.STANDARD);
-	    configBuilder.setCircularRedirectsAllowed(true);
+	private RequestConfig createRequestConfig() {
+		final RequestConfig.Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT)
+				.setConnectionRequestTimeout(timeout, TimeUnit.MILLISECONDS)
+				.setResponseTimeout(timeout, TimeUnit.MILLISECONDS)
+				.setCookieSpec(StandardCookieSpec.RELAXED)
+				.setCircularRedirectsAllowed(true);
 
 		NetworkUtil.setHttpClientProxyFromSystem(configBuilder, linkToCheck);
 
-	    return configBuilder.build();
+		return configBuilder.build();
 	}
 	
 	/**
@@ -253,15 +229,10 @@ public class LinkcheckWorker implements Runnable {
 	 * @throws NoSuchAlgorithmException on errors setting up SSL context
 	 * @throws KeyStoreException on errors setting up SSL context
 	 */
-	private final SSLContext createSSLContext() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
-		final SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
-	        @Override
-			public boolean isTrusted(X509Certificate[] arg0, String arg1) {
-	            return true;
-	        }
-	    }).build();
-		
-		return sslContext;
+	private SSLContext createSSLContext() throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+		return new SSLContextBuilder()
+				.loadTrustMaterial(null, (arg0, arg1) -> true)
+				.build();
 	}
 
 }

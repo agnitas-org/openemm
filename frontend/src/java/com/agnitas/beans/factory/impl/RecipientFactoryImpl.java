@@ -14,7 +14,7 @@ import com.agnitas.beans.Recipient;
 import com.agnitas.beans.factory.BindingEntryFactory;
 import com.agnitas.beans.factory.RecipientFactory;
 import com.agnitas.beans.impl.RecipientImpl;
-import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import com.agnitas.emm.core.blacklist.service.BlacklistService;
 import com.agnitas.dao.BindingEntryDao;
 import com.agnitas.dao.RecipientDao;
 import com.agnitas.emm.core.service.RecipientFieldService;

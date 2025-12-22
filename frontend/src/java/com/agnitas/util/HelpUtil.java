@@ -15,8 +15,8 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.agnitas.dao.DocMappingDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 

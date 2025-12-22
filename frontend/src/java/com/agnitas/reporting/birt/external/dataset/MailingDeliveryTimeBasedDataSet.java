@@ -65,9 +65,17 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
                     "(SELECT timestamp AS send_date, no_of_mailings, " + sendHourSQL + " AS send_hour FROM mailing_account_tbl " +
                     "WHERE ? <= timestamp AND timestamp < ? AND mailing_id = ? AND company_id = ? AND status_field != 'A' AND status_field != 'T') GROUP BY send_hour ORDER BY send_hour";
         } else {
-            String sendHourSQL = isDateBasedMailing ?
-                    "SUBSTRING(DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i'), 1, 10)" :
-                    "CONCAT(SUBSTRING(DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i'), 1, 15), '0')";
+            String sendHourSQL;
+            if (isPostgreSQL()) {
+                sendHourSQL = isDateBasedMailing ?
+                        "SUBSTRING(TO_CHAR(timestamp, 'YYYY-MM-DD HH24:MI'), 1, 10)" :
+                        "SUBSTRING(TO_CHAR(timestamp, 'YYYY-MM-DD HH24:MI'), 1, 15) || '0'";
+            } else {
+                sendHourSQL = isDateBasedMailing ?
+                        "SUBSTRING(DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i'), 1, 10)" :
+                        "CONCAT(SUBSTRING(DATE_FORMAT(timestamp , '%Y-%m-%d %H:%i'), 1, 15), '0')";
+            }
+
             query = "SELECT sum(no_of_mailings) AS mail_num, send_hour, max(send_date) max_send_date FROM " +
                     "(SELECT timestamp AS send_date, no_of_mailings, " + sendHourSQL + " AS send_hour FROM mailing_account_tbl " +
                     "sub_res WHERE ? <= timestamp AND timestamp < ? AND mailing_id = ? AND company_id = ? AND status_field != 'A' AND status_field != 'T') res GROUP BY send_hour ORDER BY send_hour";
@@ -136,8 +144,8 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
     
     private static class TimeBasedDelivery_RowMapper implements RowMapper<TimeBasedDeliveryStatRow> {
         
-        private DateFormat format;
-        private boolean isDateBasedMailing;
+        private final DateFormat format;
+        private final boolean isDateBasedMailing;
     
         public TimeBasedDelivery_RowMapper(DateFormat format, boolean isDateBasedMailing) {
             this.format = format;

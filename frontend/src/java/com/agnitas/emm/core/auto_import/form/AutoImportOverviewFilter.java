@@ -10,15 +10,15 @@
 
 package com.agnitas.emm.core.auto_import.form;
 
-import com.agnitas.emm.core.commons.dto.DateRange;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportBadge;
-import com.agnitas.web.forms.PaginationForm;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.util.List;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import com.agnitas.emm.core.auto_import.bean.AutoImport;
+import com.agnitas.emm.core.auto_import.enums.AutoImportBadge;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.web.forms.PaginationForm;
 
 public class AutoImportOverviewFilter extends PaginationForm {
 

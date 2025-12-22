@@ -10,60 +10,54 @@
 
 package com.agnitas.emm.core.webhooks.profilefields.dao;
 
-import com.agnitas.emm.core.webhooks.common.WebhookEventType;
-import com.agnitas.dao.impl.BaseDaoImpl;
-import com.agnitas.dao.impl.mapper.StringRowMapper;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public final class WebhookProfileFieldDaoImpl extends BaseDaoImpl implements WebhookProfileFieldDao {
+import com.agnitas.dao.impl.BaseDaoImpl;
+import com.agnitas.dao.impl.mapper.StringRowMapper;
+import com.agnitas.emm.core.webhooks.common.WebhookEventType;
+
+public class WebhookProfileFieldDaoImpl extends BaseDaoImpl implements WebhookProfileFieldDao {
 
 	@Override
-	public final Set<String> listProfileFieldsForWebhook(final int companyID, final WebhookEventType eventType) {
+	public Set<String> listProfileFieldsForWebhook(int companyID, WebhookEventType eventType) {
 		final String sql = "SELECT profile_field FROM webhook_profile_field_tbl WHERE company_ref=? AND event_type=?";
-		
-		final List<String> list = select(sql, StringRowMapper.INSTANCE, companyID, eventType.getEventCode());
-		
-		return new HashSet<>(list);
+        return new HashSet<>(select(sql, StringRowMapper.INSTANCE, companyID, eventType.getEventCode()));
 	}
 	
 	@Override
-	public final boolean deleteProfileFieldsForWebhooks(final int companyID) {
+	public boolean deleteProfileFieldsForWebhooks(int companyID) {
 		final int touchedLines = update("DELETE FROM webhook_profile_field_tbl WHERE company_ref=?", companyID);
 		
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		final int remaining = selectInt("SELECT COUNT(*) FROM webhook_profile_field_tbl WHERE company_ref = ?", companyID);
-    		
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_profile_field_tbl WHERE company_ref = ?", companyID);
+		return remaining == 0;
 	}
 	
 	@Override
-	public final boolean deleteProfileFieldsForWebhook(final int companyID, final WebhookEventType eventType) {
+	public boolean deleteProfileFieldsForWebhook(int companyID, WebhookEventType eventType) {
 		final int touchedLines = update("DELETE FROM webhook_profile_field_tbl WHERE company_ref=? AND event_type=?", companyID, eventType.getEventCode());
 		
     	if (touchedLines > 0) {
     		return true;
-    	} else {
-    		final int remaining = selectInt("SELECT COUNT(*) FROM webhook_profile_field_tbl WHERE company_ref=? AND event_type=?", companyID, eventType.getEventCode());
-    		
-    		return remaining == 0;
     	}
+
+		int remaining = selectInt("SELECT COUNT(*) FROM webhook_profile_field_tbl WHERE company_ref=? AND event_type=?", companyID, eventType.getEventCode());
+		return remaining == 0;
 	}
 	
 	@Override
-	public final void insertProfileFieldsForWebhook(final int companyID, final WebhookEventType eventType, final Set<String> profileFields) {
+	public void insertProfileFieldsForWebhook(int companyID, WebhookEventType eventType, Set<String> profileFields) {
 		final String sql = "INSERT INTO webhook_profile_field_tbl (company_ref, event_type, profile_field) VALUES (?,?,?)";
 		
 		final List<Object[]> queryParameters = profileFields
 				.stream()
 				.map(field -> new Object[] {companyID, eventType.getEventCode(), field} )
-				.collect(Collectors.toList());
+				.toList();
 		
 		this.batchupdate(sql, queryParameters);
 	}

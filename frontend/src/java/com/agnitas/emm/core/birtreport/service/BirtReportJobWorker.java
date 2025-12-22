@@ -18,21 +18,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import com.agnitas.service.JobWorker;
-import com.agnitas.util.AgnUtils;
-import com.agnitas.util.DateUtilities;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.agnitas.dao.CompanyDao;
 import com.agnitas.emm.core.birtreport.bean.BirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.BirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.BirtReportSettings;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.quartz.JobWorker;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class BirtReportJobWorker extends JobWorker {
+@JobWorker("BirtReports")
+public class BirtReportJobWorker extends JobWorkerBase {
 
 	private static final Logger logger = LogManager.getLogger(BirtReportJobWorker.class);
 

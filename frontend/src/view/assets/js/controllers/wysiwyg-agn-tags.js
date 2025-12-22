@@ -1,73 +1,69 @@
-AGN.Lib.Controller.new('wysiwyg-agn-tags', function() {
-  var Template = AGN.Lib.Template,
-    Select = AGN.Lib.Select,
-    Confirm = AGN.Lib.Confirm;
+AGN.Lib.Controller.new('wysiwyg-agn-tags', function () {
 
-  var createSelect;
-  var createTextInput;
-  var insertTagsHandlers = {};
-  var selectTagsHandlers = {};
+  const Template = AGN.Lib.Template;
+  const Select = AGN.Lib.Select;
+  const Confirm = AGN.Lib.Confirm;
 
-  insertTagsHandlers["agnFULLVIEW"] = function () {
-    const $option = $('#agn-tag-name').children('option:selected');
+  const insertTagsHandlers = {};
+  const selectTagsHandlers = {};
+
+  let $tagSelect;
+
+  insertTagsHandlers["agnFULLVIEW"] = () => {
+    const $option = $tagSelect.children('option:selected');
     const name = $option.val();
     if (!name) {
       return;
     }
 
     if (!$('#createLinkToggle').prop('checked')) {
-      return '[' + name + ']';
+      return `[${name}]`;
     }
 
-    var linkText = $('#tagLinkText').val();
+    let linkText = $('#tagLinkText').val();
     if (!linkText) {
       linkText = 'fullview';
     }
 
-    return '<a href="[' + name + ']">' + linkText + '</a>';
+    return `<a href="[${name}]">${linkText}</a>`;
   }
 
   insertTagsHandlers["agnWEBVIEW"] = insertTagsHandlers["agnFULLVIEW"];
 
   insertTagsHandlers["agnFORM"] = function () {
-    var $option = $('#agn-tag-name').children('option:selected');
-    var name = $option.val(),
-        attributes = $option.data('attributes');
-    if(!name) {
+    const $option = $tagSelect.children('option:selected');
+    const name = $option.val();
+    const attributes = $option.data('attributes');
+
+    if (!name) {
       return;
     }
 
-    var createLinkChecked = $('#createLinkToggle').prop('checked') === true;
-    if(createLinkChecked) {
-      var linkText = $('#tagLinkText').val();
-      if(!linkText) {
-        var attrIndex = attributes.findIndex(function (attr) {
+    if ($('#createLinkToggle').prop('checked') === true) {
+      let linkText = $('#tagLinkText').val();
+      if (!linkText) {
+        const attrIndex = attributes.findIndex(function (attr) {
           return attr.name === 'name';
         });
-        if(attrIndex > -1) {
-          linkText = $('#agn-tag-attribute-' + attrIndex).val();
+        if (attrIndex > -1) {
+          linkText = $(`#agn-tag-attribute-${attrIndex}`).val();
         }
       }
       if (linkText) {
-        return '<a href="[' + name + composeTagAttributes(attributes) + ']">' + linkText + '</a>';
+        return `<a href="[${name + composeTagAttributes(attributes)}]">${linkText}</a>`;
       }
     }
 
-    return '[' + name + composeTagAttributes(attributes) + ']';
+    return `[${name + composeTagAttributes(attributes)}]`;
   }
 
   selectTagsHandlers["agnFORM"] = function () {
-    var $toggle = $('#createLinkToggle');
-    if($toggle.prop('checked') !== true) {
-      $('#tagLinkParams').hide();
+    const $toggle = $('#createLinkToggle');
+    if ($toggle.prop('checked') !== true) {
+      $('#tagLinkText').hide();
     }
     $toggle.on('change', function () {
-      var checked = $(this).prop('checked');
-      if(checked === false) {
-        $('#tagLinkParams').hide();
-      } else {
-        $('#tagLinkParams').show();
-      }
+      $('#tagLinkText').toggle($(this).prop('checked'));
     });
   }
 
@@ -75,90 +71,94 @@ AGN.Lib.Controller.new('wysiwyg-agn-tags', function() {
   selectTagsHandlers["agnWEBVIEW"] = selectTagsHandlers["agnFULLVIEW"];
 
   function selectTag(name, attributes) {
-    var $inputs = $('#agn-tag-attributes');
+    const $inputs = $('#agn-tag-attributes');
 
     $inputs.empty();
 
     if (attributes && attributes.length > 0) {
-      attributes.forEach(function(attribute, index) {
+      attributes.forEach(function (attribute, index) {
         switch (attribute.type) {
           case 'SELECT':
-            $inputs.append(createSelect({index: index, name: attribute.name, options: attribute.options}));
+            $inputs.append(Template.text('agn-tag-select-attribute', {
+              index,
+              name: attribute.name,
+              options: attribute.options
+            }));
             break;
 
           case 'TEXT':
-            $inputs.append(createTextInput({index: index, name: attribute.name}));
+            $inputs.append(Template.text('agn-tag-text-attribute', {index, name: attribute.name}));
             break;
         }
       });
     }
 
-    try {
-      const extendedAttributes = Template.dom(name + '-extended-attributes');
-      if(extendedAttributes) {
+    const extendedAttributesTemplateName = `${name}-extended-attributes`;
+    if (Template.exists(extendedAttributesTemplateName)) {
+      const extendedAttributes = Template.dom(extendedAttributesTemplateName);
+      if (extendedAttributes) {
         $inputs.append(extendedAttributes);
       }
-    } catch(e) { /* do nothing */ }
+    }
 
     AGN.runAll($inputs);
   }
 
   function composeTag() {
-    var $option = $('#agn-tag-name').children('option:selected');
-    var name = $option.val();
+    const $option = $tagSelect.children('option:selected');
+    const name = $option.val();
 
     if (name) {
       return '[' + name + composeTagAttributes($option.data('attributes')) + ']';
-    } else {
-      return null;
     }
+
+    return null;
   }
 
   function composeTagAttributes(attributes) {
-    var result = '';
+    let result = '';
 
     if (attributes && attributes.length > 0) {
-      attributes.forEach(function(attribute, index) {
-        var $input = $('#agn-tag-attribute-' + index);
-
-        result += ' ' + attribute.name + '="' + _.escape($input.val()) + '"';
+      attributes.forEach(function (attribute, index) {
+        const $input = $(`#agn-tag-attribute-${index}`);
+        result += ` ${attribute.name}=&quot;${_.escape($input.val())}&quot;`;
       });
     }
 
     return result;
   }
 
-  this.addDomInitializer('wysiwyg-agn-tags', function() {
-    createSelect = Template.prepare('agn-tag-select-attribute');
-    createTextInput = Template.prepare('agn-tag-text-attribute');
+  this.addDomInitializer('wysiwyg-agn-tags', function () {
+    $tagSelect = $('#agn-tag-name');
 
-    var $select = $('#agn-tag-name');
-
-    this.config.forEach(function(tag) {
-      var $option = $('<option>', {value: tag.name, text: tag.name});
-      $select.append($option);
+    this.config.forEach(function (tag) {
+      const $option = $('<option>', {value: tag.name, text: tag.name});
+      $tagSelect.append($option);
       $option.data('attributes', tag.attributes);
     });
 
-    Select.get($select).selectFirstValue();
-    $select.trigger('change');
+    Select.get($tagSelect).selectFirstValue();
+    $tagSelect.trigger('change');
   });
 
-  this.addAction({change: 'select-agn-tag'}, function() {
-    var $option = this.el.children('option:selected');
-    selectTag($option.val(), $option.data('attributes'));
-    var tagName = $option.val(),
-        handler = selectTagsHandlers[tagName];
-    if(handler) {
-     handler();
+  this.addAction({change: 'select-agn-tag'}, function () {
+    const $option = this.el.children('option:selected');
+    const tagName = $option.val();
+
+    selectTag(tagName, $option.data('attributes'));
+
+    const handler = selectTagsHandlers[tagName];
+    if (handler) {
+      handler();
     }
   });
 
-  this.addAction({click: 'insert-agn-tag'}, function() {
-    var tagName = $('#agn-tag-name').val();
-    var handler = insertTagsHandlers[tagName];
-    var code;
-    if(handler) {
+  this.addAction({click: 'insert-agn-tag'}, function () {
+    const tagName = $tagSelect.val();
+    const handler = insertTagsHandlers[tagName];
+    let code;
+
+    if (handler) {
       code = handler();
     } else {
       code = composeTag();

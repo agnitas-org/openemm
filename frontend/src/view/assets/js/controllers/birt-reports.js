@@ -1,200 +1,213 @@
-AGN.Lib.Controller.new('birt-reports', function() {
+AGN.Lib.Controller.new('birt-reports', function () {
 
-    var config = {},
-        reportType = 0,
-        ARCHIVE_LIST = [],
-        MAILINGLIST_LIST = [],
-        TARGETS_LIST = [],
-        AFTER_MAILING_TYPE_ID,
-        MAILING_ID,
-        $form;
+  let config = {},
+    reportType = 0,
+    ARCHIVE_LIST = [],
+    MAILINGLIST_LIST = [],
+    TARGETS_LIST = [],
+    AFTER_MAILING_TYPE_ID,
+    MAILING_ID,
+    $form;
 
-    this.addDomInitializer("birt-reports", function() {
-        config = this.config;
-        MAILING_ID = config.constant.MAILING_ID;
-        AFTER_MAILING_TYPE_ID = config.constant.AFTER_MAILING_TYPE_ID;
-        ARCHIVE_LIST = config.filtered.FILTER_ARCHIVE;
-        MAILINGLIST_LIST = config.filtered.FILTER_MAILINGLIST;
-        TARGETS_LIST = config.filtered.FILTER_TARGET;
-        reportType = config.reportType;
+  const SWITCH_SELECTOR = '.form-check-input';
 
-        $form = this.el;
+  this.addDomInitializer("birt-reports", function () {
+    config = this.config;
+    MAILING_ID = config.constant.MAILING_ID;
+    AFTER_MAILING_TYPE_ID = config.constant.AFTER_MAILING_TYPE_ID;
+    ARCHIVE_LIST = config.filtered.FILTER_ARCHIVE;
+    MAILINGLIST_LIST = config.filtered.FILTER_MAILINGLIST;
+    TARGETS_LIST = config.filtered.FILTER_TARGET;
+    reportType = config.reportType;
+
+    $form = this.el;
+  });
+
+  this.addDomInitializer("report-settings", function () {
+    $('#extended-settings-tile').find('[data-toggle-tab]').on('click', function (e) {
+      if (!$(e.target).is(SWITCH_SELECTOR)) {
+        const checked = $(this).find(SWITCH_SELECTOR).is(':checked');
+        getMobileActivateDeliveryCheckbox$().prop('checked', checked);
+      }
     });
 
-    function disableTabs() {
-        _.each($(config.reportSettingsId).find("[data-toggle-tab]"), function(tab) {
-            var $tab = $(tab);
-            var tabId = $tab.data("toggle-tab");
-            if(tabId.endsWith(MAILING_ID)) {
-                $tab.trigger("click");
-                return;
-            }
+    updateTabsState();
+    new ReportSettings(this.el, this.config);
+  });
 
-            $tab.parent("li").addClass("disabled");
-            AGN.Lib.Tab.hide($(tabId));
-        });
+  this.addAction({click: 'confirm-deactivate-deliveries'}, function () {
+    AGN.Lib.Confirm.from('report-deactivate-deliveries');
+  });
+
+  this.addAction({click: 'activate-delivery'}, function () {
+    const checked = this.el.is(':checked');
+
+    this.event.stopPropagation();
+    window.setTimeout(() => this.el.prop('checked', checked), 0);
+
+    const isActiveTab = this.el.closest('.btn').is('.active');
+    if (isActiveTab) {
+      getMobileActivateDeliveryCheckbox$().prop('checked', checked);
+    }
+  });
+
+  function getMobileActivateDeliveryCheckbox$() {
+    return $('[data-action="activate-delivery-for-active-tab"]');
+  }
+
+  this.addAction({click: 'activate-delivery-for-active-tab'}, function () {
+    const checked = this.el.is(':checked');
+    this.event.stopPropagation();
+    window.setTimeout(() => this.el.prop('checked', checked), 0);
+    $('#extended-settings-tile').find('[data-toggle-tab].active').find(SWITCH_SELECTOR).prop('checked', checked);
+  });
+
+  this.addAction({change: 'interval-change'}, function () {
+    updateTabsState();
+  });
+
+  function updateTabsState() {
+    const actualReportType = $('#interval').val();
+
+    if (actualReportType == AFTER_MAILING_TYPE_ID) {
+      disableTabs();
+    } else if (reportType == AFTER_MAILING_TYPE_ID) {
+      enableTabs();
     }
 
-    function enableTabs() {
-        _.each($(config.reportSettingsId).find("[data-toggle-tab]"), function(tab) {
-            $(tab).parent("li").removeClass("disabled");
-        });
+    reportType = actualReportType;
+  }
+
+  function disableTabs() {
+    $('#extended-settings-tile').find('[data-toggle-tab]').each(function () {
+      const $tab = $(this);
+      const tabId = $tab.data("toggle-tab");
+
+      if (tabId.endsWith(MAILING_ID)) {
+        $tab.trigger("click");
+        return;
+      }
+
+      $tab.addClass('disabled');
+      AGN.Lib.Tab.hide($(tabId));
+    });
+  }
+
+  function enableTabs() {
+    $('#extended-settings-tile').find('[data-toggle-tab]').each(function () {
+      $(this).removeClass('disabled');
+    });
+  }
+
+  class ReportSettings {
+    constructor($container, config) {
+      this.$container = $container;
+      this.config = config;
+      this.settingsType = config.settingsType;
+      this.select = AGN.Lib.Select.get($container.find(config.selectors.filterBlockId));
+      this.mailingSelect = AGN.Lib.Select.get($container.find(config.selectors.normalMailing));
+
+      this.init(config);
+
+      $container.find(config.selectors.mailingType).on('change', event => {
+        this.handleMailingTypeChanges($(event.target));
+      });
+      $container.find(config.selectors.mailingFilter).on('change', event => {
+        this.handleMailingFilterChanges($(event.target));
+      });
+      $container.find(config.selectors.filterBlockId).on('change', event => {
+        this.handleMailingFilterValueChanges($(event.target));
+      });
     }
 
-    AGN.Lib.Action.new({change: "input[type=radio][name=type]"}, function(){
-        var actualReportType = $(this.el).val();
-        var isAfterMailingType = actualReportType == AFTER_MAILING_TYPE_ID;
+    init(config) {
+      const mailingType = config.data.mailingType;
+      const mailingFilter = config.data.mailingFilter;
+      const predefineMailing = config.data.predefineMailing;
+      const selectedMailings = config.data.selectedMailings;
 
-        if(isAfterMailingType) {
-            disableTabs();
-        } else if(reportType == AFTER_MAILING_TYPE_ID) {
-            enableTabs();
+      const jqXHR = this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
+      jqXHR.done(() => $form.dirty('setAsClean'));
+    };
+
+    handleMailingTypeChanges($el) {
+      const mailingFilter = this.getMailingFilter();
+      const mailingFilterValue = this.getMailingFilterValue();
+      this.updateNormalMailingField($el.val(), mailingFilter, mailingFilterValue);
+    };
+
+    handleMailingFilterChanges($el) {
+      this.updateAllComparisonDependentFields(this.mailingType, $el.val());
+    };
+
+    handleMailingFilterValueChanges($el) {
+      const mailingFilter = this.getMailingFilter();
+      this.updateNormalMailingField(this.mailingType, mailingFilter, $el.val());
+    };
+
+    updateAllComparisonDependentFields(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
+      this.select.resetOptions();
+
+      if (mailingFilter > 0) {
+        let data = [];
+
+        if (mailingFilter == 1) {
+          data = ARCHIVE_LIST;
+        } else if (mailingFilter == 2) {
+          data = MAILINGLIST_LIST;
+        } else if (mailingFilter == 4) {
+          data = TARGETS_LIST;
         }
 
-        reportType = actualReportType;
-        return false;
-    });
+        _.each(data, item => this.select.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
 
-    this.addDomInitializer("report-settings", function(){
-        var el = this.el;
-        var config = this.config;
+        this.select.selectValueOrSelectFirst(predefinedMailing);
+        predefinedMailing = this.select.getSelectedValue();
+      }
 
-        new ReportSettings(el, config);
-    });
+      return this.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
+    };
 
-    var ReportSettings = function (container, config) {
-        var self = this;
-        this.container = container;
-        this.config = config;
-        this.settingsType = config.settingsType;
-        this.select = AGN.Lib.Select.get(container.find(config.selectors.filterBlockId));
-        this.mailingSelect = AGN.Lib.Select.get(container.find(config.selectors.normalMailing));
+    updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
+      const deferred = $.Deferred();
+      this.mailingSelect.resetOptions();
 
-        self.init(config);
+      if ((this.settingsType == config.constant.COMPARISON_SETTINGS && mailingType == 2) ||
+        (this.settingsType == config.constant.MAILING_SETTINGS && mailingType == 3)) {
+        $.ajax({
+          type: "GET",
+          url: AGN.url('/statistics/report/getFilteredMailing.action'),
+          data: {
+            type: mailingFilter,
+            value: predefinedMailing ? predefinedMailing : 0,
+            mailingType: config.constant.NORMAL_MAILING_TYPE
+          }
+        }).done(data => {
+          _.each(data, item => this.mailingSelect.addFormattedOption(`<option value="${item.id}">${item.shortname}</option>`));
 
-        container.find(config.selectors.mailingType).on('change', function(event) {
-            self.handleMailingTypeChanges($(event.target));
+          this.mailingSelect.selectValue(selectedMailings ? selectedMailings : '');
+          deferred.resolve();
         });
-        container.find(config.selectors.mailingFilter).on('change', function (event) {
-            self.handleMailingFilterChanges($(event.target));
-        });
-        container.find(config.selectors.filterBlockId).on('change', function(event) {
-            self.handleMailingFilterValueChanges($(event.target));
-        });
+      }
 
+      return deferred.promise();
     };
 
-    ReportSettings.prototype.init = function(config) {
-        var mailingType = config.data.mailingType;
-        var mailingFilter = config.data.mailingFilter;
-        var predefineMailing = config.data.predefineMailing;
-        var selectedMailings = config.data.selectedMailings;
-
-        const jqXHR = this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
-
-        jqXHR.done(function () {
-            $form.dirty('setAsClean');
-        });
+    getMailingFilter() {
+      const filter = this.$container.find(this.config.selectors.mailingFilter);
+      return parseInt(filter.val()) | 0;
     };
 
-    ReportSettings.prototype.handleMailingTypeChanges = function(el) {
-        var report = this;
-        var mailingFilter = report.getMailingFilter();
-        var mailingFilterValue = report.getMailingFilterValue();
-        report.updateNormalMailingField(el.val(), mailingFilter, mailingFilterValue);
+    getMailingFilterValue() {
+      return parseInt(this.select.getSelectedValue()) | 0;
     };
 
-    ReportSettings.prototype.handleMailingFilterChanges = function(el) {
-        var report = this;
-        var mailingType = report.getMailingType();
-        report.updateAllComparisonDependentFields(mailingType, el.val());
+    get $mailingType() {
+      return this.$container.find(`${this.config.selectors.mailingType}`);
+    }
+
+    get mailingType() {
+      return parseInt(this.$mailingType.val()) || 0;
     };
-
-    ReportSettings.prototype.handleMailingFilterValueChanges = function(el) {
-        var report = this;
-        var mailingFilter = report.getMailingFilter();
-        var mailingType = report.getMailingType();
-        report.updateNormalMailingField(mailingType, mailingFilter, el.val());
-    };
-
-    ReportSettings.prototype.updateAllComparisonDependentFields = function(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
-        var self = this;
-        self.select.resetOptions();
-
-        if(mailingFilter > 0) {
-            var data = [];
-
-            if(mailingFilter == 1) {
-                data = ARCHIVE_LIST;
-            } else if(mailingFilter == 2) {
-                data = MAILINGLIST_LIST;
-            } else if(mailingFilter == 4) {
-                data = TARGETS_LIST;
-            }
-
-            _.each(data, function(item) {
-                self.select.addFormattedOption('<option value=\"' + item.id + '\">' + item.shortname + '</option>');
-            });
-
-           self.select.selectValueOrSelectFirst(predefinedMailing);
-            predefinedMailing = self.select.getSelectedValue();
-        }
-
-        return self.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
-    };
-
-    ReportSettings.prototype.updateNormalMailingField = function(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
-        const deferred = $.Deferred();
-        var self = this;
-        self.mailingSelect.resetOptions();
-
-        if((self.settingsType == config.constant.COMPARISON_SETTINGS && mailingType == 2) ||
-            (self.settingsType == config.constant.MAILING_SETTINGS && mailingType == 3)) {
-            $.ajax({
-                type: "GET",
-                url: config.urls.FILTERED_MAILING_URL,
-                data: {
-                    type: mailingFilter,
-                    value: predefinedMailing ? predefinedMailing : 0,
-                    mailingType: config.constant.NORMAL_MAILING_TYPE
-                }
-            }).done(function (data) {
-                _.each(data, function (item) {
-                    self.mailingSelect.addFormattedOption('<option value=\"' + item.id + '\">' + item.shortname + '</option>');
-                });
-
-                self.mailingSelect.selectValue(selectedMailings ? selectedMailings : '');
-                deferred.resolve();
-            });
-        }
-
-        return deferred.promise();
-    };
-
-    ReportSettings.prototype.getMailingFilter = function() {
-       var filter = this.container.find(this.config.selectors.mailingFilter);
-       return parseInt(filter.val()) | 0;
-    };
-
-    ReportSettings.prototype.getMailingFilterValue = function() {
-       var filterValue = this.select.getSelectedValue();
-       return parseInt(filterValue) | 0;
-    };
-
-    ReportSettings.prototype.getMailingType = function() {
-        var mailingType = this.container.find(this.config.selectors.mailingType + ':checked');
-        return parseInt(mailingType.val()) | 0;
-    };
-
-    this.addAction({click: 'confirm-deactivate-deliveries'}, function() {
-        AGN.Lib.Confirm.createFromTemplate({
-            action: AGN.url("/statistics/report/" + config.reportId + "/deactivateAllDeliveries.action"),
-            method: 'POST',
-            title: t('birtreport.deactivateAll'),
-            content: t('birtreport.deactivateAllQuestion')
-        }, 'modal-yes-no-cancel')
-            .done(function(resp) {
-                AGN.Lib.Form.get($('#birtreportForm')).updateHtml(resp);
-            })
-    });
+  }
 });

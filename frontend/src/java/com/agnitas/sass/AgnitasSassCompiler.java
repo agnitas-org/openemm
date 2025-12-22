@@ -14,9 +14,20 @@ import java.io.File;
 import java.io.IOException;
 
 import de.larsgrefer.sass.embedded.SassCompiler;
+import sass.embedded_protocol.EmbeddedSass;
 
 public class AgnitasSassCompiler {
+
+    private AgnitasSassCompiler() {
+
+    }
+
     public static SassCompiler bundled(File sassExecutableTempDirPath) throws IOException {
-        return new SassCompiler(AgnitasSassConnectionFactory.bundled(sassExecutableTempDirPath));
+        SassCompiler compiler = new SassCompiler(AgnitasSassConnectionFactory.bundled(sassExecutableTempDirPath));
+        compiler.setGenerateSourceMaps(true);
+        compiler.setSourceMapIncludeSources(true);
+        compiler.setOutputStyle(EmbeddedSass.OutputStyle.COMPRESSED);
+
+        return compiler;
     }
 }

@@ -50,6 +50,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *         &lt;element name="matchTargetGroups" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="mailingType" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="subject" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
+ *         &lt;element name="preHeader" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
  *         &lt;element name="senderName" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
  *         &lt;element name="senderAddress" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="replyToName" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
@@ -87,6 +88,7 @@ public class AddMailingRequest {
     protected String mailingType;
     @XmlElement(required = true)
     protected String subject;
+    protected String preHeader;
     protected String senderName;
     @XmlElement(required = true)
     protected String senderAddress;
@@ -263,6 +265,30 @@ public class AddMailingRequest {
      */
     public void setSubject(String value) {
         this.subject = value;
+    }
+
+    /**
+     * Gets the value of the preHeader property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getPreHeader() {
+        return preHeader;
+    }
+
+    /**
+     * Sets the value of the preHeader property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setPreHeader(String value) {
+        this.preHeader = value;
     }
 
     /**

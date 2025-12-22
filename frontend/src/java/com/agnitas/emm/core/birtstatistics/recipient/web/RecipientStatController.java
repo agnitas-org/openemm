@@ -35,8 +35,8 @@ import com.agnitas.web.forms.FormDate;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -52,11 +52,11 @@ public class RecipientStatController implements XssCheckAware {
     private static final Logger logger = LogManager.getLogger(RecipientStatController.class);
 
     protected final BirtStatisticsService birtStatisticsService;
+    protected final MailinglistApprovalService mailinglistApprovalService;
     private final TargetService targetService;
     private final RecipientReportService recipientReportService;
     private final MediaTypesService mediaTypesService;
     private final ConversionService conversionService;
-    protected final MailinglistApprovalService mailinglistApprovalService;
     private final UserActivityLogService userActivityLogService;
     private final ConfigService configService;
 
@@ -206,4 +206,5 @@ public class RecipientStatController implements XssCheckAware {
     protected void writeUAL(Admin admin, String action, String description) {
         UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
     }
+
 }

@@ -10,23 +10,28 @@
 
 package com.agnitas.web.perm;
 
-public class NotAllowedActionException extends Exception {
+public class NotAllowedActionException extends RuntimeException {
+
 	private static final long serialVersionUID = 3862119976068496201L;
 	
-	private String token;
+	private String qualifiedMethodName;
 	private String username;
 
 	public NotAllowedActionException() {
 	}
 
-	public NotAllowedActionException(String username, String token) {
-		super("Permission for action " + token + " denied for " + username);
-		this.username = username;
-		this.token = token;
+	public NotAllowedActionException(String message) {
+		super(message);
 	}
 
-	public String getToken() {
-		return this.token;
+	public NotAllowedActionException(String username, String qualifiedMethodName) {
+		super("Permission for controller method " + qualifiedMethodName + " denied for " + username);
+		this.username = username;
+		this.qualifiedMethodName = qualifiedMethodName;
+	}
+
+	public String getQualifiedMethodName() {
+		return this.qualifiedMethodName;
 	}
 
 	public String getUsername() {

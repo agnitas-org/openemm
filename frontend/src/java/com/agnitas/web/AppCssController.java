@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -26,8 +27,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.dao.CssDao;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.sass.AgnitasSassCompiler;
+import com.agnitas.util.Tuple;
+import com.agnitas.web.perm.annotations.Anonymous;
+import de.larsgrefer.sass.embedded.SassCompilationFailedException;
+import de.larsgrefer.sass.embedded.SassCompiler;
+import jakarta.servlet.ServletContext;
 import org.apache.bval.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,16 +44,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
-
-import com.agnitas.dao.CssDao;
-import com.agnitas.sass.AgnitasSassCompiler;
-import com.agnitas.web.perm.annotations.Anonymous;
-
-import de.larsgrefer.sass.embedded.SassCompiler;
-import jakarta.servlet.ServletContext;
+import sass.embedded_protocol.EmbeddedSass.OutboundMessage.CompileResponse.CompileSuccess;
 
 @RestController
-public class AppCssController { // prev CssServlet
+public class AppCssController {
     
 	private static final Logger logger = LogManager.getLogger(AppCssController.class);
 	private static final String ETAG = "W/\"" + new Date().getTime() + "\"";
@@ -53,13 +55,13 @@ public class AppCssController { // prev CssServlet
     private final ServletContext servletContext;
     private final ConfigService configService;
     private final CssDao cssDao;
-    private final String cssCache;
+	private final Tuple<String, String> cssBundle;
 
-    public AppCssController(CssDao cssDao, ConfigService configService, ServletContext servletContext) throws IOException {
+    public AppCssController(CssDao cssDao, ConfigService configService, ServletContext servletContext) {
         this.cssDao = cssDao;
         this.configService = configService;
         this.servletContext = servletContext;
-        cssCache = tryGenerateCss();
+		this.cssBundle = tryCompile();
     }
 
 	/**
@@ -75,19 +77,53 @@ public class AppCssController { // prev CssServlet
         }
         return ResponseEntity.ok()
                 .eTag(ETAG)
-                .body(cssCache);
+                .body(cssBundle.getFirst());
     }
 
-    private String tryGenerateCss() throws IOException {
+	@Anonymous
+	@GetMapping(value = "/css/sourcemap.action", produces = "application/json; charset=UTF-8")
+	public ResponseEntity<String> cssSourceMap() {
+		return ResponseEntity.ok().body(cssBundle.getSecond());
+	}
+
+	private Tuple<String, String> tryCompile() {
+		try {
+			CompileSuccess compileResult = compileScss();
+
+			return Tuple.of(
+					addSourceMapUrl(compileResult.getCss()),
+					adjustSourceMapPaths(compileResult.getSourceMap())
+			);
+		} catch (Exception e) {
+			logger.error("Error while compiling CSS: {}", e.getMessage(), e);
+			return loadFallback();
+		}
+	}
+
+	private String adjustSourceMapPaths(String sourceMap) {
+		return sourceMap.replace("file://" + servletContext.getRealPath("."), "");
+	}
+
+	private String addSourceMapUrl(String css) {
+		return "%s%n/*# sourceMappingURL=css/sourcemap.action */".formatted(css);
+	}
+
+	private Tuple<String, String> loadFallback() {
+		try {
+			return Tuple.of(
+					Files.readString(Paths.get(servletContext.getRealPath("/assets/application.css"))),
+					Files.readString(Paths.get(servletContext.getRealPath("/assets/application.css.map")))
+			);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+    private CompileSuccess compileScss() throws SassCompilationFailedException, IOException {
         File sassExecutableTempDirPath = new File(configService.getValue(ConfigValue.ExecutableTempDirPath));
-        try (SassCompiler sassCompiler = AgnitasSassCompiler.bundled(sassExecutableTempDirPath)) {
-            replaceCssParametersInFile(servletContext.getRealPath("/assets/sass/boot/variables.scss"), 0);
-            return minifyString(sassCompiler
-                    .compileFile(new File(servletContext.getRealPath("/assets/sass_redesign/application.scss")))
-                    .getCss());
-        } catch (Exception e) {
-            logger.error("Error while generating CSS: {}", e.getMessage(), e);
-            return Files.readString(Paths.get(servletContext.getRealPath("/assets/application.redesigned.min.css")));
+        try (SassCompiler compiler = AgnitasSassCompiler.bundled(sassExecutableTempDirPath)) {
+            replaceCssParametersInFile(servletContext.getRealPath("/assets/sass/boot/variables.scss"));
+            return compiler.compileFile(new File(servletContext.getRealPath("/assets/sass/application.scss")));
         } finally {
             cleanDirectory(sassExecutableTempDirPath);
         }
@@ -149,8 +185,8 @@ public class AppCssController { // prev CssServlet
 	/**
 	 * Replaces SCSS variables in given Filepath
 	 */
-	public void replaceCssParametersInFile(String filepath, int companyID) {
-		Map<String, String> parameterMap = cssDao.getCssParameterData(companyID);
+	public void replaceCssParametersInFile(String filepath) {
+		Map<String, String> parameterMap = cssDao.getCssParameterData(0);
 		
 		String tmpFileName = filepath + ".tmp";
 
@@ -178,14 +214,4 @@ public class AppCssController { // prev CssServlet
 		newFile.renameTo(oldFile);
 	}
 	
-	/**
-	 * Minifies a given CSS-String and returns it.
-	 * The RegEx removes excess whitespaces and comments
-	 */
-	public String minifyString(String str) {
-		// Remove comments and whitespace
-		str = str.replaceAll( "(?s)\\s|/\\*.*?\\*/" , " " );
-		
-		return str.trim();
-	}
 }

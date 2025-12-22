@@ -11,35 +11,44 @@
 package com.agnitas.emm.core.mailing.web;
 
 import static com.agnitas.web.mvc.Pollable.LONG_TIMEOUT;
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateTimeValue;
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateValue;
-import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDoubleValue;
-import static com.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.agnitas.beans.impl.PaginatedListImpl;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.components.service.MailingRecipientsService;
+import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
+import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import com.agnitas.emm.core.mailing.forms.MailingRecipientsFormSearchParams;
+import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.GenericExportWorker;
-import com.agnitas.service.MailingRecipientExportWorker;
+import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.MailingRecipientExportWorkerFactory;
 import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.FileUtils;
-import com.agnitas.emm.core.mailing.enums.MailingRecipientsAdditionalColumn;
+import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.forms.FormUtils;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.Resource;
@@ -56,26 +65,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.emm.core.components.service.MailingRecipientsService;
-import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
-import com.agnitas.emm.core.mailing.forms.MailingRecipientsFormSearchParams;
-import com.agnitas.emm.core.mailing.forms.MailingRecipientsOverviewFilter;
-import com.agnitas.emm.core.mailing.service.MailingBaseService;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.WebStorage;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-
-import jakarta.servlet.http.HttpSession;
 
 public class MailingRecipientsController implements XssCheckAware {
 
@@ -104,21 +93,15 @@ public class MailingRecipientsController implements XssCheckAware {
         this.exportWorkerFactory = exportWorkerFactory;
     }
 
-    @ModelAttribute
-    public MailingRecipientsFormSearchParams getSearchParams() {
-        return new MailingRecipientsFormSearchParams();
-    }
-
     @RequestMapping("/{mailingId:\\d+}/recipients/list.action")
     public Pollable<ModelAndView> list(@PathVariable int mailingId, @ModelAttribute("form") MailingRecipientsOverviewFilter filter,
-                                       @RequestParam(required = false) boolean restoreSort,
-                                       @ModelAttribute MailingRecipientsFormSearchParams searchParams,
+                                       @RequestParam(required = false) Boolean restoreSort,
+                                       MailingRecipientsFormSearchParams searchParams,
                                        Admin admin, Model model, HttpSession session) {
         FormUtils.updateSortingState(webStorage, WebStorage.MAILING_RECIPIENT_OVERVIEW, filter, restoreSort);
-        if (isRedesignedUiUsed(admin)) {
-            FormUtils.syncSearchParams(searchParams, filter, true);
-        }
-        prepareListParameters(filter, admin);
+        searchParams.restoreParams(filter);
+
+        prepareListParameters(filter);
         Map<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID());
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
         setupListPageAttributes(model, mailingId, admin, profileFields);
@@ -128,10 +111,6 @@ public class MailingRecipientsController implements XssCheckAware {
                 getListWorker(mailingId, filter, profileFields, admin, model));
     }
 
-    private static boolean isRedesignedUiUsed(Admin admin) {
-        return admin.isRedesignedUiUsed();
-    }
-
     private String redirectToOverview(int mailingId) {
         return String.format("redirect:/mailing/%d/recipients/list.action", mailingId);
     }
@@ -139,7 +118,12 @@ public class MailingRecipientsController implements XssCheckAware {
     private Callable<ModelAndView> getListWorker(int mailingId, MailingRecipientsOverviewFilter filter, Map<String, ProfileField> profileFields, Admin admin, Model model) {
         return () -> {
             if (filter.isLoadRecipients()) {
-                PaginatedListImpl<MailingRecipientStatRow> recipients = getRecipientsList(mailingId, filter, profileFields, admin);
+                PaginatedList<MailingRecipientStatRow> recipients = mailingRecipientsService.getMailingRecipients(
+                        filter,
+                        mailingId,
+                        profileFields,
+                        admin
+                );
                 recipients.setSortCriterion(filter.getSort());
 
                 int maxRecipients = AgnUtils.getCompanyMaxRecipients(admin);
@@ -157,45 +141,18 @@ public class MailingRecipientsController implements XssCheckAware {
         };
     }
 
-    private PaginatedListImpl<MailingRecipientStatRow> getRecipientsList(int mailingId, MailingRecipientsOverviewFilter filter,
-                                                                         Map<String, ProfileField> profileFields, Admin admin) {
-        PaginatedListImpl<MailingRecipientStatRow> recipients;
-
-        if (isRedesignedUiUsed(admin)) {
-            recipients = mailingRecipientsService.getMailingRecipients(filter, mailingId, profileFields, admin);
-        } else {
-            final Set<String> additionalFields = new HashSet<>(filter.getSelectedFields());
-            additionalFields.removeAll(MailingRecipientsAdditionalColumn.getColumns());
-
-            recipients = mailingBaseService.getMailingRecipients(mailingId,
-                    admin.getCompanyID(), filter.getRecipientsFilter(), filter.getPage(), filter.getNumberOfRows(), filter.getSort(),
-                    AgnUtils.sortingDirectionToBoolean(filter.getOrder()), new ArrayList<>(additionalFields));
-
-            for (MailingRecipientStatRow recipient : recipients.getList()) {
-                for (String col : additionalFields) {
-                    recipient.setVal(col, getFieldFormattedValue(recipient.getVal(col), profileFields.get(col), admin));
-                }
-            }
-        }
-        return recipients;
-    }
-
     private PollingUid getPollingUid(MailingRecipientsOverviewFilter filter, HttpSession session) {
         return PollingUid.builder(session.getId(), "recipients")
                 .arguments(filter.toArray())
                 .build();
     }
 
-    private void prepareListParameters(MailingRecipientsOverviewFilter filter, Admin admin) {
+    private void prepareListParameters(MailingRecipientsOverviewFilter filter) {
         webStorage.access(WebStorage.MAILING_RECIPIENT_OVERVIEW, storage -> {
             if (filter.getNumberOfRows() > 0) {
                 storage.setRowsCount(filter.getNumberOfRows());
-                if (isRedesignedUiUsed(admin)) {
-                    if (!filter.isInEditColumnsMode()) {
-                        filter.setSelectedFields(storage.getSelectedFields());
-                    }
-                } else {
-                    storage.setSelectedFields(filter.getSelectedFields());
+                if (!filter.isInEditColumnsMode()) {
+                    filter.setSelectedFields(storage.getSelectedFields());
                 }
             } else {
                 filter.setNumberOfRows(storage.getRowsCount());
@@ -208,33 +165,12 @@ public class MailingRecipientsController implements XssCheckAware {
         Map<String, String> fields = profileFields.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getShortname()));
 
-        if (isRedesignedUiUsed(admin)) {
-            fields.remove("customer_id");
-            fields.remove("email");
-            Stream.of(MailingRecipientsAdditionalColumn.values())
-                    .forEach(c -> fields.put(c.name(), I18nString.getLocaleString(c.getMessageKey(), admin.getLocale())));
-        }
+        fields.remove("customer_id");
+        fields.remove("email");
+        Stream.of(MailingRecipientsAdditionalColumn.values())
+                .forEach(c -> fields.put(c.name(), I18nString.getLocaleString(c.getMessageKey(), admin.getLocale())));
 
         return fields;
-    }
-
-    // TODO: EMMGUI-714: remove when old design will be removed (the same method in com/agnitas/emm/core/components/service/impl/MailingRecipientsServiceImpl.java)
-    @Deprecated
-    private String getFieldFormattedValue(Object val, ProfileField profileField, Admin admin) {
-        if (profileField == null) {
-            return "";
-        }
-
-        switch (profileField.getSimpleDataType()) {
-            case Float:
-                return formatRecipientDoubleValue(admin, ((Number) val).doubleValue());
-            case Date:
-                return formatRecipientDateValue(admin, (Date) val);
-            case DateTime:
-                return formatRecipientDateTimeValue(admin, (Date) val);
-            default:
-                return Objects.isNull(val) ? "" : val.toString();
-        }
     }
 
     private void setupListPageAttributes(Model model, int mailingId, Admin admin, Map<String, ProfileField> profileFields) {
@@ -246,10 +182,7 @@ public class MailingRecipientsController implements XssCheckAware {
         model.addAttribute("isPostMailing", isPostMailing(mailingId, companyId));
         model.addAttribute("gridTemplateId", gridService.getGridTemplateIdByMailingId(mailingId));
         model.addAttribute("isMailingUndoAvailable", mailingBaseService.checkUndoAvailable(mailingId));
-
-        if (isRedesignedUiUsed(admin)) {
-            model.addAttribute("additionalColumns", MailingRecipientsAdditionalColumn.getColumns());
-        }
+        model.addAttribute("additionalColumns", MailingRecipientsAdditionalColumn.getColumns());
     }
 
     protected boolean isPostMailing(int mailingId, int companyId) {
@@ -259,15 +192,15 @@ public class MailingRecipientsController implements XssCheckAware {
     @PostMapping("/recipients/setSelectedFields.action")
     public @ResponseBody BooleanResponseDto updateSelectedFields(@RequestParam(required = false) List<String> selectedFields, Popups popups) {
         webStorage.access(WebStorage.MAILING_RECIPIENT_OVERVIEW, storage -> storage.setSelectedFields(selectedFields));
-        popups.success(CHANGES_SAVED_MSG);
+        popups.changesSaved();
 
         return new BooleanResponseDto(popups, !popups.hasAlertPopups());
     }
 
     @GetMapping("/{id:\\d+}/recipients/search.action")
     public String search(@PathVariable int id, @ModelAttribute MailingRecipientsOverviewFilter filter,
-                         @ModelAttribute MailingRecipientsFormSearchParams searchParams, RedirectAttributes ra) {
-        FormUtils.syncSearchParams(searchParams, filter, false);
+                         MailingRecipientsFormSearchParams searchParams, RedirectAttributes ra) {
+        searchParams.storeParams(filter);
         filter.setLoadRecipients(true);
         ra.addFlashAttribute("form", filter);
         return redirectToOverview(id) + "?restoreSort=true";
@@ -275,12 +208,11 @@ public class MailingRecipientsController implements XssCheckAware {
 
     @GetMapping("/{mailingId:\\d+}/recipients/export.action")
     public ResponseEntity<Resource> export(@PathVariable int mailingId, MailingRecipientsOverviewFilter filter,
-                                           @ModelAttribute MailingRecipientsFormSearchParams searchParams, Admin admin) throws Exception {
-        if (isRedesignedUiUsed(admin)) {
-            FormUtils.syncSearchParams(searchParams, filter, true);
-            webStorage.access(WebStorage.MAILING_RECIPIENT_OVERVIEW,
-                    storage -> filter.setSelectedFields(storage.getSelectedFields()));
-        }
+                                           MailingRecipientsFormSearchParams searchParams, Admin admin) throws Exception {
+        searchParams.restoreParams(filter);
+        webStorage.access(WebStorage.MAILING_RECIPIENT_OVERVIEW,
+                storage -> filter.setSelectedFields(storage.getSelectedFields()));
+
         final int companyId = admin.getCompanyID();
 
         if (mailingBaseService.isMailingExists(mailingId, companyId, false)) {
@@ -297,14 +229,7 @@ public class MailingRecipientsController implements XssCheckAware {
     }
 
     private void writeCsvToTmpFile(File exportTmpFile, int mailingId, MailingRecipientsOverviewFilter filter, Admin admin) throws Exception {
-        GenericExportWorker exportWorker;
-        if (isRedesignedUiUsed(admin)) {
-            exportWorker = exportWorkerFactory.newWorker(filter, mailingId, admin.getCompanyID(), admin.getLocale());
-        } else {
-            exportWorker = new MailingRecipientExportWorker(admin.getCompanyID(), mailingId, filter.getRecipientsFilter(),
-                    new ArrayList<>(filter.getSelectedFields()), filter.getSort(),
-                    AgnUtils.sortingDirectionToBoolean(filter.getOrder()), admin.getLocale());
-        }
+        GenericExportWorker exportWorker = exportWorkerFactory.newWorker(filter, mailingId, admin.getCompanyID(), admin.getLocale());
 
         exportWorker.setExportFile(exportTmpFile.getAbsolutePath());
         exportWorker.setDataSource(mailingBaseService.getDataSource());
@@ -326,4 +251,5 @@ public class MailingRecipientsController implements XssCheckAware {
                         new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date())),
                 name -> new File(AgnUtils.createDirectory(MAILING_RECIPIENT_TMP_DIRECTORY), name).exists());
     }
+
 }

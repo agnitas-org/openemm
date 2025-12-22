@@ -1,525 +1,135 @@
-$REPLACEME: red;
 
-/*
-=================================================================
-  Typography
-=================================================================
-*/
+$min-sidebar-width: 40px;
+$sidebar-icon-size: 25px;
+$header-height: $min-sidebar-width;
 
-  $ff-regular : Arial, sans-serif;
+$pagesCount: 10;
 
-//
-// Font-Sizes
-// --------------------------------------------------
+$gap:      20px;
+$gap-md:   15px;
+$gap-sm:   $gap / 2;
+$gap-x-sm: $gap-sm / 2;
 
-  $fs-xtiny   : 10px;
-  $fs-tiny    : 11px;
-  $fs-small   : 13px;
-  $fs-regular : 14px;
-  $fs-large   : 15px;
-  $fs-xlarge  : 18px;
-  $fs-xxlarge : 20px;
+$sidebar-spacer:   $gap-sm;
+$tiles-spacer:     $gap-sm;
+$header-spacer:    $gap-sm;
+$tile-body-spacer: $gap-md;
+$dropdown-spacer:  $gap-x-sm;
 
-// --------------------------------------------------
-// [END/Font-Sizes]
+$mobile-view-threshold: 1000px;
 
-//
-// Font-Weights
-// --------------------------------------------------
+$x-light-grey:   $gray-100;
+$light-grey:     $gray-400;
+$dark-purple:    #460876;
+$light-purple:   #9B45D0;
+$dark-grey:      $gray-700;
+$grey-blue:      #2D3A4D;
+$dark-blue:      #1A3258;
+$light-blue:     $info;
+$con-dark-blue:  #06101f;
+$con-grey:       #D6DADD;
+$con-blue:       #004570;
+$con-light-blue: #57BCFF;
+$con-red:        #FF7259;
+$con-green:      #8CCE40;
+$con-yellow:     #FFD84B;
 
-  $fw-regular : 400;
-  $fw-semi    : 600;
-  $fw-bold    : 700;
+$stat-blue:           #569AFF;
+$stat-light-blue:     #80C7FF;
+$stat-dark-blue:      #2872E0;
+$stat-darkest-blue:   #0A40A9;
+$stat-light-grey:     #C2C2C2;
+$stat-grey:           #7E7E7E;
+$stat-dark-grey:      #3D3D3D;
+$stat-green:          #57C700;
+$stat-dark-green:     #516C03;
+$stat-lime:           #0ACD70;
+$stat-light-lime:     #8BF4AF;
+$stat-violet:         #AD87CA;
+$stat-light-violet:   #E5CEF0;
+$stat-dark-violet:    $light-purple;
+$stat-darkest-violet: $dark-purple;
+$stat-cyan:           #2FE9C7;
+$stat-light-cyan:     #BAF8E1;
+$stat-dark-cyan:      #11A98E;
+$stat-darkest-cyan:   #086F76;
+$stat-light-red:      #E12E59;
+$stat-dark-red:       #880010;
+$stat-yellow:         #FAFF00;
+$stat-dark-yellow:    #F8CE39;
+$stat-orange:         #ED7E49;
+$stat-black:          #0A0A0A;
 
-// --------------------------------------------------
-// [END/Font-Weights]
+$stat-colors: (
+        light-blue      $stat-light-blue,
+        blue            $stat-blue,
+        dark-blue       $stat-dark-blue,
+        darkest-blue    $stat-darkest-blue,
 
-//
-// Line-Heights
-// --------------------------------------------------
+        light-cyan      $stat-light-cyan,
+        cyan            $stat-cyan,
+        dark-cyan       $stat-dark-cyan,
+        darkest-cyan    $stat-darkest-cyan,
 
-  // $lh-small  : 1.2;
-  // $lh-smaller: 1.33;
-  // $lh-regular: 1.5;
+        light-lime      $stat-light-lime,
+        lime            $stat-lime,
+        green           $stat-green,
+        dark-green      $stat-dark-green,
 
-// --------------------------------------------------
-// [END/Line-Heights]
+        light-violet    $stat-light-violet,
+        violet          $stat-violet,
+        dark-violet     $stat-dark-violet,
+        darkest-violet  $stat-darkest-violet,
 
-/*
-=================================================================
-  Colors
-=================================================================
-*/
+        yellow          $stat-yellow,
+        dark-yellow     $stat-dark-yellow,
+        orange          $stat-orange,
 
-// btn bgc
-$c-transparent: rgba(0,0,0,0);
+        light-red       $stat-light-red,
+        dark-red        $stat-dark-red,
 
-// btn-inverse bgc
-$c-white: #fff;
-
-$c-black: #000;
-
-// menu active
-$c-black-80: #38404a;
-
-// menu dropdown open bg
-$c-black-82: #2d2d2f;
-
-// menu bg
-$c-black-85: #222326;
-
-$c-black-87: #222222;
-
-// calendar prev/next month bg, table striped bg
-$c-gray-02: #faf9f9;
-
-// btn border, main-view bg, calendar pagination border
-$c-gray-11:  #e2e3e3;
-
-// table border
-$c-gray-20: #cccdcd;
-
-// menu item, menu arrow on dark - WCAG AAA contrast
-$c-gray-27: #bbbbbb;
-
-// calendar prev/next month label
-$c-gray-33: #a9aaab;
-
-// mailings list item comment, form badge, dropdown item
-$c-gray-44: #8d8d8f;
-
-// btn text
-$c-gray-55: #707173;
-
-$c-gray-60: #666;
-
-$c-gray-70: #4a4949;
-
-$c-gray-72: #444;
-
-$c-gray-80: #303030;
-
-// mailings list item hover bg, dropdown item hover
-$c-blue-03: #e5f1f8;
-
-// mailing content block target group bg
-$c-blue-20: #30c0db;
-
-$c-blue-21: #30aadb;
-
-// btn-info bgc
-$c-blue-22: #338dc7;
-
-// star checkbox
-$c-blue-23: #66aad5;
-
-// btn-primary bgc
-$c-blue-27: #0071b9;
-
-// btn-secondary bgc
-$c-blue-56: #004470;
-
-// calendar today bg
-$c-green-02: #f1f9e6;
-
-// btn-success bgc, toastr success
-$c-green-38: #109e4d;
-
-$c-green-68: #0f3306;
-
-// btn-alert badge-alert
-$c-red-02: #fa6861;
-
-// btn-warning badge-warning
-$c-orange: #ffa300;
-
-// comments
-$c-brown-58: #6b6850;
-$c-ochre-0: #fffcdf;
-$c-ochre-10: #e5e1c6;
-
-
-// mailings preview shades of blue
-$c-blue-01: #f5f9fc;
-$c-blue-02: #edf7ff;
-$c-blue-05: #cce3f1;
-$c-blue-11: #99c6e3;
-
-/**
- * Browser colors for inbox preview
- */
-$c-inbox-ie: #0cf;
-$c-inbox-ff: #f15c22;
-$c-inbox-opera: #cc0f16;
-$c-inbox-safari: #08c;
-$c-inbox-chrome: #ffb402;
-$c-inbox-desktop: #23caa5;
-$c-inbox-mobile: #22c266;
-$c-inbox-spam: $c-gray-44;
-
-$preview-clients:(
-  edge              $c-inbox-ie,
-  firefox           $c-inbox-ff,
-  opera             $c-inbox-opera,
-  safari            $c-inbox-safari,
-  chrome            $c-inbox-chrome,
-  desktop           $c-inbox-desktop,
-  mobile            $c-inbox-mobile,
-  spam              $c-inbox-spam
+        light-grey      $stat-light-grey,
+        grey            $stat-grey,
+        dark-grey       $stat-dark-grey,
+        black           $stat-black,
 );
 
+$badge-standard-blue-var:  var(--badge-standard-blue);
+$badge-blue-var:           var(--badge-blue);
+$badge-dark-blue-var:      var(--badge-dark-blue);
+$badge-darkest-blue-var:   var(--badge-darkest-blue);
+$badge-green-var:          var(--badge-green);
+$badge-dark-green-var:     var(--badge-dark-green);
+$badge-lime-var:           var(--badge-lime);
+$badge-grey-var:           var(--badge-grey);
+$badge-dark-grey-var:      var(--badge-dark-grey);
+$badge-dark-violet-var:    var(--badge-dark-violet);
+$badge-darkest-violet-var: var(--badge-darkest-violet);
+$badge-cyan-var:           var(--badge-cyan);
+$badge-dark-cyan-var:      var(--badge-dark-cyan);
+$badge-darkest-cyan-var:   var(--badge-darkest-cyan);
+$badge-dark-red-var:       var(--badge-dark-red);
+$badge-dark-yellow-var:    var(--badge-dark-yellow);
 
-// mailings
-$c-mailing-new          : $c-blue-23;
-$c-mailing-active       : #64a70b;
-$c-mailing-canceled     : $c-red-02;
-$c-mailing-disable      : $c-gray-44;
-$c-mailing-edit         : $c-blue-23;
-$c-mailing-ready        : #aacf79;
-$c-mailing-scheduled    : #83b93c;
-$c-mailing-sending      : #64a70b;
-$c-mailing-sent         : #387c00;
-$c-mailing-norecipients : $c-gray-44;
-$c-mailing-test         : #7f51b2;
-$c-mailing-admin        : #5e2b9c;
-$c-mailing-in-generation: #83b93c;
-$c-mailing-generation-finished    : #83b93c;
+$blue-var:    var(--bs-blue);
+$success-var: rgba(var(--bs-success-rgb), 1);
+$warning-var: rgba(var(--bs-warning-rgb), 1);
+$danger-var:  rgba(var(--bs-danger-rgb),  1);
 
+$body-color-var: var(--bs-body-color);
+$body-bg-var:    var(--bs-body-bg);
 
-$i-mailing-new          : $fa-var-file-o;
-$i-mailing-active       : $fa-var-play;
-$i-mailing-canceled     : $fa-var-minus-circle;
-$i-mailing-disable      : $fa-var-ban;
-$i-mailing-edit         : $fa-var-pencil;
-$i-mailing-ready        : $fa-var-check;
-$i-mailing-scheduled    : $fa-var-history;
-$i-mailing-sending      : $fa-var-paper-plane-o;
-$i-mailing-sent         : $fa-var-paper-plane;
-$i-mailing-norecipients : $fa-var-paper-plane;
-$i-mailing-test         : $fa-var-flask;
-$i-mailing-admin        : $fa-var-lightbulb-o;
-$i-mailing-in-generation : $fa-var-cogs;
-$i-mailing-generation-finished    : $fa-var-cog;
+$border-color-var:   var(--bs-border-color);
+$border-default:     1px solid $border-color-var;
+$border-transparent: 1px solid transparent;
+$table-border:       $border-default;
 
-$mailing-states:(
-  new          $c-mailing-new,
-  active       $c-mailing-active,
-  canceled     $c-mailing-canceled,
-  disable      $c-mailing-disable,
-  edit         $c-mailing-edit,
-  ready        $c-mailing-ready,
-  scheduled    $c-mailing-scheduled,
-  sending      $c-mailing-sending,
-  sent         $c-mailing-sent,
-  norecipients $c-mailing-norecipients,
-  test         $c-mailing-test,
-  admin        $c-mailing-admin,
-  in-generation $c-mailing-in-generation,
-  generation-finished    $c-mailing-generation-finished
-);
-
-$message-states:(
-
-  new $c-mailing-new,
-  scheduled    $c-mailing-scheduled,
-  sending   $c-mailing-sending,
-  sent    $c-mailing-sent,
-);
-
-$message-state-icons:(
-  new $i-mailing-new,
-  scheduled    $i-mailing-scheduled,
-  sending   $i-mailing-sending,
-  sent    $i-mailing-sent,
-);
-
-$mailing-state-icons:(
-  new          $i-mailing-new,
-  active       $i-mailing-active,
-  canceled     $i-mailing-canceled,
-  disable      $i-mailing-disable,
-  edit         $i-mailing-edit,
-  ready        $i-mailing-ready,
-  scheduled    $i-mailing-scheduled,
-  sending      $i-mailing-sending,
-  sent         $i-mailing-sent,
-  norecipients $i-mailing-norecipients,
-  test         $i-mailing-test,
-  admin        $i-mailing-admin,
-  in-generation $i-mailing-in-generation,
-  generation-finished    $i-mailing-generation-finished
-);
-
-// Push Notifications
-$c-push-new               : $c-blue-23;
-$c-push-active            : #64a70b;
-$c-push-canceled          : $c-red-02;
-$c-push-disable           : $c-gray-44;
-$c-push-edit              : $c-blue-23;
-$c-push-ready             : #aacf79;
-$c-push-scheduled         : #83b93c;
-$c-push-sending           : #64a70b;
-$c-push-sent              : #387c00;
-$c-push-test              : #7f51b2;
-$c-push-admin             : #5e2b9c;
-
-$push-states:(
-  new       $c-push-new,
-  active    $c-push-active,
-  canceled  $c-push-canceled,
-  disable   $c-push-disable,
-  edit      $c-push-edit,
-  ready     $c-push-ready,
-  scheduled $c-push-scheduled,
-  sending   $c-push-sending,
-  sent      $c-push-sent,
-  test      $c-push-test,
-  admin     $c-push-admin
-);
-
-$push-state-icons:(
-  new       $i-mailing-new,
-  active    $i-mailing-active,
-  canceled  $i-mailing-canceled,
-  disable   $i-mailing-disable,
-  edit      $i-mailing-edit,
-  ready     $i-mailing-ready,
-  scheduled $i-mailing-scheduled,
-  sending   $i-mailing-sending,
-  sent      $i-mailing-sent,
-  test      $i-mailing-test,
-  admin     $i-mailing-admin
-);
-
-// Auto optimization
-$c-auto-optimization-notstarted   : #aacf79;
-$c-auto-optimization-scheduled    : #83b93c;
-$c-auto-optimization-finished     : #387c00;
-
-$auto-optimization-states:(
-  notstarted    $c-auto-optimization-notstarted,
-  scheduled     $c-auto-optimization-scheduled,
-  finished      $c-auto-optimization-finished
-);
-
-$auto-optimization-state-icons:(
-  notstarted   $i-mailing-new,
-  scheduled    $i-mailing-scheduled,
-  finished     $i-mailing-sent
-);
-
-// Campaigns (Workflow Manager)
-$c-campaign-open             : $c-blue-23;
-$c-campaign-active           : #109e4d;
-$c-campaign-inactive         : #707173;
-$c-campaign-completed        : #387c00;
-$c-campaign-tested           : #7f51b2;
-$c-campaign-testing          : #109e4d;
-$c-campaign-testing_failed   : #880010;
-$c-campaign-paused           : #707173;
-
-$i-campaign-open             : $fa-var-check;
-$i-campaign-active           : $fa-var-paper-plane;
-$i-campaign-inactive         : $fa-var-ban;
-$i-campaign-completed        : $fa-var-check;
-$i-campaign-tested           : $fa-var-flask;
-$i-campaign-testing          : $fa-var-flask;
-$i-campaign-paused           : $fa-var-pause-circle;
-
-$campaign-states:(
-  open        $c-campaign-open,
-  active      $c-campaign-active,
-  inactive    $c-campaign-inactive,
-  completed   $c-campaign-completed,
-  tested      $c-campaign-tested,
-  testing     $c-campaign-testing,
-  testing_failed $c-campaign-testing_failed,
-  paused      $c-campaign-paused
-);
-
-$campaign-state-icons:(
-  open        $i-campaign-open,
-  active      $i-campaign-active,
-  inactive    $i-campaign-inactive,
-  completed   $i-campaign-completed,
-  tested      $i-campaign-tested,
-  testing     $i-campaign-testing,
-  testing_failed $i-campaign-testing,
-  paused      $i-campaign-paused
-);
-
-$linkage-action            : #338599;
-$linkage-campaignmanager   : #33b0b8;
-$linkage-site              : #33627d;
-
-// states
-$c-state-success : $c-green-38;
-$c-state-info    : $c-blue-22;
-$c-state-warning : $c-orange;
-$c-state-alert   : $c-red-02;
+$font-size-md: 1.143rem; // 16px
+$font-size-xl: 1.429rem; // 20px
 
 $states: (
-  success $c-state-success,
-  info    $c-state-info,
-  warning $c-state-warning,
-  alert   $c-state-alert,
-  danger   $c-state-alert
+  success $success-var,
+  info    $blue-var,
+  warning $warning-var,
+  alert   $danger-var
 );
-
-$shadow-soft    : 0 1px 5px 0 rgba(0, 23, 39, 0.3);
-$shadow-regular : 0 1px 3px 0 rgba(0, 23, 39, 0.4);
-$shadow-hard    : 0 4px 10px 0 rgba(34, 35, 38, 0.6); // Popovers, Dropdowns
-$shadow-hardest : 0 5px 15px 0 rgba(0, 0, 0, 0.6);
-$dt-shadow-regular: 0 1px 3px 0 rgba(255, 255, 255, 0.4);
-
-$shadows: (
-  soft    '#{$shadow-soft}',
-  regular '#{$shadow-regular}',
-  hard    '#{$shadow-hard}',
-  hardest '#{$shadow-hardest}',
-  dark    '#{$dt-shadow-regular}'
-);
-
-// colors indicating complexity (target groups)
-$c-complexity-green: #0ec050;
-$c-complexity-yellow: #f8c400;
-$c-complexity-red: #f7554e;
-
-//------------
-
-//Dark theme (dt)
-$c-dt-primary-text: $c-white;
-$c-dt-secondary-text: $c-gray-20;
-$c-dt-base-background: $c-gray-80;
-$c-dt-base-light-background: $c-white;
-$c-dt-main-background: $c-black-87;
-$c-dt-border: $c-gray-60;
-$c-dt-dark-border: #292a2b;
-
-$c-dt-navigation-text: $c-dt-primary-text;
-$c-dt-navigation-background: $c-dt-base-background;
-$c-dt-navigation-shadow: $c-gray-55;
-$c-dt-toggle-background: $c-dt-base-background;
-$c-dt-navigation-border: $c-dt-border;
-$c-dt-navigation-account-data-border: $c-dt-navigation-border;
-$c-dt-session-timer-background: $c-gray-72;
-
-$c-dt-header-background: $c-dt-base-background;
-$c-dt-header-text: $c-blue-21;
-
-$c-dt-sub-nav-background: $c-gray-70;
-$c-dt-sub-nav-border: $c-dt-border;
-$c-dt-sub-nav-text: $c-dt-primary-text;
-$c-dt-sub-nav-shadow: $c-black-87;
-
-$c-dt-logo-background: $c-dt-base-background;
-
-$c-dt-tile-background: $c-dt-base-background;
-$c-dt-tile-header: $c-gray-72;
-$c-dt-tile-header-actions-text: $c-dt-secondary-text;
-$c-dt-tile-header-actions-disabled-text: $c-gray-44;
-$c-dt-tile-shadow: $c-black-87;
-$c-dt-tile-text: $c-white;
-$c-dt-tile-border: $c-dt-border;
-$c-dt-tile-top-border: $c-dt-tile-border;
-
-$c-dt-btn-primary: $c-blue-27;
-$c-dt-btn-secondary: $c-gray-72;
-$c-dt-btn-secondary-text: $c-dt-primary-text;
-
-$c-dt-calendar-current-day: $c-green-68;
-$c-dt-calendar-header-background: $c-dt-base-background;
-$c-dt-calendar-td-background: $c-gray-72;
-
-$c-dt-table-background: $c-dt-tile-background;
-$c-dt-table-border: $c-dt-border;
-$c-dt-table-text: $c-dt-secondary-text;
-$c-dt-table-header-text: $c-dt-primary-text;
-$c-dt-table-header-background: darken($c-dt-table-background, 3%);
-$c-dt-table-disabled-background: $c-gray-70;
-
-$c-dt-pagination-background: $c-gray-70;
-$c-dt-pagination-border: $c-dt-border;
-$c-dt-pagination-text: $c-dt-primary-text;
-$c-dt-pagination-active-background: $c-blue-27;
-$c-dt-pagination-active-border: $c-blue-27;
-$c-dt-pagination-disabled-background: $c-gray-60;
-$c-dt-pagination-disabled-text: $c-dt-secondary-text;
-
-$c-dt-modal-background: $c-dt-base-background;
-$c-dt-modal-border: $c-dt-border;
-$c-dt-modal-text: $c-dt-primary-text;
-
-$c-dt-msg-list-text: $c-dt-primary-text;
-$c-dt-msg-list-loader-background: $c-gray-72;
-
-$c-dt-toggle-after-background: $c-gray-60;
-$c-dt-toggle-checked-after-background: $c-gray-20;
-$c-dt-toggle-before-background: $c-gray-20;
-
-$c-dt-input-background: $c-gray-70;
-$c-dt-input-disabled-background: $c-gray-55;
-$c-dt-input-text: $c-gray-02;
-$c-dt-input-border: $c-dt-border;
-$c-dt-input-focus: $c-blue-27;
-$c-dt-input-label: $c-dt-secondary-text;
-
-$c-dt-list-group-background: $c-dt-base-background;
-$c-dt-list-group-disabled-background: $c-gray-72;
-$c-dt-list-group-border: $c-dt-border;
-$c-dt-list-group-disabled-text: $c-dt-secondary-text;
-$c-dt-list-group-disabled-controls-text: $c-gray-27;
-
-$c-notification-background: $c-gray-72;
-$c-notification-text: $c-dt-primary-text;
-
-$c-mailing-priority-entry-background: $c-gray-72;
-$c-mailing-priority-entry-border: $c-blue-27;
-$c-mailing-priority-entry-text: $c-dt-secondary-text;
-
-$c-card-background: $c-dt-tile-background;
-$c-card-border: $c-dt-border;
-$c-card-text: $c-dt-secondary-text;
-$c-card-text-headline: $c-dt-primary-text;
-
-$c-mailing-preview-background: $c-card-background;
-$c-mailing-preview-border: $c-card-border;
-$c-mailing-preview-text: $c-card-text;
-$c-mailing-preview-text-headline: $c-card-text-headline;
-
-$c-chart-background: $c-dt-tile-background;
-$c-chart-border: $c-dt-tile-border;
-$c-chart-text: $c-dt-primary-text;
-$c-chart-tooltip-text: $c-black;
-
-$c-dt-dropdown-background: $c-gray-80;
-$c-dt-dropdown-text: $c-gray-20;
-$c-dt-dropdown-border: $c-gray-27;
-$c-dt-dropdown-divider: $c-dt-dropdown-border;
-$c-dt-dropdown-toggle-text: $c-dt-secondary-text;
-
-$c-dt-dropzone-background: $c-gray-70;
-$c-dt-dropzone-border: $c-black;
-$c-dt-dropzone-text: $c-dt-secondary-text;
-
-$c-dt-grid-background: $c-dt-base-light-background;
-$c-dt-grid-text: $c-dt-primary-text;
-$c-dt-grid-gutters: #596941;
-$c-dt-grid-gutters-button: #38481e;
-$c-dt-grid-gutters-button-text: $c-dt-grid-text;
-$c-dt-grid-container-background: $c-gray-44;
-
-//qb- query builder
-$c-dt-qb-background: $c-black-85;
-$c-dt-qb-border: $c-dt-dark-border;
-$c-dt-qb-rule-container-background: $c-dt-tile-background;
-$c-dt-qb-primary-text: $c-dt-primary-text;
-$c-dt-qb-secondary-text: $c-dt-secondary-text;
-
-//dp- datepicker
-$c-dt-dp-background: $c-dt-base-background;
-$c-dt-dp-primary-text: $c-dt-primary-text;
-$c-dt-dp-text: $c-dt-secondary-text;
-$c-dt-dp-border: $c-dt-border;
-$c-dt-dp-border-hover: $c-blue-27;
-$c-dt-dp-today: $c-green-68;

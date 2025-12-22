@@ -1,205 +1,255 @@
-AGN.Lib.Controller.new('notification-global-stat', function() {
-    this.addAction({
-        change: 'selectReportType'
-    }, function() {
-        var $stats = $('#globalStatInfo');
+AGN.Lib.Controller.new('notification-global-stat', function () {
 
-        switch (this.el.val()) {
-          case 'STATUS':
-            setChartsVisibility(false, true, false);
-            $stats.show();
-            break;
+  let $statusChart;
+  let $browserChart;
+  let $progressChart;
 
-          case 'BROWSER':
-            setChartsVisibility(false, false, true);
-            $stats.hide();
-            break;
+  this.addDomInitializer("notification-global-stat", function () {
+    $statusChart = $('#global-status-chart');
+    $browserChart = $('#global-browser-chart');
+    $progressChart = $('#global-progress-chart');
 
-          case 'PROGRESS':
-            setChartsVisibility(true, false, false);
-            $stats.show();
-            break;
-        }
-    });
+    updateStatusChart();
+    updateBrowserChart();
+    updateProgressChart();
+  });
 
-    this.addAction({
-        click: 'close'
-    }, function() {
-        var notificationContainer = $('#notifications-container');
-        notificationContainer.fadeOut('slow', function () {
-            notificationContainer.remove();
+  this.addAction({
+    change: 'update-progress-chart'
+  }, function () {
+    updateProgressChart();
+  });
+
+  function updateStatusChart() {
+    $.get(AGN.url('/push/ajaxGetGlobalStatusStatistic.action')).done(data => {
+      if (data && data.warning && data.warning.length > 0) {
+        AGN.Lib.JsonMessages(data, true);
+      } else {
+        new Chart($statusChart[0].getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(data),
+            datasets: [{
+              data: Object.values(data),
+              backgroundColor: $statusChart.css('--chart-blue-color'),
+              categoryPercentage: 1.08,
+              minBarLength: 2
+            }]
+          },
+          options: {
+            indexAxis: 'x',
+            layout: {
+              padding: {
+                top: 20,
+                right: 0
+              }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  autoSkip: false,
+                  maxRotation: 90
+                }
+              },
+              y: {
+                display: false
+              }
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              datalabels: {
+                anchor: 'end',
+                align: 'end',
+                offset: -5 // make labels closer to the bar
+              }
+            }
+          }
         });
+      }
     });
+  }
 
-    this.addAction({
-        click: 'refreshStat'
-    }, function() {
-        updateProgressChart();
-    });
-
-    this.addAction({
-        change: 'select-month'
-    }, function() {
-        updateProgressChart();
-    });
-
-    this.addAction({
-        change: 'select-year'
-    }, function() {
-        updateProgressChart();
-    });
-
-    this.addAction({
-        click: 'weekProgressStat'
-    }, function() {
-        $('#selectMode').val('WEEK');
-        setDateControlsVisibility(false, false);
-        updateProgressChart();
-
-        //$('#refreshStat').click();
-        //$('#refreshStat').hide();
-        setDateSelectModeActivity(true, false, false);
-    });
-
-    this.addAction({
-        click: 'monthProgressStat'
-    }, function() {
-        $('#selectMode').val('MONTH');
-        setDateControlsVisibility(true, false);
-        $('#refreshStat').show();
-
-        setDateSelectModeActivity(false, true, false);
-        updateProgressChart();
-    });
-
-    this.addAction({
-        click: 'dateRangeProgressStat'
-    }, function() {
-        $('#selectMode').val('RANGE');
-        setDateControlsVisibility(false, true);
-        $('#refreshStat').show();
-
-        setDateSelectModeActivity(false, false, true);
-        updateProgressChart();
-    });
-
-    this.addAction({
-        'change' : 'end-date-change'
-    }, function() {
-        var startDay = $('#startDay').val();
-        var endDay = $('#endDay').val();
-        $('#startDay').pickadate('picker').set('max', endDay);
-        $('#endDay').pickadate('picker').set('min', startDay);
-        updateProgressChart();
-    });
-
-    this.addAction({
-        'change' : 'start-date-change'
-    }, function() {
-        var startDay = $('#startDay').val();
-        var endDay = $('#endDay').val();
-        $('#startDay').pickadate('picker').set('max', endDay);
-        $('#endDay').pickadate('picker').set('min', startDay);
-        updateProgressChart();
-    });
-
-    function setDateControlsVisibility(isMonthProgressStatVisible, isDateRangeProgressStatVisible) {
-        $('#month-progress-stat').hide();
-        $('#daterange-progress-stat').hide();
-        if (isMonthProgressStatVisible) {
-            $('#month-progress-stat').show();
+  function updateBrowserChart() {
+    $.get(AGN.url('/push/ajaxGetGlobalBrowserStatistic.action')).done(data => {
+      if (data && (data.warning && data.warning.length > 0)) {
+        AGN.Lib.JsonMessages(data, true);
+      } else {
+        const titles = [];
+        const values = [];
+        for (const key in data) {
+          titles.push(key);
+          values.push(roundTo(data[key] * 100, 1));
         }
-        if (isDateRangeProgressStatVisible) {
-            $('#daterange-progress-stat').show();
-        }
+
+        const colors = [
+          $browserChart.css('--chart-darkest-blue-color'),
+          $browserChart.css('--chart-dark-blue-color'),
+          $browserChart.css('--chart-blue-color'),
+          $browserChart.css('--chart-light-blue-color'),
+          $browserChart.css('--chart-light-cyan-color')
+        ];
+
+        new Chart($browserChart[0].getContext('2d'), {
+          type: 'agnDoughnut',
+          data: {
+            labels: titles,
+            datasets: [{
+              data: values,
+              backgroundColor: colors,
+              borderWidth: 0
+            }]
+          }
+        });
+      }
+    });
+  }
+
+  function updateProgressChart() {
+    if (!$progressChart.exists() || !isValidDateRanges()) {
+      return;
     }
 
-    function setDateSelectModeActivity(isWeekActive, isMonthActive, isDateRangeActive) {
-        $('#weekProgressStat').removeClass('active');
-        $('#monthProgressStat').removeClass('active');
-        $('#dateRangeProgressStat').removeClass('active');
+    Chart.getChart($progressChart)?.destroy();
 
-        if (isWeekActive) {
-            $('#weekProgressStat').addClass('active');
-        }
+    const labels = [];
+    const data1 = [];
+    const data2 = [];
+    const data3 = [];
 
-        if (isMonthActive) {
-            $('#monthProgressStat').addClass('active');
-        }
-
-        if (isDateRangeActive) {
-            $('#dateRangeProgressStat').addClass('active');
-        }
-    }
-
-    function setChartsVisibility(isProgressChartVisible, isStatusChartVisible, isBrowserChartVisible) {
-        $('#notificationGlobalStatusStat').hide();
-        $('#notificationGlobalBrowserStat').hide();
-        $('#notificationGlobalProgressStat').hide();
-
-        if (isProgressChartVisible) {
-            AGN.Lib.DomInitializer.try('notification-global-progress-stat');
-            $('#notificationGlobalProgressStat').show();
-            $('#dateSelectMode').show();
-            $('#dateModeControls').show();
-        }
-
-        if (isStatusChartVisible) {
-            AGN.Lib.DomInitializer.try('notification-global-status-stat');
-            $('#notificationGlobalStatusStat').show();
-            $('#dateSelectMode').hide();
-            $('#dateModeControls').hide();
-        }
-
-        if (isBrowserChartVisible) {
-            AGN.Lib.DomInitializer.try('notification-global-browser-stat');
-            $('#notificationGlobalBrowserStat').show();
-            $('#dateSelectMode').hide();
-            $('#dateModeControls').hide();
-        }
-    }
-
-    function updateProgressChart() {
-        $('#notifications-container').remove();
-
-        if (isValidDatesRange()) {
-            if ($('#monthProgressStat').attr('class') == 'active' || $('#dateRangeProgressStat').attr('class') == 'active') {
-                AGN.Lib.DomInitializer.try('notification-global-progress-stat');
-            }
-        }
-    }
-
-    function isValidDatesRange() {
-        if ($('#dateRangeProgressStat').attr('class') == 'active') {
-            var startDay = $('#startDay').val();
-            var endDay = $('#endDay').val();
-
-            if (isEmptyDate(startDay) || isEmptyDate(endDay)) {
-                showErrorPeriodFormat();
-                return false;
+    $.get(AGN.url('/push/ajaxGetGlobalProgressStatistic.action'), {
+      dateMode: $('#periodType').val(),
+      selectMonth: $('#selectMonth').val(),
+      selectYear: $('#selectYear').val(),
+      startDay: $('#startDay').val(),
+      endDay: $('#endDay').val()
+    }).done(data => {
+      if (data && data.warning && data.warning.length > 0) {
+        AGN.Lib.JsonMessages(data, true);
+      } else {
+        for (const dataIndex in data) {
+          const item = data[dataIndex];
+          for (const key in item) {
+            //set row name
+            if (dataIndex == 0 && key != 'time') {
+              if (data1.length == 0) {
+                data1.push(key);
+              } else if (data2.length == 0) {
+                data2.push(key);
+              } else if (data3.length == 0) {
+                data3.push(key);
+              }
             }
 
-            if( (new Date(startDay).getTime() > new Date(endDay).getTime())) {
-                showErrorPeriodFormat();
-                return false;
+            //set row value
+            const value = item[key];
+            if (key == 'time') {
+              labels.push(value);
+            } else if (key == data1[0]) {
+              data1.push(value);
+            } else if (key == data2[0]) {
+              data2.push(value);
+            } else if (key == data3[0]) {
+              data3.push(value);
             }
+          }
         }
-        return true;
+
+        const pointRadius = getPointRadius(labels.length);
+
+        new Chart($progressChart[0].getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: data1[0],
+                data: data1.slice(1),
+                borderColor: $progressChart.css('--chart-darkest-blue-color'),
+                backgroundColor: $progressChart.css('--chart-darkest-blue-color'),
+                pointRadius: pointRadius
+              },
+              {
+                label: data2[0],
+                data: data2.slice(1),
+                borderColor: $progressChart.css('--chart-blue-color'),
+                backgroundColor: $progressChart.css('--chart-blue-color'),
+                pointRadius: pointRadius
+              },
+              {
+                label: data3[0],
+                data: data3.slice(1),
+                borderColor: $progressChart.css('--chart-light-cyan-color'),
+                backgroundColor: $progressChart.css('--chart-light-cyan-color'),
+                pointRadius: pointRadius
+              }
+            ]
+          },
+          options: {
+            scales: {
+              x: {
+                ticks: {
+                  maxRotation: 0
+                }
+              },
+              y: {
+                min: 0
+              }
+            },
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            stacked: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              datalabels: {
+                display: false
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+
+  function isValidDateRanges() {
+    if ($('#periodType').val() !== 'RANGE') {
+      return true;
     }
 
-    function isEmptyDate(date) {
-        return typeof date === 'undefined' || date == '';
+    const $startDate = $('#startDay');
+    const $endDate = $('#endDay');
+
+    if (!$startDate.val() || !$endDate.val() || getDate($startDate).getTime() > getDate($endDate).getTime()) {
+      AGN.Lib.Messages.alert('error.statistic.period_format');
+      return false;
     }
 
-    function showErrorPeriodFormat() {
-        AGN.Lib.Messages(t('defaults.error'), t('error.statistic.period_format'), 'alert');
+    return true;
+  }
 
-        setTimeout(function() {
-            var notificationContainer = $('#notifications-container');
+  function getDate($input) {
+    const format = $input.datepicker("option", "dateFormat");
+    return $.datepicker.parseDate(format, $input.val());
+  }
 
-            notificationContainer.fadeOut('slow', function(){
-                notificationContainer.remove();
-            });
-        }, 7000);
+  function getPointRadius(pointsCount) {
+    if (pointsCount < 60) {
+      return 5;
     }
+
+    if (pointsCount < 100) {
+      return 4;
+    }
+
+    return 3;
+  }
+
+  function roundTo(number, fractionalDigits) {
+    return (parseFloat(number).toFixed(fractionalDigits)) * 1.0;
+  }
 });

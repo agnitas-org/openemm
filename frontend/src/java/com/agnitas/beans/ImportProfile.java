@@ -16,8 +16,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-
-
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 /**
@@ -305,8 +303,6 @@ public interface ImportProfile {
 
     boolean keyColumnsContainsCustomerId();
     
-    Set<String> getEncryptedColumns();
-
 	int getImportProcessActionID();
 
 	void setImportProcessActionID(int importProcessActionID);

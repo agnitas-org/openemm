@@ -15,27 +15,26 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.JavaMailAttachment;
+import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.service.FileCompressionType;
 import com.agnitas.service.GenericExportWorker;
-import com.agnitas.service.JobWorker;
+import com.agnitas.service.JobWorkerBase;
 import com.agnitas.util.AgnUtils;
 import com.agnitas.util.DataEncryptor;
 import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.SFtpHelper;
 import com.agnitas.util.TextTableBuilder;
+import com.agnitas.util.quartz.JobWorker;
+import com.jcraft.jsch.ChannelSftp;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import com.agnitas.emm.core.JavaMailAttachment;
-import com.jcraft.jsch.ChannelSftp;
 
 /**
  * This JobWorker executes Update, Delete, Insert and Select statements on the database and, if configured, sends an email with the results
@@ -60,8 +59,10 @@ import com.jcraft.jsch.ChannelSftp;
  *   INSERT INTO job_queue_parameter_tbl (job_id, parameter_name, parameter_value)
  *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), 'infoMailSubject', 'PeriodicalDbChange');
  */
-public class DBJobWorker extends JobWorker {
-	private static final transient Logger logger = LogManager.getLogger(DBJobWorker.class);
+@JobWorker("DbJobWorker")
+public class DBJobWorker extends JobWorkerBase {
+
+	private static final Logger logger = LogManager.getLogger(DBJobWorker.class);
 
 	@Override
 	public String runJob() throws Exception {
@@ -112,7 +113,7 @@ public class DBJobWorker extends JobWorker {
 			infoMailContent.append("<br />\n");
 			
 			if (StringUtils.isBlank(sqlStatement)) {
-				throw new Exception("SQL statement parameter (" + statementIndex + "_statement) is empty or missing");
+				throw new IllegalStateException("SQL statement parameter (" + statementIndex + "_statement) is empty or missing");
 			} else {
 				sqlStatement = sqlStatement.replace("<company_id>", Integer.toString(companyID));
 				if (previousJobStart != null) {
@@ -125,7 +126,7 @@ public class DBJobWorker extends JobWorker {
 				String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
 				
 				if (StringUtils.isBlank(filename)) {
-					throw new Exception("SFTP file name parameter (" + statementIndex + "_filename) is empty or missing");
+					throw new IllegalStateException("SFTP file name parameter (" + statementIndex + "_filename) is empty or missing");
 				}
 			
 				String sftpFileName = DateUtilities.replaceDatePatternsInFileName(filename, 0, null);
@@ -197,7 +198,7 @@ public class DBJobWorker extends JobWorker {
 					}
 				} catch (Exception e) {
 					infoMailContent.append("Error occurred while executing statement with index " + statementIndex + ": " + e.getMessage());
-					logger.error("Error occurred while executing statement with index " + statementIndex, e);
+					logger.error("Error occurred while executing statement with index {}", statementIndex, e);
 					haltExecution = !continueOnError;
 					errorOccurred = true;
 					errorMessage = e.getMessage();
