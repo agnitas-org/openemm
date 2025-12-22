@@ -9,6 +9,12 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	collections
+from	typing import Callable
+from	typing import NamedTuple
+from	..dbconfig import DBConfig
+from	..dbcore import Core
 #
-Driver = collections.namedtuple ('Driver', ['name', 'aliases', 'new'])
+class Driver (NamedTuple):
+	name: str
+	aliases: None | list[str]
+	new: Callable[[DBConfig.DBRecord], Core]

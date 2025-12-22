@@ -20,7 +20,7 @@ from	agn3.exceptions import error
 from	agn3.lock import Lock
 from	agn3.log import log
 from	agn3.runtime import CLI, Preset
-from	agn3.tools import atoi
+from	agn3.tools import atoi, listsplit
 #
 logger = logging.getLogger (__name__)
 #
@@ -80,7 +80,10 @@ class Filter:
 		return False
 
 	def _cmd (self, value: str) -> bool:
-		return os.path.isfile (os.path.join (home, 'scripts', value))
+		for cmd in listsplit (value):
+			if os.path.isfile (os.path.join (home, 'scripts', cmd)):
+				return True
+		return False
 
 	pattern_version = re.compile ('([0-9]+(\\.[0-9]+)*)')
 	def _find_version (self, dbms: str) -> tuple[None | str, tuple[int, ...]]:

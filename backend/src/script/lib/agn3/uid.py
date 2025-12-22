@@ -38,8 +38,10 @@ class UID:
 	company_id: int = 0
 	mailing_id: int = 0
 	customer_id: int = 0
+	senddate: None | datetime = None
 	status_field: None | str = None
 	url_id: int = 0
+	position: int = 0
 	bit_option: int = 0
 	prefix: Optional[str] = None
 	ctx: Dict[str, Any] = field (default_factory = dict)
@@ -51,7 +53,7 @@ class UID:
 			hashable_context: Union[bytes, str] = pickle.dumps (self.ctx)
 		except:
 			hashable_context = str (self.ctx)
-		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.customer_id, self.url_id, self.bit_option, self.prefix, hashable_context))
+		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.customer_id, self.url_id, self.position, self.bit_option, self.prefix, hashable_context))
 	def __getitem__ (self, option: str) -> Any:
 		return self.ctx[option]
 	def __setitem__ (self, option: str, value: Any) -> None:
@@ -93,8 +95,12 @@ class UID:
 		set ('_c', self.company_id)
 		set ('_m', self.mailing_id)
 		set ('_r', self.customer_id)
+		if self.senddate is not None:
+			set ('_s', int (self.senddate.timestamp ()))
 		set ('_f', self.status_field)
 		set ('_u', self.url_id)
+		if self.url_id and self.position > 1:
+			set ('_x', self.position)
 		set ('_o', self.bit_option)
 		return msgpack.dumps (Stream (self.ctx.items ()).sorted (key = lambda kv: kv[0]).dict ())
 	
@@ -108,8 +114,11 @@ class UID:
 			self.company_id = self.ctx.get ('_c', self.company_id)
 			self.mailing_id = self.ctx.get ('_m', self.mailing_id)
 			self.customer_id = self.ctx.get ('_r', self.customer_id)
+			if (senddate := self.ctx.get ('_s')) is not None:
+				self.senddate = datetime.fromtimestamp (senddate)
 			self.status_field = self.ctx.get ('_f', self.status_field)
 			self.url_id = self.ctx.get ('_u', self.url_id)
+			self.position = self.ctx.get ('_x', self.position)
 			self.bit_option = self.ctx.get ('_o', self.bit_option)
 	
 	@staticmethod
@@ -222,8 +231,9 @@ class UIDCache:
 								raise error (f'invalid licence_id {licence_id} found')
 							self.instances[licence_id] = UIDCache.Instance (licence_id, db)
 							seen.add (dbid)
+							log_limit (logger.info, f'{dbid}: using for licence {licence_id}')
 					except (error, KeyError, ValueError) as e:
-						logger.debug (f'{dbid}: failed to open database: {e}')
+						log_limit (logger.warning, f'{dbid}: failed to open database: {e}', duration = '1h')
 						db.close ()
 		
 	def __del__ (self) -> None:

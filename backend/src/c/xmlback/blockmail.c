@@ -134,7 +134,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> status_field = '\0';
 		b -> senddate = NULL;
 		b -> epoch = 0;
-		b -> rdir_content_links = false;
+		b -> rdir_context_links = false;
 		b -> omit_list_informations_for_doi = true;
 		b -> add_honeypot_link = Add_Top;
 		b -> domain = NULL;
@@ -212,7 +212,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> spf = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
-		b -> force_ecs_uid = false;
+		b -> ecs = false;
 		b -> uid_version = 0;
 
 		if ((syncfile && (! open_syncfile (b))) ||
@@ -620,8 +620,8 @@ blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if ((tmp = var_find (b -> company_info, "rdir.UseRdirContextLinks")) && tmp -> val) {
-		b -> rdir_content_links = atob (tmp -> val);
+	if ((! b -> ecs) && (tmp = var_find (b -> company_info, "rdir.UseRdirContextLinks")) && tmp -> val) {
+		b -> rdir_context_links = atob (tmp -> val);
 	}
 	if (tmp = company_info_find (b, "omit-list-informations-for-doi")) {
 		b -> omit_list_informations_for_doi = atob (tmp -> val);

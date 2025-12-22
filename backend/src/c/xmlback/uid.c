@@ -17,12 +17,15 @@
 # define	OPTION_DISABLE_LINK_EXTENSION	(1 << 1)
 
 static char *
-create_ecs_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
+create_ecs_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url) /*{{{*/
 {
-	char	uid[128];
-	
-	snprintf (uid, sizeof (uid) - 1, "%ld", url_id);
-	return strdup (uid);
+	if (url && url -> url_id) {
+		char	uid[128];
+
+			snprintf (uid, sizeof (uid) - 1, "%ld", url -> url_id);
+		return strdup (uid);
+	}
+	return strdup ("0");
 }/*}}}*/
 static inline char *
 code36 (char *ptr, long val) /*{{{*/
@@ -93,7 +96,7 @@ encode (char *buf, int buflen, const byte_t *data, int datalen) /*{{{*/
 	return pos;
 }/*}}}*/
 static byte_t *
-create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, bool_t add_status_field, size_t *size) /*{{{*/
+create_packed (blockmail_t *blockmail, receiver_t *rec, url_t *url, bool_t add_status_field, size_t *size) /*{{{*/
 {
 	char		*data;
 	mpack_writer_t	writer;
@@ -131,9 +134,9 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, bool_t add_
 		mpack_write_cstr (& writer, "_f");
 		mpack_write_str (& writer, & blockmail -> status_field, 1);
 	}
-	if (url_id) {
+	if (url && url -> url_id) {
 		mpack_write_cstr (& writer, "_u");
-		mpack_write_int (& writer, url_id);
+		mpack_write_int (& writer, url -> url_id);
 	}
 	mpack_complete_map (& writer);
 	rc = mpack_writer_destroy (& writer);
@@ -143,7 +146,7 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, bool_t add_
 	return (byte_t *) data;
 }/*}}}*/
 static char *
-create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field) /*{{{*/
+create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field) /*{{{*/
 {
 	const char	*rc;
 	enum {
@@ -154,6 +157,7 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	}		uid_version_used,
 			fallback_version = V5;		/* must be always be the most recent stable one */
 	int		n;
+	long		url_id = url ? url -> url_id : 0L;
 	unsigned long	vu = 0;
 	long		vs = 0;
 	char		scratch[4096];
@@ -297,7 +301,7 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 		len = snprintf (scratch, sizeof (scratch), "%d", uid_version_used);
 		buffer_stiffsn (blockmail -> secret_sig, scratch, len);
 		buffer_stiffch (blockmail -> secret_sig, '.');
-		if (packed = create_packed (blockmail, rec, url_id, add_status_field, & psize)) {
+		if (packed = create_packed (blockmail, rec, url, add_status_field, & psize)) {
 			if (encode_uid_parameter (packed, psize, blockmail -> secret_uid))
 				buffer_stiffch (blockmail -> secret_uid, '.');
 			buffer_stiff (blockmail -> secret_sig, packed, psize);
@@ -328,12 +332,12 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	return rc ? strdup (rc) : NULL;
 }/*}}}*/
 char *
-create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field) /*{{{*/
+create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field) /*{{{*/
 {
-	if (blockmail -> force_ecs_uid) {
-		return create_ecs_uid (blockmail, uid_version, prefix, rec, url_id);
+	if (blockmail -> ecs) {
+		return create_ecs_uid (blockmail, uid_version, prefix, rec, url);
 	}
-	return create_xuid (blockmail, uid_version, prefix, rec, url_id, add_status_field);
+	return create_xuid (blockmail, uid_version, prefix, rec, url, add_status_field);
 }/*}}}*/
 
 char *

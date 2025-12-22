@@ -113,7 +113,7 @@ with Ignore (ImportError):
 		"""MariaDB specific Core implementation"""
 		__slots__ = ['host', 'user', 'passwd', 'name', 'secure']
 		BINARY_FLAG = 128
-		def __init__ (self, host: str, user: str, passwd: str, name: str, secure: str) -> None:
+		def __init__ (self, host: str, user: str, passwd: str, name: str, secure: None | str) -> None:
 			super ().__init__ ('mariadb', cast (DBAPI.Vendor, mariadb_driver), CursorMariaDB)
 			self.fallbacks.insert (0, 'mysql')
 			self.host = host
@@ -151,4 +151,14 @@ with Ignore (ImportError):
 			if auto_reconnect:
 				cast (DBAPI.DriverMariaDB, self.db).auto_reconnect = auto_reconnect
 
-	mariadb = Driver ('mariadb', None, lambda cfg: MariaDB (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name'), cfg ('secure')))
+	mariadb = Driver (
+		'mariadb',
+		None,
+		lambda cfg: MariaDB (
+			cfg['host'],
+			cfg['user'],
+			cfg['password'],
+			cfg['name'],
+			cfg ('secure')
+		)
+	)

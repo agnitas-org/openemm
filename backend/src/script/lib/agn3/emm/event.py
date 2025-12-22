@@ -34,7 +34,6 @@ class Webhook:
 		mailing_processed = 5
 		binding_changed = 6
 		testmail_delivered = 7
-		
 	known_types = dict ((_v.value, _v) for _v in Type.__members__.values ())
 	default_path = os.path.join (base, 'log', 'webhook.log')
 

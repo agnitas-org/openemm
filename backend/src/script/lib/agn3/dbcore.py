@@ -89,7 +89,7 @@ class Cursor:
 this is the base class for a database specific cursor and should
 inherit this class. This class should not be instantiated by an
 application, use ``Core.cursor()'' instead."""
-	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype', 'rowmap', 'rowcount']
+	__slots__ = ['db', 'autocommit', 'id', 'curs', 'rowtype', 'rowmap', 'rowcount', 'rowaffected']
 	def __init__ (self, db: Core, autocommit: bool) -> None:
 		"""``db'' is the database specific subclass of Core.
 
@@ -102,6 +102,7 @@ write the content directly to the database."""
 		self.rowtype: Optional[Type[Row]] = None
 		self.rowmap: List[Callable[[Any], Any]] = []
 		self.rowcount = 0
+		self.rowaffected = 0
 
 	def __enter__ (self) -> Cursor:
 		return self
@@ -136,7 +137,9 @@ write the content directly to the database."""
 	def executor (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None) -> int:
 		"""internally used to intercept a database access before it is passed to the database"""
 		if self.curs is not None:
-			return self.curs.execute (statement, parameter) if parameter is not None else self.curs.execute (statement)
+			self.curs.execute (statement, parameter) if parameter is not None else self.curs.execute (statement)
+			self.rowaffected = self.curs.rowcount
+			return self.rowaffected
 		raise error ('no active cursor')
 		
 	def close (self) -> None:
@@ -194,16 +197,17 @@ portable across different databases."""
 		return self.rowtype (*data) if not self.rowmap else self.rowtype (*[_m (_v) for (_m, _v) in zip (self.rowmap, data)])
 		
 	def __iter__ (self) -> Iterator[Row]:
-		while True:
-			try:
-				data = cast (DBAPI.Cursor, self.curs).fetchone ()
-			except self.db.driver.Error as e:
-				self.error (e)
-				raise error ('query next failed: ' + self.last_error ())
-			if data is None:
-				break
-			self.rowcount += 1
-			yield self.make_row (data)
+		if cast (DBAPI.Cursor, self.curs).description is not None:
+			while True:
+				try:
+					data = cast (DBAPI.Cursor, self.curs).fetchone ()
+				except self.db.driver.Error as e:
+					self.error (e)
+					raise error ('query next failed: ' + self.last_error ())
+				if data is None:
+					break
+				self.rowcount += 1
+				yield self.make_row (data)
 
 	def __valid (self) -> None:
 		if self.curs is None:
@@ -231,20 +235,21 @@ portable across different databases."""
 	def __execute (self, what: str, statement: str, parameter: Union[None, List[Any], Dict[str, Any]], cleanup: bool) -> int:
 		self.__valid ()
 		self.rowcount = 0
+		self.rowaffected = 0
 		try:
 			if parameter is None:
 				self.db.log (f'{what}: {statement}')
 				return self.executor (statement)
-			else:
-				if isinstance (parameter, dict):
-					if self.db.paramstyle in (Paramstyle.qmark, Paramstyle.format):
-						(statement, parameter_list) = self.db.reformat (statement, parameter)
-						self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
-						return self.executor (statement, parameter_list)
-					elif cleanup:
-						parameter = self.db.cleanup (statement, parameter)
-				self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
-				return self.executor (statement, parameter)
+			#
+			if isinstance (parameter, dict):
+				if self.db.paramstyle in (Paramstyle.qmark, Paramstyle.format):
+					(statement, parameter_list) = self.db.reformat (statement, parameter)
+					self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
+					return self.executor (statement, parameter_list)
+				elif cleanup:
+					parameter = self.db.cleanup (statement, parameter)
+			self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
+			return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
 			log_parameter = self.db.cleanup (statement, parameter) if isinstance (parameter, dict) and cleanup else parameter
@@ -279,7 +284,7 @@ than are used in the query.
 This method return an iterable realizied by itself."""
 		self.rowtype = None
 		self.rowmap.clear ()
-		self.__execute ('Query', statement, parameter, cleanup)
+		self.__execute ('query', statement, parameter, cleanup)
 		self.db.log ('Query started')
 		return self
 
@@ -287,7 +292,11 @@ This method return an iterable realizied by itself."""
 		"""See query, but returns a cached version of the query. Use with care on large result sets!"""
 		if self.query (statement, parameter, cleanup) == self:
 			try:
-				data = [self.make_row (_d) for _d in cast (DBAPI.Cursor, self.curs).fetchall ()]
+				data: list[Row] = (
+					[self.make_row (_d) for _d in cast (DBAPI.Cursor, self.curs).fetchall ()]
+					if cast (DBAPI.Cursor, self.curs).description is not None else
+					[]
+				)
 				self.rowcount = len (data)
 				return data
 			except self.db.driver.Error as e:
@@ -349,7 +358,7 @@ This method return an iterable realizied by itself."""
 		if sync_and_retry:
 			for state in range (2):
 				try:
-					self.__execute ('Update', statement, parameter, cleanup)
+					self.__execute ('update', statement, parameter, cleanup)
 				except Exception as e:
 					if state == 0:
 						self.sync ()
@@ -362,19 +371,18 @@ This method return an iterable realizied by itself."""
 				else:
 					break
 		else:
-			self.__execute ('Update', statement, parameter, cleanup)
-		self.rowcount = cast (DBAPI.Cursor, self.curs).rowcount
-		if self.rowcount > 0 and (commit or self.autocommit):
+			self.__execute ('update', statement, parameter, cleanup)
+		if self.rowaffected > 0 and (commit or self.autocommit):
 			if not self.sync ():
 				if parameter is None:
 					self.db.log ('Commit after execute failed for {statement}: {error}'.format (statement = statement, error = self.last_error ()))
 				else:
 					self.db.log ('Commit after execute failed for {statement} using {parameter!r}: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 				raise error ('commit failed: {error}'.format (error = self.last_error ()))
-		return self.rowcount
+		return self.rowaffected
 	
 	def execute (self, statement: str) -> int:
-		return self.__execute ('Execute', statement, None, False)
+		return self.__execute ('execute', statement, None, False)
 	
 	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
 		"""creates a stream using this cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""

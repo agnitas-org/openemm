@@ -212,3 +212,69 @@ var_partial_ifind (var_t *v, const char *var) /*{{{*/
 {
 	return do_find (v, var, var_partial_imatch);
 }/*}}}*/
+
+hvar_t *
+hvar_alloc (const char *var, const char *val) /*{{{*/
+{
+	hvar_t	*hv;
+	
+	if (hv = (hvar_t *) malloc (sizeof (hvar_t))) {
+		hv -> var = strdup (var);
+		hv -> val = strdup (val);
+		if (hv -> var && hv -> val) {
+			hv -> len = strlen (hv -> var);
+			hv -> hash = hash_svalue (hv -> var, hv -> len, false);
+			hv -> next = NULL;
+		} else 
+			hv = hvar_free (hv);
+	}
+	return hv;
+}/*}}}*/
+hvar_t *
+hvar_free (hvar_t *hv) /*{{{*/
+{
+	if (hv) {
+		if (hv -> var)
+			free (hv -> var);
+		if (hv -> val)
+			free (hv -> val);
+		free (hv);
+	}
+	return NULL;
+}/*}}}*/
+hvar_t *
+hvar_free_all (hvar_t *hv) /*{{{*/
+{
+	hvar_t	*temp;
+	
+	while (temp = hv) {
+		hv = hv -> next;
+		hvar_free (temp);
+	}
+	return NULL;
+}/*}}}*/
+hvar_t *
+hvar_tail (hvar_t *hv) /*{{{*/
+{
+	if (hv)
+		for (; hv -> next; hv = hv -> next);
+			;
+	return hv;
+}/*}}}*/
+hvar_t *
+hvar_nfind (hvar_t *hv, const char *key, int len) /*{{{*/
+{
+	if (hv) {
+		hash_t	hash = hash_svalue (key, len, false);
+	
+		for (; hv; hv = hv -> next)
+			if ((hv -> hash == hash) && (hv -> len == len) && (! memcmp (hv -> var, key, len)))
+				return hv;
+	}
+	return NULL;
+}/*}}}*/
+hvar_t *
+hvar_find (hvar_t *hv, const char *key) /*{{{*/
+{
+	return hv ? hvar_nfind (hv, key, strlen (key)) : NULL;
+}/*}}}*/

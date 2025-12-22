@@ -16,7 +16,7 @@ case "$1" in
 start)
 	active servant
 	shift
-	starter $command -bw --termination-delay=5m --loglevel=debug "$@"
+	starter $command -bw --termination-delay=5m "$@"
 	;;
 stop)
 	softterm $command

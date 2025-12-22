@@ -58,11 +58,11 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 {
 	char	*uid;
 
-	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url -> url_id, false))) {
+	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url, false))) {
 		char	parameter_separator[2];
 
 		parameter_separator[1] = '\0';
-		if (blockmail -> rdir_content_links && transcode_url_for_content (blockmail, blockmail -> auto_url, uid)) {
+		if (blockmail -> rdir_context_links && transcode_url_for_content (blockmail, blockmail -> auto_url, uid)) {
 			xmlBufferAdd (block -> out, buffer_content (blockmail -> link_maker), buffer_length (blockmail -> link_maker));
 			parameter_separator[0] = '?';
 		} else {
@@ -72,28 +72,6 @@ mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, 
 			parameter_separator[0] = '&';
 		}
 		free (uid);
-		if (record -> ids) {
-			var_t		*temp;
-			bool_t		first;
-			const char	*ref;
-			
-			encrypt_build_reset (rec -> encrypt);
-			for (temp = record -> ids, first = true; temp; temp = temp -> next) {
-				if (first)
-					first = false;
-				else
-					encrypt_build_add (rec -> encrypt, ",", 1);
-				encrypt_build_add (rec -> encrypt, temp -> var, strlen (temp -> var));
-				encrypt_build_add (rec -> encrypt, "=", 1);
-				encrypt_build_add (rec -> encrypt, temp -> val, strlen (temp -> val));
-			}
-			if (ref = encrypt_build_do (rec -> encrypt, rec, 0)) {
-				xmlBufferCCat (block -> out, parameter_separator);
-				xmlBufferCCat (block -> out, "ref=");
-				xmlBufferCCat (block -> out, ref);
-				parameter_separator[0] = '&';
-			}
-		}
 	} else
 		xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
 }/*}}}*/
@@ -102,7 +80,7 @@ mklinkurl (blockmail_t *blockmail, const char *uid_name, const char *uid, const 
 {
 	char	separator;
 	
-	if (url && xmlBufferLength (url) && ((! blockmail -> rdir_content_links) || (! transcode_url_for_content (blockmail, url, uid)))) {
+	if (url && xmlBufferLength (url) && ((! blockmail -> rdir_context_links) || (! transcode_url_for_content (blockmail, url, uid)))) {
 		buffer_set (blockmail -> link_maker, xmlBufferContent (url), xmlBufferLength (url));
 		buffer_appends (blockmail -> link_maker, uid_name);
 		buffer_appendch (blockmail -> link_maker, '=');
@@ -990,7 +968,7 @@ update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_
 		if (blockmail -> honeypot_url && (blockmail -> add_honeypot_link != Add_None))
 			hpl = blockmail -> add_honeypot_link;
 		if ((opl != Add_None) || (hpl != Add_None))
-			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, 0, false))) {
+			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, NULL, false))) {
 				log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create generic agnUID");
 				rc = false;
 			}

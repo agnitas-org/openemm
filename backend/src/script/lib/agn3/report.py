@@ -14,6 +14,7 @@ import	os, logging, re, json
 import	zipfile, mimetypes
 import	html.parser, html.entities
 from	email.utils import parseaddr
+from	urllib.parse import urlparse
 from	typing import Any, Optional, Sequence
 from	typing import Dict, List, NamedTuple, Set, Tuple
 from	typing import cast
@@ -541,7 +542,9 @@ class Report:
 						mail.add_binary_attachment (image.content, content_type = image.mime, filename = iname, related = content)
 						logger.debug (f'Image {iname} added')
 					except KeyError:
-						logger.warning (f'Failed to find used image {iname}')
+						url = urlparse (iname)
+						expected = url.path.endswith ('.html') or url.path.endswith ('/g')
+						(logger.debug if expected else logger.warning) (f'Failed to find used image {iname}')
 			if dryrun:
 				print (mail.build_mail ())
 			else:

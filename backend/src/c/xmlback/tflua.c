@@ -330,6 +330,7 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 	long		url_id;
 	const char	*prefix;
 	int		uid_version;
+	url_t		*url;
 	char		*uid;
 	
 	url_id = 0;
@@ -361,11 +362,17 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 			}
 		}
 	}
-	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url_id, false))) {
+	if (url_id && (url = url_alloc ()))
+		url -> url_id = url_id;
+	else
+		url = NULL;
+	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url, false))) {
 		lua_pushstring (il -> lua, uid);
 		free (uid);
 	} else
 		lua_pushnil (il -> lua);
+	if (url)
+		url_free (url);
 	return 1;
 }/*}}}*/
 static int

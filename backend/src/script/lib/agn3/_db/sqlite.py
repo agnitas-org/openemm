@@ -235,12 +235,12 @@ the class must provide these attributes to be used (see register_type for the me
 		'sqlite',
 		['sqlite3'],
 		lambda cfg: SQLite3 (
-			cfg ('filename'),
-			extended_types = atob (cfg ('extended-types', False)),
-			extended_rows = atob (cfg ('extended-rows', False)),
-			extended_functions = atob (cfg ('extended-functions', False)),
-			lock_database = atob (cfg ('lock-database', False)),
-			wait_for_lock = atob (cfg ('wait-for-lock', False))
+			cfg['filename'],
+			extended_types = atob (cfg ('extended-types)')),
+			extended_rows = atob (cfg ('extended-rows')),
+			extended_functions = atob (cfg ('extended-functions')),
+			lock_database = atob (cfg ('lock-database')),
+			wait_for_lock = atob (cfg ('wait-for-lock'))
 		)
 	)
 	

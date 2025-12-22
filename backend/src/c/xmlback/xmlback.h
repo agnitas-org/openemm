@@ -466,7 +466,7 @@ struct blockmail { /*{{{*/
 	char		status_field;
 	int		*senddate;
 	time_t		epoch;
-	bool_t		rdir_content_links;
+	bool_t		rdir_context_links;
 	bool_t		omit_list_informations_for_doi;
 	add_t		add_honeypot_link;
 	/* general part */
@@ -561,8 +561,8 @@ struct blockmail { /*{{{*/
 	xmlBufferPtr	vip;
 	/* optional template for onepixel link */
 	xmlBufferPtr	onepix_template;
-	/* force usage of ecs UID */
-	bool_t		force_ecs_uid;
+	/* create output for ECS (extended click statistics a.k.a heatmap) */
+	bool_t		ecs;
 	/* which version for uid to use */
 	long		uid_version;
 	/*}}}*/
@@ -827,7 +827,6 @@ extern link_resolve_t	*link_resolve_alloc (void);
 extern link_resolve_t	*link_resolve_free (link_resolve_t *lr);
 extern bool_t		link_resolve_prepare (link_resolve_t *lr, blockmail_t *blockmail, url_t *url);
 extern buffer_t		*link_resolve_get (link_resolve_t *lr, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record);
-
 extern url_t		*url_alloc (void);
 extern url_t		*url_free (url_t *u);
 extern bool_t		url_match (url_t *u, const xmlChar *check, int clen);
@@ -952,7 +951,7 @@ extern bool_t		xmlSQLlike (const xmlChar *pattern, int plen,
 				    const xmlChar *string, int slen,
 				    const xmlChar *escape, int elen);
 
-extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id, bool_t add_status_field);
+extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field);
 extern char		*create_pubid (blockmail_t *blockmail, receiver_t *rec, const char *source, const char *parm);
 
 extern encrypt_t	*encrypt_alloc (blockmail_t *blockmail);

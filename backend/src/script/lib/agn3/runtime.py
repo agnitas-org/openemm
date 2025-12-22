@@ -10,12 +10,11 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	sys, os, logging, argparse, time, signal, json
-from	collections import namedtuple
 from	dataclasses import dataclass
 from	fnmatch import fnmatch
 from	traceback import print_exception
-from	typing import Any, Callable, NoReturn, Optional, Sequence, TypeVar
-from	typing import Dict, List, Set, Type
+from	typing import Any, Callable, NoReturn, Sequence, TypeVar
+from	typing import Dict, List, NamedTuple, Set, Type
 from	.config import Config
 from	.daemon import Daemonic, Watchdog
 from	.definitions import host, program, syscfg
@@ -36,7 +35,7 @@ logger = logging.getLogger (__name__)
 #
 _T = TypeVar ('_T', bound = Type[object])
 #
-def _expand_inline (args: List[str], environment: Optional[Dict[str, str]] = None) -> List[str]:
+def _expand_inline (args: List[str], environment: None | dict[str, str] = None) -> list[str]:
 	"""Expands element starting with an '@' from an environment variable or a file
 
 >>> _expand_inline (['this', 'is', '@(sample)', 'test'], {})
@@ -96,7 +95,7 @@ class Frame:
 	def __init__ (self, **kwargs: Any) -> None:
 		framing = syscfg.get (f'frame:{program}')
 		self._namespace = kwargs.copy ()
-		self._plugin: Optional[Plugin] = Plugin (framing, name = program, ns = self._namespace) if framing else None
+		self._plugin: None | Plugin = Plugin (framing, name = program, ns = self._namespace) if framing else None
 		if self._plugin is not None:
 			with Ignore (KeyError):
 				valid_for = self._plugin['valid_for']
@@ -133,6 +132,10 @@ class Frame:
 		if self._plugin is not None:
 			return getattr (self._plugin, name)
 		return self._na
+
+class Option (NamedTuple):
+	option: str
+	value: str
 
 class Runtime (Watchdog):
 	"""class Runtime (Watchdog)
@@ -194,8 +197,8 @@ def cleanup (self):
 
 """
 	__slots__ = ['cfg', 'ctx', 'frame', 'round']
-	program_description: Optional[str] = None
-	program_epilog: Optional[str] = None
+	program_description: None | str = None
+	program_epilog: None | str = None
 
 	@classmethod
 	def main (cls, *args: Any, **kwargs: Any) -> NoReturn:
@@ -214,17 +217,17 @@ def cleanup (self):
 		dryrun: bool = False
 		expected_instances: bool = False
 		lock_lazy: bool = False
-		lock_id: Optional[str] = None
+		lock_id: None | str = None
 		background: bool = False
 		watchdog: bool = False
-		restart_delay: Optional[int] = None
-		termination_delay: Optional[int] = None
-		max_incarnations: Optional[int] = None
-		heartbeat: Optional[int] = None
-		exit_code: Optional[int] = None
-		job: Optional[Watchdog.Job] = None
+		restart_delay: None | int = None
+		termination_delay: None | int = None
+		max_incarnations: None | int = None
+		heartbeat: None | int = None
+		exit_code: None | int = None
+		job: None | Watchdog.Job = None
 		
-	def __init__ (self, cfg: Optional[Config] = None, **kwargs: Any) -> None:
+	def __init__ (self, cfg: None | Config = None, **kwargs: Any) -> None:
 		super ().__init__ ()
 		if cfg is not None:
 			self.cfg = cfg
@@ -233,9 +236,12 @@ def cleanup (self):
 			self.cfg.setup_namespace (**kwargs)
 			self.cfg.enable_substitution ()
 			self.cfg.read ()
-			with Ignore (KeyError):
-				for (option, value) in Parameter (syscfg[f'option:{program}']).items ():
-					self.cfg[option] = value
+			for key in [f'option:{program}', f'{program}:option']:
+				with Ignore (KeyError):
+					for (option, value) in Parameter (syscfg[key]).items ():
+						self.cfg[option] = value
+					if key == f'option:{program}':
+						logger.warning (f'{key}: deprecated')
 		self.ctx = Runtime.Context ()
 		self.frame = Frame (runtime = self, ctx = self.ctx)
 		self.round = 0
@@ -271,7 +277,7 @@ def cleanup (self):
 		ok = True
 		with Lock (id = self.ctx.lock_id, lazy = self.ctx.lock_lazy) as lck, log ('main'):
 			if lck is not None:
-				logger.info ('Starting up')
+				logger.info (f'Starting up ({spec.typ}:{spec.version})')
 				current_config = self.cfg.get_section (None)
 				current_config.update (self.cfg.get_section (host))
 				if current_config:
@@ -370,7 +376,6 @@ def cleanup (self):
 		return self.running
 			
 	def __argument_parsing (self) -> None:
-		Option = namedtuple ('Option', ['option', 'value'])
 		parser = argparse.ArgumentParser (
 			description = self.program_description,
 			epilog = self.program_epilog,
@@ -439,15 +444,15 @@ def cleanup (self):
 		pass
 	def executor (self) -> bool:
 		return False
-	def executors (self) -> Optional[List[Callable[[], bool]]]:
+	def executors (self) -> None | list[Callable[[], bool]]:
 		return None
 	def cleanup (self) -> None:
 		pass
 
 class CLI (Daemonic):
 	__slots__: List[str] = []
-	program_description: Optional[str] = None
-	program_epilog: Optional[str] = None
+	program_description: None | str = None
+	program_epilog: None | str = None
 
 	@classmethod
 	def main (cls, silent: bool = False) -> None:

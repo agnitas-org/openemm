@@ -21,7 +21,7 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.io import copen
 #
-__all__ = ['XMLWriter', 'XMLReader']
+__all__ = ['XMLWriter', 'XMLReader', 'xmlreader']
 #
 logger = logging.getLogger (__name__)
 #
@@ -507,9 +507,9 @@ that all of them had been crossed.
 		pass
 	def endPrefixMapping (self, prefix: Optional[str]) -> None:
 		pass
-	def startElementNS (self, name: Tuple[str, str], qname: str, attrs: xmlreader.AttributesNSImpl) -> None:
+	def startElementNS (self, name: Tuple[None | str, str], qname: None | str, attrs: xmlreader.AttributesNSImpl) -> None:
 		pass
-	def endElementNS (self, name: Tuple[str, str], qname: str) -> None:
+	def endElementNS (self, name: Tuple[None | str, str], qname: None | str) -> None:
 		pass
 	def ignorableWhitespace (self, whitespace: str) -> None:
 		pass

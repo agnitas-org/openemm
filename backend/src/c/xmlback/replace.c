@@ -334,7 +334,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 		} else
 			cur = next;
 	}
-	if (st && code_urls && ((! blockmail -> enhanced_url_resolver) || (level == 0)))
+	if (st && code_urls)
 		st = modify_urls (blockmail, rec, block, proot, ishtml, record);
 	protect_free_all (proot);
 	if (blockmail -> clear_empty_dyn_block && clear_output) {

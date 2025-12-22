@@ -86,7 +86,7 @@ care."""
 			exc_info = self.logexception
 		)
 		
-def ignore (callback: Callable[[], Any], default: Any, *exceptions: Type[BaseException]) -> Any:
+def ignore (callback: Callable[[], _T], default: _T, *exceptions: Type[BaseException]) -> _T:
 	with Ignore (*exceptions):
 		return callback ()
 	return default

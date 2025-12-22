@@ -12,7 +12,7 @@
 #
 from	__future__ import annotations
 import	os, logging, time
-from	collections import defaultdict, deque, namedtuple
+from	collections import defaultdict, deque
 from	datetime import datetime, timedelta
 from	typing import Any, Final
 from	typing import DefaultDict, Dict, Deque, NamedTuple, Tuple, Set
@@ -216,7 +216,12 @@ class Softbounce (Runtime):
 	def collect_new_bounces (self) -> None: #{{{
 		logger.info ('Start collecting new bounces')
 		with self.db.request () as cursor:
-			Update = namedtuple ('Update', ['customer_id', 'company_id', 'mailing_id', 'detail'])
+			class Update (NamedTuple):
+				customer_id: int
+				company_id: int
+				mailing_id: int
+				detail: int
+			#
 			class Collect (Stream.Collector):
 				def supplier (self) -> Any:
 					self.data: Dict[Tuple[int, int], Update] = {}
@@ -236,7 +241,7 @@ class Softbounce (Runtime):
 
 				def finisher (self, supplier: Any, count: int) -> Any:
 					return (count, self.uniques, self.data)
-
+			#
 			records: int
 			uniques: int
 			updates: Dict[Tuple[int, int], Update]

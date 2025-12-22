@@ -17,13 +17,13 @@ case "$1" in
 start)
 	active slrtscn
 	shift
-	starter $command -b "$@"
+	starter $command -bw "$@"
 	;;
 stop)
 	softterm $command
 	;;
 status)
-	patternstatus $command
+	patternstatus 2 $command
 	;;
 *)
 	echo "Usage: $0 [ start | stop | status ]"

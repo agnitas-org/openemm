@@ -18,8 +18,7 @@ from	traceback import format_exception
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, Generator, List, Set, TextIO, Tuple, Type
-from	typing import overload
-from	.definitions import base, host, program
+from	.definitions import base, host, program, syscfg
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import create_path
@@ -28,9 +27,11 @@ from	.sentinel import Sentinel, sentinel
 #
 __all__ = [
 	'LogID', 'log', 'mark', 'log_limit',
-	'log_filter', 'log_filter_asynchttp', 'log_filter_asyncssh', 'log_filter_websockets',
+	'log_filter', 'log_filter_asynchttp', 'log_filter_asyncssh', 'log_filter_asyncdns', 'log_filter_websockets',
 	'interactive'
 ]
+#
+logger = logging.getLogger (__name__)
 #
 class Limiter:
 	__slots__ = ['seen', 'lock', 'enabled']
@@ -130,8 +131,14 @@ class _Log:
 		self.outstream: Optional[TextIO] = None
 		self.verbosity = 0
 		self.host = host
-		self.name = program
-		self.path = os.environ.get ('LOG_HOME', os.path.join (base, 'var', 'log'))
+		self.name = syscfg.get (f'{program}:logname', program)
+		self.path = syscfg.get (f'{program}:logpath', os.environ.get ('LOG_HOME', os.path.join (base, 'var', 'log')))
+		if (loglevel := syscfg.get (f'{program}:loglevel')) is not None:
+			try:
+				self.set_loglevel (loglevel)
+			except error as e:
+				logger.warning (f'{loglevel}: invalid loglevel: {e}, keep {self.get_loglevel ()}')
+				
 		self.intercept: Optional[Callable[[logging.LogRecord, str], None]] = None
 		#
 		self.custom_ids: Dict[int, Optional[str]] = {}
@@ -159,16 +166,11 @@ class _Log:
 			del self.custom_ids[threading.get_ident ()]
 	custom_id = property (_get_custom_id, _set_custom_id, _del_custom_id)
 
-	@overload
-	def get_loglevel (self, default: Union[Sentinel, str]) -> str: ...
-	@overload
-	def get_loglevel (self, default: None) -> Optional[str]: ...
-	def get_loglevel (self, default: Union[None, Sentinel, str] = sentinel) -> Any:
-		try:
+	def get_loglevel (self, default: Union[Sentinel, str] = sentinel) -> str:
+		with Ignore (KeyError):
 			return _Log.lognames[self.loglevel]
-		except KeyError:
-			if default is sentinel:
-				raise
+		if default is sentinel:
+			raise error (f'{self.loglevel}: no name found')
 		return default
 		
 	def set_loglevel (self, loglevel: str) -> None:
@@ -373,6 +375,11 @@ def log_filter_websockets () -> None:
 	def filter_websockets (r: logging.LogRecord) -> bool:
 		return r.levelno > log.loglevel or r.name.split ('.')[0] != 'websockets'
 	log_filter (filter_websockets)
+
+def log_filter_asyncdns () -> None:
+	def filter_asyncdns (r: logging.LogRecord) -> bool:
+		return bool (r.levelno >= logging.ERROR or r.name != 'aiodns' or not r.getMessage ().startswith ('Failed to create DNS resolver channel with automatic monitoring of resolver configuration changes. This usually means the system ran out of inotify watches. Falling back to socket state callback. Consider increasing the system inotify watch limit'))
+	log_filter (filter_asyncdns)
 
 def _except (type_: Type[BaseException], value: BaseException, traceback: Optional[TracebackType]) -> None:
 	logging.critical (f'CAUGHT EXCEPTION: {value}', exc_info = value)

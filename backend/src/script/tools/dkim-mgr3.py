@@ -165,10 +165,10 @@ class DKIM (CLI):
 			except IOError as e:
 				raise error (f'Failed to setup files: {e}')
 			cipher = self._find_cipher ()
-			n = silent_call ('openssl', 'dgst', cipher, '-sign', private_file, '-out', sign_file, data_file)
+			n = silent_call (['openssl', 'dgst', cipher, '-sign', private_file, '-out', sign_file, data_file])
 			if n:
 				raise error ('Failed to sign data, openssl returns with %d' % n)
-			n = silent_call ('openssl', 'dgst', cipher, '-verify', public_file, '-signature', sign_file, data_file)
+			n = silent_call (['openssl', 'dgst', cipher, '-verify', public_file, '-signature', sign_file, data_file])
 			if n:
 				raise error ('Failed to verify data, openssl returns with %d' % n)
 			rc = True
@@ -269,10 +269,10 @@ class DKIM (CLI):
 			db.sync ()
 
 	def create (self, private_file: str, public_file: str, length: int) -> None:
-		n = silent_call ('openssl', 'genrsa', '-out', private_file, str (length))
+		n = silent_call (['openssl', 'genrsa', '-out', private_file, str (length)])
 		if n:
 			raise error ('Failed to create private key %s, openssl returns %d' % (private_file, n))
-		n = silent_call ('openssl', 'rsa', '-in', private_file, '-out', public_file, '-pubout', '-outform', 'PEM')
+		n = silent_call (['openssl', 'rsa', '-in', private_file, '-out', public_file, '-pubout', '-outform', 'PEM'])
 		if n:
 			raise error ('Failed to extract public key %s, openssl returns %d' % (public_file, n))
 		if self.verbose:

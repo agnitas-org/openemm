@@ -537,7 +537,8 @@ plugin code to prefill it using its own namespace."""
 		return [_p for _p in (
 			self.filename (),
 			os.path.join (base, 'etc', f'{program}.cfg'),
-			os.path.join (base, f'.{program}.rc')
+			os.path.join (base, f'.{program}.rc'),
+			f'{program}.cfg'
 		) if os.path.isfile (_p) and os.access (_p, os.R_OK)]
 		
 	def write (self, fname: str) -> None:

@@ -18,12 +18,12 @@ from	enum import Enum
 from	typing import Any, Callable, Final, Optional
 from	typing import Dict, List, Match, NamedTuple, Set, Tuple
 from	agn3.daemon import Daemonic
-from	agn3.definitions import base, fqdn, syscfg
+from	agn3.definitions import base, fqdn
 from	agn3.email import ParseMessageID
 from	agn3.exceptions import error
 from	agn3.fsdb import FSDB
 from	agn3.ignore import Ignore
-from	agn3.io import Filepos, normalize_path
+from	agn3.io import Filepos
 from	agn3.log import LogID, log, mark, log_filter
 from	agn3.mta import MTA
 from	agn3.plugin import Plugin, LoggingManager
@@ -538,6 +538,7 @@ class ScannerPostfix (Scanner):
 		return True
 
 class Slrtscn (Runtime):
+	__slots__ = ['maillog', 'save_file', 'bounce_log', 'deliver_log', 'provider_log', 'scan_for']
 	def supports (self, option: str) -> bool:
 		return option != 'dryrun'
 
@@ -572,7 +573,8 @@ class Slrtscn (Runtime):
 		)
 		parser.add_argument (
 			'-P', '--provider-log',
-			action = 'store', default = normalize_path (syscfg.get ('provider-log', os.path.join (base, 'log', 'provider.log'))),
+			action = 'store',
+			default = '',
 			help = 'Filename to store provider information to',
 			dest = 'provider_log'
 		)
@@ -587,11 +589,11 @@ class Slrtscn (Runtime):
 		)
 		
 	def use_arguments (self, args: argparse.Namespace) -> None:
-		self.maillog = args.maillog
-		self.save_file = args.save_file
-		self.bounce_log = args.bounce_log
-		self.deliver_log = args.deliver_log
-		self.provider_log = args.provider_log
+		self.maillog: str = args.maillog
+		self.save_file: str = args.save_file
+		self.bounce_log: str = args.bounce_log
+		self.deliver_log: str = args.deliver_log
+		self.provider_log: str = args.provider_log
 		self.scan_for: None | str = args.scan_for
 
 	def executor (self) -> bool:
@@ -606,10 +608,15 @@ class Slrtscn (Runtime):
 		mta = MTA ()
 		scanner = ScannerPostfix (self.maillog, self.save_file, self.bounce_log, self.deliver_log, self.provider_log, scan_for)
 		logger.info ('Scanning for %s using %s' % (mta.mta, scanner.__class__.__name__))
-		while self.running:
+		#
+		def is_active () -> bool:
+			self.beat ()
+			return self.running
+		#
+		while is_active ():
 			time.sleep (1)
 			mark (180)
-			scanner.scan (lambda: self.running)
+			scanner.scan (is_active)
 		scanner.done ()
 		return True
 

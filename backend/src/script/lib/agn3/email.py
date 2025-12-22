@@ -25,7 +25,6 @@ from	email.utils import parseaddr
 from	functools import partial
 from	typing import Any, Callable, ClassVar, Optional, Union
 from	typing import DefaultDict, Dict, Generator, IO, Iterator, List, Match, NamedTuple, Pattern, Set, Tuple
-from	typing import cast
 from	.db import DB, TempDB
 from	.definitions import base, fqdn, user, syscfg
 from	.emm.config import EMMCompany
@@ -106,11 +105,11 @@ class EMail (IDs):
 	
 	@staticmethod
 	def from_string (content: str) -> EmailMessage:
-		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default)) # type: ignore[arg-type]
+		return email.message_from_string (content, policy = email.policy.default)
 
 	@staticmethod
 	def from_bytes (content: bytes) -> EmailMessage:
-		return cast (EmailMessage, email.message_from_bytes (content, policy = email.policy.default)) # type: ignore[arg-type]
+		return email.message_from_bytes (content, policy = email.policy.default)
 
 	nofold_policy = EmailPolicy (refold_source = 'none')
 	@staticmethod

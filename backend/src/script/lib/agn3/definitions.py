@@ -47,11 +47,14 @@ base = syscfg._home
 user = syscfg._user
 home = syscfg._home
 #
-if len (sys.argv) > 0 and sys.argv[0]:
-	(_basename, _extension) = os.path.splitext (os.path.basename (sys.argv[0]))
-	program = _basename if _extension.lower ().startswith ('.py') else _basename + _extension
-else:
-	program = 'unset'
+try:
+	program = os.environ['CALLEE']
+except KeyError:
+	if len (sys.argv) > 0 and sys.argv[0]:
+		(_basename, _extension) = os.path.splitext (os.path.basename (sys.argv[0]))
+		program = _basename if _extension.lower ().startswith ('.py') else _basename + _extension
+	else:
+		program = 'unset'
 #
 dbid_default = syscfg.get ('dbid', 'emm')
 #

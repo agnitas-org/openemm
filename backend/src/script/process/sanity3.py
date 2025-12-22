@@ -11,12 +11,12 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, argparse
+import	os, logging, argparse
 from	typing import Callable, Iterable, Optional
 from	typing import List, TypeVar
 from	agn3.crontab import Crontab
 from	agn3.db import DB
-from	agn3.definitions import syscfg
+from	agn3.definitions import base, syscfg
 from	agn3.runtime import CLI
 from	agn3.sanity import Sanity, Report, File
 from	agn3.stream import Stream
@@ -47,6 +47,26 @@ directories = distinct (
 files: List[File] = []
 executables: List[str] = []
 #
+def check_permissions (r: Report) -> None:
+	def check_directory (path: str, mode: int) -> None:
+		if os.path.isdir (path):
+			try:
+				st = os.stat (path)
+			except OSError as e:
+				r.warning.append (f'{path}: not accessable: {e}')
+			else:
+				if st.st_mode & 0o777 != mode:
+					try:
+						os.chmod (path, mode)
+					except OSError as e:
+						r.warning.append (f'{path}: failed to chmod from 0o{st.st_mode & 0o777:03o} to 0o{mode:03o}: {e}')
+					else:
+						r.info.append (f'{path}: chmod from 0o{st.st_mode & 0o777:03o} to 0o{mode:03o}')
+		else:
+			r.warning.append (f'{path}: not a directory')
+	#
+	check_directory (os.path.join (base, 'etc'), 0o700)
+
 
 def check_openemm (r: Report) -> None:
 	with DB () as db:
@@ -114,6 +134,7 @@ def check_openemm (r: Report) -> None:
 	], runas = 'openemm')
 
 checks: List[Callable[[Report], None]] = distinct (
+	[check_permissions] +
 	service ('openemm', rc = [check_openemm])
 )
 #

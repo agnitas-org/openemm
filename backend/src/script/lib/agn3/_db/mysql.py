@@ -71,4 +71,13 @@ with Ignore (ImportError):
 				config['port'] = port
 			self.db = self.driver.connect (**config)
 
-	mysql = Driver ('mysql', None, lambda cfg: MySQL (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name')))
+	mysql = Driver (
+		'mysql',
+		None,
+		lambda cfg: MySQL (
+			cfg['host'],
+			cfg['user'],
+			cfg['password'],
+			cfg['name']
+		)
+	)

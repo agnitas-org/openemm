@@ -10,13 +10,13 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, errno, time, stat, gzip, bz2, logging
+import	os, errno, time, re, stat, gzip, bz2, logging
 import	csv, hashlib, shlex, json
 from	collections import namedtuple
 from	functools import partial
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Literal, Optional, Protocol, Union
-from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
+from	typing import Dict, IO, Iterator, List, NamedTuple, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast, overload
 from	.definitions import base
 from	.exceptions import error
@@ -28,7 +28,7 @@ from	.template import Placeholder
 #
 __all__ = [
 	'relink', 'which', 'mkpath', 'expand_path', 'normalize_path', 'create_path', 'grant_path',
-	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access',
+	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access', 'open_with_backup',
 	'copen', 'cstreamopen', 'gopen', 'fingerprint', 'expand_command',
 	'csv_dialect', 'csv_default', 'csv_reader', 'csv_named_reader', 'csv_writer',
 	'Line', 'Field'
@@ -44,6 +44,11 @@ _WriteBinary = Union[Literal['wb'], Literal['ab'], Literal['xb']]
 _modes = Union[_ReadText, _ReadBinary, _WriteText, _WriteBinary]
 _bz2modes = Union[Literal[''], Literal['r'], Literal['rb'], Literal['w'], Literal['wb'], Literal['x'], Literal['xb'], Literal['a'], Literal['ab']]
 #
+class Filepath (NamedTuple):
+	filename: str
+	source_path: str
+	target_path: str
+
 def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = None) -> None:
 	"""Updateds symbolic links in target from source, optional only these files matching pattern"""
 	def make_real (path: str) -> str:
@@ -59,7 +64,6 @@ def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = No
 	def match (filename: str) -> bool:
 		return pattern is None or sum (1 for _p in pattern if _p.match (filename)) > 0
 	#
-	Filepath = namedtuple ('Filepath', ['filename', 'source_path', 'target_path'])
 	installed = [_f for _f in os.listdir (real_target) if os.path.islink (os.path.join (real_target, _f)) and match (_f)]
 	available = [_f for _f in os.listdir (real_source) if match (_f)]
 	for fp in (Stream (available)
@@ -83,7 +87,7 @@ def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = No
 	(Stream (installed)
 		.map (lambda f: os.path.join (real_target, f))
 		.filter (lambda p: os.path.islink (p) and not resolvable (p))
-		.each (lambda p: os.unlink (p))
+		.each (lambda p: os.unlink (p), ignore_exceptions = [OSError])
 	)
 
 @overload
@@ -126,7 +130,7 @@ def normalize_path (path: str) -> str:
 	"""expand and normalize a filesystem path relative to home directory"""
 	return expand_path (path, base_path = base)
 	
-def create_path (path: str, mode: int = 0o777) -> bool:
+def create_path (path: str, mode: int = 0o777, uid: int = -1, gid: int = -1) -> bool:
 	"""create a path and all missing elements
 
 returns ``False'' if ``path''' already exists and ``True'' if
@@ -134,8 +138,13 @@ returns ``False'' if ``path''' already exists and ``True'' if
 """
 	if os.path.isdir (path):
 		return False
+	#
+	def mkdir (pathname: str) -> None:
+		os.mkdir (pathname, mode)
+		if uid != -1 or gid != -1:
+			os.chown (pathname, uid, gid)
 	try:
-		os.mkdir (path, mode)
+		mkdir (path)
 	except OSError as e:
 		if e.errno == errno.EEXIST or e.errno != errno.ENOENT:
 			if os.path.isdir (path):
@@ -147,7 +156,7 @@ returns ``False'' if ``path''' already exists and ``True'' if
 			target += element
 			if target and not os.path.isdir (target):
 				try:
-					os.mkdir (target, mode)
+					mkdir (target)
 				except OSError as e:
 					raise error (f'failed to create {path} at {target}: {e}')
 			target += os.path.sep
@@ -315,7 +324,7 @@ beginning of the new file.
 					))
 				break
 			except IOError as e:
-				logger.exception (f'Failed to write {tempfile}: {e}', e)
+				logger.exception (f'Failed to write {tempfile}: {e}')
 				with Ignore (OSError):
 					os.unlink (tempfile)
 				if state == 1:
@@ -461,6 +470,32 @@ permissions) while trying to determinate the access to the file."""
 				except OSError as e:
 					fail.append ([e, f'{cpath}: {e}'])
 	return (rc, fail)
+
+def open_with_backup (path: str, *, limit: None | int = None) -> TextIO:
+	if not (directory := os.path.dirname (path)):
+		directory = '.'
+	filename = os.path.basename (path)
+	if os.path.isfile (path) and os.path.isdir (directory):
+		class BackupFile (NamedTuple):
+			filename: str
+			nr: int
+		
+		existing = (Stream (os.listdir (directory))
+			.regexp (
+				pattern = '^{filename}~([0-9]+)~$'.format (filename = re.escape (filename)),
+				predicate = lambda p, m, e: BackupFile (e, int (m.group (1)))
+			)
+			.sorted (key = lambda bf: bf.nr)
+			.list ()
+		)
+		if limit is not None and len (existing) >= limit:
+			(Stream (existing[:-limit])
+				.each (lambda bf: os.unlink (os.path.join (directory, bf.filename)), ignore_exceptions = [OSError])
+			)
+			existing = existing[-limit:]
+		nr = existing[-1].nr + 1 if existing else 1
+		os.rename (path, f'{path}~{nr}~')
+	return open (path, 'x')
 
 def force_text (mode: _modes) -> _modes:
 	if 'b' not in mode and 't' not in mode:

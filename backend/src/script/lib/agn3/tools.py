@@ -12,12 +12,12 @@
 #
 from	__future__ import annotations
 import	os, re, subprocess, errno, logging
-import	traceback
+import	traceback, shlex, tempfile
 from	contextlib import suppress
 from	datetime import datetime, date
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Generic, Match, NoReturn, Optional, TypeVar, Union
+from	typing import Any, Callable, Generic, Match, NoReturn, Optional, Sequence, TypeVar, Union
 from	typing import Dict, Generator, List, Set, Tuple, Type
 from	.exceptions import error
 from	.stream import Stream
@@ -25,7 +25,7 @@ from	.stream import Stream
 __all__ = [
 	'abstract', 'deprecated', 'defer',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
-	'call', 'silent_call', 'match', 
+	'call', 'silent_call', 'log_call', 'match', 
 	'listsplit', 'listjoin', 
 	'Stretch', 'stretch',
 	'Escape', 'escape', 'unescape',
@@ -190,7 +190,7 @@ ValueError: could not convert string to float: 'y'
 	except:
 		return float (default)
 	
-def atob (s: Any = None) -> bool:
+def atob (s: Any = None, default: bool = False) -> bool:
 	"""Interprets a value as a boolean
 
 >>> atob (0)
@@ -223,7 +223,7 @@ False
 False
 """
 	if s is None:
-		return False
+		return default
 	if isinstance (s, bool):
 		return s
 	if isinstance (s, int) or isinstance (s, float):
@@ -302,9 +302,27 @@ this version keep waiting."""
 				return -1
 	return 0
 
-def silent_call (*args: str) -> int:
+def silent_call (command: Sequence[str], **kwargs: Any) -> int:
 	with open (os.devnull, 'rb+') as fd:
-		return call (args, stdin = fd, stdout = fd, stderr = fd)
+		return call (command, **(kwargs | {'stdin': fd, 'stdout': fd, 'stderr': fd}))
+
+def log_call (command: Sequence[str], method: Callable[[str], None] = logger.warning, **kwargs: Any) -> int:
+	with open (os.devnull, 'r') as rd:
+		(wr, filename) = tempfile.mkstemp (text = False)
+		try:
+			os.unlink (filename)
+			rc = call (command, **(kwargs | {'stdin': rd, 'stdout': wr, 'stderr': wr}))
+			if rc:
+				os.lseek (wr, 0, os.SEEK_SET)
+				output = os.read (wr, os.fstat (wr).st_size).decode ('UTF-8', errors = 'backslashreplace')
+				method ('command "{command}" returns {rc}{output}'.format (
+					command = Stream (command).map (lambda c: shlex.quote (c)).join (' '),
+					rc = rc,
+					output = f'\n{output}' if output else ''
+				))
+		finally:
+			os.close (wr)
+		return rc
 
 def match (enum: Enum, **kwargs: Callable[[], Any]) -> Any:
 	expect = set (enum.__class__.__members__.keys ())

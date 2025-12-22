@@ -253,7 +253,7 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 			m -> prefix[m -> plen] = '\0';
 		}
 		xmlBufferEmpty (rec -> message_id);
-		if (uid = create_uid (blockmail, blockmail -> uid_version, m -> prefix, rec, 0, true)) {
+		if (uid = create_uid (blockmail, blockmail -> uid_version, m -> prefix, rec, NULL, true)) {
 			if (blockmail -> status_field == 'V') {
 				xmlBufferCCat (rec -> message_id, "V0-");
 			}

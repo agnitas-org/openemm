@@ -135,6 +135,15 @@ typedef struct var { /*{{{*/
 		*next;		/**< Next element in list or NULL		*/
 	/*}}}*/
 }	var_t;
+typedef struct hvar { /*{{{*/
+	char	*var;
+	char	*val;
+	int	len;
+	hash_t	hash;
+	struct hvar
+		*next;
+	/*}}}*/
+}	hvar_t;
 
 /**
  * A node in a generic hashmap
@@ -438,6 +447,12 @@ extern var_t		*var_find (var_t *v, const char *var);
 extern var_t		*var_ifind (var_t *v, const char *var);
 extern var_t		*var_partial_find (var_t *v, const char *var);
 extern var_t		*var_partial_ifind (var_t *v, const char *var);
+extern hvar_t		*hvar_alloc (const char *var, const char *val);
+extern hvar_t		*hvar_free (hvar_t *hv);
+extern hvar_t		*hvar_free_all (hvar_t *hv);
+extern hvar_t		*hvar_tail (hvar_t *hv);
+extern hvar_t		*hvar_nfind (hvar_t *hv, const char *key, int len);
+extern hvar_t		*hvar_find (hvar_t *hv, const char *key);
 
 extern hash_t		hash_value (const byte_t *key, int len);
 extern hash_t		hash_svalue (const char *key, int len, bool_t icase);

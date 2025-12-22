@@ -11,6 +11,7 @@
 #
 from	__future__ import annotations
 import	logging, csv
+from	collections import defaultdict
 from	datetime import datetime, timedelta
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Literal, Optional, Union
@@ -46,6 +47,10 @@ handling."""
 		'_scratch_tables', '_scratch_number',
 		'_cache', '_cached_description', '_checkpoints'
 	]
+	@staticmethod
+	def quote (s: str) -> str:
+		return s.replace ('\'', '\'\'')
+		
 	def __init__ (self, dbid: Optional[str] = None) -> None:
 		"""``dbid'' is the database id to create a new driver instance"""
 		self.dbid = dbid
@@ -379,12 +384,62 @@ handling."""
 	class Column (NamedTuple):
 		name: str
 		datatype: str
+		comment: None | str
 		
 	class Index (NamedTuple):
 		name: str
 		columns: Union[str, List[str]]
 		tablespace: Optional[str] = None
-		
+	
+	def get_layout (self) -> dict[str, list[Column]]:
+		rc: defaultdict[str, list[DB.Column]] = defaultdict (list)
+		with self.request () as cursor:
+			match self.dbms:
+				case 'oracle':
+					comments: dict[str, str] = cursor.stream (
+						'SELECT table_name, column_name, comments '
+						'FROM user_col_comments'
+					).filter (lambda r: bool (r.comments)).map (lambda r: (f'{r.table_name.lower ()}.{r.column_name.lower ()}', r.comments)).dict ()
+					#
+					def oracle_mkcolumn (table: str, name: str, typ: str, length: None | int, precision: None | int, nullable: bool, default: None | str) -> DB.Column:
+						match typ:
+							case 'VARCHAR2' if length:
+								typ += f'({length})'
+							case 'NUMBER' if length and precision:
+								typ += f'({length},{precision})'
+							case 'NUMBER' if length:
+								typ += f'({length})'
+						if not nullable:
+							typ += ' NOT NULL'
+						if default:
+							typ += f' DEFAULT {default}'
+						return DB.Column (
+							name = name,
+							datatype = typ,
+							comment = comments.get (f'{table}.{name}')
+						)
+					#
+					cursor.stream (
+						'SELECT table_name, column_name, data_type, data_length, data_precision, nullable, data_default '
+						'FROM user_tab_columns'
+					).each (lambda r: rc[r.table_name.lower ()].append (oracle_mkcolumn (r.table_name.lower (), r.column_name.lower (), r.data_type, r.data_length, r.data_precision, r.nullable == 'Y', r.data_default)))
+				case 'mariadb':
+					def mariadb_mkcolumn (name: str, typ: str, nullable: bool, default: None | str, comment: None | str) -> DB.Column:
+						if not nullable:
+							typ += ' NOT NULL'
+						if default:
+							typ += f' DEFAULT {default}'
+						return DB.Column (
+							name = name,
+							datatype = typ,
+							comment = comment)
+					#
+					cursor.stream (
+						'SELECT table_name, column_name, column_type, column_default, is_nullable, column_comment '
+						'FROM information_schema.columns WHERE table_schema=(SELECT SCHEMA())'
+					).each (lambda r: rc[r.table_name.lower ()].append (mariadb_mkcolumn (r.column_name.lower (), r.column_type, r.is_nullable == 'YES', r.column_default, r.column_comment)))
+		return dict (rc)
+	
 	def update_layout (self,
 		table: str,
 		*,
@@ -397,13 +452,29 @@ handling."""
 			available: Set[str] = {_l.name for _l in layout} if layout else set ()
 			columns = Stream (columns).filter (lambda c: c.name.lower () not in available).list ()
 			if columns:
+				def comment (column: DB.Column) -> str:
+					if self.dbms == 'mariadb' and column.comment:
+						return ' COMMENT \'{comment}\''.format (
+							comment = self.quote (column.comment)
+						)
+					return ''
 				cursor.execute ('ALTER TABLE {table} ADD ({columns})'.format (
 					table = table,
 					columns = (Stream (columns)
-						.map (lambda c: f'{c.name} {c.datatype}')
+						.map (lambda c: f'{c.name} {c.datatype}{comment (c)}')
 						.join (', ')
 					)
 				))
+				if self.dbms == 'oracle':
+					for column in columns:
+						if column.comment:
+							cursor.execute (
+								'COMMENT ON COLUMN {table}.{column} IS \'{comment}\''.format (
+									table = table,
+									column = column.name,
+									comment = self.quote (column.comment)
+								)
+							)
 		if indexes:
 			available = cursor.streamc (
 				cursor.qselect (

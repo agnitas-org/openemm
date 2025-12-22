@@ -167,7 +167,7 @@ hashtag_options (hashtag_t *h, int start, const char *default_value) /*{{{*/
 static bool_t
 creator_agnuid (buffer_t *target, hashtag_t *h, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
 {
-	char	*uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, url -> url_id, false);
+	char	*uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, url, false);
 	
 	if (uid) {
 		buffer_appends (target, uid);
@@ -273,18 +273,18 @@ hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blo
 			if (h -> elements) {
 				char	*first = h -> elements[0];
 			
-				if (! strcmp (first, "MAILING_ID")) {
+				if (! strcasecmp (first, "MAILING_ID")) {
 					if (h -> fixed = buffer_alloc (32))
 						buffer_format (h -> fixed, "%d", blockmail -> mailing_id);
-				} else if (! strcmp (first, "URL_ID")) {
+				} else if (! strcasecmp (first, "URL_ID")) {
 					if (h -> fixed = buffer_alloc (32))
 						buffer_format (h -> fixed, "%ld", url -> url_id);
-				} else if (! strcmp (first, "SENDDATE-UNENCODED")) {
+				} else if (! strcasecmp (first, "SENDDATE-UNENCODED")) {
 					if (h -> fixed = buffer_alloc (0)) {
 						h -> raw = true;
 						format_date (h -> fixed, hashtag_options (h, 1, NULL), blockmail -> senddate);
 					}
-				} else if (! strcmp (first, "DATE")) {
+				} else if (! strcasecmp (first, "DATE")) {
 					time_t		now;
 					struct tm	*tt;
 					
@@ -294,9 +294,9 @@ hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blo
 
 						format_date (h -> fixed, hashtag_options (h, 1, NULL), date);
 					}
-				} else if (! strcmp (first, "AGNUID")) {
+				} else if (! strcasecmp (first, "AGNUID")) {
 					h -> creator = creator_agnuid;
-				} else if (! strcmp (first, "PUBID")) {
+				} else if (! strcasecmp (first, "PUBID")) {
 					h -> creator = creator_pubid;
 				}
 				if (h -> creator)
@@ -497,10 +497,13 @@ link_resolve_prepare (link_resolve_t *lr, blockmail_t *blockmail, url_t *url) /*
 	lr -> pure = resolved_alloc (url -> dest -> buffer, url -> dest -> length, blockmail, url);
 	return lr -> pure ? true : false;
 }/*}}}*/
+static resolved_t *
+lr_select (link_resolve_t *lr, receiver_t *rec) /*{{{*/
+{
+	return rec -> disable_link_extension || (! lr -> extended) ? lr -> pure : lr -> extended;
+}/*}}}*/
 buffer_t *
 link_resolve_get (link_resolve_t *lr, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
 {
-	resolved_t	*r = rec -> disable_link_extension || (! lr -> extended) ? lr -> pure : lr -> extended;
-	
-	return resolved_link (r, blockmail, block, url, rec, record);
+	return resolved_link (lr_select (lr, rec), blockmail, block, url, rec, record);
 }/*}}}*/

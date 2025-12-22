@@ -35,9 +35,7 @@ static output_t	output_table[] = { /*{{{*/
 		"\t\tmailtrack-logfile=<path>  path to write mailtrack information to\n"
 		"\t\tpath=<path>        path to queue directory to write spool files to\n"
 		"\tOptions specific for email:\n"
-		"\t\taction=<cmd>       command to execute after mail generation\n"
-		"\t\tqueue-flush=<n>    number of domains to start a queue flusher for\n"
-		"\t\tqueue-flush-command=<path>  path to command to flush queue\n"
+		"\t\tinject-command=<cmd>      command to pass email to the mta"
 		,true,
 		generate_oinit,	generate_odeinit, generate_owrite
 	}, {	"count",
@@ -134,7 +132,7 @@ main (int argc, char **argv) /*{{{*/
 	bool_t		anon_preserve_links;
 	const char	*selector;
 	bool_t		convert_to_entities;
-	bool_t		force_ecs_uid;
+	bool_t		ecs;
 	char		*fqdn;
 	const char	*level;
 	time_t		pointintime;
@@ -157,7 +155,7 @@ main (int argc, char **argv) /*{{{*/
 	anon_preserve_links = false;
 	selector = NULL;
 	convert_to_entities = false;
-	force_ecs_uid = false;
+	ecs = false;
 	fqdn = NULL;
 	level = NULL;
 	pointintime = 0;
@@ -215,7 +213,7 @@ main (int argc, char **argv) /*{{{*/
 			convert_to_entities = true;
 			break;
 		case 'g':
-			force_ecs_uid = true;
+			ecs = true;
 			break;
 		case 'd':
 			if (fqdn)
@@ -263,7 +261,7 @@ main (int argc, char **argv) /*{{{*/
 			break;
 		case 'h':
 			fprintf (stderr, "Usage: %s [-h] [-V] [-L <loglevel>] [-D] [-v] [-p] [-q] [-E <file>] [-r] [-d <domain>] [-o <output>[:<parm>] <file(s)>\n", argv[0]);
-			fprintf (stderr, "       further options: [-u <prefix>] [-a] [-s <selector>] [-e] [-f]\n");
+			fprintf (stderr, "       further options: [-u <prefix>] [-a] [-s <selector>] [-e]\n");
 			fputs ("Function: read and process XML files generated from database representation\n"
 			       "Options:\n"
 			       "\t-h         output this help page\n"
@@ -274,12 +272,14 @@ main (int argc, char **argv) /*{{{*/
 			       "\t-E <fname> write error messages to file <fname> instead of stderr\n"
 			       "\t-r         raw output, do not encode generated mails (used by preview)\n"
 			       "\t-u <pfix>  use <pfix> as prefix for generated auto urls\n"
+			       "\t-U         program is called from GUI\n"
 			       "\t-a         anonymize the output as far as possible\n"
 			       "\t-A         preserve links when creating anon output\n"
 			       "\t-s <sel>   selector to restrict usage of text blocks\n"
 			       "\t-e         convert known special characters to its HTML entity\n"
-			       "\t-g         force generation of extended click statistics UIDs\n"
+			       "\t-g         enable extended click statistics output\n"
 			       "\t-d <fqdn>  use this as my full qualified domain name\n"
+			       "\t-t <tids>  comma separated list of target ids defaulting to true\n"
 			       "\t-o <out>   defines the output behaviour for generated mails\n"
 			       "\t-T <time>  a point in time to use instead of current time (in epoch)\n"
 			       "\n"
@@ -349,7 +349,7 @@ main (int argc, char **argv) /*{{{*/
 			blockmail -> gui = gui || auto_url_prefix;
 			blockmail_setup_anon (blockmail, anon, anon_preserve_links);
 			blockmail_setup_selector (blockmail, selector);
-			blockmail -> force_ecs_uid = force_ecs_uid;
+			blockmail -> ecs = ecs;
 			blockmail -> convert_to_entities = convert_to_entities;
 			blockmail -> fqdn = fqdn;
 			blockmail -> pointintime = pointintime;

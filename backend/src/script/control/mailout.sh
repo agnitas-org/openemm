@@ -49,21 +49,23 @@ start)
 	fi
 	;;
 stop)
-	first="true"
-	while true ; do
-		$HOME/bin/in-progress.sh
-		if [ $? -ne 0 ]; then
-			if [ "$first" ]; then
-				echo "Looks like at least one mailing is currently in progress,"
-				echo "we will wait (and retry) until processing is finished."
-				first=""
+	if [ ! "`patternstatus 2 \"$java\"`" = "stopped" ]; then
+		first="true"
+		while true ; do
+			$HOME/bin/in-progress.sh
+			if [ $? -ne 0 ]; then
+				if [ "$first" ]; then
+					echo "Looks like at least one mailing is currently in progress,"
+					echo "we will wait (and retry) until processing is finished."
+					first=""
+				fi
+				sleep 5
+			else
+				softterm "$HOME/scripts/watchdog.py -imerger -r1800" "$HOME/scripts/watchdog3.py -imerger -r1800"
+				break
 			fi
-			sleep 5
-		else
-			softterm "$HOME/scripts/watchdog.py -imerger -r1800" "$HOME/scripts/watchdog3.py -imerger -r1800"
-			break
-		fi
-	done
+		done
+	fi
 	if [ -x $HOME/bin/emerg.sh ]; then
 		$HOME/bin/emerg.sh stop
 	fi
