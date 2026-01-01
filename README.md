@@ -1,3 +1,4 @@
+![OpenEMM Dashboard](https://www.agnitas.de/wp-content/uploads/2024/12/OpenEMM-Dashboard-EN.png)
 # Resources for OpenEMM
 
 ## Website of OpenEMM with Marketing Information:
