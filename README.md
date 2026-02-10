@@ -1,6 +1,8 @@
 ![OpenEMM Dashboard](https://www.agnitas.de/wp-content/uploads/2024/12/OpenEMM-Dashboard-EN.png)
 # Resources for OpenEMM
 
+[Interactive Demo Tour of OpenEMM](https://openemm.storylane.io/share/rglmef77v8fj)
+
 ## Website of OpenEMM with Marketing Information:
 
 [OpenEMM Website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/)
