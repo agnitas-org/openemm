@@ -3,6 +3,8 @@
 
 [Interactive Demo Tour of OpenEMM](https://openemm.storylane.io/share/rglmef77v8fj)
 
+[Free Demo Access for OpenEMM](https://www.agnitas.de/en/openemm-demo/)
+
 ## Website of OpenEMM with Marketing Information:
 
 [OpenEMM Website](https://www.agnitas.de/en/e-marketing_manager/email-marketing-software-variants/openemm/)
