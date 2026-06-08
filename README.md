@@ -47,6 +47,6 @@ Copy template files build.properties.default, build-birt.properties.default and 
 
 [OpenEMM Plus](https://www.agnitas.de/en/openemm-plus/)
 
+---
 
-
-
+If you think that you have found a security problem with OpenEMM, please contact us at email address security@agnitas.de to initiate a responsible disclosure of the security vulnerability you may have found.
