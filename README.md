@@ -1,7 +1,7 @@
 ![OpenEMM Dashboard](https://www.agnitas.de/wp-content/uploads/2024/12/OpenEMM-Dashboard-EN.png)
 # Resources for OpenEMM
 
-[Interactive Demo Tour of OpenEMM](https://openemm.storylane.io/share/rglmef77v8fj)
+[Interactive Demo Tour of OpenEMM](https://app.storylane.io/share/hmj7avv1g76e))
 
 [Free Demo Access for OpenEMM](https://www.agnitas.de/en/openemm-demo/)
 
