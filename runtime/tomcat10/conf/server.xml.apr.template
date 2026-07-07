@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="8005" shutdown="SHUTDOWN">
+	<Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+	<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+	<Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+	<Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+	<GlobalNamingResources>
+		<Resource
+			auth="Container"
+			description="User database that can be updated and saved"
+			factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+			name="UserDatabase" pathname="conf/tomcat-users.xml"
+			type="org.apache.catalina.UserDatabase" />
+	</GlobalNamingResources>
+
+	<Service name="Catalina">
+		<!-- Portforwarding via iptables
+			sudo iptables -t nat -A OUTPUT -o lo -p tcp &#45;&#45;dport 80 -j REDIRECT &#45;&#45;to-port 8080
+			sudo sh -c "iptables-save > /etc/iptables/rules.v4"
+			sudo apt install iptables-persistent
+		-->
+		<Connector
+			port="8080"
+			protocol="HTTP/1.1"
+			connectionTimeout="20000"
+			maxThreads="1000"
+			useBodyEncodingForURI="true"
+			server="AGNITAS AG" />
+
+		<!-- Portforwarding via iptables
+			sudo iptables -t nat -A OUTPUT -o lo -p tcp &#45;&#45;dport 443 -j REDIRECT &#45;&#45;to-port 8443
+			sudo sh -c "iptables-save > /etc/iptables/rules.v4"
+			sudo apt install iptables-persistent
+		-->
+		<!-- TLS configuration start
+		<Connector
+			port="8443"
+			protocol="org.apache.coyote.http11.Http11AprProtocol"
+			enableLookups="false"
+			disableUploadTimeout="true"
+			acceptCount="100"
+			maxThreads="1000"
+			scheme="https"
+			secure="true"
+			SSLEnabled="true"
+			useBodyEncodingForURI="true"
+			server="AGNITAS AG">
+			<SSLHostConfig
+				disableCompression="true"
+				honorCipherOrder="true"
+				ciphers="ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-ECDSA-CHACHA20-POLY1305 ECDHE-RSA-CHACHA20-POLY1305 ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-SHA384 ECDHE-RSA-AES256-SHA384 ECDHE-ECDSA-AES128-SHA256 ECDHE-RSA-AES128-SHA256"
+				protocols="all">
+				<Certificate
+					certificateChainFile="<tls-ca-keychain-bundle.file>"
+					certificateFile="<tls-certificate.file>"
+					certificateKeyFile="<tls-private-key.file>
+				/>
+			</SSLHostConfig>
+		</Connector>
+		TLS configuration end -->
+
+		<Engine defaultHost="localhost" name="Catalina">
+			<Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase" />
+			
+			<Host
+				name="localhost"
+				appBase="webapps-leave-empty"
+				unpackWARs="false"
+				autoDeploy="false">
+				
+				<Valve
+					className="org.apache.catalina.valves.AccessLogValve"
+					directory="${catalina.base}/logs/access/"
+					rotatable="true"
+					buffered="true"
+					prefix=""
+					suffix="-access_emm.log"
+					fileDateFormat="yyyyMMdd"
+					pattern='%a %t %v "%r" %s %b "%{Referer}i" "%{User-Agent}i" %I %D' />
+				<Context cookies="false" docBase="${HOME}/webapps/emm" path="" />
+				<Context docBase="${HOME}/webapps/statistics" path="/birt" />
+				<Context docBase="${HOME}/webapps/webservices" path="/2.0" />
+			</Host>
+		</Engine>
+	</Service>
+</Server>

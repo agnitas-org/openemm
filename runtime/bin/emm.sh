@@ -1,0 +1,1 @@
+../tomcat/bin/emm.sh
