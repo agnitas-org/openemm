@@ -208,60 +208,61 @@ handling."""
 		return self.db.dbms if self.db else None
 
 
-	def query (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Iterable[Row]:
+	def query (self, statement: str, parameter: None | dict[str, Any] = None) -> Iterable[Row]:
 		"""Execute a query try to resolve the query from the cache, if caching is enabled"""
 		if self._cache is not None:
-			key = (statement, parameter, cleanup)
+			key = (statement, parameter)
 			try:
 				rc = self._cache[key]
 			except KeyError:
 				cursor = self.check_open_cursor ()
-				rows = cursor.queryc (statement, parameter, cleanup)
+				rows = cursor.queryc (statement, parameter)
 				self._cache[key] = rc = (cursor.description (), rows)
 			self._cached_description = rc[0]
 			return rc[1]
 		#
-		return self.check_open_cursor ().query (statement, parameter, cleanup)
+		return self.check_open_cursor ().query (statement, parameter)
 
-	def queryc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Iterable[Row]:
+	def queryc (self, statement: str, parameter: None | dict[str, Any] = None) -> Iterable[Row]:
 		"""Execute a cached query try to resolve the query from the cache, if caching is enabled"""
 		if self._cache is not None:
-			return self.query (statement, parameter, cleanup)
+			return self.query (statement, parameter)
 		#
-		return self.check_open_cursor ().queryc (statement, parameter, cleanup)
+		return self.check_open_cursor ().queryc (statement, parameter)
 		
-	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
+	def querys (self, statement: str, parameter: None | dict[str, Any] = None) -> Optional[Row]:
 		"""Execute a single row query try to resolve the query from the cache, if caching is enabled"""
 		if self._cache is not None:
-			for rec in self.query (statement, parameter, cleanup):
+			for rec in self.query (statement, parameter):
 				return rec
 		#
-		return self.check_open_cursor ().querys (statement, parameter, cleanup)
+		return self.check_open_cursor ().querys (statement, parameter)
 			
 	def update (self,
 		statement: str,
-		parameter: Union[None, List[Any], Dict[str, Any]] = None,
+		parameter: None | dict[str, Any] = None,
+		*,
 		commit: bool = False,
-		cleanup: bool = False,
+		input_sizes: None | dict[str, Any] = None,
 		sync_and_retry: bool = False,
 		callback_between: Optional[Callable[[], Any]] = None
 	) -> int:
 		"""Update database content, a convenient method to complete the minimal cursor interface"""
-		return self.check_open_cursor ().update (statement, parameter, commit, cleanup, sync_and_retry, callback_between)
+		return self.check_open_cursor ().update (statement, parameter, commit = commit, input_sizes = input_sizes, sync_and_retry = sync_and_retry, callback_between = callback_between)
 	
 	def execute (self, statement: str) -> int:
 		"""Excecute a statement on the database"""
 		return self.check_open_cursor ().execute (statement)
 
-	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+	def stream (self, statement: str, parameter: None | dict[str, Any] = None) -> Stream[Row]:
 		if self._cache is not None:
-			return Stream (self.query (statement, parameter, cleanup))
-		return self.check_open ().stream (statement, parameter, cleanup)
+			return Stream (self.query (statement, parameter))
+		return self.check_open ().stream (statement, parameter)
 	
-	def streamc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+	def streamc (self, statement: str, parameter: None | dict[str, Any] = None) -> Stream[Row]:
 		if self._cache is not None:
-			return Stream (self.queryc (statement, parameter, cleanup))
-		return self.check_open ().streamc (statement, parameter, cleanup)
+			return Stream (self.queryc (statement, parameter))
+		return self.check_open ().streamc (statement, parameter)
 
 	def exists_table (self, table_name: str, cachable: bool = False) -> bool:
 		"""Check database if ``table_name'' exists as table, if ``cachable'' is True, cache the result for faster future access"""
@@ -274,7 +275,7 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:table_name)',
-			mysql = 'SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:table_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:table_name) AND table_schema=(SELECT SCHEMA())',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(name) = lower(:table_name) AND type = \'table\''
 		)
 		rq = cursor.querys (query, {'table_name': table_name})
@@ -295,7 +296,7 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_views WHERE lower(view_name) = lower(:view_name)',
-			mysql = 'SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:view_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:view_name) AND table_schema=(SELECT SCHEMA())',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(name) = lower(:view_name) AND type = \'view\''
 		)
 		rq = cursor.querys (query, {'view_name': view_name})
@@ -338,7 +339,7 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_indexes WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name)',
-			mysql = 'SELECT count(*) FROM information_schema.statistics WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.statistics WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name) AND table_schema=(SELECT SCHEMA())',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(tbl_name) = lower(:table_name) AND lower(name) = lower(:index_name) AND type = \'index\''
 		)
 		rq = cursor.querys (query, {'table_name': table_name, 'index_name': index_name})
@@ -479,7 +480,7 @@ handling."""
 			available = cursor.streamc (
 				cursor.qselect (
 					oracle = 'SELECT index_name FROM user_indexes WHERE lower(table_name) = lower(:table)',
-					mysql = 'SELECT index_name FROM information_schema.statistics WHERE lower(table_name) = lower(:table) AND table_schema=(SELECT SCHEMA())',
+					mariadb = 'SELECT index_name FROM information_schema.statistics WHERE lower(table_name) = lower(:table) AND table_schema=(SELECT SCHEMA())',
 					sqlite = 'SELECT name AS index_name FROM sqlite_master WHERE lower(tbl_name) = lower(:table) AND type = \'index\''
 				), {
 					'table': table
@@ -717,24 +718,23 @@ files to limit the size of each file."""
 				'checkpoint': self.end,
 				'persist': self.persist
 			}
+			input_sizes = {
+				'persist': 'CLOB'
+			}
 			phash = hash (self.persist)
 			chash = hash (self.end)
 			if chash != self.chash or phash != self.phash:
 				query = f'UPDATE {self.table} SET checkpoint = :checkpoint, persist = :persist WHERE name = :name'
-				if self.db.dbms == 'oracle':
-					self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
-				if self.cursor.update (query, data) == 0:
+				if self.cursor.update (query, data, input_sizes = input_sizes) == 0:
 					insert = True
 			else:
 				query = f'SELECT count(*) FROM {self.table} WHERE name = :name'
-				rq = self.cursor.querys (query, data, cleanup = True)
+				rq = self.cursor.querys (query, data)
 				if rq is not None and rq[0] == 0:
 					insert = True
 			if insert:
 				query = f'INSERT INTO {self.table} (name, checkpoint, persist) VALUES (:name, :checkpoint, :persist)'
-				if self.db.dbms == 'oracle':
-					self.cursor.set_input_sizes (persist = cast (Core, self.db.db).driver.CLOB)
-				if self.cursor.update (query, data) == 0:
+				if self.cursor.update (query, data, input_sizes = input_sizes) == 0:
 					raise error (f'failed to create new entry for {self.name} in {self.table}')
 			self.phash = phash
 			self.chash = chash
@@ -777,7 +777,7 @@ if it had not existed."""
 						'	checkpoint	date		NOT NULL,\n'
 						'       persist         clob\n'
 						')' + self.tablespace (tablespace)
-					), mysql = (
+					), mariadb = (
 						f'CREATE TABLE {table} (\n'
 						'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
 						'	checkpoint	timestamp	NOT NULL,\n'
@@ -798,7 +798,7 @@ if it had not existed."""
 				if desc is not None and 'persist' not in [_d[0] for _d in desc]:
 					cursor.execute (cursor.qselect (
 						oracle = f'ALTER TABLE {table} ADD persist clob',
-						mysql = f'ALTER TABLE {table} ADD persist longtext',
+						mariadb = f'ALTER TABLE {table} ADD persist longtext',
 						sqlite = f'ALTER TABLE {table} ADD persist text'
 					))
 			if self.exists (table) and name is not None:

@@ -140,12 +140,15 @@ main (int argc, char **argv) /*{{{*/
 	int		rc;
 	int		n;
 	const char	*ptr;
+	bool_t		user_based;
 	bool_t		dump;
 	bool_t		execute;
 	const char	*script;
 	systemconfig_t	*cfg;
+	const char	*(*finder) (systemconfig_t *, const char *);
 	const char	*key, *value;
-	
+
+	user_based = false;
 	dump = false;
 	execute = false;
 	script = NULL;
@@ -157,8 +160,11 @@ main (int argc, char **argv) /*{{{*/
 		if (! strcmp (ptr, "config-script"))
 			execute = true;
 	}
-	while ((n = getopt (argc, argv, "dec:?h")) != -1)
+	while ((n = getopt (argc, argv, "udec:?h")) != -1)
 		switch (n) {
+		case 'u':
+			user_based = true;
+			break;
 		case 'd':
 			dump = true;
 			break;
@@ -186,6 +192,7 @@ main (int argc, char **argv) /*{{{*/
 	}
 	if (! (cfg = systemconfig_alloc (true)))
 		return fprintf (stderr, "Failed to setup config (%m).\n"), 1;
+	finder = user_based ? systemconfig_find_user_based : systemconfig_find;
 	rc = 0;
 	if (dump) {
 		if (optind == argc) {
@@ -193,7 +200,7 @@ main (int argc, char **argv) /*{{{*/
 				printf ("%s=%s\n", key, value);
 		} else {
 			for (n = optind; n < argc; ++n) {
-				value = systemconfig_find (cfg, argv[n]);
+				value = (*finder) (cfg, argv[n]);
 				if (value)
 					printf ("%s=%s\n", argv[n], value);
 				else
@@ -202,7 +209,7 @@ main (int argc, char **argv) /*{{{*/
 		}
 	} else {
 		for (n = optind; n < argc; ++n) {
-			value = systemconfig_find (cfg, argv[n]);
+			value = (*finder) (cfg, argv[n]);
 			printf ("%s\n", (value ? value : ""));
 			if (! value) {
 				rc = 1;

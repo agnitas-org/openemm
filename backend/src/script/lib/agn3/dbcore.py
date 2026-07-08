@@ -134,7 +134,7 @@ write the content directly to the database."""
 			self.db.lasterr = errmsg
 		self.close ()
 
-	def executor (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None) -> int:
+	def executor (self, statement: str, parameter: None | list[Any] | dict[str, Any] = None) -> int:
 		"""internally used to intercept a database access before it is passed to the database"""
 		if self.curs is not None:
 			self.curs.execute (statement, parameter) if parameter is not None else self.curs.execute (statement)
@@ -223,16 +223,13 @@ portable across different databases."""
 		self.__valid ()
 
 	__ph = re.compile (':([a-z0-9_]+)', re.IGNORECASE)
-	def __parameter_format (self, statement: str, parameter: Union[List[Any], Dict[str, Any]]) -> str:
+	def __parameter_format (self, statement: str, parameter: dict[str, Any]) -> str:
 		try:
-			if isinstance (parameter, dict):
-				return Stream (self.__ph.findall (statement)).map (lambda ph: '{name}={value!r}'.format (name = ph, value = parameter[ph])).join (', ')
-			else:
-				return Stream (parameter).map (lambda v: f'{v!r}').join (', ')
+			return Stream (self.__ph.findall (statement)).map (lambda ph: '{name}={value!r}'.format (name = ph, value = parameter[ph])).join (', ')
 		except Exception as e:
 			return f'{parameter!r} ({e})'
 	
-	def __execute (self, what: str, statement: str, parameter: Union[None, List[Any], Dict[str, Any]], cleanup: bool) -> int:
+	def __execute (self, what: str, statement: str, parameter: None | dict[str, Any]) -> int:
 		self.__valid ()
 		self.rowcount = 0
 		self.rowaffected = 0
@@ -241,18 +238,16 @@ portable across different databases."""
 				self.db.log (f'{what}: {statement}')
 				return self.executor (statement)
 			#
-			if isinstance (parameter, dict):
-				if self.db.paramstyle in (Paramstyle.qmark, Paramstyle.format):
-					(statement, parameter_list) = self.db.reformat (statement, parameter)
-					self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
-					return self.executor (statement, parameter_list)
-				elif cleanup:
-					parameter = self.db.cleanup (statement, parameter)
+			if self.db.paramstyle in (Paramstyle.qmark, Paramstyle.format):
+				(statement, parameter_list) = self.db.reformat (statement, parameter)
+				self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
+				return self.executor (statement, parameter_list)
+			parameter = self.db.cleanup (statement, parameter)
 			self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
 			return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
 			self.error (e)
-			log_parameter = self.db.cleanup (statement, parameter) if isinstance (parameter, dict) and cleanup else parameter
+			log_parameter = self.db.cleanup (statement, parameter) if parameter else parameter
 			if parameter is None:
 				self.db.log ('{what} "{statement}" failed: {error}'.format (
 					what = what,
@@ -273,24 +268,22 @@ portable across different databases."""
 				error = self.last_error ()
 			))
 	
-	def query (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Cursor:
+	def query (self, statement: str, parameter: None | dict[str, Any] = None) -> Cursor:
 		"""Query the database
 
 ``statement'' is the query itself, ``parameter'' are the optional query parameter
-as a dict, if the query is using a prepared statement. ``cleanup''
-should be set to True, if the query parameter may contain more keys
-than are used in the query.
+as a dict, if the query is using a prepared statement.
 
 This method return an iterable realizied by itself."""
 		self.rowtype = None
 		self.rowmap.clear ()
-		self.__execute ('query', statement, parameter, cleanup)
+		self.__execute ('query', statement, parameter)
 		self.db.log ('Query started')
 		return self
 
-	def queryc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> List[Row]:
+	def queryc (self, statement: str, parameter: None | dict[str, Any] = None) -> List[Row]:
 		"""See query, but returns a cached version of the query. Use with care on large result sets!"""
-		if self.query (statement, parameter, cleanup) == self:
+		if self.query (statement, parameter) == self:
 			try:
 				data: list[Row] = (
 					[self.make_row (_d) for _d in cast (DBAPI.Cursor, self.curs).fetchall ()]
@@ -312,9 +305,9 @@ This method return an iterable realizied by itself."""
 			self.db.log ('Queryc {statement} using {parameter} failed: {error}'.format (statement = statement, parameter = parameter, error = self.last_error ()))
 		raise error ('unable to setup query: {error}'.format (error = self.last_error ()))
 
-	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
+	def querys (self, statement: str, parameter: None | dict[str, Any] = None) -> Optional[Row]:
 		"""See query, but returns only one (the first) row or None, if no row is found at all."""
-		for rec in self.query (statement, parameter, cleanup):
+		for rec in self.query (statement, parameter):
 			return rec
 		return None
 
@@ -348,9 +341,10 @@ This method return an iterable realizied by itself."""
 
 	def update (self,
 		statement: str,
-		parameter: Union[Any, List[Any], Dict[str, Any]] = None,
+		parameter: None | dict[str, Any] = None,
+		*,
 		commit: bool = False,
-		cleanup: bool = False,
+		input_sizes: None | dict[str, Any] = None,
 		sync_and_retry: bool = False,
 		callback_between: Optional[Callable[[], Any]] = None
 	) -> int:
@@ -358,7 +352,7 @@ This method return an iterable realizied by itself."""
 		if sync_and_retry:
 			for state in range (2):
 				try:
-					self.__execute ('update', statement, parameter, cleanup)
+					self.__execute ('update', statement, parameter)
 				except Exception as e:
 					if state == 0:
 						self.sync ()
@@ -371,7 +365,7 @@ This method return an iterable realizied by itself."""
 				else:
 					break
 		else:
-			self.__execute ('update', statement, parameter, cleanup)
+			self.__execute ('update', statement, parameter)
 		if self.rowaffected > 0 and (commit or self.autocommit):
 			if not self.sync ():
 				if parameter is None:
@@ -382,15 +376,15 @@ This method return an iterable realizied by itself."""
 		return self.rowaffected
 	
 	def execute (self, statement: str) -> int:
-		return self.__execute ('execute', statement, None, False)
+		return self.__execute ('execute', statement, None)
 	
-	def stream (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+	def stream (self, statement: str, parameter: None | dict[str, Any] = None) -> Stream[Row]:
 		"""creates a stream using this cursor and using ``*args'' and ``**kwargs'' for Cursor.query()"""
-		return Stream (self.query (statement, parameter, cleanup))
+		return Stream (self.query (statement, parameter))
 
-	def streamc (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Stream[Row]:
+	def streamc (self, statement: str, parameter: None | dict[str, Any] = None) -> Stream[Row]:
 		"""creates a stream using this cursor and using ``*args'' and ``**kwargs'' for Cursor.queryc()"""
-		return Stream (self.queryc (statement, parameter, cleanup))
+		return Stream (self.queryc (statement, parameter))
 
 class DBType (Enum):
 	STRING = 0
@@ -552,21 +546,20 @@ have to use a database specific query, you can use this method to
 automatically select the query required for the currently used
 database. The known databases are detected by the used driver and are
 normalized to these names:
-	- mysql: for MySQL databases
 	- mariadb: for MariaDB databases
 	- oracle: for Oracle RDBMs
 	- sqlite: for using a SQLite3 database
 
 e.g. you want to create a new record, but you use a sequence in oracle
-and an autoincrement in mysql:
+and an autoincrement in mariadb:
 	query = cursor.qselect (
 		oracle = 'INSERT INTO some_table (id, content) VALUES (some_sequence.nextval, :content)',
-		mysql = 'INSERT INTO some_table (content) VALUES (:content)'
+		mariadb = 'INSERT INTO some_table (content) VALUES (:content)'
 	)
 And to get the query to select the newly created ID:
 	query = cursor.qselect (
 		oracle = 'SELECT some_sequence.currval FROM dual',
-		mysql = 'SELECT last_insert_id()'
+		mariadb = 'SELECT last_insert_id()'
 	)
 """
 		key: Optional[str]

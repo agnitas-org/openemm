@@ -125,7 +125,7 @@ struct iflua { /*{{{*/
 	receiver_t	*rec;
 	int		last_customer_id;
 	record_t	*last_record;
-	block_t		*last_base_block;
+	block_t		*last_component;
 	lua_State	*lua;
 	char		*source;
 	
@@ -366,7 +366,7 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 		url -> url_id = url_id;
 	else
 		url = NULL;
-	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url, false))) {
+	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url, false, NULL))) {
 		lua_pushstring (il -> lua, uid);
 		free (uid);
 	} else
@@ -654,7 +654,7 @@ iflua_alloc (blockmail_t *blockmail, bool_t sandbox) /*{{{*/
 		il -> rec = NULL;
 		il -> last_customer_id = -1;
 		il -> last_record = NULL;
-		il -> last_base_block = NULL;
+		il -> last_component = NULL;
 		il -> local = NULL;
 		il -> source = NULL;
 		if (il -> lua = alua_alloc (sandbox ? Sandbox : Regular)) {
@@ -692,10 +692,10 @@ iflua_push_context (iflua_t *il) /*{{{*/
 		setifield (il -> rec -> user_status, "user_status");
 		setbuffield (il -> rec -> message_id, "message_id");
 	}
-	if (il -> last_base_block != il -> rec -> base_block) {
+	if (il -> last_component != il -> rec -> component) {
 		lua_createtable (il -> lua, 0, 0);
-		if (il -> rec -> base_block) {
-			block_t		*b = il -> rec -> base_block;
+		if (il -> rec -> component) {
+			block_t		*b = il -> rec -> component;
 			const char	*typ;
 		
 			setifield (b -> bid, "id");
@@ -715,7 +715,7 @@ iflua_push_context (iflua_t *il) /*{{{*/
 			setsfield (typ, "type");
 		} 
 		lua_setfield (il -> lua, -2, "block");
-		il -> last_base_block = il -> rec -> base_block;
+		il -> last_component = il -> rec -> component;
 	}
 }/*}}}*/
 static void
@@ -1085,7 +1085,8 @@ ev_alloc (blockmail_t *blockmail, const char *expression, const char *global, bo
 			if (! alua_load (il -> lua, "__expr__", buffer_content (frame), buffer_length (frame))) {
 				log_out (blockmail -> lg, LV_WARNING, "Expression \"%s\" does not compile: %s", expression, lua_tostring (il -> lua, -1));
 				il = iflua_free (il);
-			}
+			} else
+				iflua_set_source (il, buffer_content (frame), buffer_length (frame));
 		}
 		buffer_free (frame);
 	}
@@ -1231,7 +1232,7 @@ ev_filter_vevaluate (iflua_t *il, receiver_t *rec, va_list par) /*{{{*/
 		const char	*error = lua_tostring (il -> lua, -1);
 
 		if (error) {
-			log_out (il -> blockmail -> lg, LV_WARNING, "Failed to evaluate expression due to: %s", error);
+			log_out (il -> blockmail -> lg, LV_WARNING, "Failed to evaluate expression \"%s\" due to: %s", il -> source, error);
 		}
 		rc = -1;
 	}

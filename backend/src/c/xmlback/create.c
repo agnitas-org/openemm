@@ -146,7 +146,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 			}
 		}
 		if (block -> inuse) {
-			rec -> base_block = block;
+			rec -> component = block;
 			if (block -> attachment)
 				attcount++;
 			if (! block -> binary) {

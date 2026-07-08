@@ -150,6 +150,7 @@ tag_alloc (void) /*{{{*/
 		t -> ttype = NULL;
 		t -> topt = NULL;
 		t -> value = xmlBufferCreate ();
+		t -> tagname = NULL;
 		t -> parm = NULL;
 		t -> used = false;
 		t -> filter = NULL;
@@ -173,6 +174,8 @@ tag_free (tag_t *t) /*{{{*/
 			free (t -> ttype);
 		if (t -> value)
 			xmlBufferFree (t -> value);
+		if (t -> tagname)
+			free (t -> tagname);
 		if (t -> parm)
 			var_free_all (t -> parm);
 		if (t -> filter)
@@ -354,6 +357,14 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 		}
 		name = ptr;
 		xmlSkip (& ptr, & len);
+		if (! t -> tagname) {
+			int	namelen = ptr - name;
+			
+			if ((namelen > 0) && (t -> tagname = malloc (namelen + 1))) {
+				strncpy (t -> tagname, (const char *) name, namelen);
+				t -> tagname[namelen] = '\0';
+			}
+		}
 		for (prev = t -> parm; prev && prev -> next; prev = prev -> next)
 			;
 		filter = NULL;
@@ -531,6 +542,11 @@ tag_match (tag_t *t, const xmlChar *name, int nlen) /*{{{*/
 	}
 	return false;
 }/*}}}*/
+bool_t
+tag_same (tag_t *t, tag_t *candidate) /*{{{*/
+{
+	return ((t -> hash == 0) || (candidate -> hash == 0) || (t -> hash == candidate -> hash)) && xmlEqual (t -> name, candidate -> name);
+}/*}}}*/
 
 typedef struct { /*{{{*/
 	void		*filter;
@@ -594,3 +610,4 @@ tag_content (tag_t *t, blockmail_t *blockmail, receiver_t *rec, int *length) /*{
 	*length = xmlBufferLength (t -> value);
 	return xmlBufferContent (t -> value);
 }/*}}}*/
+

@@ -11,18 +11,15 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, re
 import	argparse, logging
-from	typing import Optional
-from	typing import List
-from	agn3.db import DB
+from	agn3.emm.scripttag import ScriptTag
 from	agn3.runtime import CLI
 from	agn3.stream import Stream
 from	agn3.tools import listsplit
 #
 logger = logging.getLogger (__name__)
 #
-class ScriptTag (CLI):
+class Main (CLI):
 	__slots__ = [
 		'dryrun', 'quiet',
 		'language', 'company_id', 'description',
@@ -79,212 +76,13 @@ class ScriptTag (CLI):
 		self.filename = args.filename[0]
 		
 	def executor (self) -> bool:
-		rc = True
-		(name, extension) = os.path.splitext (os.path.basename (self.filename))
-		if not self.language:
-			if extension.startswith ('.'):
-				extension = extension[1:]
-			self.language = extension.lower ()
-		with DB () as db, db.request () as cursor:
-			change_date_column = db.qselect (
-				oracle = 'timestamp',
-				mysql = 'change_date'
-			)
-			layout = {_c.name for _c in db.layout ('tag_tbl', True)}
-			for column_name in 'change_date', 'timestamp':
-				if column_name in layout:
-					change_date_column = column_name
-					break
-			if not self.only_tags:
-				with open (self.filename) as fd:
-					code = self.cleanup_code (fd.read ())
-				rq = cursor.querys (
-					'SELECT tag_function_id, lang, description, code '
-					'FROM tag_function_tbl '
-					'WHERE name = :name AND company_id = :company_id',
-					{'name': name, 'company_id': self.company_id}
-				)
-				if rq is None:
-					data = {
-						'name': name,
-						'company_id': self.company_id,
-						'lang': self.language,
-						'code': code,
-						'tdesc': self.description
-					}
-					query = cursor.qselect (
-						oracle = (
-							'INSERT INTO tag_function_tbl '
-							'       (tag_function_id, company_id, creation_date, timestamp, name, lang, description, code) '
-							'VALUES '
-							'       (tag_function_tbl_seq.nextval, :company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :tdesc, :code)'
-						), mysql = (
-							'INSERT INTO tag_function_tbl '
-							'       (company_id, creation_date, timestamp, name, lang, description, code) '
-							'VALUES '
-							'       (:company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :tdesc, :code)'
-						)
-					)
-					if self.dryrun:
-						print (f'{name}: Would execute {query} using {data}')
-					else:
-						if db.dbms == 'oracle' and db.db is not None:
-							cursor.set_input_sizes (code = db.db.driver.CLOB)
-						rows = cursor.update (query, data)
-						if rows == 1:
-							if not self.quiet:
-								print (f'{name}: code inserted setting language to "{self.language}" for company {self.company_id}')
-						else:
-							print ('{name}: FAILED to insert code into database: {error}'.format (
-								name = name,
-								error = db.last_error ()
-							))
-							rc = False
-				elif rq.lang == self.language and str (rq.code) == code and (not self.description or self.description == rq.description):
-					if not self.quiet:
-						print (f'{name}: no change')
-				else:
-					data = {
-						'fid': rq.tag_function_id, 
-						'lang': self.language,
-						'code': code
-					}
-					if self.description:
-						data['tdesc'] = self.description
-						extra = ', description = :tdesc'
-					else:
-						extra = ''
-					query = (
-						'UPDATE tag_function_tbl '
-						f'SET code = :code, lang = :lang, timestamp = CURRENT_TIMESTAMP{extra} '
-						'WHERE tag_function_id = :fid'
-					)
-					if self.dryrun:
-						print (f'{name}: Would execute {query} using {data}')
-					else:
-						if db.dbms == 'oracle' and db.db is not None:
-							cursor.set_input_sizes (code = db.db.driver.CLOB)
-						rows = cursor.update (query, data)
-						if rows == 1:
-							if not self.quiet:
-								print (f'{name}: code updated using language "{self.language}"')
-						else:
-							print ('{name}: FAILED to update code: {error}'.format (
-								name = name,
-								error = db.last_error ()
-							))
-							rc = False
-			#
-			for tag in self.tags:
-				parts = tag.split (':', 2)
-				cdesc = name
-				tdesc: Optional[str] = None
-				if len (parts) > 1:
-					tag = parts[0]
-					if parts[1]:
-						cdesc = '%s:%s' % (name, parts[1])
-					if len (parts) == 3 and parts[2]:
-						tdesc = parts[2]
-				data = {'cdesc': cdesc}
-				rq = cursor.querys (
-					'SELECT tag_id, type, selectvalue, description '
-					'FROM tag_tbl '
-					'WHERE tagname = :tname AND company_id = :company_id',
-					{'tname': tag, 'company_id': self.company_id}
-				)
-				if rq is None:
-					data['type'] = 'FUNCTION'
-					data['tname'] = tag
-					data['company_id'] = self.company_id
-					if tdesc is None:
-						tdesc = 'Created by script-tag'
-					data['tdesc'] = tdesc
-					query = cursor.qselect (
-						oracle = (
-							'INSERT INTO tag_tbl '
-							f'      (tag_id, tagname, selectvalue, type, company_id, description, {change_date_column}) '
-							'VALUES '
-							'       (tag_tbl_seq.nextval, :tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
-						), mysql = (
-							'INSERT INTO tag_tbl '
-							f'      (tagname, selectvalue, type, company_id, description, {change_date_column}) '
-							'VALUES '
-							'       (:tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
-						)
-					)
-					if self.dryrun:
-						print (f'Tag {tag}: Would execute {query} using {data}')
-					else:
-						rows = cursor.update (query, data)
-						if rows == 1:
-							if not self.quiet:
-								print (f'Tag {tag}: inserted into database')
-						else:
-							print ('Tag {tag}: FAILED to insert into database: {error}'.format (
-								tag = tag,
-								error = db.last_error ()
-							))
-							rc = False
-				elif rq.selectvalue == cdesc and (not tdesc or rq.description == tdesc):
-					if not self.quiet:
-						print (f'Tag {tag}: no change')
-				else:
-					data['tid'] = rq.tag_id
-					if tdesc:
-						data['tdesc'] = tdesc
-						extra = ', description = :tdesc'
-					else:
-						extra = ''
-					if rq.type != 'FUNCTION':
-						if not self.quiet:
-							print (f'Tag {tag}: modify type from {rq.type}')
-						data['type'] = 'FUNCTION'
-						extra += ', type = :type'
-					query = cursor.qselect (
-						oracle = (
-							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, {change_date_column} = CURRENT_TIMESTAMP{extra} '
-							'WHERE tag_id = :tid'
-						), mysql = (
-							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, {change_date_column} = CURRENT_TIMESTAMP{extra} '
-							'WHERE tag_id = :tid'
-						)
-					)
-					if self.dryrun:
-						print (f'Tag {tag}: Would execute (query) using {data}')
-					else:
-						rows = cursor.update (query, data)
-						if rows == 1:
-							if not self.quiet:
-								print (f'Tag {tag}: updated')
-						else:
-							print ('Tag {tag}: FAILED to update: {error}'.format (
-								tag = tag,
-								error = db.last_error ()
-							))
-							rc = False
-			cursor.sync (not self.dryrun and rc)
-		return rc
-	
-	def cleanup_code (self, code: str) -> str:
-		if code.startswith ('#!'):
-			code = code.split ('\n', 1)[-1]
-		pattern_condition = re.compile ('#<.*>#$')
-		pattern_unittest = re.compile ('%%$')
-		output: List[str] = []
-		state = 0
-		for line in code.split ('\n'):
-			match = pattern_condition.search (line)
-			if match is not None:
-				state = 0
-			elif state == 0:
-				match = pattern_unittest.search (line)
-				if match is not None:
-					state = 1
-			if state == 0:
-				output.append (line)
-		return '\n'.join (output)
+		return ScriptTag (self.filename).install (
+			tags = self.tags,
+			dryrun = self.dryrun,
+			company_id = self.company_id,
+			only_tags = self.only_tags,
+			description = self.description
+		)
 #
 if __name__ == '__main__':
-	ScriptTag.main ()
+	Main.main ()

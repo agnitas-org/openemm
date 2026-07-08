@@ -365,7 +365,7 @@ class Softbounce (Runtime):
 						'        WHERE su.customer_id IN '
 						f'             (SELECT customer_id FROM customer_{company_id}_tbl cust WHERE cust.email = sb.email) '
 						'              AND su.timestamp > sb.timestamp)'
-					), mysql = (
+					), mariadb = (
 						'DELETE sb.* '
 						f'FROM softbounce_email_tbl sb INNER JOIN success_{company_id}_tbl su '
 						f'WHERE sb.company_id = {company_id} AND su.customer_id IN '

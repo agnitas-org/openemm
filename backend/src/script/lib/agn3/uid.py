@@ -16,7 +16,7 @@ from	collections import deque
 from	dataclasses import dataclass, field, replace
 from	datetime import datetime
 from	types import TracebackType
-from	typing import Any, ClassVar, Final, Optional, Union
+from	typing import Any, ClassVar, Final, Optional, Self, Union
 from	typing import Deque, Dict, List, NamedTuple, Set, Tuple, Type
 from	.db import DB
 from	.dbconfig import DBConfig
@@ -37,11 +37,13 @@ class UID:
 	licence_id: int = 0
 	company_id: int = 0
 	mailing_id: int = 0
+	media_id: int = 0
 	customer_id: int = 0
 	senddate: None | datetime = None
 	status_field: None | str = None
 	url_id: int = 0
 	position: int = 0
+	dyn_name_id: int = 0
 	bit_option: int = 0
 	prefix: Optional[str] = None
 	ctx: Dict[str, Any] = field (default_factory = dict)
@@ -53,13 +55,19 @@ class UID:
 			hashable_context: Union[bytes, str] = pickle.dumps (self.ctx)
 		except:
 			hashable_context = str (self.ctx)
-		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.customer_id, self.url_id, self.position, self.bit_option, self.prefix, hashable_context))
+		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.media_id, self.customer_id, self.url_id, self.position, self.dyn_name_id, self.bit_option, self.prefix, hashable_context))
 	def __getitem__ (self, option: str) -> Any:
+		self._validate_option (option)
 		return self.ctx[option]
 	def __setitem__ (self, option: str, value: Any) -> None:
+		self._validate_option (option)
 		self.ctx[option] = value
 	def __delitem__ (self, option: str) -> None:
+		self._validate_option (option)
 		del self.ctx[option]
+	def _validate_option (self, option: str) -> None:
+		if option.startswith ('_'):
+			raise ValueError (f'{option}: leading underscores are reserved for internal use')
 
 	def __bit_is_set (self, bit: int) -> bool:
 		return bool (self.bit_option & (1 << bit))
@@ -91,36 +99,37 @@ class UID:
 				self.ctx[key] = value
 			elif key in self.ctx:
 				del self.ctx[key]
-		set ('_l', self.licence_id)
 		set ('_c', self.company_id)
+		set ('_l', self.licence_id)
 		set ('_m', self.mailing_id)
-		set ('_r', self.customer_id)
-		if self.senddate is not None:
-			set ('_s', int (self.senddate.timestamp ()))
-		set ('_f', self.status_field)
-		set ('_u', self.url_id)
-		if self.url_id and self.position > 1:
-			set ('_x', self.position)
 		set ('_o', self.bit_option)
+		set ('_r', self.customer_id)
+		set ('_s', int (self.senddate.timestamp ()) if self.senddate is not None else None)
+		set ('_f', self.status_field if self.status_field and self.status_field != 'W' else None)
+		set ('_u', self.url_id)
+		set ('_x', self.position if self.url_id and self.position > 1 else None)
 		return msgpack.dumps (Stream (self.ctx.items ()).sorted (key = lambda kv: kv[0]).dict ())
 	
-	def parse (self, content: bytes) -> None:
+	def parse (self, content: bytes) -> Self:
 		try:
 			self.ctx = msgpack.loads (content)
 		except Exception as e:
 			raise error (f'failed to unpack {content!r}: {e}')
 		else:
-			self.licence_id = self.ctx.get ('_l', self.licence_id)
-			self.company_id = self.ctx.get ('_c', self.company_id)
-			self.mailing_id = self.ctx.get ('_m', self.mailing_id)
-			self.customer_id = self.ctx.get ('_r', self.customer_id)
+			self.licence_id = self.ctx.get ('_l', 0)
+			self.company_id = self.ctx.get ('_c', 0)
+			self.mailing_id = self.ctx.get ('_m', 0)
+			self.customer_id = self.ctx.get ('_r', 0)
 			if (senddate := self.ctx.get ('_s')) is not None:
 				self.senddate = datetime.fromtimestamp (senddate)
-			self.status_field = self.ctx.get ('_f', self.status_field)
-			self.url_id = self.ctx.get ('_u', self.url_id)
-			self.position = self.ctx.get ('_x', self.position)
-			self.bit_option = self.ctx.get ('_o', self.bit_option)
-	
+			else:
+				self.senddate = None
+			self.status_field = self.ctx.get ('_f')
+			self.url_id = self.ctx.get ('_u', 0)
+			self.position = self.ctx.get ('_x', 0)
+			self.bit_option = self.ctx.get ('_o', 0)
+		return self
+
 	@staticmethod
 	def encode (content: bytes) -> str:
 		try:
@@ -462,12 +471,12 @@ exception is thrown, if it is not valid."""
 		except IndexError:
 			raise error (f'invalid uid {uid_str} for version {uid.version}')
 		#
-		try:
-			credential: Optional[UIDHandler.Credential] = self.retrieve_credential (uid)
-		except error as e:
-			if validate:
+		credential: None | UIDHandler.Credential = None
+		if validate:
+			try:
+				credential = self.retrieve_credential (uid)
+			except error as e:
 				raise error (f'{uid}: missing credentials (required for validation): {e}')
-			credential = None
 		#
 		if uid.version == 2:
 			if credential is not None:

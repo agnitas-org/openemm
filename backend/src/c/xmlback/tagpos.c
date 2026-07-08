@@ -146,7 +146,7 @@ tagpos_setup_tag (tagpos_t *t, blockmail_t *blockmail) /*{{{*/
 	if (! t -> tag) {
 		tag_t	*tag;
 		
-		for (tag = blockmail -> ltag; tag; tag = tag -> next)
+		for (tag = blockmail -> recipient_tags; tag; tag = tag -> next)
 			if (((t -> hash == 0) || (tag -> hash == 0) || (t -> hash == tag -> hash)) &&
 			    tag_match (tag, xmlBufferContent (t -> name), xmlBufferLength (t -> name))) {
 				t -> tag = tag;

@@ -473,6 +473,7 @@ extern bool_t		node_setdata (node_t *n, const char *data);
 
 extern map_t		*map_alloc (mapmode_t mode, int aproxsize);
 extern map_t		*map_free (map_t *m);
+extern void		map_clear (map_t *m);
 extern gnode_t		*map_gadd (map_t *m, const byte_t *key, int klen, const byte_t *data, int dlen);
 extern node_t		*map_add (map_t *m, const char *key, const char *data);
 extern bool_t		map_delete_node (map_t *m, node_t *n);
@@ -633,6 +634,7 @@ extern convert_t	*cvt_find (cvt_t *c, const char *charset);
 extern systemconfig_t	*systemconfig_free (systemconfig_t *c);
 extern systemconfig_t	*systemconfig_alloc (bool_t use_extra);
 extern const char	*systemconfig_find (systemconfig_t *c, const char *key);
+extern const char	*systemconfig_find_user_based (systemconfig_t *c, const char *key);
 extern bool_t		systemconfig_get (systemconfig_t *c, int idx, const char **key, const char **value);
 
 extern build_t		*build_alloc (void);

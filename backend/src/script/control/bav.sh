@@ -12,6 +12,7 @@
 #
 . $HOME/scripts/config.sh
 #
+cd $HOME
 case "$1" in
 start)
 	active bav

@@ -107,14 +107,10 @@ leave it unchanged."""
 		rc = False
 		if self.db and self.db.isopen ():
 			if commit:
-				if (
-					self.db.update ('UPDATE timestamp_tbl SET prev = cur WHERE name = :name', self.parm) == 1 and
-					self.db.update ('UPDATE timestamp_tbl SET cur = temp WHERE name = :name', self.parm) ==1
-				):
-					rc = True
-			else:
-				rc = True
+				self.db.update ('UPDATE timestamp_tbl SET prev = cur WHERE name = :name', self.parm)
+				self.db.update ('UPDATE timestamp_tbl SET cur = temp WHERE name = :name', self.parm)
 			self.db.sync (commit)
+			rc = True
 		self.__cleanup ()
 		if not rc:
 			raise error ('Failed to finalize timestamp entry')

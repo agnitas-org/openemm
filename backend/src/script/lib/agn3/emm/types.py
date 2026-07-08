@@ -12,13 +12,20 @@
 from	__future__ import annotations
 from	enum import Enum
 #
-__all__ = ['MediaType', 'MailType', 'UserType', 'UserStatus', 'MailingType', 'ComponentType', 'WorkStatus']
+__all__ = ['MediaType', 'MailType', 'UserType', 'UserStatus', 'MailingType', 'ComponentType', 'WorkStatus', 'CompanyStatus']
 #
 class MediaType (Enum):
 	EMAIL = 0
 	@classmethod
 	def valid (cls, mediatype: int) -> bool:
 		return mediatype in {_m.value for _m in cls.__members__.values ()}
+	
+	@classmethod
+	def by_value (cls, mediatype: int) -> MediaType:
+		for mt in cls.__members__.values ():
+			if mt.value == mediatype:
+				return mt
+		raise KeyError (mediatype)
 
 class MailType (Enum):
 	Text = 0
@@ -101,3 +108,11 @@ class WorkStatus (Enum):
 		except IndexError:
 			raise KeyError (name)
 
+class CompanyStatus (Enum):
+	Inactive = 'inactive'
+	Active = 'active'
+	Locked = 'locked'
+	ToDelete = 'todelete'
+	DeletionInProgress = 'deletion in progress'
+	Deletted = 'deleted'
+	ToReset = 'toreset'

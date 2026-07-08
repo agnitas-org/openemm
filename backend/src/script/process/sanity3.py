@@ -41,7 +41,7 @@ directories = distinct (
 		'var/spool/META', 'var/spool/DIRECT',
 		'var/spool/ADMIN', 'var/spool/ADMIN0', 'var/spool/RECOVER',
 		'var/spool/QUEUE', 'var/spool/MIDQUEUE', 'var/spool/SLOWQUEUE',
-		'var/spool/mail', 'var/spool/filter'
+		'var/spool/mail', 'var/spool/mailer', 'var/spool/filter'
 	])
 )
 files: List[File] = []
@@ -65,7 +65,7 @@ def check_permissions (r: Report) -> None:
 		else:
 			r.warning.append (f'{path}: not a directory')
 	#
-	check_directory (os.path.join (base, 'etc'), 0o700)
+	check_directory (os.path.join (base, 'etc'), 0o710)
 
 
 def check_openemm (r: Report) -> None:

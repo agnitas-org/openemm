@@ -235,17 +235,15 @@ class DKIM (CLI):
 				'SELECT count(*) '
 				'FROM dkim_key_tbl '
 				'WHERE company_id = :company_id AND domain = :domain AND selector = :selector',
-				data,
-				cleanup = True
+				data
 			)
 			if rq is not None and rq[0] > 0:
 				print ('Updating exiting record')
 				db.update (
 					'UPDATE dkim_key_tbl '
-					'SET domain_key = :key, valid_start = :vstart, valid_end = :vend, timestamp = CURRENT_TIMESTAMP '
+					'SET domain_key = :key, domain_key_encrypted = null, valid_start = :vstart, valid_end = :vend, timestamp = CURRENT_TIMESTAMP '
 					'WHERE company_id = :company_id AND domain = :domain AND selector = :selector',
-					data,
-					cleanup = True
+					data
 				)
 			else:
 				print ('Inserting new record')
@@ -256,15 +254,14 @@ class DKIM (CLI):
 							'       (dkim_id, creation_date, timestamp, company_id, valid_start, valid_end, domain, selector, domain_key) '
 							'VALUES '
 							'       (dkim_key_tbl_seq.nextval, sysdate, sysdate, :company_id, :vstart, :vend, :domain, :selector, :key)'
-						), mysql = (
+						), mariadb = (
 							'INSERT INTO dkim_key_tbl '
 							'       (creation_date, timestamp, company_id, valid_start, valid_end, domain, selector, domain_key) '
 							'VALUES '
 							'       (CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :company_id, :vstart, :vend, :domain, :selector, :key)'
 						)
 					),
-					data,
-					cleanup = True
+					data
 				)
 			db.sync ()
 

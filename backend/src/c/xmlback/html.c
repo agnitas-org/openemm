@@ -262,3 +262,79 @@ html_set_name (html_t *h, const char *name, int name_length) /*{{{*/
 		if (attr_match (h, h -> attr + n, name, name_length))
 			html_set_pos (h, n);
 }/*}}}*/
+
+image_t *
+image_alloc (long id) /*{{{*/
+{
+	image_t	*i;
+	
+	if (i = (image_t *) malloc (sizeof (image_t))) {
+		i -> id = id;
+		i -> name = NULL;
+		i -> filename = NULL;
+		i -> mime = NULL;
+		i -> link = NULL;
+		i -> description = NULL;
+		i -> alt = NULL;
+		i -> mediapool = false;
+		i -> height = 0;
+		i -> width = 0;
+		i -> next = NULL;
+	}
+	return i;
+}/*}}}*/
+image_t *
+image_free (image_t *i) /*{{{*/
+{
+	if (i) {
+		if (i -> name)
+			free (i -> name);
+		if (i -> filename)
+			free (i -> filename);
+		if (i -> mime)
+			free (i -> mime);
+		if (i -> link)
+			free (i -> link);
+		if (i -> description)
+			free (i -> description);
+		if (i -> alt)
+			free (i -> alt);
+		free (i);
+	}
+	return NULL;
+}/*}}}*/
+image_t *
+image_free_all (image_t *i) /*{{{*/
+{
+	image_t	*temp;
+	
+	while (temp = i) {
+		i = i -> next;
+		image_free (temp);
+	}
+	return NULL;
+}/*}}}*/
+static const image_t *
+image_find (image_t *i, const char *name, int length) /*{{{*/
+{
+	image_t	*fallback;
+	
+	for (fallback = NULL; i; i = i -> next)
+		if (i -> name && (! strncmp (i -> name, name, length)) && (! i -> name[length])) {
+			if (! i -> mediapool)
+				return i;
+			if (! fallback)
+				fallback = i;
+		}
+	return fallback;
+}/*}}}*/
+const image_t *
+image_find_string (image_t *i, const char *name) /*{{{*/
+{
+	return image_find (i, name, strlen (name));
+}/*}}}*/
+const image_t *
+image_find_xmlbuffer (image_t *i, const xmlBufferPtr name) /*{{{*/
+{
+	return image_find (i, (const char *) xmlBufferContent (name), xmlBufferLength (name));
+}/*}}}*/

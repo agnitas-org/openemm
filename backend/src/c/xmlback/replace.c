@@ -112,6 +112,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	      bool_t ishtml, bool_t ispdf) /*{{{*/
 {
 	bool_t		st;
+	block_t		*previous_block;
 	record_t	*record;
 	xmlBufferPtr	source;
 	tagpos_t	**tagpos;
@@ -130,6 +131,8 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	bool_t		clear_output;
 
 	st = true;
+	previous_block = rec -> current_block;
+	rec -> current_block = block;
 	record = rec -> rvdata -> cur;
 	if (! set_content (blockmail, rec, record))
 		st = false;
@@ -313,11 +316,27 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 				} else
 					st = false;
 			} else {
+				tag_t	*local_fallback = NULL;
+				tag_t	*global_fallback = NULL;
+				long	div_id = block -> div_id;
+				tag_t	**fallback;
+				
 				for (n = 0; (n < 2) && (! tag); ++n) {
-					for (tag = n ? blockmail -> gtag : record -> tag; tag; tag = tag -> next)
+					fallback = n ? & global_fallback : & local_fallback;
+					for (tag = n ? blockmail -> global_tags : record -> tag; tag; tag = tag -> next)
 						if (((tag -> hash == 0) || (tp -> hash == 0) || (tag -> hash == tp -> hash)) &&
-						    (xmlEqual (tag -> name, tp -> name)))
-							break;
+						    (xmlEqual (tag -> name, tp -> name))) {
+							if (tag -> div_id == div_id)
+								break;
+							if ((tag -> div_id == 0) && (! *fallback))
+								*fallback = tag;
+						}
+				}
+				if (! tag) {
+					if (local_fallback)
+						tag = local_fallback;
+					else if (global_fallback)
+						tag = global_fallback;
 				}
 				if (tag && (! tag_filter (tag, rec, 10, NULL)))
 					tag = NULL;
@@ -351,5 +370,6 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 				reason_empty_document (blockmail -> reason, block);
 			}
 	}
+	rec -> current_block = previous_block;
 	return st;
 }/*}}}*/

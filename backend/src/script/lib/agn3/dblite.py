@@ -10,8 +10,6 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-from	typing import Final, Optional
-from	typing import List
 from	.db import DB, Row
 from	.dbcore import Core
 from	._db.sqlite import Layout, SQLite3
@@ -19,21 +17,31 @@ from	._db.sqlite import Layout, SQLite3
 __all__ = ['DBLite', 'DB', 'Row', 'Layout']
 #
 class DBLite (DB):
-	__slots__ = ['_path', '_layout', '_lock']
-	in_memory_db: Final[str] = ':memory:'
-	def __init__ (self, path: str = in_memory_db, layout: Optional[List[Layout]] = None, lock: bool = False) -> None:
+	__slots__ = ['_path', '_layout', '_updates', '_lock', '_read_only']
+	def __init__ (self,
+		path: str = SQLite3.in_memory_db,
+		*,
+		layout: None | list[Layout] = None,
+		updates: None | dict[str, list[Layout]] = None,
+		lock: bool = False,
+		read_only: bool = False
+	) -> None:
 		super ().__init__ ()
 		self._path = path
 		self._layout = layout
+		self._updates = updates
 		self._lock = lock
+		self._read_only = read_only
 	
 	def new (self) -> Core:
 		return SQLite3 (
 			filename = self._path,
 			layout = self._layout,
+			updates = self._updates,
 			extended_types = True,
 			extended_rows = True,
 			extended_functions = True,
 			lock_database = self._lock,
-			wait_for_lock = self._lock
+			wait_for_lock = self._lock,
+			read_only = self._read_only
 		)

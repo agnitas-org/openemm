@@ -20,8 +20,8 @@ from	datetime import datetime
 from	functools import partial
 from	io import StringIO
 from	types import TracebackType
-from	typing import Any, Callable, Generic, Iterable, Literal, Optional, Sequence, TypeVar, Union
-from	typing import AsyncIterator, Coroutine, Deque, Dict, List, Set, Tuple, Type
+from	typing import Any, Callable, Generic, Iterable, Literal, Optional, Self, Sequence, TypeVar, Union
+from	typing import AsyncIterator, Coroutine, Deque, Dict, List, NamedTuple, Set, Tuple, Type
 from	typing import cast, overload
 from	.exceptions import error, Stop
 from	.log import log
@@ -29,7 +29,7 @@ from	.ignore import Ignore
 from	.runtime import Runtime, Preset
 from	.stream import Stream
 #
-__all__ = ['AIORuntime', 'Preset']
+__all__ = ['Controller', 'AIORuntime', 'Preset']
 #
 logger = logging.getLogger (__name__)
 #
@@ -42,6 +42,10 @@ def _log_exception (method: Callable[[str], None], e: BaseException, task: async
 	task.print_stack (file = buffer)
 	for line in buffer.getvalue ().strip ().split ('\n'):
 		method (line)
+
+class Controller (NamedTuple):
+	name: str
+	method: Callable[[], Coroutine[Any, Any, None]]
 
 class Queue (Generic[_T]):
 	__slots__ = ['maxsize', 'loop', 'getter', 'putter', 'queue']
@@ -146,6 +150,102 @@ class Queue (Generic[_T]):
 		#
 		await self._wake_putter ()
 
+class CTask:
+	__slots__ = ['name', 'coro', 'task']
+	def __init__ (self, name: str, coro: Coroutine[Any, Any, None]) -> None:
+		self.name = name
+		self.coro = coro
+		self.task: asyncio.Task[None]
+	
+	async def __aenter__ (self) -> Self:
+		self.task = asyncio.create_task (self.coro, name = self.name)
+		logger.debug (f'{self.name}: task started')
+		return self
+	
+	async def __aexit__ (self, exc_type: None | Type[BaseException], exc_value: None | BaseException, traceback: None | TracebackType) -> None | bool:
+		if exc_type is None or exc_type is Stop:
+			await self.task
+			logger.debug (f'{self.name}: task graceful finished')
+		else:
+			self.task.cancel ()
+			logger.debug (f'{self.name}: task aborted: {exc_value}')
+		return None
+		
+class Workers:
+	__slots__ = [
+		'base_group', 'limit', 'work_id',
+		"warden", 'tasks', 'queued'
+	]
+	group_id = 0
+	def __init__ (self, group: Optional[str], limit: Optional[int]) -> None:
+		self.__class__.group_id += 1
+		self.base_group = '{group}_{group_id}'.format (
+			group = group if group else 'worker',
+			group_id = self.__class__.group_id
+		)
+		self.limit = limit
+		self.work_id = 0
+		self.warden: Optional[asyncio.Task[None]] = None
+		self.tasks: Set[asyncio.Task[None]] = set ()
+		self.queued: Deque[Coroutine[Any, Any, None]] = deque ()
+		
+	def __len__ (self) -> int:
+		return len (self.tasks) + len (self.queued)
+		
+	async def __aenter__ (self) -> Self:
+		return self
+		
+	async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		if exc_type is None:
+			await self._warden_join ()
+		else:
+			self.cancel ()
+		return None
+		
+	async def launch (self, coro: Coroutine[Any, Any, None]) -> None:
+		if not self.tasks and not self.queued:
+			await self._warden_join ()
+		if self.limit and len (self.tasks) >= self.limit:
+			self.queued.append (coro)
+		else:
+			self._start (coro)
+		if self.warden is None:
+			self.warden = asyncio.create_task (self._warden (), name = f'{self.base_group}_warden')
+		
+	def cancel (self) -> None:
+		if self.tasks:
+			Stream (self.tasks).each (lambda t: t.cancel ())
+		self.queued.clear ()
+		self._warden_cancel ()
+
+	async def _warden (self) -> None:
+		while self.tasks or self.queued:
+			while self.queued and (not self.limit or len (self.tasks) < self.limit):
+				self._start (self.queued.popleft ())
+			if self.tasks:
+				done, pending = await asyncio.wait (self.tasks, return_when = asyncio.FIRST_COMPLETED)
+				for task in done:
+					if not task.cancelled ():
+						if (e := task.exception ()) is not None:
+							_log_exception (logger.error, e, task)
+						else:
+							await task
+					self.tasks.remove (task)
+		
+	async def _warden_join (self) -> None:
+		if self.warden is not None:
+			await self.warden
+			self.warden = None
+
+	def _warden_cancel (self) -> None:
+		if self.warden is not None:
+			self.warden.cancel ()
+			self.warden = None
+
+	def _start (self, coro: Coroutine[Any, Any, None]) -> None:
+		self.work_id += 1
+		self.tasks.add (asyncio.create_task (coro, name = f'{self.base_group}_{self.work_id}'))
+		
 class AIORuntime (Runtime):
 	__slots__ = ['_loop', '_stop', '_apply_delay', '_channels', '_tasks', '_protected']
 	with Ignore (ImportError):
@@ -371,81 +471,6 @@ class AIORuntime (Runtime):
 		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 			return self._exit (exc_type, exc_value, traceback)
 		
-	class Workers:
-		__slots__ = [
-			'base_group', 'limit', 'work_id',
-			"warden", 'tasks', 'queued'
-		]
-		group_id = 0
-		def __init__ (self, group: Optional[str], limit: Optional[int]) -> None:
-			self.__class__.group_id += 1
-			self.base_group = '{group}_{group_id}'.format (
-				group = group if group else 'worker',
-				group_id = self.__class__.group_id
-			)
-			self.limit = limit
-			self.work_id = 0
-			self.warden: Optional[asyncio.Task[None]] = None
-			self.tasks: Set[asyncio.Task[None]] = set ()
-			self.queued: Deque[Coroutine[Any, Any, None]] = deque ()
-		
-		def __len__ (self) -> int:
-			return len (self.tasks) + len (self.queued)
-		
-		async def __aenter__ (self) -> AIORuntime.Workers:
-			return self
-		
-		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-			if exc_type is None:
-				await self._warden_join ()
-			else:
-				self.cancel ()
-			return None
-		
-		async def launch (self, coro: Coroutine[Any, Any, None]) -> None:
-			if not self.tasks and not self.queued:
-				await self._warden_join ()
-			if self.limit and len (self.tasks) >= self.limit:
-				self.queued.append (coro)
-			else:
-				self._start (coro)
-			if self.warden is None:
-				self.warden = asyncio.create_task (self._warden (), name = f'{self.base_group}_warden')
-		
-		def cancel (self) -> None:
-			if self.tasks:
-				Stream (self.tasks).each (lambda t: t.cancel ())
-			self.queued.clear ()
-			self._warden_cancel ()
-
-		async def _warden (self) -> None:
-			while self.tasks or self.queued:
-				while self.queued and (not self.limit or len (self.tasks) < self.limit):
-					self._start (self.queued.popleft ())
-				if self.tasks:
-					done, pending = await asyncio.wait (self.tasks, return_when = asyncio.FIRST_COMPLETED)
-					for task in done:
-						if not task.cancelled ():
-							if (e := task.exception ()) is not None:
-								_log_exception (logger.error, e, task)
-							else:
-								await task
-						self.tasks.remove (task)
-		
-		async def _warden_join (self) -> None:
-			if self.warden is not None:
-				await self.warden
-				self.warden = None
-
-		def _warden_cancel (self) -> None:
-			if self.warden is not None:
-				self.warden.cancel ()
-				self.warden = None
-
-		def _start (self, coro: Coroutine[Any, Any, None]) -> None:
-			self.work_id += 1
-			self.tasks.add (asyncio.create_task (coro, name = f'{self.base_group}_{self.work_id}'))
-		
 	def signal_aiohandler (self) -> None:
 		super ().signal_handler (0, None)
 		self.stop ()
@@ -505,17 +530,13 @@ class AIORuntime (Runtime):
 		if (controllers := self.controllers ()) is not None and controllers:
 			executables: List[Callable[[], bool]] = []
 			for controller in controllers:
-				executable = partial (self.executor, controller)
-				try:
-					name = controller.__name__
-				except AttributeError:
-					name = str (controller)
-				setattr (executable, '__name__', name)
+				executable = partial (self.executor, controller.method)
+				setattr (executable, '__name__', controller.name)
 				executables.append (executable)
 			return executables
 		return None
 	
-	def controllers (self) -> Optional[List[Callable[[], Coroutine[Any, Any, None]]]]:
+	def controllers (self) -> None | list[Controller]:
 		return None
 	
 	async def controller (self) -> None:
@@ -539,11 +560,11 @@ class AIORuntime (Runtime):
 		return self.running
 
 	async def wait1 (self, tasks: list[asyncio.Task[_U]], timeout: None | int | float = None) -> Tuple[asyncio.Task[_U], _U]:
-		done, _ = await asyncio.wait ([self._stop] + tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
+		done, _ = await asyncio.wait ([cast (asyncio.Task[_U], self._stop)] + tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
 		if self._stop in done:
 			raise Stop ()
 		try:
-			task = cast ('asyncio.Task[_U]', [_t for _t in done if not _t.cancelled ()][0])
+			task = [_t for _t in done if not _t.cancelled ()][0]
 		except IndexError:
 			raise asyncio.CancelledError ()
 		else:
@@ -590,8 +611,11 @@ class AIORuntime (Runtime):
 			return (await self.wait (asyncio.create_task (self._tasks.watch (only_exceptions = only_exceptions)), timeout = timeout))[1]
 		return None
 	
-	def workers (self, group: Optional[str] = None, limit: Optional[int] = None) -> AIORuntime.Workers:
-		return AIORuntime.Workers (group, limit)
+	def ctask (self, name: str, coro: Coroutine[Any, Any, None]) -> CTask:
+		return CTask (name, coro)
+
+	def workers (self, group: Optional[str] = None, limit: Optional[int] = None) -> Workers:
+		return Workers (group, limit)
 
 	@dataclass
 	class Process:

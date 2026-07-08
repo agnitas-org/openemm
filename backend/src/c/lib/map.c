@@ -149,6 +149,26 @@ map_free (map_t *m) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
+void
+map_clear (map_t *m) /*{{{*/
+{
+	int	n;
+	
+	for (n = 0; n < m -> hsize; ++n) {
+		switch (m -> mode) {
+		case MAP_Generic:
+			if (m -> cont.g[n])
+				gnode_free_all (m -> cont.g[n]);
+			break;
+		case MAP_CaseSensitive:
+		case MAP_CaseIgnore:
+			if (m -> cont.n[n])
+				node_free_all (m -> cont.n[n]);
+			break;
+		}
+		m -> cont.u[n] = NULL;
+	}
+}/*}}}*/
 
 /** Add a generic node to the map
  * @param m the map

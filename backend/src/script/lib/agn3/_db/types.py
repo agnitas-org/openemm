@@ -16,5 +16,5 @@ from	..dbcore import Core
 #
 class Driver (NamedTuple):
 	name: str
-	aliases: None | list[str]
+	aliases: None | set[str]
 	new: Callable[[DBConfig.DBRecord], Core]

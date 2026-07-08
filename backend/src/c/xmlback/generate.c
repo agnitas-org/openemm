@@ -324,6 +324,7 @@ struct sendmail { /*{{{*/
 	spool_t	*	spool;		/* spool directory		*/
 	unsigned long	nr;		/* an incremental counter	*/
 	char		**inject;	/* alt: command to inject mail	*/
+	int		iuse, isize;	/* allocation values		*/
 	int		ipos_sender,	/* position to set sender ..	*/
 			ipos_recipient;	/* .. and recipient		*/
 	/*}}}*/
@@ -338,6 +339,8 @@ sendmail_alloc (void) /*{{{*/
 		s -> spool = NULL;
 		s -> nr = 0;
 		s -> inject = NULL;
+		s -> iuse = 0;
+		s -> isize = 0;
 		s -> ipos_sender = -1;
 		s -> ipos_recipient = -1;
 	}
@@ -351,9 +354,10 @@ sendmail_free (sendmail_t *s) /*{{{*/
 			spool_free (s -> spool);
 		if (s -> inject) {
 			int	n;
-			
-			for (n = 0; s -> inject[n]; ++n)
-				free (s -> inject[n]);
+
+			for (n = 0; n < s -> iuse; ++n)
+				if (s -> inject[n])
+					free (s -> inject[n]);
 			free (s -> inject);
 		}
 		free (s);
@@ -398,12 +402,20 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 # undef		SD_XF
 # undef		SD_ALL
 	} else if (var_partial_imatch (opt, "inject-command")) {
-		int		isize, iuse;
 		char		quote;
 		const char	*ptr, *start, *end;
-		
-		isize = 0;
-		iuse = 0;
+
+		if (s -> inject) {
+			int	n;
+			
+			for (n = 0; n < s -> iuse; ++n)
+				if (s -> inject[n])
+					free (s -> inject[n]);
+			free (s -> inject);
+			s -> inject = NULL;
+		}
+		s -> isize = 0;
+		s -> iuse = 0;
 		ptr = opt -> val;
 		while (*ptr) {
 			while (isspace (*ptr))
@@ -423,11 +435,14 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 				end = ptr;
 			}
 			if (start < end) {
-				if (iuse >= isize) {
-					isize += 16;
-					if (! (s -> inject = (char **) realloc (s -> inject, sizeof (char *) * (isize + 1)))) {
-						while (iuse > 0)
-							free (s -> inject[--iuse]);
+				if (s -> iuse >= s -> isize) {
+					s -> isize += 16;
+					if (! (s -> inject = (char **) realloc (s -> inject, sizeof (char *) * (s -> isize + 1)))) {
+						while (s -> iuse >= 0) {
+							if (s -> inject[s -> iuse])
+								free (s -> inject[s -> iuse]);
+							s -> iuse--;
+						}
 						free (s -> inject);
 						s -> inject = NULL;
 						break;
@@ -437,23 +452,23 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 # define	RECIPIENT	"%(recipient)"
 # define	match(ppp)	((sizeof (ppp) - 1 == end - start) && (! strncmp (start, ppp, end - start)))
 				if ((s -> ipos_sender == -1) && match (SENDER)) {
-					s -> inject[iuse] = NULL;
-					s -> ipos_sender = iuse++;
+					s -> inject[s -> iuse] = NULL;
+					s -> ipos_sender = s -> iuse++;
 				} else if ((s -> ipos_recipient == -1) && match (RECIPIENT)) {
-					s -> inject[iuse] = NULL;
-					s -> ipos_recipient = iuse++;
-				} else if (s -> inject[iuse] = malloc (end - start + 1)) {
-					strncpy (s -> inject[iuse], start, end - start);
-					s -> inject[iuse][end - start] = '\0';
-					++iuse;
+					s -> inject[s -> iuse] = NULL;
+					s -> ipos_recipient = s -> iuse++;
+				} else if (s -> inject[s -> iuse] = malloc (end - start + 1)) {
+					strncpy (s -> inject[s -> iuse], start, end - start);
+					s -> inject[s -> iuse][end - start] = '\0';
+					s -> iuse++;
 				}
 # undef		match
 # undef		RECIPIENT
 # undef		SENDER
 			}
 		}
-		if (s -> inject && iuse) {
-			s -> inject[iuse] = NULL;
+		if (s -> inject && s -> iuse) {
+			s -> inject[s -> iuse] = NULL;
 		}
 	} else
 		log_out (blockmail -> lg, LV_WARNING, "Unknown option \"%s\" using \"%s\"", opt -> var, opt -> val);
@@ -703,14 +718,14 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 		g -> s = sendmail_alloc ();
 		if (g -> s)
 		{
-			bool_t	st = true;
-			char	media = '\0';
-			var_t	*tmp;
+			bool_t		st = true;
+			mediatype_t	media = Mediatype_Unspec;
+			var_t		*tmp;
 			
 			for (tmp = opts; st && tmp; tmp = tmp -> next)
 				if ((! tmp -> var) || var_partial_imatch (tmp, "media")) {
 					if (! strcasecmp (tmp -> val, "email"))
-						media = 's';
+						media = Mediatype_EMail;
 					else {
 						log_out (blockmail -> lg, LV_ERROR, "Unknown media %s", tmp -> val);
 						st = false;
@@ -729,7 +744,7 @@ generate_oinit (blockmail_t *blockmail, var_t *opts) /*{{{*/
 						log_out (blockmail -> lg, LV_ERROR, "Unknown option %s and no media type enabled", tmp -> var);
 						st = false;
 						break;
-					case 's':
+					case Mediatype_EMail:
 						st = sendmail_oinit (g -> s, blockmail, tmp);
 						break;
 					}

@@ -10,15 +10,15 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	sys, os, time, stat
-import	logging, threading
+import	sys, os, time, stat, re
+import	logging, threading, asyncio
 from	dataclasses import dataclass
 from	datetime import datetime, timedelta
 from	traceback import format_exception
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, Generator, List, Set, TextIO, Tuple, Type
-from	.definitions import base, host, program, syscfg
+from	typing import Dict, Generator, List, NamedTuple, Set, TextIO, Tuple, Type
+from	.definitions import base, host, program, syscfg, user, home
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import create_path
@@ -26,7 +26,7 @@ from	.parser import Parsable, unit
 from	.sentinel import Sentinel, sentinel
 #
 __all__ = [
-	'LogID', 'log', 'mark', 'log_limit',
+	'LogID', 'log', 'mark', 'log_limit', 'Logline',
 	'log_filter', 'log_filter_asynchttp', 'log_filter_asyncssh', 'log_filter_asyncdns', 'log_filter_websockets',
 	'interactive'
 ]
@@ -114,8 +114,9 @@ class LogID:
 class _Log:
 	__slots__ = [
 		'loglevel', 'outlevel', 'outstream',
-		'verbosity', 'host', 'name', 'path',
-		'intercept', 'custom_ids', 'lock']
+		'verbosity', 'host', 'name', 'path', 'prefix',
+		'intercept', 'custom_ids', 'lock'
+	]
 	log_directories_seen: Set[str] = set ()
 	lognames: Dict[int, str] = {
 		logging.DEBUG:		'DEBUG',
@@ -125,6 +126,7 @@ class _Log:
 		logging.CRITICAL:	'CRITICAL',
 		logging.FATAL:		'FATAL'
 	}
+	loglevels: dict[str, int] = dict ((_v, _k) for (_k, _v) in lognames.items ())
 	def __init__ (self) -> None:
 		self.loglevel = logging.INFO
 		self.outlevel = logging.WARNING
@@ -138,14 +140,19 @@ class _Log:
 				self.set_loglevel (loglevel)
 			except error as e:
 				logger.warning (f'{loglevel}: invalid loglevel: {e}, keep {self.get_loglevel ()}')
+		self.prefix = '' if self.path.startswith (f'{home}/') else f'{user}@'
 				
 		self.intercept: Optional[Callable[[logging.LogRecord, str], None]] = None
 		#
-		self.custom_ids: Dict[int, Optional[str]] = {}
+		self.custom_ids: Dict[tuple[int, int], Optional[str]] = {}
 		self.lock = threading.RLock ()
 	
 	def __call__ (self, new_id: str) -> LogID:
 		return LogID (self, new_id)
+	
+	@property
+	def logpath (self) -> str:
+		return self.path
 	
 	def __make_filename (self, ts: Optional[datetime], timestamp: Union[None, int, float], name: str) -> str:
 		if ts is None:
@@ -155,15 +162,20 @@ class _Log:
 				dt = datetime.now ()
 		else:
 			dt = ts
-		return os.path.join (self.path, f'{dt.year:04d}{dt.month:02d}{dt.day:02d}-{name}.log')
-	
+		return os.path.join (self.path, f'{dt.year:04d}{dt.month:02d}{dt.day:02d}-{self.prefix}{name}.log')
+
+	def _custom_id_key (self) -> tuple[int, int]:
+		try:
+			return (threading.get_ident (), hash (asyncio.current_task ()))
+		except RuntimeError:
+			return (threading.get_ident (), -1)
 	def _get_custom_id (self) -> Optional[str]:
-		return self.custom_ids.get (threading.get_ident ())
+		return self.custom_ids.get (self._custom_id_key ())
 	def _set_custom_id (self, custom_id: Optional[str]) -> None:
-		self.custom_ids[threading.get_ident ()] = custom_id
+		self.custom_ids[self._custom_id_key ()] = custom_id
 	def _del_custom_id (self) -> None:
 		with Ignore (KeyError):
-			del self.custom_ids[threading.get_ident ()]
+			del self.custom_ids[self._custom_id_key ()]
 	custom_id = property (_get_custom_id, _set_custom_id, _del_custom_id)
 
 	def get_loglevel (self, default: Union[Sentinel, str] = sentinel) -> str:
@@ -355,6 +367,73 @@ _rootLogger.addHandler (_rootHandler)
 log = _rootHandler.log
 mark = _rootHandler.mark
 
+_logline_parse = re.compile ('^\\[([0-9]{2})\\.([0-9]{2})\\.([0-9]{4}) +([0-9]{2}):([0-9]{2}):([0-9]{2})\\] ([0-9]+) ([^/]+)/([^ ]*) (.*)$')
+class Logline (NamedTuple):
+	filename: str
+	lineno: int
+	line: str
+	error: None | Exception
+	timestamp: datetime
+	pid: int
+	logname: str
+	loglevel: int
+	area: str
+	message: str
+	@classmethod
+	def parse (cls, filename: str, lineno: int, line: str) -> Logline:
+		if (m := _logline_parse.match (line.rstrip ('\n'))) is not None:
+			g = m.groups ()
+			return cls (
+				filename = filename,
+				lineno = lineno,
+				line = line,
+				error = None,
+				timestamp = datetime (int (g[2]), int (g[1]), int (g[0]), int (g[3]), int (g[4]), int (g[5])),
+				pid = int (g[6]),
+				logname = g[7],
+				loglevel = log.loglevels.get (g[7], -1),
+				area = g[8].rstrip (':'),
+				message = g[9]
+			)
+		raise error (f'{line}: unparsable')
+	
+	@classmethod
+	def scan (cls, process: str, start: None | datetime = None, end: None | datetime = None, suppress_errors: bool = False) -> Generator[Logline, None, None]:
+		now = datetime.now ()
+		starting: datetime = datetime (now.year, now.month, now.day, 0, 0, 0) if start is None else start
+		ending: datetime = now if end is None else end
+		startordinal = starting.toordinal ()
+		endordinal = ending.toordinal ()
+		current = startordinal
+		while current <= endordinal:
+			current_timestamp = datetime.fromordinal (current)
+			logfile = log.filename (process, ts = current_timestamp)
+			if os.path.isfile (logfile):
+				with open (logfile) as fd:
+					for (lineno, line) in enumerate (fd, start = 1):
+						try:
+							ll = cls.parse (logfile, lineno, line.rstrip ('\n'))
+							if current == startordinal and ll.timestamp < starting:
+								continue
+							if current == endordinal and ll.timestamp > ending:
+								break
+							yield ll
+						except Exception as e:
+							if not suppress_errors:
+								yield cls (
+									filename = logfile,
+									lineno = lineno,
+									line = line,
+									error = e,
+									timestamp = current_timestamp,
+									pid = -1,
+									logname = '',
+									loglevel = -1,
+									area = '',
+									message = ''
+								)
+			current += 1
+	
 def log_filter (predicate: Callable[[logging.LogRecord], bool]) -> None:
 	class Filter (logging.Filter):
 		def filter (self, record: logging.LogRecord) -> bool:

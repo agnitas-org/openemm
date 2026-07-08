@@ -14,6 +14,7 @@ import	os, subprocess, logging
 from	typing import Optional
 from	typing import Dict, Iterator, List, Tuple
 from	.definitions import base, syscfg
+from	.emm.bounce import Bounce
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import which, create_path
@@ -159,7 +160,7 @@ used MTA."""
 	def make (self, path: str, **kwargs: str) -> List[str]:
 		generate = [
 			f'account-logfile={base}/log/account.log',
-			f'bounce-logfile={base}/log/extbounce.log',
+			f'bounce-logfile={Bounce.log_path}',
 			f'mailtrack-logfile={base}/log/mailtrack.log',
 			'media=email',
 			'inject={sendmail} -f %(sender) -- %(recipient)'.format (

@@ -17,70 +17,11 @@
 # define	ST_END_FOUND		(-3)
 
 static bool_t
-transcode_url_for_content (blockmail_t *blockmail, xmlBufferPtr url, const char *uid) /*{{{*/
-{
-	bool_t		rc = false;
-	const xmlChar	*ptr = xmlBufferContent (url);
-	int		size = xmlBufferLength (url);
-	int		state = 0;
-	xmlChar		ch;
-	
-	buffer_clear (blockmail -> link_maker);
-	while (size > 0) {
-		ch = *ptr;
-		if (state < 3) {
-			if (ch == '/')
-				++state;
-		} else if (state == 3) {
-			if (isalpha (ch)) {
-				const xmlChar	*bptr = ptr;
-				int		bsize = size;
-				
-				while ((bsize > 0) && isalpha (*bptr))
-					++bptr, --bsize;
-				buffer_append (blockmail -> link_maker, ptr, bptr - ptr);
-				buffer_appendch (blockmail -> link_maker, '/');
-				buffer_appends (blockmail -> link_maker, uid);
-				buffer_appendch (blockmail -> link_maker, '/');
-				rc = true;
-			}
-			++state;
-		} else if ((ch == '?') || (ch == '&'))
-			break;
-		buffer_appendch (blockmail -> link_maker, ch);
-		++ptr;
-		--size;
-	}
-	return rc;
-}/*}}}*/
-static void
-mkautourl (blockmail_t *blockmail, receiver_t *rec, block_t *block, url_t *url, record_t *record) /*{{{*/
-{
-	char	*uid;
-
-	if (blockmail -> auto_url_is_dynamic && (uid = create_uid (blockmail, blockmail -> uid_version, blockmail -> auto_url_prefix, rec, url, false))) {
-		char	parameter_separator[2];
-
-		parameter_separator[1] = '\0';
-		if (blockmail -> rdir_context_links && transcode_url_for_content (blockmail, blockmail -> auto_url, uid)) {
-			xmlBufferAdd (block -> out, buffer_content (blockmail -> link_maker), buffer_length (blockmail -> link_maker));
-			parameter_separator[0] = '?';
-		} else {
-			xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
-			xmlBufferCCat (block -> out, "uid=");
-			xmlBufferCCat (block -> out, uid);
-			parameter_separator[0] = '&';
-		}
-		free (uid);
-	} else
-		xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> auto_url), xmlBufferLength (blockmail -> auto_url));
-}/*}}}*/
-static bool_t
 mklinkurl (blockmail_t *blockmail, const char *uid_name, const char *uid, const xmlBufferPtr url, const char *link_parameter) /*{{{*/
 {
 	char	separator;
 	
-	if (url && xmlBufferLength (url) && ((! blockmail -> rdir_context_links) || (! transcode_url_for_content (blockmail, url, uid)))) {
+	if (url && xmlBufferLength (url) && ((! blockmail -> rdir_context_links) || (! blockmail_transcode_url_for_content (blockmail, url, uid)))) {
 		buffer_set (blockmail -> link_maker, xmlBufferContent (url), xmlBufferLength (url));
 		buffer_appends (blockmail -> link_maker, uid_name);
 		buffer_appendch (blockmail -> link_maker, '=');
@@ -104,199 +45,19 @@ mkhoneypotlinkurl (blockmail_t *blockmail, const char *uid) /*{{{*/
 {
 	return mklinkurl (blockmail, "agnUID", uid, blockmail -> honeypot_url, NULL);
 }/*}}}*/
-static bool_t
-url_is_personal (const xmlChar *url, int len) /*{{{*/
-{
-	bool_t	rc;
-	int	n;
-	int	state;
-	int	pos, count;
-	
-	rc = false;
-	for (n = 0, state = 0, pos = 0, count = 0; (! rc) && (n < len); ++n)
-		switch (state) {
-		case 0:
-			if (url[n] == '?')
-				state = 1;
-			break;
-		case 1:
-			if (url[n] == '=') {
-				state = 3;
-				pos = 0;
-				count = 0;
-			}
-			break;
-		case 2:
-			if (url[n] == '#')
-				state = 5;
-			else if (url[n] == '&')
-				state = 1;
-			break;
-		case 3:
-			if (url[n] == '.') {
-				if (pos == 0)
-					state = 2;
-				else {
-					pos = 0;
-					if (++count == 4)
-						state = 4;
-				}
-			} else if (isalnum (url[n]))
-				++count;
-			else if (url[n] == '#')
-				state = 5;
-			else
-				state = 2;
-			break;
-		case 4:
-			if (isalnum (url[n])) {
-				state = -1;
-				rc = true;
-			} else
-				state = 2;
-			break;
-		case 5:
-			if (url[n] == '#') {
-				state = 6;
-				pos = 0;
-			} else
-				state = 2;
-			break;
-		case 6:
-			if (url[n] == '#') {
-				if (pos == 0)
-					state = 2;
-				else
-					state = 7;
-			} else
-				++pos;
-			break;
-		case 7:
-			if (url[n] == '#') {
-				state = -1;
-				rc = true;
-			} else {
-				state = 6;
-				++pos;
-			}
-			break;
-		}
-	return rc;
-}/*}}}*/
 
-typedef struct { /*{{{*/
-	blockmail_t	*blockmail;
-	receiver_t	*receiver;
-	/*}}}*/
-}	rplc_t;
 static bool_t
-replace_anon_hashtags (void *rp, buffer_t *output, const xchar_t *token, int tlen) /*{{{*/
+replace_url (blockmail_t *blockmail, receiver_t *rec, block_t *block, record_t *record, const xmlChar *content, int length, int mask) /*{{{*/
 {
-	rplc_t	*replacer = (rplc_t *) rp;
-	int	pos;
-	xchar_t	*param;
+	url_t		*url;
+	const buffer_t	*output;
 	
-	for (pos = 0; pos < tlen; ++pos)
-		if (token[pos] == ':')
-			break;
-	if ((pos < tlen) && (param = malloc (tlen - pos))) {
-		if (pos + 1 < tlen)
-			memcpy (param, token + pos + 1, tlen - pos - 1);
-		param[tlen - pos - 1] = 0;
-	} else {
-		param = NULL;
+	if ((url = blockmail_find_url (blockmail, content, length, -1)) &&
+	    (output = url_create (url, blockmail, rec, record, NULL))) {
+		xmlBufferAdd (block -> out, buffer_content (output), buffer_length (output));
+		return true;
 	}
-	if ((pos == 5) && (! memcmp (token, "PUBID", 5))) {
-		char	*source = NULL;
-		char	*opts = NULL;
-		char	*pubid;
-		
-		if (param) {
-			source = (char *) param;
-			if (opts = strchr (source, ':')) {
-				*opts++ = '\0';
-			}
-		}
-		if (pubid = create_pubid (replacer -> blockmail, replacer -> receiver, source, opts)) {
-			buffer_appends (output, pubid);
-			free (pubid);
-		}
-	}
-	if (param)
-		free (param);
-	return true;
-}/*}}}*/
-static bool_t
-replace_url (blockmail_t *blockmail, receiver_t *rec, block_t *block, record_t *record, const xmlChar *url, int url_length, int mask) /*{{{*/
-{
-	bool_t	changed;
-	int	m;
-	url_t	*match;
-	int	first_orig = -1;
-
-	changed = false;
-	for (m = 0, match = NULL; m < blockmail -> url_count; ++m) {
-		if (url_match (blockmail -> url[m], url, url_length)) {
-			match = blockmail -> url[m];
-			if (blockmail -> url[m] -> usage & mask)
-				break;
-		}
-		if ((first_orig == -1) && blockmail -> url[m] -> orig) {
-			first_orig = m;
-		}
-	}
-	if ((match == NULL) && (first_orig != -1)) {
-		for (m = first_orig; m < blockmail -> url_count; ++m) {
-			if (url_match_original (blockmail -> url[m], url, url_length)) {
-				match = blockmail -> url[m];
-				if (blockmail -> url[m] -> usage & mask)
-					break;
-			}
-		}
-	}
-	if (blockmail -> anon) {
-		if (! blockmail -> anon_preserve_links) {
-			if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
-				xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
-				changed = true;
-			} else if (url_is_personal (url, url_length)) {
-				if (purl_parsen (blockmail -> purl, url, url_length)) {
-					const xchar_t	*rplc;
-					int		rlen;
-					rplc_t		replacer = { blockmail, rec };
-							
-					if ((rplc = purl_build (blockmail -> purl, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
-						xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
-					changed = true;
-				}
-			}
-		}
-	} else if (m < blockmail -> url_count) {
-		mkautourl (blockmail, rec, block, blockmail -> url[m], record);
-		changed = true;
-	} else if (match && match -> resolved) {
-		const xmlChar	*resolved_url = NULL;
-		int		resolved_url_length = -1;
-		buffer_t	*resolve;
-				
-		if (resolve = link_resolve_get (match -> resolved, blockmail, block, match, rec, record)) {
-			resolved_url = resolve -> buffer;
-			resolved_url_length = resolve -> length;
-		}
-		if (blockmail -> tracker) {
-			if (! resolved_url) {
-				resolved_url = url;
-				resolved_url_length = url_length;
-			}
-			tracker_fill (blockmail -> tracker, blockmail, & resolved_url, & resolved_url_length);
-		}
-		if (resolved_url) {
-			if (resolved_url_length > 0)
-				xmlBufferAdd (block -> out, resolved_url, resolved_url_length);
-			changed = true;
-		}
-	}
-	return changed;
+	return false;
 }/*}}}*/
 static bool_t
 replace_url_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, record_t *record, const xmlChar *chunk, int chunk_length, int mask) /*{{{*/
@@ -660,81 +421,13 @@ modify_urls_classic (blockmail_t *blockmail, receiver_t *rec, block_t *block, pr
 			++n;
 		}
 		if (state == ST_END_FOUND) {
-			int	ulen, m;
-			url_t	*match;
-			int	first_orig = -1;
-
-			ulen = end - start;
-			for (m = 0, match = NULL; m < blockmail -> url_count; ++m) {
-				if (url_match (blockmail -> url[m], cont + start, ulen)) {
-					match = blockmail -> url[m];
-					if (blockmail -> url[m] -> usage & mask)
-						break;
-				}
-				if ((first_orig == -1) && blockmail -> url[m] -> orig) {
-					first_orig = m;
-				}
-			}
 			if (lstore < start) {
 				xmlBufferAdd (block -> out, cont + lstore, start - lstore);
 				lstore = start;
 			}
-			if ((match == NULL) && (first_orig != -1)) {
-				for (m = first_orig; m < blockmail -> url_count; ++m) {
-					if (url_match_original (blockmail -> url[m], cont + start, ulen)) {
-						match = blockmail -> url[m];
-						if (blockmail -> url[m] -> usage & mask)
-							break;
-					}
-				}
-			}
-			if (blockmail -> anon) {
-				if (! blockmail -> anon_preserve_links) {
-					if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
-						xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
-						lstore = end;
-						changed = true;
-					} else if (url_is_personal (cont + start, ulen)) {
-						if (! scratch)
-							scratch = purl_alloc (NULL);
-						if (scratch && purl_parsen (scratch, cont + start, ulen)) {
-							const xchar_t	*rplc;
-							int		rlen;
-							rplc_t		replacer = { blockmail, rec };
-							
-							if ((rplc = purl_build (scratch, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
-								xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
-							lstore = end;
-							changed = true;
-						}
-					}
-				}
-			} else if (m < blockmail -> url_count) {
-				mkautourl (blockmail, rec, block, blockmail -> url[m], record);
+			if (replace_url (blockmail, rec, block, record, cont + start, end - start, mask)) {
 				lstore = end;
 				changed = true;
-			} else if (match && match -> resolved) {
-				const xmlChar	*url = NULL;
-				int		ulength = -1;
-				buffer_t	*resolve;
-				
-				if (resolve = link_resolve_get (match -> resolved, blockmail, block, match, rec, record)) {
-					url = resolve -> buffer;
-					ulength = resolve -> length;
-				}
-				if (blockmail -> tracker) {
-					if (! url) {
-						url = cont + start;
-						ulength = ulen;
-					}
-					tracker_fill (blockmail -> tracker, blockmail, & url, & ulength);
-				}
-				if (url) {
-					if (ulength > 0)
-						xmlBufferAdd (block -> out, url, ulength);
-					lstore = end;
-					changed = true;
-				}
 			}
 			state = ST_INITIAL;
 		}
@@ -968,7 +661,7 @@ update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_
 		if (blockmail -> honeypot_url && (blockmail -> add_honeypot_link != Add_None))
 			hpl = blockmail -> add_honeypot_link;
 		if ((opl != Add_None) || (hpl != Add_None))
-			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, NULL, false))) {
+			if (! (uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, NULL, false, NULL))) {
 				log_out (blockmail -> lg, LV_ERROR, "update_html: failed to create generic agnUID");
 				rc = false;
 			}

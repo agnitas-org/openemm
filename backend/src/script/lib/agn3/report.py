@@ -13,7 +13,9 @@ from	__future__ import annotations
 import	os, logging, re, json
 import	zipfile, mimetypes
 import	html.parser, html.entities
+from	datetime import datetime
 from	email.utils import parseaddr
+from	enum import Enum
 from	urllib.parse import urlparse
 from	typing import Any, Optional, Sequence
 from	typing import Dict, List, NamedTuple, Set, Tuple
@@ -30,7 +32,7 @@ from	.stream import Stream
 from	.template import Template
 from	.tools import listsplit
 #
-__all__ = ['Recipient', 'Report']
+__all__ = ['Recipient', 'Report', 'SystemMessageType', 'system_message']
 #
 logger = logging.getLogger (__name__)
 #
@@ -48,13 +50,13 @@ class Recipient:
 	__repr__ = __str__
 
 	@classmethod
-	def parse_list (cls, s: None | str) -> None | list[Recipient]:
+	def parse_list (cls, s: None | str) -> list[Recipient]:
 		if s is not None:
 			return [Recipient (email = _e) for _e in listsplit (s)]
 		return []
 
 	@classmethod
-	def retrieve (cls, db: DB, company_id: int, company_admin: bool = True) -> list[Recipient]:
+	def retrieve (cls, db: DB, company_id: int, company_admin: bool = True, system_emails: bool = True) -> list[Recipient]:
 		with db.request () as cursor:
 			recipients: list[Recipient] = []
 			seen: set[int] = set ()
@@ -88,6 +90,10 @@ class Recipient:
 				if row.admin_id not in seen:
 					seen.add (row.admin_id)
 					recipients.append (Recipient (email = row.email, firstname = row.firstname, lastname = row.fullname, language = row.admin_lang))
+			if system_emails:
+				rq = cursor.querys ('SELECT system_msg_email FROM company_tbl WHERE company_id = :company_id', {'company_id': company_id})
+				if rq is not None:
+					recipients += cls.parse_list (rq.system_msg_email)
 			return recipients
 		return []
 
@@ -561,3 +567,93 @@ class Report:
 				else:
 					logger.info (f'Mail sent to {pretty_recv}')
 		return rc
+
+class SystemMessage (NamedTuple):
+	name: str
+	id: int
+	mapping: None | dict[str, str] = None
+
+class SystemMessageStatus (Enum):
+	New = 0
+	Sent = 1
+	Failed = 2
+	Error = 3
+			
+class SystemMessageType (Enum):
+	Mandatory_Voucher = SystemMessage (
+		name = 'mandatory-voucher', 
+		id = 3
+	)
+	AGNItem_Failure = SystemMessage (
+		name = 'agnitem-failure', 
+		id = 14,
+		mapping = {
+			'mailing_id': 'mailingId',
+			'company_id': 'companyId',
+			'error': 'errorMessage'
+		}
+	)
+
+def system_message (_company_id: int, _message: str | SystemMessage | SystemMessageType, **kwargs: None | bool | int | float | str | datetime) -> bool:
+	if isinstance (_message, SystemMessage):
+		message_type = _message
+	elif isinstance (_message, SystemMessageType):
+		message_type = _message.value
+	else:
+		for entry in SystemMessageType.__members__.values ():
+			if entry.name == _message or entry.value.name == _message:
+				message_type = entry.value
+				break
+		else:
+			raise error (f'{_message}: not known/supported')
+	if (mapping := message_type.mapping) is not None:
+		source = (Stream (kwargs.items ())
+			.map (lambda kv: (mapping.get (kv[0]), kv[1]))
+			.filter (lambda kv: kv[0] is not None)
+			.dict ()
+		)
+		if len (source) < len (mapping):
+			
+			raise error ('{name}: incomplete data, missing: {missing}'.format (
+				name = message_type.name,
+				missing = Stream (mapping.items ()).filter (lambda kv: kv[1] not in source).peek ().map (lambda kv: f'"{kv[0]}"').sorted ().join (', ')
+			))
+	else:
+		source = kwargs
+	try:
+		def map_value (value: Any) -> None | bool | int | float | str:
+			if value is None or isinstance (value, bool) or isinstance (value, int) or isinstance (value, float) or isinstance (value, str):
+				return value
+			if isinstance (value, datetime):
+				return value.isoformat (timespec = 'seconds')
+			return str (value)
+		#
+		parameters = json.dumps (Stream (source.items ()).map (lambda kv: (kv[0], map_value (kv[1]))).dict ())
+	except TypeError as e:
+		raise error (f'parameters "{source!r}" cannot be encoded: {e}')
+	#
+	with DB () as db:
+		return db.update (
+			db.qselect (
+				oracle = (
+					'INSERT INTO system_message_queue_tbl '
+					'       (id, company_id, type, parameters, status, creation_date, change_date, send_date, retry_count, origin, processed_by) '
+					'VALUES '
+					'       (system_message_queue_tbl_seq.nextval, :company_id, :message_type, :parameters, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 0, :origin, NULL)'
+				), mariadb = (
+					'INSERT INTO system_message_queue_tbl '
+					'       (company_id, type, parameters, status, creation_date, change_date, send_date, retry_count, origin, processed_by) '
+					'VALUES '
+					'       (:company_id, :message_type, :parameters, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 0, :origin, NULL)'
+				)
+			),
+			{
+				'company_id': _company_id,
+				'message_type': message_type.id,
+				'parameters': parameters,
+				'status': SystemMessageStatus.New.value,
+				'origin': fqdn
+			},
+			commit = True
+		) == 1
+

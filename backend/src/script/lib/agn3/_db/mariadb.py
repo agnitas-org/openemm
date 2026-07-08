@@ -17,8 +17,8 @@ with Ignore (ImportError):
 	except:
 		raise ImportError ()
 	import	logging, time
-	from	typing import Any, Callable, Optional, Union
-	from	typing import Dict, List, Tuple
+	from	typing import Any, Callable, Optional
+	from	typing import List, Tuple
 	from	typing import cast
 	from	.types import Driver
 	from	..dbapi import DBAPI
@@ -37,7 +37,7 @@ with Ignore (ImportError):
 			self.tries = 3
 			self.rowmap: List[Callable[[Any], Any]] = []
 
-		def executor (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None) -> int:
+		def executor (self, statement: str, parameter: None | list[Any] | dict[str, Any] = None) -> int:
 			last_error: Optional[Exception] = None
 			for state in range (self.tries):
 				if state:
@@ -49,7 +49,7 @@ with Ignore (ImportError):
 					self.db.log (f'Got mariadb error: {e}')
 					try:
 						if e.errno not in {
-							# MySQL/MariaDB in common error codes
+							# MariaDB in common error codes
 							1027,	# '%s' is locked against change
 							1099,	# Table '%s' was locked with a READ lock and can't be updated
 							1105,	# Unknown error
@@ -85,8 +85,8 @@ with Ignore (ImportError):
 				self.rowmap = [self.find_mapper (_d[0], _d[1]) for _d in self.description ()]
 			return super ().make_row ([_m (_d) for (_m, _d) in zip (self.rowmap, data)])
 			
-		def querys (self, req: str, parm: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
-			rc = super ().querys (req, parm, cleanup)
+		def querys (self, req: str, parm: None | dict[str, Any] = None) -> Optional[Row]:
+			rc = super ().querys (req, parm)
 			if rc is not None:
 				with Ignore ():
 					while cast (DBAPI.Cursor, self.curs).fetchmany ():
@@ -153,7 +153,7 @@ with Ignore (ImportError):
 
 	mariadb = Driver (
 		'mariadb',
-		None,
+		{'mysql'},
 		lambda cfg: MariaDB (
 			cfg['host'],
 			cfg['user'],

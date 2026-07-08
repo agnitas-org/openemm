@@ -237,6 +237,7 @@ class Scanner:
 		if self.scan_for (test):
 			try:
 				recipient = recipient.strip ('<>')
+				reason = reason.replace ('\t', ' ')
 				info = [
 					f'timestamp={timestamp.year:04d}-{timestamp.month:02d}-{timestamp.day:02d} {timestamp.hour:02d}:{timestamp.minute:02d}:{timestamp.second:02d}',
 					f'stat={reason}',

@@ -59,6 +59,7 @@ block_alloc (void) /*{{{*/
 	if (b = (block_t *) malloc (sizeof (block_t))) {
 		b -> bid = -1;
 		b -> nr = -1;
+		b -> div_id = 0;
 		b -> mime = NULL;
 		b -> charset = NULL;
 		b -> encode = NULL;

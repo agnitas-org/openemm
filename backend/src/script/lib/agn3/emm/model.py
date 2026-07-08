@@ -8,14 +8,3 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#
-import	enum
-from	itertools import chain
-from	.types import Driver
-from	. import mariadb, oracle, sqlite
-#
-__all__ = ['Drivers']
-#
-Drivers = getattr (enum, 'Enum') ('Drivers', ((_v.name, _v) for (_n, _v) in chain (*(_m.__dict__.items () for _m in (mariadb, oracle, sqlite))) if type (_v) is Driver))
-#
-# XXX: the getattr(...) is a workaround instead of calling enum.Enum direct to bypass mypy check which results in a false positive

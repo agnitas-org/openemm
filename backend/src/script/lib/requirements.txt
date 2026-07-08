@@ -13,4 +13,5 @@ msgpack
 websockets
 asyncinotify
 asyncssh
+pydantic
 [db:mariadb] mariadb

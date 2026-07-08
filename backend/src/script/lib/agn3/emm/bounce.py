@@ -18,16 +18,36 @@ from	typing import Any, Final, Optional, Union
 from	typing import DefaultDict, Dict, List, Set, Tuple, Type
 from	.config import EMMCompany
 from	..db import DB, TempDB
-from	..definitions import epoch, base
+from	..definitions import epoch, base, fqdn
 from	..ignore import Ignore
 from	..parameter import Parameter
 from	..parser import Parsable, unit
 from	..stream import Stream
+from	..uid import UID
+from	.types import MediaType
 #
 __all__ = ['Bounce']
 #
 logger = logging.getLogger (__name__)
 #
+class DSN:
+	__slots__ = ['dsn']
+	def __init__ (self, source: str | tuple[int, int, int] | DSN) -> None:
+		self.dsn: tuple[int, int, int]
+		if isinstance (source, DSN):
+			self.dsn = source.dsn
+		elif isinstance (source, tuple):
+			self.dsn = source
+		else:
+			parsed = tuple (int (_v) for _v in source.split ('.'))
+			if len (parsed) == 3 and (1 <= parsed[0] <= 5) and (0 <= parsed[1] <= 9):
+				self.dsn = parsed
+			else:
+				raise ValueError (f'{source}: invalid DSN')
+	
+	def __str__ (self) -> str:
+		return f'{self.dsn[0]}.{self.dsn[1]}.{self.dsn[2]}'
+
 class Bounce:
 	__slots__ = [
 		'db',
@@ -38,6 +58,7 @@ class Bounce:
 		'last_check', 'recheck_interval',
 		'last_force', 'force_interval'
 	]
+	log_path: Final[str] = os.path.join (base, 'log', 'extbounce.log')
 	bav_rule_legacy_path: Final[str] = os.path.join (base, 'lib', 'bav.rule')
 	bounce_rule_table: Final[str] = 'bounce_rule_tbl'
 	bounce_config_table: Final[str] = 'bounce_config_tbl'
@@ -45,6 +66,49 @@ class Bounce:
 	ote_table: Final[str] = 'one_time_provider_tbl'
 	name_conversion: Final[str] = 'conversion'
 	name_company_info_conversion: Final[str] = 'bounce-conversion-parameter'
+	parse_space = re.compile ('[\t\n\r]')
+	@classmethod
+	def flatten (cls, s: Any) -> str:
+		return cls.parse_space.sub (' ', str (s)) if s is not None else ''
+
+	@classmethod
+	def log (cls,
+		dsn: str | tuple[int, int, int] | DSN,
+		licence_id: int,
+		mailing_id: int,
+		mediatype: MediaType,
+		customer_id: int,
+		**kws: str
+	) -> None:
+		with open (cls.log_path, 'a') as fd:
+			info: dict[str, str] = {}
+			for (option, value) in [
+				('timestamp', f'{datetime.now ():%Y-%m-%d %H:%M:%S}'),
+				('server', fqdn)
+			]:
+				if option not in kws:
+					info[option] = value
+			info.update (kws)
+			fd.write ('{dsn};{licence_id};{mailing_id};{mediatype};{customer_id};{info}\n'.format (
+				dsn = str (DSN (dsn)),
+				licence_id = licence_id,
+				mailing_id = mailing_id,
+				mediatype = mediatype.value,
+				customer_id = customer_id,
+				info = Stream (info.items ()).map (lambda kv: '{k}={v}'.format (k = kv[0], v = cls.flatten (kv[1]))).join ('\t')
+			))
+	
+	@classmethod
+	def log_with_uid (cls, dsn: str | tuple[int, int, int] | DSN, uid: UID, **kws: str) -> None:
+		cls.log (
+			dsn = dsn,
+			licence_id = uid.licence_id,
+			mailing_id = uid.mailing_id,
+			mediatype = MediaType.by_value (uid.media_id),
+			customer_id = uid.customer_id,
+			**kws
+		)
+				
 	def __init__ (self, db: Optional[DB] = None, recheck_interval: Parsable = '3m', force_interval: Parsable = '1h') -> None:
 		self.db = db
 		self.rules: Dict[Tuple[int, int], Dict[str, List[str]]] = {}

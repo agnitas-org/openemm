@@ -120,9 +120,10 @@ class Process:
 			self.do_stop ()
 		
 class Service:
-	__slots__ = ['cfg', 'id', 'ec', 'plugins', 'ns', 'command', 'selective']
-	def __init__ (self, cfg: Config, id: str, parameter: List[str]) -> None:
+	__slots__ = ['cfg', 'verbose', 'id', 'ec', 'plugins', 'ns', 'command', 'selective']
+	def __init__ (self, cfg: Config, verbose: bool, id: str, parameter: List[str]) -> None:
 		self.cfg = cfg
+		self.verbose = verbose
 		self.id = id
 		self.ec = 0
 		self.plugins: Dict[str, PluginService] = {}
@@ -207,7 +208,7 @@ class Service:
 			for dbms in Stream (DBConfig ().values ()).mapignore (lambda r: r['dbms'], KeyError).distinct ():
 				try:
 					required.append ({
-						'oracle':	'cx_Oracle',
+						'oracle':	'oracledb',
 						'mariadb':	'mariadb'
 					}[dbms])
 				except KeyError:
@@ -289,7 +290,7 @@ class Service:
 						'FROM release_log_tbl '
 						'WHERE host_name = :host_name AND application_name = :application_name '
 						'ORDER BY startup_timestamp DESC'
-					), mysql = (
+					), mariadb = (
 						'SELECT version_number '
 						'FROM release_log_tbl '
 						'WHERE host_name = :host_name AND application_name = :application_name '
@@ -388,21 +389,34 @@ class Service:
 					pass
 				sig[signal.SIGINT] = handler
 				try:
-					def callback (name: str, what: str, exc: Optional[Exception] = None) -> None:
-						if what in ('start', 'rollback'):
-							if what == 'start':
-								what = self.command
-							self.outn ('%s %s .. ' % (what, name))
-						else:
-							self.out ('%s%s' % (what, (' (%s)' % str (exc)) if exc else ''))
-							if what == 'fail':
-								time.sleep (2)
-								for proc in use:
-									try:
-										proc.do_status ()
-									except service_error as e:
-										logger.error (f'Failed to get status for {proc.name} before rollback: {e}')
-					ta.execute (rollback_failed = True, callback = callback)
+					class Callback:
+						__slots__ = ['svc', 'started']
+						def __init__ (self, svc: Service) -> None:
+							self.svc = svc
+							self.started: None | float = None
+							
+						def __call__ (self, name: str, what: str, exc: Optional[Exception] = None) -> None:
+							if what in ('start', 'rollback'):
+								if what == 'start':
+									what = self.svc.command
+									if self.svc.verbose:
+										self.started = time.monotonic ()
+								self.svc.outn (f'{what} {name} .. ')
+							else:
+								self.svc.out ('{spent}{what}{exception}'.format (
+									spent = '{diff:.2f} '.format (diff = time.monotonic () - self.started) if self.started else '',
+									what = what,
+									exception = f' ({exc})' if exc else ''
+								))
+								self.started = None
+								if what == 'fail':
+									time.sleep (2)
+									for proc in use:
+										try:
+											proc.do_status ()
+										except service_error as e:
+											logger.error (f'Failed to get status for {proc.name} before rollback: {e}')
+					ta.execute (rollback_failed = True, callback = Callback (self))
 				except Exception as e:
 					self.fail ('Rollback executed during %s: %s' % (self.command, str (e)))
 					if isinstance (e, service_error):
@@ -500,7 +514,7 @@ class Main (CLI):
 			cfg.read (self.config_filename)
 		for (option, value) in self.options.items ():
 			cfg[option] = value
-		service = Service (cfg, self.id, self.parameter)
+		service = Service (cfg, self.verbose, self.id, self.parameter)
 		if service.sanity_check ():
 			service.execute ()
 		sys.exit (service.ec)

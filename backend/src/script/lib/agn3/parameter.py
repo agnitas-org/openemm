@@ -215,7 +215,7 @@ class MailingParameter (Parameter):
 	import	string
 	
 	startOfName = string.ascii_lowercase
-	partOfName = string.ascii_lowercase + string.digits
+	partOfName = string.ascii_lowercase + string.digits + ' '
 	def __mpDecode (self, ctx: Dict[str, Any], s: str, target: Dict[str, str]) -> None:
 		pos = 0
 		state = 0

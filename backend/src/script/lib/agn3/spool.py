@@ -94,7 +94,7 @@ path to the next mail file to process."""
 						logger.exception (f'{path}: failed to remove: {e}')
 				try:
 					os.rmdir (self.path)
-					logger.info (f'{self}: removed workspace')
+					logger.debug (f'{self}: removed workspace')
 				except OSError as e:
 					logger.exception (f'{self}: failed to remove workspace: {e}')
 		
@@ -275,7 +275,7 @@ limit hard drive usage in case of high volume mail traffic."""
 				else:
 					create_path (cur)
 					self.workspaces.append (cur)
-					logger.info (f'{cur}: created new workspace')
+					logger.debug (f'{cur}: created new workspace')
 			src = os.path.join (self.incoming, fname)
 			dst = os.path.join (cur, fname)
 			try:

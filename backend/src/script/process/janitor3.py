@@ -45,12 +45,13 @@ class Janitor (agn3.janitor.Janitor):
 		tasks: List[Tuple[str, Callable[[], None]]] = [
 			('Cleanup Logfiles', partial (self.cleanup_logfiles, [Rule (None, 2)], [Rule (re.compile ('.*-account\\.log.*'), 120), Rule (None, 40)])),
 			('Cleanup FSDB', partial (self.cleanup_fsdb, 7)),
-			('Cleanup outdated virtual environments', partial (self.cleanup_venv, 30))
+			('Cleanup outdated virtual environments', partial (self.cleanup_venv, 30)),
+			('Cleanup spool', self.cleanup_spool),
+			('Cleanup Mailspool', partial (self.cleanup_mailspool, 2, 4))
 		]
 		if syscfg.service ('merger', 'openemm'):
 			tasks += [
-				('Cleanup log/done', self.cleanup_log_done),
-				('Cleanup spool', self.cleanup_spool)
+				('Cleanup log/done', self.cleanup_log_done)
 			]
 		if syscfg.service ('mailer', 'openemm'):
 			tasks += [
@@ -59,10 +60,6 @@ class Janitor (agn3.janitor.Janitor):
 		if syscfg.service ('mailloop', 'openemm'):
 			tasks += [
 				('Cleanup filter', self.cleanup_filter)
-			]
-		if syscfg.service ('merger', 'mailer', 'mailloop', 'openemm'):
-			tasks += [
-				('Cleanup Mailspool', partial (self.cleanup_mailspool, 2, 4)),
 			]
 		#
 		for (description, method) in tasks:
@@ -181,59 +178,71 @@ class Janitor (agn3.janitor.Janitor):
 			self.remove (path)
 
 	def cleanup_spool (self) -> None:
-		meta = os.path.join (base, 'var', 'spool', 'META')
-		admin = os.path.join (base, 'var', 'spool', 'ADMIN')
 		def show_count (cnt: List[int], s: str) -> None:
 			logger.info ('%d files found, %d successful, %d failed: %s' % (sum (cnt), cnt[0], cnt[1], s))
 		#
-		count = [0, 0]
-		moved = []
-		for path in self._select_xml (meta, 2, False):
-			if self.move (path, admin):
-				count[0] += 1
-				moved.append (os.path.join (admin, os.path.basename (path)))
-			else:
-				count[1] += 1
-		show_count (count, 'moved from %s to %s' % (meta, admin))
-		if moved:
-			self.compress (moved)
-			logger.info ('%d files compressed' % len (moved))
+		meta = os.path.join (base, 'var', 'spool', 'META')
+		admin = os.path.join (base, 'var', 'spool', 'ADMIN')
 		#
-		count = [0, 0]
-		for path in self._select_xml (admin, 30, True):
-			if self.remove (path):
-				count[0] += 1
-			else:
-				count[1] += 1
-		show_count (count, 'removed from %s' % admin)
+		if os.path.isdir (meta) and os.path.isdir (admin):
+			count = [0, 0]
+			moved = []
+			for path in self._select_xml (meta, 2, False):
+				if self.move (path, admin):
+					count[0] += 1
+					moved.append (os.path.join (admin, os.path.basename (path)))
+				else:
+					count[1] += 1
+			show_count (count, 'moved from %s to %s' % (meta, admin))
+			if moved:
+				self.compress (moved)
+				logger.info ('%d files compressed' % len (moved))
+			#
+			count = [0, 0]
+			for path in self._select_xml (admin, 30, True):
+				if self.remove (path):
+					count[0] += 1
+				else:
+					count[1] += 1
+			show_count (count, 'removed from %s' % admin)
 		#
 		deleted = os.path.join (base, 'var', 'spool', 'DELETED')
-		count = [0, 0]
-		for path in self._select_xml (deleted, 30, True):
-			if self.remove (path):
-				count[0] += 1
-			else:
-				count[1] += 1
-		show_count (count, 'removed from %s' % deleted)
+		if os.path.isdir (deleted):
+			count = [0, 0]
+			for path in self._select_xml (deleted, 30, True):
+				if self.remove (path):
+					count[0] += 1
+				else:
+					count[1] += 1
+			show_count (count, 'removed from %s' % deleted)
 		#
 		outdated = os.path.join (base, 'var', 'spool', 'OUTDATED')
-		self.cleanup_timestamp_directories (
-			path = outdated,
-			pack_after_days = 2,
-			remove_after_days = 14,
-			compress = 'gz'
-		)
-		count = [0, 0]
-		for path in self._select_xml (outdated, 15, True):
-			if self.remove (path):
-				count[0] += 1
-			else:
-				count[1] += 1
-		show_count (count, f'removed from {outdated}')
+		if os.path.isdir (outdated):
+			self.cleanup_timestamp_directories (
+				path = outdated,
+				pack_after_days = 2,
+				remove_after_days = 14,
+				compress = 'gz'
+			)
+			count = [0, 0]
+			for path in self._select_xml (outdated, 15, True):
+				if self.remove (path):
+					count[0] += 1
+				else:
+					count[1] += 1
+			show_count (count, f'removed from {outdated}')
 		#
 		archive = os.path.join (base, 'var', 'spool', 'ARCHIVE')
 		if os.path.isdir (archive):
 			self.cleanup_timestamp_directories (archive, 7, 30)
+			for subarchive in (Stream (os.listdir (archive))
+				.regexp ('^[a-z]+$')
+				.sorted ()
+				.map (lambda f: os.path.join (archive, f))
+				.filter (lambda p: os.path.isdir (p))
+				.list ()
+			):
+				self.cleanup_timestamp_directories (subarchive, 7, 30)
 
 	def _select_xml (self, path: str, offset: int, all_extensions: bool) -> List[str]:
 		dt = time.localtime (time.time () - offset * 24 * 60 * 60)

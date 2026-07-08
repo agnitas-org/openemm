@@ -37,7 +37,7 @@ class Activator:
 	]
 	def __init__ (self) -> None:
 		create_path (os.path.dirname (Activator.db_path))
-		self.db = DBLite (Activator.db_path, Activator.db_layout)
+		self.db = DBLite (Activator.db_path, layout = Activator.db_layout)
 	
 	def __enter__ (self) -> Activator:
 		if not self.db.isopen ():

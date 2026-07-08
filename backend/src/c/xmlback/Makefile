@@ -11,9 +11,9 @@
 #
 CFLAGS	= -I. -I../lib -I../lib/include
 LDFLAGS	= -L. -L../lib -L../lib/lib
-LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lmpack -lssl -lcrypto -lxml2 -lz -lm -ldl
+LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lmpack -luuid -lssl -lcrypto -lxml2 -lz -lm -ldl
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c html.c convert.c append.c \
-	  blockmail.c block.c tagpos.c tracker.c mailtypedefinition.c links.c blockspec.c fix.c \
+	  blockmail.c block.c tagpos.c mailtypedefinition.c links.c blockspec.c fix.c \
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
 	  codec.c eval.c counter.c rblock.c misc.c sqllike.c reason.c none.c \
 	  generate.c count.c preview.c head.c \

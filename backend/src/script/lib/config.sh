@@ -33,6 +33,7 @@ export	SYSTEM_CONFIG='{
 	"licence": "0",
 	"dbid": "openemm",
 	"merger-address": "127.0.0.1",
+	"merger.java-memory": "-Xms256m -Xmx1536m",
 	"filter-name": "localhost",
 	"mailout-server": "localhost",
 	"mailout-port": "8093",
@@ -270,7 +271,7 @@ setupVirtualEnviron() {
 	python3="`which python3.11 2>/dev/null`"
 	if [ $? -ne 0 ] || [ ! "$python3" ]; then
 		python3=""
-		minor_minimum="8"
+		minor_minimum="11"
 		for candidate in `which -a python3 2>/dev/null`; do
 			if [ -x "$candidate" ]; then
 				"$candidate" -c "import sys; sys.exit ($minor_minimum > sys.version_info.minor)"
@@ -302,67 +303,11 @@ setupVirtualEnviron() {
 	if [ ! "$VIRTUAL_ENV" ] || [ ! "$VIRTUAL_ENV" = "$venv" ]; then
 		if [ -d "$venv" ]; then
 			VIRTUAL_ENV_DISABLE_PROMPT=yes
-			source "$venv/bin/activate"
+			. "$venv/bin/activate"
 		fi
 	fi
 	[ "$VIRTUAL_ENV" = "$venv" ]
 	return $?
-}
-updateVirtualEnviron() {
-	setupVirtualEnviron || return 1
-	python3 -m pip install -U pip
-	python3 -m pip install -U `python3 -m pip list --format=freeze | cut -d= -f1`
-}	
-moduleinstalled() {
-	python3 -c "
-import	sys
-try:
-	import $@
-	sys.exit (0)
-except ImportError:
-	sys.exit (1)
-"
-}
-require() {
-	if [ "$1" = "--update" ] || [ "$1" = "-U" ]; then
-		shift
-		__update="true"
-	else
-		__update="false"
-	fi
-	if [ $# -lt 1 ]; then
-		error "Usage: $0 [--update | -U] <module> [<module-filename>]"
-		return 1
-	fi
-	#
-	__module="$1"
-	__name="$2"
-	if [ ! "$__name" ]; then
-		__name="$__module"
-	fi
-	setupVirtualEnviron || return 1
-	moduleinstalled "$__module"
-	if [ $? -ne 0 ]; then
-		python3 -m pip install -U pip
-		python3 -m pip install "$__name"
-		if [ $? -ne 0 ]; then
-			error "Failed to install $__name"
-			return 1
-		fi
-		moduleinstalled "$__module"
-		if [ $? -ne 0 ]; then
-			error "Module $__module not found, even after installation of ${__name}, see following output for details:"
-			python3 -c "import $__module" 1>&2
-			return 1
-		else
-			message "Installed module $__module from $__name"
-		fi
-	elif [ "$__update" = "true" ]; then
-		python3 -m pip install -U "$__module" || return 1
-	fi
-}
-requires() {
-	require "$@" || exit 1
 }
 #
 getproc() {
@@ -594,6 +539,4 @@ if [ "$BASE" = "$HOME" ] && [ "`$cq python-auto-install-modules:true`" = "true" 
 		die "Failed to preparse requirements file with exit status $rc"
 		;;
 	esac
-else
-	requires msgpack
 fi

@@ -100,8 +100,8 @@ coder_encode (coder_t *c, bool_t final, buffer_t *in, buffer_t *out) /*{{{*/
 	c -> codec (c, final, in, out);
 }/*}}}*/
 
-typedef struct hashtag	hashtag_t;
-struct hashtag { /*{{{*/
+typedef struct hashvalue	hashvalue_t;
+struct hashvalue { /*{{{*/
 	char		**elements;	/* elements from tag			*/
 	int		ecount;		/* # of elements			*/
 	char		*options;	/* buffer to create option strings	*/
@@ -109,15 +109,15 @@ struct hashtag { /*{{{*/
 	bool_t		raw;		/* no encoding for output value		*/
 	int		column;		/* column referenced			*/
 	coder_t		*coder;		/* encoding logics			*/
-	bool_t		(*creator) (buffer_t *, hashtag_t *, blockmail_t *, block_t *, url_t *, receiver_t *, record_t *);
+	bool_t		(*creator) (buffer_t *, hashvalue_t *, blockmail_t *, block_t *, url_t *, receiver_t *, record_t *);
 					/* callback for value			*/
 	buffer_t	*createbuf;	/* target for callback			*/
 	buffer_t	*fixed;		/* fixed value				*/
-	struct hashtag	*next;
+	hashvalue_t	*next;
 	/*}}}*/
 };
-static hashtag_t *
-hashtag_free (hashtag_t *h) /*{{{*/
+static hashvalue_t *
+hashvalue_free (hashvalue_t *h) /*{{{*/
 {
 	if (h) {
 		if (h -> elements) {
@@ -134,19 +134,19 @@ hashtag_free (hashtag_t *h) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-static hashtag_t *
-hashtag_free_all (hashtag_t *h) /*{{{*/
+static hashvalue_t *
+hashvalue_free_all (hashvalue_t *h) /*{{{*/
 {
-	hashtag_t	*tmp;
+	hashvalue_t	*tmp;
 	
 	while (tmp = h) {
 		h = h -> next;
-		hashtag_free (tmp);
+		hashvalue_free (tmp);
 	}
 	return NULL;
 }/*}}}*/
 static const char *
-hashtag_options (hashtag_t *h, int start, const char *default_value) /*{{{*/
+hashvalue_options (hashvalue_t *h, int start, const char *default_value) /*{{{*/
 {
 	if (h -> options && (start < h -> ecount)) {
 		int	n;
@@ -165,9 +165,9 @@ hashtag_options (hashtag_t *h, int start, const char *default_value) /*{{{*/
 }/*}}}*/
 
 static bool_t
-creator_agnuid (buffer_t *target, hashtag_t *h, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
+creator_agnuid (buffer_t *target, hashvalue_t *h, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
 {
-	char	*uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, url, false);
+	char	*uid = create_uid (blockmail, blockmail -> uid_version, NULL, rec, url, false, NULL);
 	
 	if (uid) {
 		buffer_appends (target, uid);
@@ -176,9 +176,9 @@ creator_agnuid (buffer_t *target, hashtag_t *h, blockmail_t *blockmail, block_t 
 	return uid ? true : false;
 }/*}}}*/
 static bool_t
-creator_pubid (buffer_t *target, hashtag_t *h, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
+creator_pubid (buffer_t *target, hashvalue_t *h, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
 {
-	char	*pubid = create_pubid (blockmail, rec, h -> ecount > 1 ? h -> elements[1] : "NL", hashtag_options (h, 2, NULL));
+	char	*pubid = create_pubid (blockmail, rec, h -> ecount > 1 ? h -> elements[1] : "NL", hashvalue_options (h, 2, NULL));
 	
 	if (pubid) {
 		buffer_appends (target, pubid);
@@ -230,12 +230,12 @@ format_date (buffer_t *target, const char *format, int *date) /*{{{*/
 	} else
 		buffer_format (target, "%d.%d.%04d", date[2], date[1], date[0]);
 }/*}}}*/
-static hashtag_t *
-hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blockmail, url_t *url) /*{{{*/
+static hashvalue_t *
+hashvalue_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blockmail, url_t *url) /*{{{*/
 {
-	hashtag_t	*h;
+	hashvalue_t	*h;
 	
-	if (h = (hashtag_t *) malloc (sizeof (hashtag_t))) {
+	if (h = (hashvalue_t *) malloc (sizeof (hashvalue_t))) {
 		char	*scratch;
 
 		h -> elements = NULL;
@@ -282,7 +282,7 @@ hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blo
 				} else if (! strcasecmp (first, "SENDDATE-UNENCODED")) {
 					if (h -> fixed = buffer_alloc (0)) {
 						h -> raw = true;
-						format_date (h -> fixed, hashtag_options (h, 1, NULL), blockmail -> senddate);
+						format_date (h -> fixed, hashvalue_options (h, 1, NULL), blockmail -> senddate);
 					}
 				} else if (! strcasecmp (first, "DATE")) {
 					time_t		now;
@@ -292,7 +292,7 @@ hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blo
 					if ((tt = localtime (& now)) && (h -> fixed = buffer_alloc (0))) {
 						int	date[6] = { tt -> tm_year + 1900, tt -> tm_mon + 1, tt -> tm_mday, tt -> tm_hour, tt -> tm_min, tt -> tm_sec };
 
-						format_date (h -> fixed, hashtag_options (h, 1, NULL), date);
+						format_date (h -> fixed, hashvalue_options (h, 1, NULL), date);
 					}
 				} else if (! strcasecmp (first, "AGNUID")) {
 					h -> creator = creator_agnuid;
@@ -306,10 +306,10 @@ hashtag_alloc (int start, int end, const byte_t *tag, int tlen, blockmail_t *blo
 	}
 	return h;
 }/*}}}*/
-static hashtag_t *
-hashtag_parse (buffer_t *lnk, blockmail_t *blockmail, url_t *url) /*{{{*/
+static hashvalue_t *
+hashvalue_parse (buffer_t *lnk, blockmail_t *blockmail, url_t *url) /*{{{*/
 {
-	hashtag_t	*root, *prev, *temp;
+	hashvalue_t	*root, *prev, *temp;
 	const xmlChar	*ptr;
 	int		n;
 	
@@ -328,7 +328,7 @@ hashtag_parse (buffer_t *lnk, blockmail_t *blockmail, url_t *url) /*{{{*/
 				ptr += 2;
 				n += 2;
 				end = n;
-				if (temp = hashtag_alloc (start, end, lnk -> buffer + start + 2, end - start - 4, blockmail, url)) {
+				if (temp = hashvalue_alloc (start, end, lnk -> buffer + start + 2, end - start - 4, blockmail, url)) {
 					if (prev)
 						prev -> next = temp;
 					else
@@ -342,7 +342,7 @@ hashtag_parse (buffer_t *lnk, blockmail_t *blockmail, url_t *url) /*{{{*/
 	return root;
 }/*}}}*/
 static void
-to_target (hashtag_t *h, const buffer_t *input1, xmlBufferPtr input2, buffer_t *target, block_t *block) /*{{{*/
+to_target (hashvalue_t *h, const buffer_t *input1, xmlBufferPtr input2, buffer_t *target, block_t *block) /*{{{*/
 {
 	if (input1 || input2) {
 		buffer_t	*scratch[3] = { NULL, NULL, NULL };
@@ -387,7 +387,7 @@ to_target (hashtag_t *h, const buffer_t *input1, xmlBufferPtr input2, buffer_t *
 	}
 }/*}}}*/
 static void
-hashtag_process (hashtag_t *h, buffer_t *target, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
+hashvalue_process (hashvalue_t *h, buffer_t *target, blockmail_t *blockmail, block_t *block, url_t *url, receiver_t *rec, record_t *record) /*{{{*/
 {
 	if (h -> fixed) {
 		if (h -> fixed -> length > 0)
@@ -406,7 +406,7 @@ hashtag_process (hashtag_t *h, buffer_t *target, blockmail_t *blockmail, block_t
 struct resolved { /*{{{*/
 	buffer_t	*link;		/* the link itself	*/
 	buffer_t	*scratch;	/* used, if hashtags	*/
-	hashtag_t	*hashtags;	/* hashtags in link	*/
+	hashvalue_t	*hashvalues;	/* hashvalues in link	*/
 	/*}}}*/
 };
 static resolved_t *
@@ -415,7 +415,7 @@ resolved_free (resolved_t *r) /*{{{*/
 	if (r) {
 		buffer_free (r -> link);
 		buffer_free (r -> scratch);
-		hashtag_free_all (r -> hashtags);
+		hashvalue_free_all (r -> hashvalues);
 		free (r);
 	}
 	return NULL;
@@ -428,10 +428,10 @@ resolved_alloc (const byte_t *source, int len, blockmail_t *blockmail, url_t *ur
 	if (r = (resolved_t *) malloc (sizeof (resolved_t))) {
 		r -> link = NULL;
 		r -> scratch = NULL;
-		r -> hashtags = NULL;
+		r -> hashvalues = NULL;
 		if (r -> link = buffer_alloc (len + 1)) {
 			buffer_set (r -> link, source, len);
-			if (r -> hashtags = hashtag_parse (r -> link, blockmail, url))
+			if (r -> hashvalues = hashvalue_parse (r -> link, blockmail, url))
 				if (! (r -> scratch = buffer_alloc (r -> link -> length + 256)))
 					r = resolved_free (r);
 		} else
@@ -444,13 +444,13 @@ resolved_link (resolved_t *r, blockmail_t *blockmail, block_t *block, url_t *url
 {
 	buffer_t	*rc;
 	
-	if (r -> hashtags) {
+	if (r -> hashvalues) {
 		int		pending = 0;
-		hashtag_t	*run = r -> hashtags;
+		hashvalue_t	*run = r -> hashvalues;
 		int		start;
 		
 		buffer_clear (r -> scratch);
-		for (run = r -> hashtags; ; run = run -> next) {
+		for (run = r -> hashvalues; ; run = run -> next) {
 			if ( !run) {
 				start = r -> link -> length;
 			} else {
@@ -459,7 +459,7 @@ resolved_link (resolved_t *r, blockmail_t *blockmail, block_t *block, url_t *url
 			if (pending < start)
 				buffer_append (r -> scratch, r -> link -> buffer + pending, start - pending);
 			if (run) {
-				hashtag_process (run, r -> scratch, blockmail, block, url, rec, record);
+				hashvalue_process (run, r -> scratch, blockmail, block, url, rec, record);
 				pending = run -> end;
 			} else
 				break;

@@ -25,6 +25,8 @@ __all__ = ['Stream']
 #
 _T = TypeVar ('_T')
 _O = TypeVar ('_O')
+_K = TypeVar ('_K')
+_V = TypeVar ('_V')
 _C_contra = TypeVar ('_C_contra', contravariant = True)
 class Comparable (Protocol[_C_contra]):
 	def __lt__ (self, other: _C_contra) -> bool: ...
@@ -247,7 +249,7 @@ matching object and the element itself."""
 		"""Like map, but passing a type as a hint for the return type of predicate for type checking"""
 		return self.map (predicate)
 	
-	def mapignore (self, predicate: Callable[[_T], _O], *exceptions: Type[BaseException]) -> Stream[_O]:
+	def mapignore (self, predicate: Callable[[_T], _O], *exceptions: Type[BaseException], log_to: None | Callable[[_T, BaseException], None] = None) -> Stream[_O]:
 		"""Like map, but ignoring given or all exceptions while calling predicate"""
 		def mapper () -> Iterator[_O]:
 			for elem in self.iterator:
@@ -256,11 +258,16 @@ matching object and the element itself."""
 				except BaseException as e:
 					if exceptions and len ([_e for _e in exceptions if issubclass (type (e), _e)]) == 0:
 						raise e
+					elif log_to is not None:
+						log_to (elem, e)
 		return self.new (mapper ())
 	
-	def mapignore_to (self, t: Type[_O], predicate: Callable[[_T], Any], *exceptions: Type[BaseException]) -> Stream[_O]:
+	def mapignore_to (self, t: Type[_O], predicate: Callable[[_T], Any], *exceptions: Type[BaseException], log_to: None | Callable[[_T, BaseException], None] = None) -> Stream[_O]:
 		"""Like mapingore, but passing a type as a hint for the return type for the new stream"""
-		return self.mapignore (predicate, *exceptions)
+		return self.mapignore (predicate, *exceptions, log_to = log_to)
+	
+	def enumerate (self, start: int = 0) -> Stream[tuple[int, _T]]:
+		return self.new (enumerate (self, start = start))
 	
 	def distinct (self, key: None | Callable[[_T], Any] = None) -> Stream[_T]:
 		"""Create a new stream eleminating duplicate elements. If ``key'' is not None, it is used to build the key for checking identical elements"""
@@ -654,17 +661,28 @@ each element. """
 		"""Like deque, but help type checker"""
 		return cast (Deque[_O], deque (self.iterator))
 	
-	def group (self, predicate: None | Callable[[Any], Tuple[Any, Any]] = None, finisher: None | Callable[[Dict[Any, List[Any]]], Any] = None) -> Any:
+	def group (self, predicate: None | Callable[[_T], Tuple[_K, _V]] = None, finisher: None | Callable[[defaultdict[Any, List[_T | _V]]], _O] = None) -> defaultdict[_T | _K, List[_T | _V]] | _O:
 		"""Returns a dict of grouped elements as separated by ``predicate'', optional modify the final dict by ``finisher''."""
-		rc: DefaultDict[Any, List[Any]] = defaultdict (list)
+		rc: defaultdict[_T | _K, List[_T | _V]] = defaultdict (list)
 		if predicate is None:
-			for (key, value) in cast (Iterable[Tuple[Any, Any]], self.iterator):
+			for (key, value) in cast (Iterable[Tuple[_K, _V]], self.iterator):
 				rc[key].append (value)
 		else:
 			for elem in self.iterator:
 				(key, value) = predicate (elem)
 				rc[key].append (value)
 		return rc if finisher is None else finisher (rc)
+	
+	def groupcount (self, predicate: None | Callable[[_T], _K] = None) -> defaultdict[_T | _K, int]:
+		"""Returns dict of grouped elements with number of elements per group"""
+		rc: defaultdict[_T | _K, int] = defaultdict (int)
+		if predicate is None:
+			for elem in self.iterator:
+				rc[elem] += 1
+		else:
+			for elem in self.iterator:
+				rc[predicate (elem)] += 1
+		return rc
 
 	def join (self, separator: str = '', finisher: None | Callable[[str], str] = None) -> str:
 		"""Returns a string joining all elements of stream with separator, optional apply ``finisher'' on result, if not None"""

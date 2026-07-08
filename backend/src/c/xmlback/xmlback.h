@@ -15,6 +15,7 @@
 # include	<libxml/parserInternals.h>
 # include	<libxml/xmlmemory.h>
 # include	<libxml/xmlerror.h>
+# include	<uuid/uuid.h>
 # include	<parson.h>
 # include	"agn.h"
 # include	"xml.h"
@@ -146,9 +147,23 @@ typedef struct { /*{{{*/
 	parm_t		*parm;	/* all parameter			*/
 	/*}}}*/
 }	media_t;
+typedef struct image { /*{{{*/
+	long		id;		/* ID from mediapool		*/
+	char		*name;		/* name of image		*/
+	char		*filename;	/* filename of image		*/
+	char		*mime;		/* mime type of image		*/
+	char		*link;		/* full URL for image		*/
+	char		*description;	/* like creator, copytight, ..	*/
+	char		*alt;		/* alt text for img tag		*/
+	int		height, width;	/* dimensions, if available	*/
+	bool_t		mediapool;	/* image is from mediapool	*/
+	struct image	*next;
+	/*}}}*/
+}	image_t;
 typedef struct encrypt		encrypt_t;
 typedef struct output		output_t;
 typedef struct block		block_t;
+typedef struct dyn		dyn_t;
 typedef struct blockmail	blockmail_t;
 typedef struct receiver		receiver_t;
 typedef struct tag		tag_t;
@@ -229,6 +244,7 @@ typedef struct { /*{{{*/
 struct block { /*{{{*/
 	int		bid;		/* the unique blockID		*/
 	int		nr;		/* the passed blocknumber	*/
+	long		div_id;		/* related div_child_id		*/
 	char		*mime;		/* mime type			*/
 	char		*charset;	/* the used character set	*/
 	char		*encode;	/* output encoding		*/
@@ -301,9 +317,11 @@ struct tag { /*{{{*/
 	xmlBufferPtr	name;		/* the name of the tag		*/
 	char		*cname;		/* normalized name		*/
 	long		hash;		/* the hashvalue		*/
+	long		div_id;		/* divID for related block	*/
 	char		*ttype;		/* internal tag type		*/
 	char		*topt;		/* itnernal tag options		*/
 	xmlBufferPtr	value;		/* value of the tag		*/
+	char		*tagname;	/* the tagname itself		*/
 	var_t		*parm;		/* parsed parameter		*/
 	bool_t		used;		/* marker to avoid loops	*/
 	void		*filter;	/* != NULL eval for filer	*/
@@ -313,8 +331,9 @@ struct tag { /*{{{*/
 	/*}}}*/
 };
 
-typedef struct dyn { /*{{{*/
+struct dyn { /*{{{*/
 	int		did;		/* unique ID			*/
+	long		div_id;		/* div_child_id, if available	*/
 	char		*name;		/* name of the dynamic part	*/
 	char		*interest;	/* db column for interest sort	*/
 	int		interest_index;	/* index into database fields	*/
@@ -327,7 +346,7 @@ typedef struct dyn { /*{{{*/
 	struct dyn	*sibling;	/* all parts with the same name	*/
 	struct dyn	*next;		/* next part chain		*/
 	/*}}}*/
-}	dyn_t;
+};
 
 typedef struct { /*{{{*/
 	char		**names;	/* names of columns		*/
@@ -346,8 +365,10 @@ typedef struct { /*{{{*/
 	buffer_t	*dest;		/* destination (the url itself)	*/
 	int		usage;		/* to use in which part?	*/
 	bool_t		admin_link;	/* if this is an admin link	*/
+	bool_t		has_hashtags;	/* if dest contains hashtags	*/
 	buffer_t	*orig;		/* original URL			*/
 	link_resolve_t	*resolved;	/* the resolved link		*/
+	buffer_t	*scratch;	/* building buffer		*/
 	/*}}}*/
 }	url_t;
 
@@ -415,12 +436,6 @@ struct track { /*{{{*/
 	track_t	*next;
 	/*}}}*/
 };
-typedef struct { /*{{{*/
-	track_t		*head;
-	track_t		*tail;
-	xmlBufferPtr	scratch[2];
-	/*}}}*/
-}	tracker_t;
 struct blockmail { /*{{{*/
 	/* internal used only data */
 	const char	*fname;		/* current filename		*/
@@ -432,10 +447,12 @@ struct blockmail { /*{{{*/
 	purl_t		*purl;		/* scratch buffer for URL build	*/
 	html_t		*html;		/* scratch HTML element parsing */
 	cvt_t		*cvt;		/* generalized charset convert	*/
+	char		uuid[UUID_STR_LEN];	/* UUID for this file	*/
 	const long	*target_ids;	/* list of true targets		*/
 	int		target_ids_count;	/* # of elements	*/
 	/* output related data */
 	bool_t		raw;		/* just generate raw output	*/
+	bool_t		fullraw;	/* include meta information	*/
 	output_t	*output;	/* output information		*/
 	void		*outputdata;	/* output related private data	*/
 	counter_t	*counter;	/* counter for created mails	*/
@@ -495,7 +512,6 @@ struct blockmail { /*{{{*/
 		xmlBufferPtr	subject;
 		xmlBufferPtr	from;
 	}	email;
-	tracker_t	*tracker;
 	/* mailcreation part */
 	int		blocknr;
 	char		*innerboundary;
@@ -511,15 +527,14 @@ struct blockmail { /*{{{*/
 	/* mail types */
 	DO_DECL (mailtypedefinition);
 	/* all known tags */
-	tag_t		*ltag;
-	int		taglist_count;
+	tag_t		*recipient_tags;
 	bool_t		clear_empty_dyn_block;
 	bool_t		clear_empty_dyn_block_without_dvalue;
+	image_t		*imagepool;
 	/* tag function global data */
 	void		*tfunc;
 	/* global tags */
-	tag_t		*gtag;
-	int		globaltag_count;
+	tag_t		*global_tags;
 	/* dynamic definitions */
 	dyn_t		*dyn;
 	int		dynamic_count;
@@ -636,7 +651,8 @@ struct receiver { /*{{{*/
 	dataset_t	*rvdata;	/* dynamic data			*/
 	encrypt_t	*encrypt;	/* for dynamic data passing	*/
 	dcache_t	*cache;		/* dynamic cache		*/
-	block_t		*base_block;	/* on which block we are	*/
+	block_t		*component;	/* on which component we are	*/
+	block_t		*current_block;	/* current block in process	*/
 	map_t		*smap;		/* for simple mappings		*/
 	gnode_t		**slist;	/* list of nodes		*/
 	int		chunks;		/* # of chunks of message	*/
@@ -694,6 +710,11 @@ extern bool_t		html_parse (html_t *h, const xmlChar *chunk, int chunk_length);
 extern bool_t		html_match (html_t *h, receiver_t *rec);
 extern void		html_set_pos (html_t *h, int position);
 extern void		html_set_name (html_t *h, const char *name, int name_length);
+extern image_t		*image_alloc (long id);
+extern image_t		*image_free (image_t *i);
+extern image_t		*image_free_all (image_t *i);
+extern const image_t	*image_find_string (image_t *i, const char *name);
+extern const image_t	*image_find_xmlbuffer (image_t *i, const xmlBufferPtr name);
 
 extern tagpos_t		*tagpos_alloc (void);
 extern tagpos_t		*tagpos_free (tagpos_t *t);
@@ -772,6 +793,8 @@ extern void		blockmail_setup_auto_url_prefix (blockmail_t *b, const char *nprefi
 extern void		blockmail_setup_anon (blockmail_t *b, bool_t anon, bool_t anon_preserve_links);
 extern void		blockmail_setup_selector (blockmail_t *b, const char *selector);
 extern void		blockmail_setup_preevaluated_targets (blockmail_t *blockmail);
+extern url_t		*blockmail_find_url (blockmail_t *blockmail, const xmlChar *source, int length, int mask);
+extern bool_t		blockmail_transcode_url_for_content (blockmail_t *blockmail, const xmlBufferPtr url, const char *uid);
 
 extern reason_t		*reason_alloc (void);
 extern reason_t		*reason_free (reason_t *r);
@@ -813,10 +836,11 @@ extern tag_t		*tag_free (tag_t *t);
 extern tag_t		*tag_free_all (tag_t *t);
 extern void		tag_parse (tag_t *t, blockmail_t *blockmail);
 extern bool_t		tag_match (tag_t *t, const xmlChar *name, int nlen);
+extern bool_t		tag_same (tag_t *t, tag_t *candidate);
 extern bool_t		tag_vfilter (tag_t *t, receiver_t *rec, int timeout, va_list par);
 extern bool_t		tag_filter (tag_t *t, receiver_t *rec, int timeout, ...);
 extern const xmlChar	*tag_content (tag_t *t, blockmail_t *blockmail, receiver_t *rec, int *length);
-extern dyn_t		*dyn_alloc (int did, int order);
+extern dyn_t		*dyn_alloc (int did, long div_id, int order);
 extern dyn_t		*dyn_free (dyn_t *d);
 extern dyn_t		*dyn_free_all (dyn_t *d);
 extern bool_t		dyn_match (const dyn_t *d, eval_t *eval, receiver_t *rec);
@@ -833,6 +857,7 @@ extern bool_t		url_match (url_t *u, const xmlChar *check, int clen);
 extern void		url_set_destination (url_t *u, xmlBufferPtr dest);
 extern bool_t		url_match_original (url_t *u, const xmlChar *check, int clen);
 extern void		url_set_original (url_t *u, xmlBufferPtr orig);
+extern const buffer_t	*url_create (url_t *url, blockmail_t *blockmail, receiver_t *rec, record_t *record, buffer_t *output);
 
 extern field_t		*field_alloc (void);
 extern field_t		*field_free (field_t *f);
@@ -868,11 +893,6 @@ extern links_t		*links_alloc (void);
 extern links_t		*links_free (links_t *l);
 extern bool_t		links_expand (links_t *l);
 extern bool_t		links_nadd (links_t *l, const char *lnk, int llen);
-
-extern tracker_t	*tracker_alloc (void);
-extern tracker_t	*tracker_free (tracker_t *tracker);
-extern bool_t		tracker_add (tracker_t *t, blockmail_t *blockmail, const char *name, xmlBufferPtr content);
-extern bool_t		tracker_fill (tracker_t *t, blockmail_t *blockmail, const xmlChar **url, int *ulength);
 
 extern const char	*head_find_name (head_t *h, int *namelength);
 extern const char	*head_value (head_t *h);
@@ -951,8 +971,8 @@ extern bool_t		xmlSQLlike (const xmlChar *pattern, int plen,
 				    const xmlChar *string, int slen,
 				    const xmlChar *escape, int elen);
 
-extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field);
-extern char		*create_pubid (blockmail_t *blockmail, receiver_t *rec, const char *source, const char *parm);
+extern char		*create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, const receiver_t *rec, const url_t *url, bool_t add_status_field, const var_t *param);
+extern char		*create_pubid (blockmail_t *blockmail, const receiver_t *rec, const char *source, const char *parm);
 
 extern encrypt_t	*encrypt_alloc (blockmail_t *blockmail);
 extern encrypt_t	*encrypt_free (encrypt_t *e);

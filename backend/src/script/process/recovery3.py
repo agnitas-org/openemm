@@ -223,7 +223,7 @@ class Recovery (CLI): #{{{
 		)
 		check_query = self.db.qselect (
 			oracle = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (sysdate - 1, \'YYYY-MM-DD\')',
-			mysql = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format(lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day)
+			mariadb = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format(lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day)
 		)
 		update = (
 			'UPDATE maildrop_status_tbl '

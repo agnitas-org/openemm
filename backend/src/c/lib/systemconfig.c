@@ -59,6 +59,9 @@ entry_alloc (const char *key, const char *value) /*{{{*/
 }/*}}}*/
 
 typedef struct { /*{{{*/
+	char	*user;
+	char	*host;
+	char	*fqdn;
 	char	**indexes;
 	int	size;
 	int	count;
@@ -103,6 +106,12 @@ static selection_t *
 selection_free (selection_t *s) /*{{{*/
 {
 	if (s) {
+		if (s -> user)
+			free (s -> user);
+		if (s -> host)
+			free (s -> host);
+		if (s -> fqdn)
+			free (s -> fqdn);
 		if (s -> indexes) {
 			int	n;
 			
@@ -142,6 +151,9 @@ selection_alloc (void) /*{{{*/
 	if (pw && pw -> pw_name)
 		user = pw -> pw_name;
 	if (s = (selection_t *) malloc (sizeof (selection_t))) {
+		s -> user = user ? strdup (user) : NULL;
+		s -> host = host ? strdup (host) : NULL;
+		s -> fqdn = fqdn ? strdup (fqdn) : NULL;
 		s -> indexes = NULL;
 		s -> size = 0;
 		s -> count = 0;
@@ -447,6 +459,51 @@ config_extra (systemconfig_t *c) /*{{{*/
 		close (fd);
 	}
 }/*}}}*/
+static void
+config_expand (systemconfig_t *c) /*{{{*/
+{
+	int		n, m;
+	entry_t		*e;
+	const char	*ptr, *start, *end, *comma;
+	char		*build;
+	int		basecount;
+	int		baselen, keylen, partlen;
+	
+	basecount = c -> count;
+	for (n = 0; n < basecount; ++n) {
+		e = c -> e[n];
+		if (ptr = strchr (e -> key, '[')) {
+			start = ++ptr;
+			baselen = start - e -> key;
+			if ((end = strrchr (ptr, ']')) && (! *(end + 1)) && (comma = strchr (ptr, ','))) {
+				keylen = strlen (e -> key);
+				if (build = malloc (keylen + 1)) {
+					strncpy (build, e -> key, baselen);
+					while (ptr) {
+						partlen = comma - ptr;
+						strncpy (build + baselen, ptr, partlen);
+						build[baselen + partlen] = ']';
+						build[baselen + partlen + 1] = '\0';
+						for (m = 0; m < basecount; ++m)
+							if (! strcmp (c -> e[m] -> key, build))
+								break;
+						if (m == basecount)
+							config_add (c, build, e -> value);
+						if (*comma == ',') {
+							ptr = ++comma;
+							while (isspace (*ptr))
+								++ptr;
+							if (! (comma = strchr (ptr, ',')))
+								comma = strrchr (ptr, ']');
+						} else
+							ptr = NULL;
+					}
+					free (build);
+				}
+			}
+		}
+	}
+}/*}}}*/
 static bool_t
 config_parse (systemconfig_t *c, char *buffer) /*{{{*/
 {
@@ -470,6 +527,7 @@ config_parse (systemconfig_t *c, char *buffer) /*{{{*/
 			rc = true;
 		if (rc && c -> use_extra)
 			config_extra (c);
+		config_expand (c);
 	}
 	return rc;
 }/*}}}*/
@@ -644,6 +702,19 @@ systemconfig_find (systemconfig_t *c, const char *key) /*{{{*/
 		}
 	}
 	return NULL;
+}/*}}}*/
+const char *
+systemconfig_find_user_based (systemconfig_t *c, const char *key) /*{{{*/
+{
+	const char	*rc = NULL;
+	char		*user_key;
+	
+	if (c -> selection && c -> selection -> user && (user_key = malloc (strlen (key) + strlen (c -> selection -> user) + 2))) {
+		sprintf (user_key, "%s-%s", key, c -> selection -> user);
+		rc = systemconfig_find (c, user_key);
+		free (user_key);
+	}
+	return rc ? rc : systemconfig_find (c, key);
 }/*}}}*/
 bool_t
 systemconfig_get (systemconfig_t *c, int idx, const char **key, const char **value) /*{{{*/

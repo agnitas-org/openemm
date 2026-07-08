@@ -440,7 +440,7 @@ class UpdateBounce (Update): #{{{
 		'webhook',
 		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount', 'infcount',
 		'translate',
-		'delayed_processing', 'cache', 'succeeded',
+		'delayed_processing', 'cache', 'succeeded', 'bounced', 'bounced_last',
 		'has_mailtrack', 'has_mailtrack_last_read', 'sys_encrypted_sending_enabled',
 		'bounce_mark_duplicate'
 	]
@@ -466,7 +466,7 @@ class UpdateBounce (Update): #{{{
 						self.map[parts[0]] = relay
 					else:
 						self.map[parts[0]] = parts[1]
-				elif len (parts) == 1:
+				elif len (parts) == 1 and 'stat' not in self.map:
 					self.map['stat'] = elem
 
 		def __str__ (self) -> str:
@@ -722,6 +722,8 @@ class UpdateBounce (Update): #{{{
 		self.delayed_processing = UpdateBounce.DelayedProcessing ()
 		self.cache: Cache[Key, Dict[str, Any]] = Cache (limit = 65536)
 		self.succeeded: DefaultDict[int, int] = defaultdict (int)
+		self.bounced: dict[tuple[int, int], datetime] = {}
+		self.bounced_last: datetime = datetime.now () - timedelta (days = 1)
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
 		self.sys_encrypted_sending_enabled: Cache[int, bool] = Cache (timeout = '30m')
@@ -744,6 +746,7 @@ class UpdateBounce (Update): #{{{
 	)
 	@dataclass
 	class Breakdown:
+		dsn: str
 		timestamp: datetime
 		rule: int
 		detail: int
@@ -751,12 +754,13 @@ class UpdateBounce (Update): #{{{
 		bounce_type: UserStatus
 		bounce_remark: Optional[str]
 		mailloop_remark: Optional[str]
-		infos: Optional[UpdateBounce.Info]
+		infos: UpdateBounce.Info
 		test: bool
 
 		@staticmethod
-		def new (dsn: str, info: str, company_id: int, translate: UpdateBounce.Translate) -> UpdateBounce.Breakdown:
+		def new (record: Line, company_id: int, translate: UpdateBounce.Translate) -> UpdateBounce.Breakdown:
 			rc = UpdateBounce.Breakdown (
+				dsn = record.dsn,
 				timestamp = datetime.now (),
 				rule = 0,
 				detail = Detail.Ignore,
@@ -764,18 +768,17 @@ class UpdateBounce (Update): #{{{
 				bounce_type = UserStatus.BOUNCE,
 				bounce_remark = None,
 				mailloop_remark = None,
-				infos = None,
+				infos = UpdateBounce.Info (record.info),
 				test = False
 			)
-			match = UpdateBounce.dsnparse.match (dsn)
+			match = UpdateBounce.dsnparse.match (rc.dsn)
 			if match is not None:
 				grp = match.groups ()
 				rc.code = int (grp[0]) * 100 + int (grp[1]) * 10 + int (grp[2][0])
-				rc.infos = infos = UpdateBounce.Info (info)
-				timestamp = Update.timestamp_parser (infos['timestamp'])
+				timestamp = Update.timestamp_parser (rc.infos['timestamp'])
 				if timestamp is not None:
 					rc.timestamp = timestamp
-				rc.mailloop_remark = infos['mailloop']
+				rc.mailloop_remark = rc.infos['mailloop']
 				if rc.mailloop_remark is not None:
 					if UpdateBounce.user_unknown.search (rc.mailloop_remark) is not None:
 						rc.code = Detail.HardbounceReceiver
@@ -786,19 +789,21 @@ class UpdateBounce (Update): #{{{
 						rc.detail = Detail.SoftbounceOther
 					else:
 						rc.detail = Detail.Internal
-					admin = infos['admin']
+					admin = rc.infos['admin']
 					if admin is not None:
 						rc.bounce_type = UserStatus.ADMOUT
 						rc.bounce_remark = admin
-					status = infos['status']
+					status = rc.infos['status']
 					if status is not None:
 						with Ignore (KeyError):
 							rc.bounce_type = UserStatus.find_status (status)
 				else:
-					rc.rule, rc.detail = translate.trans (company_id, rc.code, infos)
-				rc.test = atob (infos.get ('test'))
+					rc.rule, rc.detail = translate.trans (company_id, rc.code, rc.infos)
+					if rc.detail not in Detail.Softbounces and rc.detail not in Detail.Hardbounces:
+						rc.bounce_type = UserStatus.ACTIVE
+				rc.test = atob (rc.infos.get ('test'))
 			if rc.bounce_remark is None:
-				rc.bounce_remark = f'bounce:{rc.detail} (from {dsn} using {rc.rule})'
+				rc.bounce_remark = f'bounce:{rc.detail} (from {rc.dsn} using {rc.rule})'
 			return rc
 
 	def __log_success (self, db: DB, company_id: int, now: int) -> bool:
@@ -848,9 +853,30 @@ class UpdateBounce (Update): #{{{
 		self.infcount = 0
 		with EMMCompany (db = db, keys = [
 			'bounce-mark-duplicate',
+			'bounce-peek-threshold',
 		]) as emmcompany:
 			self.bounce_mark_duplicate = emmcompany.enabled ('bounce-mark-duplicate', default = True)
+			threshold = emmcompany.get ('bounce-peek-threshold', default = '15m')
 		self.succeeded.clear ()
+		now = datetime.now ()
+		old_bounced = len (self.bounced)
+		self.bounced.update (
+			db.stream (
+				'SELECT mailing_id, customer_id, timestamp '
+				'FROM bounce_tbl '
+				'WHERE timestamp >= :threshold AND detail >= :hard '
+				'ORDER BY timestamp',
+				{
+					'threshold': self.bounced_last - timedelta (seconds = unit (threshold)),
+					'hard': min (Detail.Hardbounces)
+				}
+			)
+			.map (lambda r: ((r.mailing_id, r.customer_id), r.timestamp))
+			.dict ()
+		)
+		self.bounced_last = now
+		if old_bounced != len (self.bounced):
+			logger.info (f'{old_bounced:,d} to {len (self.bounced):,d} bounce peek entries collected')
 		self.translate.clear ()
 		self.translate.setup (db)
 		self.sys_encrypted_sending_enabled.fill = partial (self.column_exists, db, Columns.sys_encrypted_sending)
@@ -907,7 +933,7 @@ class UpdateBounce (Update): #{{{
 			if not company_id:
 				logger.warning ('Cannot map mailing %d to company_id for line: %s' % (record.mailing_id, line))
 				return False
-			breakdown = UpdateBounce.Breakdown.new (record.dsn, record.info, company_id, self.translate)
+			breakdown = UpdateBounce.Breakdown.new (record, company_id, self.translate)
 			if breakdown.detail == Detail.Ignore:
 				logger.debug (f'Ignoring line: {line}')
 				return True
@@ -944,9 +970,13 @@ class UpdateBounce (Update): #{{{
 				return True
 			#
 			if breakdown.detail == Detail.Success:
-				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
-				self.succeeded[record.mailing_id] += 1
-				log_to_database = self.__log_success (db, company_id, now)
+				if (bounce := self.bounced.get ((record.mailing_id, record.customer_id))) is None or breakdown.timestamp > bounce:
+					self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
+					self.succeeded[record.mailing_id] += 1
+					log_to_database = self.__log_success (db, company_id, now)
+				else:
+					log_to_database = False
+					logger.debug (f'ignore already bounced entry: {record}: {breakdown}')
 			else:
 				log_to_database = True
 			rc = True
@@ -989,7 +1019,7 @@ class UpdateBounce (Update): #{{{
 									'       (bounce_id, company_id, customer_id, detail, mailing_id, dsn, timestamp) '
 									'VALUES '
 									'       (bounce_tbl_seq.nextval, :company, :customer, :detail, :mailing, :dsn, :ts)'
-								), mysql = (
+								), mariadb = (
 									'INSERT INTO bounce_tbl '
 									'       (company_id, customer_id, detail, mailing_id, dsn, timestamp) '
 									'VALUES '
@@ -1017,11 +1047,7 @@ class UpdateBounce (Update): #{{{
 							}
 							if db.update (query, data, commit = True) == 1:
 								self.rvcount += 1
-								query = 'UPDATE mailing_tbl SET delivered = delivered - 1 WHERE mailing_id = :mailing_id AND delivered IS NOT NULL AND delivered > 0'
-								data = {
-									'mailing_id': record.mailing_id
-								}
-								db.update (query, data, commit = True)
+								self.succeeded[record.mailing_id] -= 1
 						if breakdown.detail == Detail.HardbounceNotEncrypted:
 							if self.sys_encrypted_sending_enabled[company_id]:
 								query = (
@@ -1562,7 +1588,7 @@ class UpdateAccount (Update): #{{{
 						if not retry:
 							db.sync ()
 						try:
-							db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
+							db.update (self.insert_query, data._asdict (), commit = True)
 						except error as e:
 							logger.warning (f'failed to write record {data!r} to mailing_account_tbl: {e}')
 							if retry == 2:
@@ -1581,7 +1607,7 @@ class UpdateAccount (Update): #{{{
 									'      (mailing_account_id, no_of_mailings, no_of_bytes) '
 									'VALUES '
 									'      (mailing_account_tbl_seq.currval, :bcc_count, :bcc_bytes)'
-								), mysql = (
+								), mariadb = (
 									'INSERT INTO bcc_mailing_account_tbl '
 									'       (mailing_account_id, no_of_mailings, no_of_bytes) '
 									'VALUES '
@@ -1684,7 +1710,7 @@ class UpdateDeliver (Update): #{{{
 							'VALUES '
 							'       ({table}_seq.nextval, :mailing_id, :customer_id, :timestamp, :line)'
 							.format (table = table)
-						), mysql = (
+						), mariadb = (
 							'INSERT INTO {table} '
 							'       (mailing_id, customer_id, timestamp, line) '
 							'VALUES '
@@ -1761,7 +1787,7 @@ class UpdateWebhook (Update): #{{{
 							'       (id, creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
 							'VALUES '
 							'       (webhook_backend_data_seq.nextval, CURRENT_TIMESTAMP, :event_timestamp, :event_type, :company_id, :mailing_id, :recipient_id)'
-						), mysql = (
+						), mariadb = (
 							'INSERT INTO webhook_backend_data_tbl '
 							'       (creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
 							'VALUES '
@@ -1834,7 +1860,7 @@ class UpdateMailtrack (Update): #{{{
 							table = self.mailtrack_process_table,
 							tablespace = db.tablespace ('DATA_TEMP')
 						)
-					), mysql = (
+					), mariadb = (
 						'CREATE TABLE {table} (\n'
 						'	company_id		int(11),\n'
 						'	mailing_id		int(11),\n'
@@ -1862,7 +1888,7 @@ class UpdateMailtrack (Update): #{{{
 								table = self.mailtrack_process_table,
 								tablespace = db.tablespace ('DATA_TEMP')
 							)
-						), mysql = (
+						), mariadb = (
 							'CREATE INDEX {prefix}${id}$idx '
 							'ON {table} ({column})'.format (
 								prefix = mailtrack_index_prefix,
@@ -1876,7 +1902,7 @@ class UpdateMailtrack (Update): #{{{
 				if 'mediatype' not in {_f.name for _f in db.layout (self.mailtrack_process_table, normalize = True)}:
 					db.execute (db.qselect (
 						oracle = 'ALTER TABLE {table} ADD mediatype number'.format (table = self.mailtrack_process_table),
-						mysql = 'ALTER TABLE {table} ADD mediatype INTEGER UNSIGNED'.format (table = self.mailtrack_process_table)
+						mariadb = 'ALTER TABLE {table} ADD mediatype INTEGER UNSIGNED'.format (table = self.mailtrack_process_table)
 					))
 					logger.info ('added missing column "mediatype" to {table}'.format (table = self.mailtrack_process_table))
 		
@@ -2051,7 +2077,7 @@ class UpdateMailtrack (Update): #{{{
 						f'    (SELECT max(temp.timestamp) FROM {self.mailtrack_process_table} temp WHERE temp.company_id = {company_id} AND temp.customer_id = cust.customer_id) '
 						'WHERE EXISTS '
 						f'     (SELECT 1 FROM {self.mailtrack_process_table} temp2 WHERE temp2.company_id = {company_id} AND temp2.customer_id = cust.customer_id AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp2.timestamp))'
-					), mysql = (
+					), mariadb = (
 						f'UPDATE {customer_table} cust INNER JOIN {self.mailtrack_process_table} temp '
 						f'ON (cust.customer_id = temp.customer_id AND temp.company_id = {company_id} AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp.timestamp)) '
 						f'SET cust.{lastsend_date} = temp.timestamp'
@@ -2061,7 +2087,7 @@ class UpdateMailtrack (Update): #{{{
 					count = 0
 					query += db.qselect (
 						oracle = f' AND rownum <= {bulk_update_chunk}',
-						mysql = f' LIMIT {bulk_update_chunk}'
+						mariadb = f' LIMIT {bulk_update_chunk}'
 					)
 					while True:
 						if refresh is not None and not refresh ():
@@ -2286,7 +2312,7 @@ class UpdateMailloop (Update): #{{{
 							'            (mailloop_log_id, rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
 							'VALUES '
 							f'            ({UpdateMailloop.mailloop_log_table}_seq.nextval, :rid, :timestamp, :status, :company_id, :mailing_id, :customer_id, :action, :remark)'
-						), mysql = (
+						), mariadb = (
 							f'INSERT INTO {UpdateMailloop.mailloop_log_table} '
 							'            (rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
 							'VALUES '

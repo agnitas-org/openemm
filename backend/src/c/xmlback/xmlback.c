@@ -124,6 +124,7 @@ main (int argc, char **argv) /*{{{*/
 	bool_t		quiet;
 	const char	*error_file;
 	bool_t		raw;
+	bool_t		fullraw;
 	output_t	*out;
 	const char	*outparm;
 	const char	*auto_url_prefix;
@@ -147,6 +148,7 @@ main (int argc, char **argv) /*{{{*/
 	quiet = false;
 	error_file = NULL;
 	raw = false;
+	fullraw = false;
 	out = & output_table[1];
 	outparm = NULL;
 	auto_url_prefix = NULL;
@@ -168,7 +170,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
 	opterr = 0;
-	while ((n = getopt (argc, argv, "VDpqE:ru:UaAs:egd:t:o:L:T:h")) != -1)
+	while ((n = getopt (argc, argv, "VDpqE:rRu:UaAs:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 			{
@@ -193,6 +195,10 @@ main (int argc, char **argv) /*{{{*/
 			break;
 		case 'r':
 			raw = true;
+			break;
+		case 'R':
+			raw = true;
+			fullraw = true;
 			break;
 		case 'u':
 			auto_url_prefix = optarg;
@@ -271,6 +277,7 @@ main (int argc, char **argv) /*{{{*/
 			       "\t-q         quiet mode, do not print logging to stdout\n"
 			       "\t-E <fname> write error messages to file <fname> instead of stderr\n"
 			       "\t-r         raw output, do not encode generated mails (used by preview)\n"
+			       "\t-R         add meta information to raw output as well\n"
 			       "\t-u <pfix>  use <pfix> as prefix for generated auto urls\n"
 			       "\t-U         program is called from GUI\n"
 			       "\t-a         anonymize the output as far as possible\n"
@@ -341,6 +348,7 @@ main (int argc, char **argv) /*{{{*/
 			log_out (lg, LV_ERROR, "Unable to setup blockmail");
 		else {
 			blockmail -> raw = raw;
+			blockmail -> fullraw = fullraw;
 			blockmail -> output = out;
 			blockmail -> outputdata = NULL;
 			log_idpush (lg, "init");

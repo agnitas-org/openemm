@@ -13,12 +13,13 @@
 # include	"xmlback.h"
 
 dyn_t *
-dyn_alloc (int did, int order) /*{{{*/
+dyn_alloc (int did, long div_id, int order) /*{{{*/
 {
 	dyn_t	*d;
 	
 	if (d = (dyn_t *) malloc (sizeof (dyn_t))) {
 		d -> did = did;
+		d -> div_id = div_id;
 		d -> name = NULL;
 		d -> interest = NULL;
 		d -> interest_index = -1;

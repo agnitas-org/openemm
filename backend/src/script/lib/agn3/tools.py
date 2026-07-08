@@ -12,7 +12,7 @@
 #
 from	__future__ import annotations
 import	os, re, subprocess, errno, logging
-import	traceback, shlex, tempfile
+import	traceback, shlex, tempfile, pickle, base64
 from	contextlib import suppress
 from	datetime import datetime, date
 from	enum import Enum
@@ -26,7 +26,8 @@ __all__ = [
 	'abstract', 'deprecated', 'defer',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'log_call', 'match', 
-	'listsplit', 'listjoin', 
+	'listsplit', 'listjoin',
+	'linedump', 'lineload',
 	'Stretch', 'stretch',
 	'Escape', 'escape', 'unescape',
 	'Range', 'Config', 'Plugin', 'Template',
@@ -347,9 +348,15 @@ def listsplit (s: Optional[str], maxsplit: int = 0, remove_empty: bool = True) -
 
 def listjoin (elements: Optional[List[str]], remove_empty: bool = True) -> str:
 	if elements is not None:
-		return ', '.join ([_e for _e in elements if _e])
+		return ', '.join ([_e for _e in elements if _e or not remove_empty])
 	return ''
 
+def linedump (obj: Any) -> str:
+	return base64.b64encode (pickle.dumps (obj)).decode ('us-ascii')
+
+def lineload (source: str) -> Any:
+	return pickle.loads (base64.b64decode (source.encode ('us-ascii')))
+	
 class Stretch:
 	"""Stretches a string by escaping control characters
 

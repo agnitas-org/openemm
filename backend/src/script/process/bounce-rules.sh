@@ -207,7 +207,7 @@ class Main (CLI):
 							'       (rule_id, company_id, dsn, detail, pattern, active, shortname, description, creation_date, change_date) '
 							'VALUES '
 							f'       ({Bounce.bounce_translate_table}_seq.nextval, 0, :dsn, :detail, :pattern, 1, :shortname, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
-						), mysql = (
+						), mariadb = (
 							f'INSERT INTO {Bounce.bounce_translate_table} '
 							'       (company_id, dsn, detail, pattern, active, shortname, description, creation_date, change_date) '
 							'VALUES '
@@ -366,13 +366,6 @@ exit $rc
 57x;;57;400;
 58x;;58;400;
 59x;;59;400;
-EMM-7115;;443;410;stat="Host or domain name not found"
-EMM-7316 GMX;;500;420;stat="exceeded storage allocation", relay=".gmx.net."
-EMM-7316 WEB;;500;420;stat="exceeded storage allocation", relay=".web.de."
-EMM-7316 KDN;;500;420;stat="exceeded storage allocation", relay=".kundenserver.de."
-EMM-7312;;500;511;relay=".yahoo", stat="This user doesn't have a yahoo.* account"
-EMM-7310;;500;511;stat="mailbox is disabled", relay=".yahoo"
-EMM-7311;;500;511;stat="Your IP will be reported for abuse - better watch out next time."
 restore default behviour for 511;;511;511;
 restore default behviour for 512;;512;512;
 restore default behviour for 513;;513;511;
@@ -382,67 +375,6 @@ restore default behviour for 531;;531;510;
 restore default behviour for 550;;550;511;stat="unknown recipient"
 restore default behviour for 571;;571;410;
 restore default behviour for 572;;572;511;
-EMM-7389;;530;511;stat="No such user"
-EMM-7378;;500;511;stat="invalid mailbox", relay=".mail.ru."
-EMM-7492;;520;511;stat="no such mailbox", relay=".rzone.de."
-EMM-7491;;550;511;stat="no such recipient"
-EMM-7593;;500;511;stat="Not a valid recipient", relay=".yahoo"
-EMM-7691;;500;511;stat="No such user"
-EMM-7743;;541;511;stat="Recipient address rejected", relay=".protection.outlook.com.|.eo.outlook.com.|.protection.office365.us."
-EMM-7816 417;;417;0;
-EMM-7816 418;;418;0;
-EMM-7816 517;;517;0;
-EMM-7816 518;;518;0;
-EMM-7990;;500;511;stat="no mailbox here"
-EMM-7991;;5;511;relay="void.blackhole.mx."
-EMM-7901;;500;511;stat="user unknown|unknown user"
-EMM-7594;;500;511;stat="mailbox not found|unknown add?ress|unrouteable add?ress"
-EMM-7379;;500;511;stat="mailbox unavailable", relay=".rmx.de.|.protection.outlook.com.|.retarus.com."
-EMM-7409;;500;511;stat="5.1.0 Address rejected."
-EMM-8045 510;;510;511;stat="user unknown|unknown user"
-EMM-8045 530;;530;511;stat="user unknown|unknown user"
-EMM-8046;;500;511;stat="Es gibt keine Person mit diesem Namen unter dieser Adresse", relay=".sp-server.net."
-EMM-8044;;530;511;stat="user does not exist"
-EMM-8028;;571;511;stat="user does not exist"
-EMM-8043;;546;512;stat="mail for .* loops back to myself"
-EMM-8027;;500;511;stat="no such recipient here|recipient unknown|invalid recipient|no valid recipient"
-EMM-8030;;500;511;stat="Mailaddress is administratively disabled"
-EMM-8029;;500;511;stat="mailbox for .* does not exist"
-EMM-8135;;474;513;stat="TLS is required, but was not offered"
-EMM-8135-4;;4;513;port="465"
-EMM-8135-5;;5;513;port="465"
-EMM-8617;;500;511;stat="No such local user", relay=".firemail.de."
-EMM-8629;;550;511;stat="recipient rejected"
-EMM-8634;;571;511;stat="user unknown|no such user", relay=".vol.at.|.yandex.ru.|.antispameurope.com.|.uni-wuerzburg.de.|.bund.de."
-EMM-8628;;500;511;stat="user suspended"
-EMM-8637;;500;511;stat="address unknown"
-EMM-8636;;500;511;stat="user not found"
-EMM-8638;;500;511;stat="unkown user", relay=".sil.at.|.silverserver.at."
-EMM-7490 520;;520;511;stat="mailbox.*unavailable"
-EMM-7490 550;;550;511;stat="mailbox.*unavailable"
-EMM-8635;;571;511;stat="User email address is marked as invalid", relay=".ppe-hosted.com."
-EMM-8618;;500;511;stat="max message size exceeded", relay="mx.tim.it."
-EMM-8826;;500;511;stat="mailbox unavailable \(in reply to RCPT TO command\)"
-EMM-8802;;571;511;stat="mailbox unavailable", relay=".bund.de."
-EMM-8801;;571;511;stat="user [^ ]+ does not exist", relay=".hostedemail.com."
-EMM-8800;;500;511;stat="address invalid"
-EMM-8725;;500;512;stat="this domain is not hosted here"
-EMM-8723;;500;511;stat="account is disabled"
-EMM-8721;;510;512;stat="domain [^ ]+ does not accept mail"
-EMM-8713;;500;511;stat="recipient does not exist"
-EMM-8709;;500;511;stat="unknown recipient"
-EMM-8710;;500;511;stat="address not present"
-EMM-8693 500;;500;511;stat="recipient not found"
-EMM-8693 571;;571;511;stat="recipient not found", relay=".uni-bielefeld.de.|.tutanota.de.|.cleanmail.ch.|.uni-kl.de."
-EMM-8708;;500;511;stat="envelope blocked", relay=".mimecast.com."
-EMM-8870;;500;511;stat="Address not present in directory"
-EMM-8724;;500;511;stat="can't verify recipient", relay=".koeln.de.|.tele2.de|.hamburg.de.|.inter.net.|.berlin.de."
-EMM-9020;;500;511;stat="Domain not in use", relay=".tuwien.ac.at."
-EMM-10052;;500;511;stat="denied by SecuMail valid-address-filter"
-EMM-10241;;571;511;stat="XGEMAIL_00(08|09|10|11) Command rejected", relay=".sophos.com."
-EMM-10242-1;;5;511;stat="mailbox.*disabled"
-EMM-10242-2;;571;511;stat="Relay access denied", relay=".kasserver.com."
-EMM-10265;;571;511;stat="Mailbox not found", relay=".a1.net."
 ##
 ## BAV-RULES
 ##
@@ -451,9 +383,7 @@ EMM-10265;;571;511;stat="Mailbox not found", relay=".a1.net."
 ;systemmail;^Subject: .*(DELIVER|RETURNED MAIL).*
 ;systemmail;^Return-Path:.*<>
 ;systemmail;^Precedence: bulk
-;systemmail;^Return-Path:.*<(MAILER-DA?EMON.*|(mailgun|mailout)@(.*\.)?(agnitas|mailemm)\.de)>
 ;systemmail;^Subject:.*unsubscribe:[A-Za-z0-9]+(\.[A-Za-z0-9]+)+
-;systemmail;^X-Env-Sender: (mailgun|mailout)@(.*\.)?(agnitas|mailemm)\.de
 #
 #
 #	Every mail that matches this filter won't be forwarded and will be

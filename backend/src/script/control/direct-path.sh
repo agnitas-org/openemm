@@ -18,7 +18,6 @@ case "$1" in
 start)
 	active direct-path
 	shift
-	requires asyncinotify
 	starter $command -bw "$@"
 	;;
 stop)

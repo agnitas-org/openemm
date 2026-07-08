@@ -14,12 +14,14 @@ from	..ignore import Ignore
 with Ignore (ImportError):
 	import	os, pickle, fcntl, logging
 	import	sqlite3
-	from	typing import Any, Callable, Optional
-	from	typing import Dict, List, NamedTuple, Tuple, Type
+	from	datetime import datetime
+	from	typing import Any, Callable, Final
+	from	typing import NamedTuple, Type
 	from	typing import cast
 	from	.types import Driver
 	from	..dbapi import DBAPI
 	from	..dbcore import Cursor, Core, DBType, Binary
+	from	..emm.build import spec
 	from	..exceptions import error
 	from	..tools import atob
 
@@ -32,7 +34,7 @@ these database specific methods are available here:
 	- mode: set the operation mode:
 	- validate: performs an integrity check of the database
 """
-		__slots__: List[str] = []
+		__slots__: list[str] = []
 		modes = {
 			'fast':	[
 				'PRAGMA cache_size = 65536',
@@ -61,7 +63,7 @@ currently these two modes are implemented, which can also be used in conjunction
 					modes = ', '.join (sorted (self.modes.keys ()))
 				))
 
-		def validate (self, collect: Optional[List[Any]] = None, quick: bool = False, amount: Optional[int] = None) -> bool:
+		def validate (self, collect: None | list[Any] = None, quick: bool = False, amount: None | int = None) -> bool:
 			"""performs an integrity check of the database, returns True on okay, otherwise False
 
 ``collect'' can be a list where the results of the integrity check are
@@ -83,28 +85,34 @@ the database. ``amount'' can be numeric value to restrict the check."""
 
 	class Layout (NamedTuple):
 		statement: str
-		parameter: Optional[Dict[str, Any]] = None
+		parameter: None | dict[str, Any] = None
 	class SQLite3 (Core):
 		"""SQLite specific Core implementation"""
 		__slots__ = [
-			'filename', 'layout', 'extended_types', 'extended_rows', 'functions',
-			'lock_database', 'wait_for_lock', 'lock_fd'
+			'filename', 'layout', 'updates', 
+			'extended_types', 'extended_rows', 'functions',
+			'lock_database', 'wait_for_lock', 'read_only', 'lock_fd'
 		]
+		in_memory_db: Final[str] = ':memory:'
 		def __init__ (self,
 			filename: str,
-			layout: Optional[List[Layout]] = None,
+			*,
+			layout: None | list[Layout] = None,
+			updates: None | dict[str, list[Layout]] = None,
 			extended_types: bool = False,
 			extended_rows: bool = False,
 			extended_functions: bool = False,
 			lock_database: bool = False,
-			wait_for_lock: bool = False
+			wait_for_lock: bool = False,
+			read_only: bool = False
 		):
 			super ().__init__ ('sqlite', cast (DBAPI.Vendor, sqlite3), CursorSQLite3)
 			self.filename = filename
 			self.layout = layout
+			self.updates = updates
 			self.extended_types = extended_types
 			self.extended_rows = extended_rows
-			self.functions: List[Tuple[Callable[..., None], Tuple[Any, ...]]] = []
+			self.functions: list[tuple[Callable[..., None], tuple[Any, ...]]] = []
 			if extended_types:
 				self.register_class (Binary)
 			if extended_functions:
@@ -127,7 +135,8 @@ the database. ``amount'' can be numeric value to restrict the check."""
 				self.create_function ('decode', -1, __decode)
 			self.lock_database = lock_database
 			self.wait_for_lock = wait_for_lock
-			self.lock_fd: Optional[int] = None
+			self.read_only = read_only and filename != self.in_memory_db
+			self.lock_fd: None | int = None
 
 		def register_type (self,
 			name: str,
@@ -165,10 +174,10 @@ the class must provide these attributes to be used (see register_type for the me
 			"""registers a new type and use python pickler for converting from/to string representation"""
 			self.register_type (name, register_class, lambda o: pickle.dumps (o), lambda s: pickle.loads (s), datatype)
 		
-		def __function (self, name: Callable[..., None], args: Tuple[Any, ...]) -> None:
-			self.functions.append ((name, args))
+		def __function (self, function: Callable[..., None], args: tuple[Any, ...]) -> None:
+			self.functions.append ((function, args))
 			if self.db is not None:
-				name (*args)
+				function (*args)
 		def __create_function (self, name: str, number_of_parameter: int, method: Callable[..., None]) -> None:
 			cast (DBAPI.DriverSQLite3, self.db).create_function (name, number_of_parameter, method)
 		def create_function (self, name: str, number_of_parameter: int, method: Callable[..., None]) -> None:
@@ -197,9 +206,11 @@ the class must provide these attributes to be used (see register_type for the me
 			
 		def connect (self) -> None:
 			is_new_file = not os.path.isfile (self.filename)
-			config: Dict[str, Any] = {
-				'database': self.filename
+			config: dict[str, Any] = {
+				'database': self.filename if not self.read_only else f'file:{self.filename}?mode=ro'
 			}
+			if self.read_only:
+				config['uri'] = True
 			if self.extended_types:
 				config['detect_types'] = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 			config.update (self.connect_options)
@@ -222,18 +233,69 @@ the class must provide these attributes to be used (see register_type for the me
 			if self.extended_rows:
 				cast (DBAPI.DriverSQLite3, self.db).row_factory = sqlite3.Row
 			if self.db is not None:
-				for (name, args) in self.functions:
-					name (*args)
-				if is_new_file and self.layout is not None:
-					c = self.cursor ()
-					cast (CursorSQLite3, c).mode ('fast')
-					for entry in self.layout:
-						c.update (entry.statement, entry.parameter)
-					c.close ()
+				for (function, args) in self.functions:
+					function (*args)
+				if (is_new_file and self.layout) or self.updates:
+					changelog_table = '_changelog'
+					changelog_layout = [
+						Layout (statement = (
+							'CREATE TABLE _changelog (\n'
+							'\tname\ttext NOT NULL PRIMARY KEY,\n'
+							'\tcreated\ttext NOT NULL,\n'
+							'\tversion\ttext NOT NULL\n'
+							')'
+						))
+					]
+					changelog_updates: dict[str, list[Layout]] = {
+					}
+					with self.cursor () as cursor:
+						def setup (layout: list[Layout]) -> None:
+							for entry in layout:
+								cursor.update (entry.statement, entry.parameter)
+						def update (updates: dict[str, list[Layout]], seen: set[str]) -> None:
+							for (name, layout) in updates.items ():
+								if name not in seen:
+									setup (layout)
+									seen.add (name)
+									cursor.update (
+										f'INSERT INTO {changelog_table} '
+										'        (name, created, version) '
+										'VALUES '
+										'        (:name, :created, :version)',
+										{
+											'name': name,
+											'created': f'{datetime.now ():%Y-%m-%d %H:%M:%S}',
+											'version': spec.version
+										}
+									)
+						#
+						cast (CursorSQLite3, cursor).mode ('fast')
+						if is_new_file and self.layout:
+							setup (self.layout)
+						if self.updates:
+							rq = cursor.querys (
+								'SELECT count(*) '
+								'FROM sqlite_master '
+								'WHERE type = :type AND name = :name',
+								{
+									'type': 'table',
+									'name': changelog_table
+								}
+							)
+							if rq is not None:
+								seen: set[str]
+								if rq[0] == 0:
+									setup (changelog_layout)
+									seen = set ()
+								else:
+									seen = cursor.stream (f'SELECT name FROM {changelog_table}').map (lambda r: r.name).set ()
+								update (changelog_updates, seen)
+								update (self.updates, seen)
+						cursor.sync ()
 
 	sqlite = Driver (
 		'sqlite',
-		['sqlite3'],
+		{'sqlite3'},
 		lambda cfg: SQLite3 (
 			cfg['filename'],
 			extended_types = atob (cfg ('extended-types)')),

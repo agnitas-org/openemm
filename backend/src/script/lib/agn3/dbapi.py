@@ -44,6 +44,7 @@ class DBAPI:
 	class DriverOracle (Driver):
 		stmtcachesize: int
 		autocommit: int
+		thin: bool
 	class Cursor (Protocol):
 		description: Optional[List[Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], Optional[bool]]]]
 		rowcount: int

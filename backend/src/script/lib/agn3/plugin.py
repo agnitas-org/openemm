@@ -11,8 +11,9 @@
 #
 from	__future__ import annotations
 import	os, re, logging
-import	imp, marshal
+import	marshal
 from	configparser import RawConfigParser
+from	importlib.util import MAGIC_NUMBER 
 from	typing import Any, Callable, Iterable, Optional, Union
 from	typing import Dict, Generator, IO, List, Set, Tuple, Type
 from	typing import cast
@@ -459,8 +460,7 @@ found, no module is loaded at all.
 							compiled_code = fd.read ()
 						if len (compiled_code) < 8:
 							raise Exception ('truncated binary')
-						magic = imp.get_magic ()
-						if compiled_code[:len (magic)] != magic:
+						if compiled_code[:len (MAGIC_NUMBER)] != MAGIC_NUMBER:
 							raise Exception ('binary version mismatch')
 						m = marshal.loads (compiled_code[8:])
 					else:

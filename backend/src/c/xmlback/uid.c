@@ -17,7 +17,7 @@
 # define	OPTION_DISABLE_LINK_EXTENSION	(1 << 1)
 
 static char *
-create_ecs_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url) /*{{{*/
+create_ecs_uid (blockmail_t *blockmail, int uid_version, const char *prefix, const receiver_t *rec, const url_t *url) /*{{{*/
 {
 	if (url && url -> url_id) {
 		char	uid[128];
@@ -96,7 +96,7 @@ encode (char *buf, int buflen, const byte_t *data, int datalen) /*{{{*/
 	return pos;
 }/*}}}*/
 static byte_t *
-create_packed (blockmail_t *blockmail, receiver_t *rec, url_t *url, bool_t add_status_field, size_t *size) /*{{{*/
+create_packed (blockmail_t *blockmail, const receiver_t *rec, const url_t *url, bool_t add_status_field, const var_t *param, size_t *size) /*{{{*/
 {
 	char		*data;
 	mpack_writer_t	writer;
@@ -116,6 +116,10 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, url_t *url, bool_t add_s
 	if (blockmail -> mailing_id) {
 		mpack_write_cstr (& writer, "_m");
 		mpack_write_int (& writer, blockmail -> mailing_id);
+	}
+	if (rec -> media && rec -> media && rec -> media -> type && (rec -> media -> type > Mediatype_Unspec)) {
+		mpack_write_cstr (& writer, "_t");
+		mpack_write_int (& writer, rec -> media -> type);
 	}
 	option = OPTION (rec -> tracking_veto, OPTION_TRACKING_VETO) | OPTION (rec -> disable_link_extension, OPTION_DISABLE_LINK_EXTENSION);
 	if (option) {
@@ -138,6 +142,11 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, url_t *url, bool_t add_s
 		mpack_write_cstr (& writer, "_u");
 		mpack_write_int (& writer, url -> url_id);
 	}
+	for (; param; param = param -> next)
+		if (param -> var && param -> val) {
+			mpack_write_cstr (& writer, param -> var);
+			mpack_write_cstr (& writer, param -> val);
+		}
 	mpack_complete_map (& writer);
 	rc = mpack_writer_destroy (& writer);
 	if (rc != mpack_ok) {
@@ -146,7 +155,7 @@ create_packed (blockmail_t *blockmail, receiver_t *rec, url_t *url, bool_t add_s
 	return (byte_t *) data;
 }/*}}}*/
 static char *
-create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field) /*{{{*/
+create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, const receiver_t *rec, const url_t *url, bool_t add_status_field, const var_t *param) /*{{{*/
 {
 	const char	*rc;
 	enum {
@@ -301,7 +310,7 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 		len = snprintf (scratch, sizeof (scratch), "%d", uid_version_used);
 		buffer_stiffsn (blockmail -> secret_sig, scratch, len);
 		buffer_stiffch (blockmail -> secret_sig, '.');
-		if (packed = create_packed (blockmail, rec, url, add_status_field, & psize)) {
+		if (packed = create_packed (blockmail, rec, url, add_status_field, param, & psize)) {
 			if (encode_uid_parameter (packed, psize, blockmail -> secret_uid))
 				buffer_stiffch (blockmail -> secret_uid, '.');
 			buffer_stiff (blockmail -> secret_sig, packed, psize);
@@ -332,16 +341,16 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	return rc ? strdup (rc) : NULL;
 }/*}}}*/
 char *
-create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, url_t *url, bool_t add_status_field) /*{{{*/
+create_uid (blockmail_t *blockmail, int uid_version, const char *prefix, const receiver_t *rec, const url_t *url, bool_t add_status_field, const var_t *param) /*{{{*/
 {
 	if (blockmail -> ecs) {
 		return create_ecs_uid (blockmail, uid_version, prefix, rec, url);
 	}
-	return create_xuid (blockmail, uid_version, prefix, rec, url, add_status_field);
+	return create_xuid (blockmail, uid_version, prefix, rec, url, add_status_field, param);
 }/*}}}*/
 
 char *
-create_pubid (blockmail_t *blockmail, receiver_t *rec, const char *source, const char *parm) /*{{{*/
+create_pubid (blockmail_t *blockmail, const receiver_t *rec, const char *source, const char *parm) /*{{{*/
 {
 	static const char	cl[] = "w5KMCHOXE_PTuLcfF6D1ZI3BydeplQaztVAnUj0bqos7k49YgWhxiS-RrGJm8N2v";
 	static const char	vc[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-";

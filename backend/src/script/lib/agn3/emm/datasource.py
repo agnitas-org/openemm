@@ -76,7 +76,7 @@ class Sourcegroup (_Cache[SGKey, SGValue]):
 					'       (sourcegroup_id, sourcegroup_type, description, timestamp, creation_date) '
 					'VALUES '
 					'       (sourcegroup_tbl_seq.nextval, :sourcegroup_type, :description, current_timestamp, current_timestamp)'
-				), mysql = (
+				), mariadb = (
 					'INSERT INTO sourcegroup_tbl '
 					'       (sourcegroup_type, description, timestamp, creation_date) '
 					'VALUES '
@@ -91,7 +91,7 @@ class Sourcegroup (_Cache[SGKey, SGValue]):
 		rq = db.querys (
 			db.qselect (
 				oracle = 'SELECT sourcegroup_tbl_seq.currval FROM DUAL',
-				mysql = 'SELECT last_insert_id()'
+				mariab = 'SELECT last_insert_id()'
 			)
 		)
 		return SGValue (
@@ -133,7 +133,7 @@ class Datasource (_Cache[DSKey, DSValue]):
 					'       (datasource_id, description, company_id, sourcegroup_id, timestamp) '
 					'VALUES '
 					'       (datasource_description_tbl_seq.nextval, :description, :company_id, :sourcegroup_id, current_timestamp)'
-				), mysql = (
+				), mariadb = (
 					'INSERT INTO datasource_description_tbl '
 					'       (description, company_id, sourcegroup_id, timestamp) '
 					'VALUES '
@@ -149,7 +149,7 @@ class Datasource (_Cache[DSKey, DSValue]):
 		rq = db.querys (
 			db.qselect (
 				oracle = 'SELECT datasource_description_tbl_seq.currval FROM DUAL',
-				mysql = 'SELECT last_insert_id()'
+				mariadb = 'SELECT last_insert_id()'
 			)
 		)
 		return DSValue (

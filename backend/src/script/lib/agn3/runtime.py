@@ -12,9 +12,11 @@
 import	sys, os, logging, argparse, time, signal, json
 from	dataclasses import dataclass
 from	fnmatch import fnmatch
+from	inspect import isclass
 from	traceback import print_exception
-from	typing import Any, Callable, NoReturn, Sequence, TypeVar
-from	typing import Dict, List, NamedTuple, Set, Type
+from	typing import Any, Callable, Iterable, NoReturn, Sequence, TypeVar
+from	typing import NamedTuple, Type
+from	typing import cast
 from	.config import Config
 from	.daemon import Daemonic, Watchdog
 from	.definitions import host, program, syscfg
@@ -35,7 +37,7 @@ logger = logging.getLogger (__name__)
 #
 _T = TypeVar ('_T', bound = Type[object])
 #
-def _expand_inline (args: List[str], environment: None | dict[str, str] = None) -> list[str]:
+def _expand_inline (args: list[str], environment: None | dict[str, str] = None) -> list[str]:
 	"""Expands element starting with an '@' from an environment variable or a file
 
 >>> _expand_inline (['this', 'is', '@(sample)', 'test'], {})
@@ -54,7 +56,7 @@ agn3.exceptions.error: @(sample): specified environment not found
 >>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': json.dumps (['very', 'great', 'example', {'even': 'better', 'noone': None}])})
 ['this', 'is', 'very', 'great', 'example', 'even', 'better', 'noone', 'test']
 """
-	expanded: List[str] = []
+	expanded: list[str] = []
 	for arg in args:
 		if arg.startswith ('@'):
 			if arg.startswith ('@(') and arg.endswith (')'):
@@ -450,7 +452,7 @@ def cleanup (self):
 		pass
 
 class CLI (Daemonic):
-	__slots__: List[str] = []
+	__slots__: list[str] = []
 	program_description: None | str = None
 	program_epilog: None | str = None
 
@@ -507,9 +509,9 @@ class CLI (Daemonic):
 #	Mixins
 #
 class Preset:
-	__slots__: List[str] = []
-	def preset (self, presets: Dict[str, str | Callable[..., Any]]) -> None:
-		rpresets: Dict[str, Callable[..., Any]] = (Stream (presets.items ())
+	__slots__: list[str] = []
+	def preset (self, presets: dict[str, str | Callable[..., Any]]) -> None:
+		rpresets: dict[str, Callable[..., Any]] = (Stream (presets.items ())
 			.map (lambda kv: (kv[0], getattr (self, f'preset_{kv[1]}') if isinstance (kv[1], str) else kv[1]))
 			.dict ()
 		)
@@ -534,20 +536,28 @@ class Preset:
 		return value
 
 class Locate:
-	__slots__: List[str] = []
+	__slots__: list[str] = []
 	@classmethod
 	def locate (cls,
-		subclasses_of: _T,
+		subclasses_of: _T | set[_T] | Sequence[_T],
 		*,
 		use: None | str = None,
-		source: None | Dict[str, Any] = None,
-		skip: None | Sequence[str] | Set[str] = None,
-		exclude: None | Sequence[_T] | Set[_T] = None
-	) -> List[_T]:
+		source: None | dict[str, Any] = None,
+		skip: None | set[str] | Sequence[str] = None,
+		exclude: None | set[_T] | Sequence[_T] = None
+	) -> list[_T]:
+		subclasses: set[_T]
+		if isclass (subclasses_of):
+			subclasses = set ([subclasses_of])
+		elif isinstance (subclasses_of, set):
+			subclasses = subclasses_of
+		else:
+			subclasses = set (cast (Iterable[_T], subclasses_of))
+		#
 		return (Stream ((source if source is not None else cls.__dict__).items ())
 			.filter (lambda kv: not kv[0].startswith ('_') and (skip is None or kv[0] not in skip))
 			.map (lambda kv: kv[1])
-			.filter (lambda v: type (v) is type and issubclass (v, subclasses_of) and v is not subclasses_of)
+			.filter (lambda v: type (v) is type and v not in subclasses and len (list (filter (lambda subclass: issubclass (v, subclass), subclasses))) > 0)
 			.filter (lambda v: exclude is None or v not in exclude)
 			.filter (lambda v: use is None or (hasattr (v, use) and (method := getattr (v, use)) is not None and callable (method) and method ()))
 			.list ()

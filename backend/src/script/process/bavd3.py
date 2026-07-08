@@ -43,6 +43,7 @@ from	agn3.stream import Stream
 from	agn3.template import Placeholder
 from	agn3.tools import atoi, sizefmt, listsplit, stretch, unescape
 from	agn3.uid import UID, UIDHandler
+from	agn3.tools import atob
 #
 logger = logging.getLogger (__name__)
 #
@@ -170,6 +171,9 @@ class Report:
 			use = str (value)
 		self.content[option] = use
 	
+	def __getitem__ (self, option: str) -> None | str:
+		return self.content.get (option)
+	
 	def write (self, ok: bool) -> None:
 		report = '{licence};{rid};{timestamp};{action};{status};{info}'.format (
 			licence = atoi (self.content.get ('licence', licence)),
@@ -183,6 +187,12 @@ class Report:
 				.join ('\t')
 			)
 		)
+		#
+		if not self['company_id']:
+			if self.logpath is None:
+				print (f'Would NOT write report {report} due to missing company_id')
+			return
+		#
 		if self.logpath is not None:
 			try:
 				with open (self.logpath, 'a') as fd:
@@ -788,7 +798,10 @@ class BAV:
 			self.parameter = bavconfig.parse ('')
 			if self.cinfo is not None and self.cinfo.company_id > 0:
 				self.parameter = self.parameter._replace (company_id = self.cinfo.company_id)
-
+		#
+		if not self.report['company_id'] and self.parameter.company_id:
+			self.report['company_id'] = self.parameter.company_id
+		#
 		try:
 			self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
 			if self.header_from is not None:
@@ -1066,7 +1079,7 @@ class BAV:
 							sourcegroup = 'FO'
 						)
 					).id
-					if db.dbms in ('mysql', 'mariadb'):
+					if db.dbms == 'mariadb':
 						db.update (
 							'INSERT INTO customer_%d_tbl (email, gender, mailtype, timestamp, creation_date, datasource_id) '
 							'VALUES (:email, 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :datasource_id)'
@@ -1197,6 +1210,123 @@ class BAV:
 			rc = self.rule.match_header (self.msg, ['systemmail']) is not None
 		self.report['systemmail'] = rc
 		return rc
+
+	inbox_enabled_key: Final[str] = 'bavd:inbox-enabled'
+	def inbox (self, db: DB) -> None:
+		if (
+			not self.parameter.company_id
+			or
+			not self.parameter.rid
+			or
+			not self.parameter.to
+		):
+			return
+		#
+		with EMMCompany (db = db, keys = [self.inbox_enabled_key]) as emmcompany:
+			if not emmcompany.get (
+				name = self.inbox_enabled_key,
+				company_id = self.parameter.company_id,
+				index = self.rid,
+				default = False,
+				convert = atob
+			):
+				return
+		#
+		sender_full_name = sender_email = ''
+		if (header_from := self.msg['from']):
+			(visual, email) = parseaddr (header_from)
+			if visual:
+				sender_full_name = visual
+			if email:
+				sender_email = email
+		if not sender_email:
+			sender_email = self.parameter.sender
+		if not sender_full_name:
+			sender_full_name = sender_email
+		subject = self.msg['subject']
+		mail_timestamp = datetime.now ()
+		try:
+			if (date := self.msg['date']) is not None:	
+				mail_timestamp = date.datetime.astimezone ()
+		except Exception as e:
+			if self.dryrun:
+				print (f'{self.parameter.rid}: failed to parse mails date: {e}')
+			else:
+				logger.warning (f'{self.parameter.rid}: failed to parse mails date: {e}')
+		if (html := self.content.get ('html')):
+			content = html[0]
+			content_type = 1
+		else:
+			content = self.content.get ('plain', [''])[0]
+			content_type = 0
+		repr = 'RID {rid} (company {company_id}) envelope-from=<{mfrom}>,to=<{mto}>, header-from "{visual}" <{email}> at {timestamp:%Y-%m-%d %H:%M:%S}, {recipient}content[{content_type}]={content}'.format (
+			rid = self.parameter.rid,
+			company_id = self.parameter.company_id,
+			mfrom = self.parameter.sender,
+			mto = self.parameter.to,
+			visual = sender_full_name,
+			email = sender_email,
+			timestamp = mail_timestamp,
+			recipient = '' if self.cinfo is None else f'customer_id {self.cinfo.customer_id} <{self.cinfo.customer.email}> from company {self.cinfo.company_id} ({self.cinfo.company.shortname}), ',
+			content_type = 'html' if content_type == 1 else 'text',
+			content = f'{content!r}' if len (content) <= 100 else f'{content[:100]!r} ...'
+		)
+		with db.request () as cursor:
+			rq = cursor.querys ('SELECT count(*) FROM mailloop_tbl WHERE rid = :rid', {'rid': self.parameter.rid})
+			if rq is None or rq[0] is None or rq[0] == 0:
+				if self.dryrun:
+					print (f'{self.parameter.rid}: bounce filter does not exists (any more), mail not saved for {repr}')
+				else:
+					logger.warning (f'{repr}: failed to save to database, bounce filter does not exists for {self.parameter.rid}')
+			elif self.dryrun:
+				print (f'Would save mail to inbox for {repr}')
+			elif (count := cursor.update (
+				db.qselect (
+					oracle = (
+						'INSERT INTO mailloop_replies_tbl '
+						'       (id, mailloop_id, status, sender_full_name, subject, sender_email, response_email, timestamp, creation_date, change_date, content, content_type, raw_message, customer_id, company_id, customer_company_id) '
+						'VALUES '
+						'       (mailloop_replies_tbl_seq.nextval, :rid, :status, :sender_full_name, :subject, :sender_email, :response_email, :mail_timestamp, current_timestamp, current_timestamp, :content, :content_type, :raw_message, :customer_id, :company_id, :customer_company_id)'
+					), mariadb = (
+						'INSERT INTO mailloop_replies_tbl '
+						'       (mailloop_id, status, sender_full_name, subject, sender_email, response_email, timestamp, creation_date, change_date, content, content_type, raw_message, customer_id, company_id, customer_company_id) '
+						'VALUES '
+						'       (:rid, :status, :sender_full_name, :subject, :sender_email, :response_email, :mail_timestamp, current_timestamp, current_timestamp, :content, :content_type, :raw_message, :customer_id, :company_id, :customer_company_id)'
+					)
+				), {
+					'rid': self.parameter.rid,
+					'status': 0,
+					'sender_full_name': sender_full_name,
+					'subject': subject,
+					'sender_email': sender_email,
+					'response_email': self.parameter.to,
+					'mail_timestamp': mail_timestamp,
+					'content': content,
+					'content_type': content_type,
+					'raw_message': None, # self.raw,
+					'customer_id': self.cinfo.customer_id if self.cinfo is not None else None,
+					'company_id': self.parameter.company_id,
+					'customer_company_id': self.cinfo.company_id if self.cinfo is not None else None
+				}, input_sizes = {
+					'content': 'CLOB',
+					'raw_message': 'BLOB'
+				}
+			)) == 1:
+				rq = cursor.querys (
+					db.qselect (
+						oracle = 'SELECT mailloop_replies_tbl_seq.currval FROM DUAL',
+						mariadb = 'SELECT last_insert_id()'
+					)
+				)
+				if rq is not None and rq[0] is not None:
+					self.report['inbox'] = rq[0]
+					logger.debug (f'{repr}: saved to database with ID {rq[0]}')
+				else:
+					logger.warning (f'{repr}: failed to retrieve saved ID')
+				db.sync ()
+			else:
+				logger.warning (f'{repr}: failed to save to database, expect one changed row but had {count}')
+
 	def execute_filter_or_forward (self, db: DB) -> bool:
 		if self.parsed_email.ignore:
 			action = 'ignore'
@@ -1231,7 +1361,11 @@ class BAV:
 				action = 'sent'
 			else:
 				action = 'filtered'
-
+				try:
+					self.inbox (db)
+				except error as e:
+					logging.warning (f'Failed to save inbox: {e}')
+			#
 			if self.parameter.autoresponder:
 				if self.parameter.sender and self.header_from is not None and self.header_from.address:
 					sender = self.header_from.address

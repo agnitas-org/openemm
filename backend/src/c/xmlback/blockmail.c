@@ -11,6 +11,7 @@
 # include	<stdlib.h>
 # include	<stdarg.h>
 # include	<string.h>
+# include	<ctype.h>
 # include	<sys/utsname.h>
 # include	"xmlback.h"
 
@@ -80,13 +81,14 @@ blockmail_t *
 blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 {
 	blockmail_t	*b;
-	int		n;
-	struct utsname	utsbuf;
-	const char	*ptr;
 
 	if (b = (blockmail_t *) malloc (sizeof (blockmail_t))) {
+		uuid_t		uuid;
+		int		n;
+		struct utsname	utsbuf;
+		const char	*ptr;
+		
 		b -> fname = fname;
-
 		b -> syfname[0] = '\0';
 		b -> syfp = NULL;
 		b -> syeof = false;
@@ -95,11 +97,13 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> purl = NULL;
 		b -> html = NULL;
 		b -> cvt = NULL;
+		uuid_generate_time (uuid);
+		uuid_unparse_upper (uuid, b -> uuid);
 		b -> target_ids = NULL;
 		b -> target_ids_count = 0;
-		b -> tracker = NULL;
 
 		b -> raw = false;
+		b -> fullraw = false;
 		b -> output = NULL;
 		b -> outputdata = NULL;
 		b -> counter = NULL;
@@ -171,13 +175,12 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		DO_ZERO (b, media);
 		DO_ZERO (b, mailtypedefinition);
 
-		b -> ltag = NULL;
-		b -> taglist_count = 0;
+		b -> recipient_tags = NULL;
 		b -> clear_empty_dyn_block = true;
 		b -> clear_empty_dyn_block_without_dvalue = true;
+		b -> imagepool = NULL;
 
-		b -> gtag = NULL;
-		b -> globaltag_count = 0;
+		b -> global_tags = NULL;
 
 		b -> tfunc = NULL;
 
@@ -253,8 +256,6 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			html_free (b -> html);
 		if (b -> cvt)
 			cvt_free (b -> cvt);
-		if (b -> tracker)
-			tracker_free (b -> tracker);
 		if (b -> counter)
 			counter_free_all (b -> counter);
 		if (b -> reason)
@@ -325,10 +326,12 @@ blockmail_free (blockmail_t *b) /*{{{*/
 		DO_FREE (b, media);
 		DO_FREE (b, mailtypedefinition);
 
-		if (b -> ltag)
-			tag_free_all (b -> ltag);
-		if (b -> gtag)
-			tag_free_all (b -> gtag);
+		if (b -> recipient_tags)
+			tag_free_all (b -> recipient_tags);
+		if (b -> imagepool)
+			image_free_all (b -> imagepool);
+		if (b -> global_tags)
+			tag_free_all (b -> global_tags);
 		if (b -> tfunc)
 			tfunc_free (b -> tfunc);
 		if (b -> dyn)
@@ -753,7 +756,7 @@ blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 		b -> clear_empty_dyn_block = atob (tmp -> val);
 	if (tmp = company_info_find (b, "clear-empty-dyn-block-enhanced"))
 		b -> clear_empty_dyn_block_without_dvalue = atob (tmp -> val);
-	if (b -> ltag) {
+	if (b -> recipient_tags) {
 		int	n, m;
 		dyn_t	*d, *dd;
 		
@@ -812,4 +815,62 @@ blockmail_setup_preevaluated_targets (blockmail_t *blockmail) /*{{{*/
 				sib -> target_index = find_preevaluated_index (blockmail, sib -> target_id);
 		}
 	}
+}/*}}}*/
+url_t *
+blockmail_find_url (blockmail_t *blockmail, const xmlChar *content, int length, int mask) /*{{{*/
+{
+	url_t	*url = NULL;
+	int	n;
+
+	for (n = 0; n < blockmail -> url_count; ++n)
+		if (url_match (blockmail -> url[n], content, length)) {
+			if (blockmail -> url[n] -> usage & mask)
+				url = blockmail -> url[n];
+			break;
+		}
+	if (! url)
+		for (n = 0; n < blockmail -> url_count; ++n)
+			if (url_match_original (blockmail -> url[n], content, length)) {
+				if (blockmail -> url[n] -> usage & mask)
+					url = blockmail -> url[n];
+				break;
+			}
+	return url;
+}/*}}}*/
+bool_t
+blockmail_transcode_url_for_content (blockmail_t *blockmail, const xmlBufferPtr url, const char *uid) /*{{{*/
+{
+	bool_t		rc = false;
+	const xmlChar	*ptr = xmlBufferContent (url);
+	int		size = xmlBufferLength (url);
+	int		state = 0;
+	xmlChar		ch;
+	
+	buffer_clear (blockmail -> link_maker);
+	while (size > 0) {
+		ch = *ptr;
+		if (state < 3) {
+			if (ch == '/')
+				++state;
+		} else if (state == 3) {
+			if (isalpha (ch)) {
+				const xmlChar	*bptr = ptr;
+				int		bsize = size;
+				
+				while ((bsize > 0) && isalpha (*bptr))
+					++bptr, --bsize;
+				buffer_append (blockmail -> link_maker, ptr, bptr - ptr);
+				buffer_appendch (blockmail -> link_maker, '/');
+				buffer_appends (blockmail -> link_maker, uid);
+				buffer_appendch (blockmail -> link_maker, '/');
+				rc = true;
+			}
+			++state;
+		} else if ((ch == '?') || (ch == '&'))
+			break;
+		buffer_appendch (blockmail -> link_maker, ch);
+		++ptr;
+		--size;
+	}
+	return rc;
 }/*}}}*/

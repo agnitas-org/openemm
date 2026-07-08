@@ -741,9 +741,27 @@ alua_pushnull (lua_State *lua) /*{{{*/
 	lua_getglobal (lua, LUA_NULL);
 }/*}}}*/
 static int
+alua_null_meta_null (lua_State *lua) /*{{{*/
+{
+	alua_pushnull (lua);
+	return 1;
+}/*}}}*/
+static int
 alua_null_meta_len (lua_State *lua) /*{{{*/
 {
 	lua_pushnumber (lua, 0);
+	return 1;
+}/*}}}*/
+static int
+alua_null_meta_eq (lua_State *lua) /*{{{*/
+{
+	lua_pushboolean (lua, alua_isnull (lua, -2) && alua_isnull (lua, -1));
+	return 1;
+}/*}}}*/
+static int
+alua_null_meta_ne (lua_State *lua) /*{{{*/
+{
+	lua_pushboolean (lua, 0);
 	return 1;
 }/*}}}*/
 static int
@@ -757,7 +775,13 @@ static struct { /*{{{*/
 	lua_CFunction	func;
 	/*}}}*/
 }	null_metatab[] = { /*{{{*/
+	{	"__add",	alua_null_meta_null	},
+	{	"__sub",	alua_null_meta_null	},
+	{	"__mul",	alua_null_meta_null	},
+	{	"__div",	alua_null_meta_null	},
 	{	"__len",	alua_null_meta_len	},
+	{	"__eq",		alua_null_meta_eq	},
+	{	"__lt",		alua_null_meta_ne	},
 	{	"__tostring",	alua_null_meta_tostring	}
 	/*}}}*/
 };

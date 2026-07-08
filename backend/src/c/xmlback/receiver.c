@@ -88,7 +88,8 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> rvdata = dataset_alloc (data_blocks, blockmail -> target_groups_count);
 		r -> encrypt = encrypt_alloc (blockmail);
 		r -> cache = NULL;
-		r -> base_block = NULL;
+		r -> component = NULL;
+		r -> current_block = NULL;
 		r -> smap = NULL;
 		r -> slist = NULL;
 		r -> chunks = 1;
@@ -172,7 +173,8 @@ receiver_clear (receiver_t *r) /*{{{*/
 	header_clear (r -> header);
 	dataset_clear (r -> rvdata);
 	r -> cache = dcache_free_all (r -> cache);
-	r -> base_block = NULL;
+	r -> component = NULL;
+	r -> current_block = NULL;
 	r -> chunks = 1;
 	r -> size = 0;
 	r -> dkim = false;
@@ -206,18 +208,8 @@ receiver_set_data_buf (receiver_t *rec, const char *key, const buffer_t *data) /
 void
 receiver_set_data_default (receiver_t *rec) /*{{{*/
 {
-	media_target_t	*mt;
-	char		*temp;
-	
 	receiver_set_data_i (rec, "sys$customer_id", rec -> customer_id);
 	receiver_set_data_i (rec, "sys$boundary", rec -> customer_id);
-	for (mt = rec -> media_target; mt; mt = mt -> next) {
-		if (temp = malloc (strlen (mt -> media) + 5)) {
-			sprintf (temp, "sys$%s", mt -> media);
-			receiver_set_data_buf (rec, temp, mt -> value);
-			free (temp);
-		}
-	}
 }/*}}}*/
 void
 receiver_set_data (receiver_t *rec, const char *name, record_t *record) /*{{{*/
@@ -253,7 +245,7 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 			m -> prefix[m -> plen] = '\0';
 		}
 		xmlBufferEmpty (rec -> message_id);
-		if (uid = create_uid (blockmail, blockmail -> uid_version, m -> prefix, rec, NULL, true)) {
+		if (uid = create_uid (blockmail, blockmail -> uid_version, m -> prefix, rec, NULL, true, NULL)) {
 			if (blockmail -> status_field == 'V') {
 				xmlBufferCCat (rec -> message_id, "V0-");
 			}

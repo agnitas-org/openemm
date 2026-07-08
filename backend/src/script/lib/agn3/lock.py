@@ -95,6 +95,12 @@ program is used."""
 									if st.st_size == 0:
 										os.unlink (self.lockpath)
 										logger.info (f'{self.id}: removed corrupted (empty) lockfile')
+							except OSError as e2:
+								match e2.errno:
+									case errno.ENOENT:
+										logger.info (f'{self.id}: existing lockfile vanished')
+									case _:
+										logger.warning (f'{self.id}: failed to read existing lockfile: {e2}')
 						elif e.errno == errno.ENOENT:
 							lockdirectory = os.path.abspath (os.path.dirname (self.lockpath))
 							try:

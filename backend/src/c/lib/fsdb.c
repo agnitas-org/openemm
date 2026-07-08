@@ -251,8 +251,10 @@ fsdb_remove (fsdb_t *f, const char *key) /*{{{*/
 		if (stat (f -> path, & st) == -1) {
 			if (errno == ENOENT)
 				return true;
-		} else if (S_ISREG (st.st_mode) && (unlink (f -> path) != -1))
-			return true;
+		} else if (S_ISREG (st.st_mode)) {
+			if ((unlink (f -> path) != -1) || (errno == ENOENT))
+				return true;
+		}
 	}
 	return false;
 }/*}}}*/

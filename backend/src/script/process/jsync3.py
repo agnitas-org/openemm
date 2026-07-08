@@ -19,6 +19,8 @@ class JSync (CLI):
 	def executor (self) -> bool:
 		target = os.path.join (base, 'JAVA')
 		webroot = os.path.join (base, 'webapps', 'emm')
+		if not os.path.isdir (webroot):
+			webroot = os.path.join (base, 'webapps', 'openemm')
 		libs = os.path.join (webroot, 'WEB-INF', 'lib')
 		syslibs = os.path.join (base, 'tomcat', 'lib')
 		classes = os.path.join (webroot, 'WEB-INF', 'classes')

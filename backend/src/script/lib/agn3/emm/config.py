@@ -27,7 +27,11 @@ from	..stream import Stream
 from	..systemconfig import Systemconfig
 from	..tools import atob, listsplit, listjoin
 #
-__all__ = ['EMMConfig', 'EMMCompany', 'EMMMailerset', 'EMMMessages', 'Responsibility']
+__all__ = [
+	'EMMConfig', 'EMMCompany',
+	'EMMMailerset', 'EMMMessages',
+	'Responsibility'
+]
 #
 logger = logging.getLogger (__name__)
 #
@@ -372,6 +376,7 @@ class EMMCompany (_Config):
 
 	def get (self,
 		name: str,
+		*,
 		company_id: Optional[int] = None,
 		index: Optional[str] = None,
 		default: Any = sentinel,
@@ -470,8 +475,7 @@ found value to convert it before returning it."""
 				'UPDATE company_info_tbl '
 				f'SET cvalue = :cvalue, timestamp = CURRENT_TIMESTAMP{description_assignment} '
 				f'WHERE company_id = :company_id AND cname = :cname AND {hostname_clause}',
-				data,
-				cleanup = True
+				data
 			) == 1)) or cursor.update (
 				'INSERT INTO company_info_tbl '
 				'       (company_id, cname, cvalue, description, creation_date, timestamp, hostname) '
