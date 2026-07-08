@@ -1,0 +1,87 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.service.job;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.agnitas.dao.AnonymizeStatisticsDao;
+import com.agnitas.dao.CompanyDao;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * Example Insert in DB:
+ *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted)
+ *     VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '0000', CURRENT_TIMESTAMP, null, 'AnonymizeStatistics', 0);
+ */
+@JobWorker("AnonymizeStatistics")
+public class AnonymizeStatisticsJobWorker extends JobWorkerBase {
+
+	private static final Logger LOGGER = LogManager.getLogger(AnonymizeStatisticsJobWorker.class);
+
+	@Override
+	public String runJob() throws Exception {
+		try {
+			LOGGER.info("{} started", this.getClass().getSimpleName());
+
+			final List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
+			final List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
+	
+			if(LOGGER.isInfoEnabled()) {
+				LOGGER.info(String.format(
+						"Included company IDs (parsed list): %s",
+						includedCompanyIds == null || includedCompanyIds.isEmpty() ? "all" : includedCompanyIds.stream().map(Object::toString).collect(Collectors.joining(", "))
+						));
+				LOGGER.info(String.format(
+						"Excluded company IDs (parsed list): %s",
+						excludedCompanyIds == null || excludedCompanyIds.isEmpty() ? "none" : excludedCompanyIds.stream().map(Object::toString).collect(Collectors.joining(", "))
+						));
+			}
+					
+			final CompanyDao companyDao = daoLookupFactory.getBeanCompanyDao();
+			final AnonymizeStatisticsDao anonymizeStatisticsDao = daoLookupFactory.getBeanAnonymizeStatisticsDao();
+			
+			for (final CompanyEntry company : companyDao.getActiveCompaniesLight(true)) {
+				final int companyID = company.getCompanyId();
+				
+				final boolean included = includedCompanyIds == null || includedCompanyIds.contains(companyID);
+				final boolean excluded = excludedCompanyIds != null && excludedCompanyIds.contains(companyID);
+				final boolean anonymize = configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyID);
+				
+				LOGGER.debug("Processing company ID {} (included: {}, excluded {}, anonymize: {})", companyID, included, excluded, anonymize);
+
+				if (included && !excluded && anonymize) {
+					final boolean anonymizeAll = configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID);
+			
+					LOGGER.debug("Running anonymization on company ID {} (anonymize all: {})", companyID, anonymizeAll);
+
+					anonymizeStatisticsDao.anonymizeStatistics(companyID, anonymizeAll);
+				} else {
+					if(LOGGER.isInfoEnabled()) {
+						LOGGER.debug("Anonymization not run on company ID {}", companyID);
+					}
+				}
+			}
+	
+			LOGGER.info("{} finished without exception", this.getClass().getSimpleName());
+		} catch(final Exception e) {
+			LOGGER.info("{} finished with exception", this.getClass().getSimpleName(), e);
+			throw e;
+		}
+		
+		return null;
+	}
+}

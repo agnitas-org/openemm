@@ -225,7 +225,7 @@ reportContext.setPersistentGlobalVariable("message_report.openers.total", I18nSt
 reportContext.setPersistentGlobalVariable("message_report.openers.tablet.shortname", I18nString.getLocaleString("report.openers.tablet.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.mobile.shortname", I18nString.getLocaleString("report.openers.mobile.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.smarttv.shortname", I18nString.getLocaleString("report.openers.smarttv.shortname", reportContext.getLocale()));
-reportContext.setPersistentGlobalVariable("message_report.openers.multiple-devices.shortname", I18nString.getLocaleString("report.openers.multiple-devices.shortname", reportContext.getLocale()));
+reportContext.setPersistentGlobalVariable("message_report.device.mixed", I18nString.getLocaleString("report.device.mixed", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("statistic.blacklisted", I18nString.getLocaleString("recipient.MailingState6", reportContext.getLocale()));
 
 //BIRT label report item onCreate Script
@@ -13766,7 +13766,7 @@ reportContext.getPersistentGlobalVariable("message_report.openers.mobile.shortna
 } else if (data["category"] == RecipientsStatisticDataSet.CLICKER_SMARTTV_END_DATE_INDEX) {
 reportContext.getPersistentGlobalVariable("message_report.openers.smarttv.shortname");
 } else if (data["category"] == RecipientsStatisticDataSet.CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX) {
-reportContext.getPersistentGlobalVariable("message_report.openers.multiple-devices.shortname");
+reportContext.getPersistentGlobalVariable("message_report.device.mixed");
 } else {
 dimension["category"]["category"]["category"]}</expression>
                                 <property name="dataType">string</property>
@@ -14734,7 +14734,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;report.openers.mo
 } else if (row[&quot;categoryIndx&quot;] == RecipientsStatisticDataSet.CLICKER_SMARTTV_END_DATE_INDEX) {
 Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;report.openers.smarttv.shortname&quot;, reportContext.getLocale());
 } else if (row[&quot;categoryIndx&quot;] == RecipientsStatisticDataSet.CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX) {
-Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;report.openers.multiple-devices.shortname&quot;, reportContext.getLocale());
+Packages.com.agnitas.messages.I18nString.getLocaleString(&quot;report.device.mixed&quot;, reportContext.getLocale());
 } else {
 row[&quot;category&quot;]
 }</Definition>

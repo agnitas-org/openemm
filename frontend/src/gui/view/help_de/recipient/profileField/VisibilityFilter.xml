@@ -1,0 +1,14 @@
+<HelpBalloon>
+    <title><![CDATA[Sichtbarkeit]]></title>
+    <content>
+        <![CDATA[
+        Bitte beachten Sie, dass eine &Auml;nderung des Defaultwerts &quot;sichtbar&quot; Auswirkungen auf die Verwendbarkeit und Anzeige des jeweiligen Profilfelds auf der EMM-Oberfl&auml;che hat. In jedem Fall bleibt der Feldinhalt im Hintergrund erhalten.
+        <br><br>
+        <b>&quot;nur lesbar&quot;:</b> Profilfeld und Inhalt werden im Empf&auml;ngerprofil und Profilfelder-&Uuml;bersicht angezeigt. Das Feld kann in Importprofilen, im Import-Assistenten, bei Zielgruppendefinitionen und auch f&uuml;r Exporte nicht ausgew&auml;hlt werden.
+        <br><br>
+        <b>&quot;nicht sichtbar&quot;:</b> Profilfeld und Inhalt werden im Empf&auml;ngerprofil und Profilfelder-&Uuml;bersicht nicht angezeigt. Das Feld kann in Importprofilen, im Import-Assistenten, bei Zielgruppendefinitionen und auch f&uuml;r Exporte nicht ausgew&auml;hlt werden.
+        <br><br>
+        F&uuml;r weitere Details lesen Sie bitte im Handbuch: Empf&auml;nger - Kundendaten pflegen &gt; Profilfelder &gt; Empf&auml;ngerprofil erweitern &gt; Neue Felder erzeugen.
+        ]]>
+    </content>
+</HelpBalloon>

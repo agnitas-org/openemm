@@ -1,0 +1,269 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.beans;
+
+import java.util.Set;
+
+import com.agnitas.util.importvalues.MailType;
+
+public interface MediatypeEmail extends Mediatype {
+    String ONEPIXEL_BOTTOM = "bottom";
+    String ONEPIXEL_NONE = "none";
+    String ONEPIXEL_TOP = "top";
+
+	String SEND_ENCRYPTED_PARAM = "send_encrypted";
+	String BCC_STRING_PARAM = "bcc";
+    
+    /**
+     * Getter for property charset.
+     * 
+     * @return Value of property charset.
+     */
+    String getCharset();
+
+    /**
+     * Getter for property fromAdr.
+     * 
+     * @return Value of property fromAdr.
+     */
+    String getFromEmail();
+
+    /**
+     * Getter for property fromAdr.
+     * 
+     * @return Value of property fromAdr.
+     */
+    String getFromFullname();
+
+    /**
+     * Getter for property fromAdr.
+     * 
+     * @return Value of property fromAdr.
+     */
+    String getReplyEmail();
+
+    /**
+     * Getter for property fromAdr.
+     * 
+     * @return Value of property fromAdr.
+     */
+    String getReplyFullname();
+
+    /**
+     * Getter for property fromAdr.
+     * 
+     * @return Value of property fromAdr.
+     */
+    String getFromAdr();
+
+    /**
+     * Getter for property linefeed.
+     * 
+     * @return Value of property linefeed.
+     */
+    int getLinefeed();
+
+    /**
+     * Getter for property mailFormat.
+     * 
+     * @return Value of property mailFormat.
+     */
+    int getMailFormat();
+
+    /**
+     * Getter for property onepixel.
+     * 
+     * @return Value of property onepixel.
+     */
+    String getOnepixel();
+
+    /**
+     * Getter for property replyAdr.
+     * 
+     * @return Value of property replyAdr.
+     */
+    String getReplyAdr();
+
+    /**
+     * Getter for property subject.
+     * 
+     * @return Value of property subject.
+     */
+    String getSubject();
+
+    String getPreHeader();
+
+    /**
+     * Getter for property subject.
+     * 
+     * @return Value of property subject.
+     */
+    String getHtmlTemplate();
+
+    /**
+     * Setter for property charset.
+     * 
+     * @param charset New value of property charset.
+     */
+    void setCharset(String charset);
+
+    /**
+     * Setter for property fromAdr.
+     * 
+     * @param fromEmail New value of property fromAdr.
+     */
+    void setFromEmail(String fromEmail);
+
+    /**
+     * Setter for property fromAdr.
+     * 
+     * @param fromFullname New value of property fromAdr.
+     */
+    void setFromFullname(String fromFullname);
+
+    /**
+     * Setter for property fromAdr.
+     * 
+     * @param replyEmail New value of property fromAdr.
+     */
+    void setReplyEmail(String replyEmail);
+
+    /**
+     * Setter for property fromAdr.
+     * 
+     * @param replyFullname New value of property fromAdr.
+     */
+    void setReplyFullname(String replyFullname);
+
+    /**
+     * Setter for property linefeed.
+     * 
+     * @param linefeed New value of property linefeed.
+     */
+    void setLinefeed(int linefeed);
+
+    /**
+     * Setter for property mailFormat.
+     * 
+     * @param mailFormat New value of property mailFormat.
+     */
+    void setMailFormat(int mailFormat);
+
+    /**
+     * Setter for property onepixel.
+     * 
+     * @param onepixel New value of property onepixel.
+     */
+    void setOnepixel(String onepixel);
+
+    /**
+     * Setter for property subject.
+     * 
+     * @param subject New value of property subject.
+     */
+    void setSubject(String subject);
+
+    void setPreHeader(String preHeader);
+
+    /**
+     * Setter for property subject.
+     * 
+     * @param htmlTemplate New value of property subject.
+     */
+    void setHtmlTemplate(String htmlTemplate);
+
+    /**
+     * Getter for property mailingID.
+     *
+     * @return Value of property mailingID.
+     */
+    int getMailingID();
+    
+     /**
+     * Setter for property mailingID.
+     * 
+     * @param mailingID New value of property mailingID.
+     */
+    void setMailingID(int mailingID);
+
+    void setEncryptedSend(boolean isEncryptedSend);
+
+    boolean isEncryptedSend();
+    
+	/**
+     * Getter for property envelopeAdr.
+     * 
+     * @return Value of property envelopeAdr.
+     */
+    String getEnvelopeEmail();
+    
+    /**
+     * Setter for property envelopeAdr.
+     * 
+     * @param envelopeEmail New value of property envelopeAdr.
+     */
+    void setEnvelopeEmail(String envelopeEmail);
+
+	/**
+	 * Gets the id of the mailing this one is referencing.
+	 * This field is only used in followup mails for non-openers.
+	 * 
+	 * @return Value of property followupFor.
+	 */
+	String	getFollowupFor();
+    
+	/**
+	 * Setter for property followupFor.
+	 * 
+	 * @param followupFor	The mailing_id of the referenced mailing.
+	 */
+	void setFollowupFor(String followupFor);
+	
+	boolean isDoublechecking();
+
+	void setDoublechecking(boolean doublechecking);
+
+	// for getting and setting the Follow-Up Method (for clickers, non-clickers and so on).
+	String getFollowUpMethod();
+
+	void setFollowUpMethod(String followUpMethod);
+	
+	boolean isSkipempty();
+
+	void setSkipempty(boolean skipempty);
+	
+	// removes the follow-up parameters (and only that) from the mailing.
+	void deleteFollowupParameters();
+    
+    String getBccRecipients();
+    
+    void setBccRecipients(String bccRecipients);
+
+	void setMailFormat(MailType mailType);
+    
+    void deleteDateBasedParameters();
+
+	boolean isCleanupTestsBeforeDelivery();
+
+	void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery);
+
+    int getApprovalRequester();
+
+    void setApprovalRequester(int approvalRequester);
+
+    String getApprovedBy();
+
+    void setApprovedBy(String clearance);
+    
+    Set<Integer> getApprovers();
+    
+    void setApprovers(Set<Integer> approvers);
+}

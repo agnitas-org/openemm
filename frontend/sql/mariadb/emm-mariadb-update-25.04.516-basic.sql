@@ -18,6 +18,7 @@ ALTER TABLE company_tbl DROP COLUMN export_notify;
 DELETE FROM admin_permission_tbl WHERE permission_name = 'stats.dynamic';
 DELETE FROM admin_group_permission_tbl WHERE permission_name = 'stats.dynamic';
 DELETE FROM company_permission_tbl WHERE permission_name = 'stats.dynamic';
+DELETE FROM permission_tbl WHERE permission_name = 'stats.dynamic';
 
 DELETE FROM admin_permission_tbl WHERE permission_name = 'user.xpress';
 DELETE FROM admin_group_permission_tbl WHERE permission_name = 'user.xpress';

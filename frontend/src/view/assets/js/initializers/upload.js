@@ -341,15 +341,23 @@ AGN.Lib.DomInitializer.new('upload', function ($e) {
     exposeSelection();
 
     $form.on('form:loadershow', () => {
+      AGN.Lib.Modal.getWrapper($progress).addClass('modal-locked');
+
       $progress.html(Template.text(progressBarTemplate,{currentProgress: true}));
       $progress.show();
     });
-    $form.on('form:loaderhide', () => $progress.hide());
+    $form.on('form:loaderhide', () => {
+      $progress.hide();
+      AGN.Lib.Modal.getWrapper($progress).removeClass('modal-locked');
+    });
     $form.on('form:submit', () => setFormValues());
     $form.on('submitted', reset);
-    $form.on('form:progress', (e, data) => {
-      $progress.html(Template.text(progressBarTemplate,{currentProgress: data.progress}));
-    });
+
+    if ($form.data('skip-upload-progress') !== true) {
+      $form.on('form:progress', (e, data) => {
+        $progress.html(Template.text(progressBarTemplate,{currentProgress: data.progress}));
+      });
+    }
 
     $dropzone.on('upload:reset', reset);
     $dropzone.on('upload:dropped', (e, files) => {

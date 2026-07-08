@@ -26,7 +26,7 @@ class SetFilter {
   }
 
   isFilterActive() {
-    return this.filterValues.length > 0;
+    return this.filterValues?.length > 0;
   }
 
   getModel() {

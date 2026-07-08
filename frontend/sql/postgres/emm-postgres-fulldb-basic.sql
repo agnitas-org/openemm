@@ -1528,6 +1528,7 @@ COMMENT ON COLUMN title_gender_tbl.title IS 'title value for this specific type 
 
 CREATE TABLE trackpoint_def_tbl
 (
+    trackpoint_id SERIAL PRIMARY KEY,
     company_id    INTEGER,
     pagetag       VARCHAR(2000),
     mailing_id    INTEGER,
@@ -1537,7 +1538,6 @@ CREATE TABLE trackpoint_def_tbl
     type          INTEGER,
     currency      VARCHAR(200),
     format        INTEGER,
-    trackpoint_id SERIAL PRIMARY KEY,
     creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) TABLESPACE data_accounting;
 ALTER TABLE trackpoint_def_tbl ADD CONSTRAINT trckpdef$coid$nn CHECK (company_id IS NOT NULL);
@@ -3298,7 +3298,7 @@ COMMENT ON COLUMN csv_imexport_mapping_tbl.keycolumn IS 'Is this a keycolumn';
 
 CREATE TABLE client_tbl
 (
-    client_id    INTEGER UNIQUE,
+    client_id    SERIAL,
     client_order INTEGER UNIQUE,
     description  VARCHAR(200),
     regex        VARCHAR(200)
@@ -3601,7 +3601,7 @@ COMMENT ON COLUMN webservice_permission_tbl.endpoint IS 'Name of granted endpoin
 
 CREATE TABLE webservice_perm_group_tbl
 (
-    id   INTEGER      NOT NULL PRIMARY KEY,
+    id   SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL
 );
 CREATE UNIQUE INDEX wsprmgrp$name$uq ON webservice_perm_group_tbl (name);
@@ -3616,6 +3616,8 @@ INSERT INTO webservice_perm_group_tbl (id, name) VALUES (4, 'content');
 INSERT INTO webservice_perm_group_tbl (id, name) VALUES (5, 'web_push');
 INSERT INTO webservice_perm_group_tbl (id, name) VALUES (6, 'statistics');
 INSERT INTO webservice_perm_group_tbl (id, name) VALUES (7, 'misc');
+
+SELECT SETVAL('webservice_perm_group_tbl_id_seq', (SELECT MAX(id) FROM webservice_perm_group_tbl));
 
 CREATE TABLE webservice_perm_group_perm_tbl
 (
@@ -3749,7 +3751,7 @@ COMMENT ON COLUMN webservice_permissions_tbl.category IS 'Category of endpoint (
 
 CREATE TABLE ws_login_track_tbl
 (
-    login_track_id SERIAL,
+    login_track_id BIGSERIAL,
     ip_address     VARCHAR(50),
     creation_date  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     login_status   INTEGER,
@@ -3799,6 +3801,8 @@ COMMENT ON COLUMN startup_job_tbl.description IS 'Optional description';
 
 INSERT INTO startup_job_tbl (classname, version, company_id, enabled, state)
 VALUES ('com.agnitas.startuplistener.api.ReferenceTableIdColumnStartupJob', '24.04.272', 0, 1, 0);
+
+SELECT SETVAL('startup_job_tbl_id_seq', (SELECT MAX(id) FROM startup_job_tbl));
 
 CREATE TABLE layout_tbl
 (
@@ -4027,7 +4031,7 @@ COMMENT ON COLUMN webhook_url_tbl.webhook_url IS 'Webhook URL';
 
 CREATE TABLE webhook_message_tbl
 (
-    message_id      SERIAL PRIMARY KEY,
+    message_id      BIGSERIAL PRIMARY KEY,
     company_ref     INTEGER   NOT NULL,
     event_type      SMALLINT  NOT NULL,
     event_timestamp TIMESTAMP NOT NULL,
@@ -4076,7 +4080,7 @@ COMMENT ON COLUMN webhook_profile_field_tbl.profile_field IS 'Name of profile fi
 
 CREATE TABLE webhook_backend_data_tbl
 (
-    id              SERIAL PRIMARY KEY,
+    id              BIGSERIAL PRIMARY KEY,
     creation_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     event_timestamp TIMESTAMP                           NOT NULL,
     event_type      SMALLINT                            NOT NULL,
@@ -4387,11 +4391,9 @@ COMMENT ON COLUMN import_size_tbl.timestamp IS 'timestamp of import';
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('system', 'url', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('system', 'defaultRdirDomain', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('system', 'defaultRdirDomain', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('system', 'defaultMailloopDomain', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('system', 'defaultMailloopDomain', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('system', 'licence', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
@@ -4411,28 +4413,23 @@ VALUES ('mailaddress', 'bounce', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_T
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailaddress', 'error', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailaddress', 'feature_support', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailaddress', 'feature_support', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailaddress', 'frontend', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailaddress', 'replyto', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailaddress', 'report_archive', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailaddress', 'report_archive', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailaddress', 'sender', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailaddress', 'support', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailaddress', 'upload.database', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailaddress', 'upload.database', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailaddress', 'upload.support', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailaddress', 'upload.support', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.account_logfile', '${home}/log/account.log', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailout', 'ini.account_logfile', '${home}/log/account.log', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.blocksize', '1000', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
@@ -4440,11 +4437,9 @@ VALUES ('mailout', 'ini.boundary', 'AGNITAS', CURRENT_TIMESTAMP, CURRENT_TIMESTA
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.default_charset', 'ISO-8859-1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.default_encoding', 'quoted-printable', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailout', 'ini.default_encoding', 'quoted-printable', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.directdir', '${home}/var/spool/DIRECT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailout', 'ini.directdir', '${home}/var/spool/DIRECT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.domain', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
@@ -4452,26 +4447,19 @@ VALUES ('mailout', 'ini.eol', 'LF', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initi
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.loglevel', 'ERROR', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.mailer', 'Agnitas EMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP, 'initial setting fulldb');
+VALUES ('mailout', 'ini.mailer', 'Agnitas EMM ${ApplicationMajorVersion}.${ApplicationMinorVersion}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.mail_log_number', '400', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.metadir', '${home}/var/spool/META', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailout', 'ini.metadir', '${home}/var/spool/META', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('mailout', 'ini.xmlback', '${home}/bin/xmlback', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        'initial setting fulldb');
+VALUES ('mailout', 'ini.xmlback', '${home}/bin/xmlback', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('mailout', 'ini.xmlvalidate', 'False', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('upselling', 'moreInfo.url.de',
-        'https://www.agnitas.de/e-marketing-manager/funktionsumfang/unterschiede-emminhouse-openemm/',
-        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
+VALUES ('upselling', 'moreInfo.url.de', 'https://www.agnitas.de/e-marketing-manager/funktionsumfang/unterschiede-emminhouse-openemm/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
-VALUES ('upselling', 'moreInfo.url.en',
-        'https://www.agnitas.de/en/e-marketing_manager/functions/differences-emminhouse-openemm/', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP, 'initial setting fulldb');
+VALUES ('upselling', 'moreInfo.url.en', 'https://www.agnitas.de/en/e-marketing_manager/functions/differences-emminhouse-openemm/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description)
 VALUES ('security', 'csrfProtection.enabled', 'true', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 
@@ -4613,11 +4601,9 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('targets.access.limit.extended', 'System', NULL, 61, NULL, CURRENT_TIMESTAMP);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.show', 'System', 'package.smartdata.restful', 55, 'WebservicesRestful Package', CURRENT_TIMESTAMP);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.change', 'System', 'package.smartdata.restful', 56, 'WebservicesRestful Package',
-        CURRENT_TIMESTAMP);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.change', 'System', 'package.smartdata.restful', 56, 'WebservicesRestful Package', CURRENT_TIMESTAMP);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.new', 'System', 'package.smartdata.restful', 57, NULL, CURRENT_TIMESTAMP);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.delete', 'System', 'package.smartdata.restful', 58, 'WebservicesRestful Package',
-        CURRENT_TIMESTAMP);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('restfulUser.delete', 'System', 'package.smartdata.restful', 58, 'WebservicesRestful Package', CURRENT_TIMESTAMP);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('server.status', 'System', 'others', 2, NULL, CURRENT_TIMESTAMP);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('masterlog.show', 'System', 'others', 3, NULL, CURRENT_TIMESTAMP);
@@ -4644,8 +4630,7 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('template.change', 'Mailing', 'Template', 2, NULL, CURRENT_TIMESTAMP);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('template.delete', 'Mailing', 'Template', 3, NULL, CURRENT_TIMESTAMP);
 
-INSERT INTO permission_tbl (permission_name, category, sort_order)
-values ('admin.management.show', 'Administration', 2);
+INSERT INTO permission_tbl (permission_name, category, sort_order) VALUES ('admin.management.show', 'Administration', 2);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package, creation_date) VALUES ('master.dbschema.snapshot.create', 'System', NULL, 60, NULL, CURRENT_TIMESTAMP);
 
@@ -4751,23 +4736,15 @@ INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('StartImport
 INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('AddMailingImage', NULL);
 
 INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'keep-xml-files', 'true', 'Admin-/Testmail XML Files nicht loeschen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'use-extended-usertypes', 'true', 'USER_TYPE fuer VIP Verteiler ermoeglichen', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'url-default', 'http://UndefinedInCompanyInfoTbl',
-        'Bei fehlender RDIR_DOMAIN in der COMPANY_TBL wird diese URL genommen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'use-extended-usertypes', 'true', 'USER_TYPE fuer VIP Verteiler ermoeglichen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'url-default', 'http://UndefinedInCompanyInfoTbl', 'Bei fehlender RDIR_DOMAIN in der COMPANY_TBL wird diese URL genommen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'expire-recv', '90', 'Expiration period for recv_xxx_tbl entries', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'expire-recipients-report', 90, 'Expiration period for recipients_report_tbl rows', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'host_authentication.authentication', 'disabled', 'Two way authentication', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'limit-block-operations', '500000', 'Splitting Merger Updates for customer_tbls', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'limit-block-operations-max', '5', 'Splitting Merger Updates for customer_tbls', CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'imagelink-template', '%(rdir-domain)/image/%(licence-id)/%(company-id)/%(mailing-id)/[name]',
-        'Path-structure by default (EMM-4603)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'imagelink-template-no-cache', '%(rdir-domain)/image/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]',
-        'Path-structure by default (EMM-4603)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'expire-recipients-report', 90, 'Expiration period for recipients_report_tbl rows', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'host_authentication.authentication', 'disabled', 'Two way authentication', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'limit-block-operations', '500000', 'Splitting Merger Updates for customer_tbls', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'limit-block-operations-max', '5', 'Splitting Merger Updates for customer_tbls', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'imagelink-template', '%(rdir-domain)/image/%(licence-id)/%(company-id)/%(mailing-id)/[name]', 'Path-structure by default (EMM-4603)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES (0, 'imagelink-template-no-cache', '%(rdir-domain)/image/nc/%(licence-id)/%(company-id)/%(mailing-id)/[name]', 'Path-structure by default (EMM-4603)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO sourcegroup_tbl (sourcegroup_type, description, timestamp, creation_date) VALUES ('A', 'Subscriber Interface', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO sourcegroup_tbl (sourcegroup_type, description, timestamp, creation_date) VALUES ('D', 'File', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
@@ -4779,8 +4756,7 @@ INSERT INTO sourcegroup_tbl (sourcegroup_type, description, timestamp, creation_
 INSERT INTO sourcegroup_tbl (sourcegroup_type, description, timestamp, creation_date) VALUES ('RS', 'RestfulService', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO company_tbl (rdir_domain, mailloop_domain, shortname, description, status, secret_key, enabled_uid_version, max_recipients, company_token)
-VALUES ('http://[to be defined]', '[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 'SecretKeyToBeDefined', 5,
-        10000, (SELECT CONCAT(LOWER(LEFT (MD5(random()::text), 16)), UPPER(LEFT (MD5(random()::text), 16)))));
+VALUES ('http://[to be defined]', '[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 'SecretKeyToBeDefined', 5, 10000, (SELECT CONCAT(LOWER(LEFT (MD5(random()::text), 16)), UPPER(LEFT (MD5(random()::text), 16)))));
 
 INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
 VALUES ('Default Datasource', 1, (SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = 'DD'));
@@ -4803,8 +4779,7 @@ INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
 VALUES ('RestfulService', 0,
         (SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = 'RS'));
 
-INSERT INTO mailinglist_tbl (company_id, description, shortname, auto_url, remove_data, rdir_domain,
-                             creation_date, change_date)
+INSERT INTO mailinglist_tbl (company_id, description, shortname, auto_url, remove_data, rdir_domain, creation_date, change_date)
 VALUES (1, 'Default, please do not delete!', 'Default-Mailinglist', NULL, '0', NULL,
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
@@ -4849,61 +4824,39 @@ VALUES ((SELECT admin_id FROM admin_tbl WHERE username = 'emm-master'), 1);
 
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDATE', '{base}', 'SIMPLE', 0, 'Dummy Tag for Preview');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDB', NULL, 'COMPLEX', 0, 'Selects a generic column from DB');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDVALUE', 'agnDVALUE textComponent {name}', 'FLOW', 0,
-        'agnDVALUE-Tag works only with agnDYN');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDYN', 'agnDYN textComponent {name}', 'FLOW', 0,
-        'agnDYN-Tag works optionally with agnDVALUE');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDVALUE', 'agnDVALUE textComponent {name}', 'FLOW', 0, 'agnDVALUE-Tag works only with agnDYN');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnDYN', 'agnDYN textComponent {name}', 'FLOW', 0,'agnDYN-Tag works optionally with agnDVALUE');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnEMAIL', NULL, 'SIMPLE', 0, '');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnFORM',
-        '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN={name}' || chr(38) ||
-        'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-form');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnFORM', '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN={name}' || chr(38) || 'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-form');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnIMAGE', NULL, 'COMPLEX', 0, 'Generates URL for hosted images');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnIMGLINK', NULL, 'COMPLEX', 0, '');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnMAILTYPE', 'cust.mailtype', 'SIMPLE', 0, '');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnMESSAGEID', '''''', 'SIMPLE', 0, 'Dummy content replaced by merger');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnPROFILE',
-        '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN=profile' || chr(38) ||
-        'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-profile-form');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnPROFILE', '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN=profile' || chr(38) || 'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-profile-form');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnSUBSCRIBERCOUNT', NULL, 'SIMPLE', 0, 'Dummy-Tag for Preview');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnTITLE', NULL, 'COMPLEX', 0, 'shows title - print out title, lastname - by tw');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnTITLEFIRST', NULL, 'COMPLEX', 0, 'shows title - print out firstname');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnTITLEFULL', NULL, 'COMPLEX', 0,
-        'shows title - print out title, firstname, lastname - by tw');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnTITLEFULL', NULL, 'COMPLEX', 0, 'shows title - print out title, firstname, lastname - by tw');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnUID', '''''', 'SIMPLE', 0, 'agnUID');
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnUNSUBSCRIBE',
-        '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN=unsubscribe' || chr(38) ||
-        'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-unsubscribe-form');
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnUNSUBSCRIBE', '''[rdir-domain]/form.action?agnCI=[company-id]' || chr(38) || 'agnFN=unsubscribe' || chr(38) || 'agnUID=##AGNUID##''', 'COMPLEX', 0, 'create a link to an emm-unsubscribe-form');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnITEM', '', 'COMPLEX', 0, NULL);
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnFULLVIEW', NULL, 'COMPLEX', 0, 'Generates URL for fullview');
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES ('agnWEBVIEW', NULL, 'COMPLEX', 0, 'Generates URL for fullview');
 
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnALTER', 'trunc(months_between(sysdate, cust.{column})/12, 0)', 'COMPLEX', 0,
-        'Returns years from column value until now', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnALTERCALC', 'trunc(months_between(sysdate, cust.{column})/12, 0) {op} {value}',
-        'COMPLEX', 0, 'like agnALTER with operator and value', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnALTER', 'trunc(months_between(sysdate, cust.{column})/12, 0)', 'COMPLEX', 0, 'Returns years from column value until now', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnALTERCALC', 'trunc(months_between(sysdate, cust.{column})/12, 0) {op} {value}', 'COMPLEX', 0, 'like agnALTER with operator and value', 1);
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCALC', 'cust.{column} {op} {value}', 'COMPLEX', 0, 'calculate with NUM-Field', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCUSTOMDATE', 'to_char(sysdate+{offset}, ''{format}'')', 'COMPLEX', 0,
-        'Adds an offset in days to the sysdate value and returns the formatted date', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCUSTOMDATE_DE',
-        'to_char(sysdate+{offset}, ''{format}'', ''nls_date_language = german'')', 'COMPLEX', 0,
-        'Adds an offset in days to the sysdate value and returns the formatted date in german lang', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCUSTOMDATE', 'to_char(sysdate+{offset}, ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCUSTOMDATE_DE', 'to_char(sysdate+{offset}, ''{format}'', ''nls_date_language = german'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date in german lang', 1);
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnCUSTOMERID', 'cust.customer_id', 'SIMPLE', 0, '', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB', 'to_char(cust.{column}, ''{format}'')', 'COMPLEX', 0,
-        'returns date value in column custom formatted', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB_DE',
-        'rtrim(ltrim(to_char(cust.{column}, ''{format}'', ''nls_date_language = german'')))', 'COMPLEX', 0,
-        'Returns date in column custom formatted in german lang', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB_LANG',
-        'to_char(cust.{column}, ''{format}'', ''nls_date_language = {lang}'')', 'COMPLEX', 0,
-        'Returns date in column custom formatted in given language', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDAYS_UNTIL', 'trunc(cust.{column})-trunc(SYSDATE)', 'COMPLEX', 0,
-        'Returns days until endday (endday MUST lie in future!!!)', 0);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB', 'to_char(cust.{column}, ''{format}'')', 'COMPLEX', 0, 'returns date value in column custom formatted', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB_DE', 'rtrim(ltrim(to_char(cust.{column}, ''{format}'', ''nls_date_language = german'')))', 'COMPLEX', 0, 'Returns date in column custom formatted in german lang', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDATEDB_LANG', 'to_char(cust.{column}, ''{format}'', ''nls_date_language = {lang}'')', 'COMPLEX', 0, 'Returns date in column custom formatted in given language', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnDAYS_UNTIL', 'trunc(cust.{column})-trunc(SYSDATE)', 'COMPLEX', 0, 'Returns days until endday (endday MUST lie in future!!!)', 0);
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnFIRSTNAME', 'cust.firstname', 'SIMPLE', 0, '', 1);
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnLASTNAME', 'cust.lastname', 'SIMPLE', 0, '', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnYEARCALC', 'to_char (cust.{field}, ''YYYY'') {op} {value}', 'COMPLEX', 0,
-        'to calculate with column', 1);
-INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnYEARCALC_F', 'to_char (cust.{column}, ''{format}'') {op} {value}', 'COMPLEX', 0,
-        'like agnYEARCALC with formating the date', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnYEARCALC', 'to_char (cust.{field}, ''YYYY'') {op} {value}', 'COMPLEX', 0, 'to calculate with column', 1);
+INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES ('agnYEARCALC_F', 'to_char (cust.{column}, ''{format}'') {op} {value}', 'COMPLEX', 0, 'like agnYEARCALC with formating the date', 1);
 
 INSERT INTO swyn_tbl (company_id, name, source, charset, ordering, image, icon, target, code, creation_date, timestamp, isize) VALUES (0, '__prefix__', NULL, NULL, NULL, NULL, NULL, NULL,
         '<table border="0" cellpadding="0" cellspacing="5"><tr><td>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '');
@@ -4947,18 +4900,14 @@ INSERT INTO del_predelivery_view_conf_tbl (device, screen, container) VALUES ('b
 
 INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname)
 VALUES (0, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'Light');
-INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname,
-                                 menu_position, theme_type)
-VALUES ((SELECT MAX(layout_base_id) FROM emm_layout_base_tbl) + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        0, 'Dark', 1, 1);
-INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname,
-                                 menu_position, theme_type)
-VALUES ((SELECT MAX(layout_base_id) FROM emm_layout_base_tbl) + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        0, 'High-Contrast Light', 0, 2);
-INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname,
-                                 menu_position, theme_type)
-VALUES ((SELECT MAX(layout_base_id) FROM emm_layout_base_tbl) + 1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-        0, 'High-Contrast Dark', 0, 3);
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
+VALUES (1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'Dark', 1, 1);
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
+VALUES (2, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'High-Contrast Light', 0, 2);
+INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname, menu_position, theme_type)
+VALUES (3, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'High-Contrast Dark', 0, 3);
+
+SELECT SETVAL('emm_layout_base_tbl_layout_base_id_seq', (SELECT MAX(layout_base_id) FROM emm_layout_base_tbl));
 
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('importStep2', 'assigning_the_csv_columns_to_t.htm');
 INSERT INTO doc_mapping_tbl (pagekey, filename) VALUES ('userRights', 'assigning_user_rights.htm');
@@ -5782,24 +5731,23 @@ INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES
 INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('text/x-vcard', 'Outlook Kontakt Windows (EMM-7861)', CURRENT_TIMESTAMP);
 INSERT INTO mimetype_whitelist_tbl (mimetype, description, creation_date) VALUES ('application/json', NULL, CURRENT_TIMESTAMP);
 
-CREATE
-OR REPLACE FUNCTION emm_log_db_errors(p_error_message TEXT, p_company_id INT, p_module_name TEXT)
-    RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION emm_log_db_errors(
+    p_error_message TEXT,
+    p_company_id INT,
+    p_module_name TEXT
+) RETURNS VOID AS $$
 DECLARE
 v_client_info TEXT;
 BEGIN
-    -- Get client info using PostgreSQL functions
-SELECT pg_catalog.current_user || '|' || inet_client_addr() || '|' || current_setting('application_name')
+-- Get client info using PostgreSQL functions
+SELECT current_user || '|' || inet_client_addr() || '|' || current_setting('application_name')
 INTO v_client_info;
 
 -- Insert error log into the table
 INSERT INTO emm_db_errorlog_tbl (company_id, errortext, module_name, client_info)
 VALUES (p_company_id, p_error_message, p_module_name, v_client_info);
-
-COMMIT;
 END;
-$$
-LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION mailing_account_sum_trigger_function()
 RETURNS TRIGGER AS $$

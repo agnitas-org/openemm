@@ -1,6 +1,7 @@
 (() => {
 
   const Table = AGN.Lib.Table;
+  const RenderMessages = AGN.Lib.RenderMessages;
   const WebStorage = AGN.Lib.WebStorage;
   const Confirm = AGN.Lib.Confirm;
 
@@ -63,7 +64,7 @@
           if (typeof positiveResp === 'object') {
             AGN.Lib.JsonMessages(positiveResp.popups, true);
           } else {
-            AGN.Lib.RenderMessages($(positiveResp));
+            RenderMessages($(positiveResp));
           }
         });
       } else {
@@ -92,7 +93,10 @@
     const ids = rows.map(row => row.id);
 
     requestAction(ids, $el.data('bulk-url'), restore ? 'POST' : $el.data('method'))
-      .done(() => removeRows(tableApi, rows, restore));
+      .done(resp => {
+        RenderMessages($(resp));
+        removeRows(tableApi, rows, restore)
+      });
   }
 
   function removeRows(tableApi, rows, restore) {

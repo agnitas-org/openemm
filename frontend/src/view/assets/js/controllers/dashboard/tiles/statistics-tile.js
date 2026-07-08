@@ -58,12 +58,7 @@
             }
           },
           plugins: {
-            legend: {
-              display: false
-            },
             datalabels: {
-              anchor: 'end',
-              align: 'end',
               offset: isMobileView ? 0 : -5 // make labels closer to the bar
             }
           }

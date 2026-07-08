@@ -24,4 +24,14 @@
   #system-status-tile, #db-status-tile {
     flex: 1;
   }
+
+  body:has(&) {
+    #system-notifications {
+      padding: $tiles-spacer $tiles-spacer 0 $tiles-spacer;
+
+      &:not(:has(> *)) {
+        display: none;
+      }
+    }
+  }
 }

@@ -7,3 +7,7 @@ Fixed node insertion into empty body with <br> in static safeInsertNode(range, n
 Added return of the image object in insertImage(url, styles = null, defaultWidth = null) {...} (GWUA-6770)
 Fixed auto wrap of <li> tags without parent <ul> tags when 'enter' option is set to 'br' (GWUA-6794)
 Fixed adding of several <div> tags when increasing indent when 'enter' option is set to 'br' (GWUA-6697)
+Fixed unwrapping of text from the <b> tag when clicking on the bold icon (GWUA-6845)
+Fixed table header on appendColumn(table, selectedCell, insertAfter = true) (GWUA-6907)
+Fixed pasting text from Word (GWUA-6928)
+Fixed content removal when merging near `<br>` tags on backspace

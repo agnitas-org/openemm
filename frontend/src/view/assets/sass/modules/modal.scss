@@ -189,3 +189,14 @@
   width: 90vw;
   height: calc(85vh - 120px); // 120px - modal except body
 }
+
+.modal-locked {
+  .btn-close {
+    display: none;
+  }
+
+  button, .btn {
+    pointer-events: none;
+    opacity: 0.4;
+  }
+}

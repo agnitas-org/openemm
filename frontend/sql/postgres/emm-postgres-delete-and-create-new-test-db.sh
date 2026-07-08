@@ -5,6 +5,7 @@ hostname=$1
 username=$2
 password=$3
 dbname=$4
+createTableSpaces=$5
 
 if [ -z "${hostname}" ]; then
 	read -t 1 -n 10000 discard
@@ -56,7 +57,14 @@ psql -h ${hostname} -p ${port} -U ${username} -d postgres -c "DROP DATABASE IF E
 echo "Creating database ${dbname}"
 psql -h ${hostname} -p ${port} -U ${username} -d postgres -c "CREATE DATABASE ${dbname} WITH ENCODING 'UTF8';"
 
-sqlScriptsToDo="emm-postgres-create-tablespaces.sql"
+sqlScriptsToDo=""
+
+if [[ "${createTableSpaces}" == "true" ]]; then
+	echo "Tablespaces creation enabled"
+	sqlScriptsToDo+="${scriptDir}/emm-postgres-create-tablespaces.sql"
+else
+	echo "Tablespaces creation skipped"
+fi
 
 for sqlfilename in $(find ${scriptDir} -maxdepth 1 -name "emm-postgres-fulldb-*.sql" | sort); do
 	sqlScriptsToDo+=" ${sqlfilename}"
@@ -94,9 +102,8 @@ for sqlfilename in $(find ${scriptDir} -maxdepth 1 -name "emm-postgres-update-*.
 done
 
 sqlScriptsToDo+=" ${scriptDir}/../userrights.sql ${scriptDir}/emm-postgres-messages.sql"
-
-for sqlfilename in $(find ${scriptDir} -maxdepth 1 -name "emm-postgres-messages-*.sql" | sort); do
-	sqlScriptsToDo+=" ${sqlfilename}"
+for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-postgres-messages-*.sql" | sort`;do
+	sqlScriptsToDo="${sqlScriptsToDo} ${sqlfilename}"
 done
 
 if [ -e "${scriptDir}/emm-postgres-test-post-update.sql" ]; then

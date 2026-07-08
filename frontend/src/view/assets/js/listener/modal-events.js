@@ -75,6 +75,8 @@ For a modal with custom content, you can use mustache syntax on the template . T
 
 (() => {
 
+  const $document = $(document);
+
   AGN.Lib.Action.new({click: '[data-modal]'}, function() {
     const template = this.el.data('modal');
     let opts = this.el.data('modal-set');
@@ -83,14 +85,18 @@ For a modal with custom content, you can use mustache syntax on the template . T
     AGN.Lib.Modal.fromTemplate(template, opts);
   });
 
-  $(document).on('hidden.bs.modal', '.modal', function() {
+  $document.on('hide.bs.modal', '.modal.modal-locked', function (event) {
+    event.preventDefault();
+  });
+
+  $document.on('hidden.bs.modal', '.modal', function() {
     const $modal = $(this);
 
     $modal.trigger('modal:close');
     setTimeout(() => $modal.remove(), 100);
   });
 
-  $(document).on('shown.bs.modal', '.modal', function() {
+  $document.on('shown.bs.modal', '.modal', function() {
     setTimeout(() => $(this).trigger('modal:open'), 0);
 
     const $modals = $('.modal.show');

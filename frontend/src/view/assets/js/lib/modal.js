@@ -13,6 +13,7 @@
 
       const $modals = $resp.filter('.modal');
       const $scripts = $resp.filter('script');
+      const $templates = $resp.filter('template');
 
       if ($modals.exists()) {
         // Multiple modals at once are not allowed
@@ -20,9 +21,7 @@
         $modal.data('_modal', conf);
 
         // Some scripts are placed outside modals (an elements having .model class), we have to put them in
-        $scripts.each(function () {
-          $(this).appendTo($modal);
-        });
+        $scripts.add($templates).appendTo($modal);
 
         // Construct a dialog.
         // Disable focus as it was causing issues with not being able to focus on the search field in select2

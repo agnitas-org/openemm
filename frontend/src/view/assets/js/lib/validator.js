@@ -1,7 +1,6 @@
-(function() {
-  var Validator;
+(() => {
 
-  Validator = function(handlers) {
+  const Validator = function(handlers) {
     if (handlers.init) {
       handlers.init();
       delete handlers.init;
@@ -19,10 +18,10 @@
 
   Validator.new = function(name, handlers) {
     if (Validator.exists(name)) {
-      console.debug('Validator with name `' + name + '` was overridden');
+      console.debug(`Validator with name \`${name}\` was overridden`);
     }
 
-    var validator = new Validator(handlers);
+    const validator = new Validator(handlers);
     AGN.Opt.Validators[name] = validator;
     return validator;
   };

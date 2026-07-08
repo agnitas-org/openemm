@@ -155,9 +155,9 @@ if [ "${dbname}" == "" ]; then {
 } fi
 
 if [ "${secure}" = "yes" ] || [ "${secure}" = "true" ] || [ "${secure}" = "y" ] || [ "${secure}" = "j" ] || [ "${secure}" = "YES" ] || [ "${secure}" = "TRUE" ] || [ "${secure}" = "Y" ] || [ "${secure}" = "J" ] || [ "${secure}" = "" ]; then {
-	mysql --ssl-mode=REQUIRED 2> /dev/null
+	mariadb --ssl-mode=REQUIRED 2> /dev/null
 	if [ $? == 7 ]; then {
-		# currently the mysql/mariadb client only works with parameter "--ssl" (in contrast to the mysql documentation)
+		# currently the mariadb client only works with parameter "--ssl" (in contrast to the mysql documentation)
 		optionalSslParameter="--ssl"
 	} else {
 		optionalSslParameter=" --ssl-mode=REQUIRED"
@@ -183,7 +183,7 @@ done
 for sqlfilename in `find ${scriptDir} -maxdepth 1 -name "emm-mariadb-update-*.sql" | sort`;do
 	updatefileVersion=$(getVersionNumber ${sqlfilename})
 	
-	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | MYSQL_PWD=${password} mysql -h ${hostname} -P ${port} --protocol=TCP ${optionalSslParameter} -u ${username} --database=${dbname} --default-character-set=utf8`
+	versionAlreadyInDb=`echo "SELECT version_number FROM agn_dbversioninfo_tbl WHERE version_number = '${updatefileVersion}';" | mariadb -h ${hostname} -P ${port} --protocol=TCP ${optionalSslParameter} -u ${username} --password="${password}" --database=${dbname} --default-character-set=utf8`
 
 	if [[ ${versionAlreadyInDb} == *${updatefileVersion}* ]]; then {
 		if [ "${updatefileVersion}" == "" ]; then {
@@ -204,7 +204,7 @@ echo
 
 for sqlfilename in ${updatefiles};do
 	echo "Executing ${sqlfilename}"
-	MYSQL_PWD=${password} mysql -h ${hostname} -P ${port} --protocol=TCP ${optionalSslParameter} -u ${username} --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
+	mariadb -h ${hostname} -P ${port} --protocol=TCP ${optionalSslParameter} -u ${username} --password="${password}" --database=${dbname} --default-character-set=utf8 < ${sqlfilename}
 	if [ $? != 0 ]; then {
 		echo "Error while executing ${sqlfilename}"
 		exit 1

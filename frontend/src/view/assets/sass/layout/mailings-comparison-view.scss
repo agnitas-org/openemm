@@ -1,0 +1,32 @@
+#mailings-comparison-view {
+ #mailings-data {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: $gap-md;
+ }
+
+  #charts-container {
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    gap: $gap-sm;
+    row-gap: $gap;
+    overflow: hidden;
+    min-height: 100%;
+  }
+
+  .comparison-bar-chart-container {
+    display: contents;
+
+    > * {
+      margin-block: auto;
+    }
+
+    > p {
+      text-align: right;
+    }
+
+    > div {
+      overflow: hidden;
+    }
+  }
+}

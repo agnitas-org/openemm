@@ -164,7 +164,7 @@ function getMailingGroupName(groupId) {
 		case 5:
 			return autoOptData.getTestGroup5();
 		default:
-			return "" + tr("Unknown");
+			return "" + tr("MailType.unknown");
 	}
 }
 

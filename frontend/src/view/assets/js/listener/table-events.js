@@ -113,7 +113,7 @@
 
     _.each($targets, target => {
       const $target = $(target);
-      if (!$target.prop('disabled')) {
+      if (!$target.prop('disabled') && !$target.is('[readonly]')) {
         $target.prop('checked', !$target.prop('checked'));
         $target.trigger('change');
       }

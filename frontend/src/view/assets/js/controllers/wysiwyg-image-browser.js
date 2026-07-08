@@ -63,12 +63,8 @@ AGN.Lib.Controller.new('wysiwyg-image-browser', function () {
   }
   
   function submitLink(link) {
-    if (window.opener.Jodit) {
-      const editorId = getUrlParam('editorId');
-      window.opener.AGN.Lib.Messaging.send(`image-browser:selectedLink:${editorId}`, link);
-    } else {
-      window.opener.CKEDITOR.tools.callFunction(getUrlParam('CKEditorFuncNum'), link);
-    }
+    const editorId = getUrlParam('editorId');
+    window.opener.AGN.Lib.Messaging.send(`image-browser:selectedLink:${editorId}`, link);
     window.close();
   }
 

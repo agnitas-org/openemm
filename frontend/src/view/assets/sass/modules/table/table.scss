@@ -469,3 +469,49 @@ tbody > tr.disabled {
 .table-layout-fixed {
   table-layout: fixed !important;
 }
+
+.table-wrapper--sm {
+  font-size: $font-size-sm;
+
+  .table--borderless {
+    thead {
+      tr {
+        height: 30px;
+      }
+      th {
+        padding-bottom: 0;
+      }
+    }
+    tr {
+      height: 36px;
+    }
+  }
+
+  .table-wrapper__header {
+    &:empty {
+      padding: 0;
+    }
+    border: none;
+    &::after {
+      left: 0;
+      right: 0;
+      border-top: $table-border;
+      @include border-top-radius($border-radius);
+    }
+  }
+}
+
+.table--stretch-rows {
+  table-layout: fixed;
+  height: 100%;
+  @supports (-moz-appearance: none) {
+    height: calc(100% - 30px); // minus header
+  }
+
+  tbody {
+    height: 100%;
+    tr {
+      height: calc(100% / var(--table-row-count, 1));
+    }
+  }
+}

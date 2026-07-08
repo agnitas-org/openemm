@@ -1,0 +1,77 @@
+
+<div class="col-12 d-flex flex-column gap-2">
+    <label class="form-label mb-0">
+        <mvc:message code="mailing.size" />
+        <a href="#" class="icon icon-question-circle" data-help="mailing/MailingMaxSize.xml"></a>
+    </label>
+
+    <div style="height: 30px">
+        <canvas id="delivery-size-chart" class="w-100 h-100 border rounded">
+            <%-- Loads by JS --%>
+        </canvas>
+    </div>
+
+    <div id="mailing-size-table" class="table-wrapper">
+        <%-- Loads by JS --%>
+    </div>
+</div>
+
+<script id="mailing-size-table-cfg" type="application/json">
+    {
+        "columns": [
+            {
+                "headerName": "<mvc:message code='mailing.Attachments'/>",
+                "headerComponentParams": {
+                    "innerHeaderComponent": "MustacheTemplateHeader",
+                    "innerHeaderComponentParams": {
+                        "templateName": "mailing-size-header-cell",
+                        "templateParams": {"color": "var(--attachments-color)"}
+                    }
+                },
+                "cellRenderer": "MustacheTemplateCellRender",
+                "cellRendererParams": {"templateName": "mailing-size-cell"},
+                "field": "attachmentsSize",
+                "type": "textCaseInsensitiveColumn",
+                "sortable": false
+            },
+            {
+                "headerName": "<mvc:message code='mailing.size.image.html'/>",
+                "headerComponentParams": {
+                    "innerHeaderComponent": "MustacheTemplateHeader",
+                    "innerHeaderComponentParams": {
+                       "templateName": "mailing-size-header-cell",
+                        "templateParams": {"color": "var(--other-html-color)"}
+                    }
+                },
+                "cellRenderer": "MustacheTemplateCellRender",
+                "cellRendererParams": {"templateName": "mailing-size-cell"},
+                "field": "otherHtmlSize",
+                "type": "textCaseInsensitiveColumn",
+                "sortable": false
+            },
+            {
+                "headerName": "<mvc:message code='report.total'/>",
+                "cellRenderer": "MustacheTemplateCellRender",
+                "cellRendererParams": {"templateName": "mailing-size-cell"},
+                "valueGetter": "data.attachmentsSize + data.otherHtmlSize",
+                "type": "textCaseInsensitiveColumn",
+                "sortable": false
+            }
+        ],
+        "options": {
+            "hideFooter": true,
+            "domLayout": "autoHeight"
+        }
+    }
+</script>
+
+<template id="mailing-size-cell">
+    <span>{{= AGN.formatNumber(value / 1024) }} kB</span>
+</template>
+
+<template id="mailing-size-header-cell">
+    <div class="d-flex align-items-center gap-1">
+        <span class="square-badge" style="background: {{= color }}"></span>
+        <span class="text-truncate">{{= text }}</span>
+    </div>
+</template>

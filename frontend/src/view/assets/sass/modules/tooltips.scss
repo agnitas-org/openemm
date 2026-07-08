@@ -26,6 +26,7 @@
 
   background: $body-bg-var;
   opacity: 1;
+  z-index: 1; // so that it doesn't overlap with the AGGrid table header
   pointer-events: none;
   position: absolute;
   transition: all .1s ease;

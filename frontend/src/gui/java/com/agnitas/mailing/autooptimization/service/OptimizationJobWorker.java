@@ -1,0 +1,41 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.mailing.autooptimization.service;
+
+import java.util.List;
+
+import com.agnitas.service.JobWorkerBase;
+import com.agnitas.util.quartz.JobWorker;
+
+/**
+ * This worker is responsible for processing the "Auto-Optimization" decision icon in the workflow (e.g. A/B test).
+ * It evaluates the performance of available mailings by chosen decision criteria,
+ * selects the best-performing one and sends it to the remaining recipients.
+ * This ensures that the most effective email version is used to improve effectiveness.
+ * <p>
+ * Example Insert in DB:
+ *  INSERT INTO job_queue_tbl (id, description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, job_name, deleted)
+ *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'AutoOptimization', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '***0;***5', CURRENT_TIMESTAMP, NULL, 'AutoOptimization', 1);
+ */
+@JobWorker("AutoOptimization")
+public class OptimizationJobWorker extends JobWorkerBase {
+		
+	@Override
+	public String runJob() throws Exception {
+		// Invoke the secured method to finish optimizations. This method will terminate, if another thread previously started the process and has not terminated yet.
+		List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
+        List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
+
+		serviceLookupFactory.getBeanOptimizationService().finishOptimizationsSingle(includedCompanyIds, excludedCompanyIds);
+		
+		return null;
+	}
+}

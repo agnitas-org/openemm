@@ -1,0 +1,796 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.beans.impl;
+
+import static com.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
+
+import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.ParameterParser;
+import com.agnitas.util.importvalues.MailType;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+
+public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail {
+
+	private static final Logger logger = LogManager.getLogger(MediatypeEmailImpl.class);
+
+	protected String subject = "";
+	protected String preHeader = "";
+	protected int linefeed;
+	protected int mailFormat = 2;
+	protected String charset = "UTF-8";
+
+	/** Holds value of property fromAdr. */
+	protected String fromEmail = "";
+
+	/** Holds value of property fromAdr. */
+	protected String fromFullname = "";
+
+	/** Complete Reply-To Address. */
+	protected String replyEmail = "";
+
+	/** Holds value of property replyFullname. */
+	protected String replyFullname = "";
+
+	/** Holds value of property envelopeAdr. */
+	protected String envelopeEmail = "";
+
+	/** Holds value of property envelopeAdr. */
+	protected String followupFor = "";
+
+	/** holds the follow-Up Method, eg. non-opener, opener, non-clicker, clicker */
+	protected String followUpMethod = "";
+
+	protected boolean doublechecking = false;
+
+	protected boolean skipempty = false;
+
+	protected boolean cleanupTestsBeforeDelivery = false;
+
+	protected String htmlTemplate;
+
+	/** Holds value of property onepixel. */
+	protected String onepixel = ONEPIXEL_TOP;
+
+	/** Holds value of property mailingID. */
+	protected int mailingID;
+	
+	protected String bccRecipients;
+
+	private boolean isEncryptedSend;
+
+	private int approvalRequester;   // GWUA-6572 admin id
+
+	private String approvedBy;       // GWUA-5889 csv list of the approval recipient ids (approval counter)
+
+	/** Creates a new instance of MediatypeEmailImpl */
+	public MediatypeEmailImpl() {
+		template = "[agnDYN name=\"Text\" /]";
+		htmlTemplate = "[agnDYN name=\"HTML-Version\" /]";
+	}
+
+	/**
+	 * Getter for property envelopeAdr.
+	 * 
+	 * @return Value of property envelopeAdr.
+	 */
+	@Override
+	public String getEnvelopeEmail() {
+		return envelopeEmail;
+	}
+
+	/**
+	 * Setter for property envelopeAdr.
+	 * 
+	 * @param envelopeEmail
+	 *            New value of property envelopeAdr.
+	 */
+	@Override
+	public void setEnvelopeEmail(String envelopeEmail) {
+		this.envelopeEmail = envelopeEmail;
+	}
+
+	@Override
+	public String getFollowupFor() {
+		return followupFor;
+	}
+
+	@Override
+	public void setFollowupFor(String followupFor) {
+		this.followupFor = followupFor;
+	}
+
+	@Override
+	public boolean isDoublechecking() {
+		return doublechecking;
+	}
+
+	@Override
+	public void setDoublechecking(boolean doublechecking) {
+		this.doublechecking = doublechecking;
+	}
+
+	/**
+	 * Setter for property onepixel.
+	 * 
+	 * @param onepixel
+	 *            New value of property onepixel.
+	 */
+	@Override
+	public void setOnepixel(String onepixel) {
+		this.onepixel = onepixel;
+	}
+
+	/**
+	 * Getter for property onepixel.
+	 * 
+	 * @return Value of property onepixel.
+	 */
+	@Override
+	public String getOnepixel() {
+		return onepixel;
+	}
+
+	@Override
+	public String getSubject() {
+		return subject;
+	}
+
+	@Override
+	public String getPreHeader() {
+		return preHeader;
+	}
+
+	@Override
+	public void setSubject(String subject) {
+		this.subject = subject;
+	}
+
+	@Override
+	public void setPreHeader(String preHeader) {
+		this.preHeader = preHeader;
+	}
+
+	/**
+	 * Getter for property fromAdr.
+	 * 
+	 * @return Value of property fromAdr.
+	 *
+	 */
+	@Override
+	public String getFromEmail() {
+		return fromEmail;
+	}
+
+	/**
+	 * Setter for property fromAdr.
+	 * 
+	 * @param fromEmail
+	 *            New value of property fromAdr.
+	 *
+	 */
+	@Override
+	public void setFromEmail(String fromEmail) {
+		this.fromEmail = fromEmail;
+	}
+
+	/**
+	 * Getter for property fromAdr.
+	 * 
+	 * @return Value of property fromAdr.
+	 *
+	 */
+	@Override
+	public String getFromFullname() {
+		return fromFullname;
+	}
+
+	/**
+	 * Setter for property fromAdr.
+	 * 
+	 * @param fromFullname
+	 *            New value of property fromAdr.
+	 *
+	 */
+	@Override
+	public void setFromFullname(String fromFullname) {
+		this.fromFullname = fromFullname;
+	}
+
+	@Override
+	public String getFromAdr() {
+		InternetAddress tmpFrom;
+		try {
+			tmpFrom = new InternetAddress(fromEmail, fromFullname, charset);
+		} catch (UnsupportedEncodingException ue) {
+			throw new UncheckedIOException(ue);
+		}
+
+		if (StringUtils.isNotBlank(tmpFrom.getPersonal())) {
+			return tmpFrom.getPersonal() + " <" + tmpFrom.getAddress() + ">";
+		} else {
+			return tmpFrom.getAddress();
+		}
+	}
+
+	/**
+	 * Getter for property linefeed.
+	 * 
+	 * @return Value of property linefeed.
+	 *
+	 */
+	@Override
+	public int getLinefeed() {
+		return linefeed;
+	}
+
+	/**
+	 * Setter for property linefeed.
+	 * 
+	 * @param linefeed
+	 *            New value of property linefeed.
+	 *
+	 */
+	@Override
+	public void setLinefeed(int linefeed) {
+		this.linefeed = linefeed;
+	}
+
+	/**
+	 * Getter for property mailFormat.
+	 * 
+	 * @return Value of property mailFormat.
+	 *
+	 */
+	@Override
+	public int getMailFormat() {
+		return mailFormat;
+	}
+
+	/**
+	 * Setter for property mailFormat.
+	 * 
+	 * @param mailFormat
+	 *            New value of property mailFormat.
+	 *
+	 */
+	@Override
+	public void setMailFormat(int mailFormat) {
+		this.mailFormat = mailFormat;
+	}
+	
+	@Override
+	public void setMailFormat(MailType mailType) {
+		this.mailFormat = mailType.getIntValue();
+	}
+	
+	@Override
+	public void deleteDateBasedParameters() {
+		setBccRecipients("");
+	}
+	
+	/**
+	 * Getter for property charset.
+	 * 
+	 * @return Value of property charset.
+	 *
+	 */
+	@Override
+	public String getCharset() {
+		return charset;
+	}
+
+	/**
+	 * Setter for property charset.
+	 * 
+	 * @param charset
+	 *            New value of property charset.
+	 *
+	 */
+	@Override
+	public void setCharset(String charset) {
+		this.charset = charset;
+	}
+
+	/**
+	 * Getter for property replyAdr.
+	 * 
+	 * @return Value of property replyAdr.
+	 */
+	@Override
+	public String getReplyAdr() {
+		InternetAddress tmpReply;
+		try {
+			tmpReply = new InternetAddress(replyEmail, replyFullname, charset);
+		} catch (UnsupportedEncodingException ue) {
+			throw new UncheckedIOException(ue);
+		}
+
+		if (StringUtils.isNotBlank(tmpReply.getPersonal())) {
+			return tmpReply.getPersonal() + " <" + tmpReply.getAddress() + ">";
+		} else {
+			return tmpReply.getAddress();
+		}
+	}
+
+	/**
+	 * Getter for property replyEmail.
+	 * 
+	 * @return Value of property replyEmail.
+	 */
+	@Override
+	public String getReplyEmail() {
+		return replyEmail;
+	}
+
+	/**
+	 * Setter for property replyAdr.
+	 * 
+	 * @param replyEmail
+	 *            New value of property replyAdr.
+	 */
+	@Override
+	public void setReplyEmail(String replyEmail) {
+		this.replyEmail = replyEmail;
+	}
+
+	/**
+	 * Getter for property replyFullname.
+	 * 
+	 * @return Value of property replyFullname.
+	 */
+	@Override
+	public String getReplyFullname() {
+		return replyFullname;
+	}
+
+	/**
+	 * Setter for property replyFullname.
+	 * 
+	 * @param replyFullname
+	 *            New value of property replyFullname.
+	 */
+	@Override
+	public void setReplyFullname(String replyFullname) {
+		this.replyFullname = replyFullname;
+	}
+
+	/**
+	 * Getter for property mailingID.
+	 * 
+	 * @return Value of property mailingID.
+	 */
+	@Override
+	public int getMailingID() {
+		return mailingID;
+	}
+
+	/**
+	 * Setter for property mailingID.
+	 * 
+	 * @param mailingID
+	 *            New value of property mailingID.
+	 */
+	@Override
+	public void setMailingID(int mailingID) {
+		this.mailingID = mailingID;
+	}
+
+	/**
+	 * Setter for property onepixel.
+	 * 
+	 * @param htmlTemplate
+	 *            New value of property onepixel.
+	 */
+	@Override
+	public void setHtmlTemplate(String htmlTemplate) {
+		this.htmlTemplate = htmlTemplate;
+	}
+
+	@Override
+	public void setParam(String param) {
+		Map<String, String> parameters = new ParameterParser(param).parse();
+
+		String from = parameters.get("from");
+		fromEmail = "";
+		fromFullname = "";
+		if (StringUtils.isNotEmpty(from)) {
+			try {
+				InternetAddress adr = new InternetAddress(from);
+
+				fromEmail = adr.getAddress();
+				fromFullname = adr.getPersonal();
+			} catch (Exception e) {
+				// Cannot check from address
+			}
+		}
+
+		String reply = parameters.get("reply");
+		replyEmail = "";
+		replyFullname = "";
+		if (StringUtils.isNotEmpty(reply)) {
+			try {
+				InternetAddress adr = new InternetAddress(reply);
+				
+				replyEmail = adr.getAddress();
+				replyFullname = adr.getPersonal();
+			} catch (Exception e) {
+				// Cannot check reply address
+			}
+		} else {
+			replyEmail = fromFullname;
+			replyFullname = fromFullname;
+		}
+
+		String envelope = parameters.get("envelope");
+		envelopeEmail = "";
+		if (StringUtils.isNotBlank(envelope)) {
+            InternetAddress adr;
+            try {
+                adr = new InternetAddress(envelope);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
+            envelopeEmail = adr.getAddress();
+		}
+
+		charset = parameters.get("charset");
+		if (StringUtils.isBlank(charset)) {
+			charset = "ISO-8859-1";
+		}
+
+		subject = parameters.get("subject");
+
+		preHeader = parameters.get("preHeader");
+		if (preHeader == null) {
+			preHeader = "";
+		}
+
+		mailFormat = NumberUtils.toInt(parameters.get("mailformat"), OFFLINE_HTML.getValue());
+
+		linefeed = NumberUtils.toInt(parameters.get("linefeed"), 72);
+
+		onepixel = StringUtils.defaultIfEmpty(parameters.get("onepixlog"), MediatypeEmail.ONEPIXEL_TOP);
+
+		followupFor = StringUtils.defaultString(parameters.get("followup_for"));
+
+		// set the follow-up method
+		// we have 4 different types:
+		// "non-opener" ,"opener", "non-clicker", "clicker"
+		// they all have to be lowercase!
+		followUpMethod = StringUtils.defaultString(parameters.get("followup_method"));
+
+		doublechecking = StringUtils.isNotEmpty(parameters.get("remove_dups"));
+
+		String skip = parameters.get("skipempty");
+		skipempty = BooleanUtils.toBoolean(skip);
+		
+		String cleanupTestsBeforeDeliveryString = parameters.get("cleanupTestsBeforeDelivery");
+		cleanupTestsBeforeDelivery = BooleanUtils.toBoolean(cleanupTestsBeforeDeliveryString);
+
+		String encryptedSendParam = parameters.get(SEND_ENCRYPTED_PARAM);
+		setEncryptedSend(BooleanUtils.toBoolean(encryptedSendParam));
+
+		String bcc = parameters.get(BCC_STRING_PARAM);
+		setBccRecipients(bcc);
+
+        boolean clearance = BooleanUtils.toBoolean(parameters.get("clearance"));
+        if (clearance) {
+			setApprovalRequester(NumberUtils.toInt(parameters.get("clearance_requested_by")));
+			setApprovedBy(parameters.get("cleared_by"));
+        }
+	}
+
+	@Override
+	public String getParam() {
+		StringBuilder result = new StringBuilder();
+        InternetAddress tmpFrom;
+        try {
+            tmpFrom = new InternetAddress(fromEmail, fromFullname, charset);
+        } catch (UnsupportedEncodingException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        if (StringUtils.isEmpty(replyEmail)) {
+			replyEmail = fromEmail;
+		}
+		if (StringUtils.isEmpty(replyFullname)) {
+			replyFullname = fromFullname;
+		}
+        InternetAddress tmpReply;
+        try {
+            tmpReply = new InternetAddress(replyEmail, replyFullname, charset);
+        } catch (UnsupportedEncodingException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        result.append("from=\"");
+		result.append(ParameterParser.escapeValue(tmpFrom.toString()));
+		result.append("\"");
+
+		result.append(", subject=\"");
+		result.append(ParameterParser.escapeValue(subject));
+		result.append("\"");
+
+		if (StringUtils.isNotBlank(preHeader)) {
+			result.append(", preHeader=\"");
+			result.append(ParameterParser.escapeValue(preHeader));
+			result.append("\"");
+		}
+
+		result.append(", charset=\"");
+		result.append(ParameterParser.escapeValue(charset));
+		result.append("\"");
+
+		result.append(", linefeed=\"");
+		result.append(ParameterParser.escapeValue(Integer.toString(linefeed)));
+		result.append("\"");
+
+		result.append(", mailformat=\"");
+		result.append(ParameterParser.escapeValue(Integer.toString(mailFormat)));
+		result.append("\"");
+
+		result.append(", reply=\"");
+		result.append(ParameterParser.escapeValue(tmpReply.toString()));
+		result.append("\"");
+
+		result.append(", onepixlog=\"");
+		result.append(ParameterParser.escapeValue(onepixel));
+		result.append("\"");
+
+		// we have to check if we have a follow up. If not, we dont even write the
+		// parameters
+		// to the DB-Field. With that nothing wrong can happen if the backend checks
+		// that
+		// parameters.
+		if (StringUtils.isNotBlank(followupFor) && StringUtils.isNotBlank(followUpMethod) && !followupFor.equals("0")) {
+			result.append(", followup_for=\"");
+			result.append(ParameterParser.escapeValue(followupFor));
+			result.append("\"");
+
+			result.append(", followup_method=\"");
+			result.append(ParameterParser.escapeValue(followUpMethod));
+			result.append("\"");
+		}
+
+		if (isEncryptedSend) {
+			result.append(", ");
+			result.append(SEND_ENCRYPTED_PARAM);
+			result.append("=\"true\"");
+		}
+
+		if (StringUtils.isNotEmpty(envelopeEmail)) {
+            InternetAddress tmpEnvelope;
+            try {
+                tmpEnvelope = new InternetAddress(envelopeEmail);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
+
+            result.append(", envelope=\"");
+			result.append(tmpEnvelope);
+			result.append("\"");
+		}
+
+		if (doublechecking) {
+			result.append(", remove_dups=\"true\"");
+		}
+
+		result.append(", skipempty=");
+		if (skipempty) {
+			result.append("\"true\"");
+		} else {
+			result.append("\"false\"");
+		}
+
+		if (cleanupTestsBeforeDelivery) {
+			result.append(", cleanupTestsBeforeDelivery=\"true\"");
+		}
+		
+		if (StringUtils.isNotBlank(getBccRecipients())) {
+			result.append(", ");
+			result.append(BCC_STRING_PARAM);
+			result.append("=\"");
+			result.append(getBccRecipients());
+			result.append("\"");
+		}
+
+        if (getApprovalRequester() > 0) {
+            result.append(", clearance=\"true\"");
+            result.append(", clearance_requested_by=\"%d\"".formatted(approvalRequester));
+            if (StringUtils.isNotBlank(getApprovedBy())) {
+                result.append(", cleared_by=\"").append(getApprovedBy().trim()).append("\"");
+            }
+        }
+
+		super.setParam(result.toString());
+		return result.toString();
+	}
+
+	// getter and setter for the followUpMethod (see declaration of String
+	// followUpMethod)
+	@Override
+	public String getFollowUpMethod() {
+		return followUpMethod;
+	}
+
+	@Override
+	public void setFollowUpMethod(String followUpMethod) {
+		this.followUpMethod = followUpMethod;
+	}
+
+	@Override
+	public boolean isSkipempty() {
+		return skipempty;
+	}
+
+	@Override
+	public void setSkipempty(boolean skipempty) {
+		this.skipempty = skipempty;
+	}
+
+	@Override
+	public boolean isCleanupTestsBeforeDelivery() {
+		return cleanupTestsBeforeDelivery;
+	}
+
+	@Override
+	public void setCleanupTestsBeforeDelivery(boolean cleanupTestsBeforeDelivery) {
+		this.cleanupTestsBeforeDelivery = cleanupTestsBeforeDelivery;
+	}
+
+	// removes the parameters for a follow-up mailing.
+	@Override
+	public void deleteFollowupParameters() {
+		String params = "";
+		String paramsWithoutFollowup = "";
+
+		// first, get original parameters
+		try {
+			params = getParam();
+		} catch (Exception e) {
+			logger.error("Error in getting parameters from mailing: ", e);
+		}
+
+		// now remove followup
+		paramsWithoutFollowup = removeFollowUp(params);
+
+		// set the new parameters
+		try {
+			setParam(paramsWithoutFollowup);
+		} catch (Exception e) {
+			logger.error("Error setting new parameters in mailing: ", e);
+		}
+	}
+
+	// removes everthing for a followup from the given String.
+	private String removeFollowUp(String original) {
+		// search for ', followup_for="12345"' with "" but without ''
+		String pattern = "\\p{Punct}\\p{Blank}followup_for=\\p{Punct}\\d*\\p{Punct}";
+		// search for ', followup_method="abcd"' or ', followup_method="abcd-efgh"'
+		// eg. "followup_method="non-opener" or "followup_method="opener".
+		String pattern2 = "\\p{Punct}\\p{Blank}followup_method=\\p{Punct}\\w*\\p{Punct}?\\w*\\p{Punct}";
+		String returnString = original.replaceAll(pattern, "");
+		returnString = returnString.replaceAll(pattern2, "");
+		return returnString;
+	}
+
+	/**
+	 * Getter for property onepixel.
+	 * 
+	 * @return Value of property onepixel.
+	 */
+	@Override
+	public String getHtmlTemplate() {
+		return htmlTemplate;
+	}
+	
+	@Override
+	public String getBccRecipients() {
+		return Stream.of(AgnUtils.getEmailAddressesFromList(bccRecipients))
+					.map(InternetAddress::toString).collect(Collectors.joining(", "));
+	}
+	
+	@Override
+	public void setBccRecipients(String bccRecipients) {
+		this.bccRecipients = bccRecipients;
+	}
+
+	@Override
+	public void setEncryptedSend(boolean isEncryptedSend) {
+		this.isEncryptedSend = isEncryptedSend;
+	}
+
+	@Override
+	public boolean isEncryptedSend() {
+		return this.isEncryptedSend;
+	}
+
+	@Override
+	public int getApprovalRequester() {
+		return approvalRequester;
+	}
+
+	@Override
+	public void setApprovalRequester(int approvalRequester) {
+		this.approvalRequester = approvalRequester;
+	}
+
+    @Override
+    public String getApprovedBy() {
+        return approvedBy;
+    }
+
+    @Override
+    public void setApprovedBy(String approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    @Override
+    public Set<Integer> getApprovers() {
+        return AgnUtils.csvStrToIntSet(approvedBy);
+    }
+    
+    @Override
+    public void setApprovers(Set<Integer> approvers) {
+        this.approvedBy = StringUtils.join(approvers, ",");
+    }
+
+    /**
+	 * Makes a standalone copy of this mediatype without any references to this
+	 * objects data
+	 */
+	@Override
+	public MediatypeEmail copy() {
+		MediatypeEmail mediatypeEmail = new MediatypeEmailImpl();
+		mediatypeEmail.setParam(getParam());
+		mediatypeEmail.setStatus(getStatus());
+		mediatypeEmail.setPriority(getPriority());
+		mediatypeEmail.setCompanyID(getCompanyID());
+		mediatypeEmail.setTemplate(getTemplate());
+		return mediatypeEmail;
+	}
+
+	@Override
+	public void syncTemplate(Mailing mailing, ApplicationContext con) {
+		MailingComponent component = mailing.getTextTemplate();
+		if (component != null) {
+			component.setEmmBlock(template, "text/plain");
+		}
+
+		component = mailing.getHtmlTemplate();
+		if (component != null) {
+			component.setEmmBlock(htmlTemplate, "text/html");
+		}
+	}
+
+	@Override
+	public MediaTypes getMediaType() {
+		return MediaTypes.EMAIL;
+	}
+}

@@ -1,0 +1,708 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.company.dto;
+
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.components.entity.AdminTestMarkPlacementOption;
+import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.post.PostalField;
+
+public class CompanySettingsDto {
+
+    private String technicalContacts;
+	private Set<String> systemMessageEmails = new HashSet<>();
+    private boolean hasMailTracking;
+    private int statisticsExpireDays;
+    private boolean hasActivatedAccessAuthorization;
+    private boolean hasExtendedSalutation;
+    private int executiveAdministrator;
+    private String language;
+    private String timeZone;
+    private boolean hasForceSending;
+    private boolean hasTrackingVeto;
+    private boolean responseInboxEnabled;
+    private int sector;
+    private int business;
+    private int maxAdminMails = -1;
+    private int maxFields = -1;
+    private boolean hasTwoFactorAuthentication;
+    private int recipientAnonymization;
+    private int recipientCleanupTracking;
+    private int recipientDeletion;
+    private String loginlockSettingsName;
+    private String passwordPolicyName;
+    private int passwordExpireDays;
+    private int hostauthCookieExpireDays;
+    private boolean sendPasswordChangedNotification;
+    private boolean sendEncryptedMailings;
+	private boolean enableHoneypotIntermediatePage;
+    private String defaultLinkExtension;
+    private int linkcheckerLinktimeout;
+    private int linkcheckerThreadcount;
+    private int mailingUndoLimit;
+    private boolean prefillCheckboxSendDuplicateCheck;
+    private boolean regenerateTargetSqlOnce = false;
+    private String fullviewFormName;
+    private boolean deleteSuccessfullyImportedFiles;
+    private boolean enableAltgExtended;
+	private String importAlwaysInformEmail;
+	private String exportAlwaysInformEmail;
+	private String bccEmail;
+	private boolean anonymizeAllRecipients;
+	private boolean cleanRecipientsWithoutBinding;
+	private boolean recipientEmailInUseWarning;
+	private boolean allowEmailWithWhitespace;
+	private boolean allowEmptyEmail;
+	private boolean userBasedFavoriteTargets;
+	private boolean filterRecipientsOverviewForActiveRecipients;
+	private boolean autoDeeptracking;
+	private boolean cleanAdminAndTestRecipientsActivity;
+	private boolean individualLinkTrackingForMailings;
+	private int expireStatistics;
+	private int expireSuccess;
+	private int expireRecipient;
+	private int expireBounce;
+	private int expireUpload;
+	private boolean writeCustomerOpenOrClickField;
+	private boolean trackingVetoAllowTransactionTracking;
+	private List<Integer> optionsMaxAdminMails = Arrays.asList(25, 50, 100);
+    private boolean normalizeEmails;
+    private int defaultCompanyLinkTrackingMode;
+    private int defaultBlockSize;
+	private int mailingMinimumApprovals = Integer.parseInt(ConfigValue.MailingMinimumApprovals.getDefaultValue());
+    private String listHelpUrl;
+    private boolean htmlContentAllowed;
+	private TestRunOption defaultTestRunOption;
+	private AdminTestMarkPlacementOption adminTestMarkPlacement;
+	private String adminMailSubjectMark;
+	private String testMailSubjectMark;
+	private String adminMailToAddressMark;
+	private String testMailToAddressMark;
+	private boolean useDefaultAddressFieldsForPost;
+	private Map<PostalField, String> postalFieldsMappings = new EnumMap<>(PostalField.class);
+    private boolean showAllDashboardCalendarMailings;
+    private boolean vouchersMandatory;
+    private boolean voucherEnableReport;
+    private String voucherCcReportEmails;
+    private String voucherBccReportEmails;
+
+	public String getListHelpUrl() {
+		return listHelpUrl;
+	}
+
+	public void setListHelpUrl(String listHelpUrl) {
+		this.listHelpUrl = listHelpUrl;
+	}
+
+	public boolean isHasMailTracking() {
+        return hasMailTracking;
+    }
+
+    public void setHasMailTracking(boolean mailTracking) {
+        this.hasMailTracking = mailTracking;
+    }
+
+    public int getStatisticsExpireDays() {
+        return statisticsExpireDays;
+    }
+
+    public void setStatisticsExpireDays(int statisticsExpireDays) {
+        this.statisticsExpireDays = statisticsExpireDays;
+    }
+
+    public boolean isHasActivatedAccessAuthorization() {
+        return hasActivatedAccessAuthorization;
+    }
+
+    public void setHasActivatedAccessAuthorization(boolean hasActivatedAccessAuthorization) {
+        this.hasActivatedAccessAuthorization = hasActivatedAccessAuthorization;
+    }
+
+    public boolean isHasExtendedSalutation() {
+        return hasExtendedSalutation;
+    }
+
+    public void setHasExtendedSalutation(boolean hasExtendedSalutation) {
+        this.hasExtendedSalutation = hasExtendedSalutation;
+    }
+
+    public int getExecutiveAdministrator() {
+        return executiveAdministrator;
+    }
+
+    public void setExecutiveAdministrator(int executiveAdministrator) {
+        this.executiveAdministrator = executiveAdministrator;
+    }
+
+    public String getTechnicalContacts() {
+        return technicalContacts;
+    }
+
+    public void setTechnicalContacts(String technicalContacts) {
+        this.technicalContacts = technicalContacts;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
+    }
+
+    public boolean isHasForceSending() {
+        return hasForceSending;
+    }
+
+    public void setHasForceSending(boolean hasForceSending) {
+        this.hasForceSending = hasForceSending;
+    }
+
+	public boolean isHasTrackingVeto() {
+        return hasTrackingVeto;
+    }
+
+    public void setHasTrackingVeto(boolean hasTrackingVeto) {
+        this.hasTrackingVeto = hasTrackingVeto;
+    }
+
+	public boolean isResponseInboxEnabled() {
+		return responseInboxEnabled;
+	}
+
+	public void setResponseInboxEnabled(boolean responseInboxEnabled) {
+		this.responseInboxEnabled = responseInboxEnabled;
+	}
+
+	public int getSector() {
+        return sector;
+    }
+
+    public void setSector(int sector) {
+        this.sector = sector;
+    }
+
+    public int getBusiness() {
+        return business;
+    }
+
+    public void setBusiness(int business) {
+        this.business = business;
+    }
+
+    public boolean isHasTwoFactorAuthentication() {
+        return hasTwoFactorAuthentication;
+    }
+
+    public void setHasTwoFactorAuthentication(boolean hasTwoFactorAuthentication) {
+        this.hasTwoFactorAuthentication = hasTwoFactorAuthentication;
+    }
+
+	public int getMaxAdminMails() {
+		return maxAdminMails;
+	}
+
+	public void setMaxAdminMails(int maxAdminMails) {
+		this.maxAdminMails = maxAdminMails;
+	}
+
+	public int getMaxFields() {
+		return maxFields;
+	}
+
+	public void setMaxFields(int maxFields) {
+		this.maxFields = maxFields;
+	}
+
+	public final String getLoginlockSettingsName() {
+		return loginlockSettingsName;
+	}
+
+	public final void setLoginlockSettingsName(String loginlockSettingsName) {
+		this.loginlockSettingsName = loginlockSettingsName;
+	}
+	
+	public final String getPasswordPolicyName() {
+		return this.passwordPolicyName;
+	}
+	
+	public final void setPasswordPolicyName(final String name) {
+		this.passwordPolicyName = name;
+	}
+
+	public final int getPasswordExpireDays() {
+		return passwordExpireDays;
+	}
+
+	public final void setPasswordExpireDays(final int days) {
+		this.passwordExpireDays = days;
+	}
+
+	public final int getHostauthCookieExpireDays() {
+		return hostauthCookieExpireDays;
+	}
+
+	public final void setHostauthCookieExpireDays(final int hostauthCookieExpireDays) {
+		this.hostauthCookieExpireDays = hostauthCookieExpireDays;
+	}
+
+	public int getRecipientAnonymization() {
+		return recipientAnonymization;
+	}
+
+	public void setRecipientAnonymization(int recipientAnonymization) {
+		this.recipientAnonymization = recipientAnonymization;
+	}
+
+	public int getRecipientCleanupTracking() {
+		return recipientCleanupTracking;
+	}
+
+	public void setRecipientCleanupTracking(int recipientCleanupTracking) {
+		this.recipientCleanupTracking = recipientCleanupTracking;
+	}
+
+	public int getRecipientDeletion() {
+		return recipientDeletion;
+	}
+
+	public void setRecipientDeletion(int recipientDeletion) {
+		this.recipientDeletion = recipientDeletion;
+	}
+
+    public boolean isSendPasswordChangedNotification() {
+		return sendPasswordChangedNotification;
+	}
+
+	public void setSendPasswordChangedNotification(boolean sendPasswordChangedNotification) {
+		this.sendPasswordChangedNotification = sendPasswordChangedNotification;
+	}
+
+	public boolean isSendEncryptedMailings() {
+		return sendEncryptedMailings;
+	}
+
+	public void setSendEncryptedMailings(boolean sendEncryptedMailings) {
+		this.sendEncryptedMailings = sendEncryptedMailings;
+	}
+
+	public boolean isEnableHoneypotIntermediatePage() {
+		return enableHoneypotIntermediatePage;
+	}
+
+	public void setEnableHoneypotIntermediatePage(boolean enableHoneypotIntermediatePage) {
+		this.enableHoneypotIntermediatePage = enableHoneypotIntermediatePage;
+	}
+
+	public String getDefaultLinkExtension() {
+		return defaultLinkExtension;
+	}
+
+	public void setDefaultLinkExtension(String defaultLinkExtension) {
+		this.defaultLinkExtension = defaultLinkExtension;
+	}
+
+	public int getLinkcheckerLinktimeout() {
+		return linkcheckerLinktimeout;
+	}
+
+	public void setLinkcheckerLinktimeout(int linkcheckerLinktimeout) {
+		this.linkcheckerLinktimeout = linkcheckerLinktimeout;
+	}
+
+	public int getLinkcheckerThreadcount() {
+		return linkcheckerThreadcount;
+	}
+
+	public void setLinkcheckerThreadcount(int linkcheckerThreadcount) {
+		this.linkcheckerThreadcount = linkcheckerThreadcount;
+	}
+
+	public int getMailingUndoLimit() {
+		return mailingUndoLimit;
+	}
+
+	public void setMailingUndoLimit(int mailingUndoLimit) {
+		this.mailingUndoLimit = mailingUndoLimit;
+	}
+
+	public boolean isPrefillCheckboxSendDuplicateCheck() {
+		return prefillCheckboxSendDuplicateCheck;
+	}
+
+	public void setPrefillCheckboxSendDuplicateCheck(boolean prefillCheckboxSendDuplicateCheck) {
+		this.prefillCheckboxSendDuplicateCheck = prefillCheckboxSendDuplicateCheck;
+	}
+
+	public String getFullviewFormName() {
+		return fullviewFormName;
+	}
+
+	public void setFullviewFormName(String fullviewFormName) {
+		this.fullviewFormName = fullviewFormName;
+	}
+
+	public boolean isDeleteSuccessfullyImportedFiles() {
+		return deleteSuccessfullyImportedFiles;
+	}
+
+	public void setDeleteSuccessfullyImportedFiles(boolean deleteSuccessfullyImportedFiles) {
+		this.deleteSuccessfullyImportedFiles = deleteSuccessfullyImportedFiles;
+	}
+
+	public boolean isEnableAltgExtended() {
+		return enableAltgExtended;
+	}
+
+	public void setEnableAltgExtended(boolean enableAltgExtended) {
+		this.enableAltgExtended = enableAltgExtended;
+	}
+
+	public String getImportAlwaysInformEmail() {
+		return importAlwaysInformEmail;
+	}
+
+	public void setImportAlwaysInformEmail(String importAlwaysInformEmail) {
+		this.importAlwaysInformEmail = importAlwaysInformEmail;
+	}
+
+	public String getExportAlwaysInformEmail() {
+		return exportAlwaysInformEmail;
+	}
+
+	public void setExportAlwaysInformEmail(String exportAlwaysInformEmail) {
+		this.exportAlwaysInformEmail = exportAlwaysInformEmail;
+	}
+	
+	public String getBccEmail() {
+		return bccEmail;
+	}
+
+	public void setBccEmail(String bccEmail) {
+		this.bccEmail = bccEmail;
+	}
+
+	public boolean isAnonymizeAllRecipients() {
+		return anonymizeAllRecipients;
+	}
+
+	public void setAnonymizeAllRecipients(boolean anonymizeAllRecipients) {
+		this.anonymizeAllRecipients = anonymizeAllRecipients;
+	}
+
+	public boolean isCleanRecipientsWithoutBinding() {
+		return cleanRecipientsWithoutBinding;
+	}
+
+	public void setCleanRecipientsWithoutBinding(boolean cleanRecipientsWithoutBinding) {
+		this.cleanRecipientsWithoutBinding = cleanRecipientsWithoutBinding;
+	}
+
+	public boolean isRecipientEmailInUseWarning() {
+		return recipientEmailInUseWarning;
+	}
+
+	public void setRecipientEmailInUseWarning(boolean recipientEmailInUseWarning) {
+		this.recipientEmailInUseWarning = recipientEmailInUseWarning;
+	}
+
+	public boolean isAllowEmailWithWhitespace() {
+		return allowEmailWithWhitespace;
+	}
+
+	public void setAllowEmailWithWhitespace(boolean allowEmailWithWhitespace) {
+		this.allowEmailWithWhitespace = allowEmailWithWhitespace;
+	}
+
+	public boolean isAllowEmptyEmail() {
+		return allowEmptyEmail;
+	}
+
+	public void setAllowEmptyEmail(boolean allowEmptyEmail) {
+		this.allowEmptyEmail = allowEmptyEmail;
+	}
+
+	public int getExpireStatistics() {
+		return expireStatistics;
+	}
+
+	public void setExpireStatistics(int expireStatistics) {
+		this.expireStatistics = expireStatistics;
+	}
+
+	public int getExpireSuccess() {
+		return expireSuccess;
+	}
+
+	public void setExpireSuccess(int expireSuccess) {
+		this.expireSuccess = expireSuccess;
+	}
+
+	public int getExpireRecipient() {
+		return expireRecipient;
+	}
+
+	public void setExpireRecipient(int expireRecipient) {
+		this.expireRecipient = expireRecipient;
+	}
+
+	public int getExpireBounce() {
+		return expireBounce;
+	}
+
+	public void setExpireBounce(int expireBounce) {
+		this.expireBounce = expireBounce;
+	}
+
+	public int getExpireUpload() {
+		return expireUpload;
+	}
+
+	public void setExpireUpload(int expireUpload) {
+		this.expireUpload = expireUpload;
+	}
+
+	public boolean isWriteCustomerOpenOrClickField() {
+		return writeCustomerOpenOrClickField;
+	}
+
+	public void setWriteCustomerOpenOrClickField(boolean writeCustomerOpenOrClickField) {
+		this.writeCustomerOpenOrClickField = writeCustomerOpenOrClickField;
+	}
+
+	public boolean isTrackingVetoAllowTransactionTracking() {
+		return trackingVetoAllowTransactionTracking;
+	}
+
+	public void setTrackingVetoAllowTransactionTracking(boolean trackingVetoAllowTransactionTracking) {
+		this.trackingVetoAllowTransactionTracking = trackingVetoAllowTransactionTracking;
+	}
+
+	public List<Integer> getOptionsMaxAdminMails() {
+		return optionsMaxAdminMails;
+	}
+
+	public boolean isNormalizeEmails() {
+		return normalizeEmails;
+	}
+
+	public void setNormalizeEmails(boolean normalizeEmails) {
+		this.normalizeEmails = normalizeEmails;
+	}
+
+	public int getDefaultCompanyLinkTrackingMode() {
+		return defaultCompanyLinkTrackingMode;
+	}
+
+	public void setDefaultCompanyLinkTrackingMode(int defaultCompanyLinkTrackingMode) {
+		this.defaultCompanyLinkTrackingMode = defaultCompanyLinkTrackingMode;
+	}
+
+	public int getDefaultBlockSize() {
+		return defaultBlockSize;
+	}
+
+	public void setDefaultBlockSize(int defaultBlockSize) {
+		this.defaultBlockSize = defaultBlockSize;
+	}
+
+    public boolean isUserBasedFavoriteTargets() {
+        return userBasedFavoriteTargets;
+    }
+
+    public void setUserBasedFavoriteTargets(boolean userBasedFavoriteTargets) {
+        this.userBasedFavoriteTargets = userBasedFavoriteTargets;
+    }
+
+	public boolean isFilterRecipientsOverviewForActiveRecipients() {
+		return filterRecipientsOverviewForActiveRecipients;
+	}
+
+	public void setFilterRecipientsOverviewForActiveRecipients(boolean filterRecipientsOverviewForActiveRecipients) {
+		this.filterRecipientsOverviewForActiveRecipients = filterRecipientsOverviewForActiveRecipients;
+	}
+
+	public boolean isCleanAdminAndTestRecipientsActivity() {
+		return cleanAdminAndTestRecipientsActivity;
+	}
+
+	public void setCleanAdminAndTestRecipientsActivity(boolean cleanAdminAndTestRecipientsActivity) {
+		this.cleanAdminAndTestRecipientsActivity = cleanAdminAndTestRecipientsActivity;
+	}
+
+	public boolean isIndividualLinkTrackingForMailings() {
+		return individualLinkTrackingForMailings;
+	}
+
+	public void setIndividualLinkTrackingForMailings(boolean individualLinkTrackingForMailings) {
+		this.individualLinkTrackingForMailings = individualLinkTrackingForMailings;
+	}
+
+	public boolean isAutoDeeptracking(){
+		return autoDeeptracking;
+	}
+	
+	public void setAutoDeeptracking(boolean autoDeeptracking){
+		this.autoDeeptracking = autoDeeptracking;
+	}
+
+	public boolean isRegenerateTargetSqlOnce() {
+		return regenerateTargetSqlOnce;
+	}
+
+	public void setRegenerateTargetSqlOnce(boolean regenerateTargetSqlOnce) {
+		this.regenerateTargetSqlOnce = regenerateTargetSqlOnce;
+	}
+
+	public TestRunOption getDefaultTestRunOption() {
+		return defaultTestRunOption;
+	}
+
+	public void setDefaultTestRunOption(TestRunOption defaultTestRunOption) {
+		this.defaultTestRunOption = defaultTestRunOption;
+	}
+
+	public boolean isHtmlContentAllowed() {
+		return htmlContentAllowed;
+	}
+
+	public void setHtmlContentAllowed(boolean htmlContentAllowed) {
+		this.htmlContentAllowed = htmlContentAllowed;
+	}
+
+	public boolean isUseDefaultAddressFieldsForPost() {
+		return useDefaultAddressFieldsForPost;
+	}
+
+	public void setUseDefaultAddressFieldsForPost(boolean useDefaultAddressFieldsForPost) {
+		this.useDefaultAddressFieldsForPost = useDefaultAddressFieldsForPost;
+	}
+
+	public Map<PostalField, String> getPostalFieldsMappings() {
+		return postalFieldsMappings;
+	}
+
+	public void setPostalFieldsMappings(Map<PostalField, String> postalFieldsMappings) {
+		this.postalFieldsMappings = postalFieldsMappings;
+	}
+
+	public int getMailingMinimumApprovals() {
+		return mailingMinimumApprovals;
+	}
+
+	public void setMailingMinimumApprovals(int mailingMinimumApprovals) {
+		this.mailingMinimumApprovals = mailingMinimumApprovals;
+	}
+
+    public boolean isShowAllDashboardCalendarMailings() {
+        return showAllDashboardCalendarMailings;
+    }
+
+    public void setShowAllDashboardCalendarMailings(boolean showAllDashboardCalendarMailings) {
+        this.showAllDashboardCalendarMailings = showAllDashboardCalendarMailings;
+    }
+
+	public AdminTestMarkPlacementOption getAdminTestMarkPlacement() {
+		return adminTestMarkPlacement;
+	}
+
+	public void setAdminTestMarkPlacement(AdminTestMarkPlacementOption adminTestMarkPlacement) {
+		this.adminTestMarkPlacement = adminTestMarkPlacement;
+	}
+
+	public String getAdminMailSubjectMark() {
+		return adminMailSubjectMark;
+	}
+
+	public void setAdminMailSubjectMark(String adminMailSubjectMark) {
+		this.adminMailSubjectMark = adminMailSubjectMark;
+	}
+
+	public String getTestMailSubjectMark() {
+		return testMailSubjectMark;
+	}
+
+	public void setTestMailSubjectMark(String testMailSubjectMark) {
+		this.testMailSubjectMark = testMailSubjectMark;
+	}
+
+	public String getAdminMailToAddressMark() {
+		return adminMailToAddressMark;
+	}
+
+	public void setAdminMailToAddressMark(String adminMailToAddressMark) {
+		this.adminMailToAddressMark = adminMailToAddressMark;
+	}
+
+	public String getTestMailToAddressMark() {
+		return testMailToAddressMark;
+	}
+
+	public void setTestMailToAddressMark(String testMailToAddressMark) {
+		this.testMailToAddressMark = testMailToAddressMark;
+	}
+
+	public boolean isVouchersMandatory() {
+		return vouchersMandatory;
+	}
+
+	public void setVouchersMandatory(boolean vouchersMandatory) {
+		this.vouchersMandatory = vouchersMandatory;
+	}
+
+	public boolean isVoucherEnableReport() {
+		return voucherEnableReport;
+	}
+
+	public void setVoucherEnableReport(boolean voucherEnableReport) {
+		this.voucherEnableReport = voucherEnableReport;
+	}
+
+	public String getVoucherCcReportEmails() {
+		return voucherCcReportEmails;
+	}
+
+	public void setVoucherCcReportEmails(String voucherCcReportEmails) {
+		this.voucherCcReportEmails = voucherCcReportEmails;
+	}
+
+	public String getVoucherBccReportEmails() {
+		return voucherBccReportEmails;
+	}
+
+	public void setVoucherBccReportEmails(String voucherBccReportEmails) {
+		this.voucherBccReportEmails = voucherBccReportEmails;
+	}
+
+	public Set<String> getSystemMessageEmails() {
+		return systemMessageEmails;
+	}
+
+	public void setSystemMessageEmails(Set<String> systemMessageEmails) {
+		this.systemMessageEmails = systemMessageEmails;
+	}
+
+}

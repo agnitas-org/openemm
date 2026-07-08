@@ -1,5 +1,0 @@
-<HelpBalloon>
-    <title><![CDATA[Static BCC address]]></title>
-    <content><![CDATA[Enter one or more BCC addresses (separated by commas) which will receive a blind copy for each sent mailing. This allows you to archive all of the emails that are sent to your recipients, regardless of the type of message.]]></content>
-</HelpBalloon>
-    

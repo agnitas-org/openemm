@@ -203,7 +203,6 @@ AGN.Lib.Controller.new('company-insights', function () {
         datasets: [{
           data: Object.values(data),
           backgroundColor: colors,
-          categoryPercentage: 0.9,
           minBarLength: MIN_REVENUE_BAR_LENGTH
         }]
       },
@@ -228,14 +227,8 @@ AGN.Lib.Controller.new('company-insights', function () {
         },
         plugins: {
           'half-doughnut-label': false,
-          legend: {
-            display: false
-          },
           datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: -5, // make labels closer to the bar
-            formatter: (value, context) => {
+            formatter: value => {
               const percent = (value * 100 / valuesSum).toFixed(1);
               return `${percent}%`;
             }
@@ -469,6 +462,7 @@ AGN.Lib.Controller.new('company-insights', function () {
             display: false,
           },
           legend: {
+            display: true,
             position: 'bottom',
             reverse: true // reverse order (to display 'Reactions' legend at the end)
           },

@@ -16,19 +16,28 @@ AGN.Lib.Controller.new('import-profile', function () {
 
   // column mappings variables
   let DO_NOT_IMPORT;
+  let isBlacklistSelected;
   let columnMappings;
+  let actuallyUsedDbColumns;
   let profileFieldsColumns;
+  let blacklistColumns;
   let columnMappingRowTemplate;
   let $columnMappingsTable;
   let isClientForceSendingActive;
+  let blacklistModes = [];
+  let emailColumnName;
 
   this.addDomInitializer('import-profile-view', function () {
     isMailingListWasDisabled = $getRecipientMailinglists().prop('disabled');
     availableGenderIntValues = this.config.availableGenderIntValues;
     isClientForceSendingActive = this.config.isClientForceSendingActive;
+    blacklistModes = this.config.blacklistModes;
+    emailColumnName = this.config.emailColumnName;
+    isBlacklistSelected = isBlacklistModeSelected();
 
     initGenderMappingTable(sortGenderMappingsByValue(this.config.genderMappings));
     updateMailingListsSelectState();
+    updateKeyValueState();
   });
 
   this.addAction({click: 'save'}, function () {
@@ -51,6 +60,16 @@ AGN.Lib.Controller.new('import-profile', function () {
   //all mailinglists slider parent is visible just for ${allowedModesForAllMailinglists} import modes
   //if all Malinglists slider is activated and is not visible just deactivate it
   this.addAction({change: 'change-mode'}, function () {
+    let isBlacklistSelectedBefore = isBlacklistSelected;
+    isBlacklistSelected = isBlacklistModeSelected()
+
+    updateKeyValueState();
+    actuallyUsedDbColumns = isBlacklistSelected ? blacklistColumns : profileFieldsColumns;
+
+    if (isBlacklistSelectedBefore !== isBlacklistSelected) {
+      renderColumnMappings([]);
+    }
+
     const $allMalinglistsSlider = $('#allMalinglistsCheckbox');
     if (!$allMalinglistsSlider.exists()) {
       return;
@@ -60,6 +79,20 @@ AGN.Lib.Controller.new('import-profile', function () {
       $allMalinglistsSlider.prop('checked', false).trigger('change');
     }
   });
+
+  function updateKeyValueState() {
+    const $keyColumn = $('#import_key_column');
+    $keyColumn.attr('readonly', isBlacklistSelected);
+
+    if (isBlacklistSelected) {
+      Select.get($keyColumn).selectValue(emailColumnName);
+    }
+  }
+
+  function isBlacklistModeSelected() {
+    const importMode = Number.parseInt($('#import_mode_select').val());
+    return blacklistModes.includes(importMode);
+  }
 
   function updateMailingListsSelectState() {
     const $newRecipientsAction = $('#import_actionnewrecipients');
@@ -226,11 +259,11 @@ AGN.Lib.Controller.new('import-profile', function () {
     }
 
     _.each(collectColumnMappingsDataFromTable(true), (mapping, index) => {
-      form.setValueOnce('columnsMappings[' + index + '].id', mapping.id);
-      form.setValueOnce('columnsMappings[' + index + '].fileColumn', mapping.fileColumn);
-      form.setValueOnce('columnsMappings[' + index + '].databaseColumn', mapping.databaseColumn);
-      form.setValueOnce('columnsMappings[' + index + '].mandatory', mapping.mandatory);
-      form.setValueOnce('columnsMappings[' + index + '].defaultValue', mapping.defaultValue);
+      form.setValueOnce(`columnsMappings[${index}].id`, mapping.id);
+      form.setValueOnce(`columnsMappings[${index}].fileColumn`, mapping.fileColumn);
+      form.setValueOnce(`columnsMappings[${index}].databaseColumn`, mapping.databaseColumn);
+      form.setValueOnce(`columnsMappings[${index}].mandatory`, mapping.mandatory);
+      form.setValueOnce(`columnsMappings[${index}].defaultValue`, mapping.defaultValue);
     });
   }
 
@@ -244,10 +277,13 @@ AGN.Lib.Controller.new('import-profile', function () {
       columnMappings = columnMappingsConfig.columnMappings;
       DO_NOT_IMPORT = columnMappingsConfig.doNotImportValue;
       profileFieldsColumns = columnMappingsConfig.columns;
+      blacklistColumns = columnMappingsConfig.blacklistColumns;
+      actuallyUsedDbColumns = isBlacklistSelected ? blacklistColumns : profileFieldsColumns;
 
       $columnMappingsTable = $('#column-mappings-block');
       renderColumnMappings(columnMappings);
       updateColumnMappingsControlsState();
+      controlMandatoryMappings();
     }
   });
 
@@ -362,7 +398,7 @@ AGN.Lib.Controller.new('import-profile', function () {
     if (type === 'date') {
       AGN.runAll($inputCell);
     } else if (type === 'datetime') {
-      _.each($inputCell.find('[data-field]'), function (field) {
+      _.each($inputCell.find('[data-field]'), field => {
         AGN.Lib.Field.create($(field));
       });
     }
@@ -379,7 +415,7 @@ AGN.Lib.Controller.new('import-profile', function () {
   }
 
   function getColumnDefValInputType(dbColumn) {
-    const type = profileFieldsColumns[dbColumn].simpleDataType.toLowerCase();
+    const type = actuallyUsedDbColumns[dbColumn].simpleDataType.toLowerCase();
     switch (type) {
       case 'date':
       case 'datetime':
@@ -438,7 +474,7 @@ AGN.Lib.Controller.new('import-profile', function () {
 
   function validateColumnMappings($el) {
     const form = Form.get($el);
-    form.validatorOptions = {$mappingsBlock: $columnMappingsTable};
+    form.validatorOptions = {$mappingsBlock: $columnMappingsTable, columns: actuallyUsedDbColumns, doNotImportValue: DO_NOT_IMPORT};
     if (!form.valid()) {
       form.handleErrors();
       return false;
@@ -611,11 +647,22 @@ AGN.Lib.Controller.new('import-profile', function () {
 
   function appendRowToColumnMappingTable(mapping) {
     mapping.isFirstMapping = $columnMappingsTable.find('[data-mapping-row]').length == 0;
-    const $rowTemplate = $(columnMappingRowTemplate(mapping));
+    const $rowTemplate = $(columnMappingRowTemplate({ ... mapping, dbColumns: Object.keys(actuallyUsedDbColumns) }));
     $columnMappingsTable.append($rowTemplate);
 
     AGN.runAll($rowTemplate);
   }
 
-  // ----------------------------------------
+  this.addAction({change: 'change-key-columns'}, controlMandatoryMappings);
+
+  function controlMandatoryMappings() {
+    $('#column-mappings-block select').each(function () {
+      if ($('#import_key_column').val().includes($(this).val())) {
+        $(this)
+          .closest("[data-mapping-row]")
+          .find('[data-mapping-mandatory]')
+          .prop('checked', true)
+      }
+    });
+  }
 });

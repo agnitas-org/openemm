@@ -46,8 +46,8 @@
 
     <!-- Custom EMM tags beginning -->
 
-    <tag name="agn:content" content="all" section="all" deprecated="false" unique="false" ignore-permitted="false"/>
-    <tag name="agn:block" content="all" section="all" deprecated="false" unique="false" ignore-permitted="false"/>
+    <tag name="agn-content" content="all" section="all" deprecated="false" unique="false" ignore-permitted="false"/>
+    <tag name="agn-block" content="all" section="all" deprecated="false" unique="false" ignore-permitted="false"/>
 
     <!-- Custom EMM tags end -->
 
@@ -200,7 +200,7 @@
         <close-before-tags>p,address,label,abbr,acronym,dfn,kbd,samp,var,cite,code,param,xml</close-before-tags>
     </tag>
     <tag name="table" content="all" section="body" deprecated="false" unique="false" ignore-permitted="false">
-        <allowed-children-tags>tr,tbody,thead,tfoot,colgroup,col,form,caption,tr,agn:content,agn:block
+        <allowed-children-tags>tr,tbody,thead,tfoot,colgroup,col,form,caption,tr,agn-content,agn-block
         </allowed-children-tags>
         <close-before-copy-inside-tags>a,bdo,strong,em,q,b,i,u,tt,sub,sup,big,small,strike,s,font
         </close-before-copy-inside-tags>
@@ -211,7 +211,7 @@
     <tag name="tr" content="all" section="body" deprecated="false" unique="false" ignore-permitted="false">
         <fatal-tags>table</fatal-tags>
         <req-enclosing-tags>tbody</req-enclosing-tags>
-        <allowed-children-tags>td,th,agn:content,agn:block</allowed-children-tags>
+        <allowed-children-tags>td,th,agn-content,agn-block</allowed-children-tags>
         <higher-level-tags>thead,tfoot</higher-level-tags>
         <close-before-tags>tr,td,th,caption,colgroup</close-before-tags>
     </tag>
@@ -227,17 +227,17 @@
     </tag>
     <tag name="tbody" content="all" section="body" deprecated="false" unique="false" ignore-permitted="false">
         <fatal-tags>table</fatal-tags>
-        <allowed-children-tags>tr,form,agn:content,agn:block</allowed-children-tags>
+        <allowed-children-tags>tr,form,agn-content,agn-block</allowed-children-tags>
         <close-before-tags>td,th,tr,tbody,thead,tfoot,caption,colgroup</close-before-tags>
     </tag>
     <tag name="thead" content="all" section="body" deprecated="false" unique="false" ignore-permitted="false">
         <fatal-tags>table</fatal-tags>
-        <allowed-children-tags>tr,form,agn:content,agn:block</allowed-children-tags>
+        <allowed-children-tags>tr,form,agn-content,agn-block</allowed-children-tags>
         <close-before-tags>td,th,tr,tbody,thead,tfoot,caption,colgroup</close-before-tags>
     </tag>
     <tag name="tfoot" content="all" section="body" deprecated="false" unique="false" ignore-permitted="false">
         <fatal-tags>table</fatal-tags>
-        <allowed-children-tags>tr,form,agn:content,agn:block</allowed-children-tags>
+        <allowed-children-tags>tr,form,agn-content,agn-block</allowed-children-tags>
         <close-before-tags>td,th,tr,tbody,thead,tfoot,caption,colgroup</close-before-tags>
     </tag>
     <tag name="col" content="none" section="body" deprecated="false" unique="false" ignore-permitted="false">

@@ -9,6 +9,8 @@ AGN.Opt.Templates['select2-badge-option'] = `
 </div>
 `;
 
+AGN.Opt.Templates['statistics-number-cell'] = `<span>{{- AGN.formatNumber(value) ?? value }}</span>`;
+
 AGN.Opt.Templates['input-feedback'] = `
 <div class="form-control-feedback-message">
     <i class="icon icon-state-{{- type === 'success' ? 'success' : 'warning' }}"></i>
@@ -364,5 +366,12 @@ AGN.Opt.Templates['processing-loader'] = `
       {{- t('statistic.cancelProcessing') }}
     </a>
   </div>
+</div>
+`;
+
+AGN.Opt.Templates['table-header-with-color'] = `
+<div class="d-flex align-items-center gap-1">
+    <span class="square-badge" style="background: {{= color }}"></span>
+    <span class="text-truncate">{{= text }}</span>
 </div>
 `;

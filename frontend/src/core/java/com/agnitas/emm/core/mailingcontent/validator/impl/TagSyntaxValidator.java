@@ -1,0 +1,90 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.mailingcontent.validator.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
+import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
+import com.agnitas.preview.AgnTagError;
+import com.agnitas.preview.TagSyntaxChecker;
+import com.agnitas.web.mvc.Popups;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+@Component
+@Order(3)
+public class TagSyntaxValidator implements DynTagValidator {
+
+    private static final Logger logger = LogManager.getLogger(TagSyntaxValidator.class);
+    private static final Pattern TAG_WRONG_SPACES_PATTERN = Pattern.compile("(\\[\\s+agn)|(\\/\\s+\\])");
+
+    private final TagSyntaxChecker tagSyntaxChecker;
+
+    public TagSyntaxValidator(TagSyntaxChecker tagSyntaxChecker) {
+        this.tagSyntaxChecker = tagSyntaxChecker;
+    }
+
+    @Override
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
+        boolean hasNoErrors = true;
+        Locale locale = admin.getLocale();
+        if (locale == null) {
+            locale = Locale.ENGLISH;
+        }
+
+        try {
+            List<AgnTagError> agnTagSyntaxErrors = new ArrayList<>();
+            List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
+
+            for (DynContentDto contentBlock : contentBlocks) {
+                if (!tagSyntaxChecker.check(admin.getCompanyID(), contentBlock.getContent(), agnTagSyntaxErrors)) {
+                    for (AgnTagError agnTagError : agnTagSyntaxErrors) {
+                        String localizedMessage = agnTagError.getLocalizedMessage(locale);
+                        popups.alert("error.mailing.agntags", agnTagError.getFullAgnTagText(), localizedMessage);
+                    }
+
+                    hasNoErrors = false;
+                }
+
+                validateTagSpaces(contentBlock.getContent(), popups);
+            }
+        } catch (Exception e) {
+            logger.warn("Something went wrong while syntax validation in the dyn tag (ID: {}, Name: '{}'): {}",
+                    dynTagDto.getId(), dynTagDto.getName(), e.getMessage());
+        }
+
+        return hasNoErrors;
+    }
+
+    private void validateTagSpaces(String content, Popups popups) {
+        Matcher matcher = TAG_WRONG_SPACES_PATTERN.matcher(content);
+        while (matcher.find()) {
+            String tagName = "";
+            if (Strings.CS.equals("[ agn", matcher.group())) {
+                tagName = StringUtils.substring(content, matcher.start(), content.indexOf("]", matcher.start()) + 1);
+            } else if (Strings.CS.equals("/ ]", matcher.group())) {
+                tagName = StringUtils.substring(content, content.lastIndexOf("[agn", matcher.end()), matcher.end());
+            }
+            popups.warning("warning.mailing.agntags", tagName);
+        }
+    }
+}

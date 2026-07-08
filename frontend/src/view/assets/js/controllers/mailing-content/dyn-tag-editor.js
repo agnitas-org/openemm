@@ -65,13 +65,7 @@
     }
 
     applyWysiwygInitialChanges() {
-      if (window.Jodit) {
-        setTimeout(() => this.currentDynTag.applyWysiwygInitialChanges(), 200);
-      } else {
-        CKEDITOR.instances['content']?.on('instanceReady', () => setTimeout(() => {
-          this.currentDynTag.applyWysiwygInitialChanges()
-        }, 200));
-      }
+      setTimeout(() => this.currentDynTag.applyWysiwygInitialChanges(), 200);
     }
 
     #initInterestGroup() {
@@ -125,11 +119,7 @@
           : this.aceEditor.val();
       }
       if ($wysiwygEditorBlock.is(":visible")) {
-        if (window.Jodit) {
-          return Jodit.instances["content"].value.replace(/[\r\n]?\s*<style[^>]*class=["']?jodit[^>]*>[\s\S]*?<\/style>/gi, ''); // filter out Jodit UI elements
-        } else {
-          return CKEDITOR.instances['content'].getData();
-        }
+        return Jodit.instances["content"].value.replace(/[\r\n]?\s*<style[^>]*class=["']?jodit[^>]*>[\s\S]*?<\/style>/gi, ''); // filter out Jodit UI elements
       }
       if ($htmlEditorBlock.is(":visible")) {
         return this.aceEditor.val();

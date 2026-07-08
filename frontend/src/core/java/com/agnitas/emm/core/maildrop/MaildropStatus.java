@@ -1,0 +1,78 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.maildrop;
+
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+public enum MaildropStatus {
+
+	WORLD('W'),
+	TEST('T'),
+	ADMIN('A'),
+	DATE_BASED('R'), // formerly rule-based
+	ACTION_BASED('E'), // formerly event-based
+	ON_DEMAND('D'), // to be executed as normal mailing when a dataagent demands it
+	PREDELIVERY('V'), // Verification
+	
+	UNKNOWN_C('C'), // Relict of old value for eventbased mailings. Will never be used again, New value is 'E'
+	UNKNOWN_X('X'); // TODO: What is 'X'?
+	
+	private final char code;
+	
+	MaildropStatus(char code) {
+		this.code = code;
+	}
+	
+	public char getCode() {
+		return this.code;
+	}
+	
+	public String getCodeString() {
+		return Character.toString(this.code);
+	}
+	
+	public static MaildropStatus fromCode(char code) {
+		for(final MaildropStatus item : values()) {
+			if (item.code == code) {
+				return item;
+			}
+		}
+		throw new IllegalArgumentException("Invalid user MaildropStatus: " + code);
+	}
+
+	public static MaildropStatus fromCode(String code) {
+		return Stream.of(values())
+				.filter(s -> s.getCodeString().equals(code))
+				.findAny()
+				.orElseThrow(() -> new IllegalArgumentException("Invalid user MaildropStatus: " + code));
+	}
+	
+	public static MaildropStatus fromName(String name) {
+		for(final MaildropStatus item : values()) {
+			if (item.name().equalsIgnoreCase(name)) {
+				return item;
+			}
+		}
+		throw new IllegalArgumentException("Invalid user MaildropStatus: " + name);
+	}
+
+	public static List<MaildropStatus> allExcept(MaildropStatus ... statuses) {
+		Set<MaildropStatus> statusesToExclude = Set.of(statuses);
+
+		return Stream.of(MaildropStatus.values())
+				.filter(Predicate.not(statusesToExclude::contains))
+				.toList();
+	}
+
+}

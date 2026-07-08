@@ -77,7 +77,6 @@ AGN.Lib.Controller.new('recipient-insights', function () {
             const isMaxValue = data.values[chartData.dataIndex] === maxValue;
             return $chart.css(isMaxValue ? '--chart-darkest-blue-color' : '--chart-blue-color')
           },
-          categoryPercentage: 0.9,
           minBarLength: 2
         }]
       },
@@ -101,13 +100,7 @@ AGN.Lib.Controller.new('recipient-insights', function () {
           }
         },
         plugins: {
-          legend: {
-            display: false
-          },
           datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: -5, // make labels closer to the bar
             formatter: (value, context) => data.percentages[context.dataIndex] + '%'
           },
           tooltip: {
@@ -170,13 +163,7 @@ AGN.Lib.Controller.new('recipient-insights', function () {
           }
         },
         plugins: {
-          legend: {
-            display: false
-          },
           datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: -5, // make labels closer to the bar
             display: 'auto', // prevents overlap
             formatter: (value, context) => data.percentages[context.dataIndex] + '%'
           },
@@ -279,11 +266,6 @@ AGN.Lib.Controller.new('recipient-insights', function () {
       },
       options: {
         scales: {
-          x: {
-            ticks: {
-              maxRotation: 0
-            }
-          },
           y: {
             display: false
           }
@@ -294,12 +276,6 @@ AGN.Lib.Controller.new('recipient-insights', function () {
         },
         stacked: false,
         plugins: {
-          legend: {
-            position: 'bottom'
-          },
-          datalabels: {
-            display: false,
-          },
           tooltip: {
             callbacks: {
               title: function (tooltipItems) {

@@ -1,0 +1,248 @@
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+
+<%--@elvariable id="mailingThumbnailUrl" type="java.lang.String"--%>
+<%--@elvariable id="isMailtrackingActive" type="java.lang.Boolean"--%>
+<%--@elvariable id="isTrackingExists" type="java.lang.Boolean"--%>
+<%--@elvariable id="isTrackingAvailableForMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="successStatisticExpired" type="java.lang.Boolean"--%>
+<%--@elvariable id="onepixelStatisticExpired" type="java.lang.Boolean"--%>
+<%--@elvariable id="stats" type="com.agnitas.emm.core.birtstatistics.dto.MailingSummaryStats"--%>
+
+<script id="config:mailing-summary-stats" type="application/json">
+    {
+        "mailingId": ${mailingId}
+    }
+</script>
+
+<script id="summary-stats-template" type="text/x-mustache-template">
+
+    <div class="d-flex gap-3" style="align-items: stretch;">
+
+        <img src="<c:url value="${mailingThumbnailUrl}"/>" class="rounded-1" alt="Thumbnail" style="height: auto; aspect-ratio: 1 / 1; object-fit: cover; flex-shrink: 0;">
+
+        <div class="table-wrapper table-wrapper--sm" style="flex: 1;">
+            <div class="table-wrapper__header"></div>
+            <div class="table-wrapper__body" data-prevent-scrollable>
+                <table class="table--borderless">
+                    <thead>
+                    <tr>
+                        <th><mvc:message code='General2'/></th>
+                        <th>&nbsp;</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><mvc:message code="mailing.Subject"/></td>
+                        <td>{{- generalInfo.subject }}</td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="birt.Target"/></td>
+                        <td>
+                            {{ _.each(generalInfo.targets, function(target) { }}
+                                {{- target }}<br>
+                            {{ }); }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="${isTrackingAvailableForMailing ? 'report.numberRecipients.notracking' : 'report.numberRecipients'}"/></td>
+                        <td>{{- generalInfo.sentCount }} ${isTrackingAvailableForMailing && not successStatisticExpired ? '('.concat('{{- generalInfo.anonymousCount }}').concat(')') : ''}</td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="report.startSending"/></td>
+                        <td>{{- generalInfo.sendStart }}</td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="report.stopSending"/></td>
+                        <td>{{- generalInfo.sendEnd }}</td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="report.mailformat"/></td>
+                        <td>{{- generalInfo.mailFormat }}</td>
+                    </tr>
+                    <tr>
+                        <td><mvc:message code="report.mailsize"/></td>
+                        <td>{{- generalInfo.sizeInKb }}</td>
+                    </tr>
+                    {{ if (generalInfo.period) { }}
+                        <tr>
+                            <td><mvc:message code="report.period.evaluation"/></td>
+                            <td>{{- generalInfo.period }}</td>
+                        </tr>
+                    {{ } }}
+                    {{ if (generalInfo.period) { }}
+                        <tr>
+                            <td><mvc:message code="mailing.SendingTime"/></td>
+                            <td>{{- generalInfo.dispatchTime }}</td>
+                        </tr>
+                    {{ } }}
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-wrapper__footer"></div>
+        </div>
+
+        <div class="table-wrapper table-wrapper--sm" style="flex: 1;">
+            <div class="table-wrapper__header"></div>
+            <div class="table-wrapper__body" data-prevent-scrollable>
+                <table class="table--borderless table--stretch-rows">
+                    <thead>
+                        <tr>
+                            <th><mvc:message code="statistic.Response"/></th>
+                            {{ _.each(reactions, function(reaction) { }}
+                                <th>{{- reaction.target }}</th>
+                            {{ }); }}
+                        </tr>
+                    </thead>
+                    <tbody style="--table-row-count: 3">
+                        <tr>
+                            <td><mvc:message code="statistic.MeasuredOpeningsGross"/></td>
+                            {{ _.each(reactions, function(reaction) { }}
+                                <td>{{- reaction.openings }}</td>
+                            {{ }); }}
+                        </tr>
+                        <tr>
+                            <td><mvc:message code="statistic.Clicks"/></td>
+                            {{ _.each(reactions, function(reaction) { }}
+                                <td>{{- reaction.clicks }}</td>
+                            {{ }); }}
+                        </tr>
+                        <tr>
+                            <td><mvc:message code="statistic.ActivityRate"/></td>
+                            {{ _.each(reactions, function(reaction) { }}
+                                <td>{{- reaction.rate }}</td>
+                            {{ }); }}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-wrapper__footer"></div>
+        </div>
+    </div>
+
+    <div class="d-grid gap-3" style="grid-template-columns: 1fr 2fr;">
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title fs-4"><mvc:message code="KeydataGeneral"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="key-figures-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="key-figures-table" class="table-wrapper table-wrapper--sm no-truncate h-auto"></div>
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title fs-4"><mvc:message code="report.mailing.openersByDevices"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="openers-by-device-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="openers-by-device-table" class="table-wrapper table-wrapper--sm h-auto"></div>
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title fs-4"><mvc:message code="report.mailing.clickersByDevices"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="clickers-by-device-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div id="clickers-by-device-table" class="table-wrapper table-wrapper--sm h-auto"></div>
+    </div>
+
+    <div class="notification-simple p-2">
+        <i class="icon icon-state-info"></i>
+        <div class="d-flex flex-column gap-1 fs-4">
+            <p><mvc:message code="report.mailsize.explanation"/></p>
+            <p><mvc:message code="report.opens.measured.explanation"/></p>
+            <p><mvc:message code="report.opens.invisible.explanation"/></p>
+            <p><mvc:message code="report.opens.pc.and.mobile.explanation"/></p>
+
+            <c:if test="${not isMailtrackingActive and not empty mailingStatisticForm.selectedTargets}">
+                <p><mvc:message code="noMailingTracking"/></p>
+            </c:if>
+
+            <p><mvc:message code="statistic.MeasuredOpeningsGross.explanation"/></p>
+            <p><mvc:message code="statistic.ActivityRate.explanation"/></p>
+            <p><mvc:message code="statistic.withoutConfirmation.explanation"/></p>
+
+            <c:if test="${not isTrackingExists}">
+                <p><mvc:message code="noTrackingData"/></p>
+            </c:if>
+            <c:if test="${successStatisticExpired || onepixelStatisticExpired}">
+                <p><mvc:message code="statistic.nodata.hint"/></p>
+            </c:if>
+        </div>
+    </div>
+</script>
+
+<script id="metric-label-cell" type="text/x-mustache-template">
+    <div class="d-flex flex-column gap-4">
+        <div class="text-truncate-table">
+            <div class="d-flex gap-2">
+                <span class="square-badge badge--stat-{{- entry.meta[value].color }}"></span>
+                <span class="text-truncate-table">{{- entry.meta[value].label }}</span>
+            </div>
+        </div>
+
+        {{ var firstTargetId = _.keys(entry.data)[0]; }}
+        {{ var metricData = entry.data[firstTargetId][value]; }}
+
+        {{ if (metricData && _.size(metricData.partialValues) > 0) { }}
+            {{ _.each(metricData.partialValues, (partialObj, partialKey) => { }}
+                <div class="text-truncate-table ml-6">
+                    <div class="d-flex gap-2">
+                        <span class="square-badge badge--stat-{{- entry.meta[partialKey].color }}"></span>
+                        <span class="text-truncate-table">{{- entry.meta[partialKey].label }}</span>
+                    </div>
+                </div>
+            {{ }); }}
+        {{ } }}
+    </div>
+</script>
+
+<script id="metric-value-cell" type="text/x-mustache-template">
+    <div class="d-flex flex-column gap-3">
+        <span class="align-content-center" style="height: 36px">
+            {{ if (value.expired || value.val < 0) { }}
+                <mvc:message code="NotAvailableShort"/>
+            {{ } else { }}
+                {{- value.val }}
+                {{ if (entry.showNetto) { }}
+                    {{ if (value.deliveredRate >= 0) { }}
+                        ({{- value.deliveredRate.toFixed(1) }}%)
+                    {{ } }}
+                {{ } else { }}
+                    {{ if (value.rate >= 0) { }}
+                        ({{- value.rate.toFixed(1) }}%)
+                    {{ } }}
+                {{ } }}
+            {{ } }}
+        </span>
+
+        {{ if (value.partialValues && _.size(value.partialValues) > 0) { }}
+            {{ _.each(value.partialValues, (partialObj) => { }}
+                <span class="align-content-center" style="height: 36px">
+                    {{ if (partialObj.val.expired || partialObj.val < 0) { }}
+                        <mvc:message code="NotAvailableShort"/>
+                    {{ } else { }}
+                        {{- partialObj.val }}
+                        {{ if (partialObj.rate > 0) { }}
+                            ({{- partialObj.rate.toFixed(1) }}%)
+                        {{ } }}
+                    {{ } }}
+                </span>
+            {{ }); }}
+        {{ } }}
+    </div>
+</script>

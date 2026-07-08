@@ -1,18 +1,30 @@
 AGN.Lib.Validator.new('reject-script-element', {
   valid: function($e, options) {
-        return !this.errors($e, options).length;
+    return !this.errors($e, options).length;
   },
+
   errors: function ($e, options) {
-      var errors = [];
+    var errors = [];
 
-      var scriptElement = new DOMParser()
-        .parseFromString($e.val(), 'text/html')
-        .querySelector('script');
+    var doc = new DOMParser().parseFromString($e.val(), 'text/html');
+    var scripts = doc.querySelectorAll('script');
+    Array.from(scripts).some(function(script) {
+      var attrs = Array.from(script.attributes);
 
-      if (scriptElement) {
-        errors.push({field: $e, msg: t('fields.errors.illegal_script_element')});
+      var type = (script.getAttribute('type') || '')
+              .toLowerCase()
+              .trim();
 
+      if (type !== 'application/ld+json') {
+        errors.push({
+          field: $e,
+          msg: t('fields.errors.illegal_script_type')
+        });
+        return true;
       }
-      return errors;
+      return false;
+    });
+
+    return errors;
   }
 });

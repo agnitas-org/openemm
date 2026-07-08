@@ -1,0 +1,58 @@
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+
+<script id="config:mailing-bounce-stats" type="application/json">
+    {
+        "mailingId": ${mailingId},
+        "isMailtrackingActive": "${isMailtrackingActive}"
+    }
+</script>
+
+<script id="bounce-stats-template" type="text/x-mustache-template">
+
+    <div class="gap-3" style="display: grid; grid-template-columns: 1fr 2fr;">
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title"><mvc:message code="statistic.bounces.softbounce"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="softBounces-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+            <div id="softBounces-table" class="table-wrapper h-auto"></div>
+            <c:if test="${isMailtrackingActive}">
+                <div id="undelivered-table" class="table-wrapper h-auto"></div>
+            </c:if>
+        </div>
+
+        <div class="tile tile--highlighted tile--xs">
+            <div class="tile-header">
+                <h3 class="tile-title"><mvc:message code="statistic.bounces.hardbounce"/></h3>
+            </div>
+            <div class="tile-body p-3">
+                <canvas id="hardBounces-chart" class="h-100">
+                    <%-- Loads by JS --%>
+                </canvas>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+            <div id="hardBounces-table" class="table-wrapper h-auto"></div>
+        </div>
+    </div>
+</script>
+
+<script id="table-value-cell" type="text/x-mustache-template">
+    <div class="d-flex flex-column gap-3">
+        <span class="align-content-center">
+            {{- value.value }}
+            {{ if (value.rate >= 0) { }}
+                ({{- value.rate.toFixed(2) }}%)
+            {{ } }}
+        </span>
+    </div>
+</script>

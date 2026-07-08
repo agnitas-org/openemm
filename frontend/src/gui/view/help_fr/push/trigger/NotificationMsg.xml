@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title><![CDATA[D&eacute;clencheur Push
+	]]></title>
+	<content><![CDATA[Ce d&eacute;clencheur envoie une notification lorsqu'un utilisateur s'abonne &agrave; au moins une nouvelle liste de diffusion. La notification est envoy&eacute;e sans respecter son type de navigateur ou sa liste de diffusion.]]></content>
+</HelpBalloon>

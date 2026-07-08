@@ -1,4 +1,5 @@
 AGN.Lib.Controller.new('mailing-preview', function () {
+
   const Form = AGN.Lib.Form;
   const Messages = AGN.Lib.Messages;
   const Helpers = AGN.Lib.Helpers;
@@ -166,4 +167,11 @@ AGN.Lib.Controller.new('mailing-preview', function () {
     $tempAnchor[0].click();
     $tempAnchor.remove();
   });
+
+  this.addAction({click: 'calculateRecipients'}, function () {
+    const targetGroupId = $('#target-groups').val();
+    $.post(AGN.url(`/mailing/ajax/${MAILING_ID}/recipients/${targetGroupId}/count.action`))
+      .done(({ count }) => $('#number-of-recipients').val(count));
+  });
+
 });

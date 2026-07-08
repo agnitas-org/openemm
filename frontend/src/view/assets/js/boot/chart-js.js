@@ -22,7 +22,47 @@
   Chart.defaults.scale.border.display = false;
   Chart.defaults.scale.grid.display = false;
 
-  Chart.controllers.bar.defaults.barPercentage = 1;
+  Chart.defaults.datasets.bar.barPercentage = 1;
+  Chart.defaults.datasets.bar.categoryPercentage = 0.9;
+
+  Chart.overrides.bar = _.merge(_.cloneDeep(Chart.overrides.bar), {
+    plugins: {
+      datalabels: {
+        anchor: 'end',
+        align: 'end',
+        offset: -5, // make labels closer to the bar
+        formatter: value => AGN.formatNumber(value) ?? value,
+        display: context => {
+          const bar = context.chart
+            .getDatasetMeta(context.datasetIndex)
+            .data[context.dataIndex];
+
+          return bar.width >= 10;
+        }
+      },
+      legend: {
+        display: false
+      }
+    }
+  });
+
+  Chart.overrides.line = _.merge(_.cloneDeep(Chart.overrides.line), {
+    scales: {
+      x: {
+        ticks: {
+          maxRotation: 0
+        }
+      }
+    },
+    plugins: {
+      datalabels: {
+        display: false
+      },
+      legend: {
+        position: 'bottom'
+      }
+    }
+  });
 
   Chart.defaults.plugins.legend.labels.usePointStyle = true;
   Chart.defaults.plugins.legend.labels.pointStyle = 'rectRounded';
@@ -117,7 +157,8 @@
   class AgnDoughnutController extends Chart.DoughnutController {
     initialize() {
       this._actualRealValues = this.chart.data.datasets[0].data;
-      this._exactPercentages = AGN.Lib.ChartUtils.calcExactPercentages(this._actualRealValues);
+      this._initialRates = this.chart.data.datasets[0].rates;
+      this._exactPercentages = this._initialRates ?? AGN.Lib.ChartUtils.calcExactPercentages(this._actualRealValues);
       this.chart.data.datasets[0].data = calcVisiblePercentages(this._actualRealValues)
       super.initialize();
     }
@@ -139,7 +180,10 @@
             return item.hidden ? 0 : controller._actualRealValues[i];
           });
 
-          controller._exactPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
+          if (!controller._initialRates) {
+            controller._exactPercentages = AGN.Lib.ChartUtils.calcExactPercentages(actualValues);
+          }
+
           legend.chart.data.datasets[0].data = calcVisiblePercentages(actualValues);
 
           const originHandler = Chart.DoughnutController.overrides.plugins.legend.onClick;
@@ -166,8 +210,10 @@
       },
       tooltip: {
         callbacks: {
-          // Shows real values
-          label: context => getChartController(context.chart)._actualRealValues[context.dataIndex]
+          label: context => {
+            const value = getChartController(context.chart)._actualRealValues[context.dataIndex];
+            return AGN.formatNumber(value) ?? value;
+          }
         }
       }
     }

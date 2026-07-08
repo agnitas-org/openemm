@@ -3,6 +3,7 @@
   const Helpers = AGN.Lib.Helpers;
   const Popover = AGN.Lib.Popover;
   const CoreInitializer = AGN.Lib.CoreInitializer;
+  const statColors = AGN.Lib.Helpers.getStatColors();
 
   class Table {
 
@@ -12,17 +13,32 @@
       this.$el = $el;
       this.$el.append(this.#template);
       this.$el.data(Table.DATA_KEY, this);
+      let statColorIndex = 0;
 
       columns.forEach(column => {
         if (column.cellRenderer) {
           column.cellRenderer = AGN.Opt.TableCellRenderers[column.cellRenderer];
         }
 
+        if (column.headerComponentParams?.innerHeaderComponent) {
+          column.headerComponentParams.innerHeaderComponent = AGN.Opt.Components[column.headerComponentParams.innerHeaderComponent];
+        }
+
+        if (column.headerColor) {
+          column.headerComponentParams = {
+            innerHeaderComponent: AGN.Opt.Components['MustacheTemplateHeader'],
+            innerHeaderComponentParams: {
+              templateName: "table-header-with-color",
+              templateParams: {color: _.values(statColors)[statColorIndex++]}
+            }
+          };
+        }
+
         if (column.filter) {
           column.filter = AGN.Opt.Table['filters'][column.filter];
         }
 
-        if (column.comparator) {
+        if (column.comparator && typeof column.comparator === 'string') {
           column.comparator = AGN.Opt.Table['comparators'][column.comparator];
         }
 
@@ -33,8 +49,15 @@
 
       if (columns.some(col => col.type === 'colorBadge')) {
         const colors = Helpers.getStatColorsNames();
-        _.each(data, (row, i) => row.color = colors[i % colors.length]);
+        _.each(data, (row, i) => {
+          if (!row.preventColor) {
+            row.color = colors[i % colors.length];
+          }
+        });
       }
+
+      columns.filter(col => col.autoHideIfAllNull && !col.hide && col.field)
+        .forEach(col => col.hide = data.every(row => row[col.field] == null));
 
       columns[columns.length - 1].resizable = false;
       this.gridOptions = _.merge(this.#defaultGridOptions(columns), options || {});
@@ -161,6 +184,9 @@
           setColumn: {
             filter: SetFilter,
           },
+          toggleInclude: {
+            filter: ToggleIncludeFilter
+          },
           tableActionsColumn: {
             headerName: '',
             editable: false,
@@ -262,11 +288,11 @@
 
       const $cell = $('<div>')
         .addClass("text-truncate-table")
-        .html(`
+        .html(params.data.color ? `
         <div class="d-flex gap-2">
             <span class="square-badge badge--stat-${params.data.color}"></span>
             <span class="text-truncate-table">${params.value}</span>
-        </div>`);
+        </div>` : params.value);
       return $(wrapper).append($cell)[0];
     }
 
@@ -305,6 +331,12 @@
     }
 
     #renderPagination() {
+      this.#updateDisplayedEntriesCount();
+
+      if (this.gridOptions.hideFooter) {
+        return;
+      }
+
       const currentPage = this.api.paginationGetCurrentPage() + 1;
       const totalPages = this.api.paginationGetTotalPages();
 
@@ -316,8 +348,6 @@
         pageSize: this.api.paginationGetPageSize(),
         pageSelects: this.#generatePageNumbers(currentPage, totalPages)
       }
-
-      this.#updateDisplayedEntriesCount();
 
       const $tableFooter = AGN.Lib.Template.dom('table-footer', paginationData);
       const $existingFooter = this.$el.find('.table-wrapper__footer');
@@ -414,6 +444,10 @@
       this.$el.trigger('table:redraw');
     };
 
+    setData(data) {
+      this.api.setGridOption('rowData', data);
+    }
+
     #bindFilters() {
       $('#filter-tile').on('enterdown', e => {
         e.preventDefault();
@@ -428,7 +462,7 @@
       const numberFilterModel = this.#getFilterModelForTextCols(columns['numberColumn']);
       const numberRangeFilterModel = this.#getFilterModelForNumberRangeCols(columns['numberRangeColumn']);
       const selectFilterModel = this.#getFilterModelForSelectCols(columns['select']);
-      const emptyFilterModel = this.#getEmptyFilterModelForCols(_.union(columns['dateColumn'], columns['dateTimeColumn'], columns['customColumn'], columns['setColumn'], columns['tableActionsColumn'], columns['textCaseInsensitiveColumn']));
+      const emptyFilterModel = this.#getEmptyFilterModelForCols(_.union(columns['dateColumn'], columns['dateTimeColumn'], columns['customColumn'], columns['setColumn'], columns['tableActionsColumn'], columns['toggleInclude'], columns['textCaseInsensitiveColumn']));
       const otherFilterModel = this.#getFilterModelForTextCols(columns['undefined']);
       this.api.setFilterModel({
         ...numberRangeFilterModel,
@@ -449,7 +483,7 @@
         acc[colId] = {
           filterType: 'number',
           type: 'inRange',
-          filter: min,
+          filter: min - 1,
           filterTo: max,
         };
         return acc;

@@ -30,6 +30,19 @@ AGN.url = function(address, excludeSessionId) {
   }
 };
 
+AGN.formatNumber = function(value) {
+  const floatValue = Number.parseFloat(value);
+  if (Number.isNaN(floatValue)) {
+    return null;
+  }
+
+  if (Number.isInteger(floatValue)) {
+    return floatValue.toLocaleString(window.adminLocale);
+  }
+
+  return Number(floatValue.toFixed(2)).toLocaleString(window.adminLocale);
+}
+
 AGN.runAll = function($scope) {
   AGN.Lib.CoreInitializer.autorun($scope);
   AGN.Lib.DomInitializer.autorun($scope);

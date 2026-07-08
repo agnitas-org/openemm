@@ -212,7 +212,7 @@ $select-height-regular: $input-height;
         }
 
         .select2-search__field {
-          font-family: "Poppins", sans-serif;
+          font-family: $font-family;
           margin: 0 0 0 $gap-x-sm;
           color: $body-color-var;
           &::placeholder {

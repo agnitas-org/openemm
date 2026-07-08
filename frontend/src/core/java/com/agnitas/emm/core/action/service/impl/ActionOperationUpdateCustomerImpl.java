@@ -1,0 +1,115 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.action.service.impl;
+
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.agnitas.beans.TrackpointDef;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.dao.RecipientDao;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationType;
+import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
+import com.agnitas.emm.core.action.service.EmmActionOperation;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class ActionOperationUpdateCustomerImpl implements EmmActionOperation {
+	
+	private static final Logger logger = LogManager.getLogger(ActionOperationUpdateCustomerImpl.class);
+
+	private RecipientDao recipientDao;
+	
+	@Override
+	@DaoUpdateReturnValueCheck
+	public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, final EmmActionOperationErrors actionOperationErrors) {
+		ActionOperationUpdateCustomerParameters op =(ActionOperationUpdateCustomerParameters) operation;
+		int companyID = op.getCompanyId();
+		String columnName = op.getColumnName();
+		int updateType = op.getUpdateType();
+		String updateValue = op.getUpdateValue();
+		
+		if (params.get("customerID") == null) {
+			return false;
+		} else {
+			int customerID = (Integer) params.get("customerID");
+			try {
+				if (op.isUseTrack()) {
+					Integer type = (Integer) params.get("trackingPointType");
+					switch (type) {
+						case TrackpointDef.TYPE_SIMPLE:
+							updateValue = String.valueOf(params.get("trackingValue"));
+							break;
+						case TrackpointDef.TYPE_NUM:
+							updateValue = String.valueOf(params.get("trackingValue"));
+							break;
+						case TrackpointDef.TYPE_ALPHA:
+							updateValue = (String)params.get("trackingValue");
+							break;
+						default:
+							throw new IllegalArgumentException("Invalid tracking point type: " + type);
+					}
+				}
+				
+				recipientDao.updateForActionOperationUpdateCustomer(companyID, columnName, updateType, generateUpdateValue(params, updateValue), customerID);
+				
+				return true;
+			} catch (Exception e) {
+				return false;
+			}
+		}
+	}
+
+    @Override
+    public ActionOperationType processedType() {
+        return ActionOperationType.UPDATE_CUSTOMER;
+    }
+
+    /**
+	 * Replace parameter references in updatestatements with the given values.
+	 * If the value holds ##foo## it is replaced by the value of the
+	 * requestparameter foo.
+	 * 
+	 * @param params
+	 *            The requestparameters sent to the form.
+	 * @return The resulting value after replacing parameters.
+	 */
+	private String generateUpdateValue(Map<String, Object> params, String updateValue) {
+		Pattern aRegExp = Pattern.compile("##[^#]+##");
+		StringBuilder aBuf = new StringBuilder(updateValue);
+		String tmpString;
+		String tmpString2;
+
+		try {
+			Matcher aMatcher = aRegExp.matcher(aBuf);
+			while (aMatcher.find()) {
+				tmpString = aBuf.toString().substring(aMatcher.start() + 2, aMatcher.end() - 2);
+				tmpString2 = "";
+				if (params.get(tmpString) != null) {
+					tmpString2 = params.get(tmpString).toString();
+				}
+				aBuf.replace(aMatcher.start(), aMatcher.end(), tmpString2);
+				aMatcher = aRegExp.matcher(aBuf);
+			}
+		} catch (Exception e) {
+			logger.error("Exception: {}", e.getMessage(), e);
+		}
+
+		return aBuf.toString();
+	}
+	
+	public void setRecipientDao(RecipientDao recipientDao) {
+		this.recipientDao = recipientDao;
+	}
+}

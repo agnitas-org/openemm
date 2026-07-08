@@ -11,15 +11,17 @@ parent: badges_04_status
 ```htmlexample
 <div class="d-flex gap-1">
     <span class="status-badge mailing.mediatype.sms"></span>
+    <span class="status-badge mailing.mediatype.rcs"></span>
     <span class="status-badge mailing.mediatype.post"></span>
 </div>
 ```
 */
 
 $mailing-mediatype-badges-defs: (
-  email: (background: $badge-dark-blue-var,   icon: $fa-var-envelope),
-  post:  (background: $badge-dark-yellow-var, icon: $fa-var-envelope-open-text),
-  sms:   (background: $badge-cyan-var,        icon: $fa-var-mobile-alt),
+  email: (background: $badge-dark-blue-var,    icon: $fa-var-envelope),
+  post:  (background: $badge-dark-yellow-var,  icon: $fa-var-envelope-open-text),
+  sms:   (background: $badge-cyan-var,         icon: $fa-var-mobile-alt),
+  rcs:   (background: $badge-darkest-cyan-var, icon: $fa-var-mobile-alt),
 );
 
 @mixin mailing-mediatype-badge($state) {

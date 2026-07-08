@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Ic&ocirc;ne-URL]]></title>
+	<content><![CDATA[Les URL des ic&ocirc;nes doivent commencer par https:// sinon les navigateurs Web refuseront de charger l'ic&ocirc;ne.<br>Nous recommandons d'utiliser des graphiques en.jpg ou.png car la plupart des navigateurs les supportent.]]></content>
+</HelpBalloon>

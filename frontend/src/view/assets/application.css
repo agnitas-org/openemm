@@ -26011,6 +26011,7 @@ input[type=checkbox]:focus-visible {
   --badge-dark-cyan: #11A98E;
   --badge-darkest-cyan: #086F76;
   --badge-dark-red: #880010;
+  --badge-light-red: #E12E59;
   --badge-dark-yellow: #F8CE39;
   --chart-light-blue-color: #80C7FF;
   --chart-blue-color: #569AFF;
@@ -26030,6 +26031,7 @@ input[type=checkbox]:focus-visible {
   --chart-darkest-violet-color: #460876;
   --chart-yellow-color: #FAFF00;
   --chart-dark-yellow-color: #F8CE39;
+  --chart-darkest-yellow-color: #C9A216;
   --chart-orange-color: #ED7E49;
   --chart-light-red-color: #E12E59;
   --chart-dark-red-color: #880010;
@@ -26041,7 +26043,7 @@ input[type=checkbox]:focus-visible {
   --chart-font-family: "Poppins",sans-serif;
   --chart-font-size: 14px;
   --chart-half-doughnut-label-color: #1A3258;
-  --stat-colors: light-blue #80C7FF,blue #569AFF,dark-blue #2872E0,darkest-blue #0A40A9,light-cyan #BAF8E1,cyan #2FE9C7,dark-cyan #11A98E,darkest-cyan #086F76,light-lime #8BF4AF,lime #0ACD70,green #57C700,dark-green #516C03,light-violet #E5CEF0,violet #AD87CA,dark-violet #9B45D0,darkest-violet #460876,yellow #FAFF00,dark-yellow #F8CE39,orange #ED7E49,light-red #E12E59,dark-red #880010,light-grey #C2C2C2,grey #7E7E7E,dark-grey #3D3D3D,black #0A0A0A
+  --stat-colors: darkest-blue #0A40A9,lime #0ACD70,dark-cyan #11A98E,light-violet #E5CEF0,dark-red #880010,blue #569AFF,dark-green #516C03,light-cyan #BAF8E1,dark-violet #9B45D0,dark-yellow #F8CE39,dark-blue #2872E0,light-lime #8BF4AF,darkest-cyan #086F76,violet #AD87CA,light-red #E12E59,light-blue #80C7FF,green #57C700,cyan #2FE9C7,darkest-violet #460876,yellow #FAFF00,orange #ED7E49,light-grey #C2C2C2,grey #7E7E7E,dark-grey #3D3D3D,black #0A0A0A
 }
 [data-bs-theme=dark] {
   --table-head-sorted-color: #009BFF;
@@ -26884,7 +26886,7 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   content: "\f00d"
 }
 .status\.comment {
-  background-color: #80c7ff
+  background-color: var(--badge-blue)
 }
 .status\.comment:before {
   content: "\f075"
@@ -26896,19 +26898,19 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   content: "\f0f3"
 }
 .status\.clipboard {
-  background-color: #0a40a9
+  background-color: var(--badge-darkest-blue)
 }
 .status\.clipboard:before {
   content: "\f46d"
 }
 .status\.auto-opt {
-  background-color: #11a98e
+  background-color: var(--badge-dark-cyan)
 }
 .status\.auto-opt:before {
   content: "\f542"
 }
 .status\.bell-slash {
-  background-color: #7e7e7e
+  background-color: var(--badge-grey)
 }
 .status\.bell-slash:before {
   content: "\f1f6"
@@ -27082,6 +27084,12 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
   background-color: var(--badge-cyan)
 }
 .mailing\.mediatype\.sms:before {
+  content: "\f3cd"
+}
+.mailing\.mediatype\.rcs {
+  background-color: var(--badge-darkest-cyan)
+}
+.mailing\.mediatype\.rcs:before {
   content: "\f3cd"
 }
 .campaign\.status\.open {
@@ -27338,50 +27346,59 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 .badge--darkest-violet {
   background: var(--badge-darkest-violet)
 }
-.badge--stat-light-blue {
-  background: #80c7ff
-}
-.badge--stat-blue {
-  background: #569aff
-}
-.badge--stat-dark-blue {
-  background: #2872e0
-}
 .badge--stat-darkest-blue {
   background: #0a40a9
-}
-.badge--stat-light-cyan {
-  background: #baf8e1
-}
-.badge--stat-cyan {
-  background: #2fe9c7
-}
-.badge--stat-dark-cyan {
-  background: #11a98e
-}
-.badge--stat-darkest-cyan {
-  background: #086f76
-}
-.badge--stat-light-lime {
-  background: #8bf4af
 }
 .badge--stat-lime {
   background: #0acd70
 }
-.badge--stat-green {
-  background: #57c700
-}
-.badge--stat-dark-green {
-  background: #516c03
+.badge--stat-dark-cyan {
+  background: #11a98e
 }
 .badge--stat-light-violet {
   background: #e5cef0
 }
-.badge--stat-violet {
-  background: #ad87ca
+.badge--stat-dark-red {
+  background: #880010
+}
+.badge--stat-blue {
+  background: #569aff
+}
+.badge--stat-dark-green {
+  background: #516c03
+}
+.badge--stat-light-cyan {
+  background: #baf8e1
 }
 .badge--stat-dark-violet {
   background: #9b45d0
+}
+.badge--stat-dark-yellow {
+  background: #f8ce39
+}
+.badge--stat-dark-blue {
+  background: #2872e0
+}
+.badge--stat-light-lime {
+  background: #8bf4af
+}
+.badge--stat-darkest-cyan {
+  background: #086f76
+}
+.badge--stat-violet {
+  background: #ad87ca
+}
+.badge--stat-light-red {
+  background: #e12e59
+}
+.badge--stat-light-blue {
+  background: #80c7ff
+}
+.badge--stat-green {
+  background: #57c700
+}
+.badge--stat-cyan {
+  background: #2fe9c7
 }
 .badge--stat-darkest-violet {
   background: #460876
@@ -27389,17 +27406,8 @@ input[type=checkbox]:checked + .btn-icon--toggle .icon {
 .badge--stat-yellow {
   background: #faff00
 }
-.badge--stat-dark-yellow {
-  background: #f8ce39
-}
 .badge--stat-orange {
   background: #ed7e49
-}
-.badge--stat-light-red {
-  background: #e12e59
-}
-.badge--stat-dark-red {
-  background: #880010
 }
 .badge--stat-light-grey {
   background: #c2c2c2
@@ -28422,11 +28430,6 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .ag-theme-bootstrap .ag-body-viewport .ps__rail-y:hover > .ps__thumb-y {
   width: 5px
 }
-@supports (-moz-appearance:none) {
-  .ag-theme-bootstrap .ag-body-viewport .ps__rail-y {
-    right: 15px!important
-  }
-}
 .ag-theme-bootstrap .ag-body-vertical-scroll {
   width: 0!important;
   min-width: 0!important
@@ -28446,6 +28449,9 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
   -webkit-line-clamp: var(--text-truncate-lines);
   -webkit-box-orient: vertical;
   overflow: hidden
+}
+.ag-theme-bootstrap .ag-spanned-cell-wrapper {
+  top: -1px
 }
 .dropdown-toggle::after,
 .js-btn-dropdown::after {
@@ -28672,6 +28678,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
   --chart-tooltip-header-bg: #F5F5F5;
   background: var(--bs-body-bg);
   opacity: 1;
+  z-index: 1;
   pointer-events: none;
   position: absolute;
   transition: all .1s ease;
@@ -29410,7 +29417,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .tile--processing {
   --processing-tile-bg-color: #0071B9;
-  --processing-tile-title-text-color: #fff;
+  --processing-tile-text-color: #fff;
   --processing-tile-btn-color: #fff;
   --processing-tile-btn-text-color: #0071B9;
   background-color: var(--processing-tile-bg-color);
@@ -29425,9 +29432,12 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .tile--processing .modal-header .modal-title,
 .tile--processing .modal-header .tile-title,
 .tile--processing .tile-header .tile-title {
-  color: var(--processing-tile-title-text-color);
+  color: var(--processing-tile-text-color);
   font-size: 1.143rem;
   font-weight: 600
+}
+.tile--processing .tile-body {
+  color: var(--processing-tile-text-color)
 }
 .form-builder-dialog.positioned .button-wrap .tile--processing .tile-body button,
 .tile--processing .tile-body .btn,
@@ -29438,7 +29448,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 [data-bs-theme=light-contrast] .tile--processing {
   --processing-tile-bg-color: #06101f;
-  --processing-tile-title-text-color: #fff;
+  --processing-tile-text-color: #fff;
   --processing-tile-btn-color: #fff;
   --processing-tile-btn-text-color: #06101f
 }
@@ -31745,6 +31755,12 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
 .icon-mediatype-4:before {
   content: "\f3cd"
 }
+.icon-mediatype-5 {
+  color: silver
+}
+.icon-mediatype-5:before {
+  content: "\f3cd"
+}
 .icon-mediatype--active {
   color: var(--bs-blue)
 }
@@ -31799,17 +31815,33 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
   color: #fff;
   background-color: rgba(var(--bs-success-rgb),1)
 }
+.panel--success .btn-close {
+  --bs-btn-close-white-filter: unset;
+  color: #fff
+}
 .panel--info {
   color: #fff;
   background-color: var(--bs-blue)
+}
+.panel--info .btn-close {
+  --bs-btn-close-white-filter: unset;
+  color: #fff
 }
 .panel--warning {
   color: #fff;
   background-color: rgba(var(--bs-warning-rgb),1)
 }
+.panel--warning .btn-close {
+  --bs-btn-close-white-filter: unset;
+  color: #fff
+}
 .panel--alert {
   color: #fff;
   background-color: rgba(var(--bs-danger-rgb),1)
+}
+.panel--alert .btn-close {
+  --bs-btn-close-white-filter: unset;
+  color: #fff
 }
 .panel--statistics {
   --statistics-panel-bg: #1A3258;
@@ -32169,6 +32201,7 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
 #sys-status-external-view .system-status__support,
 .bordered-box,
 .bordered-box-sm,
+.bordered-box-xs,
 .permission-categories {
   padding: 20px;
   border: 1px solid var(--bs-border-color);
@@ -32179,6 +32212,7 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
 }
 #sys-status-external-view .system-status__support::-webkit-scrollbar,
 .bordered-box-sm::-webkit-scrollbar,
+.bordered-box-xs::-webkit-scrollbar,
 .bordered-box::-webkit-scrollbar,
 .permission-categories::-webkit-scrollbar {
   display: none
@@ -32186,6 +32220,9 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
 .bordered-box-sm,
 .permission-categories {
   padding: 10px
+}
+.bordered-box-xs {
+  padding: 5px
 }
 .bordered-box--input {
   padding: 5px 9px
@@ -32729,65 +32766,11 @@ body.edit-mode .tile-overlay {
 .dropdown-menu--table-column .select2-container .select2-selection.form-control[aria-expanded=true] .select2-search::after {
   transform: rotate(0)
 }
-.cke_chrome {
-  border: 0!important
-}
-.full-height-ck-editor .cke {
-  height: 100%
-}
-.full-height-ck-editor .cke_editor_content {
-  height: 100%;
-  width: 100%!important
-}
-.full-height-ck-editor .ace_editor {
-  height: 100%!important
-}
-.full-height-ck-editor .cke_inner {
-  display: table;
-  width: 100%
-}
-.full-height-ck-editor .cke_inner {
-  display: table;
-  width: 100%;
-  height: 100%
-}
-.full-height-ck-editor .cke_contents {
-  height: 100%!important;
-  display: table-row
-}
-.modal-editors-container .cke_chrome {
-  height: 100%
-}
-.modal-editors-container .cke_chrome > * {
-  height: 100%
-}
-.modal-editors-container .cke_chrome {
-  border-radius: 0;
-  padding: 0;
-  box-sizing: border-box
-}
-.modal-editors-container .cke_wrapper {
-  height: 100%
-}
-.modal-editors-container .cke_editor {
-  height: 100%
-}
-.modal-editors-container .cke_editor tbody tr:nth-child(2) {
-  height: 100%
-}
-.modal-editors-container .cke_inner {
-  display: table;
-  width: 100%
-}
-.modal-editors-container .cke_contents {
-  height: 100%!important;
-  display: table-row
-}
-.modal-editors-container .cke_wysiwyg_frame {
-  height: 100%
-}
 .jodit-container {
   min-height: 100%!important
+}
+.jodit-toolbar-button__icon i {
+  color: var(--jd-color-icon)
 }
 .jodit-emoji {
   width: 303px;
@@ -32820,6 +32803,13 @@ body.edit-mode .tile-overlay {
 .jodit-emoji__symbol:hover {
   filter: brightness(1.2)
 }
+.jodit-popup:has(.jodit-ui-block__link-type) {
+  width: 648px;
+  max-width: 80vw
+}
+.jodit-popup:has(.jodit-ui-block__link-type) .jodit-ui-input {
+  width: 100%
+}
 .jodit-popup__content:has(.jodit-emoji) {
   display: flex;
   overflow: hidden;
@@ -32828,6 +32818,12 @@ body.edit-mode .tile-overlay {
 .jodit-dialog_theme_dark .jodit-ui-input__input,
 .jodit-popup.jodit_theme_dark .jodit-ui-input__input {
   background: var(--jd-dark-background-darknes)
+}
+.jodit-ui-input__wrapper:has(.form-control-feedback-message) {
+  flex-direction: column
+}
+.jodit-ui-input__wrapper:has(.form-control-feedback-message) .form-control-feedback-message {
+  width: 100%
 }
 .ace_invisible.ace_invisible_space.ace_invalid {
   visibility: hidden
@@ -34788,7 +34784,11 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   --xl-calendar-hovered-day-color: var(--xl-calendar-cell-day-header-color);
   --xl-calendar-cell-border-color: #C0C0C0;
   --xl-calendar-today-border-color: #0071B9;
-  --xl-calendar-label-color: #4B4B4B
+  --xl-calendar-label-color: #4B4B4B;
+  --xl-calendar-mailing-label-bg-opacity: 0.3;
+  --xl-calendar-label-border: none;
+  --xl-calendar-comment-btn-color: #0071B9;
+  --xl-calendar-more-mailings-btn-color: #fff
 }
 #dashboard-calendar .search-container {
   max-width: 260px
@@ -35048,10 +35048,10 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   display: none;
   text-align: right;
   font-size: 10px;
-  color: #0071b9
+  color: var(--xl-calendar-comment-btn-color)
 }
 .dashboard-calendar-day [data-action=show-more-mailings] {
-  color: #fff;
+  color: var(--xl-calendar-more-mailings-btn-color);
   text-align: center;
   font-size: .857rem;
   padding: 4px 5px;
@@ -35120,14 +35120,21 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   min-height: fit-content;
   flex-shrink: 0
 }
+.dashboard-calendar__label > span:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0
+}
+.dashboard-calendar__label > span:nth-child(3) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0
+}
 .dashboard-calendar__label > span:first-child,
 .dashboard-calendar__label > span:nth-child(3) {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
-  height: auto;
-  border-radius: 0
+  height: auto
 }
 .dashboard-calendar__label > span:nth-child(2) {
   color: var(--xl-calendar-label-color);
@@ -35136,7 +35143,16 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   font-size: .857rem;
   flex-grow: 1;
   align-items: center;
-  min-width: 0
+  min-width: 0;
+  border: var(--xl-calendar-label-border);
+  border-left: none
+}
+.dashboard-calendar__label > span:nth-child(2):last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px
+}
+.dashboard-calendar__label > span:nth-child(2):not(:last-child) {
+  border-right: none
 }
 .dashboard-calendar__label--mailing\.status\.new > span:first-child {
   background-color: var(--badge-blue)
@@ -35145,6 +35161,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f15b"
 }
 .dashboard-calendar__label--mailing\.status\.new > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-blue);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.new > span:nth-child(2)::before {
@@ -35152,7 +35169,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-blue);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.has-content > span:first-child {
   background-color: var(--badge-darkest-blue)
@@ -35161,6 +35178,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f15c"
 }
 .dashboard-calendar__label--mailing\.status\.has-content > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-darkest-blue);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.has-content > span:nth-child(2)::before {
@@ -35168,7 +35186,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-darkest-blue);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.no-content > span:first-child {
   background-color: #c2c2c2
@@ -35177,6 +35195,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f15b"
 }
 .dashboard-calendar__label--mailing\.status\.no-content > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #C2C2C2;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.no-content > span:nth-child(2)::before {
@@ -35184,7 +35203,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #c2c2c2;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.active > span:first-child {
   background-color: var(--badge-green)
@@ -35193,6 +35212,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f04b"
 }
 .dashboard-calendar__label--mailing\.status\.active > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-green);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.active > span:nth-child(2)::before {
@@ -35200,7 +35220,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-green);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.canceled > span:first-child {
   background-color: #e12e59
@@ -35209,6 +35229,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f056"
 }
 .dashboard-calendar__label--mailing\.status\.canceled > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #E12E59;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.canceled > span:nth-child(2)::before {
@@ -35216,7 +35237,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #e12e59;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.insufficient-vouchers > span:first-child {
   background-color: var(--badge-grey)
@@ -35225,6 +35246,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f056"
 }
 .dashboard-calendar__label--mailing\.status\.insufficient-vouchers > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-grey);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.insufficient-vouchers > span:nth-child(2)::before {
@@ -35232,7 +35254,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-grey);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.disable > span:first-child {
   background-color: var(--badge-grey)
@@ -35241,6 +35263,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f05e"
 }
 .dashboard-calendar__label--mailing\.status\.disable > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-grey);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.disable > span:nth-child(2)::before {
@@ -35248,7 +35271,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-grey);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.edit > span:first-child {
   background-color: var(--badge-dark-blue)
@@ -35257,6 +35280,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f304"
 }
 .dashboard-calendar__label--mailing\.status\.edit > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-blue);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.edit > span:nth-child(2)::before {
@@ -35264,7 +35288,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-blue);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.ready > span:first-child {
   background-color: #8bf4af
@@ -35273,6 +35297,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f00c"
 }
 .dashboard-calendar__label--mailing\.status\.ready > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #8BF4AF;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.ready > span:nth-child(2)::before {
@@ -35280,7 +35305,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #8bf4af;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.scheduled > span:first-child {
   background-color: var(--badge-lime)
@@ -35289,6 +35314,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f1da"
 }
 .dashboard-calendar__label--mailing\.status\.scheduled > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-lime);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.scheduled > span:nth-child(2)::before {
@@ -35296,7 +35322,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-lime);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.sending > span:first-child {
   background-color: var(--badge-green)
@@ -35305,6 +35331,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f1d8"
 }
 .dashboard-calendar__label--mailing\.status\.sending > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-green);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.sending > span:nth-child(2)::before {
@@ -35312,7 +35339,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-green);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.sent > span:first-child {
   background-color: var(--badge-dark-green)
@@ -35321,6 +35348,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f1d8"
 }
 .dashboard-calendar__label--mailing\.status\.sent > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-green);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.sent > span:nth-child(2)::before {
@@ -35328,7 +35356,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-green);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.norecipients > span:first-child {
   background-color: var(--badge-grey)
@@ -35337,6 +35365,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f1d8"
 }
 .dashboard-calendar__label--mailing\.status\.norecipients > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-grey);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.norecipients > span:nth-child(2)::before {
@@ -35344,7 +35373,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-grey);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.test > span:first-child {
   background-color: var(--badge-dark-violet)
@@ -35353,6 +35382,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f0eb"
 }
 .dashboard-calendar__label--mailing\.status\.test > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-violet);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.test > span:nth-child(2)::before {
@@ -35360,7 +35390,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-violet);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.admin > span:first-child {
   background-color: var(--badge-darkest-violet)
@@ -35369,6 +35399,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f0eb"
 }
 .dashboard-calendar__label--mailing\.status\.admin > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-darkest-violet);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.admin > span:nth-child(2)::before {
@@ -35376,7 +35407,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-darkest-violet);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.in-generation > span:first-child {
   background-color: #8bf4af
@@ -35385,6 +35416,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f085"
 }
 .dashboard-calendar__label--mailing\.status\.in-generation > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #8BF4AF;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.in-generation > span:nth-child(2)::before {
@@ -35392,7 +35424,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #8bf4af;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.generation-finished > span:first-child {
   background-color: var(--badge-lime)
@@ -35401,6 +35433,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f013"
 }
 .dashboard-calendar__label--mailing\.status\.generation-finished > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-lime);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.generation-finished > span:nth-child(2)::before {
@@ -35408,7 +35441,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-lime);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.canceledAndCopied > span:first-child {
   background-color: #e12e59
@@ -35417,6 +35450,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f0c5"
 }
 .dashboard-calendar__label--mailing\.status\.canceledAndCopied > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #E12E59;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.canceledAndCopied > span:nth-child(2)::before {
@@ -35424,7 +35458,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #e12e59;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.cm > span:first-child {
   background-color: var(--badge-dark-cyan)
@@ -35433,6 +35467,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f542"
 }
 .dashboard-calendar__label--mailing\.status\.cm > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-cyan);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.cm > span:nth-child(2)::before {
@@ -35440,7 +35475,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-cyan);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.emc > span:first-child {
   background-color: var(--badge-dark-grey)
@@ -35449,6 +35484,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f009"
 }
 .dashboard-calendar__label--mailing\.status\.emc > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-grey);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.emc > span:nth-child(2)::before {
@@ -35456,7 +35492,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-grey);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.trigger > span:first-child {
   background-color: var(--badge-dark-grey)
@@ -35465,6 +35501,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f085"
 }
 .dashboard-calendar__label--mailing\.status\.trigger > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-grey);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.trigger > span:nth-child(2)::before {
@@ -35472,7 +35509,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-grey);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.deleted > span:first-child {
   background-color: var(--badge-dark-red)
@@ -35481,6 +35518,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f2ed"
 }
 .dashboard-calendar__label--mailing\.status\.deleted > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-red);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.deleted > span:nth-child(2)::before {
@@ -35488,7 +35526,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-red);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.world > span:first-child {
   background-color: var(--badge-dark-blue)
@@ -35497,6 +35535,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f0e0"
 }
 .dashboard-calendar__label--mailing\.status\.world > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-dark-blue);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.world > span:nth-child(2)::before {
@@ -35504,7 +35543,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-dark-blue);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.datebased > span:first-child {
   background-color: var(--badge-darkest-blue)
@@ -35513,6 +35552,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f073"
 }
 .dashboard-calendar__label--mailing\.status\.datebased > span:nth-child(2) {
+  --xl-calendar-label-bg-color: var(--badge-darkest-blue);
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.datebased > span:nth-child(2)::before {
@@ -35520,7 +35560,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: var(--badge-darkest-blue);
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--mailing\.status\.ao_test_send > span:first-child {
   background-color: #2fe9c7
@@ -35529,6 +35569,7 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   content: "\f0c3"
 }
 .dashboard-calendar__label--mailing\.status\.ao_test_send > span:nth-child(2) {
+  --xl-calendar-label-bg-color: #2FE9C7;
   position: relative
 }
 .dashboard-calendar__label--mailing\.status\.ao_test_send > span:nth-child(2)::before {
@@ -35536,13 +35577,14 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   background: #2fe9c7;
   position: absolute;
   inset: 0;
-  opacity: .3
+  opacity: var(--xl-calendar-mailing-label-bg-opacity)
 }
 .dashboard-calendar__label--comment > span:first-child {
   background-color: #80c7ff
 }
 .dashboard-calendar__label--comment > span:nth-child(2) {
-  background-color: rgba(128,199,255,.3)
+  --xl-calendar-label-bg-color: #80C7FF;
+  background-color: rgba(128,199,255,var(--xl-calendar-mailing-label-bg-opacity))
 }
 .dashboard-calendar__week-number {
   position: absolute;
@@ -35560,10 +35602,19 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   --xl-calendar-label-color: #F5F5F5
 }
 [data-bs-theme=light-contrast] #dashboard-calendar {
+  --xl-calendar-alien-day-bg: #D6DADD;
+  --xl-calendar-day-header-color: #000;
   --xl-calendar-hovered-day-bg: #57BCFF;
   --xl-calendar-cell-day-header-color: #06101f;
   --xl-calendar-cell-border-color: #06101f;
-  --xl-calendar-today-border-color: #06101f
+  --xl-calendar-today-border-color: #06101f;
+  --xl-calendar-label-color: #06101f;
+  --xl-calendar-label-border: 1px solid #000;
+  --xl-calendar-mailing-label-bg-opacity: 0;
+  --xl-calendar-comment-btn-color: #000
+}
+[data-bs-theme=light-contrast] .dashboard-calendar__label > span:nth-child(2) {
+  background-color: var(--xl-calendar-label-bg-color)
 }
 [data-bs-theme=dark-contrast] #dashboard-calendar {
   --xl-calendar-alien-day-bg: #4B4B4B;
@@ -35572,7 +35623,15 @@ body.edit-mode li:has(#dashboard-stop-edit-btn) {
   --xl-calendar-cell-day-header-color: #fff;
   --xl-calendar-day-header-color: #fff;
   --xl-calendar-cell-border-color: #fff;
-  --xl-calendar-today-border-color: #D6DADD
+  --xl-calendar-today-border-color: #D6DADD;
+  --xl-calendar-label-border: 1px solid #fff;
+  --xl-calendar-label-color: #06101f;
+  --xl-calendar-mailing-label-bg-opacity: 0;
+  --xl-calendar-comment-btn-color: #06101f;
+  --xl-calendar-more-mailings-btn-color: #06101f
+}
+[data-bs-theme=dark-contrast] .dashboard-calendar__label > span:nth-child(2) {
+  background-color: var(--xl-calendar-label-bg-color)
 }
 .dashboard-mailing-popover {
   border-radius: 5px;
@@ -36122,6 +36181,7 @@ body.edit-mode .dashboard-plus-tile {
   #help-center-support-tab #sys-status-external-view .system-status__support,
   #help-center-support-tab .bordered-box,
   #help-center-support-tab .bordered-box-sm,
+  #help-center-support-tab .bordered-box-xs,
   #help-center-support-tab .permission-categories,
   #sys-status-external-view #help-center-support-tab .system-status__support {
     padding: 20px 10px 10px
@@ -36288,6 +36348,12 @@ body:has(#recipient-detail-view) .popover:has(.input-groups) {
 #system-status-overview #db-status-tile,
 #system-status-overview #system-status-tile {
   flex: 1
+}
+body:has(#system-status-overview) #system-notifications {
+  padding: 10px 10px 0 10px
+}
+body:has(#system-status-overview) #system-notifications:not(:has(>*)) {
+  display: none
 }
 #sys-status-external-view {
   min-height: 100vh;
@@ -36786,7 +36852,7 @@ body:has(#layout-builder-view) #server-undo-option {
   padding: 5px 10px
 }
 .context-menu-root.context-menu-list .context-menu-item span {
-  font-family: Poppins
+  font-family: Poppins,sans-serif
 }
 .context-menu-root.context-menu-list .context-menu-item:first-of-type {
   border-top-left-radius: 10px;
@@ -37368,5 +37434,30 @@ body:has(#layout-builder-view) #server-undo-option {
 }
 #evaluate-loader-modal .modal-header svg {
   max-height: 110px
+}
+#mailings-comparison-view #mailings-data {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px
+}
+#mailings-comparison-view #charts-container {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  gap: 10px;
+  row-gap: 20px;
+  overflow: hidden;
+  min-height: 100%
+}
+#mailings-comparison-view .comparison-bar-chart-container {
+  display: contents
+}
+#mailings-comparison-view .comparison-bar-chart-container > * {
+  margin-block: auto
+}
+#mailings-comparison-view .comparison-bar-chart-container > p {
+  text-align: right
+}
+#mailings-comparison-view .comparison-bar-chart-container > div {
+  overflow: hidden
 }
 /*# sourceMappingURL=application.css.map */

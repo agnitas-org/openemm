@@ -1,0 +1,58 @@
+
+<div id="delivery-info-tile" class="tile" data-editable-tile="">
+    <div class="tile-header">
+        <h1 class="tile-title text-truncate"><mvc:message code="delivery.information" /></h1>
+
+        <c:if test="${isWorkflowDriven or isOfflineHtmlFormat}">
+            <div class="tile-controls">
+                <div class="form-check form-switch">
+                    <input id="includeImagesInSize" class="form-check-input" role="switch" type="checkbox"
+                           checked data-action="update-mailing-size">
+                    <label class="form-label form-check-label text-truncate" for="includeImagesInSize">
+                        <mvc:message code="mailing.size.external" />
+                    </label>
+                </div>
+
+                <c:if test="${isWorkflowDriven}">
+                    <c:url var="WORKFLOW_LINK" value="/workflow/${workflowParams.workflowId}/view.action" scope="page">
+                        <c:param name="forwardParams" value="${workflowParams.workflowForwardParams};elementValue=${tmpMailingID}"/>
+                    </c:url>
+
+                    <a href="${WORKFLOW_LINK}" class="status-badge status-badge--lg mailing.status.cm"
+                       data-tooltip="<mvc:message code="mailing.EditWithCampaignManager" />"></a>
+                </c:if>
+            </div>
+        </c:if>
+    </div>
+
+    <div class="tile-body js-scrollable">
+        <div class="row g-3">
+            <%@ include file="../mailing-send-size.jspf" %>
+            <%@include file="../mailing-recipients-statistics.jspf"%>
+
+            <c:if test="${not isFollowUpMailing and not isActionBasedMailing}">
+                <%-- Target groups block --%>
+                <div class="col-12">
+                    <div class="input-group">
+                        <span class="input-group-text input-group-text--disabled h-auto">
+                            <mvc:message code="Target-Groups" />
+                        </span>
+                        <span class="input-group-text input-group-text--disabled input-group-text--left-aligned h-auto flex-grow-1">
+                             <c:choose>
+                                 <c:when test="${empty targetGroupsNames}">
+                                     <p><mvc:message code="statistic.all_subscribers" /></p>
+                                 </c:when>
+                                 <c:otherwise>
+                                     <c:forEach var="target" items="${targetGroupsNames}">
+                                         ${target}
+                                         <br>
+                                     </c:forEach>
+                                 </c:otherwise>
+                             </c:choose>
+                        </span>
+                    </div>
+                </div>
+            </c:if>
+        </div>
+    </div>
+</div>

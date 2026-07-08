@@ -5,9 +5,7 @@
   window.addEventListener('message', (e) => {
     if (e.data?.type === 'scroll-transfer') {
       const editorId = e.data.wysiwygId;
-      const iframe = window.Jodit
-        ? Jodit.instances[editorId].iframe
-        : CKEDITOR.instances[editorId].container.findOne('iframe').$;
+      const iframe = Jodit.instances[editorId].iframe;
 
       const container = AGN.Lib.Scrollbar.get($(iframe))?.$el?.get(0);
 
@@ -25,51 +23,31 @@
       const editorId = $editor.attr('id');
       const options = getEditorOptions($editor);
 
-      if (window.Jodit) {
-        const jodit = Jodit.make(`#${editorId}`, {
-          theme: AGN.Lib.Helpers.isDarkTheme() ? 'dark' : 'default',
-          editHTMLDocumentMode: options.isFullHtml,
-          language: window.adminLocale?.split('-')[0] || 'en',
-          cleanHTML: {
-            denyTags: `${options.allowExternalScript ? '' : 'script'}`
-          },
-          emmMailingId: options.browseMailingId || -1,
-          emmToolbarType: options.toolbarType
-        });
+      const jodit = Jodit.make(`#${editorId}`, {
+        theme: AGN.Lib.Helpers.isDarkTheme() ? 'dark' : 'default',
+        editHTMLDocumentMode: options.isFullHtml,
+        language: window.adminLocale?.split('-')[0] || 'en',
+        cleanHTML: {
+          denyTags: `${options.allowExternalScript ? '' : 'script'}`
+        },
+        emmMailingId: options.browseMailingId || -1,
+        emmToolbarType: options.toolbarType
+      });
 
-        if (options.isFullHtml) {
-          $(jodit.editor).trigger('click'); // trigger HTML cleaner
-          fixJoditEvents(jodit);
-          setTimeout(() => {
-            jodit.e.on('keyup', (e) => {
-              if (e.key.length === 1 || inputKeys.includes(e.key)) {
-                jodit.userInputHappened = true;
-              }
-            });
-            Messaging.send("html-version-wysiwyg-shown")
-          }, 100);
-        }
-
-        addTransferScrollBehavior(jodit.iframe, jodit.id);
-      } else {
-        window.createEditorExt(
-          editorId,
-          options.width,
-          options.height,
-          options.browseMailingId,
-          options.isFullHtml,
-          false,
-          options.allowExternalScript
-        );
-        if (options.isFullHtml) {
-          Messaging.send("html-version-wysiwyg-shown");
-        }
-
-        window.setTimeout(() => {
-          const iframe = CKEDITOR.instances[editorId].container.findOne('iframe').$;
-          addTransferScrollBehavior(iframe, editorId);
-        }, 500);
+      if (options.isFullHtml) {
+        $(jodit.editor).trigger('click'); // trigger HTML cleaner
+        fixJoditEvents(jodit);
+        setTimeout(() => {
+          jodit.e.on('keyup', (e) => {
+            if (e.key.length === 1 || inputKeys.includes(e.key)) {
+              jodit.userInputHappened = true;
+            }
+          });
+          Messaging.send("html-version-wysiwyg-shown")
+        }, 100);
       }
+
+      addTransferScrollBehavior(jodit.iframe, jodit.id);
       Messaging.send("wysiwyg-shown")
     }
   });
@@ -78,19 +56,13 @@
     $(e.target).find('.js-wysiwyg').each(function () {
       const $textArea = $(this);
 
-      if (window.Jodit) {
-        const jodit = Jodit.instances[$textArea.attr('id')];
-        if (jodit?.options.editHTMLDocumentMode) {
-          jodit.e.fire('outsideClick');
-          jodit.synchronizeValues();
-        }
-        jodit?.destruct();
-        AGN.Lib.Editor.get($textArea).val($textArea.val());
-      } else {
-        CKEDITOR.instances[$textArea.attr('id')]?.updateElement();
-        AGN.Lib.Editor.get($textArea).val($textArea.val());
-        window.removeEditor($textArea.attr('id'));
+      const jodit = Jodit.instances[$textArea.attr('id')];
+      if (jodit?.options.editHTMLDocumentMode) {
+        jodit.e.fire('outsideClick');
+        jodit.synchronizeValues();
       }
+      jodit?.destruct();
+      AGN.Lib.Editor.get($textArea).val($textArea.val());
     });
   });
 

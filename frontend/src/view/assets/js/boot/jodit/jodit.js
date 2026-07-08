@@ -14,7 +14,7 @@
     toolbarAdaptive: false,
     addNewLineOnDBLClick: false,
     hidePoweredByJodit: true,
-    extraPlugins: ['emm', 'emoji'],
+    extraPlugins: ['emm', 'emoji', 'table-props'],
     cleanHTML: {
       timeout: 500,
       removeEmptyTags: false,

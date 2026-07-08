@@ -1,0 +1,55 @@
+
+<div data-controller="click-stat-per-link" data-initializer="click-stat-per-link" class="d-flex flex-column gap-3">
+    <script id="config:click-stat-per-link" type="application/json">
+        {
+            "targetGroups": ${emm:toJson(targetlist)},
+            "selectedTargets": ${emm:toJson(mailingStatisticForm.selectedTargets)},
+            "mailingId": ${mailingId}
+        }
+    </script>
+
+    <div class="notification-simple notification-simple--info">
+        <i class="icon icon-state-info"></i>
+        <span><mvc:message code="report.clickers.infoBox"/></span>
+    </div>
+
+    <div id="link-click-summary-table" class="table-wrapper no-truncate h-auto"></div>
+</div>
+
+<template id="link-clickers-cell">
+    <div class="d-flex flex-column gap-2">
+        <b>{{= value.totalClickers }}</b>
+
+        {{ if (!entry.isTotal) { }}
+            <span>{{= value.mobileClickers }}</span>
+            <span>{{= value.anonymousClickers }}</span>
+        {{ } }}
+    </div>
+</template>
+
+<template id="link-clicks-cell">
+    <div class="d-flex flex-column gap-2">
+        <b>{{= value.totalClicks }}</b>
+        <span>{{= value.mobileClicks }}</span>
+        <span>{{= value.anonymousClicks }}</span>
+    </div>
+</template>
+
+<template id="summary-cell">
+    {{ if (entry.isTotal) { }}
+        <b>{{= value }}</b>
+    {{ } else { }}
+        <div class="d-flex align-items-center justify-content-between gap-1 w-100">
+            <span class="text-truncate">{{= value }}</span>
+            <div class="d-flex flex-column gap-2">
+                <b><mvc:message code="report.total" /></b>
+                <span class="text-nowrap"><mvc:message code="report.mobile" /></span>
+                <span class="text-nowrap"><mvc:message code="statistics.share.anonymous" /></span>
+            </div>
+        </div>
+    {{ } }}
+</template>
+
+<template id="links-category-table">
+    <div class="table-wrapper no-truncate h-auto"></div>
+</template>

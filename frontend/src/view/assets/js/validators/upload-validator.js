@@ -16,11 +16,11 @@ AGN.Lib.Validator.new('upload-file/form', {
     const REQUIRED_MSG_KEY = 'fields.required.errors.missing';
 
     var validationRules = [{
-      field: $('#name'),
+      field: $('#lastname'),
       minLength: {val: 3, msgKey: NAME_TOO_SHORT_MSG_KEY},
       maxLength: 99,
     }, {
-      field: $('#firstName'),
+      field: $('#firstname'),
       minLength: {val: 3, msgKey: NAME_TOO_SHORT_MSG_KEY},
       maxLength: 99
     }, {
@@ -28,7 +28,7 @@ AGN.Lib.Validator.new('upload-file/form', {
       minLength: {val: 1, msgKey: REQUIRED_MSG_KEY},
       maxLength: 99,
     }, {
-      field: $('#email'),
+      field: $('#contact-email'),
       maxLength: 99,
       regexpRules: [{
         regexp: /\S+@\S+\.\S{2,}/,

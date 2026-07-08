@@ -46,6 +46,12 @@ class DateRangeFilter {
 
   #getDate(params) {
     const value = params.data[this.column];
+
+    const m = moment(value);
+    if (m.isValid()) {
+      return m.toDate();
+    }
+
     if (typeof value === 'number' && value > 0) {
       return new Date(value);
     }

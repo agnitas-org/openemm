@@ -57,37 +57,37 @@ $stat-light-red:      #E12E59;
 $stat-dark-red:       #880010;
 $stat-yellow:         #FAFF00;
 $stat-dark-yellow:    #F8CE39;
+$stat-darkest-yellow: #C9A216;
 $stat-orange:         #ED7E49;
 $stat-black:          #0A0A0A;
 
 $stat-colors: (
-        light-blue      $stat-light-blue,
-        blue            $stat-blue,
-        dark-blue       $stat-dark-blue,
         darkest-blue    $stat-darkest-blue,
-
-        light-cyan      $stat-light-cyan,
-        cyan            $stat-cyan,
-        dark-cyan       $stat-dark-cyan,
-        darkest-cyan    $stat-darkest-cyan,
-
-        light-lime      $stat-light-lime,
         lime            $stat-lime,
-        green           $stat-green,
-        dark-green      $stat-dark-green,
-
+        dark-cyan       $stat-dark-cyan,
         light-violet    $stat-light-violet,
-        violet          $stat-violet,
-        dark-violet     $stat-dark-violet,
-        darkest-violet  $stat-darkest-violet,
 
-        yellow          $stat-yellow,
-        dark-yellow     $stat-dark-yellow,
-        orange          $stat-orange,
-
-        light-red       $stat-light-red,
         dark-red        $stat-dark-red,
+        blue            $stat-blue,
+        dark-green      $stat-dark-green,
+        light-cyan      $stat-light-cyan,
 
+        dark-violet     $stat-dark-violet,
+        dark-yellow     $stat-dark-yellow,
+        dark-blue       $stat-dark-blue,
+        light-lime      $stat-light-lime,
+
+        darkest-cyan    $stat-darkest-cyan,
+        violet          $stat-violet,
+        light-red       $stat-light-red,
+        light-blue      $stat-light-blue,
+
+        green           $stat-green,
+        cyan            $stat-cyan,
+        darkest-violet  $stat-darkest-violet,
+        yellow          $stat-yellow,
+
+        orange          $stat-orange,
         light-grey      $stat-light-grey,
         grey            $stat-grey,
         dark-grey       $stat-dark-grey,
@@ -124,6 +124,7 @@ $border-default:     1px solid $border-color-var;
 $border-transparent: 1px solid transparent;
 $table-border:       $border-default;
 
+$font-family: 'Poppins', sans-serif;
 $font-size-md: 1.143rem; // 16px
 $font-size-xl: 1.429rem; // 20px
 

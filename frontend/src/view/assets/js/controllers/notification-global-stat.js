@@ -54,16 +54,6 @@ AGN.Lib.Controller.new('notification-global-stat', function () {
               y: {
                 display: false
               }
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              datalabels: {
-                anchor: 'end',
-                align: 'end',
-                offset: -5 // make labels closer to the bar
-              }
             }
           }
         });
@@ -188,11 +178,6 @@ AGN.Lib.Controller.new('notification-global-stat', function () {
           },
           options: {
             scales: {
-              x: {
-                ticks: {
-                  maxRotation: 0
-                }
-              },
               y: {
                 min: 0
               }
@@ -201,15 +186,7 @@ AGN.Lib.Controller.new('notification-global-stat', function () {
               mode: 'index',
               intersect: false
             },
-            stacked: false,
-            plugins: {
-              legend: {
-                position: 'bottom'
-              },
-              datalabels: {
-                display: false
-              }
-            }
+            stacked: false
           }
         });
       }

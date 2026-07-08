@@ -105,6 +105,11 @@ const fieldFiles = [
   'value-split-field',
 ].map(file => `${config.assets}/js/lib/field/${file}.js`);
 
+const chartFiles = [
+  'stats-chart',
+  'line-chart',
+].map(file => `${config.assets}/js/lib/chart/${file}.js`);
+
 const mailingContentFiles = [
   'definitions',
   'dyn-content',
@@ -157,6 +162,7 @@ const applicationCommonFiles = [
     `${config.assets}/js/boot/jodit/plugins/*.js`,
     `${config.assets}/js/vendor/querybuilder/query-builder.js`,
     ...fieldFiles,
+    ...chartFiles,
     `${config.assets}/js/lib/*.js`,
     ...lbFiles,
     ...scheduleFiles,

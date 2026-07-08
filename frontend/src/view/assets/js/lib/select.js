@@ -171,19 +171,34 @@
       return this.$select.find("option:selected").text();
     }
 
-    disableOptions(values = [], forceSelected) {
-      const currentValue = this.$select.val(); // may be disabled too
-      
+    disableOptionsByPredicate(predicate, forceSelected = false) {
+      const $selectedOption = this.$select.find(':selected');
+
       this.$options.prop('disabled', false);
-      this.$select.find(`option${forceSelected ? '' : ':not(:selected)'}`)
-        .filter((i, option) => values.includes($(option).val()))
-        .each((i, option) => $(option).prop('disabled', true));
-      
-      if (forceSelected && !this.isMultiple() && values.includes(currentValue)) {
+
+      const $toDisable = this.$options.filter((index, option) => {
+        const $option = $(option);
+
+        if (!forceSelected && $option.is(':selected')) {
+          return false;
+        }
+        return predicate(option);
+      });
+
+      $toDisable.prop('disabled', true);
+
+      if (forceSelected && !this.isMultiple() && predicate($selectedOption[0])) {
         this.selectFirstValue();
       }
-      
       this.$select.trigger('change.select2');
+    }
+
+    disableOptions(values = [], forceSelected) {
+      const valueSet = new Set(values);
+      this.disableOptionsByPredicate(
+        (element) => valueSet.has($(element).val()),
+        forceSelected
+      );
     }
 
     disableOption(value, forceSelected) {
@@ -211,6 +226,12 @@
         this.#runSelectInitializer($el);
       }
       return this;
+    }
+
+    selectedValues(){
+      return Object.fromEntries(
+        this.$select.find('option:selected').map((_, opt) => [[opt.value, opt.text]]).get()
+      );
     }
 
     get $selectedOption() {

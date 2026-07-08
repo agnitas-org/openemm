@@ -811,6 +811,10 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
   &--grey {
     color: var(--tile-title-grey-color);
   }
+
+  .icon {
+    cursor: pointer;
+  }
 }
 
 .tile-title-controls {
@@ -1033,7 +1037,7 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
 
 .tile--processing {
   --processing-tile-bg-color: #{$primary};
-  --processing-tile-title-text-color: #{$white};
+  --processing-tile-text-color: #{$white};
   --processing-tile-btn-color: #{$white};
   --processing-tile-btn-text-color: #{$primary};
 
@@ -1045,13 +1049,15 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
     padding-bottom: 0;
 
     .tile-title {
-      color: var(--processing-tile-title-text-color);
+      color: var(--processing-tile-text-color);
       font-size: $font-size-md;
       font-weight: 600;
     }
   }
 
   .tile-body {
+    color: var(--processing-tile-text-color);
+
     .btn {
       background-color: var(--processing-tile-btn-color);
       color: var(--processing-tile-btn-text-color);
@@ -1062,7 +1068,7 @@ Use `[data-toggle-tile]` to collapse the tile body and footer with caret icon, l
 @include color-mode(light-contrast) {
   .tile--processing {
     --processing-tile-bg-color: #{$con-dark-blue};
-    --processing-tile-title-text-color: #{$white};
+    --processing-tile-text-color: #{$white};
     --processing-tile-btn-color: #{$white};
     --processing-tile-btn-text-color: #{$con-dark-blue};
   }

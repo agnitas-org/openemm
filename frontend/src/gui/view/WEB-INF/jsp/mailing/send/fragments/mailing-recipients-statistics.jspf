@@ -1,0 +1,175 @@
+<%@ page import="com.agnitas.emm.common.FollowUpType" %>
+
+<c:set var="TYPE_FOLLOWUP_NON_OPENER" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey() %>"/>
+<c:set var="TYPE_FOLLOWUP_NON_CLICKER" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey() %>"/>
+<c:set var="TYPE_FOLLOWUP_OPENER" value="<%= FollowUpType.TYPE_FOLLOWUP_OPENER.getKey() %>"/>
+<c:set var="TYPE_FOLLOWUP_CLICKER" value="<%= FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey() %>"/>
+
+<%--@elvariable id="followupFor" type="java.lang.String"--%>
+<%--@elvariable id="followUpType" type="java.lang.String"--%>
+<%--@elvariable id="textEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="totalSendCount" type="java.lang.Integer"--%>
+<%--@elvariable id="totalSentCount" type="java.lang.Integer"--%>
+<%--@elvariable id="htmlEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="offlineHtmlEmailsCount" type="java.lang.Integer"--%>
+<%--@elvariable id="mediaTypesRecipientsCountMap" type="java.util.Map<java.lang.Integer, java.lang.Integer>"--%>
+
+<c:if test="${(totalSendCount ne null or totalSentCount ne null) and (isNormalMailing or (isFollowUpMailing and not empty followupFor))}">
+    <div class="col-12">
+        <label class="form-label"><mvc:message code="Recipients" /></label>
+
+        <c:choose>
+            <c:when test="${totalSendCount ne null}">
+                <c:choose>
+                    <c:when test="${isFollowUpMailing}">
+                        <div class="notification-simple notification-simple--lg">
+                            <span>
+                                <mvc:message code="RecipientsFollowupXplain1" />
+                                <strong>${totalSendCount}</strong>
+                                <mvc:message code="RecipientsFollowupXplain2" />
+                                <br/>
+                               <mvc:message code="mailing.RecipientsRecieved" />
+                                <strong>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_OPENER}">
+                                        <mvc:message code="noneOpeners" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_NON_CLICKER}">
+                                        <mvc:message code="noneClickers" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_OPENER}">
+                                        <mvc:message code="openers" />.
+                                    </c:if>
+                                    <c:if test="${followUpType eq TYPE_FOLLOWUP_CLICKER}">
+                                        <mvc:message code="clickers" />.
+                                    </c:if>
+                                </strong>
+                            </span>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="d-flex flex-column gap-2">
+                            <c:if test="${totalSendCount gt 0}">
+                                <div style="height: 30px">
+                                    <canvas id="recipients-count-chart" class="w-100 h-100 border rounded">
+                                        <%-- Loads by JS --%>
+                                    </canvas>
+                                </div>
+                            </c:if>
+
+                            <div id="recipients-count-table" class="table-wrapper" data-js-table="recipients-count-table-cfg">
+                                <script id="recipients-count-table-cfg" type="application/json">
+                                    {
+                                        "columns": [
+                                            {
+                                                "headerName": "<mvc:message code='Text'/>",
+                                                "headerComponentParams": {
+                                                    "innerHeaderComponent": "MustacheTemplateHeader",
+                                                    "innerHeaderComponentParams": {
+                                                        "templateName": "recipients-count-header-cell",
+                                                        "templateParams": {"color": "var(--text-count-color)"}
+                                                    }
+                                                },
+                                                "cellRenderer": "MustacheTemplateCellRender",
+                                                "cellRendererParams": {"templateName": "statistics-number-cell"},
+                                                "field": "textEmailsCount",
+                                                "type": "numberColumn",
+                                                "sortable": false
+                                            },
+                                            {
+                                                "headerName": "<mvc:message code='HTML'/>",
+                                                "headerComponentParams": {
+                                                    "innerHeaderComponent": "MustacheTemplateHeader",
+                                                    "innerHeaderComponentParams": {
+                                                       "templateName": "recipients-count-header-cell",
+                                                        "templateParams": {"color": "var(--html-count-color)"}
+                                                    }
+                                                },
+                                                "cellRenderer": "MustacheTemplateCellRender",
+                                                "cellRendererParams": {"templateName": "statistics-number-cell"},
+                                                "field": "htmlEmailsCount",
+                                                "type": "numberColumn",
+                                                "sortable": false
+                                            },
+                                            {
+                                                "headerName": "<mvc:message code='OfflineHTML'/>",
+                                                "headerComponentParams": {
+                                                    "innerHeaderComponent": "MustacheTemplateHeader",
+                                                    "innerHeaderComponentParams": {
+                                                       "templateName": "recipients-count-header-cell",
+                                                        "templateParams": {"color": "var(--offlineHtml-count-color)"}
+                                                    }
+                                                },
+                                                "cellRenderer": "MustacheTemplateCellRender",
+                                                "cellRendererParams": {"templateName": "statistics-number-cell"},
+                                                "field": "offlineHtmlEmailsCount",
+                                                "type": "numberColumn",
+                                                "sortable": false
+                                            },
+                                            <c:forEach var="mediaTypeRecipientCountEntry" items="${mediaTypesRecipientsCountMap}">
+                                                <c:if test="${mediaTypeRecipientCountEntry.value gt 0}">
+                                                    {
+                                                        "headerName": "<mvc:message code='mailing.MediaType.${mediaTypeRecipientCountEntry.key}'/>",
+                                                        "headerComponentParams": {
+                                                            "innerHeaderComponent": "MustacheTemplateHeader",
+                                                            "innerHeaderComponentParams": {
+                                                               "templateName": "recipients-count-header-cell",
+                                                                "templateParams": {"color": "var(--mediaTypes${mediaTypeRecipientCountEntry.key}-count-color)"}
+                                                            }
+                                                        },
+                                                        "cellRenderer": "MustacheTemplateCellRender",
+                                                        "cellRendererParams": {"templateName": "statistics-number-cell"},
+                                                        "field": "mediatype${mediaTypeRecipientCountEntry.key}Count",
+                                                        "type": "numberColumn",
+                                                        "sortable": false
+                                                    },
+                                                </c:if>
+                                            </c:forEach>
+                                            {
+                                                "headerName": "<mvc:message code='report.total'/>",
+                                                "cellRenderer": "MustacheTemplateCellRender",
+                                                "cellRendererParams": {"templateName": "statistics-number-cell"},
+                                                "field": "totalCount",
+                                                "type": "numberColumn",
+                                                "sortable": false
+                                            }
+                                        ],
+                                        "data": [
+                                            {
+                                                "textEmailsCount": ${textEmailsCount},
+                                                "htmlEmailsCount": ${htmlEmailsCount},
+                                                "offlineHtmlEmailsCount": ${offlineHtmlEmailsCount},
+                                                <c:forEach var="mediaTypeRecipientCountEntry" items="${mediaTypesRecipientsCountMap}">
+                                                    <c:if test="${mediaTypeRecipientCountEntry.value gt 0}">
+                                                        "mediatype${mediaTypeRecipientCountEntry.key}Count": ${mediaTypeRecipientCountEntry.value},
+                                                    </c:if>
+                                                </c:forEach>
+                                                "totalCount": ${totalSendCount}
+                                            }
+                                        ],
+                                        "options": {
+                                            "hideFooter": true,
+                                            "domLayout": "autoHeight"
+                                        }
+                                    }
+                                </script>
+                            </div>
+
+                            <template id="recipients-count-header-cell">
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="square-badge" style="background: {{= color }}"></span>
+                                    <span class="text-truncate">{{= text }}</span>
+                                </div>
+                            </template>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </c:when>
+            <c:otherwise>
+                <div class="input-group">
+                    <span class="input-group-text input-group-text--disabled fw-semibold"><mvc:message code="report.total"/></span>
+                    <input type="text" class="form-control commaSplitInput fw-semibold" value="${totalSentCount}" disabled>
+                </div>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</c:if>

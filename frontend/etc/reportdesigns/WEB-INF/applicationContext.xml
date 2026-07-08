@@ -36,12 +36,17 @@
     <bean id="ConfigService" class="com.agnitas.emm.core.commons.util.ConfigService">
    		<property name="permissionService" ref="permissionService" />
    		<property name="licenseDao" ref="licenseDao" />
+		<property name="licenseParser" ref="LicenseParser" />
    		<property name="configTableDao" ref="configTableDao" />
    		<property name="companyInfoDao" ref="companyInfoDao" />
    		<property name="serverMessageDao" ref="serverMessageDao" />
    		<property name="recipientFieldService" ref="RecipientFieldService" />
 		<property name="licenseSignatureVerifier" ref="licenseSignatureVerifier"/>
    	</bean>
+
+	<bean id="LicenseParser" class="com.agnitas.emm.core.commons.util.LicenseParser">
+		<property name="licenseDao" ref="licenseDao" />
+	</bean>
 
 	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.WorkflowDataParser" />
     

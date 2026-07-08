@@ -1,0 +1,37 @@
+<div id="stat-loader" class="tile tile--notification tile--processing">
+    <div class="tile-body">
+        <h1>
+            <i class="icon icon-sync icon-pulse"></i>
+            <mvc:message code="statistic.viewer.progressbar.prompt" />
+        </h1>
+    </div>
+</div>
+
+<div class="d-flex flex-column gap-3 invisible" data-controller="progress-stat" data-initializer="mailing-progress-stat">
+
+    <script id="config:mailing-progress-stat" type="application/json">
+        {
+            "mailingId": ${mailingId},
+            "from": ${emm:toJson(fromDate)},
+            "to": ${emm:toJson(toDate)},
+            "isHourScale": ${isHourScale},
+            "targetGroups": ${emm:toJson(targetlist)},
+            "selectedTargets": ${emm:toJson(mailingStatisticForm.selectedTargets)}
+        }
+    </script>
+
+    <div class="tile tile--xs flex-none h-auto">
+        <div class="tile-header">
+            <h2 class="tile-title text-truncate">
+                <mvc:message code="mailing.Delivery" />
+            </h2>
+        </div>
+        <div class="tile-body border-top">
+            <canvas id="delivery-progress-chart" style="height: 370px">
+                <%-- Loads by JS --%>
+            </canvas>
+        </div>
+    </div>
+</div>
+
+<%@include file="progress-stat-templates.jspf"%>

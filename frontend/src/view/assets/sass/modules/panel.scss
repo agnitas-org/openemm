@@ -16,6 +16,17 @@ The basic structure is as follows:
 </div>
 ```
 
+Panels can also include more complex structures, such as icons, text, and buttons within a single header:
+
+```htmlexample
+<div class="panel" style="background: orangered">
+    <h2 class="d-flex gap-1 align-items-center w-100">
+        <i class="icon icon-state-alert"></i>
+        <span class="flex-grow-1">Some message</span>
+        <button type="button" class="btn-close"></button>
+    </h2>
+</div>
+```
 */
 
 /*doc
@@ -81,6 +92,11 @@ Variation of panel to display some status. Contains an icon, title, and addition
   .panel--#{$state} {
     color: $white;
     background-color: $color;
+
+    .btn-close {
+      --bs-btn-close-white-filter: unset;
+      color: $white;
+    }
   }
 }
 

@@ -3985,7 +3985,7 @@ return true;
                     <list-property name="arguments">
                         <structure>
                             <property name="name">Expression</property>
-                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.multiple-devices.shortname", reportContext.getLocale())} else {""}</expression>
+                            <expression name="value" type="javascript">if (dataSetRow["categoryindex"] == RecipientsStatisticDataSet.CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX) {Packages.com.agnitas.messages.I18nString.getLocaleString("report.device.mixed", reportContext.getLocale())} else {""}</expression>
                         </structure>
                     </list-property>
                 </structure>

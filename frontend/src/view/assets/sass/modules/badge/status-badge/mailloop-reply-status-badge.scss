@@ -1,0 +1,34 @@
+
+/*doc
+---
+title: Mailloop reply status badges
+name: badges_17_mailloop_reply
+parent: badges_04_status
+---
+
+`.mailloop.reply.status` can be combined with the reply status, e.g. `.mailloop.reply.status.read, .mailloop.reply.status.unread`.
+
+```htmlexample
+<div class="d-flex gap-1">
+    <span class="status-badge mailloop.reply.status.unread"></span>
+    <span class="status-badge mailloop.reply.status.read"></span>
+</div>
+```
+*/
+
+$mailloop-reply-status-defs: (
+  unread: (background: $stat-light-red, icon: $fa-var-flag),
+  read:   (background: $badge-blue-var, icon: $fa-var-check)
+);
+
+@mixin mailloop-reply-status($state) {
+  $background: map-get(map-get($mailloop-reply-status-defs, $state), background);
+  $icon: map-get(map-get($mailloop-reply-status-defs, $state), icon);
+  @include status-badge($background, $icon);
+}
+
+@each $state, $values in $mailloop-reply-status-defs {
+  .mailloop\.reply\.status\.#{$state} {
+    @include mailloop-reply-status($state);
+  }
+}

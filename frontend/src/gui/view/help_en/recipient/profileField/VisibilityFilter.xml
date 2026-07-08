@@ -1,0 +1,14 @@
+<HelpBalloon>
+    <title><![CDATA[Visibility]]></title>
+    <content>
+        <![CDATA[
+        Please note that changing the default value &quot;visible&quot; affects the usability and display of the respective profile field on the EMM interface. However the field content will remain intact in the background with any chosen option.
+        <br><br>
+        <b>&quot;read only&quot;:</b> Profile field and content are displayed in the recipient profile and profile field overview. The field cannot be selected in import profiles, in the import wizard, in target group definitions or for exports.
+        <br><br>
+        <b>&quot;not visible&quot;:</b> The profile field and content are not displayed in the recipient profile and profile field overview. The field cannot be selected in import profiles, in the import wizard, for target group definitions or for exports.
+        <br><br>
+        For further details, please see the manual: Recipient - Maintain customer data &gt; Profile fields &gt; Extend recipient profile &gt; Create new fields.
+        ]]>
+    </content>
+</HelpBalloon>

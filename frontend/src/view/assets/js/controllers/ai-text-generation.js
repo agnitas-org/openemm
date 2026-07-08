@@ -83,24 +83,15 @@ AGN.Lib.Controller.new('ai-text-generation', function () {
     const $textArea = $scope.find('.js-wysiwyg');
 
     if ($('#tab-content-wysiwyg').is(":visible") || $(`[id^='tab-grid-wysiwyg${tabId}']`).is(":visible")) {
-      if (window.Jodit) {
-        const jodit = Jodit.instances[$textArea.attr('id')];
-        if (jodit.o.editHTMLDocumentMode) {
-          const doc = new DOMParser().parseFromString(jodit.value, "text/html");
-          doc.body.innerHTML = content;
+      const jodit = Jodit.instances[$textArea.attr('id')];
+      if (jodit.o.editHTMLDocumentMode) {
+        const doc = new DOMParser().parseFromString(jodit.value, "text/html");
+        doc.body.innerHTML = content;
 
-          content = `${jodit.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
-        }
-
-        jodit.value = content;
-      } else {
-        const editor = CKEDITOR.instances[$textArea.attr('id')];
-        if (editor.status === 'ready') {
-          editor.setData(content)
-        } else {
-          editor.on("instanceReady", event => event.editor.setData(content));
-        }
+        content = `${jodit.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
       }
+
+      jodit.value = content;
     }
     if ($('#contentEditor').is(":visible") || $(`[id^='tab-grid-html${tabId}']`).is(":visible")) {
       ace.edit(`${$textArea.attr('name')}Editor`).setValue(content);

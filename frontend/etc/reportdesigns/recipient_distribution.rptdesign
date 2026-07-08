@@ -229,8 +229,8 @@ currentrow = 0;
             <method name="fetch"><![CDATA[if (currentrow < valueList.size() ) {
     row["MONTH_NUMBER"] = valueList.get(currentrow).getMonth();
 	row["ACTIVE"] = valueList.get(currentrow).getActive();
-	row["UNSUBSCRIBED"] = valueList.get(currentrow).getBounced();
-	row["BOUNCED"] = valueList.get(currentrow).getUnsubscribed();
+	row["UNSUBSCRIBED"] = valueList.get(currentrow).getUnsubscribed();
+	row["BOUNCED"] = valueList.get(currentrow).getBounced();
 	row["WAIT_FOR_DOI"] = valueList.get(currentrow).getWaitForDoi();
 	row["BLACKLISTED"] = valueList.get(currentrow).getBlacklisted();
 	currentrow++;

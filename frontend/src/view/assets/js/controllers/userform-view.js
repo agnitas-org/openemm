@@ -86,10 +86,6 @@ AGN.Lib.Controller.new('userform-view', function () {
     });
 
     function isTemplateCodeChanged(editorId) {
-        if (!window.Jodit) {
-            CKEDITOR.instances[editorId]?.updateElement();
-        }
-
         return $('#userFormForm').dirty('isFieldDirty', $(`#${editorId}`));
     }
 

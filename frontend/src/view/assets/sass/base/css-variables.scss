@@ -52,6 +52,7 @@
   --badge-dark-cyan: #{$stat-dark-cyan};
   --badge-darkest-cyan: #{$stat-darkest-cyan};
   --badge-dark-red: #{$stat-dark-red};
+  --badge-light-red: #{$stat-light-red};
   --badge-dark-yellow: #{$stat-dark-yellow};
 
   --chart-light-blue-color: #{$stat-light-blue};
@@ -72,6 +73,7 @@
   --chart-darkest-violet-color: #{$stat-darkest-violet};
   --chart-yellow-color: #{$stat-yellow};
   --chart-dark-yellow-color: #{$stat-dark-yellow};
+  --chart-darkest-yellow-color: #{$stat-darkest-yellow};
   --chart-orange-color: #{$stat-orange};
   --chart-light-red-color: #{$stat-light-red};
   --chart-dark-red-color: #{$stat-dark-red};
@@ -80,8 +82,9 @@
   --chart-dark-grey-color: #{$stat-dark-grey};
   --chart-black-color: #{$stat-black};
 
+  --chart-axis-color: #{$light-grey};
   --chart-label-color: #{$dark-grey};
-  --chart-font-family: 'Poppins', sans-serif;
+  --chart-font-family: #{inspect($font-family)};
   --chart-font-size: 14px; // note: rem not works!
   --chart-half-doughnut-label-color: #{$dark-blue};
 

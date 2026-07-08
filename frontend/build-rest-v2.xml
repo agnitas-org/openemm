@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="all" name="EMM_REST_V2">
+	<import file="build.xml" />
+
+	<target name="all" depends="
+		parseApplicationVersion,
+		createPropertiesFiles,
+		replaceEmmPropertiesPlaceholders,
+		compile,
+		generate-rest-docs,
+		generate-openapi-json,
+		generate-swagger-ui,
+		deploy,
+		create_web.xml,
+		applicationContext
+	" description="Build everything.">
+		<echo message="Application built." />
+	</target>
+
+	<target name="docless" depends="
+		parseApplicationVersion,
+		createPropertiesFiles,
+		replaceEmmPropertiesPlaceholders,
+		compile,
+		deploy,
+		create_web.xml,
+		applicationContext
+	" description="Build everything.">
+		<echo message="Application built." />
+	</target>
+
+	<target name="checkForPropertiesFile" description="Check the existence of the propertyfile and import it. This overrides the base target">
+		<property file="build-rest-v2.properties" />
+		<available file="build-rest-v2.properties" property="isBuildPropertiesAvailable" />
+		<fail message="Missing build-rest-v2.properties">
+			<condition>
+				<not>
+					<isset property="isBuildPropertiesAvailable" />
+				</not>
+			</condition>
+		</fail>
+
+		<propertyregex property="deploydir" input="${deploydir}" regexp="~" replace="${user.home}" global="true" override="true" />
+
+		<if>
+			<not>
+				<isset property="javaVersion" />
+			</not>
+			<then>
+				<property name="javaVersion" value="21" />
+			</then>
+		</if>
+		<echo message="Using Java version ${javaVersion}" />
+
+		<!-- Fallback property "jdk" for property "JAVA_HOME"-->
+		<if>
+			<not>
+				<isset property="JAVA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="jdk" />
+					<then>
+						<echo message="Using fallback property 'jdk' for property 'JAVA_HOME'" />
+						<property name="JAVA_HOME" value="${jdk}" />
+					</then>
+					<else>
+						<fail message="Missing property 'JAVA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
+
+		<!-- Fallback property "container.home" for property "CATALINA_HOME"-->
+		<if>
+			<not>
+				<isset property="CATALINA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="container.home" />
+					<then>
+						<echo message="Using fallback property 'container.home' for property 'CATALINA_HOME'" />
+						<property name="CATALINA_HOME" value="${container.home}" />
+					</then>
+					<else>
+						<fail message="Missing property 'CATALINA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
+	</target>
+
+	<target name="setDeploytarget" depends="checkForPropertiesFile, checkDeployTargetRunstage">
+		<if>
+			<not>
+				<isset property="basecss" />
+			</not>
+			<then>
+				<property name="basecss" value="." />
+			</then>
+		</if>
+
+		<property name="emmSourcePath" value="src" />
+		<property name="emmEtcPath" value="etc" />
+		<property name="emmLibsPath" value="libs" />
+
+		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
+			<condition>
+				<not>
+					<contains string="${deploytarget}" substring="rest-v2" casesensitive="false" />
+				</not>
+			</condition>
+		</fail>
+		<property name="applicationtype" value="REST-V2" />
+	</target>
+
+	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create properties">
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<copy file="${basecss}/build/templates/emm.properties" tofile="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="ApplicationType=${applicationtype}${line.separator}" />
+		<tstamp>
+			<format property="current_timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
+		</tstamp>
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildTime=${current_timestamp}${line.separator}" />
+		<exec executable="hostname" outputproperty="hostname"/>
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildHost=${hostname}${line.separator}" />
+		<property environment="env" />
+		<condition property="buildUserRaw" value="${env.ORIGINAL_USER}">
+			<isset property="env.ORIGINAL_USER" />
+		</condition>
+		<condition property="buildUserRaw" value="${env.USERNAME}">
+			<and>
+				<not>
+					<isset property="buildUserRaw" />
+				</not>
+				<isset property="env.USERNAME" />
+			</and>
+		</condition>
+		<condition property="buildUserRaw" value="Unknown">
+			<not>
+				<isset property="buildUserRaw"/>
+			</not>
+		</condition>
+		<propertyregex property="buildUser" input="${buildUserRaw}" regexp="([^@]*).*" select="\1" casesensitive="false" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildUser=${buildUser}${line.separator}" />
+
+		<copy file="${basecss}/build/templates/log4j2-rest.xml" tofile="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" overwrite="true" />
+	</target>
+
+	<target name="create_web.xml" depends="deploy">
+		<echo message="rewriting web.xml for rest-v2" />
+
+		<delete file="${deploydir}${appname}/WEB-INF/web.xml" />
+
+		<xmltask source="${basecss}/build/templates/web.rest-v2.xml" dest="${deploydir}${appname}/WEB-INF/web.xml" preserveType="true">
+			<replace path="/*[local-name()='web-app']/*[local-name()='display-name']/text()">EMM Rest V2</replace>
+			<insert path="/*[local-name()='web-app']/*[local-name()='servlet'][1]" position="after" buffer="servletBuffer" />
+			<insert path="/*[local-name()='web-app']/*[local-name()='filter'][1]" position="before" buffer="filterBuffer" />
+			<insert path="/*[local-name()='web-app']/*[local-name()='filter'][1]" position="after" buffer="filterMappingBuffer" />
+			<replace path="/*[local-name()='web-app']/*[local-name()='welcome-file-list']/*[local-name()='welcome-file']/text()">/WEB-INF/jsp/page-template/empty-welcome.jsp</replace>
+			<replace path="/*[local-name()='web-app']/*[local-name()='context-param'][*[local-name()='param-name']/text()='contextConfigLocation']/*[local-name()='param-value']/text()">/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-commons-basic.xml /WEB-INF/applicationContext-commons-extended.xml /WEB-INF/applicationContext-dao-basic.xml /WEB-INF/applicationContext-dao-extended.xml /WEB-INF/applicationContext-service-basic.xml /WEB-INF/applicationContext-service-extended.xml /WEB-INF/dataAccessContext.xml</replace>
+		</xmltask>
+
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
+		<echo message="rewriting web.xml done" />
+	</target>
+
+	<target name="applicationContext" depends="deploy">
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-commons-basic.xml" />
+		<xmltask source="${emmSourcePath}/core/view/WEB-INF/applicationContext-commons-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-commons-basic.xml" preserveType="true">
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='ColumnMapping']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='EcsRecipientsProvider']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='ImportProfile']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='Optimization']" />
+		</xmltask>
+
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/applicationContext-commons-basic.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" />
+		<xmltask source="${emmSourcePath}/core/view/WEB-INF/applicationContext-service-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" preserveType="true">
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='DemoAccountService']" />
+			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='DemoAccountServlet']" />
+		</xmltask>
+		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-service-extended.xml" />
+		<xmltask source="${emmSourcePath}/core/view/WEB-INF/applicationContext-service-extended.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-extended.xml" preserveType="true" />
+
+		<!-- Remove unwanted namespace attributes -->
+		<replace file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" value="">
+			<replacetoken> xmlns=""</replacetoken>
+		</replace>
+
+		<echo message="...applicationContext.xml done" />
+	</target>
+
+	<target name="compile-rest-v2-tests" depends="compile">
+		<property name="rest.v2.test.classes" value="docs/rest/v2/temp-test-classes" />
+
+		<echo message="Cleaning up old test classes and snippets..." />
+		<delete dir="${rest.v2.test.classes}" />
+		<delete dir="docs/rest/v2/generated-snippets" />
+		<delete dir="docs/rest/v2/openapi" />
+
+		<mkdir dir="${rest.v2.test.classes}" />
+
+		<echo message="Compiling REST v2 tests for documentation generation..." />
+		<javac debug="true" nowarn="true" destdir="${rest.v2.test.classes}" executable="${JAVA_HOME}/bin/javac"
+			   source="${javaVersion}" target="${javaVersion}" fork="yes" includeantruntime="false" encoding="UTF-8">
+
+			<src path="${emmSourcePath}/rest-v2/java" />
+
+			<src path="${emmSourcePath}/core/test" />
+			<src path="${emmSourcePath}/rest-v2/test" />
+
+			<classpath>
+				<path refid="build.core.classpath" />
+				<path refid="build.rest.classpath" />
+				<path refid="build.containerPath" />
+				<pathelement location="${deploydir}${appname}/WEB-INF/classes" />
+				<fileset dir="lib_testing"><include name="**/*.jar"/></fileset>
+				<pathelement location="${deploydir}${appname}/WEB-INF/lib/emm-core.jar"/>
+			</classpath>
+			<compilerarg line="-processorpath lib_tools/mapstruct-processor-1.6.3.jar"/>
+		</javac>
+	</target>
+
+	<target name="generate-rest-docs" depends="compile-rest-v2-tests">
+		<echo message="Executing REST v2 tests to generate OpenAPI specs..." />
+		<mkdir dir="docs/rest/v2/test-reports" />
+
+		<junitlauncher printsummary="true" haltonfailure="true">
+			<classpath>
+				<pathelement location="${deploydir}${appname}/WEB-INF/classes" />
+				<pathelement location="docs/rest/v2/temp-test-classes" />
+				<pathelement location="${deploydir}${appname}/WEB-INF/lib/emm-core.jar"/>
+
+				<pathelement location="test" />
+
+				<path refid="build.core.classpath" />
+				<path refid="build.rest.classpath" />
+
+				<fileset dir="${CATALINA_HOME}/lib">
+					<include name="servlet-api.jar" />
+					<include name="jsp-api.jar" />
+					<include name="el-api.jar" />
+					<include name="*.jar" />
+				</fileset>
+
+				<fileset dir="lib_testing"><include name="**/*.jar"/></fileset>
+			</classpath>
+
+			<testclasses outputdir="docs/rest/v2/test-reports">
+				<fileset dir="docs/rest/v2/temp-test-classes">
+					<include name="com/agnitas/emm/restful/v2/**/*ControllerTest.class" />
+				</fileset>
+
+				<listener type="legacy-xml" sendSysErr="true" sendSysOut="true"/>
+
+				<fork>
+					<jvmarg value="-Xmx1024m" />
+					<jvmarg value="-Dfile.encoding=UTF-8" />
+				</fork>
+			</testclasses>
+		</junitlauncher>
+		<echo message="OpenAPI documentation generated successfully." />
+
+		<delete dir="docs/rest/v2/temp-test-classes" />
+	</target>
+
+	<target name="generate-openapi-json" depends="generate-rest-docs">
+
+		<echo message="Running Gradle REST Docs API Spec generation..." />
+		<exec executable="./gradlew" dir="docs/rest/v2" failonerror="true">
+			<arg value="postProcessOpenApi3" />
+			<arg value="--no-daemon" />
+		</exec>
+
+		<echo message="Copying generated openapi3.json to deployment directory..." />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/docs" />
+		<copy file="docs/rest/v2/openapi/openapi3.json"
+			  tofile="${deploydir}${appname}/WEB-INF/docs/openapi3.json"
+			  overwrite="true" />
+	</target>
+
+	<target name="generate-swagger-ui" depends="generate-openapi-json">
+		<echo message="Copying Swagger UI assets to WEB-INF..." />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes/static/swagger-ui" />
+		<copy todir="${deploydir}${appname}/WEB-INF/classes/static/swagger-ui" overwrite="true">
+			<fileset dir="docs/rest/v2/swagger-ui" />
+		</copy>
+	</target>
+
+	<target name="deploy" depends="compile">
+		<copy todir="${deploydir}${appname}/WEB-INF">
+			<fileset dir="${emmSourcePath}/view/WEB-INF">
+				<include name="*.xml" />
+				<include name="*.tld" />
+				<include name="*.wsdd" />
+				<exclude name="*tiles-defs*" />
+				<exclude name="*.tld" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF">
+			<fileset dir="${emmSourcePath}/core/view/WEB-INF">
+				<include name="*.xml" />
+				<include name="*.tld" />
+				<include name="*.wsdd" />
+				<exclude name="*tiles-defs*" />
+				<exclude name="*.tld" />
+			</fileset>
+		</copy>
+
+		<delete dir="${deploydir}${appname}/WEB-INF/conf" />
+
+		<copy todir="${deploydir}${appname}/WEB-INF/classes">
+			<fileset dir="${emmSourcePath}/view/WEB-INF/conf">
+				<exclude name="**/*.default" />
+				<exclude name="**/*~" />
+				<exclude name="**/*.tmp" />
+				<exclude name="**/.nbattrs" />
+				<exclude name="**/*test*" />
+				<exclude name="**/*cactus*" />
+				<exclude name="**/*web-cactus.xml" />
+				<exclude name="emm.properties" />
+				<exclude name="log4j2.xml" />
+				<exclude name="**/messages*.properties" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmSourcePath}/rest-v2/resources" />
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/lib" overwrite="true">
+			<fileset dir="${emmLibsPath}/core" />
+			<fileset dir="${emmLibsPath}/rest" />
+		</copy>
+
+		<!--
+		Added this copy instruction to get merged application context working.
+		This could be the wrong validation file, but it doesn't matter.
+		This file will only be used by the webservice classes and these classes
+		are currently not used in EMM.
+		-->
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmEtcPath}/validation">
+				<include name="validation-constraints-basic.xml" />
+				<include name="validator-rules.xml" />
+				<include name="validator-messages.properties" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploydir}${appname}/WEB-INF/classes" overwrite="true">
+			<fileset dir="${emmSourcePath}/view/WEB-INF/conf" />
+		</copy>
+
+		<copy tofile="${deploydir}${appname}/robots.txt" file="${emmSourcePath}/view/robots.txt" />
+	</target>
+
+	<target name="setupBuildPaths" depends="EMM.setupBuildPaths">
+		<path id="build.rest.classpath">
+			<fileset dir="${basecss}/libs/rest">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+	</target>
+
+	<target name="compile" depends="setupBuildPaths, createPropertiesFiles, compile-core" description="Build EMM">
+		<!-- Both srcdir and destdir should be package roots. -->
+		<!-- They could be different of course; in that case NetBeans can also be set -->
+		<!-- up to compile to a different filesystem in the same way; see Compiler Types: -->
+		<echo message="Java Home: ${java.home}" />
+		<echo message="JAVA_HOME: ${JAVA_HOME}" />
+		<echo message="Container Home: ${CATALINA_HOME}" />
+		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
+
+		<javac debug="true" nowarn="true" deprecation="false" destdir="${deploydir}${appname}/WEB-INF/classes" executable="${JAVA_HOME}/bin/javac" fork="yes" source="${javaVersion}" target="${javaVersion}" includeantruntime="false" encoding="UTF-8">
+			<src path="${emmSourcePath}/rest-v2/java" />
+
+			<classpath>
+				<path refid="build.core.classpath"/>
+				<path refid="build.rest.classpath"/>
+				<path refid="build.containerPath"/>
+				<pathelement location="${deploydir}${appname}/WEB-INF/lib/emm-core.jar"/>
+			</classpath>
+
+			<compilerarg line="-processorpath ${basecss}/lib_tools/mapstruct-processor-1.6.3.jar"/>
+			<compilerarg line="-s ${deploydir}${appname}/WEB-INF/classes"/>
+
+			<!-- To exclude some files: -->
+			<compilerarg line="-Xlint:-unchecked" />
+			<compilerarg value="-parameters"/>
+		</javac>
+	</target>
+
+	<target name="clean" depends="checkForPropertiesFile" description="Clean all build products.">
+		<delete dir="${deploydir}${appname}" />
+		<echo message="deleted ${deploydir}${appname}" />
+	</target>
+</project>

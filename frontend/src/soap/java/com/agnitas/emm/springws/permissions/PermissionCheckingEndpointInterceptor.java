@@ -1,0 +1,105 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+
+package com.agnitas.emm.springws.permissions;
+
+import java.util.Locale;
+import java.util.Objects;
+
+import com.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
+import com.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import com.agnitas.emm.springws.util.SecurityContextAccess;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ws.context.MessageContext;
+import org.springframework.ws.soap.SoapBody;
+import org.springframework.ws.soap.SoapHeaderElement;
+import org.springframework.ws.soap.SoapMessage;
+import org.springframework.ws.soap.server.SoapEndpointInterceptor;
+
+import com.agnitas.emm.springws.common.EndpointClassUtil;
+
+/**
+ * Interceptor checking webservice permissions.
+ * 
+ * The required permission for an endpoint is derived from the simple name of the endpoint class by
+ * cutting the <i>Endpoint</i> suffix.
+ * Therefore the endpoint class must follow the form </i>&lt;endpoint-name>Endpoint</i>.
+ * If the endpoint class name does not satisfy this pattern, the simple endpoint class name (class name without
+ * package) is used.
+ */
+public final class PermissionCheckingEndpointInterceptor implements SoapEndpointInterceptor {
+	
+	private static final Logger LOGGER = LogManager.getLogger(PermissionCheckingEndpointInterceptor.class);
+
+	/** Accessor for Spring WS security context. */
+	private SecurityContextAccess securityContextAccess;
+	
+	@Autowired
+	public PermissionCheckingEndpointInterceptor(final SecurityContextAccess securityContextAccess) {
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+	}
+
+	@Override
+	public void afterCompletion(MessageContext messageContext, Object endpoint, Exception arg2) {
+		// Nothing to do
+	}
+
+	@Override
+	public boolean handleFault(MessageContext messageContext, Object endpoint) {
+		return true;
+	}
+
+	@Override
+	public boolean handleRequest(MessageContext messageContext, Object endpoint) {
+		final String endpointName = permissionFromEndpointInstance(endpoint);
+	
+		if (this.securityContextAccess.isAuthorityGranted(new EndpointAuthority(endpointName)) || this.securityContextAccess.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
+			return true;
+		} else {
+            final SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();
+            response.addClientOrSenderFault(String.format("Access to endpoint '%s' denied", endpointName), Locale.ENGLISH);
+			
+			return false;
+		}
+	}
+	
+	private static final String permissionFromEndpointInstance(final Object endpoint) {
+		return permissionFromEndpointClass(EndpointClassUtil.trueEndpointClass(endpoint));
+	}
+	
+	private static final String permissionFromEndpointClass(final Class<?> clazz) {
+		try {
+			final String permission = EndpointClassUtil.endpointNameFromClass(clazz);
+			
+			LOGGER.info("Permission for endpoint class '{}' is '{}'", clazz.getCanonicalName(), permission);
+
+			return permission;
+		} catch(final IllegalArgumentException e) {
+			LOGGER.error("Could not derive permission name from endpoint class: {}", clazz.getCanonicalName(), e);
+			
+			// Fallback to simple class name
+			return clazz.getSimpleName();
+		}
+	}
+
+	@Override
+	public boolean handleResponse(MessageContext messageContext, Object endpoint) {
+		return true;
+	}
+
+	@Override
+	public final boolean understands(final SoapHeaderElement header) {
+		return true;
+	}
+
+}

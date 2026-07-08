@@ -24,7 +24,6 @@ AGN.Lib.Controller.new('target-group-stat', function () {
         datasets: [{
           data: data.map(d => d.recipientsCount),
           backgroundColor: colors,
-          categoryPercentage: 0.9,
           minBarLength: 2
         }]
       },
@@ -45,16 +44,6 @@ AGN.Lib.Controller.new('target-group-stat', function () {
           },
           y: {
             display: false
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: -5 // make labels closer to the bar
           }
         }
       }

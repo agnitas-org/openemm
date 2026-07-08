@@ -4,6 +4,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
     Confirm = AGN.Lib.Confirm,
     Page = AGN.Lib.Page,
     Template = AGN.Lib.Template,
+    ChartUtils = AGN.Lib.ChartUtils,
     Messages = AGN.Lib.Messages;
 
   const RECIPIENT_TEST_RUN_OPTION = 'RECIPIENT';
@@ -12,7 +13,8 @@ AGN.Lib.Controller.new('mailing-send', function () {
 
   let $testRecipientsTable;
   let approvalOptions;
-  let config;
+  let testSendConfig;
+  let includeImagesInSize;
 
   const Helpers = {
     hideGreenMarks: function () {
@@ -32,24 +34,36 @@ AGN.Lib.Controller.new('mailing-send', function () {
     drawTestRecipientsTable(this.config.testRecipients);
 
     approvalOptions = JSON.parse(this.config ? this.config.approvalOptions : '[]');
+    testSendConfig = this.config;
     controlTestRunOptionsDisplaying();
-    $('#get-approval-switch').on('change', function () {
-      controlTestRunOptionsDisplaying();
-    });
+    $('#get-approval-switch').on('change', controlTestRunOptionsDisplaying);
     controlTestRunRecipientsDisplaying();
     $('#test-run-options').on('change', function () {
       controlTestRunRecipientsDisplaying();
     });
   });
-
   function controlTestRunOptionsDisplaying() {
     const filterOptions = $('#get-approval-switch').prop('checked');
+    const showOnlyMailinglistApproval = isMailinglistEmailsUsedForApproval();
+
+    $('#mailinglist-approval-emails').toggle(showOnlyMailinglistApproval);
+    $('#save-as-target-switch, #test-recipients-table, #test-run-options, #testRunOptionSelect')
+      .parent()
+      .toggle(!showOnlyMailinglistApproval);
+
     const $optionsSelect = $("#test-run-options");
     $optionsSelect.find("option:not([value='" + approvalOptions.join("']):not([value='") + "']")
       .attr('disabled', filterOptions);
-    if (filterOptions && approvalOptions.indexOf($optionsSelect.val()) === -1) {
+    if (filterOptions && !approvalOptions.includes($optionsSelect.val())) {
       $optionsSelect.val($optionsSelect.find("option:not(:disabled):first").val()).trigger('change')
     }
+  }
+
+  function isMailinglistEmailsUsedForApproval() {
+    const $approvalSwitch = $('#get-approval-switch');
+    return $approvalSwitch.is(':visible')
+      && $approvalSwitch.prop('checked')
+      && testSendConfig.mailinglistApprovalEmails.length > 0;
   }
 
   function controlTestRunRecipientsDisplaying() {
@@ -73,6 +87,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
 
   this.addDomInitializer("send-mailing", function () {
     config = this.config;
+    includeImagesInSize = $('#includeImagesInSize').is(':checked');
     const decimalSeparator = window.adminLocale === 'en-US' ? ',' : '.';
 
     _.each($('.commaSplitInput'), e => {
@@ -83,6 +98,8 @@ AGN.Lib.Controller.new('mailing-send', function () {
     });
 
     clearMaxRecipientsValueIfZero();
+    updateDeliverySize();
+    displayRecipientsCount();
 
     if (config.approximateMaxDeliverySize > config.errorSizeThreshold) {
       Messages.warnText(Template.text('delivery-size-error-msg'));
@@ -90,7 +107,13 @@ AGN.Lib.Controller.new('mailing-send', function () {
   });
 
   this.addAction({click: 'check-links'}, function () {
-    $.post(config.urls.CHECK_LINKS).done(resp => AGN.Lib.RenderMessages($(resp)));
+    $.post(AGN.url(`/mailing/${config.mailingId}/trackablelink/check.action`))
+      .done(resp => AGN.Lib.RenderMessages($(resp)));
+  });
+
+  this.addAction({change: 'update-mailing-size'}, function() {
+    includeImagesInSize = this.el.is(':checked');
+    updateDeliverySize();
   });
 
   this.addAction({click: 'send-world'}, function () {
@@ -115,6 +138,257 @@ AGN.Lib.Controller.new('mailing-send', function () {
 
     formSubmissionCallback();
   });
+
+  function updateDeliverySize() {
+    const sizes = getMailingSize();
+    const colors = getMailingSizeColors(sizes);
+
+    drawSizeTable(colors, sizes);
+    drawDeliverySizeChart(colors, sizes);
+  }
+
+  function drawSizeTable(colors, sizes) {
+    const $table = $('#mailing-size-table');
+    if (!$table.exists()) {
+      return;
+    }
+
+    const tableConfig = $('#mailing-size-table-cfg').json();
+
+    $table.get(0).style.setProperty('--attachments-color', colors.attachments);
+    $table.get(0).style.setProperty('--other-html-color', colors.otherHtml);
+
+    const table = AGN.Lib.Table.get($table);
+    const tableData = [{
+      attachmentsSize: sizes.attachments,
+      otherHtmlSize: sizes.otherHtml
+    }];
+
+    if (table) {
+      table.setData(tableData);
+    } else {
+      new AGN.Lib.Table($table, tableConfig.columns, tableData, tableConfig.options);
+    }
+  }
+
+  function drawDeliverySizeChart(colors, sizes) {
+    const $chart = $('#delivery-size-chart');
+    if (!$chart.exists()) {
+      return;
+    }
+
+    const chartInstance = Object.values(Chart.instances)
+      .find(chart => chart.canvas === $chart[0]);
+
+    if (chartInstance && !config.isOfflineHtmlFormat) {
+      return;
+    }
+
+    chartInstance?.destroy();
+
+    const barThickness = $chart.outerHeight();
+
+    new Chart($chart[0].getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: [''],
+        datasets: [
+          {
+            label: t('mailing.default.attachments'),
+            data: [sizes.attachments],
+            backgroundColor: colors.attachments,
+            barThickness
+          },
+          {
+            label: t('mailing.default.otherHtml'),
+            data: [sizes.otherHtml],
+            backgroundColor: colors.otherHtml,
+            barThickness
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        layout: {
+          padding: 0
+        },
+        scales: {
+          x: {
+            display: false,
+            stacked: true,
+            max: Math.max(sizes.attachments + sizes.otherHtml, config.errorSizeThreshold),
+          },
+          y: {
+            stacked: true,
+            display: false
+          }
+        },
+        plugins: {
+          datalabels: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              title(items) {
+                return items[0].dataset.label
+              },
+              label(context) {
+                const sizeKb = context.raw / 1024;
+                return `${AGN.formatNumber(sizeKb)} kB`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const getMailingSizeColors = (sizes) => {
+    const totalSize = sizes.attachments + sizes.otherHtml;
+
+    if (totalSize >= config.errorSizeThreshold) {
+      return {
+        attachments: ChartUtils.getLightRedColor(),
+        otherHtml: ChartUtils.getDarkRedColor()
+      };
+    }
+
+    if (totalSize >= config.warningSizeThreshold) {
+      return {
+        attachments: ChartUtils.getDarkYellowColor(),
+        otherHtml: ChartUtils.getDarkestYellowColor()
+      };
+    }
+
+    return {
+      attachments: ChartUtils.getGreenColor(),
+      otherHtml: ChartUtils.getDarkGreenColor()
+    };
+  }
+
+  const getMailingSize = () => {
+    let otherHtmlSize;
+    if (config.isOfflineHtmlFormat && includeImagesInSize) {
+      otherHtmlSize = config.approximateMaxDeliverySize - config.attachmentsSize;
+    } else {
+      otherHtmlSize = config.contentSize;
+    }
+
+    return { attachments: config.attachmentsSize, otherHtml: otherHtmlSize }
+  }
+
+  function displayRecipientsCount() {
+    const colors = {
+      text: ChartUtils.getLightBlueColor(),
+      html: ChartUtils.getBlueColor(),
+      offlineHtml: ChartUtils.getDarkBlueColor(),
+      mediaTypes: {
+        2: ChartUtils.getCyanColor(),
+        4: ChartUtils.getDarkestBlueColor(),
+        5: ChartUtils.getDarkestCyanColor()
+      }
+    }
+
+    assignColorsToRecipientsCountTable(colors);
+    drawRecipientsCountChart(colors);
+  }
+
+  function assignColorsToRecipientsCountTable(colors) {
+    const $table = $('#recipients-count-table');
+    if (!$table.exists()) {
+      return;
+    }
+
+    const el = $table.get(0);
+
+    Object.entries(colors).forEach(([key, value]) => {
+      if (typeof value === 'object') {
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          el.style.setProperty(`--${key}${subKey}-count-color`, subValue);
+        });
+      } else {
+        el.style.setProperty(`--${key}-count-color`, value);
+      }
+    });
+  }
+
+  function drawRecipientsCountChart(colors) {
+    const $chart = $('#recipients-count-chart');
+    if (!$chart.exists()) {
+      return;
+    }
+
+    const barThickness = $chart.outerHeight();
+
+    const chartConfig = {
+      type: 'bar',
+      data: {
+        labels: [''],
+        datasets: [
+          {
+            label: t('mailing.default.mailFormat.text'),
+            data: [config.textEmailsCount],
+            backgroundColor: colors.text,
+            barThickness
+          },
+          {
+            label: t('mailing.default.mailFormat.html'),
+            data: [config.htmlEmailsCount],
+            backgroundColor: colors.html,
+            barThickness
+          },
+          {
+            label: t('mailing.default.mailFormat.offlineHtml'),
+            data: [config.offlineHtmlEmailsCount],
+            backgroundColor: colors.offlineHtml,
+            barThickness
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        layout: {
+          padding: 0
+        },
+        scales: {
+          x: {
+            display: false,
+            stacked: true,
+            max: config.totalSendCount,
+          },
+          y: {
+            stacked: true,
+            display: false
+          }
+        },
+        plugins: {
+          datalabels: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              title(items) {
+                return items[0].dataset.label
+              }
+            }
+          }
+        }
+      }
+    };
+
+    Object.keys(config.mediaTypesRecipientsCountMap)
+      .filter(code => code > 0)
+      .forEach(code => {
+        chartConfig.data.datasets.push({
+          label: t(`mailing.default.mediaType.${code}`),
+          data: [config.mediaTypesRecipientsCountMap[code]],
+          backgroundColor: colors.mediaTypes[code],
+          barThickness
+        });
+      });
+
+    new Chart($chart[0].getContext('2d'), chartConfig);
+  }
 
   const drawTestRecipientsTable = function (recipients) {
     if (!recipients.length) {
@@ -239,7 +513,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
   }
 
   this.addAction({'click': 'start-delivery'}, function () {
-    if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION) {
+    if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION && !isMailinglistEmailsUsedForApproval()) {
       const existsAnyEmailAddress = $('input[name="mailingTestRecipients"]')
         .get()
         .some(input => $(input).val().trim());
@@ -339,7 +613,7 @@ AGN.Lib.Controller.new('mailing-send', function () {
   function saveTargetName() {
     $.ajax({
       type: 'POST',
-      url: AGN.url("/mailing/send/test/saveTarget.action"),
+      url: AGN.url(`/mailing/send/${config.mailingId}/test/saveTarget.action`),
       data: {
         'mailingTestRecipients': collectTestRunEmails(),
         'targetName': $('input[name="targetName"]').val().trim()

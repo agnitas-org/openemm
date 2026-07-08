@@ -1,0 +1,67 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.dao;
+
+import java.util.List;
+
+import com.agnitas.beans.Mailloop;
+import com.agnitas.beans.MailloopEntry;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
+
+public interface MailloopDao {
+
+    /**
+     * Deletes mailloop.
+     *
+     * @param mailloopId
+     *            Id of the mailloop
+     * @param companyId
+     *              Id of the company
+     * @return true==success, false==error
+     */
+    boolean deleteMailloop(int mailloopId, int companyId);
+
+    /**
+     * Loads mailloop by mailloop id and company id.
+     *
+     * @param mailloopId
+     *              Id of the mailloop
+     * @param companyId
+     *              Id of the company
+     * @return Mailloop bean object or null
+     */
+    Mailloop getMailloop(int mailloopId, int companyId);
+
+    /**
+     * Saves mailloop.
+     *
+     * @param loop
+     *          Mailloop bean object
+     * @return Saved mailloop id.
+     */
+    int saveMailloop(Mailloop loop);
+    
+    boolean deleteMailloopByCompany(int companyId);
+
+    PaginatedList<BounceFilterDto> getPaginatedMailloopList(BounceFilterListForm filter);
+
+    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
+    
+    List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId);
+    
+    boolean isAddressInUse(String filterAddress);
+
+    boolean deleteExpiredLogs(int daysToHold, int companyId);
+
+}
+

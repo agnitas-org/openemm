@@ -1,15 +1,11 @@
-(function () {
-
-  let config;
+(() => {
 
   AGN.Lib.Validator.new('import-profile-mappings/form', {
     valid: function ($e, options) {
       return !this.errors($e, options).length;
     },
     errors: function ($e, options) {
-      const errors = [];
-      validateDefaultValues(errors, options.$mappingsBlock);
-      return errors;
+      return validateDefaultValues(options.columns, options.doNotImportValue, options.$mappingsBlock);
     }
   });
 
@@ -34,24 +30,31 @@
     return value;
   }
 
-  function validateDefValField($defValField, errors) {
+  function validateDefValField($defValField, columns, doNotImportValue, errors) {
     const value = getDefValFieldValue($defValField);
-    if (value && getColNameByDefValField($defValField) !== config.doNotImportValue) {
-      const columnInfo = getValFieldColumnInfo($defValField);
-      const dataType = columnInfo.simpleDataType.toLowerCase();
+    if (!value) {
+      return;
+    }
 
-      if (columnInfo.columnName === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
-        errors.push({field: $defValField, msg: t('import.columnMapping.error.invalidEmail')});
-      } else if (dataType === 'date' || dataType === 'datetime') {
-        if (isDbDateFunction($defValField.val().trim())) {
-          return;
-        }
-        validateDateOrDateTimeValue(dataType, value, errors, $defValField);
-      } else if (!isValidValueForDataType(dataType, value)) {
-        errors.push({field: $defValField, msg: t('import.columnMapping.error.type', dataType)});
-      } else if (!isValidDataLength(columnInfo, value)) {
-        errors.push({field: $defValField, msg: t('import.columnMapping.error.length', getMaxColumnLength(columnInfo))});
+    const columnName = getColNameByDefValField($defValField);
+    if (columnName === doNotImportValue) {
+      return;
+    }
+
+    const columnInfo = columns[columnName];
+    const dataType = columnInfo.simpleDataType.toLowerCase();
+
+    if (columnName === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
+      errors.push({field: $defValField, msg: t('import.columnMapping.error.invalidEmail')});
+    } else if (dataType === 'date' || dataType === 'datetime') {
+      if (isDbDateFunction($defValField.val().trim())) {
+        return;
       }
+      validateDateOrDateTimeValue(dataType, value, errors, $defValField);
+    } else if (!isValidValueForDataType(dataType, value)) {
+      errors.push({field: $defValField, msg: t('import.columnMapping.error.type', dataType)});
+    } else if (!isValidDataLength(columnInfo, value)) {
+      errors.push({field: $defValField, msg: t('import.columnMapping.error.length', getMaxColumnLength(columnInfo))});
     }
   }
 
@@ -65,18 +68,18 @@
     }
   }
 
-  function validateDefaultValues(errors, $mappingsBlock) {
+  function validateDefaultValues(columns, doNotImportValue, $mappingsBlock) {
+    const errors = [];
+
     _.each($mappingsBlock.find('[data-mapping-defaultValue]'), defValueField => {
       const $defValueField = $(defValueField);
       const $row = $defValueField.closest('[data-mapping-row]');
-      if (!$row.is('[data-mapping-new]') || (getColNameByDefValField($defValueField) !== config.doNotImportValue && !isCurrentTimeChecked())) {
-        validateDefValField($defValueField, errors);
+      if (!$row.is('[data-mapping-new]') || (getColNameByDefValField($defValueField) !== doNotImportValue && !isCurrentTimeChecked())) {
+        validateDefValField($defValueField, columns, doNotImportValue, errors);
       }
     });
-  }
 
-  function getValFieldColumnInfo($defValField) {
-    return config.columns[getColNameByDefValField($defValField)];
+    return errors;
   }
 
   function getColNameByDefValField($defValField) {
@@ -126,7 +129,4 @@
     return currentTimeCheckbox.exists() && currentTimeCheckbox.is(":checked");
   }
 
-  AGN.Lib.DomInitializer.new('import-profile-mappings-validator', function () {
-    config = this.config;
-  });
 })();

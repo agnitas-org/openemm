@@ -1,0 +1,61 @@
+<div id="stat-loader" class="tile tile--notification tile--processing">
+    <div class="tile-body">
+        <h1>
+            <i class="icon icon-sync icon-pulse"></i>
+            <mvc:message code="statistic.viewer.progressbar.prompt" />
+        </h1>
+    </div>
+</div>
+
+<div class="d-flex flex-column gap-3 invisible" data-controller="mailing-end-device-stat" data-initializer="mailing-end-device-stat">
+    <script id="config:mailing-end-device-stat" type="application/json">
+        {
+            "mailingId": ${mailingId},
+            "targetGroups": ${emm:toJson(targetlist)},
+            "selectedTargets": ${emm:toJson(mailingStatisticForm.selectedTargets)}
+        }
+    </script>
+
+    <%-- Loads by JS --%>
+</div>
+
+<template id="end-device-metric">
+    <div class="d-flex gap-3">
+        <div class="tile tile--xs" style="flex: 600">
+            <div class="tile-header">
+                <h2 class="tile-title text-truncate">{{= metricLabel }}</h2>
+            </div>
+            <div class="tile-body flex-center border-top">
+                <div class="w-100">
+                    <canvas id="{{= metricName }}-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="{{= metricName }}-table-container" class="d-flex flex-column gap-3" style="flex: 1195">
+            <%-- Loads by JS --%>
+        </div>
+    </div>
+</template>
+
+<template id="no-results-found">
+    <div class="notification-simple">
+        <i class="icon icon-info-circle"></i>
+        <span><mvc:message code="noResultsFound" /></span>
+    </div>
+</template>
+
+<template id="metric-table-wrapper">
+    <div class="table-wrapper flex-none h-auto"></div>
+</template>
+
+<template id="device-name-cell">
+    <div class="d-flex gap-2">
+        <span class="square-badge" style="background: {{= entry.colorHex }}"></span>
+        <span class="text-truncate-table">{{= value }}</span>
+    </div>
+</template>
+
+<template id="stat-metric-cell">
+    <span>{{= value.value }} ({{= value.rate.toFixed(1) }}%)</span>
+</template>

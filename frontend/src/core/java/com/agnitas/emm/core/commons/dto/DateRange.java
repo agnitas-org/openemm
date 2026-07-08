@@ -1,0 +1,40 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.commons.dto;
+
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
+public class DateRange extends BaseRange<Date> {
+
+    public DateRange() {
+    }
+
+    public DateRange(Date from, Date to) {
+        super(from, to);
+    }
+
+    public DateRange(ZonedDateTime from, ZonedDateTime to) {
+        this(
+                from == null ? null : from.toInstant(),
+                to == null ? null : to.toInstant()
+        );
+    }
+
+    public DateRange(Instant from, Instant to) {
+        this(
+                from == null ? null : Date.from(from),
+                to == null ? null : Date.from(to)
+        );
+    }
+
+}

@@ -1,0 +1,9 @@
+
+<script id="progress-stats-template" type="text/x-mustache-template">
+    <div class="d-grid gap-3" style="grid-template-rows: 1fr 1fr">
+
+        <div><canvas id="progress-chart"></canvas></div>
+
+        <div id="progress-table" class="table-wrapper"></div>
+    </div>
+</script>

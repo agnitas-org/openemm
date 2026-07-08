@@ -30,7 +30,7 @@
     padding: $gap-x-sm $gap-sm;
 
     span {
-      font-family: "Poppins";
+      font-family: $font-family;
     }
     
     &:first-of-type {

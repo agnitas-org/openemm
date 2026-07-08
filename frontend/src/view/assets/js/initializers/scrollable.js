@@ -35,21 +35,24 @@ Adding the `.js-scrollable` class to an element will create perfect scrollbar fo
   const Scrollbar = AGN.Lib.Scrollbar;
 
   AGN.Lib.CoreInitializer.new('scrollable', ['table'], function($scope = $(document)) {
-    _.each($scope.find('.js-scrollable, .table-wrapper__body, .ag-body-viewport'), el => {
-      const $el = $(el);
-      const scrollbar = Scrollbar.get($el, false);
+    _.each($scope
+      .find('.js-scrollable, .table-wrapper__body, .ag-body-viewport:not(.ag-layout-auto-height)')
+      .filter(':not([data-prevent-scrollable])'), el => {
+        const $el = $(el);
+        const scrollbar = Scrollbar.get($el, false);
 
-      if (AGN.Lib.Helpers.isMobileView()) {
-        scrollbar?.destroy();
-        return;
-      }
+        if (AGN.Lib.Helpers.isMobileView()) {
+          scrollbar?.destroy();
+          return;
+        }
 
-      if (scrollbar) {
-        scrollbar.update();
-      } else {
-        new Scrollbar($el);
+        if (scrollbar) {
+          scrollbar.update();
+        } else {
+          new Scrollbar($el);
+        }
       }
-    });
+    );
   });
 
 })();

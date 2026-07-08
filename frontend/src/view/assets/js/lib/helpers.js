@@ -189,13 +189,6 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       $div.remove();
     },
 
-    renameFile: function (file, name) {
-      Object.defineProperty(file, 'name', {
-        writable: true,
-        value: name
-      });
-    },
-
     formatBytes: function (bytes, units) {
       // Handle some special cases
       if (bytes == 0) return '0 Bytes';
@@ -275,7 +268,7 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
                 attributes[tagAttribute.nodeName] = tagAttribute.nodeValue;
               }
 
-              return replacementFn({name: tagName, attributes: attributes}, whole);
+              return replacementFn({name: tagName, attributes: attributes, text: whole}, whole);
             }
 
             return whole;
@@ -286,6 +279,17 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       }
 
       return html;
+    },
+
+    findAgnTags: function(content, predicate = () => true) {
+      const tags = [];
+      this.replaceAgnTags(content, (tag, tagContent) => {
+        if (predicate(tag, tagContent)) {
+          tags.push(tag);
+        }
+      });
+
+      return tags;
     },
 
     escapeAgnTags: function (html) {
@@ -345,7 +349,7 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
 
     isUrl: function (url) {
       // starts with HTTP/HTTPS
-      const re = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=!$]*)$/;
+      const re = /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,10}\b([-a-zA-Z0-9()@:%_+.,~#?&/=!$]*)$/;
       return re.test(url);
     },
 
@@ -453,6 +457,14 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       return Object.values(this.getStatColors());
     },
 
+    getStatColorHexByName: function (name) {
+      return this.getStatColors()[name] ?? null;
+    },
+
+    getColorByVar: function (name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name)
+    },
+
     imagesLoaded: function ($images) {
       const deferred = $.Deferred();
       const images = $images.filter(function() {
@@ -509,14 +521,23 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
 
       if (window.Jodit?.instances[id]) {
         Jodit.instances[id].value = value;
-      } else if (window.CKEDITOR && CKEDITOR.instances[id]) {
-        CKEDITOR.instances[id].setData(value);
       } else if (AGN.Lib.Editor.exists($target)) {
         AGN.Lib.Editor.get($target).val(value);
       } else {
         $target.val(value);
       }
     },
+
+    IMPORT_TYPE_MAP: {
+      'csv':  ['csv', 'tsv', 'txt', 'psv'],
+      'json': ['json'],
+      'ods':  ['ods', 'fods'],
+      'xls': ['xlsx', 'xls', 'xlsm']
+    },
+
+    getFileExtension: filename => filename.lastIndexOf('.') !== -1
+        ? filename.split('.').pop().toLowerCase()
+        : ''
   };
 
     /*

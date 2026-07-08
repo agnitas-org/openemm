@@ -2,7 +2,7 @@
 <project basedir="." default="all" name="OpenEMM_WS">
 	<import file="build.xml" />
 
-	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, replaceEmmPropertiesPlaceholders, compile, deploy, setupContexts, applicationContext" description="Build everything.">
+	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, replaceEmmPropertiesPlaceholders, compile, deploy, applicationContext" description="Build everything.">
 		<echo message="Application built."/>
 	</target>
 
@@ -35,7 +35,7 @@
 				<isset property="javaVersion" />
 			</not>
 			<then>
-				<property name="javaVersion" value="17" />
+				<property name="javaVersion" value="21" />
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
@@ -80,8 +80,14 @@
 	</target>
 
 	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
-		<path id="build.classpath">
-			<fileset dir="${basecss}/lib">
+		<path id="build.core.classpath">
+			<fileset dir="${basecss}/libs/core">
+				<include name="*.jar"/>
+			</fileset>
+		</path>
+
+		<path id="build.soap.classpath">
+			<fileset dir="${basecss}/libs/soap">
 				<include name="*.jar"/>
 			</fileset>
 		</path>
@@ -105,7 +111,7 @@
 
 		<property name="emmSourcePath" value="src" />
 		<property name="emmEtcPath" value="etc" />
-		<property name="emmLibPath" value="lib" />
+		<property name="emmLibsPath" value="libs" />
 
 		<fail message="Invalid deploytarget: ${deploytarget} (Invalid applicationtype)">
 			<condition>
@@ -175,12 +181,16 @@
 
 	<target name="deploy" depends="compile">
 		<copy todir="${deploydir}${appname}">
-			<fileset dir="${basecss}/etc/spring-ws/webapp">
+			<fileset dir="${emmSourcePath}/soap/view">
 				<exclude name="**/*.default"/>
 			</fileset>
 		</copy>
 		<copy todir="${deploydir}${appname}/WEB-INF/lib">
-			<fileset dir="${basecss}/lib">
+			<fileset dir="${basecss}/libs/core">
+				<include name="*.jar" />
+			</fileset>
+
+			<fileset dir="${basecss}/libs/soap">
 				<include name="*.jar" />
 			</fileset>
 		</copy>
@@ -197,50 +207,15 @@
             </fileset>
 		</copy>
 		<copy todir="${deploydir}${appname}/WEB-INF">
-			<fileset dir="${emmSourcePath}/view/WEB-INF">
+			<fileset dir="${emmSourcePath}/core/view/WEB-INF">
 				<include name="dataAccessContext.xml" />
 				<include name="applicationContext*.xml" />
 			</fileset>
 		</copy>
 	</target>
 
-	<target name="setupContexts" depends="deploy" description="Removes cronContext.xml">
-		<echo message="removing cronContext.xml" />
-		<delete file="${deploydir}${appname}/WEB-INF/cronContext.xml"/>
-		<echo message="cronContext.xml removed"/>
-	</target>
-
 	<target name="applicationContext" depends="deploy">
 		<echo message="rewriting applicationContext for webservice" />
-		<delete file="${deploydir}${appname}/WEB-INF/applicationContext.xml" />
-		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext.xml" preserveType="true">
-			<!-- Remove beans not wanted/needed in webservices -->
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/autoimport']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/dashboard']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/devices_stats']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/domain_stats']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/ecs_stat']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/grid_template']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/ip_stats']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_compare']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat2']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailing_stat_plugins']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mcomponents']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/formcomponents']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/month_stats']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/motd']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_ajax']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/optimize_schedule']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlink']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/trackuserformlinkstat']" />
-		</xmltask>
 
 		<!-- Remove unwanted namespace attributes -->
 		<replace file="${deploydir}${appname}/WEB-INF/applicationContext.xml" value="">
@@ -248,7 +223,7 @@
 		</replace>
 
 		<delete file="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" />
-		<xmltask source="${emmSourcePath}/view/WEB-INF/applicationContext-service-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" preserveType="true">
+		<xmltask source="${emmSourcePath}/core/view/WEB-INF/applicationContext-service-basic.xml" dest="${deploydir}${appname}/WEB-INF/applicationContext-service-basic.xml" preserveType="true">
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@id='LogonService']" />
 		</xmltask>
 
@@ -258,7 +233,7 @@
 		</replace>
 
 		<xmltask
-				source="${emmEtcPath}/spring-ws/webapp/WEB-INF/applicationContext-ws-service.xml"
+				source="${emmSourcePath}/soap/view/WEB-INF/applicationContext-ws-service.xml"
 				dest="${deploydir}${appname}/WEB-INF/applicationContext-ws-service.xml"
 				preserveType="true">
 			<insert path="/*[local-name()='beans']/*[local-name()='bean'][last()]" position="after">
@@ -279,16 +254,6 @@
 		</replace>
 
 		<echo message="...applicationContext.xml done" />
-
-		<!-- Delete unwanted classes -->
-		<echo message="Deleting unwanted classes: ${deploydir}${appname}/WEB-INF/classes/com/agnitas" />
-		<delete>
-			<fileset dir="${deploydir}/${appname}/WEB-INF/classes/com/agnitas">
-				<include name="**/PuppeteerServiceManager.class" />
-				<include name="**/PuppeteerServiceImpl.class" />
-				<include name="**/WebConfiguration.class" />
-			</fileset>
-		</delete>
 	</target>
 
 	<target name="war" depends="all" description="Build Webapp-WS-WAR">
@@ -310,7 +275,7 @@
         </war>
     </target>
 
-	<target name="compile" depends="setupBuildPaths, createPropertiesFiles" description="Build EMM">
+	<target name="compile" depends="setupBuildPaths, createPropertiesFiles, compile-core" description="Build EMM">
 		<!-- Both srcdir and destdir should be package roots. -->
 		<!-- They could be different of course; in that case NetBeans can also be set -->
 		<!-- up to compile to a different filesystem in the same way; see Compiler Types: -->
@@ -320,23 +285,19 @@
 		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
 
 		<javac debug="true" nowarn="true" deprecation="false" destdir="${deploydir}${appname}/WEB-INF/classes" executable="${JAVA_HOME}/bin/javac" fork="yes" source="${javaVersion}" target="${javaVersion}" includeantruntime="false" encoding="UTF-8">
-			<src path="${emmSourcePath}/java" />
-			<src path="${emmSourcePath}/autogenerated/java" />
+			<src path="${emmSourcePath}/soap/java" />
+			<src path="${emmSourcePath}/soap/autogenerated/java" />
 
-			<!-- Exclude all Web-UI classes -->
-			<exclude name="**/web/*Controller.java" />
-			<exclude name="**/web/*ControllerExtended.java" />
-			<exclude name="**/web/*ControllerBasic.java" />
-			<exclude name="**/web/*ControllerOpenemm.java" />
-			<exclude name="**/web/*Action.java" />
-			<exclude name="**/PuppeteerServiceManager.java" />
-			<exclude name="**/PuppeteerServiceImpl.class" />
-			<exclude name="**/DbSchemaSnapshotLoader.java" />
-			<exclude name="**/WebConfiguration.class" />
+			<classpath>
+				<path refid="build.core.classpath"/>
+				<path refid="build.soap.classpath"/>
+				<path refid="build.containerPath"/>
+				<pathelement location="${deploydir}${appname}/WEB-INF/lib/emm-core.jar"/>
+			</classpath>
 
-			<!-- To add something to the classpath: -->
-			<classpath refid="build.classpath" />
-			<classpath refid="build.containerPath" />
+			<compilerarg line="-processorpath lib_tools/mapstruct-processor-1.6.3.jar"/>
+			<compilerarg line="-s ${deploydir}${appname}/WEB-INF/classes"/>
+
 			<!-- To exclude some files: -->
 			<compilerarg line="-Xlint:-unchecked" />
 		</javac>

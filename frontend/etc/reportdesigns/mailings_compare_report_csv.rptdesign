@@ -3207,7 +3207,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.tablet.
                         <structure>
                             <property name="name">Expression</property>
                             <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.OPENERS_PC_AND_MOBILE_INDEX) {
-Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.multiple-devices.shortname", reportContext.getLocale())
+Packages.com.agnitas.messages.I18nString.getLocaleString("report.device.mixed", reportContext.getLocale())
 } else {""}</expression>
                         </structure>
                     </list-property>
@@ -4142,7 +4142,7 @@ Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.tablet.
                         <structure>
                             <property name="name">Expression</property>
                             <expression name="value" type="javascript">if (row["category_index"] == CommonKeys.CLICKER_PC_AND_MOBILE_INDEX) {
-Packages.com.agnitas.messages.I18nString.getLocaleString("report.openers.multiple-devices.shortname", reportContext.getLocale())
+Packages.com.agnitas.messages.I18nString.getLocaleString("report.device.mixed", reportContext.getLocale())
 } else {""}</expression>
                         </structure>
                     </list-property>

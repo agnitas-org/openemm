@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+	   xmlns:sws="http://www.springframework.org/schema/web-services"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+						http://www.springframework.org/schema/context 
+						http://www.springframework.org/schema/context/spring-context-2.5.xsd
+						http://www.springframework.org/schema/aop 
+                        http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+                        http://www.springframework.org/schema/tx 
+                        http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                        http://www.springframework.org/schema/web-services
+                        http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
+
+	<!-- emm applicationContext.xml part -->
+
+	<bean id="comObjectFactory" class="com.agnitas.emm.springws.jaxb.extended.ObjectFactory" />
+
+	<bean id="throttlingService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
+		<property name="bucketManager">
+			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.LocalBucketManager">
+				<property name="configService" ref="ConfigService" />
+				<property name="webserviceUserService" ref="webserviceUserService" />
+			</bean>
+		</property>
+
+		<property name="apiInvocationCosts">
+			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.WebserviceInvocationCostsCache">
+				<constructor-arg><bean class="com.agnitas.emm.springws.throttling.tokenbucket.dao.DatabaseBasedWebserviceInvocationCosts" parent="_BaseDao" /></constructor-arg>
+				<constructor-arg ref="ConfigService" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="WsLoginTrackService" class="com.agnitas.emm.core.loginmanager.service.impl.LoginTrackServiceImpl">
+		<property name="loginTrackDao" ref="WsLoginTrackDao" />
+
+		<property name="loginTrackSettingsDao">
+			<bean class="com.agnitas.emm.springws.logintrack.WebserviceLoginTrackSettingsDaoImpl">
+				<property name="configService" ref="ConfigService" />
+			</bean>
+		</property>
+	</bean>
+
+
+
+	<bean id="springSecurityHandler" class="org.springframework.ws.soap.security.wss4j2.callback.SpringSecurityPasswordValidationCallbackHandler">
+		<property name="userDetailsService" ref="userDetailsService"/>
+	</bean>
+
+	<bean id="userDetailsService" class="com.agnitas.emm.springws.WebserviceUserDetailService">
+		<property name="dataSource" ref="dataSource" />
+		<property name="webservicePasswordEncryptor" ref="WebservicePasswordEncryptor" />
+		<property name="javaMailService" ref="JavaMailService"/>
+		<property name="configService" ref="ConfigService" />
+	</bean>
+
+
+
+    <!-- emm ws part -->
+
+	<context:annotation-config/>
+
+    <aop:aspectj-autoproxy/>
+    
+    <tx:annotation-driven />
+    
+</beans>

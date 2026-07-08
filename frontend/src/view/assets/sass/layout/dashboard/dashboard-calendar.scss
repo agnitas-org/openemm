@@ -12,6 +12,10 @@
   --xl-calendar-cell-border-color: #{$light-grey};
   --xl-calendar-today-border-color: #{$blue};
   --xl-calendar-label-color: #{$dark-grey};
+  --xl-calendar-mailing-label-bg-opacity: 0.3;
+  --xl-calendar-label-border: none;
+  --xl-calendar-comment-btn-color: #{$blue};
+  --xl-calendar-more-mailings-btn-color: #{$white};
 
   .search-container {
     max-width: 260px;
@@ -141,11 +145,11 @@
     display: none;
     text-align: right;
     font-size: $gap-sm;
-    color: $blue;
+    color: var(--xl-calendar-comment-btn-color);
   }
 
   [data-action="show-more-mailings"] {
-    color: $white;
+    color: var(--xl-calendar-more-mailings-btn-color);
     text-align: center;
     font-size: $font-size-sm;
     padding: 4px $gap-x-sm;
@@ -219,15 +223,22 @@
   display: flex;
   outline: none;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: $border-radius-sm;
   min-height: fit-content;
   flex-shrink: 0;
+
+  > span:first-child {
+    @include border-end-radius(0);
+  }
+
+  > span:nth-child(3) {
+    @include border-start-radius(0);
+  }
 
   > span:first-child, > span:nth-child(3) {
     @include flex-center;
     width: 20px;
     height: auto;
-    border-radius: 0;
   }
 
   > span:nth-child(2) {
@@ -238,6 +249,17 @@
     flex-grow: 1;
     align-items: center;
     min-width: 0;
+
+    border: var(--xl-calendar-label-border);
+    border-left: none;
+
+    &:last-child {
+      @include border-end-radius($border-radius-sm);
+    }
+
+    &:not(:last-child) {
+      border-right: none;
+    }
   }
 
   @each $state, $values in $mailing-status-badges-defs {
@@ -252,14 +274,15 @@
         }
       }
 
-      > span:nth-child(2) { // 30% transparent background
+      > span:nth-child(2) {
+        --xl-calendar-label-bg-color: #{$background};
         position: relative;
         &::before {
           content: "";
           background: $background;
           position: absolute;
           inset: 0;
-          opacity: 0.3;
+          opacity: var(--xl-calendar-mailing-label-bg-opacity);
         }
       }
     }
@@ -270,7 +293,8 @@
       background-color: $stat-light-blue;
     }
     > span:nth-child(2) {
-      background-color: rgba($stat-light-blue, 0.3);
+      --xl-calendar-label-bg-color: #{$stat-light-blue};
+      background-color: rgba($stat-light-blue, var(--xl-calendar-mailing-label-bg-opacity));
     }
   }
 }
@@ -296,10 +320,22 @@
 
 @include color-mode(light-contrast) {
   #dashboard-calendar {
+    --xl-calendar-alien-day-bg: #{$con-grey};
+    --xl-calendar-day-header-color: #{$black};
     --xl-calendar-hovered-day-bg: #{$con-light-blue};
     --xl-calendar-cell-day-header-color: #{$con-dark-blue};
     --xl-calendar-cell-border-color: #{$con-dark-blue};
     --xl-calendar-today-border-color: #{$con-dark-blue};
+    --xl-calendar-label-color: #{$con-dark-blue};
+    --xl-calendar-label-border: 1px solid #{$black};
+    --xl-calendar-mailing-label-bg-opacity: 0;
+    --xl-calendar-comment-btn-color: #{$black};
+  }
+
+  .dashboard-calendar__label {
+    > span:nth-child(2) {
+      background-color: var(--xl-calendar-label-bg-color);
+    }
   }
 }
 
@@ -312,5 +348,16 @@
     --xl-calendar-day-header-color: #{$white};
     --xl-calendar-cell-border-color: #{$white};
     --xl-calendar-today-border-color: #{$con-grey};
+    --xl-calendar-label-border: 1px solid #{$white};
+    --xl-calendar-label-color: #{$con-dark-blue};
+    --xl-calendar-mailing-label-bg-opacity: 0;
+    --xl-calendar-comment-btn-color: #{$con-dark-blue};
+    --xl-calendar-more-mailings-btn-color: #{$con-dark-blue};
+  }
+
+  .dashboard-calendar__label {
+    > span:nth-child(2) {
+      background-color: var(--xl-calendar-label-bg-color);
+    }
   }
 }

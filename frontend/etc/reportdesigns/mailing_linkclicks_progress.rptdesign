@@ -1014,7 +1014,7 @@ function getDeviceClassName(classId, reportContext) {
 	case 4:
 		return tr(&quot;report.device.smarttv&quot;, reportContext);
 	default:
-		return tr(&quot;Unknown&quot;, reportContext);
+		return tr(&quot;MailType.unknown&quot;, reportContext);
 	}
 }
 
@@ -9781,7 +9781,7 @@ function getDeviceClassName(classId, reportContext) {
 	case 4:
 		return tr(&quot;report.device.smarttv&quot;, reportContext);
 	default:
-		return tr(&quot;Unknown&quot;, reportContext);
+		return tr(&quot;MailType.unknown&quot;, reportContext);
 	}
 }
 

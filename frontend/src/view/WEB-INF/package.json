@@ -9,12 +9,16 @@
     "chartjs-adapter-date-fns": "3.0.0",
     "chartjs-plugin-datalabels": "2.2.0",
     "chartjs-plugin-zoom": "2.2.0",
-    "express": "4.21.2",
+    "express": "4.22.1",
     "hammerjs": "2.0.8",
     "js-beautify": "1.15.4",
     "marked": "15.0.12",
-    "puppeteer": "24.2.1",
+    "puppeteer": "24.39.0",
+    "puppeteer-cluster": "^0.25.0",
     "select2": "4.1.0-rc.0",
     "spectrum-colorpicker": "1.8.1"
+  },
+  "overrides": {
+    "glob": "13.0.6"
   }
 }

@@ -35,4 +35,29 @@
 
   AGN.Lib.Loader = Loader;
 
+  class ProcessingLoader {
+    constructor($el, formSelector) {
+      if ($el.data('emm-loader')) {
+        return $el.data('emm-loader');
+      }
+      this.$el = $el;
+      this.$form = $(formSelector);
+      this.$form.on("form:abort", () => this.$loader.hide());
+      this.$loader = AGN.Lib.Template.dom('processing-loader', { targetForm: formSelector });
+      this.$el.data('emm-loader', this);
+    }
+
+    show() {
+      prevent = true;
+      this.$el.hide().before(this.$loader.show());
+    }
+
+    hide() {
+      this.$loader.hide();
+      this.$el.show();
+      prevent = false;
+    }
+  }
+
+  AGN.Lib.ProcessingLoader = ProcessingLoader;
 })();

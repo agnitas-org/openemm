@@ -1,0 +1,81 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.mailinglist.service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mailinglist;
+import com.agnitas.beans.PaginatedList;
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.web.forms.PaginationForm;
+import org.json.JSONArray;
+import org.springframework.transaction.annotation.Transactional;
+
+public interface MailinglistService {
+
+	List<Mailinglist> getMailinglists(int companyId);
+
+    PaginatedList<Mailinglist> findAll(PaginationForm form, int companyId);
+
+    Mailinglist getMailinglist(int id, int companyId);
+
+    Mailinglist getOrNull(int id, int companyId);
+
+	boolean exist(int mailinglistId, int companyId);
+
+	boolean existAndEnabled(Admin admin, int mailingListId);
+
+	boolean isFrequencyCounterEnabled(Admin admin, int mailingListId);
+
+	String getMailinglistName(int mailinglistId, int companyId);
+
+	ServiceResult<List<Mailinglist>> getAllowedForDeletion(Set<Integer> ids, Admin admin);
+
+	List<Integer> delete(Set<Integer> ids, Admin admin);
+
+	List<Mailinglist> getAllMailingListsNames(int companyId);
+	
+	int saveMailinglist(int companyId, MailinglistDto mailinglist);
+	
+	boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId);
+    
+    @Transactional
+    boolean deleteMailinglist(int mailinglistId, int companyId);
+
+    void deleteMailinglistBindingRecipients(int companyId, int mailinglistId, boolean onlyActiveUsers, boolean withoutAdminAndTestUsers);
+
+	JSONArray getMailingListsJson(Admin admin);
+
+    boolean mailinglistDeleted(int mailinglistId, int companyId);
+
+    Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);
+
+    List<Mailing> getUsedMailings(Set<Integer> mailinglistIds, int companyId);
+
+    int getSentMailingsCount(int mailinglistId, int companyId);
+
+    int getAffectedReportsCount(int mailinglistId, int companyId);
+
+	Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID);
+
+	int saveMailinglist(Mailinglist mailinglist);
+
+	List<Integer> getMailinglistIds(int companyId);
+
+	String[] getApprovalEmails(int mailinglistId);
+
+    int getMailinglistIdByName(String name, int companyId);
+}

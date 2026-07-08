@@ -4,12 +4,8 @@ AGN.Lib.Validator.new('max-length-validator', {
   },
 
   errors: function($e, options) {
-    var content = $e.val();
-    var errors = [];
-
-    if ($e.hasClass('js-wysiwyg') && !content) {
-      content = $('#cke_' + $e.attr("id")).find('iframe').contents().find('body').text();
-    }
+    const content = $e.val();
+    const errors = [];
 
     if (content) {
       if (content.length > options.max) {

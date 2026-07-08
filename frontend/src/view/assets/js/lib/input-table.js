@@ -197,14 +197,19 @@ method          |description            |
       if (!this.isUniqueRow(rowData)) {
         return;
       }
+      const $row = this.generateRow$(rowData);
+      this.$table.append($row);
+      AGN.runAll($row);
+      AGN.Lib.Form.get(this.$table).initFields();
+    }
+
+    generateRow$(rowData) {
       const $row = $(this.rowTemplateMustache(rowData));
       if (!this.readonly) {
         const button = this.generateRowBtn(rowData);
         $row.append($('<td>').html(button));
       }
-      this.$table.append($row);
-      AGN.runAll($row);
-      AGN.Lib.Form.get(this.$table).initFields();
+      return $row;
     }
 
     getNextInputToFocus($current) {

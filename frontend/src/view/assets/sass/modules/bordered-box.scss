@@ -11,6 +11,11 @@
   padding: $gap-sm;
 }
 
+.bordered-box-xs {
+  @extend .bordered-box;
+  padding: $gap-x-sm;
+}
+
 .bordered-box--input {
   padding: $input-padding-y $input-padding-x;
 }

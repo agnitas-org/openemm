@@ -62,7 +62,6 @@ AGN.Lib.Controller.new('notification-settings', function () {
         datasets: [{
           data: Object.values(data),
           backgroundColor: $chart.css('--chart-blue-color'),
-          categoryPercentage: 0.9,
           minBarLength: 2
         }]
       },
@@ -83,16 +82,6 @@ AGN.Lib.Controller.new('notification-settings', function () {
           },
           y: {
             display: false
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          datalabels: {
-            anchor: 'end',
-            align: 'end',
-            offset: -5 // make labels closer to the bar
           }
         }
       }
@@ -173,16 +162,13 @@ AGN.Lib.Controller.new('notification-settings', function () {
               tooltipFormat: 'yyyy-MM-dd hh:mm'
             },
             ticks: {
-              autoSkip: true,
-              maxRotation: 0
+              autoSkip: true
             }
           },
           y: {min: 0}
         },
         interaction: {mode: 'index'},
         plugins: {
-          legend: {position: 'bottom'},
-          datalabels: {display: false},
           zoom: {
             pan: {
               enabled: true,
@@ -225,7 +211,6 @@ AGN.Lib.Controller.new('notification-settings', function () {
         },
         plugins: {
           legend: {display: false},
-          datalabels: {display: false},
           tooltip: {external: null}
         }
       }

@@ -533,7 +533,7 @@
         }
       },
       "post" : {
-        "summary" : "Create new mailing content (no update)",
+        "summary" : "Create new mailing content (no update).\n\nNote: Content blocks can no longer be created directly via REST POST requests. They must first be declared as dynamic tags within the mailing frame content, from address, reply address, subject or pre-header. Once declared, the content for those dynamic tags can then be updated or populated through PUT endpoints.\n\nBest Practice:\nAlways define all dynamic content placeholders in the template before attempting to update their content via API. This ensures template consistency and prevents orphaned or mismatched content blocks.",
         "tags" : [ "Content" ],
         "parameters" : [ {
           "in" : "path",
@@ -581,7 +581,7 @@
         }
       },
       "put" : {
-        "summary" : "Create or update mailing content",
+        "summary" : "Update mailing content.\n\nNote: Content blocks can no longer be created directly via REST POST requests. They must first be declared as dynamic tags within the mailing frame content, from address, reply address, subject or pre-header. Once declared, the content for those dynamic tags can then be updated or populated through PUT endpoints.\n\nBest Practice:\nAlways define all dynamic content placeholders in the template before attempting to update their content via API. This ensures template consistency and prevents orphaned or mismatched content blocks.",
         "tags" : [ "Content" ],
         "parameters" : [ {
           "in" : "path",
@@ -721,7 +721,7 @@
         }
       },
       "put" : {
-        "summary" : "Create or update mailing content",
+        "summary" : "Update mailing content.\n\nNote: Content blocks can no longer be created directly via REST POST requests. They must first be declared as dynamic tags within the mailing frame content, from address, reply address, subject or pre-header. Once declared, the content for those dynamic tags can then be updated or populated through PUT endpoints.\n\nBest Practice:\nAlways define all dynamic content placeholders in the template before attempting to update their content via API. This ensures template consistency and prevents orphaned or mismatched content blocks.",
         "tags" : [ "Content" ],
         "parameters" : [ {
           "in" : "path",
@@ -869,7 +869,7 @@
         }
       },
       "put" : {
-        "summary" : "Create or update mailing content",
+        "summary" : "Update mailing content.\n\nNote: Content blocks can no longer be created directly via REST POST requests. They must first be declared as dynamic tags within the mailing frame content, from address, reply address, subject or pre-header. Once declared, the content for those dynamic tags can then be updated or populated through PUT endpoints.\n\nBest Practice:\nAlways define all dynamic content placeholders in the template before attempting to update their content via API. This ensures template consistency and prevents orphaned or mismatched content blocks.",
         "tags" : [ "Content" ],
         "parameters" : [ {
           "in" : "path",
@@ -7595,6 +7595,7 @@
           },
           "name" : {
             "type" : "string",
+            "description" : "Optional for read methods. Name or id specified in URI for update methods",
             "example" : "My_Special_Content_Name"
           },
           "disableLinkExtension" : {
@@ -8176,6 +8177,18 @@
           "campaign_id" : {
             "type" : "integer",
             "description" : "Assign mailing to workflow campaign"
+          },
+          "subject" : {
+            "type" : "string",
+            "description" : "Mailing subject"
+          },
+          "sender_address" : {
+            "type" : "string",
+            "description" : "Mailing sender address"
+          },
+          "reply_address" : {
+            "type" : "string",
+            "description" : "Mailing reply address"
           },
           "parameters" : {
             "description" : "Mailingparameters as JsonArray of JsonObjects",

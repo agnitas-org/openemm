@@ -1,0 +1,729 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.emm.core.birtstatistics.mailing.web;
+
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingSendStatus;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingStatus;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.archive.service.CampaignService;
+import com.agnitas.emm.core.birtreport.service.BirtReportService;
+import com.agnitas.emm.core.birtstatistics.DateMode;
+import com.agnitas.emm.core.birtstatistics.dto.ClickStatisticsPerLinkResponse;
+import com.agnitas.emm.core.birtstatistics.dto.EndDeviceStatisticsResponse;
+import com.agnitas.emm.core.birtstatistics.dto.MailingProgressStatisticsResponse;
+import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingSummaryStatsResponse;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingBounceStatsPresenter;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingSummaryStatsPresenter;
+import com.agnitas.emm.core.birtstatistics.mailing.mapper.MailingTopDomainsPresenter;
+import com.agnitas.emm.core.birtstatistics.mailing.service.MailingEndDeviceStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.ClickPerLinkMailingStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.MailingBounceStatsService.BounceStats;
+import com.agnitas.emm.core.birtstatistics.service.MailingStatisticsService;
+import com.agnitas.emm.core.birtstatistics.service.MailingTopDomainsStatsService.TopDomainStats;
+import com.agnitas.emm.core.birtstatistics.service.ProgressStatisticsService;
+import com.agnitas.emm.core.commons.dto.DateRange;
+import com.agnitas.emm.core.commons.dto.DateTimeRange;
+import com.agnitas.emm.core.commons.util.ConfigService;
+import com.agnitas.emm.core.commons.util.ConfigValue;
+import com.agnitas.emm.core.company.service.CompanyService;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.enums.MailingAdditionalColumn;
+import com.agnitas.emm.core.mailing.service.MailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.TargetService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
+import com.agnitas.emm.core.workflow.service.WorkflowStatisticsService;
+import com.agnitas.mailing.autooptimization.service.OptimizationService;
+import com.agnitas.reporting.birt.external.utils.ExpirationUtils;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.UserActivityLogService;
+import com.agnitas.service.WebStorage;
+import com.agnitas.util.AgnUtils;
+import com.agnitas.util.DateUtilities;
+import com.agnitas.util.DbUtilities;
+import com.agnitas.util.MvcUtils;
+import com.agnitas.util.UserActivityUtil;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.forms.FormDateTime;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+
+public class MailingBirtStatController implements XssCheckAware {
+	
+    private static final Logger logger = LogManager.getLogger(MailingBirtStatController.class);
+
+    private static final List<StatisticType> ALLOWED_STATISTIC = Arrays.asList(
+            SUMMARY,
+            SUMMARY_AUTO_OPT,
+            CLICK_STATISTICS_PER_LINK,
+            PROGRESS,
+            PROGRESS_OF_DELIVERY, // TODO: GWUA-6950: Remove after migration
+            PROGRESS_OF_OPENINGS, // TODO: GWUA-6950: Remove after migration
+            PROGRESS_OF_CLICKS, // TODO: GWUA-6950: Remove after migration
+            TOP_DOMAINS,
+            BOUNCES
+    );
+
+    private static final MailingAdditionalColumn[] ADDITIONAL_COLUMNS = new MailingAdditionalColumn[] {
+        MailingAdditionalColumn.CREATION_DATE,
+        MailingAdditionalColumn.TEMPLATE,
+        MailingAdditionalColumn.SUBJECT,
+        MailingAdditionalColumn.TARGET_GROUPS,
+        MailingAdditionalColumn.MAILING_ID,
+        MailingAdditionalColumn.RECIPIENTS_COUNT
+    };
+
+    protected final BirtStatisticsService birtStatisticsService;
+    protected final CompanyService companyService;
+    protected final BirtReportService birtReportService;
+    protected final MailingBaseService mailingBaseService;
+    protected final ConfigService configService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final WebStorage webStorage;
+    private final ConversionService conversionService;
+    private final UserActivityLogService userActivityLogService;
+    private final AdminService adminService;
+    private final GridServiceWrapper gridServiceWrapper;
+    private final TargetService targetService;
+    private final OptimizationService optimizationService;
+    private final MaildropService maildropService;
+    private final CampaignService campaignService;
+    private final ClickPerLinkMailingStatisticsService clickPerLinkStatisticsService;
+    private final WorkflowStatisticsService workflowStatisticsService;
+    private final MailingSummaryStatsPresenter mailingSummaryStatsPresenter;
+    private final MailingTopDomainsPresenter mailingTopDomainsPresenter;
+    private final MailingBounceStatsPresenter bounceStatsPresenter;
+    private final ProgressStatisticsService progressStatisticsService;
+    private final MailingStatisticsService mailingStatisticsService;
+    private final MailingEndDeviceStatisticsService endDeviceStatisticsService;
+    private final TrackableLinkService trackableLinkService;
+
+    public MailingBirtStatController(
+            MailingBaseService mailingBaseService,
+            MailinglistApprovalService mailinglistApprovalService,
+            WebStorage webStorage,
+            ConversionService conversionService,
+            UserActivityLogService userActivityLogService,
+            AdminService adminService,
+            GridServiceWrapper gridServiceWrapper,
+            BirtStatisticsService birtStatisticsService,
+            CompanyService companyService,
+            TargetService targetService,
+            BirtReportService birtReportService,
+            OptimizationService optimizationService,
+            MaildropService maildropService,
+            CampaignService campaignService,
+            ClickPerLinkMailingStatisticsService clickPerLinkStatisticsService,
+            WorkflowStatisticsService workflowStatisticsService,
+            MailingSummaryStatsPresenter mailingSummaryStatsPresenter,
+            MailingTopDomainsPresenter mailingTopDomainsPresenter,
+            MailingBounceStatsPresenter bounceStatsPresenter,
+            MailingStatisticsService mailingStatisticsService,
+            ConfigService configService,
+            ProgressStatisticsService progressStatisticsService,
+            MailingEndDeviceStatisticsService endDeviceStatisticsService,
+            TrackableLinkService trackableLinkService
+    ) {
+        this.mailingBaseService = mailingBaseService;
+        this.mailinglistApprovalService = mailinglistApprovalService;
+        this.webStorage = webStorage;
+        this.conversionService = conversionService;
+        this.userActivityLogService = userActivityLogService;
+        this.adminService = adminService;
+        this.gridServiceWrapper = gridServiceWrapper;
+        this.birtStatisticsService = birtStatisticsService;
+        this.companyService = companyService;
+        this.targetService = targetService;
+        this.birtReportService = birtReportService;
+        this.optimizationService = optimizationService;
+        this.maildropService = maildropService;
+        this.campaignService = campaignService;
+        this.clickPerLinkStatisticsService = clickPerLinkStatisticsService;
+        this.workflowStatisticsService = workflowStatisticsService;
+        this.mailingSummaryStatsPresenter = mailingSummaryStatsPresenter;
+        this.mailingStatisticsService = mailingStatisticsService;
+        this.configService = configService;
+        this.mailingTopDomainsPresenter = mailingTopDomainsPresenter;
+        this.bounceStatsPresenter = bounceStatsPresenter;
+        this.progressStatisticsService = progressStatisticsService;
+        this.endDeviceStatisticsService = endDeviceStatisticsService;
+        this.trackableLinkService = trackableLinkService;
+    }
+
+    @RequestMapping("/list.action")
+    public String list(Admin admin, MailingStatatisticListForm form, Model model, Popups popups) {
+        if (!validate(form, popups)){
+            return MESSAGES_VIEW;
+        }
+
+        syncFormProps(form);
+
+        MailingsListProperties props = getMailingsListProperties(admin, form);
+
+        model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
+        model.addAttribute("mailingStatisticList", mailingBaseService.getPaginatedMailingsData(admin, props));
+        model.addAttribute("availableAdditionalFields", ADDITIONAL_COLUMNS);
+        model.addAttribute("availableMailingLists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
+        model.addAttribute("availableArchives", campaignService.getCampaigns(admin.getCompanyID()));
+
+        return "stats_mailing_list";
+    }
+
+    @PostMapping("/setSelectedFields.action")
+    public @ResponseBody BooleanResponseDto updateSelectedFields(@RequestParam(required = false) List<String> selectedFields, Popups popups) {
+        webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> storage.setSelectedFields(selectedFields));
+        popups.changesSaved();
+
+        return new BooleanResponseDto(popups, !popups.hasAlertPopups());
+    }
+
+    @GetMapping("/{mailingId:\\d+}/clickStatPerLink.action")
+    public ResponseEntity<ClickStatisticsPerLinkResponse> getClickStatisticsPerLink(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin
+    ) {
+        return ResponseEntity.ok(clickPerLinkStatisticsService.getStatistics(mailingId, targetGroups, admin));
+    }
+
+    @GetMapping("/{mailingId:\\d+}/endDevice.action")
+    public ResponseEntity<EndDeviceStatisticsResponse> getEndDeviceStat(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin
+    ) {
+        return ResponseEntity.ok(endDeviceStatisticsService.getStatistics(mailingId, targetGroups, admin));
+    }
+
+    @RequestMapping(value = "/{mailingId:\\d+}/endDevice/csv.action", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<InputStreamResource> exportEndDevice(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin
+    ) throws Exception {
+        byte[] data = endDeviceStatisticsService.getCsvData(mailingId, targetGroups, admin);
+        return MvcUtils.csvFileResponse(data, "mailing_devices_overview.csv");
+    }
+
+    @GetMapping("/{mailingId:\\d+}/progressStat.action")
+    public ResponseEntity<MailingProgressStatisticsResponse> getProgressStatistics(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            @RequestParam("hourScale") boolean hourScale,
+            @RequestParam("from") Instant from,
+            @RequestParam("to") Instant to,
+            Admin admin
+    ) {
+        MailingProgressStatisticsResponse response = progressStatisticsService.getMailingStatistics(
+                mailingId,
+                new DateRange(from, to),
+                hourScale,
+                targetGroups,
+                admin
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @RequestMapping(value = "/{mailingId:\\d+}/progressStat/csv.action", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<InputStreamResource> exportProgressStatistics(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            @RequestParam("hourScale") boolean hourScale,
+            @RequestParam("from") Instant from,
+            @RequestParam("to") Instant to,
+            Admin admin
+    ) throws Exception {
+        byte[] data = progressStatisticsService.exportMailingStatsToZip(
+                mailingId,
+                new DateRange(from, to),
+                hourScale,
+                targetGroups,
+                admin
+        );
+        return MvcUtils.zipFileResponse(data, "progress.zip");
+    }
+
+    @GetMapping("/{mailingId:\\d+}/summary.action")
+    @ResponseBody
+    public MailingSummaryStatsResponse getSummaryStats(
+            @PathVariable int mailingId,
+            MailingStatisticForm form,
+            Admin admin
+    ) {
+        MailingStatisticDto statDto = getStatDtoForSummary(mailingId, form, admin);
+        return mailingSummaryStatsPresenter.ui(statDto, admin);
+    }
+
+    private MailingStatisticDto getStatDtoForSummary(int mailingId, MailingStatisticForm form, Admin admin) {
+        form.setMailingID(mailingId);
+        checkAbsentDateFields(form);
+        Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
+        return convertFormToDto(form, admin, mailing);
+    }
+
+    @GetMapping(value = "/{mailingId:\\d+}/summary/csv.action")
+    public ResponseEntity<InputStreamResource> getSummaryCsv(
+            @PathVariable int mailingId,
+            MailingStatisticForm form,
+            Admin admin
+    ) throws Exception {
+        MailingStatisticDto statDto = getStatDtoForSummary(mailingId, form, admin);
+        userActivityLogService.writeUserActivityLog(admin, "mailing summary statistics", "csv export");
+        return MvcUtils.csvFileResponse(
+                mailingSummaryStatsPresenter.csv(statDto, admin),
+                "mailing_summary.csv"
+        );
+    }
+
+    @GetMapping("/{mailingId:\\d+}/top-domains.action")
+    @ResponseBody
+    public TopDomainStats getTopDomainsStats(@PathVariable int mailingId, MailingStatisticForm form, Admin admin) {
+        return mailingTopDomainsPresenter.ui(mailingId, form, admin);
+    }
+
+    @GetMapping(value = "/{mailingId:\\d+}/top-domains/csv.action")
+    public ResponseEntity<InputStreamResource> getTopDomainsCsv(
+            @PathVariable int mailingId,
+            MailingStatisticForm form,
+            Admin admin
+    ) throws Exception {
+        userActivityLogService.writeUserActivityLog(admin, "mailing top domains statistics", "csv export");
+        return MvcUtils.csvFileResponse(
+                mailingTopDomainsPresenter.csv(mailingId, form, admin),
+                "top_domains.csv"
+        );
+    }
+
+    @RequestMapping(value = "/{mailingId:\\d+}/clickStatPerLink/csv.action", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<InputStreamResource> exportClickStatisticsPerLink(
+            @PathVariable int mailingId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin
+    ) throws Exception {
+        byte[] data = clickPerLinkStatisticsService.getCsvData(mailingId, targetGroups, admin);
+        return MvcUtils.csvFileResponse(data, "mailing_linkclicks.csv");
+    }
+
+    @RequestMapping("/link/{linkId:\\d+}/progress.action")
+    public String viewLinkProgress(
+            @PathVariable int linkId,
+            @RequestParam(required = false) Set<Integer> targetGroups,
+            Admin admin,
+            Model model
+    ) {
+        DateRange dateRange = progressStatisticsService.getDefaultLinkStatisticsDateRange();
+
+        model.addAttribute("linkUrl", trackableLinkService.getUrl(linkId, admin.getCompanyID()));
+        model.addAttribute("statData", progressStatisticsService.getLinkStatistics(linkId, dateRange, false, targetGroups, admin));
+        model.addAttribute("fromDate", dateRange.getFrom());
+        model.addAttribute("toDate", dateRange.getTo());
+        model.addAttribute("selectedTargets", targetService.getTargetLights(admin.getCompanyID(), targetGroups));
+
+        return "link_clicks_progress_stat_view";
+    }
+
+    @GetMapping("/{mailingId:\\d+}/bounces.action")
+    @ResponseBody
+    public BounceStats getBounceStats(@PathVariable int mailingId, MailingStatisticForm form, Admin admin) {
+        return bounceStatsPresenter.ui(mailingId, form, admin);
+    }
+
+    @GetMapping(value = "/{mailingId:\\d+}/bounces/csv.action")
+    public ResponseEntity<InputStreamResource> getBouncesCsv(
+            @PathVariable int mailingId,
+            MailingStatisticForm form,
+            Admin admin
+    ) throws Exception {
+        userActivityLogService.writeUserActivityLog(admin, "mailing bounces statistics", "csv export");
+        return MvcUtils.csvFileResponse(
+                bounceStatsPresenter.csv(mailingId, form, admin),
+                "mailing_bounces.csv"
+        );
+    }
+
+    @RequestMapping("/{mailingId:\\d+}/view.action")
+    public String view(@RequestParam(required = false) Integer statWorkflowId, Admin admin, Model model,
+                       @PathVariable int mailingId, MailingStatisticForm form, Popups popups) {
+        if (!validateDates(admin, form, popups)){
+            return MESSAGES_VIEW;
+        }
+        
+        Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingId);
+
+        if (mailing == null) {
+            return "redirect:/statistics/mailing/list.action";
+        }
+
+        boolean show10HoursTab = mailing.getMailingType().equals(MailingType.NORMAL) && birtStatisticsService.isWorldMailing(mailing);
+
+        form.setMailingID(mailingId);
+        form.setShortname(mailing.getShortname());
+        form.setDescription(mailing.getDescription());
+        form.setTemplateId(gridServiceWrapper.getGridTemplateIdByMailingId(mailing.getId()));
+        form.setShow10HoursTab(show10HoursTab);
+
+        AdminPreferences adminPreferences = adminService.getAdminPreferences(admin.getAdminID());
+        form.setStatisticType(getReportType(form.getStatisticType(), adminPreferences));
+        form.setDateMode(getDateMode(form.getStatisticType(), mailingId, form.getDateMode()));
+
+        if (form.getDateMode().equals(DateMode.LAST_TENHOURS) && !form.isShow10HoursTab()) {
+            form.setDateMode(DateMode.SELECT_DAY);
+        }
+
+        checkAbsentDateFields(form);
+
+        MailingStatisticDto mailingStatisticDto = convertFormToDto(form, admin, mailing);
+
+        if (form.getStatisticType() == SUMMARY) {
+            int optimizationId = optimizationService.getOptimizationIdByFinalMailing(mailingId, admin.getCompanyID());
+            if (optimizationId > 0 && !form.isIgnoreAutoOptSummary()) {
+                mailingStatisticDto.setType(SUMMARY_AUTO_OPT);
+                mailingStatisticDto.setDateMode(DateMode.NONE);
+                mailingStatisticDto.setOptimizationId(optimizationId);
+                model.addAttribute("hideStatActions", true);
+            }
+            model.addAttribute("isTotalAutoOpt", optimizationId > 0);
+        }
+
+        if (mailingStatisticDto.getType() == TOP_DOMAINS) {
+            processMailingInfo(admin, mailingId, mailingStatisticDto, model);
+        }
+
+        processStatisticView(admin, model, mailingStatisticDto, form, mailing);
+
+        int workflowId = mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID());
+        model.addAttribute("workflowId", workflowId);
+        if (statWorkflowId != null && statWorkflowId > 0) {
+            model.addAttribute("workflowStatMailings", workflowStatisticsService.getStatMailings(statWorkflowId, admin));
+            model.addAttribute("statWorkflowId", statWorkflowId);
+        }
+
+        userActivityLogService.writeUserActivityLog(admin, "view statistics", form.getShortname() + " (" + mailingId + ")" + " active tab - statistics", logger);
+
+        if (form.getStatisticType() == SUMMARY && admin.permissionAllowed(Permission.MAILING_SUMMARY_STAT_MIGRATION)) {
+            addAttrsForSummaryStat(model, admin, mailingStatisticDto, mailing);
+        }
+
+        if (form.getStatisticType() == PROGRESS) {
+            addDateRangeAttributes(model, admin, mailingStatisticDto);
+        }
+
+        model.addAttribute("isMailtrackingActive", AgnUtils.isMailTrackingAvailable(admin));
+
+        return "stats_mailing_view";
+    }
+
+    private void addAttrsForSummaryStat(Model model, Admin admin, MailingStatisticDto mailingStatisticDto, Mailing mailing) {
+        boolean onepixelStatisticExpired;
+        if (mailingStatisticDto.isDateRangeExists()) {
+            model.addAttribute("successStatisticExpired", ExpirationUtils.isDateOlderThenDays(configService.getIntegerValue(ConfigValue.ExpireSuccess), mailingStatisticDto.getDateTimeRange().getFrom().toLocalDate()));
+            onepixelStatisticExpired = mailingStatisticsService.isOnePixelStatisticExpired(mailingStatisticDto.getDateTimeRange()
+                    .getFrom()
+                    .toLocalDate());
+            model.addAttribute("onepixelStatisticExpired", onepixelStatisticExpired);
+        }
+
+        model.addAttribute("isTrackingExists", !AgnUtils.isMailTrackingAvailable(admin)
+                                               || !ArrayUtils.isNotEmpty(mailingStatisticDto.getSelectedTargets())
+                                               || mailingStatisticsService.isTrackingExists(mailing.getId(), admin.getCompanyID()));
+
+        model.addAttribute("isTrackingAvailableForMailing", mailingStatisticsService.isTrackingAvailableForMailing(mailing.getId(), admin.getCompanyID()));
+        model.addAttribute("mailingThumbnailUrl", mailingBaseService.getThumbnailUrl(mailing));
+        addDateRangeAttributes(model, admin, mailingStatisticDto);
+    }
+
+    private void addDateRangeAttributes(Model model, Admin admin, MailingStatisticDto mailingStatisticDto) {
+        DateRange dateRange = mailingStatisticDto.getDateRange(admin.getZoneId());
+        model.addAttribute("fromDate", dateRange.getFrom());
+        model.addAttribute("toDate", dateRange.getTo());
+        model.addAttribute("isHourScale", mailingStatisticDto.isHourScale());
+    }
+
+    private MailingStatisticDto convertFormToDto(MailingStatisticForm form, Admin admin, Mailing mailing) {
+        Date mailingStartDate = getMinSendDate(mailing);
+
+        final MailingStatisticDto mailingStatisticDto = conversionService.convert(form, MailingStatisticDto.class);
+        mailingStatisticDto.setMailingStartDate(mailingStartDate);
+        final DateTimeFormatter dateFormatter = admin.getDateFormatter();
+
+        LocalDateTime mailingSendLocalDate = mailingStartDate != null ? DateUtilities.toLocalDateTime(mailingStartDate, admin.getZoneId()) : null;
+        DateTimeRange dateRestrictions = getDateTimeRestrictions(form, mailingSendLocalDate, dateFormatter);
+
+        mailingStatisticDto.setDateTimeRange(dateRestrictions);
+        form.getStartDate().set(dateRestrictions.getFrom(), dateFormatter);
+        form.getEndDate().set(dateRestrictions.getTo(), dateFormatter);
+
+        return mailingStatisticDto;
+    }
+
+    private Date getMinSendDate(Mailing mailing) {
+        List<Date> sendDates = Stream.of(mailing.getSenddate(), mailingBaseService.getMailingLastSendDate(mailing.getId()))
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (!sendDates.isEmpty()) {
+            return Collections.min(sendDates);
+        }
+
+        return null;
+    }
+
+    protected MailingsListProperties getMailingsListProperties(Admin admin, MailingStatatisticListForm statForm) {
+        MailingsListProperties props = new MailingsListProperties();
+        props.setSearchNameStr(statForm.getFilterName());
+        props.setSearchDescriptionStr(statForm.getFilterDescription());
+        props.setMailingStatisticsOverview(true);
+        props.setTypes("0,1,2,3,4"); // all mailing types
+        props.setStatuses(Collections.singletonList(MailingStatus.SENT.getDbKey())); // just sent mailings
+        props.setSort(Objects.toString(statForm.getSort(), "senddate")); // sort by send date by default
+        props.setDirection(Objects.toString(statForm.getDir(), "desc")); // desc order by default
+        props.setPage(statForm.getPage());
+        props.setRownums(statForm.getNumberOfRows());
+        props.setAdditionalColumns(SetUtils.union(Set.of("archives"), statForm.getAdditionalFieldsSet()));
+        props.setMailingLists(statForm.getFilteredMailingListsAsList());
+        props.setArchives(statForm.getFilterArchives());
+        props.setSendDateBegin(tryParseDate(statForm.getFilterSendDateBegin(), admin));
+        props.setSendDateEnd(tryParseDate(statForm.getFilterSendDateEnd(), admin));
+
+        return props;
+    }
+
+    private Date tryParseDate(String date, Admin admin) {
+        if (StringUtils.isBlank(date)) {
+            return null;
+        }
+        try {
+            return admin.getDateFormat().parse(date);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    protected void processStatisticView(Admin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) {
+        String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
+        String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
+        String birtDownloadUrl = "";
+        if (StringUtils.isNotBlank(birtUrl)) {
+            birtDownloadUrl = birtStatisticsService.changeFormat(birtUrl, "csv");
+        }
+        SimpleDateFormat localeFormat = admin.getDateFormat();
+
+        model.addAttribute("isActiveMailing", maildropService.isActiveMailing(mailing.getId(), admin.getCompanyID()));
+        model.addAttribute("mailinglistDisabled", !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID()));
+        model.addAttribute("isMailingGrid", form.getTemplateId() > 0);
+        model.addAttribute("targetlist", targetService.getTargetLights(admin));
+        model.addAttribute("monthlist", AgnUtils.getMonthList());
+        model.addAttribute("yearlist", AgnUtils.getYearList(getStartYear(mailingStatisticDto.getMailingStartDate())));
+        model.addAttribute("localDatePattern", localeFormat.toPattern());
+        model.addAttribute("birtUrl", StringUtils.defaultString(birtUrl));
+        model.addAttribute("downloadBirtUrl", StringUtils.defaultString(birtDownloadUrl));
+    }
+
+    protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) {
+        if (mailingStatisticDto.getType() == null || mailingStatisticDto.getType() == StatisticType.BENCHMARK) {
+            return null;
+        }
+
+        return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, mailingStatisticDto);
+    }
+
+    private StatisticType getReportType(StatisticType statisticType, AdminPreferences adminPreferences) {
+        if (statisticType != null && isAllowedStatistic(statisticType)) {
+            return statisticType;
+        }
+
+        if (adminPreferences.getStatisticLoadType() == AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
+            return null;
+        }
+
+        return StatisticType.SUMMARY;
+    }
+
+    protected boolean isAllowedStatistic(StatisticType statisticType) {
+        return ALLOWED_STATISTIC.contains(statisticType);
+    }
+
+    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) {
+        DateMode dateMode = statisticType != null ? statisticType.getDateMode() : DateMode.NONE;
+        if (dateMode != DateMode.NONE && SUMMARY == statisticType) {
+        	MailingType mailingType = mailingBaseService.getMailingType(mailingId);
+            if ((mailingType != MailingType.ACTION_BASED) &&
+                    (mailingType != MailingType.DATE_BASED) &&
+                    (mailingType != MailingType.INTERVAL)) {
+                return DateMode.NONE;
+            }
+        }
+        
+        return DateMode.NONE == oldDateMode || DateMode.NONE == dateMode ? dateMode : oldDateMode;
+    }
+
+    private void syncFormProps(MailingStatatisticListForm form){
+        webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
+            if (form.getNumberOfRows() > 0) {
+                storage.setRowsCount(form.getNumberOfRows());
+                if (!form.isInEditColumnsMode()) {
+                    form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+                }
+            } else {
+                form.setNumberOfRows(storage.getRowsCount());
+                form.setAdditionalFields(storage.getSelectedFields().toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+            }
+        });
+    }
+
+    private boolean validate(MailingStatatisticListForm form, Popups popups) {
+        Stream.of(form.getFilterName(), form.getFilterDescription())
+                .flatMap(x -> DbUtilities.validateFulltextSearchQueryText(x).stream())
+                .forEach(popups::alert);
+
+        return !popups.hasAlertPopups();
+    }
+
+    protected boolean validateDates(Admin admin, MailingStatisticForm form, Popups popups) {
+        return validateDates(admin, form.getStartDate(), form.getEndDate(), popups);
+    }
+
+    private boolean validateDates(Admin admin, FormDateTime startDate, FormDateTime endDate, Popups popups) {
+        String pattern = admin.getDateFormat().toPattern();
+
+        String startDateValue = startDate == null ? null : startDate.getDate();
+        if (StringUtils.isNotBlank(startDateValue) && !AgnUtils.isDateValid(startDateValue, pattern)) {
+            popups.alert("error.date.format");
+            return false;
+        }
+
+        String endDateValue = endDate == null ? null : endDate.getDate();
+        if (StringUtils.isNotBlank(endDateValue) && !AgnUtils.isDateValid(endDateValue, pattern)) {
+            popups.alert("error.date.format");
+            return false;
+        }
+
+        if (StringUtils.isNotBlank(startDateValue) && StringUtils.isNotBlank(endDateValue) &&
+                !isPeriodDateValid(startDateValue, endDateValue, pattern)) {
+            popups.alert("error.period.format");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isPeriodDateValid(String startDateValue, String endDateValue, String pattern) {
+        return AgnUtils.isDatePeriodValid(startDateValue, endDateValue, pattern) || startDateValue.equals(endDateValue);
+    }
+
+    protected void processMailingInfo(Admin admin, int mailingId, MailingStatisticDto mailingStatisticDto,
+                                    Model model){
+        MailingSendStatus status = mailingBaseService.getMailingSendStatus(mailingId, admin.getCompanyID());
+        boolean isEverSent = status.getHasMailtracks();
+        boolean isMailtrackingActive = AgnUtils.isMailTrackingAvailable(admin);
+
+        mailingStatisticDto.setMailtrackingActive(isMailtrackingActive);
+        model.addAttribute("isMailtrackingActive", isMailtrackingActive);
+        model.addAttribute("isEverSent", isEverSent);
+
+        boolean mailTrackingExpired = isEverSent && status.getHasMailtrackData();
+        mailingStatisticDto.setMailtrackingExpired(mailTrackingExpired);
+        model.addAttribute("mailtrackingExpired", mailTrackingExpired);
+    
+        if (!mailTrackingExpired) {
+            model.addAttribute("mailtrackingExpirationDays", status.getExpirationDays());
+        }
+    }
+
+    private int getStartYear(Date mailingStartDate) {
+        if (mailingStartDate != null) {
+            return DateUtilities.getYear(mailingStartDate);
+        } else {
+            return Year.now().getValue(); // fallback is current year
+        }
+    }
+
+    private DateTimeRange getDateTimeRestrictions(MailingStatisticForm form, LocalDateTime mailingStart, DateTimeFormatter dateFormatter) {
+        LocalDateTime startDate = form.getStartDate().get(dateFormatter);
+        LocalDateTime endDate = form.getEndDate().get(dateFormatter);
+
+        return birtStatisticsService.getDateTimeRestrictions(
+                new DateTimeRange(startDate, endDate),
+                form.getDateMode(),
+                mailingStart,
+                form.getYear(),
+                form.getMonthValue()
+        );
+    }
+
+    private void checkAbsentDateFields(MailingStatisticForm form) {
+        if (form.getMonth() == -1) {
+            form.setMonth(YearMonth.now().getMonth());
+        }
+        if (form.getYear() == 0) {
+            form.setYear(YearMonth.now().getYear());
+        }
+    }
+
+    protected void writeUAL(Admin admin, String action, String description) {
+        UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
+    }
+}

@@ -13,7 +13,7 @@
       {buttons: ['cut', 'copy', 'paste']},
       {buttons: ['undo', 'redo']},
       {buttons: ['find', 'selectall', 'spellcheck']},
-      {buttons: ['link', 'image', 'table', 'hr', 'symbols']},
+      {buttons: ['link', 'image', 'table-props', 'hr', 'symbols']},
       {buttons: ['font', 'fontsize', 'paragraph', 'brush']},
       {buttons: ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript']},
       {buttons: ['eraser', 'align']},
@@ -33,7 +33,7 @@
       {buttons: ['cut', 'copy', 'paste']},
       {buttons: ['undo', 'redo']},
       {buttons: ['find', 'selectall']},
-      {buttons: ['link', 'image', 'table', 'hr', 'symbols']},
+      {buttons: ['link', 'image', 'table-props', 'hr', 'symbols']},
       {buttons: ['font', 'fontsize', 'paragraph', 'brush']},
       {buttons: ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript']},
       {buttons: ['eraser', 'align']},
@@ -282,6 +282,46 @@
       html = replaceAgnImageTags(html, mailingId);
       return AGN.Lib.Helpers.escapeAgnTags(html);
     });
+
+    editor.events.on('beforeCommand', (command) => {
+      if (command.toLowerCase() === 'delete') {
+        const selection = editor.s;
+        const range = selection.range;
+        const startElement = range.startContainer.nodeType === Node.TEXT_NODE
+          ? range.startContainer.parentElement
+          : range.startContainer;
+        const caption = startElement ? startElement.closest('caption') : null;
+
+        if (caption && !selection.isCollapsed()) { // if everything (or part) is selected inside the caption
+          const selectedText = selection.sel.toString().replace(/\uFEFF/g, '').trim();
+          const captionText = caption.textContent.replace(/\uFEFF/g, '').trim();
+
+          if (selectedText.length >= captionText.length) {
+            caption.innerHTML = '<br>'; // manually empty it instead of letting the browser delete the node
+            selection.setCursorIn(caption); // reset the cursor inside the now-empty caption
+            return false; // don't run the native Delete
+          }
+        }
+      }
+    });
+
+    editor.e.on('backSpaceBeforeCases', (backspace, fakeNode) => {
+      // Prevent delete for <caption> when it's empty
+      const caption = fakeNode.parentElement
+        ? fakeNode.parentElement.closest('caption')
+        : null;
+      if (caption) {
+        const textContent = caption.textContent.replace(/\uFEFF/g, '').trim();
+        if (textContent === '') {
+          // If the user is backspacing in an empty caption, we do nothing and return true.
+          if (!caption.querySelector('br')) {
+            caption.innerHTML = '<br>';
+          }
+          editor.s.setCursorIn(caption);
+          return true;
+        }
+      }
+    });
   });
 
   function insertContent(editor, content) {
@@ -349,7 +389,7 @@
       normalizedUrl = normalizedUrl.replaceAll('&amp;', '&');
       const imageName = urlsImagesNamesMap[normalizedUrl];
       if (imageName) {
-        content = content.replace(url, `[agnIMAGE name="${imageName}"]`);
+        content = content.replace(url, `[agnIMAGE name='${imageName}']`);
       }
     });
 

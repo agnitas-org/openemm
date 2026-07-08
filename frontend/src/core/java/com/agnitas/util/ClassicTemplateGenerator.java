@@ -1,0 +1,92 @@
+/*
+
+    Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+package com.agnitas.util;
+
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingComponent;
+import com.agnitas.dao.MailingDao;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+/**
+ * This class bind template and content modules with emm`s mailings dyn tag content.
+ */
+public class ClassicTemplateGenerator implements ApplicationContextAware {
+
+	private static final Logger logger = LogManager.getLogger(ClassicTemplateGenerator.class);
+
+	private ApplicationContext applicationContext;
+	private MailingDao mailingDao;
+
+	public void setMailingDao(MailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
+
+	public void generate(int mailingId, HttpServletRequest request) {
+		// by default checkMailingType=true, copyImages=false
+		generate(mailingId, request, true);
+	}
+
+	public void generate(int mailingId, HttpServletRequest request, boolean checkMailingType) {
+		final int companyId = AgnUtils.getCompanyID(request);
+		this.generate(mailingId, companyId, checkMailingType);
+	}
+
+	/**
+	 * Method perform only mailings contained elements, clears previous
+	 * mailing`s contetn and write new from template
+	 * and content modules, if cmTemplate dosen`t exist it adds
+	 * default tag`s name.
+	 *
+	 * @param mailingId mailing`s id to attach classic template content
+	 * @param checkMailingType do we need to check that it is CMS-mailing?
+	 */
+	public void generate(int mailingId, int companyId, boolean checkMailingType) {
+		// Mailing IDs start from 1. Mailing ID = 0 is invalid situation.
+		// generating a preview for mailing with id 0 will cause creating a new mailing with companyId o
+		if (mailingId == 0) {
+			return;
+		}
+
+		final Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+		if (mailing != null) {
+			if (!checkMailingType) {
+				cleanMailingContent(mailing);
+				try {
+					mailing.buildDependencies(true, applicationContext);
+				} catch (Exception e) {
+					logger.warn("Can`t build mailing dependencies", e);
+				}
+				mailingDao.saveMailing(mailing, false);
+			}
+		}
+	}
+	
+	private void cleanMailingContent(Mailing mailing) {
+		MailingComponent htmlTemplate = mailing.getHtmlTemplate();
+		if (htmlTemplate != null) {
+			htmlTemplate.setEmmBlock("[agnDYN name=\"" + AgnUtils.DEFAULT_MAILING_HTML_DYNNAME + "\"/]", "text/plain");
+		}
+		MailingComponent textTemplate = mailing.getTextTemplate();
+		if (textTemplate != null) {
+			textTemplate.setEmmBlock("", "text/plain");
+		}
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
+
+}
