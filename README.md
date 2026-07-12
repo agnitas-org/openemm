@@ -73,6 +73,20 @@ Build the executable code with
 
 `$ ant -f build.xml`
 
+`$ ant -f build-birt.xml`
+
+`$ ant -f build-ws.xml`
+
+To update the database schema, run the shell script that executes any missing database updates:
+
+`$ /home/openemm/webapps/emm/WEB-INF/sql/mariadb/emm-mariadb-execute-missing-updates.sh dbcfg`
+
+Finally, exceute
+
+`$ /home/openemm/webapps/emm/WEB-INF/npm install`
+
+to install all required npm packages.
+
 You can start the OpenEMM frontend with
 
 `/home/openemm/bin/emm.sh start`
