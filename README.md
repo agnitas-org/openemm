@@ -21,13 +21,16 @@ OpenEMM offers tons of features for professional marketing users, among them:
 
 - a console based administration tool for checks, configuration, updates and backups (OST)
 - a **responsive web user interface** with great usability and different languages
+  <img src="https://www.agnitas.de/wp-content/uploads/2026/08/sendmailing_openemm.png" width="50%" alt="Send mailing">
 - a **mail template management** system
 - a **visual web form builder**
 - mailing, template and web forms import and export to load and exchange prepared mailing templates and web forms
-- a **graphical workflow manager** to create complex campaigns with drag&drop
+- a **graphical workflow manager** to create complex campaigns with drag&drop  
+    <img src="https://www.agnitas.de/wp-content/uploads/2026/08/NewEMM-Campaigns-EN.png" width="50%" alt="Campaign manager">
 - individual and (GDPR compliant) anonymous tracking of mail openings, link clicks and deep tracking
 - **automated bounce management**
-- graphical **realtime statistics** with lots of KPIs and configurable reports (PDF and CSV)
+- graphical **realtime statistics** with lots of KPIs and configurable reports (PDF and CSV)  
+  <img src="https://www.agnitas.de/wp-content/uploads/2026/08/domain_statistics_openemm.png" width="50%" alt="Domain statistics">
 - self-defined **target groups** based on recipient profiles, recpient's status and behaviour (created visually or with SQL-like syntax)
 - a **scalable multiqueue mail backend** for maximum sending performance
 - flexibly configurable data import and export with extensive reporting of results
@@ -36,6 +39,7 @@ OpenEMM offers tons of features for professional marketing users, among them:
 - sophisticated management of users, user roles and user rights
 - an audit-proof searchable and exportable user activity log
 - a system status menu with helpful info and configuration options for OpenEMM administrators
+  <img src="https://www.agnitas.de/wp-content/uploads/2026/08/systemstatus_openemm.png" width="50%" alt="System status menu">
 - an extensive set of **SOAP webservices** to manage OpenEMM from remote
 - a feature-rich **RESTful API** to manage OpenEMM from remote
 - a callback API to register **webhooks** for notifications of 3rd party systems about various mailing and recipient events
