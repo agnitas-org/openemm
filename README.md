@@ -22,14 +22,14 @@ OpenEMM offers tons of features for professional marketing users, among them:
 | Most relevant features |
 |---|
 | - A console based administration tool for checks, configuration, updates and backups (OST) |
-| - A **responsive web user interface** with great usability and different languages <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/sendmailing_openemm.png" width="70%" alt="Send mailing"> |
+| - A **responsive web user interface** with great usability and different languages <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/sendmailing_openemm.png" width="80%" alt="Send mailing"> |
 | - A **mail template management** system |
 | - A **visual web form builder** |
 | - Mailing, template and web forms import and export to load and exchange prepared mailing templates and web forms |
-| - A **graphical workflow manager** to create complex campaigns with drag&drop <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/NewEMM-Campaigns-EN.png" width="70%" alt="Campaign manager"> |
+| - A **graphical workflow manager** to create complex campaigns with drag&drop <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/NewEMM-Campaigns-EN.png" width="80%" alt="Campaign manager"> |
 | - Individual and (GDPR compliant) anonymous tracking of mail openings, link clicks and deep tracking |
 | - **Automated bounce management** |
-| - Graphical **realtime statistics** with lots of KPIs and configurable reports (PDF and CSV) <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/domain_statistics_openemm.png" width="70%" alt="Domain statistics"> |
+| - Graphical **realtime statistics** with lots of KPIs and configurable reports (PDF and CSV) <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/domain_statistics_openemm.png" width="80%" alt="Domain statistics"> |
 | - Self-defined **target groups** based on recipient profiles, recpient's status and behaviour (created visually or with SQL-like syntax) |
 | - A **scalable multiqueue mail backend** for maximum sending performance |
 | - Flexibly configurable data import and export with extensive reporting of results |
@@ -37,7 +37,7 @@ OpenEMM offers tons of features for professional marketing users, among them:
 | - A **scripting** feature to enhance the functionality of OpenEMM with **customized triggers** |
 |- Sophisticated management of users, user roles and user rights |
 | - An audit-proof searchable and exportable user activity log |
-| - A system status menu with helpful info and configuration options for OpenEMM administrators <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/systemstatus_openemm.png" width="70%" alt="System status menu"> |
+| - A system status menu with helpful info and configuration options for OpenEMM administrators <br><br> <img src="https://www.agnitas.de/wp-content/uploads/2026/08/systemstatus_openemm.png" width="80%" alt="System status menu"> |
 | - An extensive set of **SOAP webservices** to manage OpenEMM from remote |
 | - A feature-rich **RESTful API** to manage OpenEMM from remote |
 | - A callback API to register **webhooks** for notifications of 3rd party systems about various mailing and recipient events |
