@@ -382,7 +382,7 @@ def clientMenuAction(actionParameters):
 			for propertyKey in Environment.unsavedClientChanges:
 				if propertyKey != "company_id":
 					if propertyKey in Environment.companyInfoProperties:
-						itemExists = DbConnector.selectValue("SELECT COUNT(*) FROM company_info_tbl WHERE company_id = ? AND cname = ?", companyID, propertyKey) > 0
+						itemExists = DbConnector.selectIntValue("SELECT COUNT(*) FROM company_info_tbl WHERE company_id = ? AND cname = ?", companyID, propertyKey) > 0
 						if itemExists:
 							DbConnector.update("UPDATE company_info_tbl SET timestamp = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', cvalue = ? WHERE company_id = ? AND cname = ?", Environment.unsavedClientChanges[propertyKey], companyID, propertyKey)
 						else:

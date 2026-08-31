@@ -22,7 +22,11 @@ from EST_lib import VersionSwitchMenu
 from EST_lib import ConfigurationMenu
 from EST_lib import SupplementalMenu
 from EST_lib import TlsCertificateMenu
-from packaging.version import Version
+
+try:
+	from packaging.version import Version
+except ImportError:
+	from EST_lib.FallBackLibrary import Version
 
 
 def configureTool():
@@ -156,6 +160,8 @@ def main():
 		elif ESTUtilities.isBlank(Environment.catalinaHome) or not ESTUtilities.checkTomcatAvailable(Environment.javaHome, Environment.catalinaHome):
 			Environment.errors.append("Basic webapplication configuration for Tomcat/CatalinaHome is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
+		elif Version(ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)).major < 11:
+			Environment.warnings.append("A tomcat version below 11 was detected. It is recommended to run EMM with at least version 11.")
 		elif (DbConnector.emmDbVendor is None or not DbConnector.checkDbServiceAvailable()) and Environment.username != "mailout":
 			Environment.errors.append("Database is not running or host is invalid. Please configure.")
 			Environment.overrideNextMenu = dbcfgMenu
@@ -163,12 +169,10 @@ def main():
 			Environment.errors.append("Basic configuration is missing. Please configure.")
 			Environment.overrideNextMenu = Environment.configTableMenu
 
-		if Version(ESTUtilities.getTomcatVersion(Environment.javaHome, Environment.catalinaHome)).major < 11:
-			Environment.warnings.append("A tomcat version below 11 was detected. It is recommended to run EMM with at least version 11.")
 		if not ESTUtilities.checkNodeAvailable():
 			Environment.errors.append("Node.js was not detected in path. This is needed during the Frontend Installation. Please configure.")
 		elif Version(ESTUtilities.getNodeVersion()).major < 22:
-			Environment.warnings.append("A Node version below 22 was detected. It is recommended to run EMM with at least version 22")
+			Environment.warnings.append("A Node version below 22 was detected. It is recommended to run OpenEMM with at least version 22.")
 
 		missingPuppeteerRequirements = Environment.checkForMissingPuppeteerRequirements()
 		if missingPuppeteerRequirements:

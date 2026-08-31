@@ -157,68 +157,60 @@ def dbTableFormatCheckMenuAction(actionParameters):
 	choice = input(" > ")
 	choice = choice.strip().lower()
 	if choice.startswith("y") or choice.startswith("j"):
-		connection = None
-		cursor = None
 		try:
-			connection = DbConnector.openDbConnection()
-			if connection is None:
-				raise Exception("Cannot establish db connection")
-			cursor = connection.cursor()
+			with DbConnector.openDbConnection() as connection:
+				if connection is None:
+					raise Exception("Cannot establish db connection")
+				cursor = connection.cursor()
 
-			processGranted = False
-			reloadGranted = False
-			cursor.execute("SHOW GRANTS")
-			for row in cursor:
-				if "GRANT ALL PRIVILEGES ".lower() in row[0].lower() or " process " in row[0].lower() or " process," in row[0].lower().replace('`','').replace('',''):
-					processGranted = True
-				if "GRANT ALL PRIVILEGES ON *.* ".lower() in row[0].lower() or " reload " in row[0].lower() or " reload," in row[0].lower().replace('`','').replace('',''):
-					reloadGranted = True
-			if processGranted and reloadGranted:
-				cursor.execute("SELECT COUNT(*) FROM information_schema.innodb_sys_tables WHERE name LIKE CONCAT(SCHEMA(), '/%') AND row_format = 'Compact'")
-
+				processGranted = False
+				reloadGranted = False
+				cursor.execute("SHOW GRANTS")
 				for row in cursor:
-					compactTablesAmount = row[0]
-					if compactTablesAmount >= 0:
-						print("Found " + str(row[0]) + " tables with 'row_format = Compact'. Change row_format to Dynamic ? (N/y, Blank => Cancel):")
-						choice = input(" > ")
-						choice = choice.strip().lower()
-						if choice.startswith("y") or choice.startswith("j"):
-							cursor.execute("DROP PROCEDURE IF EXISTS tmp_convert_row")
-							cursor.execute("CREATE PROCEDURE tmp_convert_row()\n"
-								+ "BEGIN\n"
-								+ "DECLARE done INT DEFAULT FALSE; DECLARE dbtable VARCHAR(100);\n"
-								+ "DECLARE tab_cursor cursor FOR SELECT SUBSTRING(name, length(SCHEMA()) + 2) FROM information_schema.innodb_sys_tables WHERE name LIKE CONCAT(SCHEMA(), '/%') AND row_format = 'Compact';\n"
-								+ "DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;\n"
-								+ "OPEN tab_cursor;\n"
-								+ "read_loop: LOOP\n"
-								+ "FETCH tab_cursor INTO dbtable;\n"
-								+ "IF done THEN LEAVE read_loop; END IF;\n"
-								+ "SET @SQLText = CONCAT('ALTER TABLE ', dbtable, ' ROW_FORMAT=DYNAMIC');\n"
-								+ "PREPARE stmt FROM @SQLText; EXECUTE stmt; DEALLOCATE PREPARE stmt;\n"
-								+ "END LOOP;\n"
-								+ "CLOSE tab_cursor;\n"
-								+ "END")
-							cursor.execute("CALL tmp_convert_row();")
+					if "GRANT ALL PRIVILEGES ".lower() in row[0].lower() or " process " in row[0].lower() or " process," in row[0].lower().replace('`','').replace('',''):
+						processGranted = True
+					if "GRANT ALL PRIVILEGES ON *.* ".lower() in row[0].lower() or " reload " in row[0].lower() or " reload," in row[0].lower().replace('`','').replace('',''):
+						reloadGranted = True
+				if processGranted and reloadGranted:
+					cursor.execute("SELECT COUNT(*) FROM information_schema.innodb_sys_tables WHERE name LIKE CONCAT(SCHEMA(), '/%') AND row_format = 'Compact'")
 
-							Environment.messages.append("MariaDB table format check executed successully. " + compactTablesAmount + " tables changed.")
-					else:
-						Environment.messages.append("MariaDB table format check executed successully. No tables found for change.")
-			else:
-				dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName] if DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties else None
-				if not processGranted:
-					Environment.errors.append("Database user needs grant 'PROCESS' to check and change table format. (e.g. GRANT PROCESS ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
-				if not reloadGranted:
-					Environment.errors.append("Database user needs grant 'RELOAD' to check and change table format. (e.g. GRANT RELOAD ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
+					for row in cursor:
+						compactTablesAmount = row[0]
+						if compactTablesAmount >= 0:
+							print("Found " + str(row[0]) + " tables with 'row_format = Compact'. Change row_format to Dynamic ? (N/y, Blank => Cancel):")
+							choice = input(" > ")
+							choice = choice.strip().lower()
+							if choice.startswith("y") or choice.startswith("j"):
+								cursor.execute("DROP PROCEDURE IF EXISTS tmp_convert_row")
+								cursor.execute("CREATE PROCEDURE tmp_convert_row()\n"
+									+ "BEGIN\n"
+									+ "DECLARE done INT DEFAULT FALSE; DECLARE dbtable VARCHAR(100);\n"
+									+ "DECLARE tab_cursor cursor FOR SELECT SUBSTRING(name, length(SCHEMA()) + 2) FROM information_schema.innodb_sys_tables WHERE name LIKE CONCAT(SCHEMA(), '/%') AND row_format = 'Compact';\n"
+									+ "DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;\n"
+									+ "OPEN tab_cursor;\n"
+									+ "read_loop: LOOP\n"
+									+ "FETCH tab_cursor INTO dbtable;\n"
+									+ "IF done THEN LEAVE read_loop; END IF;\n"
+									+ "SET @SQLText = CONCAT('ALTER TABLE ', dbtable, ' ROW_FORMAT=DYNAMIC');\n"
+									+ "PREPARE stmt FROM @SQLText; EXECUTE stmt; DEALLOCATE PREPARE stmt;\n"
+									+ "END LOOP;\n"
+									+ "CLOSE tab_cursor;\n"
+									+ "END")
+								cursor.execute("CALL tmp_convert_row();")
+								connection.commit()
+								Environment.messages.append("MariaDB table format check executed successully. " + compactTablesAmount + " tables changed.")
+						else:
+							Environment.messages.append("MariaDB table format check executed successully. No tables found for change.")
+				else:
+					dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName] if DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties else None
+					if not processGranted:
+						Environment.errors.append("Database user needs grant 'PROCESS' to check and change table format. (e.g. GRANT PROCESS ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
+					if not reloadGranted:
+						Environment.errors.append("Database user needs grant 'RELOAD' to check and change table format. (e.g. GRANT RELOAD ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
 		except Exception as e:
 			errorText = "Error while checking MariaDB table format: " + str(e)
 			Environment.errors.append(errorText)
 			logging.exception(errorText)
-		finally:
-			if cursor is not None:
-				cursor.close()
-			if connection is not None:
-				connection.commit()
-				connection.close()
 
 def updateHistoryMenuAction(actionParameters):
 	print(Environment.applicationName + " update history")

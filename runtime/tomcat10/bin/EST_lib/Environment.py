@@ -17,7 +17,7 @@ class Environment:
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "26.05.043" #Dummy version number. This is going to be replaced by build tools.
+	toolVersion = "26.05.115" #Dummy version number. This is going to be replaced by build tools.
 	toolName = None
 
 	applicationName = None
@@ -309,11 +309,11 @@ class Environment:
 				DbConnector.applicationDbcfgEntryName = additionalProperties["DB_PROPERTIES_ITEM_NAME"].strip()
 				DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName] if DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties else None
 
-		if DbConnector.dbcfgProperties is not None and DbConnector.dbcfgEntry is None and Environment.applicationDbcfgEntryDefaultName in DbConnector.dbcfgProperties:
+		if DbConnector.dbcfgProperties and not DbConnector.dbcfgEntry and Environment.applicationDbcfgEntryDefaultName in DbConnector.dbcfgProperties:
 			DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[Environment.applicationDbcfgEntryDefaultName]
 
-		if DbConnector.dbcfgProperties is not None and DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties:
-			dbVendor = DbConnector.dbcfgEntry["dbms"]
+		if DbConnector.dbcfgProperties and DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties:
+			dbVendor = DbConnector.dbcfgEntry.get("dbms")
 			if "oracle" == dbVendor.lower().strip():
 				DbConnector.emmDbVendor = "oracle"
 			elif "mariadb" == dbVendor.lower().strip():
@@ -346,7 +346,7 @@ class Environment:
 					DbConnector.applicationDbcfgEntryName = "agnitas.emm"
 					DbConnector.dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName]
 
-			if DbConnector.dbcfgProperties is not None and DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties:
+			if DbConnector.dbcfgProperties and DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties:
 				dbVendor = DbConnector.dbcfgEntry["dbms"]
 				if "oracle" == dbVendor.lower().strip():
 					DbConnector.emmDbVendor = "oracle"
@@ -899,7 +899,10 @@ class Environment:
 
 		if DbConnector.checkDbServiceAvailable():
 			if not DbConnector.checkDbConnection():
-				Environment.errors.append("Database Connection cannot be established. (Maybe database user or database connection parameters for " + Environment.applicationName + " were not configured)")
+				if not DbConnector.checkDbExists():
+					Environment.errors.append("Required Database does not seem to exist. (Maybe database name for " + Environment.applicationName + " is malformed or not yet configured)")
+				else:
+					Environment.errors.append("Database Connection cannot be established. (Maybe database user or database connection parameters for " + Environment.applicationName + " were not configured)")
 			elif not DbConnector.checkDbStructureExists():
 				Environment.errors.append("Database structure does not exist. (Maybe " + Environment.applicationName + " is not installed)")
 			else:
@@ -1229,34 +1232,35 @@ class Environment:
 	def checkMigration():
 		try:
 			# To be removed in near future: GWUA-5514
-			if DbConnector.checkDbConnection() and DbConnector.checkColumnExists("workflow_tbl", "is_legacy_mode"):
-				problematicInActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status != 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
-				if len(problematicInActiveWorkflows) > 0:
-					listOfWorkflowNames = ""
-					for row in problematicInActiveWorkflows:
-						shortname = row[0]
-						companyID = row[1]
-						workflowID = row[2]
-						if len(listOfWorkflowNames) > 0:
-							listOfWorkflowNames = listOfWorkflowNames + ", "
-						listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
-					Environment.warnings.append("Your " + Environment.applicationName + " database contains inactive legacy workflows " + listOfWorkflowNames + ". Please delete those workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later.")
+			if DbConnector.checkDbConnection():
+				if DbConnector.checkColumnExists("workflow_tbl", "is_legacy_mode"):
+					problematicInActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status != 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
+					if len(problematicInActiveWorkflows) > 0:
+						listOfWorkflowNames = ""
+						for row in problematicInActiveWorkflows:
+							shortname = row[0]
+							companyID = row[1]
+							workflowID = row[2]
+							if len(listOfWorkflowNames) > 0:
+								listOfWorkflowNames = listOfWorkflowNames + ", "
+							listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
+						Environment.warnings.append("Your " + Environment.applicationName + " database contains inactive legacy workflows " + listOfWorkflowNames + ". Please delete those workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later.")
 
-				problematicActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status = 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
-				if len(problematicActiveWorkflows) > 0:
-					listOfWorkflowNames = ""
-					for row in problematicActiveWorkflows:
-						shortname = row[0]
-						companyID = row[1]
-						workflowID = row[2]
-						if len(listOfWorkflowNames) > 0:
-							listOfWorkflowNames = listOfWorkflowNames + ", "
-						listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
-					Environment.warnings.append("Your " + Environment.applicationName + " database contains active legacy workflows " + listOfWorkflowNames + " which can not be migrated. Please rebuild these workflows from scratch and delete the legacy workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later. If you need help, please contact support.")
+					problematicActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status = 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
+					if len(problematicActiveWorkflows) > 0:
+						listOfWorkflowNames = ""
+						for row in problematicActiveWorkflows:
+							shortname = row[0]
+							companyID = row[1]
+							workflowID = row[2]
+							if len(listOfWorkflowNames) > 0:
+								listOfWorkflowNames = listOfWorkflowNames + ", "
+							listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
+						Environment.warnings.append("Your " + Environment.applicationName + " database contains active legacy workflows " + listOfWorkflowNames + " which can not be migrated. Please rebuild these workflows from scratch and delete the legacy workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later. If you need help, please contact support.")
 
-			oldFormDoLinks = DbConnector.selectValue("SELECT COUNT(*) FROM rdir_url_tbl WHERE full_url like '%/form.do%' AND deleted = 0 AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE deleted = 0)")
-			if oldFormDoLinks is not None and oldFormDoLinks > 0:
-				Environment.warnings.append("Your " + Environment.applicationName + " database contains userform links in mailings of the old '.../form.do?...' format. Please switch those to the new format '.../form.action?...'. If you need help, please contact support.")
+				oldFormDoLinks = DbConnector.selectValue("SELECT COUNT(*) FROM rdir_url_tbl WHERE full_url like '%/form.do%' AND deleted = 0 AND mailing_id IN (SELECT mailing_id FROM mailing_tbl WHERE deleted = 0)")
+				if oldFormDoLinks is not None and oldFormDoLinks > 0:
+					Environment.warnings.append("Your " + Environment.applicationName + " database contains userform links in mailings of the old '.../form.do?...' format. Please switch those to the new format '.../form.action?...'. If you need help, please contact support.")
 		except Exception as e:
 			if ESTUtilities.isDebugMode():
 				logging.exception("Cannot check migration")

@@ -89,7 +89,7 @@ class License:
 		if newLicenseValues is not None and 0 in newLicenseValues and "licenseID" in newLicenseValues[0]:
 			licenseID = newLicenseValues[0]["licenseID"]
 
-		if licenseID is not None and DbConnector.selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'system' and name = 'licence'") == 0:
+		if licenseID is not None and DbConnector.selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'system' and name = 'licence'") == 0:
 			DbConnector.update("INSERT INTO config_tbl (class, name, value) VALUES ('system', 'licence', ?)", licenseID)
 
 		License.checkLicenseStatus()

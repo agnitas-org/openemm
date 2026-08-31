@@ -1,12 +1,13 @@
 import bisect
+import inspect
 import shutil
 import sys
 import re
 import os
 import pwd
 import ssl
-import datetime
 import smtplib
+import datetime
 import subprocess
 import logging
 import glob
@@ -20,6 +21,13 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
+from typing import Callable
+
+try:
+	from packaging.version import Version
+except ImportError:
+	from EST_lib.FallBackLibrary import Version
+
 from . import Colors
 
 debugMode = False
@@ -69,50 +77,50 @@ def flushStdInAndGetInput(promptText):
 	return inputString
 
 def downloadVersionInfo(versionInfoUrl):
-    global debugMode
+	global debugMode
 
-    versionInfo = {}
-    if versionInfoUrl is not None:
-        if debugMode:
-            print("VersionInfoUrl: " + versionInfoUrl)
+	versionInfo = {}
+	if versionInfoUrl is not None:
+		if debugMode:
+			print("VersionInfoUrl: " + versionInfoUrl)
 
-        with tempfile.TemporaryFile() as temporaryFileHandle:
-            downloadPageResponse = None
-            try:
-                downloadPageResponse = openUrlConnection(versionInfoUrl)
-                chunk_size = 8192
-                while True:
-                    chunk = downloadPageResponse.read(chunk_size)
+		with tempfile.TemporaryFile() as temporaryFileHandle:
+			downloadPageResponse = None
+			try:
+				downloadPageResponse = openUrlConnection(versionInfoUrl)
+				chunk_size = 8192
+				while True:
+					chunk = downloadPageResponse.read(chunk_size)
 
-                    if not chunk:
-                        break
+					if not chunk:
+						break
 
-                    temporaryFileHandle.write(chunk)
-            except:
-                errorText = "Download of version info failed"
-                if debugMode:
-                    logging.exception(errorText + "\nUrl: " + str(versionInfoUrl))
-                    raise
-                else:
-                    raise Exception(errorText)
-            finally:
-                if downloadPageResponse is not None:
-                    downloadPageResponse.close()
+					temporaryFileHandle.write(chunk)
+			except:
+				errorText = "Download of version info failed"
+				if debugMode:
+					logging.exception(errorText + "\nUrl: " + str(versionInfoUrl))
+					raise
+				else:
+					raise Exception(errorText)
+			finally:
+				if downloadPageResponse is not None:
+					downloadPageResponse.close()
 
-                temporaryFileHandle.seek(0)
-                for line in temporaryFileHandle.read().decode("UTF-8").splitlines():
-                    line = line.strip()
-                    if line and not line.startswith("#") and ":" in line:
-                        indexOfNameSeparator = line.index(":")
-                        name = line[0:indexOfNameSeparator].strip()
-                        if " " in line[indexOfNameSeparator + 1:].strip():
-                            versionNumber = line[indexOfNameSeparator + 1:].strip().split(" ")[0]
-                            downloadLink = line[indexOfNameSeparator + 1:].strip().split(" ")[1]
-                        else:
-                            versionNumber = line[indexOfNameSeparator + 1:].strip()
-                            downloadLink = None
-                        versionInfo[name] = [versionNumber, downloadLink]
-    return versionInfo
+				temporaryFileHandle.seek(0)
+				for line in temporaryFileHandle.read().decode("UTF-8").splitlines():
+					line = line.strip()
+					if line and not line.startswith("#") and ":" in line:
+						indexOfNameSeparator = line.index(":")
+						name = line[0:indexOfNameSeparator].strip()
+						if " " in line[indexOfNameSeparator + 1:].strip():
+							versionNumber = line[indexOfNameSeparator + 1:].strip().split(" ")[0]
+							downloadLink = line[indexOfNameSeparator + 1:].strip().split(" ")[1]
+						else:
+							versionNumber = line[indexOfNameSeparator + 1:].strip()
+							downloadLink = None
+						versionInfo[name] = [versionNumber, downloadLink]
+	return versionInfo
 
 def downloadTextFile(textFileUrl):
 	if textFileUrl is not None:
@@ -244,6 +252,9 @@ def printTextInBox(text, boxChar="*"):
 
 def checkNodeAvailable():
 	return bool(shutil.which("node"))
+
+def checkVersionInvalid(version: str | None):
+	return not version or not version.strip() or version in ["Unknown", "Unknown version"]
 
 def checkJavaAvailable(javaHome):
 	if isBlank(javaHome) or not os.path.isfile(javaHome + "/bin/java"):
@@ -578,55 +589,31 @@ def getFirstVersionFromText(text):
 		return None
 
 def compareVersions(version1, version2):
-	if version1 is None or len(version1.strip()) == 0 or version1 == "Unknown" or version1 == "Unknown version":
-		if version2 is None or len(version2.strip()) == 0 or version2 == "Unknown" or version2 == "Unknown version":
+	if checkVersionInvalid(version1):
+		if checkVersionInvalid(version2):
 			return 0
 		else:
 			return 1
-	elif version2 is None or len(version2.strip()) == 0 or version2 == "Unknown" or version2 == "Unknown version":
+	elif checkVersionInvalid(version2):
 		return -1
 	else:
-		version1Parts = version1.split(".")
-		version2Parts = version2.split(".")
-		for i in range(max(len(version1Parts), len(version2Parts))):
-			if len(version1Parts) > i and len(version2Parts) > i:
-				if int(version1Parts[i]) < int(version2Parts[i]):
-					return 1
-				elif int(version1Parts[i]) > int(version2Parts[i]):
-					return -1
-			elif len(version1Parts) > i:
-				if int(version1Parts[i]) != 0:
-					return -1
-			elif len(version2Parts) > i:
-				if int(version2Parts[i]) != 0:
-					return 1
-		return 0
+		version1 = Version(version1)
+		version2 = Version(version2)
+		if version1 < version2:
+			return 1
+		elif version1 > version2:
+			return -1
+		else:
+			return 0
 
-def normalizeVersion(versionText, removeLeadingZeros = False):
-	if versionText is None:
-		return None
-	elif len(versionText.strip()) == 0:
-		return ""
-	elif removeLeadingZeros:
-		versionParts = versionText.split(".")
-		newVersion = str(int(versionParts[0]))
-		for i in range(1, len(versionParts)):
-			newVersion = newVersion + "." + str(int(versionParts[i]))
-		while newVersion.endswith(".0"):
-			newVersion = newVersion[0:len(newVersion) - 2]
-		return newVersion
+def normalizeVersion(versionText: str, removeLeadingZeros = False):
+	if versionText and versionText.strip():
+		if removeLeadingZeros:
+			return str(Version(versionText.rstrip("0.")))
+		else:
+			return versionText.rstrip("0.")
 	else:
-		newVersion = versionText
-		while True:
-			lastPointIndex = newVersion.rfind(".")
-			if lastPointIndex > 0:
-				if int(newVersion[lastPointIndex + 1:]) == 0:
-					newVersion = newVersion[0:lastPointIndex]
-				else:
-					break
-			else:
-				break
-		return newVersion
+		return ""
 
 def isWritable(path):
 	if os.path.isfile(path):
@@ -800,56 +787,41 @@ def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServer
 		print()
 
 def getMainLtsVersion(versionString):
-	if versionString is None or len(
-			versionString.strip()) == 0 or versionString == "Unknown" or versionString == "Unknown version":
+	if checkVersionInvalid(versionString):
 		return None
 	else:
-		validMinorVersions = [4, 5, 10, 11]
-		versionParts = versionString.split(".")
-		if len(versionParts) > 2:
-			minorPart = int(versionParts[1])
-			if minorPart in validMinorVersions:
-				return ".".join(versionParts[0:2])
+		version = Version(versionString)
+		oldMinorVersions = [4, 10]
+		newMinorVersions = [5, 11]
+		minorVersions = newMinorVersions if version.major > 24 else oldMinorVersions
+		if not version.minor in minorVersions:
+			index = bisect.bisect_left(minorVersions, version.minor)
+			if index >= len(minorVersions):
+				return f"{version.major + 1}.{minorVersions[0]:02}"
 			else:
-				index = bisect.bisect_left(validMinorVersions, minorPart)
-				if index >= len(validMinorVersions):
-					return f"{int(versionParts[0]) + 1}.{validMinorVersions[0]:02}"
-				else:
-					return f"{versionParts[0]}.{validMinorVersions[index]:02}"
-		elif len(versionParts) > 1:
-			return versionParts[0]
+				return f"{version.major}.{minorVersions[index]:02}"
+		elif len(version.release) >= 2:
+			return f"{version.major}.{version.minor:02}"
 		else:
 			return None
 
 def getMajorVersion(versionString):
-	if versionString is None or len(versionString.strip()) == 0 or versionString == "Unknown" or versionString == "Unknown version":
+	if checkVersionInvalid(versionString):
 		return 0
 	else:
-		versionParts = versionString.split(".")
-		if len(versionParts) > 0:
-			return int(versionParts[0])
-		else:
-			return 0
+		return Version(versionString).major
 
 def getMinorVersion(versionString):
-	if versionString is None or len(versionString.strip()) == 0 or versionString == "Unknown" or versionString == "Unknown version":
+	if checkVersionInvalid(versionString):
 		return 0
 	else:
-		versionParts = versionString.split(".")
-		if len(versionParts) > 1:
-			return int(versionParts[1])
-		else:
-			return 0
+		return Version(versionString).minor
 
-def getMicroVersion(versionString):
-	if versionString is None or len(versionString.strip()) == 0 or versionString == "Unknown":
+def getMicroVersion(versionString: str):
+	if checkVersionInvalid(versionString):
 		return 0
 	else:
-		versionParts = versionString.split(".")
-		if len(versionParts) > 2:
-			return int(versionParts[2])
-		else:
-			return 0
+		return Version(versionString).micro
 
 def printProgressBar(temsTodo, itemsDone, progressbarSize):
 	percentageDone = itemsDone / float(temsTodo)
@@ -914,11 +886,11 @@ def check_tree_permissions(path):
 				return False
 	return True
 
-def str_to_int(s):
+def str_to_int(string,default: int | None=None):
 	try:
-		return int(s)
+		return int(string)
 	except ValueError:
-		return None
+		return default
 
 def getNodeVersion():
 	if shutil.which("node"):
@@ -934,3 +906,7 @@ def parse_header (content: str) -> dict[str, str]:
 			msg['content-type'] = content
 			return dict (msg['content-type'].params)
 	return {}
+
+def filter_argument_list(func: Callable, data: dict) -> dict:
+	sig = inspect.signature(func)
+	return {k:data[k] for k in sig.parameters.keys() if k in data}

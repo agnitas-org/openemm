@@ -1,3 +1,5 @@
+import importlib.util
+import itertools
 import sys
 import os
 import re
@@ -5,7 +7,11 @@ import time
 import subprocess
 import logging
 import socket
-from contextlib import suppress
+from contextlib import suppress, contextmanager
+from urllib.parse import urlparse
+from itertools import chain
+from operator import itemgetter
+from pathlib import Path
 
 from EST_lib import ESTUtilities
 
@@ -18,22 +24,40 @@ emmDbVendor = None
 dbcfgPropertiesFilePath = None
 dbcfgProperties = None
 applicationDbcfgEntryName = None
-dbcfgEntry = None
+dbcfgEntry: dict = {}
+oracledb = None
+attemptedInitializingThickClient = False
 
-def is_connectable (host: str, port: int | str, timeout: None | int | float = None, verbose: bool = False) -> bool:
+class DatabaseMissingException(Exception):
+	def __init__(self, message, errors):
+		super().__init__(message)
+		self.errors = errors
+
+class MissingTableException(Exception):
+	def __init__(self, table=None):
+		if table:
+			super().__init__(f"The table {table} does not exist.")
+		else:
+			super().__init__("A table required for statement execution does not exist.")
+
+class MissingDatabaseVendorException(Exception):
+	def __init__(self, dbms):
+		super().__init__(f"The database vendor {dbms} is not supported by this python installation")
+
+def is_connectable(host: str, port: int | str, timeout: None | int | float = None, verbose: bool = False) -> bool:
 	sock: None | socket.socket = None
 	try:
-		sock = socket.create_connection ((host, port if isinstance (port, int) else int (port)), timeout = timeout)
+		sock = socket.create_connection((host, port if isinstance(port, int) else int(port)), timeout=timeout)
 		return True
 	except Exception as e:
 		if verbose:
-			logging.warning (f'{host}:{port}: failed to connect: {e}')
+			logging.warning(f'{host}:{port}: failed to connect: {e}')
 	finally:
 		if sock is not None:
-			with suppress (Exception):
-				sock.close ()
+			with suppress(Exception):
+				sock.close()
 	return False
-	
+
 def isOracleDriverModuleAvailable():
 	global oraclePythonDriverAvailable
 
@@ -41,7 +65,7 @@ def isOracleDriverModuleAvailable():
 		try:
 			import oracledb
 			oraclePythonDriverAvailable = True
-		except:
+		except ModuleNotFoundError:
 			oraclePythonDriverAvailable = False
 	return oraclePythonDriverAvailable
 
@@ -52,7 +76,7 @@ def isMariadbDriverModuleAvailable():
 		try:
 			import mariadb
 			mariadbPythonDriverAvailable = True
-		except:
+		except ModuleNotFoundError:
 			mariadbPythonDriverAvailable = False
 	return mariadbPythonDriverAvailable
 
@@ -62,7 +86,7 @@ def recheckMariadbDriverModuleAvailability():
 	try:
 		import mariadb
 		mariadbPythonDriverAvailable = True
-	except:
+	except ModuleNotFoundError:
 		mariadbPythonDriverAvailable = False
 	return mariadbPythonDriverAvailable
 
@@ -73,7 +97,7 @@ def isMysqlDriverModuleAvailable():
 		try:
 			import MySQLdb
 			mysqlPythonDriverAvailable = True
-		except:
+		except ModuleNotFoundError:
 			mysqlPythonDriverAvailable = False
 	return mysqlPythonDriverAvailable
 
@@ -83,7 +107,7 @@ def recheckMysqlDriverModuleAvailability():
 	try:
 		import MySQLdb
 		mysqlPythonDriverAvailable = True
-	except:
+	except ModuleNotFoundError:
 		mysqlPythonDriverAvailable = False
 	return mysqlPythonDriverAvailable
 
@@ -91,7 +115,7 @@ def recheckMysqlDriverModuleAvailability():
 # Attention: ', ' characters are not allowed in keypair names or values, especially in passwords
 def readDbcfgPropertiesFile(filePath):
 	dbcfgProperties = {}
-	dbcfgLinePattern = re.compile ("([a-z0-9._+-]+):[ \t]*(.*)$", re.IGNORECASE)
+	dbcfgLinePattern = re.compile("([a-z0-9._+-]+):[ \t]*(.*)$", re.IGNORECASE)
 	with open(filePath, "r", encoding="UTF-8") as dbcfgPropertiesFileHandle:
 		for line in dbcfgPropertiesFileHandle:
 			line = line.strip()
@@ -101,8 +125,8 @@ def readDbcfgPropertiesFile(filePath):
 					(dbEntryName, parameters) = lineMatch.groups()
 					if parameters:
 						properties = {}
-						for keyValuePairString in [_p.strip () for _p in parameters.split(", ")]:
-							keyValueParts = [_e.strip () for _e in keyValuePairString.split("=", 1)]
+						for keyValuePairString in [_p.strip() for _p in parameters.split(", ")]:
+							keyValueParts = [_e.strip() for _e in keyValuePairString.split("=", 1)]
 							if len(keyValueParts) == 2:
 								properties[keyValueParts[0]] = keyValueParts[1]
 						dbcfgProperties[dbEntryName] = properties
@@ -111,7 +135,7 @@ def readDbcfgPropertiesFile(filePath):
 # Write the special dbcfg file format
 # Any comments within the existing file should be preserved
 def updateDbcfgPropertiesFile(filePath, changedDbcfgProperties, usernameForSecureLibImportScript):
-	dbcfgLinePattern = re.compile ("([a-z0-9._+-]+):[ \t]*(.*)$", re.IGNORECASE)
+	dbcfgLinePattern = re.compile("([a-z0-9._+-]+):[ \t]*(.*)$", re.IGNORECASE)
 
 	with open(filePath, "r", encoding="UTF-8") as propertiesFileHandle:
 		dbcfgPropertiesData = propertiesFileHandle.read()
@@ -198,121 +222,163 @@ def parseOracleJdbcConnectionString(jdbcConnectionString):
 			raise Exception("Invalid jdbcConnectionString (Unknown dbIdentifier format): " + jdbcConnectionString)
 		return jdbcConnectionProperties
 
-def openDbConnection():
-	global dbcfgEntry
+def checkModuleAvailable(moduleName: str) -> bool:
+	return importlib.util.find_spec(moduleName) is not None
+
+
+def _openOracleConnection():
+	global attemptedInitializingThickClient
 
 	try:
-		if dbcfgEntry["dbms"].lower() == "oracle":
-			if oraclePythonDriverAvailable == False:
-				raise Exception("The database vendor " + dbcfgEntry["dbms"] + " is not supported by this python installation")
+		import oracledb
 
-			import oracledb
+		if not attemptedInitializingThickClient and dbClientPath:
+			attemptedInitializingThickClient = True
+			oracledb.init_oracle_client()
 
-			if "secure" in dbcfgEntry and len(dbcfgEntry["secure"]) > 0 and dbcfgEntry["secure"].lower().strip() == "true":
-				host = dbcfgEntry["host"]
+		def inputTypeHandler(cursor, value, arraysize):
+			if isinstance(value, (bytes, bytearray)):
+				cursor.var(oracledb.BLOB)
+				return cursor.var(oracledb.BLOB, value)
+			return None
 
-				portStartIndex = host.find(":")
-				if portStartIndex > 0:
-					portString = host[portStartIndex + 1:]
-					if "/" in portString:
-						portString = portString[0:portString.find("/")]
-					port = int(portString)
-					host = host[0:portStartIndex]
-				else:
-					port = 2848
+		def _connect(dbcfg: dict):
+			parameters = {}
 
-				connect_string = "(description= (retry_count=20)(retry_delay=3)"\
-					"(address="\
-					"(protocol=tcps)"\
-					"(port=" + str(port) + ")"\
-					"(host=" + host + ")"\
-					")"\
-					"(connect_data=(service_name=" + dbcfgEntry["sid"] + "))"\
-					")"
+			host = dbcfg.get("host", "")
 
-				connection = oracledb.connect(user=dbcfgEntry["user"], password=dbcfgEntry["password"], dsn=connect_string)
-			elif "host" in dbcfgEntry and len(dbcfgEntry["host"]) > 0:
-				host = dbcfgEntry["host"]
+			if host:
+				parsedHost = urlparse(f"tcp://{host}")
+				parameters["port"] = parsedHost.port
+				parameters["host"] = parsedHost.hostname or host
 
-				portStartIndex = host.find(":")
-				if portStartIndex > 0:
-					portString = host[portStartIndex + 1:]
-					if "/" in portString:
-						portString = portString[0:portString.find("/")]
-					port = int(portString)
-					host = host[0:portStartIndex]
-				else:
-					port = 1521
+			parameters["user"] = dbcfg.get("user", "")
+			parameters["password"] = dbcfg.get("password", "")
+			parameters.update(dbcfg.get("py-connect", {}))
 
-				dsn_tns = oracledb.makedsn(host, port, service_name=dbcfgEntry["sid"])
-				connection = oracledb.connect(user=dbcfgEntry["user"], password=dbcfgEntry["password"], dsn=dsn_tns)
+			if dbcfg.get("secure", "").lower().strip() == "true":
+				oracledb.connect()
+				connectString = ("(description= (retry_count=20)(retry_delay=3)"
+								 f"(address=(protocol=tcps)(port={parameters.get('port', 2848)})(host={host}))"
+								 f"(connect_data=(service_name={dbcfg.get('sid')})))"
+								)
+				parameters["dsn"] = connectString
+			elif parameters.get("host"):
+				parameters["dsn"] = oracledb.makedsn(host, parameters.get('port', 1521), service_name=dbcfg["sid"])
 			else:
-				connection = oracledb.connect(dbcfgEntry["user"] + "/" + dbcfgEntry["password"] + "@" + dbcfgEntry["sid"])
-			return connection
-		elif dbcfgEntry["dbms"].lower() == "mysql":
-			if mysqlPythonDriverAvailable == False:
-				raise Exception("The database vendor " + dbcfgEntry["dbms"] + " is not supported by this python installation")
+				parameters = {"dsn": parameters["user"] + "/" + parameters["password"] + "@" + dbcfg["sid"]}
+			parameters.update(dbcfgEntry.get("py-connect", {}))
+			try:
+				connection = oracledb.connect(**parameters)
+				connection.inputtypehandler = inputTypeHandler
+				return connection
+			except Exception as e:
+				logging.error(f"Instantiation of oracledb related functionality failed unexpectedly: {e}")
 
-			host = dbcfgEntry["host"]
-			if host is None or len(host) == 0:
-				print("Missing database host configuration")
-				sys.exit(1)
+		return _connect
+	except ImportError:
+		pass
 
-			portStartIndex = host.find(":")
-			if portStartIndex > 0:
-				portString = host[portStartIndex + 1:]
-				if "/" in portString:
-					portString = portString[0:portString.find("/")]
-				port = int(portString)
-				host = host[0:portStartIndex]
-			else:
-				port = 3306
+def _openMariadbConnection():
+	try:
+		import mariadb
+		def _connect(dbcfg: dict):
+			parameters = {}
 
-			import MySQLdb
+			host = dbcfg.get("host", "")
 
-			if "secure" in dbcfgEntry and len(dbcfgEntry["secure"]) > 0 and dbcfgEntry["secure"].lower().strip() == "true":
-				connection = MySQLdb.connect(host, dbcfgEntry["user"], dbcfgEntry["password"], dbcfgEntry["name"], port, "UTF-8", ssl=True)
-			else:
-				if host is not None and host.lower() == "localhost":
-					connection = MySQLdb.connect(host, dbcfgEntry["user"], dbcfgEntry["password"], dbcfgEntry["name"])
-				else:
-					connection = MySQLdb.connect(host, dbcfgEntry["user"], dbcfgEntry["password"], dbcfgEntry["name"], port, "UTF-8")
-			return connection
-		elif dbcfgEntry["dbms"].lower() == "mariadb":
-			if mariadbPythonDriverAvailable == False:
-				raise Exception("The database vendor " + dbcfgEntry["dbms"] + " is not supported by this python installation")
+			if host:
+				parsedHost = urlparse(f"tcp://{host}")
+				parameters["port"] = parsedHost.port or 3306
+				parameters["host"] = parsedHost.hostname or host
 
-			host = dbcfgEntry["host"]
-			if host is None or len(host) == 0:
-				print("Missing database host configuration")
-				sys.exit(1)
+			parameters["user"] = dbcfg.get("user", "")
+			parameters["password"] = dbcfg.get("password", "")
+			parameters["database"] = dbcfg.get("name", "")
+			parameters.update(dbcfg.get("py-connect", {}))
 
-			portStartIndex = host.find(":")
-			if portStartIndex > 0:
-				portString = host[portStartIndex + 1:]
-				if "/" in portString:
-					portString = portString[0:portString.find("/")]
-				port = int(portString)
-				host = host[0:portStartIndex]
-			else:
-				port = 3306
+			if dbcfg.get("secure", "").lower().strip() == "true":
+				parameters["ssl"] = True
+			try:
+				return mariadb.connect(**parameters)
 
-			import mariadb
+			except mariadb.ProgrammingError as e:
+				if str(e).startswith("Unknown database"):
+					errorMessage = f"Database {dbcfg.get('name')} is not accessible or does not exist"
+					if ESTUtilities.isDebugMode():
+						logging.exception(errorMessage)
+					raise DatabaseMissingException(errorMessage, e)
+				return None
 
-			if "secure" in dbcfgEntry and len(dbcfgEntry["secure"]) > 0 and dbcfgEntry["secure"].lower().strip() == "true":
-				connection = mariadb.connect(host=host, user=dbcfgEntry["user"], password=dbcfgEntry["password"], database=dbcfgEntry["name"], port=port, ssl=True)
-			else:
-				if host is not None and host.lower() == "localhost":
-					connection = mariadb.connect(host=host, user=dbcfgEntry["user"], password=dbcfgEntry["password"], database=dbcfgEntry["name"])
-				else:
-					connection = mariadb.connect(host=host, user=dbcfgEntry["user"], password=dbcfgEntry["password"], database=dbcfgEntry["name"], port=port)
-			return connection
-		else:
-			raise Exception("Invalid database type: " + dbcfgEntry["dbms"])
-	except:
-		if ESTUtilities.isDebugMode():
-			logging.exception("Cannot open DbConnection")
-		return None
+		return _connect
+	except ImportError:
+		pass
+
+def _openMySQLConnection():
+	try:
+		import MySQLdb
+		def _connect(dbcfg: dict):
+			parameters = {}
+
+			host = dbcfg.get("host", "")
+
+			if host:
+				parsedHost = urlparse(f"tcp://{host}")
+				parameters["port"] = parsedHost.port or 3306
+				parameters["host"] = parsedHost.hostname or host
+
+			parameters["user"] = dbcfg.get("user", "")
+			parameters["password"] = dbcfg.get("password", "")
+			parameters["database"] = dbcfg.get("name", "")
+			parameters["charset"] = "UTF-8"
+			parameters.update(dbcfg.get("py-connect", {}))
+
+			if dbcfg.get("secure", "").lower().strip() == "true":
+				parameters["ssl"] = True
+			try:
+				MySQLdb.connect(**parameters)
+			except Exception as e:
+				logging.error(f"Instantiation of MySQLdb related functionality failed unexpectedly: {e}")
+
+		return _connect
+	except ImportError:
+		pass
+
+def detectNeededConnectionMethod(dbms: str) -> "mariadb.Connection oracledb.Connection":
+	if dbms.lower() == "oracle":
+		if not checkModuleAvailable('oracledb'):
+			raise MissingDatabaseVendorException(dbms)
+		return _openOracleConnection()
+	elif dbms.lower() == "mysql":
+		if not checkModuleAvailable('MySQLdb'):
+			raise MissingDatabaseVendorException(dbms)
+		return _openMySQLConnection()
+	elif dbms.lower() == "mariadb":
+		if not checkModuleAvailable('mariadb'):
+			raise MissingDatabaseVendorException(dbms)
+		return _openMariadbConnection()
+	else:
+		raise Exception("The Database Management System {dbms} is not supported by this Tool.")
+
+@contextmanager
+def openDbConnection(dbcfg: dict | None = None):
+	if not dbcfg:
+		dbcfg = dbcfgEntry
+
+	connection = None
+	try:
+		connectionMethod = detectNeededConnectionMethod(dbcfg.get("dbms"))
+		connection = connectionMethod(dbcfg)
+		yield connection
+	except Exception as e:
+		errorMessage = str(e)
+		if 'ORA-00942' in errorMessage:
+			raise MissingTableException() from e
+		elif errorMessage.startswith("Table") and errorMessage.endswith("doesn't exist"):
+			raise MissingTableException(errorMessage.split("'")[1::3])
+	finally:
+		if connection:
+			connection.close()
 
 def detectDbClientPath(emmDbVendor, dbClientOracleSearchPaths, dbClientMariadbSearchPaths):
 	global dbClientPath
@@ -372,119 +438,123 @@ def select(sqlStatement, *parameters):
 
 def selectValue(sqlSelect, *parameters):
 	result = select(sqlSelect, *parameters)
-	if result is None:
-		return None
+	if result and len(result[0]) > 0:
+		return result[0][0]
 	else:
-		for row in result:
-			# return first value only
-			return row[0]
+		return None
+def selectIntValue(sqlSelect, *parameters):
+	return selectValue(sqlSelect, *parameters) or 0
 
-def executeSql(sqlStatement, isUpdate=True, *parameters):
+def executeSql(sqlStatement: str, isUpdate: bool = True, *parameters, withoutDatabase: bool = False):
 	if sqlStatement is None or len(sqlStatement.strip()) == 0:
 		raise Exception("Invalid empty sql statement")
-	connection = None
-	cursor = None
-	try:
-		connection = openDbConnection()
-		if connection is None:
-			raise Exception("Cannot establish db connection")
-		cursor = connection.cursor()
 
-		if "oracle" in str(type(connection)).lower():
+	dbcfgArgument: dict = dbcfgEntry.copy()
+	if withoutDatabase:
+		dbcfgArgument.pop("name", None)
+
+	try:
+		with openDbConnection(dbcfgArgument) as connection:
+			cursor = connection.cursor()
+
+			placeholderOccurrence = sqlStatement.count('?')
+			if len(parameters) < placeholderOccurrence:
+				raise Exception("Invalid number of sql parameters: More '?' (" + str(
+					placeholderOccurrence) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
+			if len(parameters) > placeholderOccurrence:
+				raise Exception("Invalid number of sql parameters: Less '?' (" + str(
+					placeholderOccurrence) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
 			result = []
-			parameterMap = {}
-			parameterIndex = 0
-			while "?" in sqlStatement:
-				parameterIndex += 1
-				if parameters is None or len(parameters) < parameterIndex:
-					raise Exception("Invalid number of sql parameters: More '?' (" + str(parameterIndex) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
-				elif isinstance(parameters[parameterIndex - 1], (bytes, bytearray)):
-					import oracledb
-					sqlStatement = sqlStatement.replace("?", ":parameter" + str(parameterIndex), 1)
-					blobparameter = cursor.var(oracledb.BLOB)
-					blobparameter.setvalue(0, parameters[parameterIndex - 1])
-					parameterMap["parameter" + str(parameterIndex)] = blobparameter
-				else:
-					sqlStatement = sqlStatement.replace("?", ":parameter" + str(parameterIndex), 1)
-					parameterMap["parameter" + str(parameterIndex)] = parameters[parameterIndex - 1]
-			if parameters is not None and len(parameters) > parameterIndex:
-				raise Exception("Invalid number of sql parameters: Less '?' (" + str(parameterIndex) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
-			cursor.execute(sqlStatement, parameterMap)
-			if not isUpdate:
-				for row in cursor:
-					rowArray = []
-					for i in range(len(row)):
-						if row[i] is not None and "oracledb.LOB" in str(type(row[i])):
-							rowArray.append(row[i].read())
-						else:
-							rowArray.append(row[i])
-					result.append(rowArray)
-		else:
-			result = []
-			parameterList = []
-			parameterIndex = 0
-			while "?" in sqlStatement:
-				parameterIndex += 1
-				if parameters is None or len(parameters) < parameterIndex:
-					raise Exception("Invalid number of sql parameters: More '?' (" + str(parameterIndex) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
-				else:
-					sqlStatement = sqlStatement.replace("?", "%s", 1)
-					parameterList.append(parameters[parameterIndex - 1])
-			if parameters is not None and len(parameters) > parameterIndex:
-				raise Exception("Invalid number of sql parameters: Less '?' (" + str(parameterIndex) + ") in sql statement then parameters given (" + str(len(parameters)) + ")")
-			cursor.execute(sqlStatement, tuple(parameterList))
+			if "oracle" in str(type(connection)).lower():
+				for parameterIndex in range(0, placeholderOccurrence):
+					sqlStatement = sqlStatement.replace("?", f":{parameterIndex}", 1)
+				cursor.execute(sqlStatement, parameters, fetch_lobs=False)
+			else:
+				cursor.execute(sqlStatement, parameters)
 			if not isUpdate:
 				for row in cursor:
 					rowArray = []
 					for i in range(len(row)):
 						rowArray.append(row[i])
 					result.append(rowArray)
-
-		return result
+			connection.commit()
+			return result
 	except:
 		if ESTUtilities.isDebugMode():
 			print("SQL: " + sqlStatement)
 			print("Parameters: " + str(parameters))
 			logging.exception("executeSql")
 		return None
-	finally:
-		if cursor is not None:
-			cursor.close()
-		if connection is not None:
-			connection.commit()
-			connection.close()
+
+
+def executeMissingUpdates(sqlUpdateScriptFilePath: str | Path):
+	sqlUpdateScriptFilePath = Path(sqlUpdateScriptFilePath)
+	sqlUpdateVersions: dict = {}
+	sqlUpdateFiles = chain.from_iterable([sqlUpdateScriptFilePath.joinpath().glob(i) for i in
+	                                      ["emm-*update*.sql", "emm-*-messages*.sql", "../userrights.sql",
+	                                       "emm-*-migration.sql"]])
+	versionFilePattern = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+((\.|-hf)[0-9]+)?")
+	necessarySQLScripts = []
+	for file in sqlUpdateFiles:
+		sqlUpdateScript = versionFilePattern.search(file.name)
+		if sqlUpdateScript:
+			sqlUpdateVersions[sqlUpdateScript.group(0)] = file.name
+		else:
+			necessarySQLScripts.append(file)
+
+	query = f"""
+	SELECT uv.version_number
+	FROM (
+	SELECT ? AS version_number FROM dual 
+		{'UNION ALL SELECT ? FROM dual ' * (len(sqlUpdateVersions) - 1)}
+	) uv 
+	WHERE NOT EXISTS ( 
+	SELECT 1 FROM agn_dbversioninfo_tbl version_tbl 
+	WHERE version_tbl.version_number = uv.version_number
+	)
+	"""
+	missingVersions = select(query, *sqlUpdateVersions.keys())
+
+	if missingVersions:
+		for version in set(sqlUpdateVersions.keys()) - set((itertools.chain.from_iterable(missingVersions))):
+			print("DB already contains version", version)
+
+		updateFilesNeeded = itemgetter(*missingVersions[0])(sqlUpdateVersions)
+		updateFilesNeeded = updateFilesNeeded if isinstance(updateFilesNeeded, list) else [updateFilesNeeded]
+		for sqlFile in updateFilesNeeded:
+			executeSqlScriptFile(sqlUpdateScriptFilePath / sqlFile)
+
+	for sqlFile in necessarySQLScripts:
+		executeSqlScriptFile(sqlUpdateScriptFilePath / sqlFile)
 
 def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 	global dbcfgEntry
-
-	if sqlScriptFilePath is None or len(sqlScriptFilePath.strip()) == 0:
+	sqlScriptFilePath = Path(sqlScriptFilePath) if sqlScriptFilePath else None
+	if not sqlScriptFilePath or not sqlScriptFilePath.name:
 		raise Exception("Invalid empty sql statement")
-	elif not os.path.isfile(sqlScriptFilePath) and not os.path.islink(sqlScriptFilePath):
-		raise Exception("Scriptfile does not exist: " + sqlScriptFilePath)
+	elif not sqlScriptFilePath.is_file() and not sqlScriptFilePath.is_symlink():
+		raise Exception("Scriptfile does not exist: " + str(sqlScriptFilePath))
 
 	if emmDbVendor == "oracle":
-		connection = None
-		cursor = None
 		try:
-			with open(sqlScriptFilePath, 'r') as fileHandle:
-				sql = fileHandle.read()
-
-			connection = openDbConnection()
-			if connection is None:
-				raise Exception("Cannot establish db connection")
-			cursor = connection.cursor()
-			cursor.execute(sql)
+			dsn = dbcfgEntry["user"] + "/" + dbcfgEntry["password"] + "@" + dbcfgEntry["sid"]
+			sqlInput = f"""
+			WHENEVER SQLERROR EXIT SQL.SQLCODE;
+			SET SERVEROUTPUT ON;
+			SET ECHO OFF;
+			SET DEFINE OFF;
+			SET HEADING OFF;
+			@{sqlScriptFilePath}
+			EXIT;
+			"""
+			output = subprocess.run([getDbClientPath(), "-S", dsn], input=sqlInput, capture_output=True, text=True,
+			                        check=False)
 			return True
-		except:
+		except Exception as e:
 			if ESTUtilities.isDebugMode():
-				logging.exception("Error in executeSqlScriptFile: " + str(sqlScriptFilePath))
+				logging.exception(f"Error in executeSqlScriptFile: {e}")
 			return False
-		finally:
-			if cursor is not None:
-				cursor.close()
-			if connection is not None:
-				connection.commit()
-				connection.close()
+
 	elif emmDbVendor == "mysql" or emmDbVendor == "mariadb":
 		host = dbcfgEntry["host"]
 		if host is None or len(host) == 0:
@@ -501,7 +571,7 @@ def executeSqlScriptFile(sqlScriptFilePath, logFilePath=None):
 		else:
 			port = 3306
 
-		commandText = getDbClientPath() + " -h " + host + " -P " + str(port) + " --protocol=TCP -u " + dbcfgEntry["user"] + " -p\"" + dbcfgEntry["password"] + "\" --database=" + dbcfgEntry["name"] + " --default-character-set=utf8 < " + sqlScriptFilePath
+		commandText = getDbClientPath() + " -h " + host + " -P " + str(port) + " --protocol=TCP -u " + dbcfgEntry["user"] + " -p\"" + dbcfgEntry["password"] + "\" --database=" + dbcfgEntry["name"] + " --default-character-set=utf8 < " + str(sqlScriptFilePath)
 
 		if logFilePath is not None:
 			sqlUpdateReturnCode = os.system("/bin/bash -c '" + commandText + " 2>&1 | tee " + logFilePath + "; test ${PIPESTATUS[0]} -eq 0'")
@@ -533,7 +603,7 @@ def checkDbServiceAvailable():
 			return False
 
 		if "host" in jdbcConnectProperties and "port" in jdbcConnectProperties:
-			return is_connectable (jdbcConnectProperties["host"], jdbcConnectProperties["port"], 1)
+			return is_connectable(jdbcConnectProperties["host"], jdbcConnectProperties["port"], 1)
 		return True
 	else:
 		host = dbcfgEntry["host"] if "host" in dbcfgEntry else None
@@ -550,7 +620,24 @@ def checkDbServiceAvailable():
 		else:
 			port = 3306
 
-		return is_connectable (host, port, 1)
+		return is_connectable(host, port, 1)
+
+def checkDbConnectionWithoutDatabase():
+	if emmDbVendor in ["mariadb", "mysql"]:
+		result = executeSql("SELECT VERSION()", withoutDatabase=True)
+		if result:
+			return True
+	else:
+		try:
+			with openDbConnection() as connection:
+				if connection is None:
+					raise Exception("Cannot establish db connection")
+				connection.cursor()
+		except:
+			if ESTUtilities.isDebugMode():
+				logging.exception("Error in checkDbConnection")
+			return False
+	return True
 
 def checkDbConnection():
 	global emmDbVendor
@@ -585,28 +672,21 @@ def checkDbConnection():
 				logging.exception("Error in checkDbConnection")
 			return False
 	else:
-		connection = None
-		cursor = None
 		try:
-			connection = openDbConnection()
-			if connection is None:
-				raise Exception("Cannot establish db connection")
-			cursor = connection.cursor()
+			with openDbConnection() as connection:
+				if connection is None:
+					raise Exception("Cannot establish db connection")
 		except:
 			if ESTUtilities.isDebugMode():
 				logging.exception("Error in checkDbConnection")
 			return False
-		finally:
-			if cursor is not None:
-				cursor.close()
-			if connection is not None:
-				connection.commit()
-				connection.close()
 	return True
 
-def checkDbExists(databaseName):
+def checkDbExists(databaseName: str | None = None):
 	try:
-		return selectValue("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = ?", databaseName) >= 0
+		if not databaseName:
+			databaseName = dbcfgEntry.get("name")
+		return selectIntValue("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = ?", databaseName) >= 0
 	except:
 		if ESTUtilities.isDebugMode():
 			logging.exception("Error in checkDbExists")
@@ -616,106 +696,84 @@ def checkDbStructureExists():
 	return checkTableExists("agn_dbversioninfo_tbl") and checkTableExists("config_tbl");
 
 def checkTableExists(tableName):
-	connection = None
-	cursor = None
 	try:
-		connection = openDbConnection()
-		if connection is None:
-			raise Exception("Cannot establish db connection")
-		cursor = connection.cursor()
+		with openDbConnection() as connection:
+			if connection is None:
+				raise Exception("Cannot establish db connection")
+			cursor = connection.cursor()
 
-		cursor.execute("SELECT COUNT(*) FROM " + tableName + " WHERE 1 = 0")
+			cursor.execute("SELECT COUNT(*) FROM " + tableName + " WHERE 1 = 0")
 
-		for row in cursor:
-			if row[0] >= 0:
-				return True
-		return False
+			for row in cursor:
+				if row[0] >= 0:
+					return True
+			return False
 	except:
 		return False
-	finally:
-		if cursor is not None:
-			cursor.close()
-		if connection is not None:
-			connection.commit()
-			connection.close()
 
 def checkColumnExists(tableName, columnName):
-	connection = None
-	cursor = None
 	try:
-		connection = openDbConnection()
-		if connection is None:
-			raise Exception("Cannot establish db connection")
-		cursor = connection.cursor()
+		with openDbConnection() as connection:
+			if connection is None:
+				raise Exception("Cannot establish db connection")
+			cursor = connection.cursor()
 
-		cursor.execute("SELECT " + columnName + " FROM " + tableName + " WHERE 1 = 0")
+			cursor.execute("SELECT " + columnName + " FROM " + tableName + " WHERE 1 = 0")
 
-		for row in cursor:
-			if row[0] >= 0:
-				return True
-		return False
+			for row in cursor:
+				if row[0] >= 0:
+					return True
+			return False
 	except:
 		return False
-	finally:
-		if cursor is not None:
-			cursor.close()
-		if connection is not None:
-			connection.commit()
-			connection.close()
 
 def createDatabaseBackup(applicationName, currentVersion):
 	global dbcfgEntry
 
 	try:
-		connection = openDbConnection()
-		if connection is None:
-			raise Exception("Cannot establish db connection")
-		cursor = connection.cursor()
+		with openDbConnection() as connection:
+			if connection is None:
+				raise Exception("Cannot establish db connection")
+			cursor = connection.cursor()
 
-		reloadGranted = False
-		selectOnMysqlProcGranted = False
-		cursor.execute("SHOW GRANTS")
-		for row in cursor:
-			if "GRANT ALL PRIVILEGES ".lower() in row[0].lower() or " reload " in row[0].lower() or " reload," in row[0].lower().replace('`','').replace('',''):
-				reloadGranted = True
-			if "GRANT ALL PRIVILEGES ON *.* ".lower() in row[0].lower() or "GRANT SELECT ON mysql.proc TO ".lower() in row[0].lower().replace('`','').replace('',''):
-				selectOnMysqlProcGranted = True
-		if reloadGranted and selectOnMysqlProcGranted:
-			dumpFile = os.path.expanduser("~/database_" + applicationName + "_" + currentVersion + "_" + time.strftime("%Y%m%d-%H%M%S") +".dmp")
-			print("Creating backup of database ...")
-			print("Dumpfile: " + dumpFile)
-			dbDumpToolPath = getDbClientPath() + "dump";
-			if not os.path.isfile(dbDumpToolPath):
-				dbDumpToolPath = dbDumpToolPath.replace("mariadbdump", "mysqldump")
-			if not os.path.isfile(dbDumpToolPath):
-				raise Exception("Database dump tool is not available: " + dbDumpToolPath)
-				return
-			subprocess.check_output(dbDumpToolPath + " -aCceQx --hex-blob --routines --triggers -u " + dbcfgEntry["user"] + " -h " + dbcfgEntry["host"] + " " + dbcfgEntry["name"] + " -p'" + dbcfgEntry["password"] + "' > " + dumpFile, shell=True).decode("UTF-8").strip()
-			print("Creation of database backup finished")
-			return dumpFile
-		else:
-			if not reloadGranted:
-				raise Exception("Database user needs grant 'RELOAD' to check and change table format. (e.g. GRANT RELOAD ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
-			if not selectOnMysqlProcGranted:
-				raise Exception("Database user needs grant 'SELECT ON mysql.proc' to backup database data. (e.g. GRANT SELECT ON mysql.proc TO '" + dbcfgEntry["user"] + "'@'%';)")
+			reloadGranted = False
+			selectOnMysqlProcGranted = False
+			cursor.execute("SHOW GRANTS")
+			for row in cursor:
+				if "GRANT ALL PRIVILEGES ".lower() in row[0].lower() or " reload " in row[0].lower() or " reload," in row[0].lower().replace('`','').replace('',''):
+					reloadGranted = True
+				if "GRANT ALL PRIVILEGES ON *.* ".lower() in row[0].lower() or "GRANT SELECT ON mysql.proc TO ".lower() in row[0].lower().replace('`','').replace('',''):
+					selectOnMysqlProcGranted = True
+			if reloadGranted and selectOnMysqlProcGranted:
+				dumpFile = os.path.expanduser("~/database_" + applicationName + "_" + currentVersion + "_" + time.strftime("%Y%m%d-%H%M%S") +".dmp")
+				print("Creating backup of database ...")
+				print("Dumpfile: " + dumpFile)
+				dbDumpToolPath = getDbClientPath() + "dump";
+				if not os.path.isfile(dbDumpToolPath):
+					dbDumpToolPath = dbDumpToolPath.replace("mariadbdump", "mysqldump")
+				if not os.path.isfile(dbDumpToolPath):
+					raise Exception("Database dump tool is not available: " + dbDumpToolPath)
+					return
+				subprocess.check_output(dbDumpToolPath + " -aCceQx --hex-blob --routines --triggers -u " + dbcfgEntry["user"] + " -h " + dbcfgEntry["host"] + " " + dbcfgEntry["name"] + " -p'" + dbcfgEntry["password"] + "' > " + dumpFile, shell=True).decode("UTF-8").strip()
+				print("Creation of database backup finished")
+				return dumpFile
+			else:
+				if not reloadGranted:
+					raise Exception("Database user needs grant 'RELOAD' to check and change table format. (e.g. GRANT RELOAD ON *.* TO '" + dbcfgEntry["user"] + "'@'%';)")
+				if not selectOnMysqlProcGranted:
+					raise Exception("Database user needs grant 'SELECT ON mysql.proc' to backup database data. (e.g. GRANT SELECT ON mysql.proc TO '" + dbcfgEntry["user"] + "'@'%';)")
 	except Exception as e:
 		errorText = "Error while creating backup of database: " + str(e)
 		logging.exception(errorText)
 		raise Exception(errorText)
-	finally:
-		if cursor is not None:
-			cursor.close()
-		if connection is not None:
-			connection.commit()
-			connection.close()
 
-def createDatabaseAndUser(host, dbname, username, userpassword, dbRootPassword = None):
+def createDatabaseAndUser(host, dbname, username, userpassword, dbRootPassword=None):
 	if not checkDbServiceAvailable():
 		return False
 	if getDbClientPath() is None:
 		return False
-	if checkDbConnection():
-		return True
+	if not checkDbConnectionWithoutDatabase():
+		return False
 
 	if username == "root":
 		dbRootPassword = userpassword
@@ -747,7 +805,7 @@ def createDatabaseAndUser(host, dbname, username, userpassword, dbRootPassword =
 			sqlUpdateReturnCode = os.system(getDbClientPath() + " -u root -h " + host + passwordParameterPart + " --default-character-set=utf8 -e \"FLUSH PRIVILEGES\"")
 		return sqlUpdateReturnCode == 0
 	else:
-		if dbRootPassword is None: 
+		if dbRootPassword is None:
 			print("Please enter database root user password:")
 			dbRootPassword = input(" > ")
 
@@ -829,15 +887,15 @@ def updateConfigurationValueInDB(configClass, configName, configValue, hostname)
 		if configValue == "<delete>":
 			update("DELETE FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) = '' OR hostname = ?)", configClass, configName, hostname)
 		else:
-			itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", configClass, configName, hostname) > 0
+			itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", configClass, configName, hostname) > 0
 			if itemExists:
 				update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = ? AND name = ? AND hostname = ?", configValue, configClass, configName, hostname)
 			else:
-				itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ? AND hostname != ?", configClass, configName, hostname) > 0
+				itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ? AND hostname != ?", configClass, configName, hostname) > 0
 				if itemExists:
 					update("INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", configClass, configName, hostname, configValue)
 				else:
-					itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ?", configClass, configName) > 0
+					itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ?", configClass, configName) > 0
 					if itemExists:
 						update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = ? AND name = ?", configValue, configClass, configName)
 					else:
@@ -853,13 +911,13 @@ def readJobQueueHostsFromDB():
 
 def storeJobQueueHostInDB(hostName, status):
 	if hostName == "*" or hostName is None:
-		itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')") > 0
+		itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')") > 0
 		if itemExists:
 			update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')", 1 if status else 0)
 		else:
 			update("INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES ('jobqueue', 'execute', NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", 1 if status else 0)
 	else:
-		itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND hostname = ?", hostName) > 0
+		itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND hostname = ?", hostName) > 0
 		if itemExists:
 			update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = 'jobqueue' AND name= 'execute' AND hostname = ?", 1 if status else 0, hostName)
 		else:
@@ -872,7 +930,7 @@ def removeJobQueueHostFromDB(hostName):
 		update("DELETE FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND hostname = ?", hostName)
 
 def insertBirtKeysInDb(applicationUserName):
-	itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' AND name = 'privatekey' AND value = '[to be defined]'") > 0
+	itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' AND name = 'privatekey' AND value = '[to be defined]'") > 0
 	if itemExists and os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/keys/birt_private.pem"):
 		with open(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/keys/birt_private.pem", "r", encoding="UTF-8") as keyFileHandle:
 			privateKeyFileData = keyFileHandle.read()
@@ -882,7 +940,7 @@ def insertBirtKeysInDb(applicationUserName):
 
 		update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = 'birt' AND name = 'privatekey'", privateKeyFileData)
 
-	itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' AND name = 'publickey' AND value = '[to be defined]'") > 0
+	itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' AND name = 'publickey' AND value = '[to be defined]'") > 0
 	if itemExists and os.path.isfile(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/keys/birt_public.pem"):
 		with open(ESTUtilities.getUserHomeDirectory(applicationUserName) + "/tomcat/conf/keys/birt_public.pem", "r", encoding="UTF-8") as keyFileHandle:
 			publicKeyFileData = keyFileHandle.read()
@@ -916,7 +974,7 @@ def checkConfigurationInDB():
 		mandatoryConfigEntries.append(["mailout", "ini.domain", "[to be defined]"])
 
 		for mandatoryConfigEntry in mandatoryConfigEntries:
-			itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ?", mandatoryConfigEntry[0], mandatoryConfigEntry[1]) > 0
+			itemExists = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ?", mandatoryConfigEntry[0], mandatoryConfigEntry[1]) > 0
 			if not itemExists:
 				update("INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", mandatoryConfigEntry[0], mandatoryConfigEntry[1], mandatoryConfigEntry[2])
 
@@ -933,67 +991,30 @@ def readLandingPagesFromDB(defaultLandingPage):
 	return landingPages
 
 def updateLandingPageInDB(domain, landingPage):
-
-	connection = None
-	cursor = None
 	try:
-		connection = openDbConnection()
-		if connection is None:
-			raise Exception("Cannot establish db connection")
-		cursor = connection.cursor()
-
 		if domain.lower() == "default":
 			if landingPage.lower() == "remove":
-				if "oracle" in str(type(connection)).lower():
-					cursor.execute("DELETE FROM config_tbl WHERE class = :class AND name = :name", {"class" : "system", "name" : "RdirLandingpage"})
-				else:
-					cursor.execute("DELETE FROM config_tbl WHERE class = %s AND name = %s", ("system", "RdirLandingpage"))
+				update("DELETE FROM config_tbl WHERE class = ? AND name = ?", "system", "RdirLandingpage")
 			else:
-				if "oracle" in str(type(connection)).lower():
-					cursor.execute("SELECT COUNT(*) FROM config_tbl WHERE class = :class AND name = :name", {"class" : "system", "name" : "RdirLandingpage"})
+				itemCount: int = selectIntValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ?",
+												"system", "RdirLandingpage")
+				if itemCount > 0:
+					update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = ? AND name = ?", landingPage, "system", "RdirLandingpage")
 				else:
-					cursor.execute("SELECT COUNT(*) FROM config_tbl WHERE class = %s AND name = %s", ("system", "RdirLandingpage"))
-				for row in cursor:
-					itemExists = row[0] > 0
-				if itemExists:
-					if "oracle" in str(type(connection)).lower():
-						cursor.execute("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = :value WHERE class = :class AND name = :name", {"value": landingPage, "class" : "system", "name" : "RdirLandingpage"})
-					else:
-						cursor.execute("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = %s WHERE class = %s AND name = %s", (landingPage, "system", "RdirLandingpage"))
-				else:
-					if "oracle" in str(type(connection)).lower():
-						cursor.execute("INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES (:class, :name, :value, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", {"class" : "system", "name": "RdirLandingpage", "value": landingPage})
-					else:
-						cursor.execute("INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", ("system", "RdirLandingpage", landingPage))
+					update("INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')","system", "RdirLandingpage", landingPage)
 		else:
 			if landingPage.lower() == "remove":
-				if "oracle" in str(type(connection)).lower():
-					cursor.execute("DELETE FROM landingpage_tbl WHERE domain = :domain", {"domain" : domain})
-				else:
-					cursor.execute("DELETE FROM landingpage_tbl WHERE domain = %s", (domain,))
+				update("DELETE FROM landingpage_tbl WHERE domain = ?", domain)
 			else:
-				if "oracle" in str(type(connection)).lower():
-					cursor.execute("SELECT COUNT(*) FROM landingpage_tbl WHERE domain = :domain", {"domain" : domain})
+				itemCount: int = selectIntValue("SELECT COUNT(*) FROM landingpage_tbl WHERE domain = ?", domain)
+				if itemCount > 0:
+					update("UPDATE landingpage_tbl SET landingpage = ? WHERE domain = ?", landingPage, domain)
 				else:
-					cursor.execute("SELECT COUNT(*) FROM landingpage_tbl WHERE domain = %s", (domain,))
-				for row in cursor:
-					itemExists = row[0] > 0
-				if itemExists:
-					if "oracle" in str(type(connection)).lower():
-						cursor.execute("UPDATE landingpage_tbl SET landingpage = :landingpage WHERE domain = :domain", {"landingpage": landingPage, "domain" : domain})
-					else:
-						cursor.execute("UPDATE landingpage_tbl SET landingpage = %s WHERE domain = %s", (landingPage, domain))
-				else:
-					if "oracle" in str(type(connection)).lower():
-						cursor.execute("INSERT INTO landingpage_tbl (domain, landingpage) VALUES (:domain, :landingpage)", {"domain" : domain, "landingpage": landingPage})
-					else:
-						cursor.execute("INSERT INTO landingpage_tbl (domain, landingpage) VALUES (%s, %s)", (domain, landingPage))
-	finally:
-		if cursor is not None:
-			cursor.close()
-		if connection is not None:
-			connection.commit()
-			connection.close()
+					update("INSERT INTO landingpage_tbl (domain, landingpage) VALUES (?, ?)", domain, landingPage)
+	except:
+		if ESTUtilities.isDebugMode():
+			logging.exception("Executing SQL to update Landing Page failed")
+		return None
 
 def setupSecureOracleDbLibrariesForStartup(username):
 	additionalPropertiesData = ""

@@ -5,6 +5,7 @@ import datetime
 import urllib.parse
 import getpass
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 
 from EST_lib.Environment import Environment
 from EST_lib import Colors
@@ -524,11 +525,6 @@ def dbRestoreMenuAction(actionParameters):
 	answer = input(" > ").lower().strip()
 	if answer.startswith("y") or answer.startswith("j"):
 		try:
-			connection = DbConnector.openDbConnection()
-			if connection is None:
-				raise Exception("Cannot establish db connection")
-			cursor = connection.cursor()
-
 			print("Restoring database from file ...")
 			print("Backup file: " + backupFilePath)
 			subprocess.check_output(DbConnector.getDbClientPath() + " -u " + dbcfgEntry["user"] + " -h " + dbcfgEntry["host"] + " " + dbcfgEntry["name"] + " -p'" + dbcfgEntry["password"] + "' < " + backupFilePath, shell=True).decode("UTF-8").strip()
@@ -539,16 +535,17 @@ def dbRestoreMenuAction(actionParameters):
 			errorText = "Error while restoring database from file: " + str(e)
 			Environment.errors.append(errorText)
 			logging.exception(errorText)
-		finally:
-			if cursor is not None:
-				cursor.close()
-			if connection is not None:
-				connection.commit()
-				connection.close()
+	return None
+
 
 def deleteMarkedCompaniesAction(actionParameters):
+	companiesWithDeletionInProgress = []
 	while True:
-		companyIDsWithStatusToDelete = DbConnector.getCompaniesWithToDelete()
+		companyIDsWithStatusToDelete = [entry for entry in DbConnector.getCompaniesWithToDelete() if
+		                                entry[0] not in companiesWithDeletionInProgress]
+		if not companyIDsWithStatusToDelete:
+			Environment.warnings.append("There are currently no available companies with status todelete")
+			return
 		print("Please choose company for the final deletion: (Blank => Back)")
 
 		for index, (company_id, company_name) in enumerate(companyIDsWithStatusToDelete):
@@ -557,7 +554,7 @@ def deleteMarkedCompaniesAction(actionParameters):
 		choice = input(" > ").strip()
 		if choice == "":
 			break
-		choice = ESTUtilities.str_to_int(choice) -1
+		choice = ESTUtilities.str_to_int(choice, 0) - 1
 		if choice is not None and 0 <= choice <= len(companyIDsWithStatusToDelete):
 			cid = companyIDsWithStatusToDelete[choice][0]
 
@@ -571,18 +568,25 @@ def deleteMarkedCompaniesAction(actionParameters):
 			if not pwd:
 				return
 			try:
-				connection = ESTUtilities.openUrlConnection(Environment.getSystemUrl() + "/demoaccount?companyID=" + str(cid) +"&svu=" + urllib.parse.quote_plus(svu) +"&method=deleteaccount&pwd=" + urllib.parse.quote_plus(pwd))
+				print()
+				connection = ESTUtilities.openUrlConnection(Environment.getSystemUrl() + "/demoaccount?" + urlencode(
+					{"companyID": str(cid), "svu": svu, "method": "deleteaccount", "pwd": pwd}))
 				if connection.read() == "Access denied":
-					print("Supervisor credentials are incorrect")
+					print("request returned: access denied")
+					Environment.errors.append("Supervisor credentials are incorrect")
 				elif connection.status == 200:
 					Environment.messages.append(f"Deletion of company {cid} started")
 				elif connection.status == 403:
-					print("Request returned unauthorized")
+					print("request returned: unauthorized")
+					Environment.errors.append(f"Deleting account {cid} failed")
 				elif connection.status == 500:
 					print("There was an error with the request")
+					Environment.errors.append(f"Deleting account {cid} failed")
 			except HTTPError:
-				print("Supervisor credentials are incorrect")
-			return
+				Environment.errors.append("Supervisor credentials are incorrect")
+			companiesWithDeletionInProgress.append(cid)
+			if len(companyIDsWithStatusToDelete) - len(companiesWithDeletionInProgress) <= 0:
+				return
 		else:
 			if len(companyIDsWithStatusToDelete) == 1:
 				print("Please select an existing index, like in this case '1'", end="\n\n")

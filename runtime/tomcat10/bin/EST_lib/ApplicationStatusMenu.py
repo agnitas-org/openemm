@@ -36,7 +36,7 @@ def readApplicationStatus(colorize = True):
 
 	# Python version
 	statusText += "Python version: " + str(sys.version_info[0]) + "." + str(sys.version_info[1]) + "." + str(sys.version_info[2]) + "\n"
-
+	statusText += "Node version: " + str(ESTUtilities.getNodeVersion() or "Unknown") + "\n"
 	if DbConnector.emmDbVendor == "mariadb":
 		if not ESTUtilities.checkPackageIsInstalled(Environment.osVendor, "MariaDB-server") and not ESTUtilities.checkPackageIsInstalled(Environment.osVendor, "mariadb-server"):
 			statusText += errorColorCode + "Mandatory system package 'MariaDB-server' (or lower case) is not installed" + defaultColorCode + "\n"
@@ -112,22 +112,17 @@ def readApplicationStatus(colorize = True):
 	if not DbConnector.checkDbServiceAvailable():
 		statusText += errorColorCode + "Database: Not running or not reachable" + defaultColorCode + "\n"
 	else:
-		connection = None
 		try:
-			connection = DbConnector.openDbConnection()
-			if connection is None:
-				statusText += errorColorCode + "Database Connection: ERROR" + defaultColorCode + "\n"
-			else:
-				statusText += "Database Connection: OK" + "\n"
-				dbConnectionWorked = True
+			with DbConnector.openDbConnection() as connection:
+				if connection is None:
+					statusText += errorColorCode + "Database Connection: ERROR" + defaultColorCode + "\n"
+				else:
+					statusText += "Database Connection: OK" + "\n"
+					dbConnectionWorked = True
 		except:
 			if ESTUtilities.isDebugMode():
 				logging.exception("Database Connection")
 			statusText += errorColorCode + "Database Connection: ERROR" + defaultColorCode + "\n"
-		finally:
-			if connection is not None:
-				connection.commit()
-				connection.close()
 
 	statusText += "System-Time: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n"
 
