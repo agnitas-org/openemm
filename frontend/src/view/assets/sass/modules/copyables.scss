@@ -34,3 +34,17 @@
     --copy-box-color: #{$white};
   }
 }
+
+.click-to-copy {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border: $border-transparent;
+  padding: 0.15rem 0.4rem;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+
+  &:hover {
+    border: $border-default;
+    border-radius: 0.375rem;
+  }
+}

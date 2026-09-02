@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -861,31 +862,81 @@ public class DbUtilities {
 			throw new IllegalArgumentException("Invalid empty tableName for getColumnDataTypes");
 		}
 
-		CaseInsensitiveMap<String, DbColumnType> returnMap = new CaseInsensitiveMap<>();
+		return getColumnDataTypes(connection, List.of(tableName)).get(tableName);
+	}
+
+	public static CaseInsensitiveMap<String, CaseInsensitiveMap<String, DbColumnType>> getColumnDataTypes(DataSource dataSource, Set<String> tableNames) {
+		if (dataSource == null) {
+			throw new IllegalArgumentException("Invalid empty dataSource for getColumnDataTypes");
+		}
+
+		if (tableNames.isEmpty()) {
+			return new CaseInsensitiveMap<>();
+		}
+
+		try (Connection connection = dataSource.getConnection()) {
+			return getColumnDataTypes(connection, tableNames);
+		} catch (Exception e) {
+			logger.error("Cannot getColumnDataTypes: {}", e.getMessage(), e);
+			throw new IllegalStateException("Cannot getColumnDataTypes: " + e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Batched variant of {@link #getColumnDataTypes(Connection, String)}: loads column metadata for all given
+	 * tables in a single query per DB vendor branch (instead of one query per table), keyed by table name.
+	 */
+	public static CaseInsensitiveMap<String, CaseInsensitiveMap<String, DbColumnType>> getColumnDataTypes(
+			Connection connection,
+			Collection<String> tableNames
+	) throws Exception {
+		if (connection == null) {
+			throw new IllegalArgumentException("Invalid empty connection for getColumnDataTypes");
+		}
+
+		CaseInsensitiveMap<String, CaseInsensitiveMap<String, DbColumnType>> resultMap = new CaseInsensitiveMap<>();
+		if (CollectionUtils.isEmpty(tableNames)) {
+			return resultMap;
+		}
+
+		List<String> tableNameList = new ArrayList<>(tableNames);
+		for (String tableName : tableNameList) {
+			resultMap.put(tableName, new CaseInsensitiveMap<>());
+		}
+
+		String plainPlaceholders = AgnUtils.csvQMark(tableNameList.size());
+
 		if (checkDbVendorIsOracle(connection)) {
-			// Read special constraints for not-nullable fields by user_tab_columns
-			String nullableSql = "SELECT search_condition FROM user_constraints WHERE table_name = ?";
-			Set<String> notNullByConstraintFields = new HashSet<>();
+			String nullableSql = "SELECT table_name, search_condition FROM user_constraints WHERE table_name IN (" + plainPlaceholders + ")";
+			Map<String, Set<String>> notNullByConstraintFieldsByTable = new HashMap<>();
 			try (PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-				preparedStatementNullable.setNString(1, tableName.toUpperCase());
+				for (int i = 0; i < tableNameList.size(); i++) {
+					preparedStatementNullable.setNString(i + 1, tableNameList.get(i).toUpperCase());
+				}
 				try (ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
 					while (resultSetNullable.next()) {
+						String tableName = resultSetNullable.getString("table_name");
 						String searchCondition = resultSetNullable.getString("search_condition");
 						searchCondition = searchCondition != null ? searchCondition.toLowerCase().replace("'", "").replace("\"", "") : "";
 						if (searchCondition.endsWith(" is not null")) {
-							notNullByConstraintFields.add(searchCondition.substring(0, searchCondition.indexOf(" is not null")).trim());
+							notNullByConstraintFieldsByTable
+									.computeIfAbsent(tableName, k -> new HashSet<>())
+									.add(searchCondition.substring(0, searchCondition.indexOf(" is not null")).trim());
 						}
 					}
 				}
 			}
 
 			// Watchout: Oracle's timestamp datatype is "TIMESTAMP(6)", so remove the bracket value
-			String sql = "SELECT column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name = ? ORDER BY column_name";
+			String sql = "SELECT table_name, column_name, COALESCE(SUBSTR(data_type, 1, INSTR(data_type, '(') - 1), data_type) AS data_type, data_length, data_precision, data_scale, nullable FROM user_tab_columns WHERE table_name IN (" + plainPlaceholders + ") ORDER BY table_name, column_name";
 			try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-				preparedStatement.setNString(1, tableName.toUpperCase());
+				for (int i = 0; i < tableNameList.size(); i++) {
+					preparedStatement.setNString(i + 1, tableNameList.get(i).toUpperCase());
+				}
 
 				try (ResultSet resultSet = preparedStatement.executeQuery()) {
 					while (resultSet.next()) {
+						String tableName = resultSet.getString("table_name");
 						String columnName = resultSet.getString("column_name");
 
 						String dataType = resultSet.getString("data_type");
@@ -913,27 +964,33 @@ public class DbUtilities {
 
 						boolean isNullable = resultSet.getString("nullable").equalsIgnoreCase("y");
 						// Check for special constraints if nullable by user_tab_columns
-						if (isNullable && notNullByConstraintFields.contains(columnName.toLowerCase())) {
+						Set<String> notNullByConstraintFields = notNullByConstraintFieldsByTable.get(tableName);
+						if (isNullable && notNullByConstraintFields != null && notNullByConstraintFields.contains(columnName.toLowerCase())) {
 							isNullable = false;
 						}
 
-						returnMap.put(columnName, new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
+						resultMap.computeIfAbsent(tableName, k -> new CaseInsensitiveMap<>())
+								.put(columnName, new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
 					}
 				}
 			}
 		} else {
+			String lowerPlaceholders = tableNameList.stream().map(t -> "LOWER(?)").collect(Collectors.joining(", "));
 			String sql;
 			if (checkDbVendorIsPostgreSQL(connection)) {
-				sql = "SELECT column_name, udt_name AS data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+				sql = "SELECT table_name, column_name, udt_name AS data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = CURRENT_SCHEMA AND LOWER(table_name) IN (" + lowerPlaceholders + ") ORDER BY table_name, column_name";
 			} else {
-				sql = "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) = LOWER(?) ORDER BY column_name";
+				sql = "SELECT table_name, column_name, data_type, character_maximum_length, numeric_precision, numeric_scale, is_nullable FROM information_schema.columns WHERE table_schema = SCHEMA() AND LOWER(table_name) IN (" + lowerPlaceholders + ") ORDER BY table_name, column_name";
 			}
 
 			try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-				preparedStatement.setString(1, tableName);
+				for (int i = 0; i < tableNameList.size(); i++) {
+					preparedStatement.setString(i + 1, tableNameList.get(i));
+				}
 
 				try (ResultSet resultSet = preparedStatement.executeQuery()) {
 					while (resultSet.next()) {
+						String tableName = resultSet.getString("table_name");
 						String dataType = resultSet.getString("data_type");
 
 						long characterLength;
@@ -953,28 +1010,14 @@ public class DbUtilities {
 						}
 						boolean isNullable = resultSet.getString("is_nullable").equalsIgnoreCase("yes");
 
-						returnMap.put(resultSet.getString("column_name"), new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
+						resultMap.computeIfAbsent(tableName, k -> new CaseInsensitiveMap<>())
+								.put(resultSet.getString("column_name"), new DbColumnType(dataType, characterLength, numericPrecision, numericScale, isNullable));
 					}
 				}
 			}
 		}
 
-		return returnMap;
-	}
-
-	public static CaseInsensitiveMap<String, CaseInsensitiveMap<String, DbColumnType>> getColumnDataTypes(DataSource dataSource, Set<String> tableNames) {
-		if (dataSource == null) {
-			throw new IllegalArgumentException("Invalid empty dataSource for getColumnDataTypes");
-		} else {
-			CaseInsensitiveMap<String, CaseInsensitiveMap<String, DbColumnType>> resultMap = new CaseInsensitiveMap<>();
-			// Return empty map for empty set
-			if (!tableNames.isEmpty()) {
-				for (String tableName : tableNames) {
-					resultMap.put(tableName, getColumnDataTypes(dataSource, tableName));
-				}
-			}
-			return resultMap;
-		}
+		return resultMap;
 	}
 
 	public static int getTableEntriesCount(DataSource dataSource, String tableName) {

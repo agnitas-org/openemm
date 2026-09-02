@@ -552,7 +552,7 @@ public class MailingController implements XssCheckAware {
         popups.changesSaved();
 
         return StringUtils.isNotBlank(referer)
-                ? "redirect:" + referer
+                ? "redirect:" + AgnUtils.removeJsessionIdFromUrl(referer)
                 : redirectToView(mailingId);
     }
 

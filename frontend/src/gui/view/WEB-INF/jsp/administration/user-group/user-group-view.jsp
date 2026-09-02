@@ -18,7 +18,7 @@
           id="userGroupForm"
           data-form="resource"
           data-form-focus="shortname"
-          data-controller="user|groups-permissions"
+          data-controller="user-and-groups-permissions"
           data-disable-controls="save"
           data-editable-view="${agnEditViewKey}">
 

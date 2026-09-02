@@ -44,7 +44,7 @@
                     {
                         "headerName": "<mvc:message code='MailinglistID'/>",
                         "editable": false,
-                        "cellRenderer": "StringCellRenderer",
+                        "cellRenderer": "ClickToCopyCellRenderer",
                         "field": "id",
                         "type": "numberColumn",
                         "suppressSizeToFit": true

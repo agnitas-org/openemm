@@ -99,10 +99,11 @@ public class WorkflowStatisticsService {
 	}
 
 	private Map<Integer, String> getMailingsMap(Workflow workflow, Admin admin) {
-        return workflow.getWorkflowIcons().stream()
+        return workflow.getWorkflowIcons()
+				.stream()
 				.filter(WorkflowUtils::isMailingIcon)
 				.filter(icon -> mailingService.exists(WorkflowUtils.getMailingId(icon), admin.getCompanyID()))
-				.collect(Collectors.toMap(WorkflowUtils::getMailingId, WorkflowIcon::getIconTitle));
+				.collect(Collectors.toMap(WorkflowUtils::getMailingId, WorkflowIcon::getIconTitle, (a, b) -> b));
 	}
 
 	public String getWorkflowStatUrl(Workflow workflow, Admin admin, String sessionId, MailingStatisticForm form) {

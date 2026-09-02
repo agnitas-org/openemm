@@ -49,7 +49,7 @@
                                 "cellStyle": {"user-select": "text"},
                                 "type": "numberColumn",
                                 "editable": false,
-                                "cellRenderer": "StringCellRenderer"
+                                "cellRenderer": "ClickToCopyCellRenderer"
                             },
                             {
                                 "field": "description",

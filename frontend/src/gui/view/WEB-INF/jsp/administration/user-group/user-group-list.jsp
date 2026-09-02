@@ -85,7 +85,9 @@
                         <emm:ShowByPermission token="master.show">
                             <emm:column headerClass="fit-content"
                                         property="userGroupId" titleKey="MailinglistID"
-                                        sortable="true" sortProperty="admin_group_id" />
+                                        sortable="true" sortProperty="admin_group_id">
+                                <span class="click-to-copy">${userGroup.userGroupId}</span>
+                            </emm:column>
                         </emm:ShowByPermission>
 
                         <emm:column titleKey="default.Name" sortable="true" property="shortname" />

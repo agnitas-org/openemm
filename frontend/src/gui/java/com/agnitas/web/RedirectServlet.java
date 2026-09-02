@@ -39,7 +39,6 @@ import com.agnitas.emm.core.commons.util.ConfigService;
 import com.agnitas.emm.core.commons.util.ConfigValue;
 import com.agnitas.emm.core.deeptracking.web.DeepTrackingCookieUtil;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.mailing.bean.LightweightMailing;
 import com.agnitas.emm.core.mailing.cache.SnowflakeMailingCache;
 import com.agnitas.emm.core.mailtracking.service.ClickTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -290,9 +289,10 @@ public class RedirectServlet extends HttpServlet {
 			final String targetUrl = request.getParameterMap().isEmpty() 
 					? request.getRequestURL().toString()
 					: request.getRequestURL().append("?").append(request.getQueryString()).toString();
-			
-			final String redirectUrl = String.format("%s/hpl/showConfirm.action?u=%s&i=%s", company.getRdirDomain(), URLEncoder.encode(targetUrl), URLEncoder.encode(uidString));
-			
+
+			String token = honeypotLinkService.getTokenForUrl(targetUrl);
+			String redirectUrl = String.format("%s/hpl/showConfirm.action?u=%s&i=%s&t=%s", company.getRdirDomain(), URLEncoder.encode(targetUrl), URLEncoder.encode(uidString), URLEncoder.encode(token));
+
 			makeRedirectResponse(response, redirectUrl);
 		} else {
 			// Write to different log (need to use String-ed name because class does not exist in OpenEMM
@@ -373,8 +373,7 @@ public class RedirectServlet extends HttpServlet {
 	 * Configures response to be a redirection.
 	 * 
 	 * @param response HTTP response
-	 * @param companyID company ID
-	 * 
+	 *
 	 * @throws IOException on errors configuring response
 	 */
 	private final void makeRedirectResponse(final HttpServletResponse response, final String redirectUrl) throws IOException {

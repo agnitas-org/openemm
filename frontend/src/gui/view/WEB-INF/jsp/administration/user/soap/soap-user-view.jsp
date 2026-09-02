@@ -12,12 +12,12 @@
           id="wsuser-edit-form"
           modelAttribute="webserviceUserForm"
           data-form="resource"
-          data-controller="user|groups-permissions" data-editable-view="${agnEditViewKey}">
+          data-controller="user-and-groups-permissions" data-editable-view="${agnEditViewKey}">
 
     <mvc:hidden path="userName"/>
     <mvc:hidden path="companyId"/>
 
-    <script data-initializer="user|groups-permissions" type="application/json">
+    <script data-initializer="user-and-groups-permissions" type="application/json">
         {
             "isSoapUser": "true",
             "permissions": ${emm:toJson(PERMISSIONS.allPermissions)},

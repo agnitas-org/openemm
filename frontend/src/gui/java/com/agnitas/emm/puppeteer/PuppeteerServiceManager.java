@@ -16,8 +16,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 
 import jakarta.servlet.ServletContext;
 import org.apache.logging.log4j.Level;
@@ -48,10 +50,12 @@ public class PuppeteerServiceManager implements SmartLifecycle {
             return;
         }
 
-        if (isPuppeteerProcessRunning()) {
+        if (puppeteerProcess != null && puppeteerProcess.isAlive()) {
             logger.info("Puppeteer service is already running. Skipping startup.");
             return;
         }
+
+        killOrphanedPuppeteerProcesses();
 
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("node", path);
@@ -111,6 +115,69 @@ public class PuppeteerServiceManager implements SmartLifecycle {
             return null;
         }
         return path;
+    }
+
+    /**
+     * Kills Puppeteer-related processes left over from a previous JVM instance that was
+     * terminated without a graceful Spring shutdown (e.g. SIGKILL or OOM killer).
+     * <p>
+     * Two categories of orphans are handled:
+     * <ul>
+     *   <li>The Node.js process running {@code puppeteer-service.js} together with any
+     *       Chrome processes that are still its live descendants.</li>
+     *   <li>Detached Chrome processes from puppeteer's bundled Chrome whose Node.js parent
+     *       was itself already killed by SIGKILL. Identified by the installation path
+     *       {@code puppeteer/chrome} (e.g. {@code ~/.cache/puppeteer/chrome/...}).</li>
+     * </ul>
+     * Only processes owned by the current OS user are considered, preventing accidental
+     * interference with other users' processes.
+     */
+    private void killOrphanedPuppeteerProcesses() {
+        Optional<String> currentUserOpt = ProcessHandle.current().info().user();
+        if (currentUserOpt.isEmpty()) {
+            logger.warn("Cannot determine current OS user; skipping orphaned Puppeteer process cleanup.");
+            return;
+        }
+
+        String currentUser = currentUserOpt.get();
+
+        List<ProcessHandle> orphanedNodeProcesses = findOwnedProcesses(
+                currentUser,
+                info -> info.commandLine()
+                        .map(cmd -> cmd.contains("puppeteer-service.js"))
+                        .orElse(false)
+        );
+
+        List<ProcessHandle> orphanedChromeProcesses = findOwnedProcesses(
+                currentUser,
+                info -> info.command()
+                        .map(cmd -> cmd.contains("puppeteer/chrome"))
+                        .orElse(false)
+        );
+
+        orphanedNodeProcesses.forEach(ph -> killWithDescendants(ph, "Puppeteer node"));
+        orphanedChromeProcesses.forEach(ph -> killWithDescendants(ph, "puppeteer Chrome"));
+
+        if (!orphanedNodeProcesses.isEmpty() || !orphanedChromeProcesses.isEmpty()) {
+            logger.info("Killed {} orphaned Puppeteer node process(es) and {} orphaned Chrome process(es).",
+                    orphanedNodeProcesses.size(), orphanedChromeProcesses.size());
+        }
+    }
+
+    private List<ProcessHandle> findOwnedProcesses(String user, Predicate<ProcessHandle.Info> predicate) {
+        return ProcessHandle.allProcesses()
+                .filter(ph -> ph.info().user().map(user::equals).orElse(false))
+                .filter(ph -> predicate.test(ph.info()))
+                .toList();
+    }
+
+    private void killWithDescendants(ProcessHandle ph, String label) {
+        logger.warn("Killing orphaned {} process (PID: {}).", label, ph.pid());
+        ph.descendants().forEach(child -> {
+            logger.warn("Killing descendant process (PID: {}).", child.pid());
+            child.destroyForcibly();
+        });
+        ph.destroyForcibly();
     }
 
     private boolean isPuppeteerProcessRunning() { // check in system processes

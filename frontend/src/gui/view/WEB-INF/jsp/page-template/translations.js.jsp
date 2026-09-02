@@ -71,6 +71,7 @@ window.I18n = {
       reset: '<mvc:message javaScriptEscape="true" code="button.Reset" />',
       today: '<mvc:message javaScriptEscape="true" code="calendar.today.button" />',
       clear: '<mvc:message javaScriptEscape="true" code="button.Delete" />',
+      clickToCopy: '<mvc:message javaScriptEscape="true" code="GWUA.clickToCopy" />',
       add: '<mvc:message javaScriptEscape="true" code="button.Add" />',
       Days: '<mvc:message javaScriptEscape="true" code="Days" />',
       entries: '<mvc:message javaScriptEscape="true" code="default.entries" />',

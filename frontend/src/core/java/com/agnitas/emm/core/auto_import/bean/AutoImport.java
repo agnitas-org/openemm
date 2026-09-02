@@ -101,6 +101,7 @@ public class AutoImport extends AutoImportLight {
 	private String timeZone;
 	private int mailingID;
 	private int contentSourceID;
+	private boolean keepHtmlEncoding;
 	private ContentSourceType contentSourceType;
 
 	private List<Integer> mailinglists = new ArrayList<>();
@@ -457,6 +458,14 @@ public class AutoImport extends AutoImportLight {
 
 	public void setContentSourceType(ContentSourceType contentSourceType) {
 		this.contentSourceType = contentSourceType;
+	}
+
+	public boolean isKeepHtmlEncoding() {
+		return keepHtmlEncoding;
+	}
+
+	public void setKeepHtmlEncoding(boolean keepHtmlEncoding) {
+		this.keepHtmlEncoding = keepHtmlEncoding;
 	}
 
 	public void setReportLocale(Locale reportLocale) {

@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import javax.crypto.Cipher;
@@ -164,4 +166,17 @@ public class DataEncryptor {
 	private String decryptByLiveMode(String encryptedDataBase64) {
 		return new String(decryptToByteArrayByLiveMode(encryptedDataBase64), StandardCharsets.UTF_8);
     }
+
+	public byte[] getHmacSigningKey() {
+		if (saltBytes == null) {
+			init();
+		}
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			digest.update(saltBytes);
+			return digest.digest();
+		} catch (NoSuchAlgorithmException e) {
+			throw new IllegalStateException(e);
+		}
+	}
 }

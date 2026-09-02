@@ -2100,7 +2100,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 			suqQuery.append(" LIMIT ?");
 		}
 
-		String query = "DELETE FROM %s WHERE customer_id IN (%s)".formatted(getCustomerBindingTableName(companyID), suqQuery.toString());
+		String query = "DELETE FROM %s WHERE mailinglist_id = ? AND customer_id IN (%s)".formatted(getCustomerBindingTableName(companyID), suqQuery.toString());
 
 		if (isMariaDB()) {
 			query += " LIMIT ?";
@@ -2108,7 +2108,7 @@ public class RecipientDaoImpl extends PaginatedBaseDaoImpl implements RecipientD
 		
 		int touchedLines = 0;
 		do {
-			touchedLines = update(query, mailinglistID, stepSize);
+			touchedLines = update(query, mailinglistID, mailinglistID, stepSize);
 		} while (touchedLines == stepSize);
 	}
 

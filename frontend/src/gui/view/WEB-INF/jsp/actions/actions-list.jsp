@@ -80,7 +80,7 @@
                             "headerName": "<mvc:message code='MailinglistID'/>",
                             "editable": false,
                             "suppressSizeToFit": true,
-                            "cellRenderer": "StringCellRenderer",
+                            "cellRenderer": "ClickToCopyCellRenderer",
                             "field": "id",
                             "type": "numberColumn"
                         },

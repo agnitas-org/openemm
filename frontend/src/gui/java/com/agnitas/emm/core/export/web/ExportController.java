@@ -124,14 +124,16 @@ public class ExportController implements XssCheckAware {
 
     @GetMapping("/{id:\\d+}/view.action")
     @RequiredPermission("wizard.export")
-    public String view(@PathVariable int id, ExportForm form, Model model, Admin admin,
-                       @RequestHeader("referer") String referringUrl, Popups popups) {
+    public String view(@PathVariable int id, ExportForm form, Model model, Admin admin, Popups popups,
+                       @RequestHeader(value = "referer", required = false) String referer) {
         ExportPredef export = null;
         if (id != 0) {
             export = exportService.get(id, admin.getCompanyID());
             if (!allowedToView(admin, export)) {
                 popups.permissionDenied();
-                return "redirect:" + AgnUtils.removeJsessionIdFromUrl(referringUrl);
+                return StringUtils.isBlank(referer)
+                        ? "redirect:/export/list.action"
+                        : "redirect:" + AgnUtils.removeJsessionIdFromUrl(referer);
             }
             exportToForm(export, form, admin);
             writeUserActivityLog(admin, "view export", export.toString());

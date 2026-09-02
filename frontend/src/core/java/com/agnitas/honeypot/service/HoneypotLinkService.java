@@ -15,5 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface HoneypotLinkService {
 
 	boolean isShowHoneypotLinkRequestIntermediatePage(final String targetUrl, final HttpServletRequest request, final int companyId);
-	
+
+	String getTokenForUrl(String targetUrl);
 }

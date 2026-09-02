@@ -189,7 +189,7 @@
             el.remove();
           });
 
-          data.value = `${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
+          data.value = AGN.Lib.Helpers.unescapeAgnTags(`${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`);
         }
 
         const bodyHtml = doc.body.innerHTML.trim();
@@ -251,7 +251,7 @@
       }
 
       function parseHtml(html) {
-        return new DOMParser().parseFromString(html, "text/html");
+        return new DOMParser().parseFromString(AGN.Lib.Helpers.escapeAgnTags(html), "text/html");
       }
     } else {
       editor.events.on('afterGetValueFromEditor', data => {
@@ -274,14 +274,21 @@
       return undefined;
     });
 
-    editor.events.on('beforeSetValueToEditor', function (html) {
+    function escapeForNativeWrite(html) {
       if (!html) {
         return html;
       }
 
-      html = replaceAgnImageTags(html, mailingId);
-      return AGN.Lib.Helpers.escapeAgnTags(html);
+      return AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+    }
+
+    editor.events.on('beforeSetValueToEditor', function (html) {
+      return escapeForNativeWrite(html);
     });
+
+    editor.events.on('beforeSetNativeEditorValue', function (data) {
+      data.value = escapeForNativeWrite(data.value);
+    }, { top: true });
 
     editor.events.on('beforeCommand', (command) => {
       if (command.toLowerCase() === 'delete') {

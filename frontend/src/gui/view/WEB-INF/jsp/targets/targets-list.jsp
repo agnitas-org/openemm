@@ -82,7 +82,9 @@
                             </emm:column>
                         </c:if>
 
-                        <emm:column headerClass="fit-content" property="id" titleKey="MailinglistID" />
+                        <emm:column headerClass="fit-content" property="id" titleKey="MailinglistID">
+                            <span class="click-to-copy">${target.id}</span>
+                        </emm:column>
 
                         <c:choose>
                             <c:when test="${targetForm.showDeleted}">

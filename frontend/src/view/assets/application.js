@@ -102995,7 +102995,7 @@ if (window.agnTimeZoneId) {
                         }
                         el.remove();
                     });
-                    data.value = `${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
+                    data.value = AGN.Lib.Helpers.unescapeAgnTags(`${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`);
                 }
                 const bodyHtml = doc.body.innerHTML.trim();
                 if (editor._initialRawValue.trim() === "" && isBodyEmpty(bodyHtml)) {
@@ -103041,7 +103041,7 @@ if (window.agnTimeZoneId) {
                 return !!(doc.documentElement && doc.head && doc.body);
             }
             function parseHtml(html) {
-                return (new DOMParser).parseFromString(html, "text/html");
+                return (new DOMParser).parseFromString(AGN.Lib.Helpers.escapeAgnTags(html), "text/html");
             }
         } else {
             editor.events.on("afterGetValueFromEditor", data => {
@@ -103057,12 +103057,19 @@ if (window.agnTimeZoneId) {
             }
             return undefined;
         });
-        editor.events.on("beforeSetValueToEditor", function(html) {
+        function escapeForNativeWrite(html) {
             if (!html) {
                 return html;
             }
-            html = replaceAgnImageTags(html, mailingId);
-            return AGN.Lib.Helpers.escapeAgnTags(html);
+            return AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+        }
+        editor.events.on("beforeSetValueToEditor", function(html) {
+            return escapeForNativeWrite(html);
+        });
+        editor.events.on("beforeSetNativeEditorValue", function(data) {
+            data.value = escapeForNativeWrite(data.value);
+        }, {
+            top: true
         });
         editor.events.on("beforeCommand", command => {
             if (command.toLowerCase() === "delete") {
@@ -114921,6 +114928,29 @@ AGN.Lib.LB.Definitions = {
         $img.attr("title", title || "");
         $name.text(name || "");
     };
+    ChildEditor.prototype._renderMobileAlternative = function(placeholderId, imageId) {
+        const $mobileAlternative = $(`#image-mobile-${placeholderId}`);
+        if (imageId) {
+            $mobileAlternative.find("img").attr("src", AGN.url(`/mediapool/${imageId}/raw.action`));
+        }
+        AGN.Lib.LB.Ui.setShown($mobileAlternative, imageId != null);
+    };
+    ChildEditor.prototype._refreshMobileAlternative = function(imageId, phId) {
+        this._fetchMobileAlternative(imageId).then(imageData => this._renderMobileAlternative(phId, imageData.id)).catch(() => this._renderMobileAlternative(phId));
+    };
+    ChildEditor.prototype._fetchMobileAlternative = function(imageId) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: AGN.url(`/mediapool/${imageId}/mobile-alternative/json.action`),
+                type: "GET",
+                success: mobileImage => resolve(mobileImage),
+                error: () => reject(),
+                statusCode: {
+                    404: () => reject()
+                }
+            });
+        });
+    };
     ChildEditor.prototype.chooseImage = function(placeholderId) {
         const $file = $(`#file-${placeholderId}`);
         if ($file.val()) {
@@ -114931,6 +114961,7 @@ AGN.Lib.LB.Definitions = {
     };
     ChildEditor.prototype.deleteImage = function(placeholderId) {
         this._clearImageData(placeholderId);
+        this._renderMobileAlternative(placeholderId);
         this._updateImageDependentPlaceholders(placeholderId);
         this.savePlaceholder(placeholderId);
     };
@@ -114951,6 +114982,7 @@ AGN.Lib.LB.Definitions = {
     };
     ChildEditor.prototype.showMediapoolDialog = function(placeholderId) {
         AGN.Lib.Confirm.request(AGN.url("/mediapool/image/pick.action")).done(image => {
+            this._refreshMobileAlternative(image.id, placeholderId);
             let categoryId = image.category.categoryId;
             const placeholdersWithSameImage = this._findPlaceholdersWithImage(image.id);
             if (placeholdersWithSameImage.length > 0) {
@@ -115209,6 +115241,9 @@ AGN.Lib.LB.Definitions = {
                     const entry = entries[id];
                     AGN.Lib.Select.get($(`#image-category-id-${ph.id}`)).selectValue(entry.categoryId);
                     this._updateImagePreview(ph.id, entry.src, entry.name, entry.title);
+                    if (entry.mobileId) {
+                        this._renderMobileAlternative(ph.id, entry.mobileId);
+                    }
                 }
             });
         });
@@ -115705,8 +115740,8 @@ AGN.Lib.LB.Definitions = {
             this.$removeButton.data("agn:row", this);
             this.droppables = [];
             this.callbacks = {};
-            for (var column = 1; column <= columns; column++) {
-                var droppable = this.createDroppable();
+            for (let column = 1; column <= columns; column++) {
+                const droppable = this.createDroppable();
                 this.droppables.push(droppable);
                 this.$row.append(droppable.get$());
             }
@@ -115841,8 +115876,8 @@ AGN.Lib.LB.Definitions = {
         this.columnWidth = grid.columnWidth;
         this.callbacks = {};
         this.hoveredDroppable = null;
-        for (var i = 1; i <= rows; i++) {
-            var row = this.createRow(grid.gutters[i - 1]);
+        for (let i = 1; i <= rows; i++) {
+            const row = this.createRow(grid.gutters[i - 1]);
             this.$template.append(row.get$());
             this.rows.push(row);
         }
@@ -116115,13 +116150,13 @@ AGN.Lib.LB.Definitions = {
         return droppables;
     };
     Grid.prototype.addRowBefore = function(row) {
-        var index = this.getRowIndex(row);
+        const index = this.getRowIndex(row);
         if (index >= 0) {
-            var isGuttered = true;
+            let isGuttered = false;
             if (index > 0) {
                 isGuttered = this.rows[index - 1].isGuttered();
             }
-            var newRow = this.createRow(isGuttered);
+            const newRow = this.createRow(isGuttered);
             this.rows[index].get$().before(newRow.get$());
             this.rows.splice(index, 0, newRow);
         }
@@ -116129,15 +116164,15 @@ AGN.Lib.LB.Definitions = {
     };
     Grid.prototype.addRow = function() {
         if (this.rows.length > 0) {
-            this.rows[this.rows.length - 1].setGuttered(true);
+            this.rows[this.rows.length - 1].setGuttered(false);
         }
-        var row = this.createRow(true);
+        const row = this.createRow(false);
         this.$template.append(row.get$());
         this.rows.push(row);
         return this.rows.length;
     };
     Grid.prototype.removeRow = function(row) {
-        var index = this.getRowIndex(row);
+        const index = this.getRowIndex(row);
         if (index >= 0) {
             this.rows[index].remove();
             this.rows.splice(index, 1);
@@ -117149,7 +117184,7 @@ AGN.Lib.LB.Definitions = {
         });
     };
     Editor.prototype.getGuttersAsString = function() {
-        var gutters = [];
+        const gutters = [];
         this.grid.each(function(row) {
             gutters.push(row.isGuttered() ? "1" : "0");
         });
@@ -124575,10 +124610,13 @@ class SetFilter {
             this.gui = AGN.Lib.TableCellWrapper(api.getGridOption("viewLinkTemplate"), api.getGridOption("viewInModal"), api.getGridOption("isRestoreMode")(), params.data);
             const contentDiv = document.createElement("div");
             if (params.value) {
-                contentDiv.appendChild(document.createTextNode(params.value));
+                contentDiv.appendChild(this.getContent(params.value));
             }
             contentDiv.classList.add("text-truncate-table");
             this.gui.appendChild(contentDiv);
+        }
+        getContent(value) {
+            return document.createTextNode(value);
         }
         getGui() {
             return this.gui;
@@ -124589,6 +124627,17 @@ class SetFilter {
         destroy() {}
     }
     AGN.Opt.TableCellRenderers["StringCellRenderer"] = StringCellRenderer;
+    class ClickToCopyCellRenderer extends StringCellRenderer {
+        getContent(value) {
+            const $el = $("<span>", {
+                class: "click-to-copy",
+                text: value
+            });
+            AGN.Lib.CoreInitializer.run("copyable", $el);
+            return $el[0];
+        }
+    }
+    AGN.Opt.TableCellRenderers["ClickToCopyCellRenderer"] = ClickToCopyCellRenderer;
 })();
 
 (() => {
@@ -125592,6 +125641,19 @@ AGN.Lib.CoreInitializer.new("colorpicker", function($scope = $(document)) {
         if (!Colorpicker.get($el)) {
             new Colorpicker($el);
         }
+    });
+});
+
+AGN.Lib.CoreInitializer.new("copyable", function($scope = $(document)) {
+    $scope.all(".click-to-copy").each(function() {
+        const $el = $(this);
+        if ($el.data("copyable-initialized")) {
+            return;
+        }
+        $el.attr("data-copyable", "").attr("data-tooltip", t("defaults.clickToCopy")).data("copyable-initialized", true).on("click", function(e) {
+            e.preventDefault();
+        });
+        AGN.Lib.CoreInitializer.run("tooltip", $el);
     });
 });
 
@@ -136394,7 +136456,7 @@ AGN.Lib.MailingContent.Def = {
                 handle: ".target-row-handle",
                 cursor: "move",
                 items: `${TARGET_ROW_SELECTOR}:not(:has(option[value="0"][selected]))`,
-                stop: this.updateSortable
+                stop: () => this.updateSortable()
             };
         }
         init() {
@@ -148007,6 +148069,180 @@ AGN.Lib.Controller.new("uploads-overview", function() {
     }
 });
 
+AGN.Lib.Controller.new("user-and-groups-permissions", function() {
+    let permissions;
+    this.addDomInitializer("user-and-groups-permissions", function() {
+        permissions = collectPermissions(this.config);
+        switchCategory(+getVisibleCategory$().first().attr("id").match(/\d+/)[0]);
+        updatePermissionsCounter();
+    });
+    function collectPermissions(config) {
+        if (config.isSoapUser) {
+            return collectSoapUserPermissions(config);
+        }
+        return collectAdminOrRestUserPermissions(config);
+    }
+    function collectSoapUserPermissions(config) {
+        const permissions = config.permissions.map(permission => ({
+            ...permission,
+            name: permission.endpointName
+        }));
+        return [ ...permissions, ...config.permissionGroups ];
+    }
+    function collectAdminOrRestUserPermissions(config) {
+        return config.permissionCategories.map(function(category) {
+            return category.subCategories;
+        }).flatMap(function(subcategories) {
+            return Object.values(subcategories);
+        }).flatMap(function(subcategory) {
+            return subcategory.permissions;
+        });
+    }
+    function getCategoryPermissions$(categoryIndex) {
+        return $(`#${categoryIndex}-category-permissions`).find(".permission:not(.hidden)");
+    }
+    function getCategoriesButtons$() {
+        return $(".permission-categories__btn");
+    }
+    function updatePermissionsCounter() {
+        _.each(getCategoriesButtons$(), function(button) {
+            const $button = $(button);
+            const categoryIndex = $button.data("category-index");
+            const $categoryPermissions = getCategoryPermissions$(categoryIndex);
+            const categoryPermissionsCount = $categoryPermissions.length;
+            const activePermissionsCount = $categoryPermissions.find('[role="switch"]:checked').length;
+            $(`label[for="${categoryIndex}-category-btn"] .permissions-counter`).text(`(${activePermissionsCount}/${categoryPermissionsCount})`);
+            $button.toggleClass("disabled", categoryPermissionsCount <= 0);
+        });
+    }
+    function getVisibleCategory$() {
+        return $('[id$="-category-permissions"]:visible');
+    }
+    function scrollPermissionsTop() {
+        $(`[id$="-category-permissions"]:visible .tile-body`).scrollTop(0);
+    }
+    function switchCategory(categoryIndex) {
+        showCategoryPermissions(categoryIndex);
+        scrollPermissionsTop(categoryIndex);
+        $('[id$="-category-btn"]').prop("checked", false);
+        $(`#${categoryIndex}-category-btn`).prop("checked", true);
+        triggerToggleAllUpdate();
+    }
+    function showCategoryPermissions(categoryIndex) {
+        $('[id$="-category-permissions"]').hide();
+        $(`#${categoryIndex}-category-permissions`).show();
+        controlSubCategoriesDisplaying();
+    }
+    this.addAction({
+        click: "change-category"
+    }, function() {
+        switchCategory(this.el.data("category-index"));
+    });
+    function showPermissionsByFilters() {
+        permissions.filter(permission => shouldBeShownByFilters(permission)).map(permission => $('[id="' + permission.name + '"]').closest(".permission")).forEach(permission => permission.removeClass("hidden"));
+    }
+    function switchToFirstActiveCategory() {
+        const $enabledCategories = getCategoriesButtons$().not(".disabled");
+        if (getVisiblePermissions$().length > 0 || $enabledCategories.length <= 0) {
+            return;
+        }
+        switchCategory(+$enabledCategories.first().data("category-index"));
+    }
+    this.addAction({
+        click: "apply-filter",
+        enterdown: "handle-filter-enterdown"
+    }, function() {
+        this.event.preventDefault();
+        hideAllPermissions();
+        showPermissionsByFilters();
+        controlSubCategoriesDisplaying();
+        updatePermissionsCounter();
+        switchToFirstActiveCategory();
+        scrollPermissionsTop();
+        triggerToggleAllUpdate();
+    });
+    function allowedByTypeFilter(permission) {
+        const types = $("#type-filter").val();
+        if (!types?.length) {
+            return true;
+        }
+        return types.some(filter => getPredicateByFilter(filter)(permission));
+    }
+    function allowedByNameFilter(permission) {
+        const filterVal = $("#name-filter").val().trim().toLowerCase();
+        const name = $(`#${permission.name.replaceAll(".", "\\.")}`).parent().find("label").text().toLowerCase().trim();
+        return !filterVal || name.includes(filterVal);
+    }
+    function allowedByRightFilter(permission) {
+        const filterVal = $("#right-filter").val()?.trim()?.toLowerCase();
+        return !filterVal || permission.name.toLowerCase().includes(filterVal);
+    }
+    function shouldBeShownByFilters(permission) {
+        return allowedByNameFilter(permission) && allowedByRightFilter(permission) && allowedByTypeFilter(permission);
+    }
+    function getPredicateByFilter(filter) {
+        switch (filter) {
+          case "granted":
+            return function(permission) {
+                return permission.granted;
+            };
+
+          case "grantedForUser":
+            return function(permission) {
+                return permission.granted && !permission.showInfoTooltip;
+            };
+
+          case "grantedByGroup":
+            return function(permission) {
+                return permission.showInfoTooltip;
+            };
+
+          case "grantable":
+            return function(permission) {
+                return !permission.granted && permission.changeable;
+            };
+
+          case "notGrantable":
+            return function(permission) {
+                return !permission.granted && !permission.changeable;
+            };
+
+          case "new":
+            return function(permission) {
+                return permission.recent;
+            };
+
+          default:
+            return function() {
+                return true;
+            };
+        }
+    }
+    function showAllSubCategories() {
+        $(".permission_category-subcategory").show();
+    }
+    function getVisiblePermissions$() {
+        return getVisibleCategory$().find(".permission:visible");
+    }
+    function controlNoResultsInfoDisplay() {
+        const shown = getVisiblePermissions$().length <= 0;
+        $(".no-results-found").toggle(shown);
+    }
+    function controlSubCategoriesDisplaying() {
+        showAllSubCategories();
+        $(".permission_category-subcategory").each(function() {
+            return $(this).toggle($(this).find("li:visible").length > 0);
+        });
+        controlNoResultsInfoDisplay();
+    }
+    function hideAllPermissions() {
+        $(".permission").addClass("hidden");
+    }
+    function triggerToggleAllUpdate() {
+        getVisibleCategory$().find("[data-toggle-checkboxes]").trigger("update-toggle-all");
+    }
+});
+
 AGN.Lib.Controller.new("userform-images", function() {
     const Modal = AGN.Lib.Modal;
     const Template = AGN.Lib.Template;
@@ -148203,180 +148439,6 @@ AGN.Lib.Controller.new("userform-view", function() {
                 $link.addClass("hidden");
             }
         }
-    }
-});
-
-AGN.Lib.Controller.new("user|groups-permissions", function() {
-    let permissions;
-    this.addDomInitializer("user|groups-permissions", function() {
-        permissions = collectPermissions(this.config);
-        switchCategory(+getVisibleCategory$().first().attr("id").match(/\d+/)[0]);
-        updatePermissionsCounter();
-    });
-    function collectPermissions(config) {
-        if (config.isSoapUser) {
-            return collectSoapUserPermissions(config);
-        }
-        return collectAdminOrRestUserPermissions(config);
-    }
-    function collectSoapUserPermissions(config) {
-        const permissions = config.permissions.map(permission => ({
-            ...permission,
-            name: permission.endpointName
-        }));
-        return [ ...permissions, ...config.permissionGroups ];
-    }
-    function collectAdminOrRestUserPermissions(config) {
-        return config.permissionCategories.map(function(category) {
-            return category.subCategories;
-        }).flatMap(function(subcategories) {
-            return Object.values(subcategories);
-        }).flatMap(function(subcategory) {
-            return subcategory.permissions;
-        });
-    }
-    function getCategoryPermissions$(categoryIndex) {
-        return $(`#${categoryIndex}-category-permissions`).find(".permission:not(.hidden)");
-    }
-    function getCategoriesButtons$() {
-        return $(".permission-categories__btn");
-    }
-    function updatePermissionsCounter() {
-        _.each(getCategoriesButtons$(), function(button) {
-            const $button = $(button);
-            const categoryIndex = $button.data("category-index");
-            const $categoryPermissions = getCategoryPermissions$(categoryIndex);
-            const categoryPermissionsCount = $categoryPermissions.length;
-            const activePermissionsCount = $categoryPermissions.find('[role="switch"]:checked').length;
-            $(`label[for="${categoryIndex}-category-btn"] .permissions-counter`).text(`(${activePermissionsCount}/${categoryPermissionsCount})`);
-            $button.toggleClass("disabled", categoryPermissionsCount <= 0);
-        });
-    }
-    function getVisibleCategory$() {
-        return $('[id$="-category-permissions"]:visible');
-    }
-    function scrollPermissionsTop() {
-        $(`[id$="-category-permissions"]:visible .tile-body`).scrollTop(0);
-    }
-    function switchCategory(categoryIndex) {
-        showCategoryPermissions(categoryIndex);
-        scrollPermissionsTop(categoryIndex);
-        $('[id$="-category-btn"]').prop("checked", false);
-        $(`#${categoryIndex}-category-btn`).prop("checked", true);
-        triggerToggleAllUpdate();
-    }
-    function showCategoryPermissions(categoryIndex) {
-        $('[id$="-category-permissions"]').hide();
-        $(`#${categoryIndex}-category-permissions`).show();
-        controlSubCategoriesDisplaying();
-    }
-    this.addAction({
-        click: "change-category"
-    }, function() {
-        switchCategory(this.el.data("category-index"));
-    });
-    function showPermissionsByFilters() {
-        permissions.filter(permission => shouldBeShownByFilters(permission)).map(permission => $('[id="' + permission.name + '"]').closest(".permission")).forEach(permission => permission.removeClass("hidden"));
-    }
-    function switchToFirstActiveCategory() {
-        const $enabledCategories = getCategoriesButtons$().not(".disabled");
-        if (getVisiblePermissions$().length > 0 || $enabledCategories.length <= 0) {
-            return;
-        }
-        switchCategory(+$enabledCategories.first().data("category-index"));
-    }
-    this.addAction({
-        click: "apply-filter",
-        enterdown: "handle-filter-enterdown"
-    }, function() {
-        this.event.preventDefault();
-        hideAllPermissions();
-        showPermissionsByFilters();
-        controlSubCategoriesDisplaying();
-        updatePermissionsCounter();
-        switchToFirstActiveCategory();
-        scrollPermissionsTop();
-        triggerToggleAllUpdate();
-    });
-    function allowedByTypeFilter(permission) {
-        const types = $("#type-filter").val();
-        if (!types?.length) {
-            return true;
-        }
-        return types.some(filter => getPredicateByFilter(filter)(permission));
-    }
-    function allowedByNameFilter(permission) {
-        const filterVal = $("#name-filter").val().trim().toLowerCase();
-        const name = $(`#${permission.name.replaceAll(".", "\\.")}`).parent().find("label").text().toLowerCase().trim();
-        return !filterVal || name.includes(filterVal);
-    }
-    function allowedByRightFilter(permission) {
-        const filterVal = $("#right-filter").val()?.trim()?.toLowerCase();
-        return !filterVal || permission.name.toLowerCase().includes(filterVal);
-    }
-    function shouldBeShownByFilters(permission) {
-        return allowedByNameFilter(permission) && allowedByRightFilter(permission) && allowedByTypeFilter(permission);
-    }
-    function getPredicateByFilter(filter) {
-        switch (filter) {
-          case "granted":
-            return function(permission) {
-                return permission.granted;
-            };
-
-          case "grantedForUser":
-            return function(permission) {
-                return permission.granted && !permission.showInfoTooltip;
-            };
-
-          case "grantedByGroup":
-            return function(permission) {
-                return permission.showInfoTooltip;
-            };
-
-          case "grantable":
-            return function(permission) {
-                return !permission.granted && permission.changeable;
-            };
-
-          case "notGrantable":
-            return function(permission) {
-                return !permission.granted && !permission.changeable;
-            };
-
-          case "new":
-            return function(permission) {
-                return permission.recent;
-            };
-
-          default:
-            return function() {
-                return true;
-            };
-        }
-    }
-    function showAllSubCategories() {
-        $(".permission_category-subcategory").show();
-    }
-    function getVisiblePermissions$() {
-        return getVisibleCategory$().find(".permission:visible");
-    }
-    function controlNoResultsInfoDisplay() {
-        const shown = getVisiblePermissions$().length <= 0;
-        $(".no-results-found").toggle(shown);
-    }
-    function controlSubCategoriesDisplaying() {
-        showAllSubCategories();
-        $(".permission_category-subcategory").each(function() {
-            return $(this).toggle($(this).find("li:visible").length > 0);
-        });
-        controlNoResultsInfoDisplay();
-    }
-    function hideAllPermissions() {
-        $(".permission").addClass("hidden");
-    }
-    function triggerToggleAllUpdate() {
-        getVisibleCategory$().find("[data-toggle-checkboxes]").trigger("update-toggle-all");
     }
 });
 

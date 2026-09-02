@@ -15,7 +15,7 @@
         handle: ".target-row-handle",
         cursor: "move",
         items: `${TARGET_ROW_SELECTOR}:not(:has(option[value="0"][selected]))`,
-        stop: this.updateSortable
+        stop: () => this.updateSortable()
       }
     }
 

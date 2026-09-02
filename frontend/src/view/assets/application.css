@@ -26039,6 +26039,7 @@ input[type=checkbox]:focus-visible {
   --chart-grey-color: #7E7E7E;
   --chart-dark-grey-color: #3D3D3D;
   --chart-black-color: #0A0A0A;
+  --chart-axis-color: #C0C0C0;
   --chart-label-color: #4B4B4B;
   --chart-font-family: "Poppins",sans-serif;
   --chart-font-size: 14px;
@@ -27862,6 +27863,46 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 .table-layout-fixed {
   table-layout: fixed!important
 }
+.table-wrapper--sm {
+  font-size: .857rem
+}
+.table-wrapper--sm .table--borderless thead tr {
+  height: 30px
+}
+.table-wrapper--sm .table--borderless thead th {
+  padding-bottom: 0
+}
+.table-wrapper--sm .table--borderless tr {
+  height: 36px
+}
+.table-wrapper--sm .table-wrapper__header:empty {
+  padding: 0
+}
+.table-wrapper--sm .table-wrapper__header {
+  border: none
+}
+.table-wrapper--sm .table-wrapper__header::after {
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--bs-border-color);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px
+}
+.table--stretch-rows {
+  table-layout: fixed;
+  height: 100%
+}
+@supports (-moz-appearance:none) {
+  .table--stretch-rows {
+    height: calc(100% - 30px)
+  }
+}
+.table--stretch-rows tbody {
+  height: 100%
+}
+.table--stretch-rows tbody tr {
+  height: calc(100% / var(--table-row-count,1))
+}
 .table-wrapper {
   --table-wrapper-title-color: #1A3258;
   --text-truncate-lines: 2;
@@ -28361,6 +28402,7 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .ag-theme-bootstrap .ag-cell-value > div {
   height: 100%;
+  max-width: 100%;
   flex-grow: 1;
   padding: 5px 9px;
   display: flex;
@@ -28452,6 +28494,9 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .ag-theme-bootstrap .ag-spanned-cell-wrapper {
   top: -1px
+}
+.table-wrapper--sm .ag-theme-bootstrap {
+  --ag-font-size: 12px
 }
 .dropdown-toggle::after,
 .js-btn-dropdown::after {
@@ -28659,6 +28704,18 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 [data-bs-theme=dark-contrast] .copy-box {
   --copy-box-color: #fff
+}
+.click-to-copy {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: .15rem .4rem;
+  transition: background-color .15s ease-in-out,color .15s ease-in-out
+}
+.click-to-copy:hover {
+  border: 1px solid var(--bs-border-color);
+  border-radius: .375rem
 }
 .tooltip {
   --tooltip-color: #fff;
@@ -29166,6 +29223,10 @@ tbody > tr.disabled .query-builder .rule-container .rule-value-container .form-c
 }
 .tile-title--grey {
   color: var(--tile-title-grey-color)
+}
+.modal-header .modal-title .icon,
+.tile-title .icon {
+  cursor: pointer
 }
 .modal-header .modal-title-controls,
 .tile-title-controls {
@@ -31662,6 +31723,17 @@ select[readonly].select2-hidden-accessible + .select2-container .select2-selecti
   width: 90vw;
   height: calc(85vh - 120px)
 }
+.modal-locked .btn-close {
+  display: none
+}
+.form-builder-dialog.positioned .button-wrap .modal-locked button,
+.modal-locked .btn,
+.modal-locked .form-builder-dialog.positioned .button-wrap button,
+.modal-locked .permission-categories__btn,
+.modal-locked button {
+  pointer-events: none;
+  opacity: .4
+}
 .icon-help:before {
   content: \f059
 }
@@ -33024,13 +33096,18 @@ body .form-builder-dialog.positioned .button-wrap::before {
   justify-content: center;
   background: var(--chat-icon-bg);
   color: var(--chat-icon-color);
+  overflow: hidden;
   width: 30px;
   height: 30px;
   border: 1px solid var(--chat-icon-border-color);
   border-radius: 50%
 }
-.chat .chat__icon {
+.chat .chat__icon:is(.icon) {
   font-size: 1rem
+}
+.chat .chat__icon:is(img) {
+  width: 30px;
+  height: 30px
 }
 .chat .chat__typing-icon {
   animation: typing 1s infinite

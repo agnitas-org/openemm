@@ -1,8 +1,8 @@
-AGN.Lib.Controller.new('user|groups-permissions', function () {
+AGN.Lib.Controller.new('user-and-groups-permissions', function () {
 
   let permissions;
 
-  this.addDomInitializer('user|groups-permissions', function() {
+  this.addDomInitializer('user-and-groups-permissions', function() {
     permissions = collectPermissions(this.config);
     switchCategory(+getVisibleCategory$().first().attr('id').match(/\d+/)[0]); // show first category
     updatePermissionsCounter();

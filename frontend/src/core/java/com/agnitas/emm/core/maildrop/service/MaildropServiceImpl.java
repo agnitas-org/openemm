@@ -177,7 +177,11 @@ public class MaildropServiceImpl implements MaildropService {
 			return;
 		}
 
-		systemMailMessageService.sendDkimWarningMail(companyId, senderDomain);
+		try {
+			systemMailMessageService.sendDkimWarningMail(companyId, senderDomain);
+		}  catch (Exception e) {
+			logger.error("Can't send DKIM warning email", e);
+		}
 	}
 
 	@Override

@@ -8,7 +8,7 @@
 <c:set var="sidemenu_sub_active" 	value="mailloop.inbox" 	                  scope="request" />
 <c:set var="agnHighlightKey" 		value="default.Overview" 	              scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Administration" 		              scope="request" />
-<c:set var="agnHelpKey" 			value="bounceFilter" 		              scope="request" />
+<c:set var="agnHelpKey" 			value="responseInbox" 		              scope="request" />
 <c:set var="agnEditViewKey" 	    value="response-inbox-overview" 	      scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

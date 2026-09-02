@@ -96,7 +96,7 @@
             <input type="text" id="right-filter" class="form-control" placeholder="${mailingShowPermissionToken}"/>
         </div>
 
-        <script data-initializer="user|groups-permissions" type="application/json">
+        <script data-initializer="user-and-groups-permissions" type="application/json">
             {
                 "permissionCategories": ${emm:toJson(permissionCategories)}
             }

@@ -19,6 +19,8 @@ import static com.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static com.agnitas.util.Const.Mvc.NOTHING_SELECTED_MSG;
 
 import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -248,10 +250,12 @@ public class BirtReportController implements XssCheckAware {
         if (tmpFile == null || !tmpFile.exists() || tmpFile.length() <= 0) {
             return "evaluation_finished";
         }
-
-        String downloadUrl = String.format("/statistics/report/download.action?fileName=%s&tmpFileName=%s",
-            download.getFileName(), Objects.requireNonNull(tmpFile).getAbsolutePath());
-        return ResponseEntity.ok(new DataResponseDto<>(downloadUrl, popups));
+        return ResponseEntity.ok(new DataResponseDto<>(
+                "/statistics/report/download.action?fileName=%s&tmpFileName=%s".formatted(
+                        URLEncoder.encode(download.getFileName(), StandardCharsets.UTF_8),
+                        URLEncoder.encode(Objects.requireNonNull(tmpFile).getAbsolutePath(), StandardCharsets.UTF_8)),
+                popups
+        ));
     }
 
     @GetMapping(value = "/report/download.action", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
