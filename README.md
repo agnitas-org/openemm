@@ -2,11 +2,11 @@
 
 # :dart: About OpenEMM
 
-OpenEMM is an open source software for email automation and marketing like email newsletters, multi-stage email campaigns, transaction emails, autoresponder emails, etc.
+OpenEMM is an **open source software** for **email automation and marketing** like email newsletters, multi-stage email campaigns, transaction emails, autoresponder emails, etc.
 
-OpenEMM is developed and maintained by AGNITAS AG in Munich, Germany. It is the free version of our commercial software E-Marketing Manager (EMM) and offers you full digital sovereignty, because you decide where and how to operate it.
+OpenEMM is developed and maintained by AGNITAS AG in Munich, Germany. It is the **free version** of our commercial software E-Marketing Manager (EMM) and offers you full **digital sovereignty**, because you decide where and how to operate it.
 
-OpenEMM is available in English and German language. The current version of OpenEMM is **26.05**. 
+OpenEMM is available in **English** and **German** language. The current version of OpenEMM is **26.05**. 
 
 **Experience OpenEMM yourself with our interactive demo tours:**    
 
