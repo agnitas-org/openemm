@@ -18,6 +18,18 @@ OpenEMM is available in **English** and **German** language. The current version
 
 ➡️ [Free Demo Access for OpenEMM](https://www.agnitas.de/en/openemm-demo/)
 
+## :fire: Latest News
+
+Version 26.11 of OpenEMM will provide lots of exciting new features:
+
+- a brand new **REST API** based on **OpenAPI 3** with **swagger user interface** for documentation and testing
+- an **MCP API** to use OpenEMM as **MCP server** with your own AI chat or AI agent (including OAuth2 autentification)
+- verified connectors for **n8n** and **Make**
+- all **visual statistics redesigned** and improved
+- support of **PostgreSQL** DBMS
+
+The source code of OpenEMM 26.11.026 is the first beta version and publication of the first release for general availability is planned for November 2026.
+
 ## :dizzy: Features
 
 OpenEMM offers tons of features for professional marketing users, among them:
