@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -16,8 +16,8 @@ SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c html.c c
 	  blockmail.c block.c tagpos.c mailtypedefinition.c links.c blockspec.c fix.c \
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
 	  codec.c eval.c counter.c rblock.c misc.c sqllike.c reason.c none.c \
-	  generate.c count.c preview.c head.c \
-	  strmap.c dkim.c spf.c uid.c tfunc.c tflua.c \
+	  generate.c count.c preview.c smime.c head.c \
+	  strmap.c helper.c dkim.c spf.c uid.c tfunc.c tflua.c \
 	  grammar/parse.c grammar/transform.c
 OBJS	= $(SRCS:%.c=%.o)
 LOBJS	= luatc.o $(shell echo $(OBJS) | tr ' ' '\n' | egrep -v 'tflua.o|xmlback.o')

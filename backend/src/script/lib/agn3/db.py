@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -14,11 +14,12 @@ import	logging, csv
 from	collections import defaultdict
 from	datetime import datetime, timedelta
 from	types import TracebackType
-from	typing import Any, Callable, Iterable, Literal, Optional, Union
+from	typing import Any, Callable, Iterable, Literal, Optional, Self, Union, Unpack
 from	typing import Dict, IO, List, NamedTuple, Set, Tuple, Type
 from	typing import cast, overload
 from	.dbdriver import DBDriver
-from	.dbcore import _T, Row, Core, Cursor, Description
+from	.dbcli import DBCLI
+from	.dbcore import _T, QType, Row, Core, Cursor, Description
 from	.definitions import epoch, program
 from	.exceptions import error
 from	.ignore import Ignore
@@ -71,7 +72,7 @@ handling."""
 	def __del__ (self) -> None:
 		self.close ()
 		
-	def __enter__ (self) -> DB:
+	def __enter__ (self) -> Self:
 		self.check_open ()
 		return self
 
@@ -164,7 +165,7 @@ handling."""
 			return self.db.last_error ()
 		return self._last_error if self._last_error else f'No active database interface ({self.dbid})'
 	
-	def qselect (self, **args: _T) -> _T:
+	def qselect (self, **args: Unpack[QType[_T]]) -> _T:
 		if self.db is not None:
 			return self.db.qselect (**args)
 		raise error ('database not open: {last_error}'.format (last_error = self.last_error ()))
@@ -203,9 +204,24 @@ handling."""
 		"""setup a newly created table according to the dbms requirements"""
 		self.check_open ().setup_table_optimizer (table, estimate_percent)
 
+	def cli (self) -> DBCLI:
+		return self.check_open ().cli ()
+
 	@property
-	def dbms (self) -> Optional[str]:
-		return self.db.dbms if self.db else None
+	def dbms (self) -> str:
+		return self.check_open ().dbms
+	
+	@property
+	def schema (self) -> None | str:
+		return self.check_open ().schema
+	
+	@property
+	def has_tablespaces (self) -> bool:
+		return self.check_open ().has_tablespaces
+	
+	@property
+	def support_tablespaces (self) -> bool:
+		return self.dbms in ('oracle', 'postgres')
 
 
 	def query (self, statement: str, parameter: None | dict[str, Any] = None) -> Iterable[Row]:
@@ -264,6 +280,19 @@ handling."""
 			return Stream (self.queryc (statement, parameter))
 		return self.check_open ().streamc (statement, parameter)
 
+	def tables (self) -> list[str]:
+		cursor = self.check_open_cursor ()
+		query = cursor.qselect (
+			oracle = 'SELECT table_name FROM user_tables',
+			mariadb = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :schema',
+			postgres = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :schema AND table_type = \'BASE TABLE\'',
+			sqlite = 'SELECT name AS table_name FROM sqlite_master WHERE type = \'table\''
+		)
+		data: dict[str, str] = {}
+		if self.schema is not None:
+			data['schema'] = self.schema
+		return cursor.stream (query, data).map (lambda r: r.table_name.lower ()).sorted ().list ()
+		
 	def exists_table (self, table_name: str, cachable: bool = False) -> bool:
 		"""Check database if ``table_name'' exists as table, if ``cachable'' is True, cache the result for faster future access"""
 		if cachable:
@@ -275,10 +304,16 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:table_name)',
-			mariadb = 'SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:table_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:table_name) AND table_schema = :schema',
+			postgres = 'SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:table_name) AND table_schema = :schema AND table_type = \'BASE TABLE\'',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(name) = lower(:table_name) AND type = \'table\''
 		)
-		rq = cursor.querys (query, {'table_name': table_name})
+		data: dict[str, str] = {
+			'table_name': table_name
+		}
+		if self.schema is not None:
+			data['schema'] = self.schema
+		rq = cursor.querys (query, data)
 		if rq is not None:
 			rc = rq[0] > 0
 			if cachable:
@@ -296,10 +331,16 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_views WHERE lower(view_name) = lower(:view_name)',
-			mariadb = 'SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:view_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:view_name) AND table_schema = :schema',
+			postgres = 'SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:view_name) AND table_schema = :schema',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(name) = lower(:view_name) AND type = \'view\''
 		)
-		rq = cursor.querys (query, {'view_name': view_name})
+		data: dict[str, str] = {
+			'view_name': view_name
+		}
+		if self.schema is not None:
+			data['schema'] = self.schema
+		rq = cursor.querys (query, data)
 		if rq is not None:
 			rc = rq[0] > 0
 			if cachable:
@@ -339,10 +380,17 @@ handling."""
 		cursor = self.check_open_cursor ()
 		query = cursor.qselect (
 			oracle = 'SELECT count(*) FROM user_indexes WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name)',
-			mariadb = 'SELECT count(*) FROM information_schema.statistics WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name) AND table_schema=(SELECT SCHEMA())',
+			mariadb = 'SELECT count(*) FROM information_schema.statistics WHERE lower(table_name) = lower(:table_name) AND lower(index_name) = lower(:index_name) AND table_schema = :schema',
+			postgres = 'SELECT count(*) FROM pg_indexes WHERE lower(tablename) = lower(:table_name) AND lower(indexname) = lower(:index_name) AND schemaname = :schema',
 			sqlite = 'SELECT count(*) FROM sqlite_master WHERE lower(tbl_name) = lower(:table_name) AND lower(name) = lower(:index_name) AND type = \'index\''
 		)
-		rq = cursor.querys (query, {'table_name': table_name, 'index_name': index_name})
+		data: dict[str, str] = {
+			'table_name': table_name,
+			'index_name': index_name
+		}
+		if self.schema is not None:
+			data['schema'] = self.schema
+		rq = cursor.querys (query, data)
 		if rq is not None:
 			rc = rq[0] > 0
 			if cachable:
@@ -356,26 +404,29 @@ handling."""
 		except KeyError:
 			self.check_open ()
 			rc: Optional[str] = None
-			if self.dbms == 'oracle':
-				cursor = self.request ()
-				try:
+			if self.dbms in ('oracle', 'postgres'):
+				with self.request () as cursor:
 					if tablespace is not None:
 						for ts in [tablespace] + list (args):
-							query = 'SELECT tablespace_name FROM user_tablespaces WHERE lower(tablespace_name) = lower(:tablespace_name)'
+							query = cursor.qselect (
+								oracle = 'SELECT tablespace_name FROM user_tablespaces WHERE lower(tablespace_name) = lower(:tablespace_name)',
+								postgres = 'SELECT spcname AS tablespace_name FROM pg_tablespace WHERE lower(spcname) = lower(:tablespace_name)'
+							)
 							data = {'tablespace_name': ts}
 							rq = cursor.querys (query, data)
 							if rq is not None and rq.tablespace_name is not None:
 								rc = rq.tablespace_name
 								break
 					if rc is None:
-						query = 'SELECT default_tablespace FROM user_users'
+						query = cursor.qselect (
+							oracle = 'SELECT default_tablespace FROM user_users',
+							postgres = 'SHOW default_tablespace'
+						)
 						for row in cursor.query (query):
 							if row.default_tablespace is not None:
 								rc = row.default_tablespace
 								break
-				finally:
-						self.release (cursor)
-			self._tablespace_cache[tablespace] = rc
+			self._tablespace_cache[tablespace] = rc if rc else None
 			return rc
 	
 	def tablespace (self, tablespace: Optional[str], *args: str) -> str:
@@ -439,6 +490,25 @@ handling."""
 						'SELECT table_name, column_name, column_type, column_default, is_nullable, column_comment '
 						'FROM information_schema.columns WHERE table_schema=(SELECT SCHEMA())'
 					).each (lambda r: rc[r.table_name.lower ()].append (mariadb_mkcolumn (r.column_name.lower (), r.column_type, r.is_nullable == 'YES', r.column_default, r.column_comment)))
+				case 'postgres':
+					def postgres_mkcolumn (name: str, typ: str, nullable: bool, default: None | str) -> DB.Column:
+						if not nullable:
+							typ += ' NOT NULL'
+						if default:
+							typ += f' DEFAULT {default}'
+						return DB.Column (
+							name = name,
+							datatype = typ,
+							comment = None
+						)
+					#
+					cursor.stream (
+						'SELECT table_name, column_name, data_type, column_default, is_nullable '
+						'FROM information_schema.columns WHERE table_schema = :schema',
+						{
+							'schema': self.schema
+						}
+					).each (lambda r: rc[r.table_name.lower ()].append (postgres_mkcolumn (r.column_name.lower (), r.data_type.lower (), r.is_nullable == 'YES', r.column_default)))
 		return dict (rc)
 	
 	def update_layout (self,
@@ -477,10 +547,16 @@ handling."""
 								)
 							)
 		if indexes:
+			data: dict[str, str] = {
+				'table': table
+			}
+			if self.schema is not None:
+				data['schema'] = self.schema
 			available = cursor.streamc (
 				cursor.qselect (
 					oracle = 'SELECT index_name FROM user_indexes WHERE lower(table_name) = lower(:table)',
-					mariadb = 'SELECT index_name FROM information_schema.statistics WHERE lower(table_name) = lower(:table) AND table_schema=(SELECT SCHEMA())',
+					mariadb = 'SELECT index_name FROM information_schema.statistics WHERE lower(table_name) = lower(:table) AND table_schema = :schema',
+					postgres = 'SELECT indexname FROM pg_indexes WHERE lower(tablename) = lower(:table) AND schemaname = :schema',
 					sqlite = 'SELECT name AS index_name FROM sqlite_master WHERE lower(tbl_name) = lower(:table) AND type = \'index\''
 				), {
 					'table': table
@@ -652,10 +728,10 @@ files to limit the size of each file."""
 				if wr is None:
 					if limit is not None:
 						fileno += 1
-						if callable (stream):
-							filename = stream (fileno)
-						else:
+						if isinstance (stream, str):
 							filename = stream % fileno
+						else:
+							filename = stream (fileno)
 					else:
 						filename = cast (str, stream)
 					fd = copen (filename, 'w')
@@ -687,7 +763,7 @@ files to limit the size of each file."""
 		def __del__ (self) -> None:
 			self.done (False)
 		
-		def __enter__ (self) -> DB.Checkpoint:
+		def __enter__ (self) -> Self:
 			return self
 			
 		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
@@ -783,6 +859,12 @@ if it had not existed."""
 						'	checkpoint	timestamp	NOT NULL,\n'
 						'       persist         longtext\n'
 						')'
+					), postgres = (
+						f'CREATE TABLE {table} (\n'
+						'	name		varchar(100)	PRIMARY KEY NOT NULL,\n'
+						'	checkpoint	timestamptz	NOT NULL,\n'
+						'       persist         text\n'
+						')'
 					), sqlite = (
 						f'CREATE TABLE {table} (\n'
 						'	name		text		PRIMARY KEY NOT NULL,\n'
@@ -799,6 +881,7 @@ if it had not existed."""
 					cursor.execute (cursor.qselect (
 						oracle = f'ALTER TABLE {table} ADD persist clob',
 						mariadb = f'ALTER TABLE {table} ADD persist longtext',
+						postgres = f'ALTER TABLE {table} ADD persist text',
 						sqlite = f'ALTER TABLE {table} ADD persist text'
 					))
 			if self.exists (table) and name is not None:
@@ -857,4 +940,3 @@ class TempDB:
 		if self.use != self.db:
 			self.use.close ()
 		return None
-		

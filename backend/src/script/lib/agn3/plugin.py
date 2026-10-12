@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -20,7 +20,7 @@ from	typing import cast
 from	.definitions import base, program
 from	.exceptions import error
 from	.rpc import XMLRPCProxy
-from	.tools import atoi, atob
+from	.tools import method_name, atoi, atob
 #
 __all__ = ['APIDescription', 'Manager', 'LoggingManager', 'Plugin']
 #
@@ -363,12 +363,9 @@ found, no module is loaded at all.
 		class_name: Optional[str] = None,
 		path: Optional[str] = None
 	) -> Manager.Callback:
-		try:
-			funcname = func.__name__
-		except AttributeError:
-			funcname = func.__class__.__name__
-			if class_name is None:
-				class_name = funcname
+		funcname = method_name (func)
+		if class_name is None and (cls := getattr (func, '__class__', None)) is not None:
+			class_name = cls.__name__
 		if name is None:
 			name = funcname
 		cb = Manager.Callback (funcname, name, class_name, path, func)
@@ -425,7 +422,7 @@ found, no module is loaded at all.
 			self.remote = XMLRPCProxy (self.address, allow_none = True)
 			remote_methods = self.remote.system.listMethods ()
 			if isinstance (remote_methods, Iterable):
-				self.methods = set (filter (lambda m: not m.startswith ('system.'), remote_methods))
+				self.methods = set (filter (lambda m: isinstance (m, str) and not m.startswith ('system.'), remote_methods))
 		
 		def __call__ (self, name: str) -> Callable[..., Any]:
 			method = name if name in self.methods else None
@@ -543,7 +540,7 @@ found, no module is loaded at all.
 					return list (val)
 				if isinstance (val, str):
 					return [_v.strip () for _v in val.split (',')] if val else None
-				return [str (val)]
+				return [str (val)] if val else None
 			except KeyError:
 				return default
 			

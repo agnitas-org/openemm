@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -21,7 +21,6 @@ from	urllib.parse import unquote
 from	types import TracebackType
 from	typing import Any, Callable, Final, Optional, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Pattern, Set, TextIO, Tuple, Type
-from	typing import cast
 from	agn3.cache import Cache
 from	agn3.db import DBIgnore, DB, Row
 from	agn3.dbm import DBM
@@ -889,7 +888,10 @@ class UpdateBounce (Update): #{{{
 		
 	def update_end (self, db: DB) -> bool:
 		if self.succeeded:
-			logger.info ('Add {mails:,d} mails to {mailings:d} mailings'.format (mails = cast (int, sum (self.succeeded.values ())), mailings = len (self.succeeded)))
+			logger.info ('Add {mails:,d} mails to {mailings:d} mailings'.format (
+				mails = sum (self.succeeded.values ()),
+				mailings = len (self.succeeded)
+			))
 			for mailing_id in sorted (self.succeeded):
 				db.update (
 					'UPDATE mailing_tbl SET delivered = COALESCE(delivered, 0) + :success WHERE mailing_id = :mailing_id',
@@ -1024,6 +1026,11 @@ class UpdateBounce (Update): #{{{
 									'       (company_id, customer_id, detail, mailing_id, dsn, timestamp) '
 									'VALUES '
 									'       (:company, :customer, :detail, :mailing, :dsn, :ts)'
+								), postgres = (
+									'INSERT INTO bounce_tbl '
+									'       (bounce_id, company_id, customer_id, detail, mailing_id, dsn, timestamp) '
+									'VALUES '
+									'       (nextval(\'bounce_tbl_bounce_id_seq\'), :company, :customer, :detail, :mailing, :dsn, :ts)'
 								)
 							)
 							db.update (query, data)
@@ -1069,7 +1076,7 @@ class UpdateBounce (Update): #{{{
 							)
 							data = {
 								'status': breakdown.bounce_type.value,
-								'remark': breakdown.bounce_remark,
+								'remark': breakdown.bounce_remark if isinstance (breakdown.bounce_remark, str) else f'#{breakdown.code}',
 								'mailing': record.mailing_id,
 								'ts': breakdown.timestamp,
 								'customer_id': record.customer_id,
@@ -1561,6 +1568,9 @@ class UpdateAccount (Update): #{{{
 		if db.dbms == 'oracle':
 			columns.insert (0, 'mailing_account_id')
 			placeholder.insert (0, 'mailing_account_tbl_seq.nextval')
+		elif db.dbms == 'postgres':
+			columns.insert (0, 'mailing_account_id')
+			placeholder.insert (0, 'nextval(\'mailing_account_tbl_mailing_account_id_seq\')')
 		self.insert_query = 'INSERT INTO mailing_account_tbl ({columns}) VALUES ({placeholder})'.format (
 			columns = ', '.join (columns),
 			placeholder = ', '.join (placeholder)
@@ -1612,6 +1622,11 @@ class UpdateAccount (Update): #{{{
 									'       (mailing_account_id, no_of_mailings, no_of_bytes) '
 									'VALUES '
 									'       (last_insert_id(), :bcc_count, :bcc_bytes)'
+								), postgres = (
+									'INSERT INTO bcc_mailing_account_tbl '
+									'      (mailing_account_id, no_of_mailings, no_of_bytes) '
+									'VALUES '
+									'      (currval(\'mailing_account_tbl_mailing_account_id_seq\'), :bcc_count, :bcc_bytes)'
 								)
 							), {
 								'bcc_count': control.bcc_count,
@@ -1688,7 +1703,7 @@ class UpdateDeliver (Update): #{{{
 										tablespace = db.tablespace ('DATA_CUST_INDEX')
 									)
 								)
-							else:
+							elif db.dbms == 'mariadb':
 								db.execute (
 									f'CREATE TABLE {table} ('
 									'id int auto_increment primary key,'
@@ -1700,6 +1715,30 @@ class UpdateDeliver (Update): #{{{
 								)
 								db.execute (
 									f'CREATE INDEX del{company_id}$tscid$idx ON {table} (timestamp, customer_id)'
+								)
+							elif db.dbms == 'postgres':
+								db.execute (
+									'CREATE TABLE {table} ('
+									'id integer primary key,'
+									'mailing_id integer,'
+									'customer_id integer,'
+									'timestamp timestamptz,'
+									'line varchar(4000)'
+									'){tablespace}'
+									.format (
+										table = table,
+										tablespace = db.tablespace ('DATA_SUCCESS')
+									)
+								)
+								db.execute (
+									'CREATE SEQUENCE {table}_seq NOCACHE'.format (table = table)
+								)
+								db.execute (
+									'CREATE INDEX del{company_id}$tscid$idx ON {table} (timestamp, customer_id){tablespace}'.format (
+										company_id = company_id,
+										table = table,
+										tablespace = db.tablespace ('DATA_CUST_INDEX')
+									)
 								)
 							db.setup_table_optimizer (table)
 						self.existing_deliver_tables.add (table)
@@ -1715,6 +1754,12 @@ class UpdateDeliver (Update): #{{{
 							'       (mailing_id, customer_id, timestamp, line) '
 							'VALUES '
 							'       (:mailing_id, :customer_id, :timestamp, :line)'
+							.format (table = table)
+						), postgres = (
+							'INSERT INTO {table} '
+							'       (id, mailing_id, customer_id, timestamp, line) '
+							'VALUES '
+							'       (nextval(\'{table}_id_seq\'), :mailing_id, :customer_id, :timestamp, :line)'
 							.format (table = table)
 						)),
 						{
@@ -1792,6 +1837,11 @@ class UpdateWebhook (Update): #{{{
 							'       (creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
 							'VALUES '
 							'       (CURRENT_TIMESTAMP, :event_timestamp, :event_type, :company_id, :mailing_id, :recipient_id)'
+						), postgres = (
+							'INSERT INTO webhook_backend_data_tbl '
+							'       (id, creation_date, event_timestamp, event_type, company_id, mailing_id, recipient_id) '
+							'VALUES '
+							'       (nextval(\'webhook_backend_data_tbl_id_seq\'), CURRENT_TIMESTAMP, :event_timestamp, :event_type, :company_id, :mailing_id, :recipient_id)'
 						)
 					), {
 						'event_timestamp': record.timestamp,
@@ -1870,6 +1920,19 @@ class UpdateMailtrack (Update): #{{{
 						'	timestamp		timestamp\n'
 						')'
 						.format (table = self.mailtrack_process_table)
+					), postgres = (
+						'CREATE TABLE {table} (\n'
+						'	company_id		integer,\n'
+						'	mailing_id		integer,\n'
+						'	maildrop_status_id	integer,\n'
+						'	customer_id		integer,\n'
+						'	mediatype		integer,\n'
+						'	timestamp		timestamptz\n'
+						'){tablespace}'
+						.format (
+							table = self.mailtrack_process_table,
+							tablespace = db.tablespace ('DATA_TEMP')
+						)
 					)
 				))
 				mailtrack_index_prefix = syscfg.get ('mailtrack-process-index-prefix', f'mtproc{unique}')
@@ -1896,13 +1959,23 @@ class UpdateMailtrack (Update): #{{{
 								column = index_column,
 								table = self.mailtrack_process_table
 							)
+						), postgres = (
+							'CREATE INDEX {prefix}${id}$idx '
+							'ON {table} ({column}){tablespace}'.format (
+								prefix = mailtrack_index_prefix,
+								id = index_id,
+								column = index_column,
+								table = self.mailtrack_process_table,
+								tablespace = db.tablespace ('DATA_TEMP')
+							)
 						)
 					))
 			else:
 				if 'mediatype' not in {_f.name for _f in db.layout (self.mailtrack_process_table, normalize = True)}:
 					db.execute (db.qselect (
 						oracle = 'ALTER TABLE {table} ADD mediatype number'.format (table = self.mailtrack_process_table),
-						mariadb = 'ALTER TABLE {table} ADD mediatype INTEGER UNSIGNED'.format (table = self.mailtrack_process_table)
+						mariadb = 'ALTER TABLE {table} ADD mediatype INTEGER UNSIGNED'.format (table = self.mailtrack_process_table),
+						postgres = 'ALTER TABLE {table} ADD mediatype INTEGER'.format (table = self.mailtrack_process_table)
 					))
 					logger.info ('added missing column "mediatype" to {table}'.format (table = self.mailtrack_process_table))
 		
@@ -2081,13 +2154,20 @@ class UpdateMailtrack (Update): #{{{
 						f'UPDATE {customer_table} cust INNER JOIN {self.mailtrack_process_table} temp '
 						f'ON (cust.customer_id = temp.customer_id AND temp.company_id = {company_id} AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp.timestamp)) '
 						f'SET cust.{lastsend_date} = temp.timestamp'
+					), postgres = (
+						f'UPDATE {customer_table} cust '
+						f'SET cust.{lastsend_date} = '
+						f'    (SELECT max(temp.timestamp) FROM {self.mailtrack_process_table} temp WHERE temp.company_id = {company_id} AND temp.customer_id = cust.customer_id) '
+						'WHERE EXISTS '
+						f'     (SELECT 1 FROM {self.mailtrack_process_table} temp2 WHERE temp2.company_id = {company_id} AND temp2.customer_id = cust.customer_id AND (cust.{lastsend_date} IS NULL OR cust.{lastsend_date} < temp2.timestamp))'
 					)
 				)
 				if bulk_update_chunk > 0:
 					count = 0
 					query += db.qselect (
 						oracle = f' AND rownum <= {bulk_update_chunk}',
-						mariadb = f' LIMIT {bulk_update_chunk}'
+						mariadb = f' LIMIT {bulk_update_chunk}',
+						postgres = f' LIMIT {bulk_update_chunk}'
 					)
 					while True:
 						if refresh is not None and not refresh ():
@@ -2317,6 +2397,11 @@ class UpdateMailloop (Update): #{{{
 							'            (rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
 							'VALUES '
 							'            (:rid, :timestamp, :status, :company_id, :mailing_id, :customer_id, :action, :remark)'
+						), postgres = (
+							f'INSERT INTO {UpdateMailloop.mailloop_log_table} '
+							'            (mailloop_log_id, rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
+							'VALUES '
+							f'            (nextval(\'{UpdateMailloop.mailloop_log_table}_maillop_log_id_seq\'), :rid, :timestamp, :status, :company_id, :mailing_id, :customer_id, :action, :remark)'
 						)
 					),
 					data
@@ -2356,11 +2441,12 @@ class Main (Runtime, Locate):
 			self.ctx.watchdog = False
 		else:
 			self.ctx.watchdog = True
+			self.maintain.set_interval ('1h')
 			
 	def start_update (self, update_class: Type[Update]) -> bool:
 		with self.title (update_class.name), log (update_class.name):
 			upd = update_class ()
-			upd.execute (lambda: self.running, self.delay)
+			upd.execute (self.is_running, self.delay)
 		return True
 
 	def executors (self) -> Optional[List[Callable[[], bool]]]:

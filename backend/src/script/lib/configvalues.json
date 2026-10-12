@@ -1,0 +1,2409 @@
+{
+  "config_values": [
+    {
+      "ident": "SystemMessageMaximumRetryCount",
+      "name": "system_message.retries.maxCount",
+      "default": "10"
+    },
+    {
+      "ident": "SystemMessageRetryDelaySeconds",
+      "name": "system_message.retries.delaySeconds",
+      "default": "600"
+    },
+    {
+      "ident": "MailAddressSystemMessage",
+      "name": "mailaddress.system_message",
+      "default": null
+    },
+    {
+      "ident": "SystemUrl",
+      "name": "system.url",
+      "default": null
+    },
+    {
+      "ident": "ApplicationVersion",
+      "name": "ApplicationVersion",
+      "default": null
+    },
+    {
+      "ident": "ApplicationType",
+      "name": "ApplicationType",
+      "default": null
+    },
+    {
+      "ident": "BuildTime",
+      "name": "BuildTime",
+      "default": null
+    },
+    {
+      "ident": "BuildHost",
+      "name": "BuildHost",
+      "default": null
+    },
+    {
+      "ident": "BuildUser",
+      "name": "BuildUser",
+      "default": null
+    },
+    {
+      "ident": "IsLegacyInstance",
+      "name": "legacy.version",
+      "default": "false"
+    },
+    {
+      "ident": "IsBetaInstance",
+      "name": "beta.version",
+      "default": "false"
+    },
+    {
+      "ident": "IsLiveInstance",
+      "name": "live.version",
+      "default": "true"
+    },
+    {
+      "ident": "ShowApplicationVersionWithDate",
+      "name": "ApplicationVersion.ShowWithDate",
+      "default": "false"
+    },
+    {
+      "ident": "DefaultSftpServerAndCredentials",
+      "name": "company.default_sftp_server_and_credentials",
+      "default": null
+    },
+    {
+      "ident": "DefaultSftpPrivateKey",
+      "name": "company.default_sftp_privatekey",
+      "default": null
+    },
+    {
+      "ident": "MaximumCachedImageSize",
+      "name": "system.MaximumCachedImageSize",
+      "default": null
+    },
+    {
+      "ident": "MaximumWarningImageSize",
+      "name": "system.MaximumWarningImageSize",
+      "default": null
+    },
+    {
+      "ident": "MaximumUploadImageSize",
+      "name": "system.MaximumUploadImageSize",
+      "default": null
+    },
+    {
+      "ident": "MaximumWarningAttachmentSize",
+      "name": "system.MaximumWarningAttachmentSize",
+      "default": null
+    },
+    {
+      "ident": "MaximumUploadAttachmentSize",
+      "name": "system.MaximumUploadAttachmentSize",
+      "default": null
+    },
+    {
+      "ident": "UserAllowed",
+      "name": "UserAllowed",
+      "default": "1000"
+    },
+    {
+      "ident": "CustomerInsightsCalculate",
+      "name": "cust.insights_calculate",
+      "default": "true"
+    },
+    {
+      "ident": "CustomerInsightsTimespan",
+      "name": "cust.insights_timespan",
+      "default": "90"
+    },
+    {
+      "ident": "CustomerReactorHigh",
+      "name": "cust.reactor_high_performance",
+      "default": "0.25"
+    },
+    {
+      "ident": "CustomerRebuyPeriod",
+      "name": "cust.rebuy_period",
+      "default": "365"
+    },
+    {
+      "ident": "CustomerRevenueAverage",
+      "name": "cust.revenue_average",
+      "default": "150"
+    },
+    {
+      "ident": "CustomerRevenueHigh",
+      "name": "cust.revenue_high",
+      "default": "500"
+    },
+    {
+      "ident": "VelocityRuntimeCheck",
+      "name": "velocity.runtimecheck",
+      "default": null
+    },
+    {
+      "ident": "VelocityScriptAbort",
+      "name": "velocity.abortscripts",
+      "default": null
+    },
+    {
+      "ident": "RdirLandingpage",
+      "name": "system.RdirLandingpage",
+      "default": "https://www.agnitas.de/"
+    },
+    {
+      "ident": "SupportEmergencyUrl",
+      "name": "system.support_emergency_url",
+      "default": null
+    },
+    {
+      "ident": "SupervisorRequiresLoginPermission",
+      "name": "supervisor.requiresLoginPermission",
+      "default": "false"
+    },
+    {
+      "ident": "ListHelpUrl",
+      "name": "list-help-url",
+      "default": null
+    },
+    {
+      "ident": "PasswordPolicy",
+      "name": "password.policy",
+      "default": null
+    },
+    {
+      "ident": "SupervisorPasswordPolicy",
+      "name": "password.policy.supervisor",
+      "default": null
+    },
+    {
+      "ident": "DeliveryTracking",
+      "name": "delivery-tracking",
+      "default": null
+    },
+    {
+      "ident": "Company_MaxReferenceTables",
+      "name": "maxReferenceTables",
+      "default": "5"
+    },
+    {
+      "ident": "Company_MaxVoucherTables",
+      "name": "maxVoucherTables",
+      "default": "10"
+    },
+    {
+      "ident": "SmtpMailRelayHostname",
+      "name": "system.mail.host",
+      "default": "localhost"
+    },
+    {
+      "ident": "Mailaddress_Error",
+      "name": "mailaddress.error",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_Support",
+      "name": "mailaddress.support",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_FeatureSupport",
+      "name": "mailaddress.feature_support",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_Velocity",
+      "name": "mailaddress.velocity",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_Frontend",
+      "name": "mailaddress.frontend",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_ReportArchive",
+      "name": "mailaddress.report_archive",
+      "default": null
+    },
+    {
+      "ident": "MailAddress_UploadSupport",
+      "name": "mailaddress.upload.support",
+      "default": null
+    },
+    {
+      "ident": "MailAddress_UploadDatabase",
+      "name": "mailaddress.upload.database",
+      "default": null
+    },
+    {
+      "ident": "MailAddress_InfoCleaner",
+      "name": "mailaddress.info.cleaner",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_Sender",
+      "name": "mailaddress.sender",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_SenderName",
+      "name": "mailaddress.sender.name",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_ReplyTo",
+      "name": "mailaddress.replyto",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_ReplyToName",
+      "name": "mailaddress.replyto.name",
+      "default": null
+    },
+    {
+      "ident": "Mailaddress_Bounce",
+      "name": "mailaddress.bounce",
+      "default": null
+    },
+    {
+      "ident": "TablespacenameCustomerIndex",
+      "name": "tablespace.cust.index",
+      "default": null
+    },
+    {
+      "ident": "MaxFields",
+      "name": "maxFields",
+      "default": "50"
+    },
+    {
+      "ident": "MaxAdminMails",
+      "name": "maxAdminMails",
+      "default": "25"
+    },
+    {
+      "ident": "SystemAlertMail",
+      "name": "system.alert.mail",
+      "default": null
+    },
+    {
+      "ident": "OnepixelBatchMaxCache",
+      "name": "onepixel.batch.maxCache",
+      "default": "500"
+    },
+    {
+      "ident": "OnepixelBatchMaxCacheTimeMillis",
+      "name": "onepixel.batch.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "HostedImageMaxCache",
+      "name": "hostedImage.maxCache",
+      "default": "500"
+    },
+    {
+      "ident": "HostedImageMaxCacheTimeMillis",
+      "name": "hostedImage.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "CdnMaxCache",
+      "name": "cdn.maxCache",
+      "default": "10000"
+    },
+    {
+      "ident": "CdnMaxCacheTimeMillis",
+      "name": "cdn.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "MailgunMaxCache",
+      "name": "mailgun.maxCache",
+      "default": "100"
+    },
+    {
+      "ident": "MailgunMaxCacheTimeMillis",
+      "name": "mailgun.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "RdirMailingIdsMaxCache",
+      "name": "rdir.mailingIds.maxCache",
+      "default": "500"
+    },
+    {
+      "ident": "RdirMailingIdsMaxCacheTimeMillis",
+      "name": "rdir.mailingIds.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "CompanyMaxCache",
+      "name": "company.maxCache",
+      "default": "500"
+    },
+    {
+      "ident": "CompanyMaxCacheTimeMillis",
+      "name": "company.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "RedirectKeysMaxCache",
+      "name": "rdir.keys.maxCache",
+      "default": "500"
+    },
+    {
+      "ident": "RedirectKeysMaxCacheTimeMillis",
+      "name": "rdir.keys.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "DefaultBccEmail",
+      "name": "company.mailing.bcc",
+      "default": null
+    },
+    {
+      "ident": "BirtUrlIntern",
+      "name": "birt.url.intern",
+      "default": null
+    },
+    {
+      "ident": "BirtUrl",
+      "name": "birt.url",
+      "default": null
+    },
+    {
+      "ident": "ManualInstallPath",
+      "name": "manual_install_path",
+      "default": "${HOME}/webapps/manual"
+    },
+    {
+      "ident": "DBCleaner_Send_Statistics_Mail",
+      "name": "dbcleaner.send_statistics_mail",
+      "default": "true"
+    },
+    {
+      "ident": "WriteCustomerOpenOrClickField",
+      "name": "measure.writecustomeropenorclickfield",
+      "default": null
+    },
+    {
+      "ident": "DynamicTagsCleanupRetentionDays",
+      "name": "dynamictags.cleanup.retention.days",
+      "default": "60"
+    },
+    {
+      "ident": "ExpireRecv",
+      "name": "expire-recv",
+      "default": "0"
+    },
+    {
+      "ident": "DefaultLinkExtension",
+      "name": "DefaultLinkExtension",
+      "default": null
+    },
+    {
+      "ident": "PrefillCheckboxSendDuplicateCheck",
+      "name": "prefillCheckboxSendDuplicateCheck",
+      "default": "false"
+    },
+    {
+      "ident": "RespectHideDataSign",
+      "name": "RespectHideDataSign",
+      "default": "false"
+    },
+    {
+      "ident": "ExportFilename",
+      "name": "export_filename",
+      "default": null
+    },
+    {
+      "ident": "MaximumParallelJobQueueJobs",
+      "name": "maximumParallelJobQueueJobs",
+      "default": null
+    },
+    {
+      "ident": "ImportMaximumParallelJobQueueJobs",
+      "name": "import.MaximumParallelJobQueueJobs",
+      "default": "3"
+    },
+    {
+      "ident": "ImageLinkTemplate",
+      "name": "imagelink-template",
+      "default": null
+    },
+    {
+      "ident": "ImageLinkTemplate_NoCache",
+      "name": "imagelink-template-no-cache",
+      "default": null
+    },
+    {
+      "ident": "LimitBlockOperations",
+      "name": "limit-block-operations",
+      "default": null
+    },
+    {
+      "ident": "LimitBlockOperations_Maximum",
+      "name": "limit-block-operations-max",
+      "default": null
+    },
+    {
+      "ident": "ForceSending",
+      "name": "force-sending",
+      "default": null
+    },
+    {
+      "ident": "LocaleLanguage",
+      "name": "locale-language",
+      "default": null
+    },
+    {
+      "ident": "LocaleCountry",
+      "name": "locale-country",
+      "default": null
+    },
+    {
+      "ident": "LocaleTimezone",
+      "name": "locale-timezone",
+      "default": null
+    },
+    {
+      "ident": "Test",
+      "name": "Test.Test",
+      "default": null
+    },
+    {
+      "ident": "DB_Vendor",
+      "name": "DB_Vendor",
+      "default": null
+    },
+    {
+      "ident": "FullviewFormName",
+      "name": "formname.fullview",
+      "default": "fullview"
+    },
+    {
+      "ident": "RecipientEmailInUseWarning",
+      "name": "recipient.emailInUseWarning",
+      "default": "true"
+    },
+    {
+      "ident": "AllowEmailWithWhitespace",
+      "name": "AllowEmailWithWhitespace",
+      "default": "false"
+    },
+    {
+      "ident": "AllowEmptyEmail",
+      "name": "AllowEmptyEmail",
+      "default": "false"
+    },
+    {
+      "ident": "ForceSteppingBlocksize",
+      "name": "force.steppingBlocksize",
+      "default": "false"
+    },
+    {
+      "ident": "DefaultBlocksizeValue",
+      "name": "default.blocksize.value",
+      "default": "0"
+    },
+    {
+      "ident": "LayoutBuilderBasic",
+      "name": "layoutbuilder.basic",
+      "default": "true"
+    },
+    {
+      "ident": "TargetAccessLimitExtended",
+      "name": "targets.access.limit.extended",
+      "default": "false"
+    },
+    {
+      "ident": "CdnImageRedirectLinkBase",
+      "name": "CdnImageRedirectLinkBase",
+      "default": null
+    },
+    {
+      "ident": "UploadMaximumSizeBytes",
+      "name": "UploadMaximumSizeBytes",
+      "default": "67108864"
+    },
+    {
+      "ident": "ImageTrafficMeasuring",
+      "name": "ImageTrafficMeasuring",
+      "default": "true"
+    },
+    {
+      "ident": "EditableConfigValues",
+      "name": "EditableConfigValues",
+      "default": ""
+    },
+    {
+      "ident": "MaximumNumberOfEntriesForColumnDrop",
+      "name": "recipient.MaximumNumberOfEntriesForColumnDrop",
+      "default": "750000"
+    },
+    {
+      "ident": "MaximumNumberOfEntriesForDefaultValueChange",
+      "name": "recipient.MaximumNumberOfEntriesForDefaultValueChange",
+      "default": "750000"
+    },
+    {
+      "ident": "UpdateInformationLink",
+      "name": "UpdateInformationLink",
+      "default": "https://www.agnitas.de"
+    },
+    {
+      "ident": "AdvancedHardbounceActivationStatus",
+      "name": "ahv:is-enabled",
+      "default": null
+    },
+    {
+      "ident": "OptimzedMailingGenerationStatus",
+      "name": "omg:is-enabled",
+      "default": null
+    },
+    {
+      "ident": "UserFormCssLocation",
+      "name": "userform.css.url",
+      "default": "https://rdir.de/content/1/basic/forms"
+    },
+    {
+      "ident": "JobQueueExecute",
+      "name": "jobqueue.execute",
+      "default": "0"
+    },
+    {
+      "ident": "EnableCleanFindLastNewsletterEntries",
+      "name": "cleanup.findLastNewsletter.removeOutdatedEntries",
+      "default": "true"
+    },
+    {
+      "ident": "FindLastNewsletterEntryRetentionDays",
+      "name": "cleanup.findLastNewsletter.entriesRetentionDays",
+      "default": "30"
+    },
+    {
+      "ident": "AllowUnnormalizedEmails",
+      "name": "AllowUnnormalizedEmails",
+      "default": "false"
+    },
+    {
+      "ident": "DefaultTestRunOption",
+      "name": "default.test.run.option",
+      "default": null
+    },
+    {
+      "ident": "DB_Snapshot_TableNamingPattern",
+      "name": "db.snapshot.tableNamingPattern",
+      "default": "^(?!ref_)(?!.*\\\\d.*\\\\d)([^0-9]*|[^0-9]*1[^0-9]*)$"
+    },
+    {
+      "ident": "EnableIntermediatePage",
+      "name": "honeypot.intermediatePage.enabled",
+      "default": "false"
+    },
+    {
+      "ident": "IntermediatePageConfirmParameterName",
+      "name": "honeypot.intermediatePage.confirmParameter.name",
+      "default": "hp"
+    },
+    {
+      "ident": "IntermediatePageConfirmParameterValue",
+      "name": "honeypot.intermediatePage.confirmParameter.value",
+      "default": "1"
+    },
+    {
+      "ident": "TrackingPeriodDays",
+      "name": "honeypot.tracking.periodDays",
+      "default": "90"
+    },
+    {
+      "ident": "TaggingThreshold",
+      "name": "honeypot.tagging.threshold",
+      "default": "3"
+    },
+    {
+      "ident": "WebhooksEnabled",
+      "name": "webhooks.enabled",
+      "default": "false"
+    },
+    {
+      "ident": "WebhooksMessagePacketSizeLimit",
+      "name": "webhooks.messagePacketSizeLimit",
+      "default": "10000"
+    },
+    {
+      "ident": "MaximumRetryCount",
+      "name": "webhooks.retries.maxCount",
+      "default": "10"
+    },
+    {
+      "ident": "RetryDelaySeconds",
+      "name": "webhooks.retries.delaySeconds",
+      "default": "600"
+    },
+    {
+      "ident": "SocketTimeoutMillis",
+      "name": "webhooks.transport.socketTimeoutMillis",
+      "default": "10000"
+    },
+    {
+      "ident": "ConnectTimeoutMillis",
+      "name": "webhooks.transport.connectTimeoutMillis",
+      "default": "10000"
+    },
+    {
+      "ident": "MessageRetentionTimeSeconds",
+      "name": "webhooks.messages.retentionSeconds",
+      "default": "604800"
+    },
+    {
+      "ident": "MessageGenerationGracePeriodSeconds",
+      "name": "webhooks.messageGeneration.gracePeriodSeconds",
+      "default": "10"
+    },
+    {
+      "ident": "RdirAllowHeadRequest",
+      "name": "rdir.request.head.allowed",
+      "default": "true"
+    },
+    {
+      "ident": "RdirRedisEnabled",
+      "name": "rdir.redis.enabled",
+      "default": null
+    },
+    {
+      "ident": "RdirRedisHost",
+      "name": "rdir.redis.host",
+      "default": null
+    },
+    {
+      "ident": "RdirRedisPort",
+      "name": "rdir.redis.port",
+      "default": "6379"
+    },
+    {
+      "ident": "RdirRedisUser",
+      "name": "rdir.redis.username",
+      "default": null
+    },
+    {
+      "ident": "RdirRedisPassword",
+      "name": "rdir.redis.password",
+      "default": null
+    },
+    {
+      "ident": "RdirRedisTimeout",
+      "name": "rdir.redis.timeout",
+      "default": "60"
+    },
+    {
+      "ident": "RdirRedisKeyExpireSeconds",
+      "name": "rdir.redis.key.expireSeconds",
+      "default": "7200"
+    },
+    {
+      "ident": "RdirRedisPoolMaxIdle",
+      "name": "rdir.redis.pool.maxIdle",
+      "default": "8"
+    },
+    {
+      "ident": "RdirRedisPoolMaxSize",
+      "name": "rdir.redis.pool.maxSize",
+      "default": "8"
+    },
+    {
+      "ident": "BirtReportsMigration",
+      "name": "development.reports.stat",
+      "default": "false"
+    },
+    {
+      "ident": "MailOut_Loglevel",
+      "name": "mailout.ini.loglevel",
+      "default": null
+    },
+    {
+      "ident": "MailOut_MailDir",
+      "name": "mailout.ini.maildir",
+      "default": null
+    },
+    {
+      "ident": "MailOut_DefaultEncoding",
+      "name": "mailout.ini.default_encoding",
+      "default": null
+    },
+    {
+      "ident": "MailOut_DefaultCharset",
+      "name": "mailout.ini.default_charset",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Blocksize",
+      "name": "mailout.ini.blocksize",
+      "default": null
+    },
+    {
+      "ident": "MailOut_MetaDir",
+      "name": "mailout.ini.metadir",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Xmlback",
+      "name": "mailout.ini.xmlback",
+      "default": null
+    },
+    {
+      "ident": "MailOut_AccountLogfile",
+      "name": "mailout.ini.account_logfile",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Xmlvalidate",
+      "name": "mailout.ini.xmlvalidate",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Domain",
+      "name": "mailout.ini.domain",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Boundary",
+      "name": "mailout.ini.boundary",
+      "default": null
+    },
+    {
+      "ident": "MailOut_MailLogNumber",
+      "name": "mailout.ini.mail_log_number",
+      "default": null
+    },
+    {
+      "ident": "MailOut_EOL",
+      "name": "mailout.ini.eol",
+      "default": null
+    },
+    {
+      "ident": "MailOut_Mailer",
+      "name": "mailout.ini.mailer",
+      "default": null
+    },
+    {
+      "ident": "MailOut_DirectDir",
+      "name": "mailout.ini.directdir",
+      "default": null
+    },
+    {
+      "ident": "MailOut_DbTempTablespace",
+      "name": "mailout.ini.db_temp_tablespace",
+      "default": null
+    },
+    {
+      "ident": "MailOut_SampleEmails",
+      "name": "mailout.ini.sample_emails",
+      "default": null
+    },
+    {
+      "ident": "Backend_AdminTestMark",
+      "name": "admin-test-mark",
+      "default": null
+    },
+    {
+      "ident": "Backend_AdminTestMarkSubjectAdmin",
+      "name": "admin-test-mark-subject-admin",
+      "default": "[ADMIN]"
+    },
+    {
+      "ident": "Backend_AdminTestMarkSubjectTest",
+      "name": "admin-test-mark-subject-test",
+      "default": "[TEST]"
+    },
+    {
+      "ident": "Backend_AdminTestMarkToAdmin",
+      "name": "admin-test-mark-to-admin",
+      "default": "Adminmail"
+    },
+    {
+      "ident": "Backend_AdminTestMarkToTest",
+      "name": "admin-test-mark-to-test",
+      "default": "Testmail"
+    },
+    {
+      "ident": "Backend_Ahv_LimitAbsolute",
+      "name": "ahv:limit-absolute",
+      "default": null
+    },
+    {
+      "ident": "Backend_Ahv_LimitPercent",
+      "name": "ahv:limit-percent",
+      "default": null
+    },
+    {
+      "ident": "Backend_Ahv_MaxReactivations",
+      "name": "ahv:max-reactivations",
+      "default": null
+    },
+    {
+      "ident": "Backend_Ahv_ReportBccs",
+      "name": "ahv:report-bccs",
+      "default": null
+    },
+    {
+      "ident": "Backend_Ahv_ReportRecipients",
+      "name": "ahv:report-recipients",
+      "default": null
+    },
+    {
+      "ident": "Backend_Ahv_ReportSender",
+      "name": "ahv:report-sender",
+      "default": null
+    },
+    {
+      "ident": "Backend_BounceConversionParameter",
+      "name": "bounce-conversion-parameter",
+      "default": null
+    },
+    {
+      "ident": "Backend_BounceMarkDuplicate",
+      "name": "bounce-mark-duplicate",
+      "default": null
+    },
+    {
+      "ident": "Backend_ClearEmptyDynBlock",
+      "name": "clear-empty-dyn-block",
+      "default": null
+    },
+    {
+      "ident": "Backend_Conversion",
+      "name": "conversion",
+      "default": null
+    },
+    {
+      "ident": "Backend_DirectPath",
+      "name": "direct-path",
+      "default": null
+    },
+    {
+      "ident": "Backend_DkimNativeReturnPath",
+      "name": "dkim-native-return-path",
+      "default": null
+    },
+    {
+      "ident": "Backend_DoiReport_CollectData",
+      "name": "doi-report:collect-data",
+      "default": null
+    },
+    {
+      "ident": "Backend_ExpireRecipientsReport",
+      "name": "expire-recipients-report",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderAdd",
+      "name": "header-add",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderAddPlus",
+      "name": "header-add+",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderFeedbackId",
+      "name": "header-feedback-id",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderImportance",
+      "name": "header-importance",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderListHelp",
+      "name": "header-list-help",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderListId",
+      "name": "header-list-id",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderXCsaComplaints",
+      "name": "header-x-csa-complaints",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderXMsmailPriority",
+      "name": "header-x-msmail-priority",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderXPriority",
+      "name": "header-x-priority",
+      "default": null
+    },
+    {
+      "ident": "Backend_HeaderXRpacampaign",
+      "name": "header-x-rpacampaign",
+      "default": null
+    },
+    {
+      "ident": "Backend_KeepXmlFiles",
+      "name": "keep-xml-files",
+      "default": null
+    },
+    {
+      "ident": "Backend_ListUnsubscribe",
+      "name": "list-unsubscribe",
+      "default": null
+    },
+    {
+      "ident": "Backend_MailtrackExtended_BulkUpdate",
+      "name": "mailtrack-extended:bulk-update",
+      "default": null
+    },
+    {
+      "ident": "Backend_MailtrackExtended_BulkUpdateChunk",
+      "name": "mailtrack-extended:bulk-update-chunk",
+      "default": null
+    },
+    {
+      "ident": "Backend_MaskEnvelopeFrom",
+      "name": "mask-envelope-from",
+      "default": null
+    },
+    {
+      "ident": "Backend_Npickup_DefaultPriority",
+      "name": "npickup:default-priority",
+      "default": null
+    },
+    {
+      "ident": "Backend_Npickup_DiscardEmptyBlocks",
+      "name": "npickup:discard-empty-blocks",
+      "default": null
+    },
+    {
+      "ident": "Backend_Npickup_EnableOutdated",
+      "name": "npickup:enable-outdated",
+      "default": null
+    },
+    {
+      "ident": "Backend_OfflinePicturePrefix",
+      "name": "offline-picture-prefix",
+      "default": null
+    },
+    {
+      "ident": "Backend_Omg_AtLeast",
+      "name": "omg:at-least",
+      "default": null
+    },
+    {
+      "ident": "Backend_Omg_Count",
+      "name": "omg:count",
+      "default": null
+    },
+    {
+      "ident": "Backend_Omg_Offset",
+      "name": "omg:offset",
+      "default": null
+    },
+    {
+      "ident": "Backend_PostExecute",
+      "name": "post-execute",
+      "default": null
+    },
+    {
+      "ident": "Backend_References",
+      "name": "references",
+      "default": null
+    },
+    {
+      "ident": "Backend_UrlAnon",
+      "name": "url-anon",
+      "default": null
+    },
+    {
+      "ident": "Backend_UrlDefault",
+      "name": "url-default",
+      "default": null
+    },
+    {
+      "ident": "Backend_UseExtendedUsertypes",
+      "name": "use-extended-usertypes",
+      "default": null
+    },
+    {
+      "ident": "Backend_XheaderBimi",
+      "name": "x-header-bimi",
+      "default": null
+    },
+    {
+      "ident": "Vouchers_Mandatory",
+      "name": "vouchers-mandatory",
+      "default": "false"
+    },
+    {
+      "ident": "ReportEnable",
+      "name": "report:enable[MandatoryVoucher]",
+      "default": "false"
+    },
+    {
+      "ident": "ReportCc",
+      "name": "report:cc[MandatoryVoucher]",
+      "default": ""
+    },
+    {
+      "ident": "ReportBcc",
+      "name": "report:bcc[MandatoryVoucher]",
+      "default": ""
+    },
+    {
+      "ident": "DkimGlobalActivation",
+      "name": "dkim-global-key",
+      "default": "false"
+    },
+    {
+      "ident": "DkimLocalActivation",
+      "name": "dkim-local-key",
+      "default": "false"
+    },
+    {
+      "ident": "MiaEnabled",
+      "name": "mia:is-enabled",
+      "default": "true"
+    },
+    {
+      "ident": "MaximumMailingsPerReport",
+      "name": "report.MaximumMailingsPerReport",
+      "default": "60"
+    },
+    {
+      "ident": "MaximumMailinglistsPerReport",
+      "name": "report.MaximumMailinglistsPerReport",
+      "default": "60"
+    },
+    {
+      "ident": "ProviderDeliveryLastExpire",
+      "name": "provider-delivery.last-expire",
+      "default": null
+    },
+    {
+      "ident": "OnlineHelpLanguages",
+      "name": "onlinehelp.languages",
+      "default": "de;en;fr"
+    },
+    {
+      "ident": "UseDefaulAdressFieldsForPost",
+      "name": "use.default.address.fields.forPost",
+      "default": null
+    },
+    {
+      "ident": "DefaultCountryField",
+      "name": "default.country.field",
+      "default": null
+    },
+    {
+      "ident": "DefaultCityField",
+      "name": "default.city.field",
+      "default": null
+    },
+    {
+      "ident": "DefaultStreetField",
+      "name": "default.street.field",
+      "default": null
+    },
+    {
+      "ident": "DefaultPostalCodeField",
+      "name": "default.postalCode.field",
+      "default": null
+    },
+    {
+      "ident": "SsoLoginHeaderType",
+      "name": "system.SsoLoginHeaderType",
+      "default": null
+    },
+    {
+      "ident": "SsoLoginSamlCertificate",
+      "name": "system.SsoLoginSamlCertificate",
+      "default": null
+    },
+    {
+      "ident": "SsoLoginSamlSpEntityID",
+      "name": "system.SsoLoginSamlSpEntityID",
+      "default": null
+    },
+    {
+      "ident": "SsoLoginSamlUsernameAttribute",
+      "name": "system.SsoLoginSamlUsernameAttribute",
+      "default": "username"
+    },
+    {
+      "ident": "SsoSamlLoginFailureRecipients",
+      "name": "system.SsoSamlLoginFailureRecipients",
+      "default": null
+    },
+    {
+      "ident": "SsoLoginSamlEmailAttribute",
+      "name": "system.SsoLoginSamlEmailAttribute",
+      "default": null
+    },
+    {
+      "ident": "SsoSamlIdpUrl",
+      "name": "system.sso.saml.idp.url",
+      "default": null
+    },
+    {
+      "ident": "SsoExtendedLogs",
+      "name": "system.sso.extended.logs",
+      "default": "false"
+    },
+    {
+      "ident": "UpsellingInfoUrlEnglish",
+      "name": "upselling.moreInfo.url.en",
+      "default": null
+    },
+    {
+      "ident": "UpsellingInfoUrlGerman",
+      "name": "upselling.moreInfo.url.de",
+      "default": null
+    },
+    {
+      "ident": "UpsellingShow",
+      "name": "company.upselling.show",
+      "default": "true"
+    },
+    {
+      "ident": "SendPasswordChangedNotification",
+      "name": "notifications.sendPasswordChanged",
+      "default": "true"
+    },
+    {
+      "ident": "SendEncryptedMailings",
+      "name": "company.mailingEncryptedSendingDefault",
+      "default": "false"
+    },
+    {
+      "ident": "MailtrackExtended",
+      "name": "mailtrack-extended",
+      "default": "false"
+    },
+    {
+      "ident": "CompanyTokenLength",
+      "name": "company.tokenLength",
+      "default": "32"
+    },
+    {
+      "ident": "DeepTrackingCookieSameSitePolicy",
+      "name": "deeptracking.cookie.sameSitePolicy",
+      "default": null
+    },
+    {
+      "ident": "RefreshBounceloadAddresses",
+      "name": "RefreshBounceloadAddresses",
+      "default": "true"
+    },
+    {
+      "ident": "DbMaximumDeadlockRetries",
+      "name": "database.MaximumDeadlockRetries",
+      "default": "3"
+    },
+    {
+      "ident": "DbDeadlockRetriesWaitSeconds",
+      "name": "database.DeadlockRetriesWaitSeconds",
+      "default": "10"
+    },
+    {
+      "ident": "UserBasedFavoriteTargets",
+      "name": "target.favorite.userBased",
+      "default": "false"
+    },
+    {
+      "ident": "ExecutableTempDirPath",
+      "name": "system.ExecutableTempDirPath",
+      "default": "/tmp"
+    },
+    {
+      "ident": "TextGeneratorUrl",
+      "name": "TextGeneratorUrl",
+      "default": null
+    },
+    {
+      "ident": "TextGeneratorApiKey",
+      "name": "TextGeneratorApiKey",
+      "default": null
+    },
+    {
+      "ident": "TextGeneratorModel",
+      "name": "TextGeneratorModel",
+      "default": "gpt-5-mini"
+    },
+    {
+      "ident": "AiSupportChatBotApiKey",
+      "name": "system.AiSupportChatBotApiKey",
+      "default": null
+    },
+    {
+      "ident": "AiSupportChatBotPromptId",
+      "name": "system.AiSupportChatBotPromptId",
+      "default": null
+    },
+    {
+      "ident": "AiSupportChatBotPromptVersion",
+      "name": "system.AiSupportChatBotPromptVersion",
+      "default": null
+    },
+    {
+      "ident": "AiSupportChatMessagesHistoryLimit",
+      "name": "ai.support.chat.messages.history.limit",
+      "default": "20"
+    },
+    {
+      "ident": "ImageGeneratorUrl",
+      "name": "ImageGeneratorUrl",
+      "default": null
+    },
+    {
+      "ident": "ImageGeneratorApiKey",
+      "name": "ImageGeneratorApiKey",
+      "default": null
+    },
+    {
+      "ident": "ImageGeneratorModel",
+      "name": "ImageGeneratorModel",
+      "default": "gpt-image-2"
+    },
+    {
+      "ident": "ImageGeneratorQuotaLimitPerDay",
+      "name": "ImageGeneratorQuotaLimitPerDay",
+      "default": "10"
+    },
+    {
+      "ident": "DeliveryCheckAddress",
+      "name": "system.DeliveryCheckAddress",
+      "default": null
+    },
+    {
+      "ident": "IntervalMailingStatisticsExpirationDays",
+      "name": "mailing.interval.statistics.expiration",
+      "default": "30"
+    },
+    {
+      "ident": "FilterRecipientsOverviewForActiveRecipients",
+      "name": "recipients.overview.filterForActive",
+      "default": "false"
+    },
+    {
+      "ident": "CleanAdminAndTestRecipientsActivities",
+      "name": "recipients.adminAndTest.cleanActivity",
+      "default": "false"
+    },
+    {
+      "ident": "IndividualLinkTrackingForAllMailings",
+      "name": "mailings.individualLinkTracking",
+      "default": "false"
+    },
+    {
+      "ident": "MailingMinimumApprovals",
+      "name": "mailing.minimum.approvals",
+      "default": "1"
+    },
+    {
+      "ident": "DashboardCalendarShowALlEntries",
+      "name": "dashboard.calendar.showAllEntries",
+      "default": "false"
+    },
+    {
+      "ident": "GenderUnknownDefaultValues",
+      "name": "gender.unknown.defaultValues",
+      "default": "unknown;diverse;kein;keine;keine Angabe;none;other;divers;unbekannt;andere"
+    },
+    {
+      "ident": "WidgetTokenSecret",
+      "name": "system.widget.token.secret",
+      "default": null
+    },
+    {
+      "ident": "System_Licence",
+      "name": "system.licence",
+      "default": null
+    },
+    {
+      "ident": "System_License_Type",
+      "name": "licenseType",
+      "default": null
+    },
+    {
+      "ident": "System_License_Holder",
+      "name": "licenseHolder",
+      "default": null
+    },
+    {
+      "ident": "System_License_ExpirationDate",
+      "name": "expirationDate",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumVersion",
+      "name": "maximumVersion",
+      "default": null
+    },
+    {
+      "ident": "System_License_LicenseUrl",
+      "name": "licenseUrl",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfCompanies",
+      "name": "maximumNumberOfCompanies",
+      "default": "1"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfCompanies_Graceful",
+      "name": "maximumNumberOfCompaniesGraceful",
+      "default": "0"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfGuiAdmins",
+      "name": "maximumNumberOfGuiAdmins",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfWebserviceUsers",
+      "name": "maximumNumberOfWebserviceUsers",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfRestfulUsers",
+      "name": "maximumNumberOfRestfulUsers",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfSupervisors",
+      "name": "maximumNumberOfSupervisors",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfCustomers",
+      "name": "maximumNumberOfCustomers",
+      "default": "-1"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfCustomers_Graceful",
+      "name": "maximumNumberOfCustomersGraceful",
+      "default": "5000"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfProfileFields",
+      "name": "maximumNumberOfProfileFields",
+      "default": "200"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfProfileFields_Graceful",
+      "name": "maximumNumberOfProfileFieldsGraceful",
+      "default": "10"
+    },
+    {
+      "ident": "System_License_AllowedPremiumFeatures",
+      "name": "allowedPremiumFeatures",
+      "default": null
+    },
+    {
+      "ident": "System_License_AllowedPremiumConfigValues",
+      "name": "allowedPremiumConfigValues",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfReferenceTables",
+      "name": "maximumNumberOfReferenceTables",
+      "default": "50"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfReferenceTables_Graceful",
+      "name": "maximumNumberOfReferenceTablesGraceful",
+      "default": "5"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfVoucherTables",
+      "name": "maximumNumberOfVoucherTables",
+      "default": "50"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfVoucherTables_Graceful",
+      "name": "maximumNumberOfVoucherTablesGraceful",
+      "default": "5"
+    },
+    {
+      "ident": "System_License_AllowMailingSendForMasterCompany",
+      "name": "allowMailingSendForMasterCompany",
+      "default": null
+    },
+    {
+      "ident": "System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany",
+      "name": "maximumNumberOfAccessLimitingMailinglistsPerCompany",
+      "default": "0"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany_Graceful",
+      "name": "maximumNumberOfAccessLimitingMailinglistsPerCompanyGraceful",
+      "default": "3"
+    },
+    {
+      "ident": "MaximumAccessLimitingMailinglists",
+      "name": "mailinglist.maximumAccessLimitingMailinglists",
+      "default": "3"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany",
+      "name": "maximumNumberOfAccessLimitingTargetgroupsPerCompany",
+      "default": "0"
+    },
+    {
+      "ident": "System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany_Graceful",
+      "name": "maximumNumberOfAccessLimitingTargetgroupsPerCompanyGraceful",
+      "default": "0"
+    },
+    {
+      "ident": "MaximumAccessLimitingTargetgroups",
+      "name": "altg.maximumAccessLimitingTargetgroups",
+      "default": "3"
+    },
+    {
+      "ident": "System_License_OpenEMMMasterCompany",
+      "name": "openEMMMasterCompany",
+      "default": null
+    },
+    {
+      "ident": "System_License_OpenEMMLoginUrl",
+      "name": "openEMMLoginURL",
+      "default": null
+    },
+    {
+      "ident": "MaximumNumberOfTestAccounts",
+      "name": "maximumNumberOfTestAccounts",
+      "default": "100"
+    },
+    {
+      "ident": "MaximumLifetimeOfTestAccounts",
+      "name": "maximumLifetimeOfTestAccounts",
+      "default": "3"
+    },
+    {
+      "ident": "SpamCheckAddress",
+      "name": "SpamCheckAddress",
+      "default": null
+    },
+    {
+      "ident": "RecipientProfileFieldHistory",
+      "name": "recipient.profile_history",
+      "default": null
+    },
+    {
+      "ident": "AllowHtmlTagsInReferenceAndProfileFields",
+      "name": "recipient.profileFields.allowHtml",
+      "default": "false"
+    },
+    {
+      "ident": "UidVersionForNewCompanies",
+      "name": "company.create.uidVersion",
+      "default": "5"
+    },
+    {
+      "ident": "ExportAlwaysInformEmail",
+      "name": "exportalwaysinformemail",
+      "default": null
+    },
+    {
+      "ident": "MediapoolMaximumSizeBytes",
+      "name": "MediapoolMaximumSizeBytes",
+      "default": "2147483648"
+    },
+    {
+      "ident": "UploadMaximumOverallSizeBytes",
+      "name": "UploadMaximumOverallSizeBytes",
+      "default": "1610612736"
+    },
+    {
+      "ident": "HostAuthenticationHostIdCookieExpireDays",
+      "name": "host_authentication.hostIdCookie.expireDays",
+      "default": "180"
+    },
+    {
+      "ident": "PendingHostAuthenticationMaxAgeMinutes",
+      "name": "host_authentication.max_pending_age_minutes",
+      "default": "1440"
+    },
+    {
+      "ident": "UserActivityLog_Expire",
+      "name": "system.UserActivityLog.Expire",
+      "default": "180"
+    },
+    {
+      "ident": "SupervisorBinding_Expire",
+      "name": "system.SupervisorBinding.Expire",
+      "default": "365"
+    },
+    {
+      "ident": "SupervisorGrant_Expire",
+      "name": "system.SupervisorGrant.Expire",
+      "default": "180"
+    },
+    {
+      "ident": "Report_Expire",
+      "name": "system.Report.Expire",
+      "default": "180"
+    },
+    {
+      "ident": "ExportReport_Expire",
+      "name": "system.ExportReport.Expire",
+      "default": "30"
+    },
+    {
+      "ident": "UserPasswordExpireNotificationDays",
+      "name": "password.expire.notification.days",
+      "default": "14"
+    },
+    {
+      "ident": "UserPasswordExpireDays",
+      "name": "password.expire.days",
+      "default": "90"
+    },
+    {
+      "ident": "UserPasswordFinalExpirationDays",
+      "name": "password.expire.final.days",
+      "default": "90"
+    },
+    {
+      "ident": "SupervisorPasswordExpireDays",
+      "name": "supervisor.password.expire.max.days",
+      "default": "30"
+    },
+    {
+      "ident": "SupervisorPasswordExpireNotificationDays",
+      "name": "supervisor.password.expire.warning.days",
+      "default": "5"
+    },
+    {
+      "ident": "SupervisorPasswordFinalExpirationDays",
+      "name": "supervisor.password.expire.final.days",
+      "default": "30"
+    },
+    {
+      "ident": "ExpireDeliveryTracking",
+      "name": "expire.deliverytracking",
+      "default": "30"
+    },
+    {
+      "ident": "DefaultExpireDays",
+      "name": "expire.default",
+      "default": "1460"
+    },
+    {
+      "ident": "ExpireStatisticsMax",
+      "name": "expire.statistics.max",
+      "default": "1460"
+    },
+    {
+      "ident": "ExpireSuccessMax",
+      "name": "expire.SuccessMax",
+      "default": "1460"
+    },
+    {
+      "ident": "ExpireSuccessDefault",
+      "name": "expire.SuccessDef",
+      "default": "180"
+    },
+    {
+      "ident": "ExpireMailloopLog",
+      "name": "expire.mailloopLog",
+      "default": "90"
+    },
+    {
+      "ident": "ExpireStatisticSummary",
+      "name": "statistic.summary.expiredAfterSeconds",
+      "default": "900"
+    },
+    {
+      "ident": "ExpireStatisticSummaryCleanup",
+      "name": "statistic.summary.expiredAfterSeconds.cleanup",
+      "default": "-1"
+    },
+    {
+      "ident": "MailingUndo_Expire",
+      "name": "mailing.undo.expire",
+      "default": "60"
+    },
+    {
+      "ident": "ExpireStatistics",
+      "name": "expire.statistics",
+      "default": "1460"
+    },
+    {
+      "ident": "ExpireSuccess",
+      "name": "expire.success",
+      "default": "180"
+    },
+    {
+      "ident": "ExpireRecipient",
+      "name": "expire.recipient",
+      "default": "30"
+    },
+    {
+      "ident": "ExpireBounce",
+      "name": "expire.bounce",
+      "default": "90"
+    },
+    {
+      "ident": "ExpireUpload",
+      "name": "expire.upload",
+      "default": "14"
+    },
+    {
+      "ident": "DeepTrackingCookieExpire",
+      "name": "deeptracking.cookie.expire",
+      "default": "-1"
+    },
+    {
+      "ident": "WorkflowPauseExpirationHours",
+      "name": "workflow.pause.expire.hours",
+      "default": "2"
+    },
+    {
+      "ident": "RecipientDistributionStatExpirationYears",
+      "name": "expire.recipientDistributionStat.years",
+      "default": "5"
+    },
+    {
+      "ident": "SystemSaltFile",
+      "name": "system.salt.file",
+      "default": "${HOME}/conf/keys/emm.salt"
+    },
+    {
+      "ident": "HostAuthentication",
+      "name": "host_authentication.authentication",
+      "default": "true"
+    },
+    {
+      "ident": "HostAuthenticationHostIdCookieName",
+      "name": "host_authentication.hostIdCookie.name",
+      "default": "com.agnitas.emm.host_id"
+    },
+    {
+      "ident": "HostauthenticationCookiesHttpsOnly",
+      "name": "hostauthentication.cookies.https.only",
+      "default": "true"
+    },
+    {
+      "ident": "SecureTransportLayerProtocol",
+      "name": "network.protocol.secureTransportLayer",
+      "default": "SSL"
+    },
+    {
+      "ident": "LogonIframeUrlEnglish",
+      "name": "logon.iframe.url.en",
+      "default": null
+    },
+    {
+      "ident": "LogonIframeUrlGerman",
+      "name": "logon.iframe.url.de",
+      "default": null
+    },
+    {
+      "ident": "SkipLogonIframeUrlCheck",
+      "name": "logon.iframe.url.skipCheck",
+      "default": "false"
+    },
+    {
+      "ident": "ShowLogonSplashScreen",
+      "name": "logon.showSplashScreen",
+      "default": "true"
+    },
+    {
+      "ident": "SessionHijackingPrevention",
+      "name": "security.sessionHijackingPrevention",
+      "default": "enabled"
+    },
+    {
+      "ident": "WebuiMaxFailedAttempts",
+      "name": "loginTracking.webui.maxFails",
+      "default": "10"
+    },
+    {
+      "ident": "WebuiIpBlockTimeSeconds",
+      "name": "loginTracking.webui.ipBlockTimeSeconds",
+      "default": "60"
+    },
+    {
+      "ident": "LoginTrackingWebserviceEnabled",
+      "name": "loginTracking.webservices.enabled",
+      "default": "true"
+    },
+    {
+      "ident": "LoginTrackingWebservicesMaxFailedAttempts",
+      "name": "loginTracking.webservices.maxFails",
+      "default": "10"
+    },
+    {
+      "ident": "LoginTrackingWebserviceIpBlockTimeSeconds",
+      "name": "loginTracking.webservices.ipBlockTimeSeconds",
+      "default": "300"
+    },
+    {
+      "ident": "CsrfProtectionEnabled",
+      "name": "security.csrfProtection.enabled",
+      "default": "true"
+    },
+    {
+      "ident": "OAuth2Issuer",
+      "name": "oauth2.issuer",
+      "default": null
+    },
+    {
+      "ident": "OAuth2ServerClientId",
+      "name": "oauth2.server.client.id",
+      "default": "emm"
+    },
+    {
+      "ident": "OAuth2InternalAuthServer",
+      "name": "oauth2.server.internal",
+      "default": "true"
+    },
+    {
+      "ident": "LogonTotpEnabled",
+      "name": "logon.totp.enabled",
+      "default": "false"
+    },
+    {
+      "ident": "LogonTotpIssuer",
+      "name": "logon.totp.issuer",
+      "default": "AGNITAS EMM"
+    },
+    {
+      "ident": "LoginTotpTrustDeviceEnabled",
+      "name": "logon.totp.trustDeviceEnabled",
+      "default": "false"
+    },
+    {
+      "ident": "LoginTotpTrustDevicePeriod",
+      "name": "logon.totp.trustDevicePeriod",
+      "default": "PT10H"
+    },
+    {
+      "ident": "LoginTotpTokenCookieName",
+      "name": "logon.totp.cookie.name",
+      "default": "com.agnitas.emm.logon.totp.token"
+    },
+    {
+      "ident": "LoginTotpTokenCookieHttpsOnly",
+      "name": "logon.totp.cookie.httpsOnly",
+      "default": "true"
+    },
+    {
+      "ident": "LogonAllowUILoginByUsernameAndPassword",
+      "name": "logon.ui.allowLoginByUsernameAndPassword",
+      "default": "true"
+    },
+    {
+      "ident": "WebserviceUsageLog_Expire",
+      "name": "system.WebserviceUsageLog.Expire",
+      "default": "60"
+    },
+    {
+      "ident": "WebserviceEnablePermissions",
+      "name": "webservice.enablePermissions",
+      "default": "false"
+    },
+    {
+      "ident": "WebserviceEnableSendServiceMailing",
+      "name": "webservice.SendServiceMailing",
+      "default": null
+    },
+    {
+      "ident": "WebserviceBulkSizeLimit",
+      "name": "webservice.bulk_size_limit",
+      "default": null
+    },
+    {
+      "ident": "WebserviceBulkDataSizeLimit",
+      "name": "webservice.bulk_data_size_limit",
+      "default": "0"
+    },
+    {
+      "ident": "WebservicesUrl",
+      "name": "webservices.url",
+      "default": null
+    },
+    {
+      "ident": "DefaultApiCallLimits",
+      "name": "webservice.default_api_call_limits",
+      "default": "432000/P1D;1200/PT1M"
+    },
+    {
+      "ident": "WebserviceCostsCacheRetentionSeconds",
+      "name": "webservice.costs_cache_retention_seconds",
+      "default": "300"
+    },
+    {
+      "ident": "MaxRestfulRequestDataSize",
+      "name": "restful.maxRestfulRequestDataSize",
+      "default": null
+    },
+    {
+      "ident": "EnableRestfulQuotas",
+      "name": "restful.enableQuota",
+      "default": "false"
+    },
+    {
+      "ident": "DefaultRestfulApiCallLimits",
+      "name": "restful.quota.default_api_call_limits",
+      "default": "432000/P1D;1200/PT1M"
+    },
+    {
+      "ident": "RestfulApiCostsCacheRetentionSeconds",
+      "name": "restful.quota.costs_cache_retention_seconds",
+      "default": "300"
+    },
+    {
+      "ident": "ExtendedRestfulLogging",
+      "name": "restful.ExtendedLogging",
+      "default": "false"
+    },
+    {
+      "ident": "RestfulJwtSecret",
+      "name": "RestfulJwtSecret",
+      "default": null
+    },
+    {
+      "ident": "RestfulJwtValidityMinutes",
+      "name": "RestfulJwtValidityMinutes",
+      "default": "60"
+    },
+    {
+      "ident": "FeatureDataCleanupPeriod",
+      "name": "cleanup.feature_data",
+      "default": "60"
+    },
+    {
+      "ident": "PushNotificationsEnabled",
+      "name": "webpush.push_notification",
+      "default": null
+    },
+    {
+      "ident": "WebpushIncludeMasterCompany",
+      "name": "webpush.includeMasterCompany",
+      "default": "false"
+    },
+    {
+      "ident": "PushNotificationProviderCredentials",
+      "name": "webpush.provider_credentials",
+      "default": null
+    },
+    {
+      "ident": "WebpushMaximumResponsesPerIteration",
+      "name": "webpush.maxResponsesPerIteration",
+      "default": "1000"
+    },
+    {
+      "ident": "PushNotificationClickTrackingUrl",
+      "name": "webpush.click_tracking_url",
+      "default": null
+    },
+    {
+      "ident": "PushNotificationOpenTrackingUrl",
+      "name": "webpush.open_tracking_url",
+      "default": null
+    },
+    {
+      "ident": "PushNotificationVapidPublicKey",
+      "name": "webpush.vapid.key.public",
+      "default": null
+    },
+    {
+      "ident": "PushNotificationVapidPrivateKey",
+      "name": "webpush.vapid.key.private",
+      "default": null
+    },
+    {
+      "ident": "PushNotificationVapidSubject",
+      "name": "webpush.vapid.subject",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpHost",
+      "name": "webpush.postman.sftp.host",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpUser",
+      "name": "webpush.postman.sftp.user",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpKeyFile",
+      "name": "webpush.postman.sftp.keyFile.name",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpKeyFilePassphrase",
+      "name": "webpush.postman.sftp.keyFile.passphrase",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpRemoteDispatcherMessageDirectory",
+      "name": "webpush.postman.dispatcher.messageDirectory",
+      "default": null
+    },
+    {
+      "ident": "WebpushPostmanSftpRemoteDispatcherResponseDirectory",
+      "name": "webpush.postman.dispatcher.responseDirectory",
+      "default": null
+    },
+    {
+      "ident": "DefaultMailloopDomain",
+      "name": "system.defaultMailloopDomain",
+      "default": null
+    },
+    {
+      "ident": "DefaultRdirDomain",
+      "name": "system.defaultRdirDomain",
+      "default": null
+    },
+    {
+      "ident": "PreviewUrl",
+      "name": "preview.url",
+      "default": "http://localhost:8080"
+    },
+    {
+      "ident": "PreviewMailgunCacheSize",
+      "name": "preview.mailgun.cache.size",
+      "default": "10"
+    },
+    {
+      "ident": "PreviewMailgunCacheAge",
+      "name": "preview.mailgun.cache.age",
+      "default": "1000"
+    },
+    {
+      "ident": "PreviewPageCacheSize",
+      "name": "preview.page.cache.size",
+      "default": "10"
+    },
+    {
+      "ident": "PreviewPageCacheAge",
+      "name": "preview.page.cache.age",
+      "default": "1000"
+    },
+    {
+      "ident": "PreviewLogName",
+      "name": "preview.logname",
+      "default": "emmpreviews"
+    },
+    {
+      "ident": "PreviewLogLevel",
+      "name": "preview.loglevel",
+      "default": "ERROR"
+    },
+    {
+      "ident": "MailingUndoLimit",
+      "name": "undo.limit",
+      "default": "15"
+    },
+    {
+      "ident": "MailingSizeWarningThresholdBytes",
+      "name": "company.mailingSizeWarningThresholdBytes",
+      "default": "2097152"
+    },
+    {
+      "ident": "MailingSizeErrorThresholdBytes",
+      "name": "company.mailingSizeErrorThresholdBytes",
+      "default": "10485760"
+    },
+    {
+      "ident": "UsePreventTableDropConstraint",
+      "name": "company.usePreventTableDropConstraint",
+      "default": "true"
+    },
+    {
+      "ident": "CampaignEnableTargetGroups",
+      "name": "campaign-enable-target-groups",
+      "default": "false"
+    },
+    {
+      "ident": "UseLatestJoditEditor",
+      "name": "useLatestJoditEditor",
+      "default": "true"
+    },
+    {
+      "ident": "UseLatestAceEditor",
+      "name": "useLatestAceEditor",
+      "default": "true"
+    },
+    {
+      "ident": "MailGenerationTimeMinutes",
+      "name": "mailing.generation.minutes",
+      "default": "60"
+    },
+    {
+      "ident": "MaximumNumberOfUserSelectedProfileFieldsInHistory",
+      "name": "recipient.profile_history.max_userdefined_fields",
+      "default": null
+    },
+    {
+      "ident": "HeatmapProxy",
+      "name": "system.heatmap.proxy",
+      "default": null
+    },
+    {
+      "ident": "ExternalMeasureSystemBaseLinkMailing",
+      "name": "externalmeasuresystem.baselinkMailing",
+      "default": null
+    },
+    {
+      "ident": "Linkchecker_Linktimeout",
+      "name": "linkchecker.linktimeout",
+      "default": "30000"
+    },
+    {
+      "ident": "Linkchecker_Threadcount",
+      "name": "linkchecker.threadcount",
+      "default": "25"
+    },
+    {
+      "ident": "LinkChecker_UserAgent",
+      "name": "linkchecker.userAgent",
+      "default": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:155.0) Gecko/20100101 Firefox/155.0"
+    },
+    {
+      "ident": "RedirectMakeAgnDynMultiLinksTrackable",
+      "name": "rdir.agnDynMulti.makeLinksTrackable",
+      "default": "false"
+    },
+    {
+      "ident": "TrackableLinkDefaultTracking",
+      "name": "trackableLinks.defaultTracking",
+      "default": null
+    },
+    {
+      "ident": "UseRdirContextLinks",
+      "name": "rdir.UseRdirContextLinks",
+      "default": "false"
+    },
+    {
+      "ident": "RdirUndecodableLinkUrl",
+      "name": "rdir.undecodableLink.url",
+      "default": "/assets/rdir/404/404.html"
+    },
+    {
+      "ident": "InboxPreview_Litmusapikey",
+      "name": "predelivery.litmusapikey",
+      "default": null
+    },
+    {
+      "ident": "InboxPreview_Litmusapiurl",
+      "name": "predelivery.litmusapiurl",
+      "default": "https://soap.litmusapp.com/soap/api"
+    },
+    {
+      "ident": "InboxPreview_Litmuspassword",
+      "name": "predelivery.litmuspassword",
+      "default": null
+    },
+    {
+      "ident": "InboxPreview_LitmusStatusUrl",
+      "name": "predelivery.litmusstatusurl",
+      "default": "https://status.litmus.com/"
+    },
+    {
+      "ident": "InboxPreview_Litmus_DisableCertificateChecks",
+      "name": "predelivery.litmus.disableCertificateChecks",
+      "default": "false"
+    },
+    {
+      "ident": "InboxPreview_RetentionDays",
+      "name": "predelivery.retentationDays",
+      "default": "90"
+    },
+    {
+      "ident": "InboxPreview_PollingTimeoutSeconds",
+      "name": "predelivery.timeout.polling.seconds",
+      "default": "7200"
+    },
+    {
+      "ident": "InboxPreview_MaximumParallelTests",
+      "name": "predelivery.maximum_parallel_tests",
+      "default": "25"
+    },
+    {
+      "ident": "InboxPreview_MaximumExecutorShutdownSeconds",
+      "name": "predelivery.maximum_executor_shutdown_seconds",
+      "default": "300"
+    },
+    {
+      "ident": "EnableResponseInbox",
+      "name": "bavd:inbox-enabled",
+      "default": "false"
+    },
+    {
+      "ident": "ResponseInbox_RetentionDays",
+      "name": "responseInbox.retentationDays",
+      "default": "7"
+    },
+    {
+      "ident": "Thumbnail_Sizex",
+      "name": "thumbnail.sizex",
+      "default": "119"
+    },
+    {
+      "ident": "Thumbnail_Sizey",
+      "name": "thumbnail.sizey",
+      "default": "84"
+    },
+    {
+      "ident": "Thumbnail_Threshold",
+      "name": "thumbnail.threshold",
+      "default": "1.0"
+    },
+    {
+      "ident": "SendFairnessMinutes",
+      "name": "send.fairness.minutes",
+      "default": "5"
+    },
+    {
+      "ident": "RecipientProfileFieldHistoryRebuildOnStartup",
+      "name": "recipient.profile_history.rebuild_trigger_on_startup",
+      "default": null
+    },
+    {
+      "ident": "RecipientBindingFieldHistoryRebuildOnStartup",
+      "name": "recipient.binding_history.rebuild_trigger_on_startup",
+      "default": null
+    },
+    {
+      "ident": "AnonymizeTrackingVetoRecipients",
+      "name": "anonymizeTrackingVetoRecipients",
+      "default": "false"
+    },
+    {
+      "ident": "TrackingVetoAllowTransactionTracking",
+      "name": "recipient.trackingVeto.allowTransactionTracking",
+      "default": "false"
+    },
+    {
+      "ident": "AnonymizeAllRecipients",
+      "name": "recipient.trackingVeto.anonymizeAllRecipients",
+      "default": "false"
+    },
+    {
+      "ident": "CleanRecipientsWithoutBinding",
+      "name": "cleanup.deleteRecipientsWithoutBinding",
+      "default": "false"
+    },
+    {
+      "ident": "CleanRecipientsData",
+      "name": "cleanup.deleteRecipientsData",
+      "default": "-1"
+    },
+    {
+      "ident": "CleanTrackingData",
+      "name": "cleanup.deleteTrackingData",
+      "default": "-1"
+    },
+    {
+      "ident": "DeleteRecipients",
+      "name": "cleanup.deleteRecipients",
+      "default": "-1"
+    },
+    {
+      "ident": "DeleteBindingStepsize",
+      "name": "mailinglist.deleteBindings",
+      "default": "10000"
+    },
+    {
+      "ident": "UseBindingHistoryForRecipientStatistics",
+      "name": "UseBindingHistoryForRecipientStatistics",
+      "default": "false"
+    },
+    {
+      "ident": "MaximumRecipientDetailPeriodDays",
+      "name": "statistics.maximumRecipientDetailPeriodDays",
+      "default": "180"
+    },
+    {
+      "ident": "CheckWellKnownProfileFields",
+      "name": "CheckWellKnownProfileFields",
+      "default": "false"
+    },
+    {
+      "ident": "RecipientFieldsMaxCache",
+      "name": "recipientFields.maxCache",
+      "default": "100"
+    },
+    {
+      "ident": "RecipientFieldsMaxCacheTimeMillis",
+      "name": "recipientFields.maxCacheTimeMillis",
+      "default": "300000"
+    },
+    {
+      "ident": "UseRecipientFieldService",
+      "name": "UseRecipientFieldService",
+      "default": "true"
+    },
+    {
+      "ident": "NoHtmlCheckOnProfileImport",
+      "name": "NoHtmlCheckOnProfileImport",
+      "default": "false"
+    },
+    {
+      "ident": "NoHtmlCheckOnReferenceImport",
+      "name": "NoHtmlCheckOnReferenceImport",
+      "default": "false"
+    },
+    {
+      "ident": "AutoImport_Expire",
+      "name": "import.AutoImport.Expire",
+      "default": "30"
+    },
+    {
+      "ident": "ImportAlwaysInformEmail",
+      "name": "importalwaysinformemail",
+      "default": null
+    },
+    {
+      "ident": "MaximumParallelAutoImports",
+      "name": "import.MaximumParallelAutoImports",
+      "default": "3"
+    },
+    {
+      "ident": "MaximumContentLinesForUnindexedImport",
+      "name": "import.maximumContentLinesForUnindexedImport",
+      "default": "-1"
+    },
+    {
+      "ident": "MaxUserImportDurationMinutes",
+      "name": "MaxUserImportDurationMinutes",
+      "default": "60"
+    },
+    {
+      "ident": "ClassicImportMaxRows",
+      "name": "import.classic.maxRows",
+      "default": "200000"
+    },
+    {
+      "ident": "ClassicImportMaxFileSize",
+      "name": "import.classic.maxSize",
+      "default": "104857600"
+    },
+    {
+      "ident": "ImportQuotaEnabled",
+      "name": "import.quota.enabled",
+      "default": "false"
+    },
+    {
+      "ident": "ImportQuota",
+      "name": "import.quota.lines",
+      "default": "1500000"
+    },
+    {
+      "ident": "ImportQuotaWarning",
+      "name": "import.quota.lines.warn",
+      "default": "1000000"
+    },
+    {
+      "ident": "ImportThrottlingSecondsPerBlock",
+      "name": "import.throttling.secondsPerBlock",
+      "default": "0"
+    },
+    {
+      "ident": "DeleteSuccessfullyImportedFiles",
+      "name": "import.importfiles.delete",
+      "default": null
+    },
+    {
+      "ident": "ReferenceTableImportMaxRows",
+      "name": "import.reference.maxRows",
+      "default": "200000"
+    },
+    {
+      "ident": "ReferenceTableImportMaxFileSize",
+      "name": "import.reference.maxSize",
+      "default": "104857600"
+    },
+    {
+      "ident": "ProfileRecipientImportMaxRows",
+      "name": "import.recipient.maxRows",
+      "default": "500000"
+    },
+    {
+      "ident": "ProfileRecipientImportMaxFileSize",
+      "name": "import.recipient.maxSize",
+      "default": "104857600"
+    },
+    {
+      "ident": "AutoExport_Expire",
+      "name": "export.AutoExport.Expire",
+      "default": "30"
+    },
+    {
+      "ident": "MaximumParallelAutoExports",
+      "name": "import.MaximumParallelAutoExports",
+      "default": "3"
+    },
+    {
+      "ident": "ExportSubscriberToFtp_JobsStatusExpireMinutes",
+      "name": "exportSubscriberToFtp.jobs.statusExpireMinutes",
+      "default": "15"
+    },
+    {
+      "ident": "ExportSubscriberToFtp_ConnectionTimeoutSeconds",
+      "name": "exportSubscriberToFtp.connection.timeoutSeconds",
+      "default": "300"
+    },
+    {
+      "ident": "ProfileRecipientExportMaxRows",
+      "name": "export.recipient.maxRows",
+      "default": "-1"
+    },
+    {
+      "ident": "BirtPrivateKey",
+      "name": "birt.privatekey",
+      "default": null
+    },
+    {
+      "ident": "BirtPublicKey",
+      "name": "birt.publickey",
+      "default": null
+    },
+    {
+      "ident": "BirtErrorPage",
+      "name": "birt.errorPage",
+      "default": "/webcontent/birt/pages/common/Error.jsp"
+    },
+    {
+      "ident": "MaximumParallelReports",
+      "name": "import.MaximumParallelReports",
+      "default": "3"
+    },
+    {
+      "ident": "SendMailingWithoutDkimCheck",
+      "name": "SendMailingWithoutDkimCheck",
+      "default": "warning"
+    },
+    {
+      "ident": "IgnoreDeletedI18NMessagesHosts",
+      "name": "system.ignoreDeletedMessagesHosts",
+      "default": null
+    },
+    {
+      "ident": "CaptureKeySecret",
+      "name": "cap.key.secret",
+      "default": null
+    },
+    {
+      "ident": "ConfigurationExpirationMinutes",
+      "name": "configuration.expiration.minutes",
+      "default": "5"
+    },
+    {
+      "ident": "Pickup_Rdir",
+      "name": "pickup.rdir",
+      "default": null
+    }
+  ]
+}

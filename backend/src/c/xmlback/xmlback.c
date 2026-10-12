@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<stdio.h>
@@ -124,7 +124,6 @@ main (int argc, char **argv) /*{{{*/
 	bool_t		quiet;
 	const char	*error_file;
 	bool_t		raw;
-	bool_t		fullraw;
 	output_t	*out;
 	const char	*outparm;
 	const char	*auto_url_prefix;
@@ -148,7 +147,6 @@ main (int argc, char **argv) /*{{{*/
 	quiet = false;
 	error_file = NULL;
 	raw = false;
-	fullraw = false;
 	out = & output_table[1];
 	outparm = NULL;
 	auto_url_prefix = NULL;
@@ -170,7 +168,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
 	opterr = 0;
-	while ((n = getopt (argc, argv, "VDpqE:rRu:UaAs:egd:t:o:L:T:h")) != -1)
+	while ((n = getopt (argc, argv, "VDpqE:ru:UaAs:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 			{
@@ -195,10 +193,6 @@ main (int argc, char **argv) /*{{{*/
 			break;
 		case 'r':
 			raw = true;
-			break;
-		case 'R':
-			raw = true;
-			fullraw = true;
 			break;
 		case 'u':
 			auto_url_prefix = optarg;
@@ -348,7 +342,6 @@ main (int argc, char **argv) /*{{{*/
 			log_out (lg, LV_ERROR, "Unable to setup blockmail");
 		else {
 			blockmail -> raw = raw;
-			blockmail -> fullraw = fullraw;
 			blockmail -> output = out;
 			blockmail -> outputdata = NULL;
 			log_idpush (lg, "init");

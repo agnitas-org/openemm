@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # ifndef	__XMLBACK_H
@@ -107,7 +107,16 @@
 # define	SP_DYNAMIC		0
 # define	SP_BLOCK		1
 
-typedef struct iflua	iflua_t;
+typedef struct iflua		iflua_t;
+typedef struct encrypt		encrypt_t;
+typedef struct output		output_t;
+typedef struct block		block_t;
+typedef struct dyn		dyn_t;
+typedef struct blockmail	blockmail_t;
+typedef struct receiver		receiver_t;
+typedef struct tag		tag_t;
+typedef struct reason		reason_t;
+typedef struct hparam		hparam_t;
 typedef enum { /*{{{*/
 	EncNone,
 	Enc8bit,
@@ -160,14 +169,6 @@ typedef struct image { /*{{{*/
 	struct image	*next;
 	/*}}}*/
 }	image_t;
-typedef struct encrypt		encrypt_t;
-typedef struct output		output_t;
-typedef struct block		block_t;
-typedef struct dyn		dyn_t;
-typedef struct blockmail	blockmail_t;
-typedef struct receiver		receiver_t;
-typedef struct tag		tag_t;
-typedef struct reason		reason_t;
 typedef struct { /*{{{*/
 	xmlBufferPtr	name;		/* the name of this position	*/
 	long		hash;		/* the hashvalue		*/
@@ -426,7 +427,7 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	adkim_t;
 typedef struct sdkim	sdkim_t;
-
+typedef struct smime	smime_t;
 typedef struct track	track_t;
 struct track { /*{{{*/
 	char	*name;
@@ -452,7 +453,6 @@ struct blockmail { /*{{{*/
 	int		target_ids_count;	/* # of elements	*/
 	/* output related data */
 	bool_t		raw;		/* just generate raw output	*/
-	bool_t		fullraw;	/* include meta information	*/
 	output_t	*output;	/* output information		*/
 	void		*outputdata;	/* output related private data	*/
 	counter_t	*counter;	/* counter for created mails	*/
@@ -570,6 +570,10 @@ struct blockmail { /*{{{*/
 	/* DKIM sign message */
 	sdkim_t		*signdkim;
 	DO_DECL (adkim);
+	/* S/Mime information */
+	smime_t		*smime;
+	/* sign verification mails? */
+	bool_t		sign_verification_mails;
 	/* validation of SPF */
 	void		*spf;
 	/* for VIP exploder, the parsed block */
@@ -915,7 +919,7 @@ extern bool_t		header_replace_content (header_t *h, xmlBufferPtr source);
 extern bool_t		header_insert (header_t *h, const char *line, head_t *after);
 extern bool_t		header_append (header_t *h, const char *line);
 extern void		header_remove (header_t *h, const char *name);
-extern bool_t		header_revalidate_mfrom (header_t *h, void *spf);
+extern bool_t		header_revalidate_mfrom (header_t *h, blockmail_t *blockmail);
 extern int		header_size (header_t *h);
 extern void		header_cleanup (header_t *h, bool_t remove_list_information);
 extern buffer_t		*header_encode (header_t *h, head_t *head);
@@ -929,10 +933,28 @@ extern sdkim_t		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const 
 extern sdkim_t		*sdkim_free (sdkim_t *s);
 extern bool_t		sdkim_should_sign (sdkim_t *s, receiver_t *rec);
 extern void		sign_mail_using_dkim (blockmail_t *blockmail, header_t *header);
+extern smime_t		*smime_alloc (void);
+extern smime_t		*smime_free (smime_t *s);
+extern bool_t		smime_add (smime_t *s, const char *email, const char *certificate);
+extern void		sign_mail_using_smime (blockmail_t *blockmail, receiver_t *rec);
+
+extern hparam_t		*hparam_alloc (void);
+extern hparam_t		*hparam_free (hparam_t *hp);
+extern bool_t		hparam_add_nil (hparam_t *hp, const char *option, int option_length);
+extern bool_t		hparam_add_boolean (hparam_t *hp, const char *option, int option_length, bool_t value);
+extern bool_t		hparam_add_integer (hparam_t *hp, const char *option, int option_length, long value);
+extern bool_t		hparam_add_float (hparam_t *hp, const char *option, int option_length, double value);
+extern bool_t		hparam_add_string (hparam_t *hp, const char *option, int option_length, const char *value);
+extern bool_t		hparam_add_stringn (hparam_t *hp, const char *option, int option_length, const char *value, int length);
+extern bool_t		hparam_add_binary (hparam_t *hp, const char *option, int option_length, const byte_t *value, int value_size);
+extern bool_t		hparam_get_boolean (hparam_t *hp, const char *option);
+extern const char	*hparam_get_string (hparam_t *hp, const char *option);
+extern hparam_t		*helper_call_timeout (blockmail_t *blockmail, const char *method, const hparam_t *request, int connect_timeout, int request_timeout, int response_timeout);
+extern hparam_t		*helper_call (blockmail_t *blockmail, const char *method, const hparam_t *request);
 
 extern void		*spf_alloc (void);
 extern void		*spf_free (void *sp);
-extern bool_t		spf_is_valid (void *sp, const char *address);
+extern bool_t		spf_is_valid (blockmail_t *blockmail, const char *address);
 
 /*
  * some support routines

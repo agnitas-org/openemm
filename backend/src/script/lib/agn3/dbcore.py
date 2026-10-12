@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -16,24 +16,26 @@ from	datetime import datetime
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Literal, Optional, Protocol, Sequence, TypeVar, Union
-from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
+from	typing import Any, Callable, ClassVar, Generic, Literal, Optional, Protocol, Sequence, TypeVar, Union, Unpack
+from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type, TypedDict
 from	typing import cast, overload
+from	typing_extensions import final
 from	.dbapi import DBAPI
+from	.dbcli import DBCLI
 from	.dbconfig import DBConfig
 from	.definitions import syscfg, fqdn, program, base, home, user
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import expand_path, normalize_path
 from	.stream import Stream
-from	.tools import abstract
+from	.tools import abstract, atob
 #
 __all__ = ['Row', 'Cursor', 'DBType', 'Core']
 #
 _T = TypeVar ('_T')
 #
 class Row (Protocol):
-	_fields: Tuple[str, ...]
+	_fields: ClassVar[Tuple[str, ...]]
 	def __getattr__ (self, attr: str) -> Any: ...
 	def __getitem__ (self, item: int) -> Any: ...
 	def __iter__ (self) -> Iterator[Any]: ...
@@ -43,6 +45,19 @@ class Paramstyle (Enum):
 	qmark = 0
 	named = 2
 	format = 3
+	pyformat = 4
+
+class QType (TypedDict, Generic[_T], total = False):
+	default: _T
+	oracle: _T
+	mariadb: _T
+	mysql: _T
+	postgres: _T
+	postgresql: _T
+	pg: _T
+	sqlite: _T
+	sqlite3: _T
+QNames = Literal['default', 'oracle', 'mariadb', 'mysql', 'postgres', 'postgresql', 'pg', 'sqlite', 'sqlite3']
 
 class Description (NamedTuple):
 	name: str
@@ -118,7 +133,7 @@ write the content directly to the database."""
 	def mode (self, mode: str) -> None:
 		raise KeyError (mode)
 		
-	def qselect (self, **args: _T) -> _T:
+	def qselect (self, **args: Unpack[QType[_T]]) -> _T:
 		"""See agn3.db.Core.qselect"""
 		return self.db.qselect (**args)
 
@@ -186,7 +201,7 @@ portable across different databases."""
 			return self.curs.description
 		raise error ('no active query')
 
-	def rowmapper (self, description: List[Tuple[Any, ...]]) -> List[Callable[[Any], Any]]:
+	def rowmapper (self, description: list[tuple[Any, ...]]) -> list[Callable[[Any], Any]]:
 		return self.rowmap
 
 	def make_row (self, data: List[Any]) -> Row:
@@ -243,6 +258,8 @@ portable across different databases."""
 				self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = ', '.join ([f'{_p!r}' for _p in parameter_list])))
 				return self.executor (statement, parameter_list)
 			parameter = self.db.cleanup (statement, parameter)
+			if self.db.paramstyle == Paramstyle.pyformat:
+				(statement, _) = self.db.reformat (statement, parameter)
 			self.db.log ('{what}: {statement} [{parameter}]'.format (what = what, statement = statement, parameter = self.__parameter_format (statement, parameter)))
 			return self.executor (statement, parameter)
 		except self.db.driver.Error as e:
@@ -400,7 +417,7 @@ this is the base class for all database specific drivers and should
 inherit this class. """
 	__slots__ = [
 		'dbms', 'driver', 'cursor_class', 'fallbacks', 'connect_options', 'has_tablespaces',
-		'db', 'lasterr', 'logger', 'cursors', 'types', 'matches',
+		'db', 'schema', 'lasterr', 'logger', 'cursors', 'types', 'matches',
 		'cache_reformat', 'cache_variables', 'paramstyle'
 	]
 	class LogState:
@@ -429,7 +446,8 @@ inherit this class. """
 			if self.enabled:
 				self.db.logger = self.save
 				self.enabled = False
-	
+
+	default_has_tablespaces = False
 	def __init__ (self, dbms: str, driver: DBAPI.Vendor, cursor_class: Type[Cursor]) -> None:
 		"""``dbms'' is the symbolic name, ``driver'' the real driver class and ``cursor_class'' based on Cursor
 
@@ -444,6 +462,7 @@ but can produce lots of output in prdocutive use."""
 		self.connect_options: Dict[str, Any] = {}
 		self.has_tablespaces = False
 		self.db: Optional[DBAPI.Driver] = None
+		self.schema: None | str = None
 		self.lasterr: Optional[Exception] = None
 		self.logger: Optional[Callable[[str], None]] = None
 		self.cursors: List[Cursor] = []
@@ -482,32 +501,44 @@ but can produce lots of output in prdocutive use."""
 	def logging (self, log: Optional[Callable[[str], None]]) -> Core.LogState:
 		return Core.LogState (self, log)
 	
-	def setup (self, cfg: DBConfig.DBRecord) -> None:
+	def setup (self, cfg: dict[str, str]) -> None:
 		"""hook to add driver specific setup code"""
-		if (connect_config := cfg ('py-connect')) is not None:
+		self.has_tablespaces = atob (cfg.get ('tablespaces'), self.default_has_tablespaces)
+		if (connect_config := cfg.get ('py-connect')) is not None:
 			try:
-				value = syscfg.as_config (
-					connect_config,
-					namespace = {
-						'driver': self.driver,
-						'datetime': datetime,
-						'expand': expand_path,
-						'normalize': normalize_path,
-						'syscfg': syscfg,
-						'fqdn': fqdn,
-						'program': program,
-						'base': base,
-						'home': home,
-						'user': user
-					},
-					path_namespace = os.environ.copy (),
-					path_base = os.path.dirname (os.path.abspath (DBConfig.default_config_path))
-				)
+				value = self._parse_config (connect_config)
 			except error as e:
 				raise error (f'py-connect: failed to parse "{connect_config}": {e}')
 			else:
 				if value:
 					self.connect_options.update (value)
+			if (dbms := cfg.get ('dbms')) is not None and (syscfg_options := syscfg.get (f'dbcfg:option:{dbms}')):
+				try:
+					value = self._parse_config (syscfg_options)
+				except error as e:
+					raise error (f'dbcfg:options:{dbms}: failed to parse "{syscfg_options}": {e}')
+				else:
+					if value:
+						self.connect_options.update (value)
+
+	def _parse_config (self, config: str) -> dict[str, Any]:
+		return syscfg.as_config (
+			config,
+			namespace = {
+				'driver': self.driver,
+				'datetime': datetime,
+				'expand': expand_path,
+				'normalize': normalize_path,
+				'syscfg': syscfg,
+				'fqdn': fqdn,
+				'program': program,
+				'base': base,
+				'home': home,
+				'user': user
+			},
+			path_namespace = os.environ.copy (),
+			path_base = os.path.dirname (os.path.abspath (DBConfig.default_config_path))
+		)
 
 	def log (self, message: str) -> None:
 		if self.logger is not None:
@@ -538,7 +569,7 @@ this will store the message in lasterr and retrieved using the method
 		self.lasterr = errmsg
 		self.close ()
 
-	def qselect (self, **args: _T) -> _T:
+	def qselect (self, **args: Unpack[QType[_T]]) -> _T:
 		"""Selects a database sepcific query variant
 
 it is not always possible to write database neutral code. So if you
@@ -547,6 +578,7 @@ automatically select the query required for the currently used
 database. The known databases are detected by the used driver and are
 normalized to these names:
 	- mariadb: for MariaDB databases
+	- postgres: for PostgreSQL
 	- oracle: for Oracle RDBMs
 	- sqlite: for using a SQLite3 database
 
@@ -562,13 +594,13 @@ And to get the query to select the newly created ID:
 		mariadb = 'SELECT last_insert_id()'
 	)
 """
-		key: Optional[str]
+		key: None | str
 		seen: Set[str] = set ()
 		for key in [self.dbms] + self.fallbacks:
 			seen.clear ()
 			while key is not None:
 				try:
-					result = args[key]
+					result = args[cast (QNames, key)]
 					if isinstance (result, str) and result in args:
 						if result in seen:
 							raise ValueError (f'{result}: cyclic reference detected')
@@ -588,14 +620,29 @@ And to get the query to select the newly created ID:
 			(new_statement, varlist) = self.cache_reformat[statement]
 		except KeyError:
 			def reformater (query: str, varlist: List[str]) -> Iterator[str]:
-				for (plain, match) in zip_longest (self.__variable_pattern.split (statement), self.__variable_pattern.findall (statement)):
-					yield plain.replace ('%', '%%') if self.paramstyle == Paramstyle.format else plain
-					if match is not None:
-						if match.startswith (':'):
-							varlist.append (match[1:])
-							yield '%s' if self.paramstyle == Paramstyle.format else '?'
+				match self.paramstyle:
+					case Paramstyle.format | Paramstyle.pyformat:
+						def escaper (s: str) -> str:
+							return s.replace ('%', '%%')
+					case _:
+						def escaper (s: str) -> str:
+							return s
+				#
+				for (plain, matching) in zip_longest (self.__variable_pattern.split (statement), self.__variable_pattern.findall (statement)):
+					yield escaper (plain)
+					if matching is not None:
+						if matching.startswith (':'):
+							varname = matching[1:]
+							varlist.append (varname)
+							match self.paramstyle:
+								case Paramstyle.qmark:
+									yield '?'
+								case Paramstyle.format:
+									yield '%s'
+								case Paramstyle.pyformat:
+									yield f'%({varname})s'
 						else:
-							yield match.replace ('%', '%%') if self.paramstyle == Paramstyle.format else match
+							yield escaper (matching)
 			varlist = []
 			new_statement = ''.join (reformater (statement, varlist))
 			self.cache_reformat[statement] = (new_statement, varlist)
@@ -759,7 +806,7 @@ closed and removed from the internal tracking."""
 		elif cursor.id is not None:
 			self.log (f'Try to release a not managed cursor {cursor.id}')
 	
-	def setup_table_optimizer (self, table: str, extimate_percent: int = 30) -> None:
+	def setup_table_optimizer (self, table: str, estimate_percent: int = 30) -> None:
 		"""setup a newly created table according to the dbms requirements"""
 
 	def stream (self, *args: Any, **kwargs: Any) -> Stream[Row]:
@@ -774,8 +821,21 @@ closed and removed from the internal tracking."""
 		cursor.close ()
 		return Stream (result)
 
+	dbcli: None | DBCLI = None
+	@final
+	def cli (self) -> DBCLI:
+		if self.__class__.dbcli is None:
+			self.__class__.dbcli = self.cli_setup ()
+		if self.__class__.dbcli is not None:
+			return self.__class__.dbcli
+		raise error ('cli: not found')
+
 	def connect (self) -> None:
 		"""Establish a connection to the database"""
+		abstract ()
+	
+	def cli_setup (self) -> DBCLI:
+		"""Create an instance to call the database specific CLI"""
 		abstract ()
 
 class Binary:

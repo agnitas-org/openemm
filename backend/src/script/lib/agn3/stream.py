@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -266,7 +266,7 @@ matching object and the element itself."""
 		"""Like mapingore, but passing a type as a hint for the return type for the new stream"""
 		return self.mapignore (predicate, *exceptions, log_to = log_to)
 	
-	def enumerate (self, start: int = 0) -> Stream[tuple[int, _T]]:
+	def enumerate (self, start: int = 0) -> Stream[Tuple[int, _T]]:
 		return self.new (enumerate (self, start = start))
 	
 	def distinct (self, key: None | Callable[[_T], Any] = None) -> Stream[_T]:
@@ -306,7 +306,7 @@ string, otherwise with a generic 'Peek'"""
 			predicater: Callable[[Any], Any] = lambda v: sys.stderr.write (format.format (value = v))
 		else:
 			predicater = predicate
-		return self.filter (lambda v: predicater (v) or True)
+		return self.filter (lambda v: bool (predicater (v)) or True)
 	
 	class Progress:
 		__slots__: List[str] = []
@@ -687,6 +687,16 @@ each element. """
 	def join (self, separator: str = '', finisher: None | Callable[[str], str] = None) -> str:
 		"""Returns a string joining all elements of stream with separator, optional apply ``finisher'' on result, if not None"""
 		rc = separator.join ((str (_s) for _s in self.iterator))
+		return rc if finisher is None else finisher (rc)
+	
+	def join_bytes (self, separator: bytes = b'', finisher: None | Callable[[bytes], bytes] = None, encoding: str = 'UTF-8') -> bytes:
+		def convert (elem: _T) -> bytes:
+			if elem is None:
+				return b''
+			if isinstance (elem, bytes):
+				return elem
+			return bytes (str (elem), encoding = encoding)
+		rc = separator.join ((convert (_b) for _b in self.iterator))
 		return rc if finisher is None else finisher (rc)
 	
 	class Collector:

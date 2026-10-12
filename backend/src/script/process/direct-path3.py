@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -17,7 +17,7 @@ import	asyncio
 from	dataclasses import dataclass
 from	typing import Final, Optional
 from	typing import Dict
-from	agn3.aioruntime import AIORuntime
+from	agn3.aioruntime import Queue, Process, AIORuntime
 from	agn3.definitions import base, syscfg
 from	agn3.emm.metafile import METAFile
 from	agn3.exceptions import error
@@ -53,39 +53,38 @@ class DPath (AIORuntime):
 				
 	async def controller (self) -> None:
 		self.mta = MTA ()
-		self.queue = self.channel ('incoming', XMLPack)
-		unpacker = self.task ('unpacker', self.unpacker ())
-		collect: Dict[str, XMLPack] = {}
-		seen: Dict[str, float] = {}
-		async for filename in self.scan (self.incoming_directory):
-			path = os.path.join (self.incoming_directory, filename)
-			meta = METAFile (path)
-			if not meta.valid:
-				logger.warning (f'{path}: invalid metafile, move to {self.recover_directory}')
-				self.move (path, self.recover_directory)
-			else:
-				try:
-					xmlpack = collect[meta.basename]
-				except KeyError:
-					xmlpack = collect[meta.basename] = XMLPack ()
-				if meta.extension.startswith ('xml'):
-					xmlpack.data = path
-				elif meta.extension == 'stamp':
-					xmlpack.stamp = path
-				elif meta.extension == 'final':
-					xmlpack.final = path
-				if xmlpack.data and xmlpack.stamp and xmlpack.final:
-					now = time.time ()
-					xmlpack = collect.pop (meta.basename)
-					if meta.basename in seen and seen[meta.basename] + 90 >= now:
-						logger.warning (f'{xmlpack.data}: already seen in last 90 seconds, skip')
-					else:
-						logger.debug (f'{xmlpack.data}: full pack forwarded for unpacking')
-						await self.queue.put (xmlpack)
-					for basename in [_i[0] for _i in seen.items () if _i[1] + 90 < now]:
-						del seen[basename]
-					seen[meta.basename] = now
-		await unpacker.join ()
+		self.queue: Queue[XMLPack] = Queue ()
+		async with self.ctask ('unpacker', self.unpacker ()):
+			collect: Dict[str, XMLPack] = {}
+			seen: Dict[str, float] = {}
+			async for filename in self.scan (self.incoming_directory):
+				path = os.path.join (self.incoming_directory, filename)
+				meta = METAFile (path)
+				if not meta.valid:
+					logger.warning (f'{path}: invalid metafile, move to {self.recover_directory}')
+					self.move (path, self.recover_directory)
+				else:
+					try:
+						xmlpack = collect[meta.basename]
+					except KeyError:
+						xmlpack = collect[meta.basename] = XMLPack ()
+					if meta.extension.startswith ('xml'):
+						xmlpack.data = path
+					elif meta.extension == 'stamp':
+						xmlpack.stamp = path
+					elif meta.extension == 'final':
+						xmlpack.final = path
+					if xmlpack.data and xmlpack.stamp and xmlpack.final:
+						now = time.time ()
+						xmlpack = collect.pop (meta.basename)
+						if meta.basename in seen and seen[meta.basename] + 90 >= now:
+							logger.warning (f'{xmlpack.data}: already seen in last 90 seconds, skip')
+						else:
+							logger.debug (f'{xmlpack.data}: full pack forwarded for unpacking')
+							await self.queue.put (xmlpack)
+						for basename in [_i[0] for _i in seen.items () if _i[1] + 90 < now]:
+							del seen[basename]
+						seen[meta.basename] = now
 
 	async def unpacker (self) -> None:
 		async with self.workers ('unpack', limit = self.worker) as workers:
@@ -100,8 +99,8 @@ class DPath (AIORuntime):
 			target = self.recover_directory
 			try:
 				command = self.mta.make (xmlpack.data)
-				process = await self.process (f'xmlback {xmlpack.data}', command)
-				(returncode, out, err) = await process.communicate_text (errors = 'backslashreplace')
+				async with Process (f'xmlback {xmlpack.data}', command) as process:
+					(returncode, out, err) = await process.communicate_text (errors = 'backslashreplace')
 				if returncode == 0:
 					if self.archive_directory != os.devnull:
 						try:

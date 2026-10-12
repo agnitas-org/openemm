@@ -2,30 +2,34 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, logging, signal
-import	asyncio
+import	os, logging, time
+import	asyncio, uvloop
+from	asyncio import CancelledError
 from	asyncinotify import Inotify, Mask
 from	collections import deque
-from	dataclasses import dataclass, field
+from	contextlib import suppress
+from	dataclasses import dataclass
 from	datetime import datetime
 from	functools import partial
 from	io import StringIO
 from	types import TracebackType
-from	typing import Any, Callable, Generic, Iterable, Literal, Optional, Self, Sequence, TypeVar, Union
+from	typing import Any, Awaitable, Callable, Generic, Iterable, Optional, Self, Sequence, TypeVar, Union
 from	typing import AsyncIterator, Coroutine, Deque, Dict, List, NamedTuple, Set, Tuple, Type
-from	typing import cast, overload
-from	.exceptions import error, Stop
-from	.log import log
+from	typing import cast
+from	typing_extensions import override
+from	.definitions import program
+from	.exceptions import Stop
 from	.ignore import Ignore
+from	.parser import Parsable, unit
 from	.runtime import Runtime, Preset
 from	.stream import Stream
 #
@@ -43,9 +47,31 @@ def _log_exception (method: Callable[[str], None], e: BaseException, task: async
 	for line in buffer.getvalue ().strip ().split ('\n'):
 		method (line)
 
+async def _wait (
+	task: asyncio.Task[_T],
+	*,
+	awaitable: None | asyncio.Future[_T] = None,
+	timeout: None | int | float = None,
+	log_with: None | Callable[[str], None] = logger.error
+) -> asyncio.Task[_T] | Awaitable[_T] | BaseException:
+	def _log_exc (exception: BaseException) -> None:
+		if log_with is not None:
+			_log_exception (log_with, exception, task)
+	#
+	done, _ = await asyncio.wait ([task] if awaitable is None else [task, awaitable], timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
+	if done:
+		finished = done.pop ()
+		if finished is task and task.done () and (exception := task.exception ()) is not None:
+			_log_exc (exception)
+			return exception
+		return finished
+	return TimeoutError ()
+
 class Controller (NamedTuple):
 	name: str
 	method: Callable[[], Coroutine[Any, Any, None]]
+	restart: None | str = None
+	maintain: Parsable = None
 
 class Queue (Generic[_T]):
 	__slots__ = ['maxsize', 'loop', 'getter', 'putter', 'queue']
@@ -64,6 +90,20 @@ class Queue (Generic[_T]):
 	
 	def __len__ (self) -> int:
 		return len (self.queue)
+
+	def __aiter__ (self) -> Queue[_T]:
+		return self
+		
+	async def __anext__ (self) -> _T:
+		with Ignore (Stop):
+			while True:
+				task = asyncio.create_task (self.get ())
+				done = await _wait (task)
+				if done is task:
+					return await task
+				else:
+					task.cancel ()
+		raise StopAsyncIteration ()
 
 	async def _wake_putter (self) -> None:
 		if self.maxsize > 0 and self.putter and len (self.queue) < self.maxsize:
@@ -164,13 +204,79 @@ class CTask:
 	
 	async def __aexit__ (self, exc_type: None | Type[BaseException], exc_value: None | BaseException, traceback: None | TracebackType) -> None | bool:
 		if exc_type is None or exc_type is Stop:
-			await self.task
+			if not self.task.cancelled ():
+				await self.task
 			logger.debug (f'{self.name}: task graceful finished')
 		else:
 			self.task.cancel ()
 			logger.debug (f'{self.name}: task aborted: {exc_value}')
 		return None
+	
+	def cancel (self) -> None:
+		if not self.task.cancelled () and self.task.cancelling () == 0:
+			self.task.cancel ()
+
+class CWTask (CTask):
+	__slots__ = ['producer', 'restart', 'terminate', 'ctx']
+	@dataclass
+	class Context:
+		fin: asyncio.Future[None]
+		task: None | asyncio.Task[None]
+		async def value (self) -> None:
+			if self.task is not None:
+				if not self.task.cancelled ():
+					await self.task
+				self.task = None
+			return None
+
+	def __init__ (self, name: str, producer: Callable[[asyncio.Future[None]], Coroutine[Any, Any, None]], restart: int | float, terminate: None | int | float) -> None:
+		self.name = name
+		self.producer = producer
+		self.restart = restart
+		self.terminate = terminate
+		self.ctx: CWTask.Context
+
+	async def __aenter__ (self) -> Self:
+		self.ctx = CWTask.Context (
+			fin = asyncio.get_running_loop ().create_future (),
+			task = None
+		)
+		async def restarter () -> None:
+			delay = 0.0
+			while not bool ((await asyncio.wait ([self.ctx.fin], timeout = max (0.0, delay), return_when = asyncio.FIRST_COMPLETED))[0]):
+				self.ctx.task = asyncio.create_task (self.producer (self.ctx.fin), name = f'{self.name}[task]')
+				logger.debug (f'{self.name}[task]: launched')
+				started = time.time ()
+				rc = await _wait (self.ctx.task, awaitable = self.ctx.fin)
+				if rc is self.ctx.task:
+					logger.debug (f'{self.name}[task]: task finished')
+					return await self.ctx.value ()
+				elif rc is not self.ctx.fin:
+					if isinstance (rc, BaseException):
+						logger.debug (f'{self.name}[task]: terminated due to: {rc}')
+					else:
+						logger.warning (f'{self.name}[task]: terminated unexpected with: {rc}')
+					self.ctx.task = None
+				delay = self.restart - (time.time () - started)
+			#
+			if self.ctx.task is not None and not self.ctx.task.cancelled ():
+				rc = await _wait (self.ctx.task, timeout = self.terminate)
+				if rc is self.ctx.task:
+					logger.debug (f'{self.name}[task]: task finished in finalization')
+					return await self.ctx.value ()
+				self.ctx.task.cancel ()
+				logger.debug (f'{self.name}[task]: cancelled')
+			return None
+		#
+		self.task = asyncio.create_task (restarter (), name = f'{self.name}[restart]')
+		logger.debug (f'{self.name}: task started')
+		return self
 		
+	async def __aexit__ (self, exc_type: None | Type[BaseException], exc_value: None | BaseException, traceback: None | TracebackType) -> None | bool:
+		with suppress (NameError):
+			self.ctx.fin.set_result (None)
+		return await super ().__aexit__ (exc_type, exc_value, traceback)
+
 class Workers:
 	__slots__ = [
 		'base_group', 'limit', 'work_id',
@@ -246,204 +352,55 @@ class Workers:
 		self.work_id += 1
 		self.tasks.add (asyncio.create_task (coro, name = f'{self.base_group}_{self.work_id}'))
 		
-class AIORuntime (Runtime):
-	__slots__ = ['_loop', '_stop', '_apply_delay', '_channels', '_tasks', '_protected']
-	with Ignore (ImportError):
-		import	uvloop
-		asyncio.set_event_loop_policy (uvloop.EventLoopPolicy ())
+@dataclass
+class Process:
+	name: str
+	args: Sequence[str]
+	process: None | asyncio.subprocess.Process = None
+	async def __aenter__ (self) -> Self:
+		await self.launched ()
+		return self
+		
+	async def __aexit__ (self, exc_type: None | Type[BaseException], exc_value: None | BaseException, traceback: None | TracebackType) -> None | bool:
+		if self.process is not None:
+			if exc_type is None or exc_type is Stop:
+				await self.wait ()
+		self.process = None
+		return None
 
-	class Channel (Generic[_T]):
-		__slots__ = ['ref', 'name', 'queue', 'event']
-		def __init__ (self, ref: AIORuntime, name: str) -> None:
-			self.ref = ref
-			self.name = name
-			self.queue: Queue[_T] = Queue ()
-			self.event = asyncio.Event ()
-
-		def __len__ (self) -> int:
-			return len (self.queue)
+	async def launched (self) -> asyncio.subprocess.Process:
+		if self.process is None:
+			self.process =  await asyncio.create_subprocess_exec (
+				*self.args,
+				stdin = asyncio.subprocess.PIPE,
+				stdout = asyncio.subprocess.PIPE,
+				stderr = asyncio.subprocess.PIPE
+			)
+		return self.process
 		
-		def delete (self) -> None:
-			self.ref.delete_channel (self.name)
-
-		async def remove (self, value: _T) -> None:
-			await self.queue.remove (value)
-			if not self.queue:
-				self.event.clear ()
-				
-		async def get (self, predicate: Optional[Callable[[_T], bool]] = None) -> _T:
-			rc = await self.queue.get (predicate = predicate)
-			if not len (self.queue):
-				self.event.clear ()
-			return rc
+	async def wait (self) -> int:
+		return await (await self.launched ()).wait ()
 		
-		async def put (self, element: _T, reject: bool = False) -> None:
-			await self.queue.put (element)
-			self.event.set ()
-			await self.ref.aioyield ()
+	async def communicate (self, input: None | bytes = None) -> Tuple[int, bytes, bytes]:
+		process = await self.launched ()
+		(out, err) = await process.communicate (input)
+		returncode = process.returncode
+		return (returncode if isinstance (returncode, int) else -1, out, err)
 		
-		async def pushback (self, element: _T) -> None:
-			await self.put (element, reject = True)
-		
-		def __aiter__ (self) -> AIORuntime.Channel[_T]:
-			return self
-		
-		async def __anext__ (self) -> _T:
-			while self.ref.running:
-				try:
-					done, pending = await self.ref._wait ([asyncio.create_task (self.get ())])
-					return await done.pop ()
-				except Stop:
-					break
-			raise StopAsyncIteration ()
-
-	class Channels:
-		__slots__ = ['ref', 'channels']
-		def __init__ (self, ref: AIORuntime) -> None:
-			self.ref = ref
-			self.channels: Dict[str, AIORuntime.Channel[Any]] = {}
-		
-		def get (self, name: str) -> AIORuntime.Channel[Any]:
-			try:
-				return self.channels[name]
-			except KeyError:
-				channel: AIORuntime.Channel[Any]
-				self.channels[name] = channel = AIORuntime.Channel (self.ref, name)
-				return channel
-		
-		def get_as (self, name: str, t: Type[_T]) -> AIORuntime.Channel[_T]:
-			return cast (AIORuntime.Channel[_T], self.get (name))
-		
-		def delete (self, name: str) -> None:
-			with Ignore (KeyError):
-				if (length := len (self.channels[name])) > 0:
-					logger.warning (f'{name}: removing channel with {length} element(s) left')
-				del self.channels[name]
-
-		async def wait (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> AIORuntime.Channel[_T]:
-			tasks = [asyncio.create_task (_c.event.wait ()) for _c in channels]
-			done, pending = await asyncio.wait (tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
-			Stream (pending).each (lambda t: t.cancel ())
-			if not done:
-				raise TimeoutError ('timeout exceeded')
-			channel = done.pop ()
-			await channel
-			return channels[tasks.index (channel)]
-		
-		async def select (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> Tuple[AIORuntime.Channel[_T], _T]:
-			tasks = [asyncio.create_task (_c.queue.get ()) for _c in channels]
-			done, pending = await asyncio.wait (tasks, timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
-			Stream (pending).each (lambda t: t.cancel ())
-			if not done:
-				raise TimeoutError ('timeout exceeded')
-			channel = done.pop ()
-			return (channels[tasks.index (channel)], await channel)
-
-	@dataclass
-	class Task (Generic[_T]):
-		name: str
-		coro: Coroutine[Any, Any, _T]
-		task: asyncio.Task[_T]
-		started: datetime = field (default_factory = lambda: datetime.now ())
-		def __str__ (self) -> str:
-			if self.task.cancelled ():
-				status = 'cancelled'
-			elif self.task.done ():
-				if (exception := self.task.exception ()) is not None:
-					status = f'exception {exception}'
-				else:
-					status = f'with result {self.task.result ()}'
-			else:
-				status = f'running {self.task.get_coro ()}'
-			return f'{self.task.get_name ()}: {status}, started {self.started:%c}'
-
-		__repr__ = __str__
-		@overload
-		async def join (self, timeout: None = ..., silent: Literal[False] = ...) -> _T: ...
-		@overload
-		async def join (self, timeout: None = ..., silent: Literal[True] = ...) -> Optional[_T]: ...
-		@overload
-		async def join (self, timeout: Union[int, float] = ..., silent: bool = ...) -> Optional[_T]: ...
-		async def join (self, timeout: Union[None, int, float] = None, silent: bool = False) -> Optional[_T]:
-			try:
-				if timeout is None:
-					return await self.task
-				return await asyncio.wait_for (self.task, timeout)
-			except (asyncio.TimeoutError, TimeoutError):
-				if not silent:
-					raise error (f'{self.name}: timeout')
-			except asyncio.CancelledError:
-				if not silent:
-					raise error (f'{self.name}: canceled')
-			except Exception as e:
-				self._log_exception (logger.error, e)
-				if not silent:
-					raise error (f'{self.name}: exception {e}')
-			return None
-		
-		def cancel (self) -> None:
-			if not self.task.done ():
-				self.task.cancel ()
-			elif self.task.cancelled ():
-				logger.debug (f'cancel {self.name}: task already cancelled')
-			elif (e := self.task.exception ()) is not None:
-				logger.info (f'cancel {self.name}: task already terminated due to exception')
-				self._log_exception (logger.info, e)
-			
-		def _log_exception (self, method: Callable[[str], None], e: BaseException) -> None:
-			_log_exception (method, e, self.task)
-		
-	class Tasks:
-		__slots__ = ['tasks']
-		def __init__ (self) -> None:
-			self.tasks: Dict[str, AIORuntime.Task[Any]] = {}
-		
-		def task (self, name: str, coro: Coroutine[Any, Any, _T]) -> AIORuntime.Task[_T]:
-			task = AIORuntime.Task (name, coro, asyncio.create_task (coro, name = name))
-			return self.add (name, task)
-		
-		def add (self, name: str, task: AIORuntime.Task[_T]) -> AIORuntime.Task[_T]:
-			self.tasks[name] = task
-			def remover (task: asyncio.Task[_T]) -> None:
-				with Ignore (KeyError):
-					myself = self.tasks.pop (task.get_name ())
-					with Ignore (asyncio.CancelledError):
-						if (e := task.exception ()):
-							myself._log_exception (logger.debug, e)
-					logger.debug (f'{myself}: removed')
-			task.task.add_done_callback (remover)
-			return task
-
-		def launch (self, name: str, coro: Coroutine[Any, Any, _T]) -> AIORuntime.Task[_T]:
-			if name in self.tasks:
-				raise ValueError (f'{name}: already active as {self.tasks[name]}')
-			return self.task (name, coro)
-
-		def cancel (self, name: str) -> None:
-			with Ignore (KeyError):
-				task = self.tasks.pop (name)
-				task.cancel ()
-				logger.info (f'{task}: cancelled')
-
-		def terminate (self) -> None:
-			Stream (self.tasks).drain ().each (lambda n: self.cancel (n))
-		
-		async def watch (self, timeout: Union[None, int, float] = None, only_exceptions: bool = False) -> Optional[AIORuntime.Task[Any]]:
-			if self.tasks:
-				tasklist = dict ((_t.task, _t) for _t in self.tasks.values ())
-				done, pending = await asyncio.wait (tasklist.keys (), timeout = timeout, return_when = asyncio.FIRST_EXCEPTION if only_exceptions else asyncio.FIRST_COMPLETED)
-				for aio_task in done:
-					task = tasklist[aio_task]
-					if (e := aio_task.exception ()) is not None:
-						logger.warning (f'{task}: terminates due to exception {e}')
-					else:
-						value = await task.join ()
-						logger.info (f'{task}: normal termination with {value!r}')
-					return task
-			else:
-				await asyncio.sleep (timeout if timeout is not None else 0)
-			return None
+	async def communicate_text (self,
+		input: Optional[str] = None,
+		input_charset: str = 'UTF-8',
+		output_charset: str = 'UTF-8',
+		errors: Optional[str] = None
+	) -> Tuple[int, str, str]:
+		(returncode, out, err) = await self.communicate (None if not input else input.encode (input_charset))
+		if errors is not None:
+			return (returncode, '' if not out else out.decode (output_charset, errors = errors), '' if not err else err.decode (output_charset, errors = errors))
+		else:
+			return (returncode, '' if not out else out.decode (output_charset), '' if not err else err.decode (output_charset))
 	
+class AIORuntime (Runtime):
+	__slots__ = ['_loop', '_stop', '_controller', '_apply_delay', '_protected']
 	class Protect (Generic[_T]):
 		__slots__ = ['task', 'timeout', 'protected']
 		def __init__ (self, task: asyncio.Task[_T], timeout: Union[None, int, float], protected: Dict[asyncio.Task[Any], AIORuntime.Protect[Any]]) -> None:
@@ -470,47 +427,94 @@ class AIORuntime (Runtime):
 		
 		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 			return self._exit (exc_type, exc_value, traceback)
-		
+
 	def signal_aiohandler (self) -> None:
 		super ().signal_handler (0, None)
 		self.stop ()
 	
-	def signal_aiohandler_stats (self) -> None:
-		with log ('stats'):
-			for (name, channel) in Stream (self._channels.channels.items ()).sorted (lambda kv: kv[0]):
-				logger.info (f'Channel {name}: {len (channel):,d} entries')
-			for task in Stream (self._tasks.tasks.values ()).sorted (key = lambda t: t.name):
-				logger.info (f'Registered task {task}')
-			for aio_task in asyncio.all_tasks ():
-				logger.info (f'Task: {aio_task}')
-				
-	def executor (self, controller: Optional[Callable[[], Coroutine[Any, Any, None]]] = None) -> bool:
-		self._channels = AIORuntime.Channels (self)
-		self._tasks = AIORuntime.Tasks ()
+	@override
+	def executor (self, controller: None | Controller = None) -> bool:
 		self._protected: Dict[asyncio.Task[Any], AIORuntime.Protect[Any]] = {}
-		async def execution (controller: Callable[[], Coroutine[Any, Any, None]]) -> None:
+		#
+		self._loop: asyncio.AbstractEventLoop
+		self._stop: asyncio.Future[None]
+		self._controller: Controller
+		self._apply_delay: Set[asyncio.Task[Any]]
+		#
+		async def restarter () -> bool:
+			if (self.ctx.watchdog or self.ctx.debug) and self._controller.restart is not None:
+				mode: str
+				option: None | str
+				try:
+					(mode, option) = self._controller.restart.split (':', 1)
+				except ValueError:
+					(mode, option) = (self._controller.restart, None)
+				delay: None | int = None
+				match mode:
+					case 'daily':
+						offset = unit.parse (option, 0)
+						now = datetime.now ()
+						tomorrow = datetime.fromordinal (now.toordinal () + 1)
+						delay = int ((tomorrow - now).total_seconds ()) + offset
+					case _:
+						if option is None:
+							option = mode
+							mode = 'in'
+						if mode == 'in' and option is not None:
+							delay = unit.parse (option)
+						else:
+							logger.warning (f'restart: unknown restart expression: "{self._controller.restart}", restart disabled')
+				#
+				if delay is not None:
+					with Ignore (Stop):
+						delay = max (delay, self.ctx.restart_delay if self.ctx.restart_delay is not None else 0)
+						logger.info ('restart: scheduled in {hour}:{min:02d}:{sec:02d} hh:mm:ss'.format (
+							hour = delay // 3600,
+							min = (delay // 60) % 60,
+							sec = delay % 60
+						))
+						done, pending = await asyncio.wait ([self._stop], timeout = delay, return_when = asyncio.ALL_COMPLETED)
+						if self._stop in pending:
+							if not self._stop.done ():
+								logger.info ('restart: initiated')
+								self.running = False
+								self._stop.set_result (None)
+								return True
+			return False
+		#
+		async def execution (controller: Controller) -> bool:
 			self._loop = asyncio.get_running_loop ()
 			self._stop = self.future (type (None))
-			self._apply_delay: Set[asyncio.Task[Any]] = set ()
+			self._controller = controller
+			self._apply_delay = set ()
 			for signr in self.signals.saved:
 				if self.signals[signr] == self.signal_handler:
 					self._loop.add_signal_handler (signr, self.signal_aiohandler)
-			if self.ctx.debug:
-				self._loop.add_signal_handler (signal.SIGUSR1, self.signal_aiohandler_stats)
-			await controller ()
-			self._tasks.terminate ()
+			#
+			restarter_task = asyncio.create_task (restarter (), name = f'{controller.name}:restart')
+			async with self.ctask (controller.name, controller.method ()):
+				delay = unit (controller.maintain if controller.maintain is not None else self.maintain_in ())
+				if delay and delay > 0:
+					logger.info (f'maintain: started with {delay} seconds interval')
+					while await self.delay (delay):
+						self.maintain ()
+					logger.info ('maintain: finished')
+				else:
+					await self.finished ()
+			restart = await restarter_task
+			#
 			myself = asyncio.current_task ()
 			for task in asyncio.all_tasks ():
 				if task != myself and not task.done ():
 					try:
 						protect = self._protected[task]
-						with Ignore (asyncio.CancelledError):
+						with Ignore (CancelledError):
 							if protect.timeout is not None:
 								try:
 									logger.info (f'{task}: protected task running, waiting for {protect.timeout} seconds to finish')
 									await asyncio.wait_for (task, protect.timeout)
 									logger.info (f'{task}: protected task finished within timeout {protect.timeout} seconds')
-								except (asyncio.TimeoutError, TimeoutError):
+								except TimeoutError:
 									logger.info (f'{task}: protected task cancelled after reaching timeout {protect.timeout} seconds')
 							else:
 								logger.info (f'{task}: protected task running, waiting for finish')
@@ -520,17 +524,21 @@ class AIORuntime (Runtime):
 						task.cancel ()
 						logger.info (f'{task}: running task cancelled during shutdown')
 			await self.aioyield ()
+			return restart
 		try:
-			asyncio.run (execution (controller if controller is not None else self.controller), debug = self.ctx.debug)
-		except asyncio.CancelledError as e:
+			if uvloop.run (execution (controller if controller is not None else Controller (program, self.controller, self.restart_in (), self.maintain_in ())), debug = self.ctx.debug):
+				logger.info ('restart: triggered')
+				self.restart ()
+		except CancelledError as e:
 			logger.exception (f'failed due to canceled task: {e}')
 		return True
 
+	@override
 	def executors (self) -> Optional[List[Callable[[], bool]]]:
 		if (controllers := self.controllers ()) is not None and controllers:
 			executables: List[Callable[[], bool]] = []
 			for controller in controllers:
-				executable = partial (self.executor, controller.method)
+				executable = partial (self.executor, controller)
 				setattr (executable, '__name__', controller.name)
 				executables.append (executable)
 			return executables
@@ -541,7 +549,13 @@ class AIORuntime (Runtime):
 	
 	async def controller (self) -> None:
 		await self.finished ()
-
+	
+	def restart_in (self) -> None | str:
+		return None
+	
+	def maintain_in (self) -> Parsable:
+		return '1h'
+		
 	def future (self, t: Type[_T]) -> asyncio.Future[_T]:
 		return self._loop.create_future ()
 
@@ -566,7 +580,7 @@ class AIORuntime (Runtime):
 		try:
 			task = [_t for _t in done if not _t.cancelled ()][0]
 		except IndexError:
-			raise asyncio.CancelledError ()
+			raise CancelledError ()
 		else:
 			if (e := task.exception ()) is not None:
 				_log_exception (logger.error, e, task)
@@ -578,97 +592,21 @@ class AIORuntime (Runtime):
 		task = done.pop ()
 		return (task, await task)
 		
-	def channel (self, name: str, t: Type[_T]) -> AIORuntime.Channel[_T]:
-		return self._channels.get_as (name, t)
-	
-	def delete_channel (self, name: str) -> None:
-		self._channels.delete (name)
-	
-	async def wait_channel (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> AIORuntime.Channel[_T]:
-		return (await self.wait (asyncio.create_task (self._channels.wait (channels)), timeout = timeout))[1]
-
-	async def select_channel (self, channels: List[AIORuntime.Channel[_T]], timeout: Union[None, int, float] = None) -> Tuple[AIORuntime.Channel[_T], _T]:
-		return (await self.wait (asyncio.create_task (self._channels.select (channels)), timeout = timeout))[1]
-	
-	def task (self, name: str, coro: Coroutine[Any, Any, _T]) -> AIORuntime.Task[_T]:
-		return self._tasks.launch (name, coro)
-	
-	def cancel_task (self, name: str) -> None:
-		self._tasks.cancel (name)
-	
 	def protect (self, coro: Coroutine[Any, Any, _T], timeout: Union[None, int, float] = None) -> AIORuntime.Protect[_T]:
 		return AIORuntime.Protect (asyncio.create_task (coro), timeout, self._protected)
 	
-	async def wait_task (self, tasks: List[AIORuntime.Task[_U]], timeout: Union[None, int, float] = None) -> Tuple[Optional[AIORuntime.Task[_U]], Optional[_U]]:
-		with Ignore (TimeoutError):
-			aio_tasks = [_t.task for _t in tasks]
-			task, rc = await self.wait (*aio_tasks, timeout = timeout)
-			return (tasks[aio_tasks.index (task)], rc)
-		return (None, None)
-	
-	async def watch (self, timeout: Union[None, int, float] = None, only_exceptions: bool = False) -> Optional[AIORuntime.Task[Any]]:
-		with Ignore (TimeoutError, Stop):
-			return (await self.wait (asyncio.create_task (self._tasks.watch (only_exceptions = only_exceptions)), timeout = timeout))[1]
-		return None
-	
 	def ctask (self, name: str, coro: Coroutine[Any, Any, None]) -> CTask:
 		return CTask (name, coro)
+	
+	def cwtask (self, name: str, producer: Callable[[asyncio.Future[None]], Coroutine[Any, Any, None]], restart: int | float = 60, terminate: None | int | float = None) -> CWTask:
+		return CWTask (name, producer, restart, terminate)
 
 	def workers (self, group: Optional[str] = None, limit: Optional[int] = None) -> Workers:
 		return Workers (group, limit)
-
-	@dataclass
-	class Process:
-		name: str
-		args: Sequence[str]
-		future: asyncio.Future[None]
-		process: Optional[asyncio.subprocess.Process] = None
-		async def launch (self) -> AIORuntime.Process:
-			self.process = await asyncio.create_subprocess_exec (
-				*self.args,
-				stdin = asyncio.subprocess.PIPE,
-				stdout = asyncio.subprocess.PIPE,
-				stderr = asyncio.subprocess.PIPE
-			)
-			self.future.set_result (None)
-			return self
-		
-		async def launched (self) -> None:
-			await self.future
-		
-		async def wait (self) -> int:
-			await self.launched ()
-			if self.process is not None:
-				return await self.process.wait ()
-			raise error (f'{self}: not started')
-		
-		async def communicate (self, input: Optional[bytes] = None) -> Tuple[int, bytes, bytes]:
-			await self.launched ()
-			if self.process is not None:
-				(out, err) = await self.process.communicate (input)
-				returncode = self.process.returncode
-				return (returncode if isinstance (returncode, int) else -1, out, err)
-			raise error (f'{self}: not started')
-		
-		async def communicate_text (self,
-			input: Optional[str] = None,
-			input_charset: str = 'UTF-8',
-			output_charset: str = 'UTF-8',
-			errors: Optional[str] = None
-		) -> Tuple[int, str, str]:
-			(returncode, out, err) = await self.communicate (None if not input else input.encode (input_charset))
-			if errors is not None:
-				return (returncode, '' if not out else out.decode (output_charset, errors = errors), '' if not err else err.decode (output_charset, errors = errors))
-			else:
-				return (returncode, '' if not out else out.decode (output_charset), '' if not err else err.decode (output_charset))
-
-	async def process (self, name: str, command: Sequence[str]) -> AIORuntime.Process:
-		process = AIORuntime.Process (name, command, self._loop.create_future ())
-		coro = process.launch ()
-		self._tasks.add (name, AIORuntime.Task (name, coro, asyncio.create_task (coro, name = name)))
-		await process.launched ()
-		return process
 	
+	def process (self, name: str, args: Sequence[str]) -> Process:
+		return Process (name, args)
+
 	async def scan (self, path: str, prescan: bool = True, predicate: Optional[Callable[[str], bool]] = None) -> AsyncIterator[str]:
 		with Inotify () as inotify:
 			inotify.add_watch (path, Mask.CLOSE_WRITE | Mask.MOVED_TO | Mask.MOVED_FROM | Mask.DELETE)
@@ -723,6 +661,7 @@ class AIORuntime (Runtime):
 	def stop (self) -> None:
 		if not self._stop.done ():
 			self._stop.set_result (None)
+		self.running = False
 
 	async def _wait (self,
 		tasks: Iterable[asyncio.Task[_U]],

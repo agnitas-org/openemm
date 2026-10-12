@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -81,6 +81,11 @@ class Sourcegroup (_Cache[SGKey, SGValue]):
 					'       (sourcegroup_type, description, timestamp, creation_date) '
 					'VALUES '
 					'       (:sourcegroup_type, :description, current_timestamp, current_timestamp)'
+				), postgres = (
+					'INSERT INTO sourcegroup_tbl '
+					'       (sourcegroup_id, sourcegroup_type, description, timestamp, creation_date) '
+					'VALUES '
+					'       (nextval(\'sourcegroup_tbl_sourcegroup_id_seq\'), :sourcegroup_type, :description, current_timestamp, current_timestamp)'
 				)
 			), {
 				'sourcegroup_type': key.typ,
@@ -91,7 +96,8 @@ class Sourcegroup (_Cache[SGKey, SGValue]):
 		rq = db.querys (
 			db.qselect (
 				oracle = 'SELECT sourcegroup_tbl_seq.currval FROM DUAL',
-				mariab = 'SELECT last_insert_id()'
+				mariadb = 'SELECT last_insert_id()',
+				postgres = 'SELECT currval(\'sourcegroup_tbl_sourcegroup_id_seq\')'
 			)
 		)
 		return SGValue (
@@ -138,6 +144,11 @@ class Datasource (_Cache[DSKey, DSValue]):
 					'       (description, company_id, sourcegroup_id, timestamp) '
 					'VALUES '
 					'       (:description, :company_id, :sourcegroup_id, current_timestamp)'
+				), postgres = (
+					'INSERT INTO datasource_description_tbl '
+					'       (datasource_id, description, company_id, sourcegroup_id, timestamp) '
+					'VALUES '
+					'       (nextval(\'datasource_description_tbl_datasource_id_seq\'), :description, :company_id, :sourcegroup_id, current_timestamp)'
 				)
 			), {
 				'description': key.name,
@@ -149,7 +160,8 @@ class Datasource (_Cache[DSKey, DSValue]):
 		rq = db.querys (
 			db.qselect (
 				oracle = 'SELECT datasource_description_tbl_seq.currval FROM DUAL',
-				mariadb = 'SELECT last_insert_id()'
+				mariadb = 'SELECT last_insert_id()',
+				postgres = 'SELECT currval(\'datasource_description_tbl_datasource_id_seq\')'
 			)
 		)
 		return DSValue (

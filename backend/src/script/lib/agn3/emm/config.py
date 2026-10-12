@@ -1,25 +1,27 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, time, re
+import	sys, os, logging, time, re, json
 from	collections import defaultdict
 from	dataclasses import dataclass, field
 from	datetime import datetime
+from	pydantic import BaseModel
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Sequence, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast, overload
-from	..db import DB, TempDB
+from	..db import DB, TempDB, DBIgnore
 from	..definitions import syscfg, licence
+from	..exceptions import error
 from	..ignore import Ignore
 from	..parser import Parsable, unit
 from	..sentinel import Sentinel, sentinel
@@ -28,7 +30,7 @@ from	..systemconfig import Systemconfig
 from	..tools import atob, listsplit, listjoin
 #
 __all__ = [
-	'EMMConfig', 'EMMCompany',
+	'EMMConfig', 'EMMCompany', 'EMMConfigValues',
 	'EMMMailerset', 'EMMMessages',
 	'Responsibility'
 ]
@@ -448,7 +450,7 @@ found value to convert it before returning it."""
 		hostname: Optional[str] = None
 	) -> bool:
 		with TempDB (self.db) as db, db.request () as cursor:
-			data = {
+			data: dict[str, None | int | str] = {
 				'company_id': company_id,
 				'cname': f'{name}[{index}]' if index is not None else name
 			}
@@ -487,6 +489,111 @@ found value to convert it before returning it."""
 				self.last = None
 				return True
 		return False
+
+class EMMConfigValues:
+	__slots__ = ['dbid', 'reread', 'last', 'config']
+	class ConfigValue (BaseModel):
+		ident: str
+		name: str
+		default: None | str
+	
+	class ConfigValues (BaseModel):
+		config_values: list[EMMConfigValues.ConfigValue]
+		
+	_default_config_values: dict[str, None | str]
+	_default_name_mapping: dict[str, str]
+	_base_config_values: dict[str, str]
+	_known_config_classes: list[str]
+	_known_keys: list[str]
+	_known_keys_set: set[str]
+	@classmethod
+	def _setup (cls) -> None:
+		try:
+			cls._default_config_values
+		except AttributeError:
+			filename = 'configvalues.json'
+			cls._default_config_values = {}
+			local_paths: list[str] = []
+			with Ignore (NameError):
+				local_paths.append (os.path.dirname (__file__))
+			if (path := Stream (local_paths + sys.path)
+				.map (lambda p: os.path.abspath (p if p else '.'))
+				.distinct ()
+				.filter (lambda p: os.path.isdir (p))
+				.map (lambda p: os.path.join (p, filename))
+				.filter (lambda f: os.path.isfile (f) and os.access (f, os.R_OK))
+				.first (no = None)
+			) is not None:
+				try:
+					with open (path) as fd:
+						config_values = EMMConfigValues.ConfigValues (**json.load (fd))
+				except IOError as e:
+					raise error (f'{path}: failed to read: {e}')
+				except Exception as e:
+					raise error (f'{path}: failed to interpret: {e}')
+				else:
+					cls._default_config_values = Stream (config_values.config_values).map (lambda cv: (cv.name, cv.default)).dict ()
+					cls._default_name_mapping = Stream (config_values.config_values).map (lambda cv: (cv.ident, cv.name)).dict ()
+					cls._known_config_classes = (Stream (cls._default_config_values.keys ())
+						.filter (lambda k: '.' in k)
+						.map (lambda k: k.split ('.', 1)[0])
+						.distinct ()
+						.sorted ()
+						.list ()
+					)
+					cls._known_keys = Stream (cls._default_config_values.keys ()).distinct ().sorted ().list ()
+					cls._known_keys_set = set (cls._known_keys)
+					cls._base_config_values = Stream (cls._default_config_values.items ()).filter (lambda kv: kv[1] is not None).dict ()
+			else:
+				raise error (f'{filename}: not found')
+			
+	def __init__ (self, dbid: None | str = None, reread: Parsable = 300) -> None:
+		self.dbid = dbid
+		self.reread = int (unit.parse (reread)) if reread is not None else None
+		self.last: float = 0.0
+		self.config: dict[int, dict[str, str]] = {}
+		self._setup ()
+	
+	def _check (self) -> None:
+		now = time.time ()
+		if self.last == 0.0 or (self.reread is not None and self.last < now):
+			with (
+				DBIgnore (loglevel = logging.INFO if self.reread is None else logging.WARNING),
+				DB (dbid = self.dbid) as db,
+				EMMConfig (db, class_names = self._known_config_classes) as emmcfg,
+				EMMCompany (db, keys = self._known_keys) as emmcompany
+			):
+				config0 = self._base_config_values.copy ()
+				for cfg_value in emmcfg.scan ():
+					key = f'{cfg_value.class_name}.{cfg_value.name}'
+					if key in self._known_keys_set:
+						config0[key] = cfg_value.value
+				config: dict[int, dict[str, str]] = {
+					0: config0
+				}
+				for company_value in emmcompany.scan_all ():
+					if company_value.name in self._known_keys_set:
+						try:
+							config[company_value.company_id][company_value.name] = company_value.value
+						except KeyError:
+							config[company_value.company_id] = {company_value.name: company_value.value}
+				self.config = config
+			self.last = now + (self.reread if self.reread is not None else 0)
+	
+	def get (self, option: str, *, company_id: int = 0, default: None | str = None) -> str:
+		key = self._default_name_mapping.get (option, option)
+		try:
+			if key in self._known_keys_set:
+				self._check ()
+				if company_id != 0:
+					with Ignore (KeyError):
+						return self.config[company_id][key]
+				return self.config[0][key]
+			raise KeyError (key)
+		except KeyError:
+			if default is not None:
+				return default
+			raise KeyError (option)
 
 class EMMMailerset (_Config):
 	__slots__ = ['mailersets', 'mailers']
@@ -573,7 +680,7 @@ class EMMMailerset (_Config):
 					elif key == 'fetchlog':
 						mailer.fetchlog = atob (value[0])
 			with Ignore (KeyError):
-				mailer.valid = set (mailer.properties['hostname']) in self.selection
+				mailer.valid = self.selection.intersects (set (mailer.properties['hostname']))
 		for sset in list (self.mailersets.values ()):
 			mailers = [_m for _m in sset.mailers if _m.valid]
 			if not mailers:

@@ -2,16 +2,16 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, os, time
+import	logging, os
 from	collections import defaultdict
 from	datetime import datetime
 from	typing import Optional
@@ -52,14 +52,11 @@ class Pickdist (Runtime):
 		self.mta = MTA ()
 		self.day = ''
 		self.existing: Set[str] = set ()
+		self.maintain.set_interval ('1h')
 		delay = self.cfg.eget ('delay', 30)
-		while self.running:
+		while self.is_running (delay):
 			mark (180)
 			self.step ()
-			n = delay
-			while self.running and n > 0:
-				n -= 1
-				time.sleep (1)
 		return True
 	
 	def step (self) -> None:

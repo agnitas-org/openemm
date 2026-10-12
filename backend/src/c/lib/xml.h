@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # ifndef	__LIB_XML_H
@@ -34,6 +34,7 @@ extern bool_t		xequal (const xchar_t *s1, const xchar_t *s2);
 extern const char	*xchar_to_char (const xchar_t *s);
 extern const xchar_t	*char_2_xchar (const char *s);
 extern const char	*byte_to_char (const byte_t *b);
+extern int		xbytelen (const xchar_t *s);
 extern int		xstrlen (const xchar_t *s);
 extern int		xstrnlen (const xchar_t *s, int slen);
 extern int		xstrcmp (const xchar_t *s1, const char *s2);

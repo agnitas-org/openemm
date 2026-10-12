@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -16,27 +16,30 @@ with Ignore (ImportError):
 		import	mariadb as mariadb_driver
 	except:
 		raise ImportError ()
-	import	logging, time
+	import	logging, time, shutil
 	from	typing import Any, Callable, Optional
 	from	typing import List, Tuple
 	from	typing import cast
+	from	typing_extensions import override
 	from	.types import Driver
 	from	..dbapi import DBAPI
+	from	..dbcli import DBCLI
 	from	..dbcore import Row, Cursor, Core, DBType
 	from	..exceptions import error
-	from	..ignore import Ignore
-	from	..tools import atob
+	from	..tools import atob, silent_call
 
 	logger = logging.getLogger (__name__)
 
 	class CursorMariaDB (Cursor):
 		"""MariaDB sepcific Cursor implementation"""
 		__slots__: List[str] = ['tries', 'rowmap']
+		@override
 		def __init__ (self, db: Core, autocommit: bool) -> None:
 			super ().__init__ (db, autocommit)
 			self.tries = 3
 			self.rowmap: List[Callable[[Any], Any]] = []
 
+		@override
 		def executor (self, statement: str, parameter: None | list[Any] | dict[str, Any] = None) -> int:
 			last_error: Optional[Exception] = None
 			for state in range (self.tries):
@@ -80,13 +83,15 @@ with Ignore (ImportError):
 						raise e
 			raise last_error if last_error is not None else error (f'retry count {self.tries} exceeded')
 
+		@override
 		def make_row (self, data: List[Any]) -> Row:
 			if self.rowtype is None:
-				self.rowmap = [self.find_mapper (_d[0], _d[1]) for _d in self.description ()]
+				self.rowmap = [self._find_mapper (_d[0], _d[1]) for _d in self.description ()]
 			return super ().make_row ([_m (_d) for (_m, _d) in zip (self.rowmap, data)])
 			
-		def querys (self, req: str, parm: None | dict[str, Any] = None) -> Optional[Row]:
-			rc = super ().querys (req, parm)
+		@override
+		def querys (self, statement: str, parameter: None | dict[str, Any] = None) -> Optional[Row]:
+			rc = super ().querys (statement, parameter)
 			if rc is not None:
 				with Ignore ():
 					while cast (DBAPI.Cursor, self.curs).fetchmany ():
@@ -94,12 +99,12 @@ with Ignore (ImportError):
 				self.rowcount = 1
 			return rc
 		
-		def find_mapper (self, name: str, typ: Any) -> Callable[[Any], Any]:
+		def _find_mapper (self, name: str, typ: Any) -> Callable[[Any], Any]:
 			if typ == mariadb_driver.STRING:
-				return self.normalize_string
+				return self._normalize_string
 			return lambda a: a
 		
-		def normalize_string (self, value: Any) -> Optional[str]:
+		def _normalize_string (self, value: Any) -> Optional[str]:
 			if value is None or isinstance (value, str):
 				return value
 			if isinstance (value, bytes):
@@ -115,26 +120,27 @@ with Ignore (ImportError):
 		BINARY_FLAG = 128
 		def __init__ (self, host: str, user: str, passwd: str, name: str, secure: None | str) -> None:
 			super ().__init__ ('mariadb', cast (DBAPI.Vendor, mariadb_driver), CursorMariaDB)
-			self.fallbacks.insert (0, 'mysql')
 			self.host = host
 			self.user = user
 			self.passwd = passwd
 			self.name = name
 			self.secure = atob (secure)
 
+		@override
 		def typ (self, entry: Tuple[Any, ...]) -> DBType:
 			if len (entry) > 7:
 				if entry[1] == mariadb_driver.BINARY and (entry[7] & self.BINARY_FLAG) == 0:
 					return DBType.STRING
 			return super ().typ (entry)
 
+		@override
 		def connect (self) -> None:
 			try:
 				(host, port_str) = self.host.split (':', 1)
 				port: Optional[int] = int (port_str)
 			except ValueError:
 				(host, port) = (self.host, None)
-			config = {
+			config: dict[str, bool | int | str] = {
 				'host': host,
 				'user': self.user,
 				'password': self.passwd,
@@ -151,6 +157,43 @@ with Ignore (ImportError):
 			if auto_reconnect:
 				cast (DBAPI.DriverMariaDB, self.db).auto_reconnect = auto_reconnect
 
+			if self.schema is None:
+				with self.cursor () as cursor:
+					rq = cursor.querys ('SELECT SCHEMA()')
+					if rq is not None:
+						self.schema = rq[0]
+				if self.schema is None:
+					self.schema = self.user
+		
+		@override
+		def cli_setup (self) -> DBCLI:
+			if (mariadb_cli := shutil.which ('mariadb')) is None:
+				logger.info ('cli: failed to find executable "mariadb", try fallback to legacy "mysql"')
+				if (mariadb_cli := shutil.which ('mysql')) is None:
+					raise error ('cli: missing executable')
+			#
+			command = [mariadb_cli]
+			if self.secure:
+				ssl = '--ssl-mode=REQUIRED'
+				if silent_call ([mariadb_cli, ssl]) == 7:
+					ssl = '--ssl'
+				command.append (ssl)
+			command.append (f'--password={self.passwd}')
+			try:
+				(hostname, port) = self.host.split (':')
+			except ValueError:
+				(hostname, port) = (self.host, '3306')
+			if hostname:
+				command.append (f'--host={hostname}')
+			if port:
+				command.append (f'--port={port}')
+			command.append ('--protocol=TCP')
+			command.append (f'--user={self.user}')
+			command.append (f'--database={self.name}')
+			command.append ('--default-character-set=utf8')
+			command.append ('--batch')
+			return DBCLI (command = command)
+
 	mariadb = Driver (
 		'mariadb',
 		{'mysql'},
@@ -159,6 +202,6 @@ with Ignore (ImportError):
 			cfg['user'],
 			cfg['password'],
 			cfg['name'],
-			cfg ('secure')
+			cfg.get ('secure')
 		)
 	)

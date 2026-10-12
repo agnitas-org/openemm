@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -34,13 +34,13 @@ class Batch:
 This class provides a frame work for batch processing using a file"""
 	__slots__ = ['path', 'directory', 'filename', 'instance_unique', 'encoder', 'decoder']
 	class Encoder (json.JSONEncoder):
-		def default (self, obj: Any) -> Any:
-			if isinstance (obj, datetime):
+		def default (self, o: Any) -> Any:
+			if isinstance (o, datetime):
 				return {
 					'__type__': 'datetime',
-					'__value__': [obj.year, obj.month, obj.day, obj.hour, obj.minute, obj.second]
+					'__value__': [o.year, o.month, o.day, o.hour, o.minute, o.second]
 				}
-			return super ().default (obj)
+			return super ().default (o)
 	class Decoder (json.JSONDecoder):
 		def __init__ (self) -> None:
 			super ().__init__ (object_hook = self._object_hook)
@@ -244,7 +244,7 @@ further handling of the processed file:
 				if delay > 0:
 					time.sleep (delay)
 				if retry > 0:
-					while retry > 0 and len (file_access (temp)[0]) > 0:
+					while retry > 0 and len (file_access (temp).pids) > 0:
 						time.sleep (1)
 						retry -= 1
 					if retry == 0:
@@ -492,7 +492,7 @@ after ``delay'' seconds using ``priority''. Call ``method'' with
 		self._running = False
 		self.log ('term', 'finished')
 
-	def log (self, area: str, what: str) -> None:
+	def log (self, area: str, message: str) -> None:
 		"Hook: logging of scheduling events"
 		
 	def intercept (self) -> None:

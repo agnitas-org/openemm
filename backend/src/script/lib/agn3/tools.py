@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -17,13 +17,13 @@ from	contextlib import suppress
 from	datetime import datetime, date
 from	enum import Enum
 from	types import TracebackType
-from	typing import Any, Callable, Generic, Match, NoReturn, Optional, Sequence, TypeVar, Union
+from	typing import Any, Callable, Coroutine, Generic, Match, NoReturn, Optional, Sequence, TypeVar, Union
 from	typing import Dict, Generator, List, Set, Tuple, Type
 from	.exceptions import error
 from	.stream import Stream
 #
 __all__ = [
-	'abstract', 'deprecated', 'defer',
+	'abstract', 'deprecated', 'defer', 'method_name',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'log_call', 'match', 
 	'listsplit', 'listjoin',
@@ -37,6 +37,9 @@ __all__ = [
 logger = logging.getLogger (__name__)
 #
 _T = TypeVar ('_T')
+#
+_suppress_keyerror = suppress (KeyError)
+_suppress_attributeerror = suppress (AttributeError)
 #
 def abstract () -> NoReturn:
 	try:
@@ -83,18 +86,12 @@ class Deprecated (Decorator):
 	def handle (self, method: Callable[..., Any], callargs: None | tuple[Any], callkwargs: None | dict[str, Any], *args: Any, **kwargs: Any) -> Any:
 		if method not in self._seen:
 			self._seen.add (method)
-			try:
-				name = method.__name__
-			except AttributeError:
-				name = str (method)
+			name = method_name (method)
 			if len (args) > 0:
-				with suppress (AttributeError):
+				with _suppress_attributeerror:
 					module = args[0].__module__
-					class_name = args[0].__class__.__name__
 					if module != '__main__':
-						name = f'{module}.{class_name}.{name}'
-					else:
-						name = f'{class_name}.{name}'
+						name = f'{module}.{name}'
 			extra = ''
 			if callargs is not None and callkwargs is not None:
 				extras: list[str] = [str (_a) for _a in callargs]
@@ -125,6 +122,27 @@ class defer (Generic[_T]):
 		if self.deferrer is not None:
 			self.deferrer (self.instance, (exc_type, exc_value, traceback))
 		return None
+#
+class MethodName:
+	__slots__ = ['cache']
+	def __init__ (self) -> None:
+		self.cache: dict[Callable[..., Any] | Coroutine[Any, Any, Any], str] = {}
+	
+	def __call__ (self, callable: Callable[..., Any] | Coroutine[Any, Any, Any]) -> str:
+		with _suppress_keyerror:
+			return self.cache[callable]
+		#
+		name: str = str (callable)
+		with _suppress_attributeerror:
+			try:
+				name = getattr (callable, '__qualname__', getattr (callable, '__name__'))
+			except AttributeError:
+				if (cls := getattr (callable, '__class__', None)) is not None:
+					name = '{name}.__call__'.format (name = getattr (cls, '__name__'))
+		self.cache[callable] = name
+		return name
+
+method_name = MethodName ()
 #
 def atoi (s: Any, base: int = 10, default: Union[int, float, str] = 0) -> int:
 	"""Lazy parses a value into an integer
@@ -392,9 +410,8 @@ class Stretch:
 	def __init__ (self, exclude: Optional[List[int]] = None) -> None:
 		self.translate_table = self.transtable.copy ()
 		if exclude is not None:
-			suppress_keyerror = suppress (KeyError)
 			for cpos in exclude:
-				with suppress_keyerror:
+				with _suppress_keyerror:
 					del self.translate_table[cpos]
 
 	def __call__ (self, s: str) -> str:
@@ -591,7 +608,6 @@ no single expression matched.
 			.map (lambda s: str (s))
 			.join (', ')
 		)
-			
 
 class Config:
 	"""Simple configuration
@@ -604,36 +620,36 @@ agn3.config.Config if this class lacks a feature."""
 	def __init__ (self, **kwargs: Any) -> None:
 		self.cfg = kwargs
 		
-	def __getitem__ (self, key: str) -> Any:
+	def __getitem__ (self, var: str) -> Any:
 		try:
-			return self.cfg[key]
+			return self.cfg[var]
 		except KeyError:
-			return self.cfg[key.split ('.', 1)[-1]]
+			return self.cfg[var.split ('.', 1)[-1]]
 		
-	def __setitem__ (self, key: str, value: Any) -> None:
-		self.cfg[key] = value
+	def __setitem__ (self, var: str, value: Any) -> None:
+		self.cfg[var] = value
 
-	def __call__ (self, key: str, default: Any = None) -> Any:
-		return self.get (key, default)
+	def __call__ (self, var: str, default: Any = None) -> Any:
+		return self.get (var, default)
 		
-	def get (self, key: str, default: Any = None) -> Any:
-		"""returns a configuratin value for ``key'', if available, else ``default''"""
+	def get (self, var: str, default: Any = None) -> Any:
+		"""returns a configuratin value for ``var'', if available, else ``default''"""
 		try:
-			return self[key]
+			return self[var]
 		except KeyError:
 			return default
 		
-	def iget (self, key: str, default: int = 0) -> int:
-		"""returns a configuratin value for ``key'' as an integer, if available, else ``default''"""
+	def iget (self, var: str, default: int = 0) -> int:
+		"""returns a configuratin value for ``var'' as an integer, if available, else ``default''"""
 		try:
-			return int (self[key])
+			return int (self[var])
 		except (KeyError, ValueError, TypeError):
 			return default
 		
-	def bget (self, key: str, default: bool = False) -> bool:
-		"""returns a configuratin value for ``key'' as a boolean, if available, else ``default''"""
+	def bget (self, var: str, default: bool = False) -> bool:
+		"""returns a configuratin value for ``var'' as a boolean, if available, else ``default''"""
 		try:
-			return atob (self[key])
+			return atob (self[var])
 		except KeyError:
 			return default
 

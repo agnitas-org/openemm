@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -36,9 +36,11 @@ class Mailing: #{{{
 	meta = os.path.join (base, 'var', 'spool', 'META')
 	archive = os.path.join (base, 'var', 'spool', 'ARCHIVE')
 	track = os.path.join (base, 'var', 'track')
-	def __init__ (self, status_id: int, status_field: str, mailing_id: int, company_id: int, check: List[str]) -> None: #{{{
+	def __init__ (self, status_id: int, status_field: str, genstatus: int, genchange: datetime, mailing_id: int, company_id: int, check: List[str]) -> None: #{{{
 		self.status_id = status_id
 		self.status_field = status_field
+		self.genstatus = genstatus
+		self.genchange = genchange
 		self.mailing_id = mailing_id
 		self.company_id = company_id
 		self.check = check
@@ -50,6 +52,10 @@ class Mailing: #{{{
 		self.current = 0
 		self.last = 0
 	#}}}
+	def __str__ (self) -> str:
+		return f'Mailing (mailing_id={self.mailing_id}, company_id={self.company_id})'
+	__repr__ = __str__
+
 	def done (self) -> None: #{{{
 		for path in [self.tempFile, self.recoverFile]:
 			if os.path.isfile (path):
@@ -158,12 +164,13 @@ class Recovery (CLI): #{{{
 		try:
 			startup = datetime.now ()
 			if ams and self.startup_delay > 0:
+				logger.info ('delay startup for ams to start')
 				with log ('delay'):
 					delay = self.startup_delay
 					while self.running and delay > 0:
 						delay -= 1
 						time.sleep (1)
-
+				logger.info ('ready to start')
 			if self.running:
 				with Lock ():
 					with log ('collect'):
@@ -223,7 +230,8 @@ class Recovery (CLI): #{{{
 		)
 		check_query = self.db.qselect (
 			oracle = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (sysdate - 1, \'YYYY-MM-DD\')',
-			mariadb = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format(lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day)
+			mariadb = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND date_format(lastsent, \'%%Y-%%m-%%d\') = \'%04d-%02d-%02d\'' % (yesterday.year, yesterday.month, yesterday.day),
+			postgres = 'SELECT count(*) FROM rulebased_sent_tbl WHERE mailing_id = :mid AND to_char (lastsent, \'YYYY-MM-DD\') = to_char (CURRENT_TIMESTAMP - INTERVAL \'1 day\', \'YYYY-MM-DD\')'
 		)
 		update = (
 			'UPDATE maildrop_status_tbl '
@@ -245,8 +253,7 @@ class Recovery (CLI): #{{{
 			else:
 				logger.warning ('Rule based mailing %d (%s) not reactivated as it had not been sent out yesterday' % (row.mailing_id, self.__mailing_name (row.mailing_id)))
 				self.report.append ('%s [%d]: Not reactivating rule based mailing as it had not been sent out yesterday' % (self.__mailing_name (row.mailing_id), row.mailing_id))
-		if not self.dryrun:
-			self.db.sync ()
+		self.db.sync (not self.dryrun)
 		#
 		query = (
 			'SELECT status_id, mailing_id, company_id, status_field, genchange, genstatus, senddate, processed_by '
@@ -263,7 +270,7 @@ class Recovery (CLI): #{{{
 			mailing_name = self.__mailing_name (row.mailing_id)
 			if row.status_field == 'W' or (row.genstatus == 1 and row.genchange > limit_restart_test_and_admin_mailings):
 				check = self.__make_range (row.senddate, now)
-				self.mailings.append (Mailing (row.status_id, row.status_field, row.mailing_id, row.company_id, check))
+				self.mailings.append (Mailing (row.status_id, row.status_field, row.genstatus, row.genchange, row.mailing_id, row.company_id, check))
 				logger.info ('Mark mailing %d (%s) for recovery' % (row.mailing_id, mailing_name))
 			else:
 				if self.db.update (
@@ -277,8 +284,7 @@ class Recovery (CLI): #{{{
 					logger.info (f'Mark {row.status_field}-mailing {row.mailing_id} ({mailing_name}) as finished in an unknown state')
 				else:
 					logger.warning (f'Failed to mark {row.status_id} for finished')
-		if not self.dryrun:
-			self.db.sync ()
+		self.db.sync (not self.dryrun)
 		self.mailings.sort (key = lambda m: m.status_id)
 		logger.info ('Found %d mailing(s) to recover' % len (self.mailings))
 	#}}}
@@ -293,6 +299,18 @@ class Recovery (CLI): #{{{
 					raise error ('abort due to process termination')
 
 		for m in self.mailings:
+			rq = self.db.querys ('SELECT genstatus, gendate FROM maildrop_status_tbl WHERE status_id = :status_id', {'status_id': m.status_id})
+			self.db.sync (False)
+			if rq is None:
+				logger.warning (f'{m}: entry from maildrop_status_tbl has vanished, no further processing')
+				continue
+			if rq.genstatus != m.genstatus:
+				logger.warning (f'{m}: genstatus has changed from {m.genstatus} to {rq.genstatus}, no further processing')
+				continue
+			if rq.genchange != m.genchange:
+				logger.warning (f'{m}: genchange has changed from {m.genchange} to {rq.genchange}, no further processing')
+				continue
+			#
 			m.collect_seen ()
 			if self.dryrun:
 				print ('%s: %d recipients already seen' % (self.__mailing_name (m.mailing_id), len (m.seen)))

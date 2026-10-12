@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<ctype.h>
@@ -494,7 +494,7 @@ header_remove (header_t *h, const char *name) /*{{{*/
 	}
 }/*}}}*/
 bool_t
-header_revalidate_mfrom (header_t *h, void *spf) /*{{{*/
+header_revalidate_mfrom (header_t *h, blockmail_t *blockmail) /*{{{*/
 {
 	bool_t		rc;
 	head_t		*run;
@@ -505,7 +505,7 @@ header_revalidate_mfrom (header_t *h, void *spf) /*{{{*/
 		if (head_matchn (run, "from", 4)) {
 			if ((line = head_value (run)) && *line) {
 				if (sender = extract_address (line)) {
-					if (*sender && spf_is_valid (spf, sender) && (h -> sender || (h -> sender = buffer_alloc (256))))
+					if (*sender && spf_is_valid (blockmail, sender) && (h -> sender || (h -> sender = buffer_alloc (256))))
 						buffer_sets (h -> sender, sender);
 					free (sender);
 				} else

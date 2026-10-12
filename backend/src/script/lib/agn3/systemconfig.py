@@ -1,24 +1,23 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
 import	os, json, platform, pwd, re, base64
 from	types import TracebackType
-from	typing import Any, Callable, Final, Optional, TypeVar, Union
+from	typing import Any, Final, Optional, Self, TypeVar, Union
 from	typing import Dict, ItemsView, KeysView, List, Set, ValuesView, Tuple, Type
 from	typing import overload
 from	.exceptions import error
 from	.ignore import Ignore
 from	.parser import unit
-from	.sentinel import sentinel
 from	.stream import Stream
 from	.template import Placeholder
 from	.tools import atob, listsplit
@@ -65,11 +64,9 @@ next lines. Close this block by using a closing curly bracket.
 Multiline values are folded to a single line value.
 
 >>> s = Systemconfig ()
->>> s._cfg = {'test1': 'global', f'test1-{s._user}': 'global-user', f'test2[{s._user}@]': 'local-user', f'test3[{s._fqdn}]': 'local-fqdn'}
+>>> s._cfg = {'test1': 'global', f'test2[{s._user}@]': 'local-user', f'test3[{s._fqdn}]': 'local-fqdn'}
 >>> s['test1']
 'global'
->>> s.user_get ('test1')
-'global-user'
 >>> s['test2']
 'local-user'
 >>> s['test3']
@@ -83,7 +80,7 @@ True
 >>> 'test4' in s
 False
 """
-	__slots__ = ['_path', '_custom_path', '_last_modified', '_content', '_content_environ', '_cfg', '_services']
+	__slots__ = ['_selection', '_selection_cache', '_path', '_custom_path', '_last_modified', '_content', '_content_environ', '_cfg', '_services']
 	_config_environ: Final[str] = 'SYSTEM_CONFIG'
 	_config_environ_path: Final[str] = 'SYSTEM_CONFIG_PATH'
 	_default_path: Final[str] = '/opt/agnitas.com/etc/system.cfg'
@@ -141,15 +138,15 @@ True
 False
 >>> '' in s
 False
->>> set () in s
+>>> s.intersects (set ())
 False
->>> {None} in s
+>>> s.intersects ({None})
 True
->>> {f'{user}@'} in s
+>>> s.intersects ({f'{user}@'})
 True
->>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}'} in s
+>>> s.intersects ({None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}'})
 True
->>> {None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}', ''} in s
+>>> s.intersects ({None, host, fqdn, f'{user}@', f'{user}@{host}', f'{user}@{fqdn}', ''})
 True
 """
 		__slots__ = ['selections', 'selections_set', '_user', '_fqdn', '_host']
@@ -204,18 +201,37 @@ True
 				with self.ignore_keyerror:
 					rc[selection] = collection[f'{key}[{selection}]' if selection is not None else key]
 			return rc
+		
+		def intersects (self, hostnames: set[None | str]) -> bool:
+			return bool (self.selections_set.intersection (hostnames))
 	
-		def __contains__ (self, hostname: Union[None, str, Set[Optional[str]]]) -> bool:
-			if isinstance (hostname, set):
-				return bool (self.selections_set.intersection (hostname))
+		def __contains__ (self, hostname: None | str) -> bool:
 			return hostname in self.selections_set
 	
-	_selection = Selection (_user, _fqdn, _host)
+	class Selected:
+		__slots__ = ['ref', 'selection', 'save']
+		def __init__ (self, ref: Systemconfig, selection: Systemconfig.Selection) -> None:
+			self.ref = ref
+			self.selection = selection
+			self.save: Systemconfig.Selection
+		
+		def __enter__ (self) -> Self:
+			self.save = self.ref._selection
+			self.ref._selection = self.selection
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.ref._selection = self.save
+			return None
+	
+	_default_selection = Selection (_user, _fqdn, _host)
 	def __init__ (self) -> None:
 		"""path to configuration file or None to use default
 
 Setup the Systemconfig object and read the content of the system confg
 file, if it is available. """
+		self._selection = self._default_selection
+		self._selection_cache: dict[tuple[str, str, str], Systemconfig.Selection] = {}
 		self._path: Optional[str] = None
 		self._custom_path = os.environ.get (self._config_environ_path)
 		self._last_modified = 0.0
@@ -227,7 +243,7 @@ file, if it is available. """
 		else:
 			self._content = self._content_environ
 			self._parse ()
-			
+	
 	def _check (self) -> None:
 		if self._content_environ is None:
 			if self._path is None or not os.path.isfile (self._path):
@@ -357,10 +373,12 @@ file, if it is available. """
 		return self._cfg.items ()
 	
 	@overload
-	def get (self, var: str, default: None = ...) -> Optional[str]: ...
+	def get (self, var: str, default: None = ...) -> None | str: ...
 	@overload
 	def get (self, var: str, default: str) -> str: ...
-	def get (self, var: str, default: Optional[str] = None) -> Optional[str]:
+	@overload
+	def get (self, var: str, default: None | str) -> None | str: ...
+	def get (self, var: str, default: None | str = None) -> None | str:
 		"""Get configuration value with default fallback"""
 		try:
 			return self[var]
@@ -368,10 +386,12 @@ file, if it is available. """
 			return default
 
 	@overload
-	def iget (self, var: str, default: None = ...) -> Optional[int]: ...
+	def iget (self, var: str, default: None = ...) -> None | int: ...
 	@overload
 	def iget (self, var: str, default: int) -> int: ...
-	def iget (self, var: str, default: Optional[int] = None) -> Optional[int]:
+	@overload
+	def iget (self, var: str, default: None | int) -> None | int: ...
+	def iget (self, var: str, default: None | int = None) -> None | int:
 		"""Get configuration value as integer with default fallback"""
 		try:
 			return int (self[var])
@@ -387,10 +407,12 @@ file, if it is available. """
 			return default_value
 
 	@overload
-	def fget (self, var: str, default: None = ...) -> Optional[float]: ...
+	def fget (self, var: str, default: None = ...) -> None | float: ...
 	@overload
 	def fget (self, var: str, default: float) -> float: ...
-	def fget (self, var: str, default: Optional[float] = None) -> Optional[float]:
+	@overload
+	def fget (self, var: str, default: None | float) -> None | float: ...
+	def fget (self, var: str, default: None | float = None) -> None | float:
 		"""Get configuration value as float with default fallback"""
 		try:
 			return float (self[var])
@@ -398,10 +420,12 @@ file, if it is available. """
 			return default
 
 	@overload
-	def bget (self, var: str, default: None = ...) -> Optional[bool]: ...
+	def bget (self, var: str, default: None = ...) -> None | bool: ...
 	@overload
 	def bget (self, var: str, default: bool) -> bool: ...
-	def bget (self, var: str, default: Optional[bool] = None) -> Optional[bool]:
+	@overload
+	def bget (self, var: str, default: None | bool) -> None | bool: ...
+	def bget (self, var: str, default: None | bool = None) -> None | bool:
 		"""Get configuration value as boolean with default fallback"""
 		try:
 			return atob (self[var])
@@ -409,59 +433,17 @@ file, if it is available. """
 			return default
 
 	@overload
-	def lget (self, var: str, default: None = ...) -> Optional[List[str]]: ...
+	def lget (self, var: str, default: None = ...) -> None | list[str]: ...
 	@overload
-	def lget (self, var: str, default: List[str]) -> List[str]: ...
-	def lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
+	def lget (self, var: str, default: list[str]) -> list[str]: ...
+	@overload
+	def lget (self, var: str, default: None | list[str]) -> None | list[str]: ...
+	def lget (self, var: str, default: None | list[str] = None) -> None | list[str]:
 		"""Get configuration value as list with default fallback"""
 		try:
 			return list (listsplit (self[var]))
 		except KeyError:
 			return default
-
-	@overload
-	def __user (self, var: str, default: None, retriever: Callable[..., _R]) -> Optional[_R]: ...
-	@overload
-	def __user (self, var: str, default: _R, retriever: Callable[..., _R]) -> _R: ...
-	def __user (self, var: str, default: Optional[_R], retriever: Callable[..., _R]) -> Optional[_R]:
-		rc = retriever (f'{var}-{Systemconfig._user}', sentinel) if Systemconfig._user is not None else sentinel
-		return rc if rc is not sentinel else retriever (var, default)
-
-	@overload
-	def user_get (self, var: str, default: None = ...) -> Optional[str]: ...
-	@overload
-	def user_get (self, var: str, default: str) -> str: ...
-	def user_get (self, var: str, default: Optional[str] = None) -> Optional[str]:
-		"""Get configuration, first try with user append with default fallback"""
-		return self.__user (var, default, self.get)
-	@overload
-	def user_iget (self, var: str, default: None = ...) -> Optional[int]: ...
-	@overload
-	def user_iget (self, var: str, default: int) -> int: ...
-	def user_iget (self, var: str, default: Optional[int] = None) -> Optional[int]:
-		return self.__user (var, default, self.iget)
-	
-	def user_eget (self, var: str, default: Union[int, str] = 0) -> int:
-		return self.__user (var, unit (default, 0), self.eget)
-
-	@overload
-	def user_fget (self, var: str, default: None = ...) -> Optional[float]: ...
-	@overload
-	def user_fget (self, var: str, default: float) -> float: ...
-	def user_fget (self, var: str, default: Optional[float] = None) -> Optional[float]:
-		return self.__user (var, default, self.fget)
-	@overload
-	def user_bget (self, var: str, default: None = ...) -> Optional[bool]: ...
-	@overload
-	def user_bget (self, var: str, default: bool) -> bool: ...
-	def user_bget (self, var: str, default: Optional[bool] = None) -> Optional[bool]:
-		return self.__user (var, default, self.bget)
-	@overload
-	def user_lget (self, var: str, default: None = ...) -> Optional[List[str]]: ...
-	@overload
-	def user_lget (self, var: str, default: List[str]) -> List[str]: ...
-	def user_lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
-		return self.__user (var, default, self.lget)
 
 	def has (self, var: str, default: Optional[bool] = None) -> bool:
 		try:
@@ -472,11 +454,6 @@ file, if it is available. """
 				return self.bget (f'has-{var}', default)
 			return atob (self[has_var])
 	
-	def user_has (self, var: str, default: Optional[bool] = None) -> bool:
-		if (rc := self.user_bget (var)) is not None:
-			return rc
-		return self.has (var, default = default)
-
 	__ph = Placeholder (lazy = True, extended = True)
 	def as_config (self,
 		value: str,
@@ -538,7 +515,7 @@ file, if it is available. """
 	_sendmail_cli = Stream (_sendmail_options).filter (lambda p: os.access (p, os.X_OK)).limit (1).first (no = _sendmail_options[1])
 	def sendmail (self, recipients: Union[None, str, List[str]] = None, *, sender: Optional[str] = None) -> List[str]:
 		"""Returns sendmail command based on configuration"""
-		cmd = [self.user_get ('sendmail-cli', default = Systemconfig._sendmail_cli)]
+		cmd = [self.get ('sendmail-cli', default = Systemconfig._sendmail_cli)]
 		if not self.bget ('enable-sendmail-dsn', False):
 			cmd.append ('-NNEVER')
 		if sender is not None:
@@ -555,6 +532,17 @@ file, if it is available. """
 	def selection (self, user: str = _user, fqdn: str = _fqdn, host: str = _host) -> Systemconfig.Selection:
 		return Systemconfig.Selection (user, fqdn, host)
 
+	def select (self, *, user: None | str = None, fqdn: None | str = None, host: None | str = None) -> Systemconfig.Selected:
+		real_user = user if isinstance (user, str) else self._user
+		real_fqdn = fqdn if isinstance (fqdn, str) else self._fqdn
+		real_host = host if isinstance (host, str) else real_fqdn.split ('.')[0]
+		key = (real_user, real_fqdn, real_host)
+		try:
+			selection = self._selection_cache[key]
+		except KeyError:
+			selection = self._selection_cache[key] = self.selection (real_user, real_fqdn, real_host)
+		return Systemconfig.Selected (self, selection)
+		
 	def service (self, *service: str) -> bool:
 		return bool (self.services.intersection (service))
 	

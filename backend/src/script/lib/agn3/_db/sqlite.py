@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -18,11 +18,14 @@ with Ignore (ImportError):
 	from	typing import Any, Callable, Final
 	from	typing import NamedTuple, Type
 	from	typing import cast
+	from	typing_extensions import override
 	from	.types import Driver
 	from	..dbapi import DBAPI
+	from	..dbcli import DBCLI
 	from	..dbcore import Cursor, Core, DBType, Binary
 	from	..emm.build import spec
 	from	..exceptions import error
+	from	..io import which
 	from	..tools import atob
 
 	logger = logging.getLogger (__name__)
@@ -47,7 +50,7 @@ these database specific methods are available here:
 				'PRAGMA locking_mode = EXCLUSIVE'
 			]
 		}
-		def mode (self, m: str) -> None:
+		def mode (self, mode: str) -> None:
 			"""set operation mode for the database
 			
 currently these two modes are implemented, which can also be used in conjunction:
@@ -55,11 +58,11 @@ currently these two modes are implemented, which can also be used in conjunction
 	- "exclusive" for exclusive locking
 """
 			try:
-				for op in self.modes[m]:
+				for op in self.modes[mode]:
 					self.execute (op)
 			except KeyError:
 				raise error ('invalid mode: {mode} (expecting one of {modes})'.format (
-					mode = m,
+					mode = mode,
 					modes = ', '.join (sorted (self.modes.keys ()))
 				))
 
@@ -191,6 +194,7 @@ the class must provide these attributes to be used (see register_type for the me
 		def create_aggregate (self, name: str, number_of_parameter: int, cls: Type[Any]) -> None:
 			self.__function (self.__create_aggregate, (name, number_of_parameter, cls))
 
+		@override
 		def close (self) -> None:
 			if self.lock_database and self.lock_fd is not None:
 				try:
@@ -204,6 +208,7 @@ the class must provide these attributes to be used (see register_type for the me
 				self.lock_fd = None
 			super ().close ()
 			
+		@override
 		def connect (self) -> None:
 			is_new_file = not os.path.isfile (self.filename)
 			config: dict[str, Any] = {
@@ -293,16 +298,31 @@ the class must provide these attributes to be used (see register_type for the me
 								update (self.updates, seen)
 						cursor.sync ()
 
+		@override
+		def cli_setup (self) -> DBCLI:
+			if (sqlite_cli := which ('sqlite3')) is None:
+				raise error ('cli: missing executable')
+			command = [
+				sqlite_cli,
+				'-bail',
+				'-batch',
+				'-echo'
+			]
+			if self.read_only:
+				command.append ('-readonly')
+			command.append (self.filename)
+			return DBCLI (command = command)
+				
 	sqlite = Driver (
 		'sqlite',
 		{'sqlite3'},
 		lambda cfg: SQLite3 (
 			cfg['filename'],
-			extended_types = atob (cfg ('extended-types)')),
-			extended_rows = atob (cfg ('extended-rows')),
-			extended_functions = atob (cfg ('extended-functions')),
-			lock_database = atob (cfg ('lock-database')),
-			wait_for_lock = atob (cfg ('wait-for-lock'))
+			extended_types = atob (cfg.get ('extended-types)')),
+			extended_rows = atob (cfg.get ('extended-rows')),
+			extended_functions = atob (cfg.get ('extended-functions')),
+			lock_database = atob (cfg.get ('lock-database')),
+			wait_for_lock = atob (cfg.get ('wait-for-lock'))
 		)
 	)
 	

@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<stdlib.h>
@@ -103,7 +103,6 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> target_ids_count = 0;
 
 		b -> raw = false;
-		b -> fullraw = false;
 		b -> output = NULL;
 		b -> outputdata = NULL;
 		b -> counter = NULL;
@@ -212,6 +211,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> revalidate_mfrom = false;
 		b -> signdkim = NULL;
 		DO_ZERO (b, adkim);
+		b -> smime = NULL;
+		b -> sign_verification_mails = false;
 		b -> spf = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
@@ -350,6 +351,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 		if (b -> signdkim)
 			sdkim_free (b -> signdkim);
 		DO_FREE (b, adkim);
+		if (b -> smime)
+			smime_free (b -> smime);
 		if (b -> spf)
 			spf_free (b -> spf);
 		if (b -> vip)
@@ -631,6 +634,9 @@ blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/
 	}
 	if (tmp = company_info_find (b, "add-honeypot-link")) {
 		b -> add_honeypot_link = add_parse (tmp -> val, Add_Top);
+	}
+	if (tmp = company_info_find (b, "predelivery-smime-sign")) {
+		b -> sign_verification_mails = atob (tmp -> val);
 	}
 }/*}}}*/
 void

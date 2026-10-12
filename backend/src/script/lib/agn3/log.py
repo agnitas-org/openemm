@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -271,7 +271,7 @@ passed object."""
 					except error as e:
 						sys.stderr.write (f'{directory}: failed to create missing log directory: {e}\n')
 
-	def add (self, record: logging.LogRecord) -> None:
+	def add (self, record: logging.LogRecord) -> bool:
 		"""add an entry to the logfile
 	
 main logfile writing method. Dependig on set global loglevel and
@@ -280,6 +280,7 @@ output methods, write logfile to file or defined output stream.
 If ``self.intercept'' is not None, this method is called instead. This
 can be used to avoid writing logfiles for interactive applications."""
 		lid = self.custom_id if self.custom_id else record.module
+		logged = False
 		if self.verbosity > 1:
 			lid += f' ({record.name}.{record.funcName}:{record.lineno})'
 		if self.intercept is not None:
@@ -297,9 +298,11 @@ can be used to avoid writing logfiles for interactive applications."""
 				output_string = f'{prefix}: {message}'
 				if record.levelno >= self.loglevel:
 					self.append (output_string)
+					logged = True
 				if record.levelno >= self.outlevel and self.outstream is not None:
 					self.outstream.write (output_string)
 					self.outstream.flush ()
+		return logged
 
 	class Datareader:
 		@dataclass
@@ -345,8 +348,8 @@ class _RootHandler (logging.Handler):
 			
 	def emit (self, record: logging.LogRecord) -> None:
 		if record.levelno >= self.log.loglevel or (record.levelno >= self.log.outlevel and self.log.outstream is not None):
-			self.log.add (record)
-			self.last = int (time.time ())
+			if self.log.add (record):
+				self.last = int (time.time ())
 	
 	def mark (self, duration_in_minutes: int = 60, message: Optional[str] = None) -> None:
 		now = int (time.time ())
@@ -367,7 +370,7 @@ _rootLogger.addHandler (_rootHandler)
 log = _rootHandler.log
 mark = _rootHandler.mark
 
-_logline_parse = re.compile ('^\\[([0-9]{2})\\.([0-9]{2})\\.([0-9]{4}) +([0-9]{2}):([0-9]{2}):([0-9]{2})\\] ([0-9]+) ([^/]+)/([^ ]*) (.*)$')
+_logline_parse = re.compile ('^\\[([0-9]{2})\\.([0-9]{2})\\.([0-9]{4}) +([0-9]{2}):([0-9]{2}):([0-9]{2})\\] ([0-9]+ )?([^/]+)/([^ ]*) (.*)$')
 class Logline (NamedTuple):
 	filename: str
 	lineno: int
@@ -389,13 +392,13 @@ class Logline (NamedTuple):
 				line = line,
 				error = None,
 				timestamp = datetime (int (g[2]), int (g[1]), int (g[0]), int (g[3]), int (g[4]), int (g[5])),
-				pid = int (g[6]),
+				pid = int (g[6].strip ()) if g[6] is not None else -1,
 				logname = g[7],
 				loglevel = log.loglevels.get (g[7], -1),
 				area = g[8].rstrip (':'),
 				message = g[9]
 			)
-		raise error (f'{line}: unparsable')
+		raise error ('unparsable')
 	
 	@classmethod
 	def scan (cls, process: str, start: None | datetime = None, end: None | datetime = None, suppress_errors: bool = False) -> Generator[Logline, None, None]:

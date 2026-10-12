@@ -1,18 +1,18 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
 import	re
 from	types import CodeType
-from	typing import Any, Callable, Optional
-from	typing import Dict, Match
+from	typing import Any, Callable, Self
+from	typing import Match
 from	.exceptions import error
 #
 __all__ = ['MessageCatalog', 'Template', 'Placeholder']
@@ -77,11 +77,11 @@ processing.
 	__slots__ = ['messages', 'lang', 'fill']
 	message_parse = re.compile ('%\\(([^)]+)\\)')
 	comment_parse = re.compile ('^[ \t]*#')
-	def __init__ (self, fname: Optional[str], lang: Optional[str] = None, fill: Optional[str] = '*') -> None:
+	def __init__ (self, fname: None | str, lang: None | str = None, fill: None | str = '*') -> None:
 		"""``fname'' is the path to the message file, ``lang''
 the language to use, ``fill'' used to mark unknown tokens"""
-		self.messages: Dict[Optional[str], Dict[str, str]] = {None: {}}
-		self.lang: Optional[str] = lang
+		self.messages: dict[None | str, dict[str, str]] = {None: {}}
+		self.lang = lang
 		self.fill = fill
 		if fname is not None:
 			cur = self.messages[None]
@@ -110,7 +110,7 @@ the language to use, ``fill'' used to mark unknown tokens"""
 			self.messages[self.lang] = {token: s}
 
 	def __getitem__ (self, token: str) -> str:
-		msg: Optional[str]
+		msg: None | str
 		try:
 			msg = self.messages[self.lang][token]
 		except KeyError:
@@ -126,7 +126,7 @@ the language to use, ``fill'' used to mark unknown tokens"""
 	def __call__ (self, s: str) -> str:
 		return self.message_parse.sub (lambda m: self[m.groups ()[0]], s)
 
-	def set_lang (self, lang: Optional[str]) -> None:
+	def set_lang (self, lang: None | str) -> None:
 		"""set the language to use"""
 		self.lang = lang
 
@@ -219,22 +219,22 @@ Dies ist ein Beispiel.
 	rplcMap = {'\n': '\\n', '\r': '\\r', '\t': '\\t', '\f': '\\f', '\v': '\\v'}
 	langID = re.compile ('^([ \t]*)([a-z][a-z]):', re.IGNORECASE)
 	emptyCatalog = MessageCatalog (None, fill = None)
-	def __init__ (self, content: str, precode: Optional[str] = None, postcode: Optional[str] = None) -> None:
+	def __init__ (self, content: str, precode: None | str = None, postcode: None | str = None) -> None:
 		"""``content'' is the template itself, ``precode'' and
 ``postcode'' will be copied literally to the generated code before
 resp. after the auto generated code"""
 		self.content = content
 		self.precode = precode
 		self.postcode = postcode
-		self.compiled: Optional[CodeType] = None
-		self.properties: Dict[str, Any] = {}
-		self.namespace: Optional[Dict[str, Any]] = None
+		self.compiled: None | CodeType = None
+		self.properties: dict[str, Any] = {}
+		self.namespace: None | dict[str, Any] = None
 		self.code = ''
 		self.indent = 0
 		self.empty = False
-		self.compile_errors: Optional[str] = None
+		self.compile_errors: None | str = None
 
-	def __getitem__ (self, var: str) -> Optional[str]:
+	def __getitem__ (self, var: str) -> None | str:
 		return self.namespace.get (var, '') if self.namespace is not None else None
 
 	def __setProperty (self, expr: str) -> None:
@@ -298,7 +298,7 @@ resp. after the auto generated code"""
 	def __compileExpr (self, s: str) -> None:
 		self.__code (f'__result.append (str ({s}))')
 
-	def __compileCode (self, token: Optional[str], arg: Optional[str]) -> None:
+	def __compileCode (self, token: None | str, arg: None | str) -> None:
 		if token is not None:
 			if arg:
 				self.__code (f'{token} {arg}:')
@@ -349,7 +349,7 @@ resp. after the auto generated code"""
 						if pos < clen and self.content[pos] == '(':
 							pos += 1
 							level = 1
-							quote: Optional[str] = None
+							quote: None | str = None
 							escape = False
 							start = pos
 							end = -1
@@ -449,7 +449,7 @@ resp. after the auto generated code"""
 				self.code += self.postcode
 			self.compiled = compile (self.code, '<template>', 'exec')
 
-	def include (self, arg: Any) -> Optional[str]:
+	def include (self, arg: Any) -> None | str:
 		"""method to overwrite to implement the #include statement"""
 		raise error (f'Subclass responsible for implementing "include ({arg!r})"')
 
@@ -474,7 +474,7 @@ resp. after the auto generated code"""
 					code = self.code
 				))
 
-	def fill (self, namespace: Optional[Dict[str, Any]], lang: Optional[str] = None, mc: Optional[MessageCatalog] = None) -> str:
+	def fill (self, namespace: None | dict[str, Any], lang: None | str = None, mc: None | MessageCatalog = None) -> str:
 		"""uses the template to fill it using the parameter
 from ``namespace'' for language ``lang'' by using the message catalog
 ``mc''"""
@@ -546,7 +546,7 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 	def __init__ (self, lazy: bool = False, extended: bool = False) -> None:
 		self.lazy = lazy
 		self.extended = extended
-		self.ns: Dict[str, Any] = {}
+		self.ns: dict[str, Any] = {}
 	
 	def __setitem__ (self, option: str, value: Any) -> None:
 		self.ns[option] = value
@@ -557,6 +557,10 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 	def __delitem__ (self, option: str) -> None:
 		del self.ns[option]
 	
+	def update (self, config: dict[str, Any]) -> Self:
+		self.ns.update (config)
+		return self
+	
 	parser = re.compile (
 		'\\$\\$|'
 		'\\$[a-z_][a-z_0-9]*(\\.[a-z_][a-z_0-9]*)*(\\([^)]*\\))?|'
@@ -564,8 +568,8 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 		'\\$\\([^)]+\\)',
 		re.IGNORECASE | re.MULTILINE
 	)
-	def __call__ (self, template: str, ns: Optional[Dict[str, Any]] = None, macros: Optional[Dict[str, Callable[[str], str]]] = None) -> str:
-		myns: Dict[str, Any]
+	def __call__ (self, template: str, ns: None | dict[str, Any] = None, macros: None | dict[str, Callable[[str], str]] = None) -> str:
+		myns: dict[str, Any]
 		if self.ns:
 			if ns:
 				myns = self.ns.copy ()

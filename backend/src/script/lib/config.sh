@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -23,23 +23,23 @@ fi
 export BASE
 #
 #
-export	SYSTEM_CONFIG='{
-	"trigger-port": "8450",
-	"direct-path": "true",
-	"direct-path-incoming": "/home/openemm/var/spool/DIRECT",
-	"direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
-	"direct-path-recover": "/home/openemm/var/spool/RECOVER",
-	"direct-path-queues": "/home/openemm/var/spool/QUEUE",
-	"licence": "0",
-	"dbid": "openemm",
-	"merger-address": "127.0.0.1",
-	"merger.java-memory": "-Xms256m -Xmx1536m",
-	"filter-name": "localhost",
-	"mailout-server": "localhost",
-	"mailout-port": "8093",
-	"direct-path-server": "localhost",
-	"direct-path-port": "9403"
-}'
+export	SYSTEM_CONFIG="{
+	\"trigger-port\": \"8450\",
+	\"direct-path\": \"true\",
+	\"direct-path-incoming\": \"$BASE/var/spool/DIRECT\",
+	\"direct-path-archive\": \"$BASE/var/spool/ARCHIVE\",
+	\"direct-path-recover\": \"$BASE/var/spool/RECOVER\",
+	\"direct-path-queues\": \"$BASE/var/spool/QUEUE\",
+	\"licence\": \"0\",
+	\"dbid\": \"openemm\",
+	\"merger-address\": \"127.0.0.1\",
+	\"merger.java-memory\": \"-Xms256m -Xmx1536m\",
+	\"filter-name\": \"localhost\",
+	\"mailout-server\": \"localhost\",
+	\"mailout-port\": \"8093\",
+	\"direct-path-server\": \"localhost\",
+	\"direct-path-port\": \"9403\"
+}"
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
 #
@@ -142,6 +142,7 @@ if [ "$LOG_HOME" ] ; then
 else
 	logpath="$BASE/var/log"
 fi
+[ -d "$logpath" ] || mkdir -p "$logpath"
 loghost="`uname -n | cut -d. -f1`"
 logname="`basename -- $0`"
 loglast=0
@@ -295,7 +296,7 @@ setupVirtualEnviron() {
 		venv="${venv}-${application}"
 	fi
 	if [ ! -d "$venv" ]; then
-		$python3 -m venv --system-site-packages "$venv"
+		$python3 -m venv "$venv"
 		if [ -f "$req" ]; then
 			rm -f "$req"
 		fi

@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -40,9 +40,9 @@ def aio_xmlrpc_loglevel (level: Optional[int] = None) -> None:
 	aio_logger.setLevel (level if level is not None else logging.WARNING)
 #
 class Configable (Protocol):
-	def get (self, key: str, default: Any = None) -> Any: ...
-	def iget (self, key: str, default: int = 0) -> int: ...
-	def bget (self, key: str, default: bool = False) -> bool: ...
+	def get (self, var: str, default: None | str = None) -> None | str: ...
+	def iget (self, var: str, default: int = 0) -> int: ...
+	def bget (self, var: str, default: bool = False) -> bool: ...
 	
 class XMLRPC:
 	"""XML-RPC Server framework
@@ -125,13 +125,13 @@ server.run ()
 		__slots__: List[str] = []
 		def __format (self, fmt: str, args: Tuple[Any, ...]) -> str:
 			rc = fmt % args
-			if self.client_address:
+			if self.client_address is not None:
 				rc = '[{client}] {s}'.format (client = self.client_address[0], s = rc)
 			return rc
-		def log_message (self, fmt: str, *args: Any) -> None:
-			logger.debug (self.__format (fmt, args))
-		def log_error (self, fmt: str, *args: Any) -> None:
-			logger.debug (self.__format (fmt, args))
+		def log_message (self, format: str, *args: Any) -> None:
+			logger.debug (self.__format (format, args))
+		def log_error (self, format: str, *args: Any) -> None:
+			logger.debug (self.__format (format, args))
 		
 		get_handler: Dict[Optional[str], Callable[[str, Optional[str], Optional[Dict[str, List[str]]]], Union[str, XMLRPC.Answer]]] = {}
 		@classmethod

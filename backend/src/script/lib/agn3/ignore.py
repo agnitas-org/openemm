@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -17,6 +17,7 @@ from	typing import Any, Callable, Optional, TypeVar, Union
 from	typing import Coroutine, Type
 from	typing import cast, overload
 from	.stream import Stream
+from	.tools import method_name
 #
 __all__ = ['Ignore', 'ignore', 'Experimental', 'Retry']
 #
@@ -144,10 +145,7 @@ def function (...): ...
 		delay: Union[None, int, float] = self.kwargs.get ('delay', self.default_delay)
 		log: Optional[Callable[[BaseException, str], None]] = self.kwargs.get ('log', self.__class__.default_log)
 		exceptions = self.args
-		try:
-			name = method.__name__
-		except AttributeError:
-			name = str (method)
+		name = method_name (method)
 		if asyncio.iscoroutinefunction (method):
 			async def aiowrapper (*args: Any, **kwargs: Any) -> _T:
 				for retry in range (retries):

@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<stdlib.h>
@@ -314,6 +314,16 @@ parse_mailkeys (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 								st = false;
 							if (! st)
 								DO_SHRINK (blockmail, adkim);
+						} else if (! strcmp (method, "smime")) {
+							char	*email;
+				
+							st = false;
+							if (email = extract_property (node, "email")) {
+								if (blockmail -> smime || (blockmail -> smime = smime_alloc ())) 
+									st = smime_add (blockmail -> smime, email, key);
+								free (email);
+							} else
+								log_out (blockmail -> lg, LV_ERROR, "%s: missing property \"email\"", method);
 						} else
 							log_out (blockmail -> lg, LV_WARNING, "%s: unsupported method", method);
 						if (key)

@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -15,8 +15,8 @@ import	xml.sax
 from	xml.sax import xmlreader
 from	xml.sax.handler import ContentHandler, ErrorHandler
 from	types import TracebackType
-from	typing import Any, Callable, NoReturn, Optional, Union
-from	typing import Dict, IO, List, Tuple, Type
+from	typing import Any, Callable, NoReturn
+from	typing import IO, Type
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import copen
@@ -76,7 +76,7 @@ will create this output:
 	escmap = {'<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', '\'': '&apos;'}
 	escape = re.compile ('[{special}]'.format (special = ''.join (escmap.keys ())))
 	
-	def __init__ (self, output: IO[Any], output_charset: Optional[str] = None, output_errors: Optional[str] = None, partial: bool = False) -> None:
+	def __init__ (self, output: IO[Any], output_charset: None | str = None, output_errors: None | str = None, partial: bool = False) -> None:
 		"""``output'' is a file like object to write the
 content to. ``output_charset'', ``output_errors'' is passed to string
 encoder to refuse invalid input, ``partial'' is False to emit valid
@@ -84,14 +84,14 @@ XML declaration."""
 		self.output = output
 		self.output_charset = output_charset if output_charset is not None else 'UTF-8'
 		self.output_errors = output_errors if output_errors is not None else 'strict'
-		self.backlog: List[str] = []
+		self.backlog: list[str] = []
 		self.state = 0
 		self.partial = partial
 	
 	def __enter__ (self) -> XMLWriter:
 		return self
 	
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+	def __exit__ (self, exc_type: None | Type[BaseException], exc_value: None | BaseException, traceback: None | TracebackType) -> None | bool:
 		if exc_type is None:
 			self.end ()
 		return None
@@ -120,7 +120,7 @@ XML declaration."""
 		else:
 			return self.escape.sub (lambda ch: self.escmap[ch.group ()], s)
 	
-	def __new_node (self, name: str, attrs: Optional[Dict[str, str]], simple: bool, text: Optional[str], cdata: bool) -> None:
+	def __new_node (self, name: str, attrs: None | dict[str, str], simple: bool, text: None | str, cdata: bool) -> None:
 		out = '{indent}<{name}'.format (
 			indent = ' ' * len (self.backlog),
 			name = name
@@ -150,7 +150,7 @@ XML declaration."""
 		"""open a new node with ``name'' using keyword style attributes"""
 		_self.__new_node (_name, _attrs, False, None, False)
 	
-	def close (self, name: Optional[str] = None) -> None:
+	def close (self, name: None | str = None) -> None:
 		"""close an open node, if ``name'' is None, close the
 last opened node, otherwise search for the node with the ``name'' and
 close it (implicit close all inner nodes as well)"""
@@ -180,15 +180,15 @@ close it (implicit close all inner nodes as well)"""
 		"""write a simple node containing embedded cdata"""
 		_self.__new_node (_name, _attrs, True, _text, True)
 	
-	def create_node (self, name: str, attrs: Dict[str, Any], simple: bool = False) -> None:
+	def create_node (self, name: str, attrs: dict[str, Any], simple: bool = False) -> None:
 		"""creates a new node ``name'' with ``attrs'' attributes as dict. Close the node if ``simple'' is True"""
 		self.__new_node (name, attrs, simple, None, False)
 	
-	def create_text_node (self, name: str, text: str, attrs: Dict[str, Any], simple: bool = False) -> None:
+	def create_text_node (self, name: str, text: str, attrs: dict[str, Any], simple: bool = False) -> None:
 		"""create a new node ``name'' with ``attrs'' attributes as dict with embeded text. Close the node if ``simple'' is True"""
 		self.__new_node (name, attrs, simple, text, False)
 	
-	def create_cdata_node (self, name: str, text: str, attrs: Dict[str, Any], simple: bool = False) -> None:
+	def create_cdata_node (self, name: str, text: str, attrs: dict[str, Any], simple: bool = False) -> None:
 		"""create a new node ``name'' with ``attrs'' attributes as dict with embeded cdata. Close the node if ``simple'' is True"""
 		self.__new_node (name, attrs, simple, text, True)
 	
@@ -200,7 +200,7 @@ close it (implicit close all inner nodes as well)"""
 		"""output inlined cdata"""
 		self.__out (self.__convert (text, True))
 	
-	def start (self, doctype: Optional[str] = None) -> None:
+	def start (self, doctype: None | str = None) -> None:
 		"""start the document, write the required XML header"""
 		self.state = 1
 		if not self.partial:
@@ -270,9 +270,9 @@ that all of them had been crossed.
 	class Point:
 		__slots__ = ['key', 'enter', 'leave', 'active']
 		def __init__ (self,
-			key: Optional[str],
-			enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
-			leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]]
+			key: None | str,
+			enter: None | Callable[[str, str, xmlreader.AttributesImpl], Any],
+			leave: None | Callable[[str, str, xmlreader.AttributesImpl, None | str], Any]
 		) -> None:
 			self.key = key
 			self.enter = enter
@@ -286,8 +286,8 @@ that all of them had been crossed.
 		__slots__ = ['regexp']
 		def __init__ (self,
 			pattern: str,
-			enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
-			leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]]
+			enter: None | Callable[[str, str, xmlreader.AttributesImpl], Any],
+			leave: None | Callable[[str, str, xmlreader.AttributesImpl, None | str], Any]
 		) -> None:
 			super ().__init__ (pattern, enter, leave)
 			self.regexp = re.compile (pattern)
@@ -300,10 +300,10 @@ that all of them had been crossed.
 		def __init__ (self, callback: Type[Any]) -> None:
 			super ().__init__ (None, self, self)
 			self.callback = callback
-			self.method_cache: Dict[str, Optional[str]] = {}
+			self.method_cache: dict[str, None | str] = {}
 
 		__normalizePattern = re.compile ('[^A-Za-z0-9_]')
-		def __call__ (self, path: str, name: str, attrs: xmlreader.AttributesImpl, content: Union[None, bool, str] = False) -> None:
+		def __call__ (self, path: str, name: str, attrs: xmlreader.AttributesImpl, content: None | bool | str = False) -> None:
 			try:
 				method = self.method_cache[path]
 			except KeyError:
@@ -320,11 +320,11 @@ that all of them had been crossed.
 			self.path = path
 			self.name = name
 			self.attrs = attrs
-			self.content: Optional[List[str]] = None
-			self.points: List[XMLReader.Point] = []
+			self.content: None | list[str] = None
+			self.points: list[XMLReader.Point] = []
 			self.active = 0
 		
-		def add_points (self, points: List[XMLReader.Point]) -> None:
+		def add_points (self, points: list[XMLReader.Point]) -> None:
 			if points:
 				self.points += points
 		
@@ -359,23 +359,22 @@ that all of them had been crossed.
 	
 	def __init__ (self) -> None:
 		super ().__init__ ()
-		self.dispatch: Dict[Optional[str], List[XMLReader.Point]] = {}
-		self.borders: Dict[str, List[XMLReader.Point]] = {}
-		self.dispatch_regex: List[XMLReader.Point] = []
-		self.dispatch_callback: List[XMLReader.Point] = []
-		self.stage: List[XMLReader.Level] = []
-		self.level: Optional[XMLReader.Level] = None
+		self.dispatch: dict[None | str, list[XMLReader.Point]] = {}
+		self.borders: dict[str, list[XMLReader.Point]] = {}
+		self.dispatch_regex: list[XMLReader.Point] = []
+		self.dispatch_callback: list[XMLReader.Point] = []
+		self.stage: list[XMLReader.Level] = []
+		self.level: None | XMLReader.Level = None
 		self.status = self.OK
 	
 	def __set_status (self, status: int) -> None:
-		if status > self.status:
-			self.status = status
+		self.status = max (self.status, status)
 	
 	def reset_status (self) -> None:
 		"""resets the working status to OK"""
 		self.status = self.OK
 	
-	def add_border (self, point: XMLReader.Point, border: Optional[str]) -> None:
+	def add_border (self, point: XMLReader.Point, border: None | str) -> None:
 		"""add a border for a callback point"""
 		if border is not None:
 			try:
@@ -385,10 +384,10 @@ that all of them had been crossed.
 			point.active = 0
 	
 	def add_handler (self,
-		key: Optional[str],
-		enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
-		leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]],
-		border: Optional[str] = None
+		key: None | str,
+		enter: None | Callable[[str, str, xmlreader.AttributesImpl], Any],
+		leave: None | Callable[[str, str, xmlreader.AttributesImpl, None | str], Any],
+		border: None | str = None
 	) -> XMLReader.Point:
 		"""add a handler for a specific XML key"""
 		point = self.Point (key, enter, leave)
@@ -401,9 +400,9 @@ that all of them had been crossed.
 		
 	def add_handler_regex (self,
 		pattern: str,
-		enter: Optional[Callable[[str, str, xmlreader.AttributesImpl], Any]],
-		leave: Optional[Callable[[str, str, xmlreader.AttributesImpl, Optional[str]], Any]],
-		border: Optional[str] = None
+		enter: None | Callable[[str, str, xmlreader.AttributesImpl], Any],
+		leave: None | Callable[[str, str, xmlreader.AttributesImpl, None | str], Any],
+		border: None | str = None
 	) -> XMLReader.PointRe:
 		"""add a handler for a XML key regex"""
 		point = self.PointRe (pattern, enter, leave)
@@ -411,7 +410,7 @@ that all of them had been crossed.
 		self.add_border (point, border)
 		return point
 
-	def add_handler_callback (self, callback: Type[Any], border: Optional[str] = None) -> XMLReader.PointCB:
+	def add_handler_callback (self, callback: Type[Any], border: None | str = None) -> XMLReader.PointCB:
 		"""add a generic callback handler"""
 		point = self.PointCB (callback)
 		self.dispatch_callback.append (point)
@@ -436,20 +435,20 @@ that all of them had been crossed.
 
 	#
 	# Error handler
-	def error (self, exc: BaseException) -> NoReturn:
+	def error (self, exception: BaseException) -> NoReturn:
 		"""writes an error"""
 		self.__set_status (self.ERROR)
-		logger.exception (exc)
-		raise exc
-	def fatalError (self, exc: BaseException) -> NoReturn:
+		logger.exception (exception)
+		raise exception
+	def fatalError (self, exception: BaseException) -> NoReturn:
 		"""writes a fatal error"""
 		self.__set_status (self.FATAL)
-		logger.exception (exc)
-		raise exc
-	def warning (self, exc: BaseException) -> None:
+		logger.exception (exception)
+		raise exception
+	def warning (self, exception: BaseException) -> None:
 		"""writes a warning"""
 		self.__set_status (self.WARNING)
-		logger.warning (exc)
+		logger.warning (exception)
 	#
 	# Content handler
 	def startDocument (self) -> None:
@@ -503,13 +502,13 @@ that all of them had been crossed.
 
 	def setDocumentLocator (self, locator: xmlreader.Locator) -> None:
 		pass
-	def startPrefixMapping (self, prefix: Optional[str], uri: str) -> None:
+	def startPrefixMapping (self, prefix: None | str, uri: str) -> None:
 		pass
-	def endPrefixMapping (self, prefix: Optional[str]) -> None:
+	def endPrefixMapping (self, prefix: None | str) -> None:
 		pass
-	def startElementNS (self, name: Tuple[None | str, str], qname: None | str, attrs: xmlreader.AttributesNSImpl) -> None:
+	def startElementNS (self, name: tuple[None | str, str], qname: None | str, attrs: xmlreader.AttributesNSImpl) -> None:
 		pass
-	def endElementNS (self, name: Tuple[None | str, str], qname: None | str) -> None:
+	def endElementNS (self, name: tuple[None | str, str], qname: None | str) -> None:
 		pass
 	def ignorableWhitespace (self, whitespace: str) -> None:
 		pass

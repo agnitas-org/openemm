@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -35,6 +35,7 @@ class ScriptTag:
 	) -> bool:
 		rc = True
 		with DB () as db, db.request () as cursor:
+			data: dict[str, None | str | int] 
 			if not only_tags:
 				with open (self.path) as fd:
 					code = self._cleanup_code (fd.read ())
@@ -66,6 +67,11 @@ class ScriptTag:
 							'       (company_id, creation_date, timestamp, name, lang, description, code) '
 							'VALUES '
 							'       (:company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :description, :code)'
+						), postgres = (
+							'INSERT INTO tag_function_tbl '
+							'       (tag_function_id, company_id, creation_date, timestamp, name, lang, description, code) '
+							'VALUES '
+							'       (nextval(\'tag_function_tbl_tag_function_id_seq\'), :company_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :name, :lang, :description, :code)'
 						)
 					)
 					if dryrun:
@@ -127,7 +133,9 @@ class ScriptTag:
 					tag = parts[0]
 					if parts[1]:
 						selectvalue = '%s:%s' % (self.name, parts[1])
-				data = {'selectvalue': selectvalue}
+				data = {
+					'selectvalue': selectvalue
+				}
 				rq = cursor.querys (
 					'SELECT tag_id, type, selectvalue, description '
 					'FROM tag_tbl '
@@ -153,6 +161,11 @@ class ScriptTag:
 							'      (tagname, selectvalue, type, company_id, description, change_date) '
 							'VALUES '
 							'       (:tname, :selectvalue, :type, :company_id, :description, CURRENT_TIMESTAMP)'
+						), postgres = (
+							'INSERT INTO tag_tbl '
+							'      (tag_id, tagname, selectvalue, type, company_id, description, change_date) '
+							'VALUES '
+							'       (nextval(\'tag_tbl_tag_id_seq\'), :tname, :selectvalue, :type, :company_id, :description, CURRENT_TIMESTAMP)'
 						)
 					)
 					if dryrun:

@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -24,8 +24,11 @@ JAVA:
 bin mode=0755:
 	src/script/control/*
 	src/script/tools/activator
+	src/script/tools/dbdisplay
+	src/script/tools/dbinstall
 	src/script/tools/dkim-creat
 	src/script/tools/dkim-mgr
+	src/script/tools/mail-key-mgr
 	src/script/tools/script-tag
 	src/script/tools/service.sh
 
@@ -40,8 +43,12 @@ lib:
 
 scripts mode=0755:
 	src/script/tools/activator3.py
+	src/script/tools/dbdisplay3.py
+	src/script/tools/dbinstall3.py
 	src/script/tools/dkim-mgr3.py
+	src/script/tools/mail-key-mgr3.py
 	src/script/lib/config.sh
+	src/script/lib/configvalues.json	mode=0644
 	src/script/process/*.py
 	src/script/data/mailstatus3.tmpl	mode=0644
 	src/script/data/recovery3.tmpl		mode=0644

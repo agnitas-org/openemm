@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -28,7 +28,7 @@ from	.ignore import Ignore
 from	.log import log
 from	.parser import Parsable, unit
 from	.stream import Stream
-from	.tools import abstract
+from	.tools import abstract, method_name
 #
 __all__ = ['Signal', 'Timer', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon']
 #
@@ -424,7 +424,7 @@ had terminated.
 		args: Sequence[Any]
 		kwargs: Dict[str, Any]
 		context: _T
-		channel: Optional[Daemonic.Channel[_T]] = None
+		channel: Optional[Daemonic.Channel[_T | Exception]] = None
 		value: Any = None
 		state: Daemonic.State = field (default_factory = lambda: Daemonic.State.new)
 		status: Optional[Daemonic.Status] = None
@@ -1112,7 +1112,7 @@ using the content of ``script''."""
 						how = f'killed by {st.signal}'
 					else:
 						how = f'died with status {child.status}'
-					logger.info (f'Child {child.method.__name__} {how}')
+					logger.info (f'Child {method_name (child.method)} {how}')
 				except KeyError:
 					logger.warning (f'Returned not active PID {st.pid}')
 
@@ -1127,7 +1127,7 @@ using the content of ``script''."""
 						child.pid = self.spawn (child.method)
 						child.status = 0
 						active[child.pid] = child
-						logger.info (f'Child {child.method.__name__} started')
+						logger.info (f'Child {method_name (child.method)} started')
 			if not active:
 				self.running = False
 			else:
@@ -1138,7 +1138,7 @@ using the content of ``script''."""
 			while active:
 				for child in list (active.values ()):
 					if not self.term (child.pid, signr):
-						logger.warning (f'Unexpected missing child process {child.method.__name__}')
+						logger.warning (f'Unexpected missing child process {method_name (child.method)}')
 						del active[child.pid]
 				if active:
 					for state in True, False:

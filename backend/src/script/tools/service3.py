@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -209,7 +209,8 @@ class Service:
 				try:
 					required.append ({
 						'oracle':	'oracledb',
-						'mariadb':	'mariadb'
+						'mariadb':	'mariadb',
+						'postgres':	'psycopg2'
 					}[dbms])
 				except KeyError:
 					raise error (f'{dbms}: there is no known database driver for this dbms')
@@ -256,12 +257,12 @@ class Service:
 		if self.command in ('start', 'restart', 'status'):
 			try:
 				self._sanity_python_modules ()
-				self._sanity_executables ()
-				if self.command in ('start', 'restart') and self.active ('sanity', True):
+				if self.active ('sanity', True):
 					import	sanity3
 
 					for (name, check) in Stream (sanity3.__dict__.items ()).filter (lambda kv: isinstance (kv[1], type) and issubclass (kv[1], Sanity) and kv[0] != 'Sanity'):
 						check ()
+				self._sanity_executables ()
 			except ImportError:
 				logger.debug (f'No sanity3 module for {user} available, no sanity check performed')
 			except error as e:
@@ -295,6 +296,12 @@ class Service:
 						'FROM release_log_tbl '
 						'WHERE host_name = :host_name AND application_name = :application_name '
 						'ORDER BY startup_timestamp DESC '
+						'LIMIT 1'
+					), postgres = (
+						'SELECT version_number '
+						'FROM release_log_tbl '
+						'WHERE host_name = :host_name AND application_name = :application_name '
+						'ORDER BY startup_timestamp DESC'
 						'LIMIT 1'
 					)), data
 				)

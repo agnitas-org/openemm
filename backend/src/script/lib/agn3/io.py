@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -414,7 +414,15 @@ and inodes on a filesystem for a specific path."""
 		"""returns a four element tuple containing the percentage of free and used blocks and free and used inodes"""
 		return (self.percentBlockFree (), self.percentBlockUsed (), self.percentInodeFree (), self.percentInodeUsed ())
 
-def file_access (path: str) -> Tuple[List[str], List[List[Any]]]:
+class FileAccessFailure (NamedTuple):
+	exception: BaseException
+	message: str
+	
+class FileAccess (NamedTuple):
+	pids: list[int]
+	failures: list[FileAccessFailure]
+	
+def file_access (path: str) -> FileAccess:
 	"""Check if a process access a file
 
 returns two lists, the first is a list of process-ids which accessing
@@ -426,10 +434,10 @@ permissions) while trying to determinate the access to the file."""
 		raise error (f'failed to stat "{path}": {e}')
 	device = st[stat.ST_DEV]
 	inode = st[stat.ST_INO]
-	rc: List[str] = []
-	fail: List[List[Any]] = []
+	pids: list[int] = []
+	failures: list[FileAccessFailure] = []
 	seen: Dict[str, bool] = {}
-	for pid in [_p for _p in os.listdir ('/proc') if isnum (_p)]:
+	for pid in [int (_p) for _p in os.listdir ('/proc') if isnum (_p)]:
 		bpath = f'/proc/{pid}'
 		checks = [f'{bpath}/{_c}' for _c in ('cwd', 'exe', 'root')]
 		try:
@@ -437,7 +445,7 @@ permissions) while trying to determinate the access to the file."""
 			for fds in os.listdir (fdp):
 				checks.append (f'{fdp}/{fds}')
 		except OSError as e:
-			fail.append ([e, f'{bpath}/fd: {e}'])
+			failures.append (FileAccessFailure (exception = e, message = f'{bpath}/fd: {e}'))
 		try:
 			fd = open (f'{bpath}/maps', 'r')
 			for line in fd:
@@ -446,11 +454,11 @@ permissions) while trying to determinate the access to the file."""
 					checks.append (parts[5].strip ())
 			fd.close ()
 		except IOError as e:
-			fail.append ([e, f'{bpath}/maps: {e}'])
+			failures.append (FileAccessFailure (exception = e, message = f'{bpath}/maps: {e}'))
 		for check in checks:
 			try:
 				if seen[check]:
-					rc.append (pid)
+					pids.append (pid)
 			except KeyError:
 				seen[check] = False
 				cpath = check
@@ -465,11 +473,11 @@ permissions) while trying to determinate the access to the file."""
 						else:
 							fpath = cpath
 					if fpath is not None and st[stat.ST_DEV] == device and st[stat.ST_INO] == inode:
-						rc.append (pid)
+						pids.append (pid)
 						seen[check] = True
 				except OSError as e:
-					fail.append ([e, f'{cpath}: {e}'])
-	return (rc, fail)
+					failures.append (FileAccessFailure (e, f'{cpath}: {e}'))
+	return FileAccess (pids = pids, failures = failures)
 
 def open_with_backup (path: str, *, limit: None | int = None) -> TextIO:
 	if not (directory := os.path.dirname (path)):

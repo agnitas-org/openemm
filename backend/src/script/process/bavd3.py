@@ -2,11 +2,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -1092,6 +1092,19 @@ class BAV:
 						)
 						for rec in db.query ('SELECT customer_id FROM customer_%d_tbl WHERE email = :email' % company_id, {'email': address}):
 							customer_id = rec.customer_id
+					elif db.dbms == 'postgres':
+						db.update (
+							f'INSERT INTO customer_{company_id}_tbl (customer_id, email, gender, mailtype, timestamp, creation_date, datasource_id) '
+							f'VALUES (nextval(\'customer_{company_id}_tbl_customer_id_seq\').nextval, :email, 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :datasource_id)',
+							{
+								'email': address,
+								'datasource_id': datasource_id
+							},
+							commit = True
+						)
+						rq = db.querys (f'SELECT currval(\'customer_{company_id}_tbl_customer_id_seq\')')
+						if rq is not None and rq[0] is not None:
+							customer_id = rq[0]
 					elif db.dbms == 'oracle':
 						for rec in db.query ('SELECT customer_%d_tbl_seq.nextval FROM dual' % company_id):
 							customer_id = rec[0]
@@ -1292,6 +1305,11 @@ class BAV:
 						'       (mailloop_id, status, sender_full_name, subject, sender_email, response_email, timestamp, creation_date, change_date, content, content_type, raw_message, customer_id, company_id, customer_company_id) '
 						'VALUES '
 						'       (:rid, :status, :sender_full_name, :subject, :sender_email, :response_email, :mail_timestamp, current_timestamp, current_timestamp, :content, :content_type, :raw_message, :customer_id, :company_id, :customer_company_id)'
+					), postgres = (
+						'INSERT INTO mailloop_replies_tbl '
+						'       (id, mailloop_id, status, sender_full_name, subject, sender_email, response_email, timestamp, creation_date, change_date, content, content_type, raw_message, customer_id, company_id, customer_company_id) '
+						'VALUES '
+						'       (nextval(\'mailloop_replies_tbl_id_seq\'), :rid, :status, :sender_full_name, :subject, :sender_email, :response_email, :mail_timestamp, current_timestamp, current_timestamp, :content, :content_type, :raw_message, :customer_id, :company_id, :customer_company_id)'
 					)
 				), {
 					'rid': self.parameter.rid,
@@ -1315,7 +1333,8 @@ class BAV:
 				rq = cursor.querys (
 					db.qselect (
 						oracle = 'SELECT mailloop_replies_tbl_seq.currval FROM DUAL',
-						mariadb = 'SELECT last_insert_id()'
+						mariadb = 'SELECT last_insert_id()',
+						postgres = 'SELECT currval(\'mailloop_replies_tbl_id_seq\')'
 					)
 				)
 				if rq is not None and rq[0] is not None:
@@ -1612,7 +1631,9 @@ class BAVD (Runtime):
 		bounce.set_rulefile (self.rulefile)
 		children: List[BAVD.Child] = []
 		spool = Mailspool (self.spooldir, worksize = self.worksize, scan = False)
-		while self.running:
+		self.maintain.set_interval ('1h')
+		delay = 0
+		while self.is_running (delay):
 			now = time.localtime ()
 			if now.tm_yday != lastCheck:
 				self.check_procmailrc (now, spool)
@@ -1628,12 +1649,14 @@ class BAVD (Runtime):
 					children.append (ch)
 					if len (children) >= self.max_children:
 						break
-			n = self.delay
-			while self.running and n > 0:
+			delay = self.delay
+			while self.running and delay > 0:
 				time.sleep (1)
+				delay -= 1
 				if children:
 					children = self.wait_for_children (children)
-				n -= 1
+				else:
+					break
 		while children:
 			logger.debug ('Wait for %d children to terminate' % len (children))
 			for child in children:

@@ -1,15 +1,16 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-import	sys, os, logging, argparse, time, signal, json
+from	__future__ import annotations
+import	sys, os, logging, argparse, time, signal, json, gc
 from	dataclasses import dataclass
 from	fnmatch import fnmatch
 from	inspect import isclass
@@ -26,10 +27,10 @@ from	.ignore import Ignore
 from	.lock import Lock
 from	.log import log, interactive
 from	.parameter import Parameter
-from	.parser import unit
+from	.parser import Parsable, unit
 from	.process import Processtitle, Parallel
 from	.stream import Stream
-from	.tools import atob, Plugin
+from	.tools import atob, method_name, Plugin
 #
 __all__ = ['Runtime', 'CLI', 'Preset', 'Locate']
 #
@@ -90,6 +91,30 @@ agn3.exceptions.error: @(sample): specified environment not found
 		else:
 			expanded.append (arg)
 	return expanded
+
+class Maintain:
+	"""maintainance during longer running jobs"""
+	__slots__ = ['interval', 'next']
+	def __init__(self, interval: Parsable = None) -> None:
+		self.interval: float
+		self.next = 0.0
+		self.set_interval (interval)
+		
+	def __call__ (self) -> None:
+		if self.interval and self.interval > 0.0:
+			now = time.time ()
+			if now < self.next:
+				return
+			self.next = now + self.interval
+		logger.debug ('maintain: gc started')
+		gc.collect ()
+		logger.debug ('maintain: gc finished')
+	
+	def set_interval (self, interval: Parsable = None) -> None:
+		self.interval = unit (interval)
+	
+	def has_interval (self) -> bool:
+		return bool (self.interval) and self.interval > 0
 
 class Frame:
 	"""generalized runtime modification framework"""
@@ -198,7 +223,7 @@ def cleanup (self):
 	The final cleanup entry point before termination.
 
 """
-	__slots__ = ['cfg', 'ctx', 'frame', 'round']
+	__slots__ = ['cfg', 'ctx', 'frame', 'round', 'maintain']
 	program_description: None | str = None
 	program_epilog: None | str = None
 
@@ -240,13 +265,17 @@ def cleanup (self):
 			self.cfg.read ()
 			for key in [f'option:{program}', f'{program}:option']:
 				with Ignore (KeyError):
-					for (option, value) in Parameter (syscfg[key]).items ():
-						self.cfg[option] = value
+					try:
+						for (option, value) in Parameter (syscfg[key]).items ():
+							self.cfg[option] = value
+					except ValueError as e:
+						logger.warning (f'{key} unparsable configuration "{syscfg[key]}": {e}')
 					if key == f'option:{program}':
 						logger.warning (f'{key}: deprecated')
 		self.ctx = Runtime.Context ()
 		self.frame = Frame (runtime = self, ctx = self.ctx)
 		self.round = 0
+		self.maintain = Maintain ()
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
 		#
@@ -291,13 +320,9 @@ def cleanup (self):
 					))
 				try:
 					def get_name (function: Callable[..., Any]) -> str:
-						try:
-							return function.__name__
-						except AttributeError:
-							try:
-								return str (function)
-							except:
-								return program
+						with Ignore ():
+							return method_name (function)
+						return program
 					#
 					if self.ctx.watchdog:
 						self.ctx.processtitle ('watchdog')
@@ -324,7 +349,7 @@ def cleanup (self):
 							self.ctx.processtitle ('controller')
 							while parallel.living ()[0] and self.running:
 								time.sleep (1)
-							if parallel.living ():
+							if parallel.living ()[0]:
 								parallel.term ()
 							for (name, (ec, rc)) in parallel.wait ().items ():
 								logger.debug (f'{name} exited with {ec} and returns {rc}')
@@ -369,12 +394,14 @@ def cleanup (self):
 	def title (self, title: str) -> Processtitle.ProcesstitleContext:
 		return self.ctx.processtitle.title (title)
 	
-	def is_running (self, delay: int) -> bool:
-		if self.round > 0:
+	def is_running (self, delay: int = 0) -> bool:
+		if self.round > 0 and delay > 0:
 			while delay > 0 and self.running:
 				delay -= 1
 				time.sleep (1)
 		self.round += 1
+		if self.running and (self.maintain.has_interval () or self.round % 10000 == 0):
+			self.maintain ()
 		return self.running
 			
 	def __argument_parsing (self) -> None:

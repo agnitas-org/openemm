@@ -1,11 +1,11 @@
 ####################################################################################################################################################################################################################################################################
 #                                                                                                                                                                                                                                                                  #
 #                                                                                                                                                                                                                                                                  #
-#        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   #
+#        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              #
 #                                                                                                                                                                                                                                                                  #
 #        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    #
 #        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           #
-#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
+#        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
@@ -142,7 +142,7 @@ None to use the default "date"."""
 		except KeyError:
 			now = datetime.now ()
 		if offset:
-			then = now.fromordinal (now.toordinal () - offset)
+			then = now.fromordinal (int (now.toordinal () - offset))
 			then = datetime (then.year, then.month, then.day, now.hour, now.minute, now.second)
 		else:
 			then = now
@@ -250,6 +250,8 @@ None to use the default "date"."""
 	def get (self, var: str, default: None = ...) -> Optional[str]: ...
 	@overload
 	def get (self, var: str, default: str) -> str: ...
+	@overload
+	def get (self, var: str, default: None | str = ...) -> str: ...
 	def get (self, var: str, default: Optional[str] = None) -> Optional[str]:
 		"""Retrieve the value for ``var'' as string, use ``default'' as default if ``var'' is not found"""
 		try:
@@ -491,9 +493,12 @@ plugin code to prefill it using its own namespace."""
 		"""Retrieves a list of all known sections"""
 		return [_k for _k in self.sections.keys () if _k is not None and self.__internal.match (_k) is None]
 	
-	def get_section_sequence (self) -> List[str]:
+	def get_section_sequence (self, reverse: bool = False) -> List[str]:
 		"""Retrieves a list of all known sections in the sequence they are created"""
-		return [_s for _s in self.section_sequence if self.__internal.match (_s) is None]
+		rc = [_s for _s in self.section_sequence if self.__internal.match (_s) is None]
+		if reverse:
+			rc.reverse ()
+		return rc
 	
 	def get_section (self, section: Optional[str]) -> Dict[str, str]:
 		"""Get a complete ``section'' as a dict, no conversion of values take place"""

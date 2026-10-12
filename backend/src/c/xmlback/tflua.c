@@ -1,11 +1,11 @@
 /********************************************************************************************************************************************************************************************************************************************************************
  *                                                                                                                                                                                                                                                                  *
  *                                                                                                                                                                                                                                                                  *
- *        Copyright (C) 2025 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                                   *
+ *        Copyright (C) 2006-2026 AGNITAS AG (https://www.agnitas.org)                                                                                                                                                                                              *
  *                                                                                                                                                                                                                                                                  *
  *        This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.    *
  *        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.           *
- *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            *
+ *        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/#AGPL>.                                                                                                       *
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<ctype.h>
@@ -327,52 +327,90 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 {
 	iflua_t		*il = GET_IFLUA (lua);
 	int		stack = lua_gettop (il -> lua);
+	int		position = 1;
+	int		state = 0;
 	long		url_id;
 	const char	*prefix;
 	int		uid_version;
+	var_t		*param;
+	const char	*var, *val;
 	url_t		*url;
 	char		*uid;
 	
 	url_id = 0;
 	prefix = NULL;
 	uid_version = il -> blockmail -> uid_version;
-	if (stack > 0) {
-		if (lua_isnumber (il -> lua, 1))
-			url_id = (long) lua_tonumber (il -> lua, 1);
-		if (stack > 1) {
-			if (lua_isnumber (il -> lua, 2)) {
-				uid_version = (int) lua_tonumber (il -> lua, 2);
-				if ((stack > 2) && lua_isstring (il -> lua, 3)) {
-					prefix = lua_tostring (il -> lua, 3);
-				}
-			} else {
-				if (lua_isstring (il -> lua, 2)) {
-					prefix = lua_tostring (il -> lua, 2);
-				}
-				if (stack > 2) {
-					if (lua_isstring (il -> lua, 3)) {
-						const char	*version = lua_tostring (il -> lua, 3);
-				
-						if (version && *version)
-							uid_version = atoi (*version == 'V' ? version + 1 : version);
-					} else if (lua_isnumber (il -> lua, 3)) {
-						uid_version = (int) lua_tonumber (il -> lua, 3);
+	param = NULL;
+	while (stack >= position) {
+		if (state == 0) {
+			if (lua_type (il -> lua, position) == LUA_TNUMBER) {
+				url_id = (long) lua_tonumber (il -> lua, position);
+				++position;
+			}
+			state = 1;
+		} else {
+			switch (lua_type (il -> lua, position)) {
+			case LUA_TNIL:
+				/* empty body, skip nil values for compatibility reasons */
+				break;
+			case LUA_TNUMBER:
+				uid_version = (int) lua_tonumber (il -> lua, position);
+				break;
+			case LUA_TSTRING:
+				prefix = lua_tostring (il -> lua, position);
+				break;
+			case LUA_TTABLE:
+				lua_pushnil (il -> lua);
+				while (lua_next (il -> lua, position)) {
+					var_t	*temp;
+					
+					if (lua_isstring (il -> lua, -2) &&
+					    lua_isstring (il -> lua, -1) &&
+					    (var = lua_tostring (il -> lua, -2)) &&
+					    (val = lua_tostring (il -> lua, -1)) &&
+					    (temp = var_alloc (var, val))) {
+						if (param) {
+							var_t	*prev, *scan;
+							int	cmp;
+							
+							for (scan = param, prev = NULL; scan; scan = scan -> next) {
+								if ((cmp = strcmp (scan -> var, temp -> var)) == 0) {
+									temp = var_free (temp);
+									break;
+								} else if (cmp > 0)
+									break;
+								prev = scan;
+							}
+							if (temp)
+								if (prev) {
+									temp -> next = prev -> next;
+									prev -> next = temp;
+								} else {
+									temp -> next = param;
+									param = temp;
+								}
+						} else
+							param = temp;
 					}
+					lua_pop (il -> lua, 1);
 				}
 			}
+			++position;
 		}
 	}
 	if (url_id && (url = url_alloc ()))
 		url -> url_id = url_id;
 	else
 		url = NULL;
-	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url, false, NULL))) {
+	if (il -> rec && (uid = create_uid (il -> blockmail, uid_version, prefix, il -> rec, url, false, param))) {
 		lua_pushstring (il -> lua, uid);
 		free (uid);
 	} else
 		lua_pushnil (il -> lua);
 	if (url)
 		url_free (url);
+	if (param)
+		var_free_all (param);
 	return 1;
 }/*}}}*/
 static int
