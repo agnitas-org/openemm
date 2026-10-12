@@ -33,21 +33,19 @@ import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.QueryAndParams;
 import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.dao.impl.mapper.DoubleRowMapper;
-import com.agnitas.dao.impl.mapper.IntegerRowMapper;
 import com.agnitas.emm.common.FollowUpType;
 import com.agnitas.emm.common.MailingStatus;
 import com.agnitas.emm.common.UserStatus;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.dto.FollowupRecipientsQuery;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetService;
 import com.agnitas.util.DbUtilities;
 import com.agnitas.util.Tuple;
 import com.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
@@ -503,226 +501,17 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
     @Override
-    public int getFollowUpRecipientsCount(int mailingID, int baseMailing, String followUpType, int companyID) {
-        return getFollowUpRecipients(mailingID, baseMailing, followUpType, companyID).size();
+    public int getFollowUpRecipientsCount(FollowupRecipientsQuery query) {
+        return getFollowUpRecipients(query).size();
     }
 
-    private List<Integer> getFollowUpRecipients(int mailingID, int baseMailing, String followUpType, int companyID) {
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey())) {
-            // TODO NEW click calculation with target groups.
-            // the maildrop-id must be the one of the 'base' mailing, which is
-            // already sent. The given
-            // mailing-id must be the one of the current (that means the
-            // follow-up) mailing.
-            return getClickers(baseMailing, mailingID, companyID);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_OPENER.getKey())) {
-            return getOpeners(baseMailing, mailingID, companyID);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey())) {
-            return getNonClickers(baseMailing, mailingID, companyID);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey())) {
-            return getNonOpeners(baseMailing, mailingID, companyID);
-        }
-
-        return Collections.emptyList();
+    protected List<Integer> getFollowUpRecipients(FollowupRecipientsQuery query) {
+        return Collections.emptyList(); // overridden in extended class
     }
 
 	@Override
-    public int getFollowUpRecipientsCount(int followUpFor, String followUpType, int companyID, String sqlTargetExpression) {
-        int resultValue = 0;
-        // What kind of followup do we have, choose the appropriate sql call...
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_CLICKER.getKey())) {
-            resultValue = getClickersCount(companyID, followUpFor, sqlTargetExpression);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_OPENER.getKey())) {
-            resultValue = getOpenersCount(companyID, followUpFor, sqlTargetExpression);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_NON_CLICKER.getKey())) {
-            resultValue = getNonClickersCount(companyID, followUpFor, sqlTargetExpression);
-        }
-
-        if (followUpType.equals(FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey())) {
-            resultValue = getNonOpenersCount(companyID, followUpFor, sqlTargetExpression);
-        }
-
-        return resultValue;
-    }
-
-    private int getClickersCount(int companyID, int followUpFor, String sqlTargetExpression) {
-        String query = getClickersQuery(companyID);
-        if (StringUtils.isNotBlank(sqlTargetExpression)) {
-            query += " AND (%s)".formatted(sqlTargetExpression);
-        }
-
-        return selectInt(wrapIntoCountQuery(query), followUpFor);
-    }
-
-    private int getNonClickersCount(int companyID, int followUpFor, String sqlTargetExpression) {
-        String query = getNonClickersQuery(companyID);
-
-        if (StringUtils.isNotBlank(sqlTargetExpression)) {
-            query += " AND (%s)".formatted(sqlTargetExpression);
-        }
-
-        return selectInt(wrapIntoCountQuery(query), followUpFor, followUpFor);
-    }
-
-    private int getOpenersCount(int companyID, int followUpFor, String sqlTargetExpression) {
-        String query = getOpenersQuery(companyID);
-
-        if (StringUtils.isNotBlank(sqlTargetExpression)) {
-            query += " AND (%s)".formatted(sqlTargetExpression);
-        }
-
-        return selectInt(wrapIntoCountQuery(query), followUpFor);
-    }
-
-    private int getNonOpenersCount(int companyID, int followUpFor, String sqlTargetExpression) {
-        String query = getNonOpenersQuery(companyID);
-        if (StringUtils.isNotBlank(sqlTargetExpression)) {
-            query += " AND (%s)".formatted(sqlTargetExpression);
-        }
-
-        return selectInt(wrapIntoCountQuery(query), followUpFor, followUpFor);
-    }
-
-    private String wrapIntoCountQuery(String query) {
-        return "SELECT COUNT(*) FROM (%s) c".formatted(query);
-    }
-
-    private List<Integer> getClickers(int baseMailingId, int followUpMailingId, int companyId) {
-        String query = getClickersQuery(companyId) + getTargetAndSplitSqlCondition(followUpMailingId);
-        return select(query, IntegerRowMapper.INSTANCE, baseMailingId);
-    }
-
-    private String getClickersQuery(int companyId) {
-        return "SELECT DISTINCT bind.customer_id FROM customer_" + companyId + "_binding_tbl bind, customer_" + companyId + "_tbl cust" +
-                " WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1" +
-                " AND EXISTS (SELECT 1 FROM rdirlog_" + companyId + "_tbl rdir WHERE rdir.mailing_id = ? AND cust.customer_id = rdir.customer_ID)";
-    }
-
-    private String getTargetAndSplitSqlCondition(int followUpMailingId) {
-        String sqlCondition = "";
-
-        String targetExpression = getTargetExpression(followUpMailingId);
-        if (getTargetExpressionIds(targetExpression).length != 0) {
-            String targetSql = createTargetStatementWithoutAnd(targetExpression);
-            if (StringUtils.isNotBlank(targetSql)) {
-                sqlCondition += " AND (%s)".formatted(targetSql);
-            }
-        }
-
-        int listSplitId = getListSplitId(followUpMailingId);
-        if (listSplitId != 0) {
-            sqlCondition += " AND (%s)".formatted(createTargetStatementWithoutAnd(Integer.toString(listSplitId)));
-        }
-
-        return sqlCondition;
-    }
-
-    /**
-     * returns the non-clickers. maildrop-id is the id of the BASE!
-     * Mailing, not the actual followup!
-     */
-    private List<Integer> getNonClickers(int baseMailingID, int followUpMailingID, int companyID) {
-        String query = getNonClickersQuery(companyID) + getTargetAndSplitSqlCondition(followUpMailingID);
-        return select(query, IntegerRowMapper.INSTANCE, baseMailingID, baseMailingID);
-    }
-
-    private String getNonClickersQuery(int companyID) {
-        return "SELECT DISTINCT bind.customer_id FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust" +
-                " WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1" +
-                " AND EXISTS (SELECT 1 FROM success_" + companyID + "_tbl succ WHERE succ.mailing_id = ? AND cust.customer_id = succ.customer_id)" +
-                " AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rdir WHERE rdir.mailing_id = ? AND cust.customer_id = rdir.customer_ID)";
-    }
-
-    private List<Integer> getOpeners(int baseMailingID, int followUpMailingID, int companyID) {
-        String query = getOpenersQuery(companyID) + getTargetAndSplitSqlCondition(followUpMailingID);
-        return select(query, IntegerRowMapper.INSTANCE, baseMailingID);
-    }
-
-    private String getOpenersQuery(int companyID) {
-        return "SELECT DISTINCT bind.customer_id FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust" +
-                " WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1" +
-                " AND EXISTS (SELECT 1 FROM onepixellog_" + companyID + "_tbl one WHERE one.mailing_id = ? AND cust.customer_id = one.customer_ID)";
-    }
-
-    private List<Integer> getNonOpeners(int baseMailingID, int followUpMailingID, int companyID) {
-        String query = getNonOpenersQuery(companyID) + getTargetAndSplitSqlCondition(followUpMailingID);
-        return select(query, IntegerRowMapper.INSTANCE, baseMailingID, baseMailingID);
-    }
-
-    private String getNonOpenersQuery(int companyID) {
-        return "SELECT DISTINCT bind.customer_id FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust" +
-                " WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1" +
-                " AND EXISTS (SELECT 1 FROM success_" + companyID + "_tbl succ WHERE succ.mailing_id = ? AND cust.customer_id = succ.customer_id)" +
-                " AND NOT EXISTS (SELECT 1 FROM onepixellog_" + companyID + "_tbl one WHERE one.mailing_id = ? AND cust.customer_id = one.customer_ID)";
-    }
-
-    private String createTargetStatementWithoutAnd(String targetString) {
-        final int[] targetIDs = getTargetExpressionIds(targetString);
-        final String operator = getTargetOperator(targetString);
-
-        final StringBuilder targetSql = new StringBuilder();
-        for (int targetID : targetIDs) {
-            if (!targetSql.isEmpty()) {
-                targetSql.append(" ").append(operator).append(" ");
-            }
-
-            targetSql.append(getTargetSql(targetID));
-        }
-
-        return targetSql.toString();
-    }
-
-    /**
-     * This method returns an Array with all Target_Expression IDs from the
-     * mailing_tbl.
-     */
-    private int[] getTargetExpressionIds(String targetExpression) {
-        final Set<Integer> targetIds = TargetExpressionUtils.getTargetIds(targetExpression);
-        return ArrayUtils.toPrimitive(targetIds.toArray(new Integer[0]));
-    }
-
-    /**
-     * This method returns the Operator for the target String. If the
-     * targetString contains "|" it returns "OR" and if it contains "&" it
-     * returns "AND". WARNING! Mixing up targets will result in an exception!
-     */
-    private String getTargetOperator(String targetString) {
-        if (targetString.contains("|") && targetString.contains("&")) {
-            // Mix-Check. We don't support mixed target-group at this time (2011.02.01)
-            throw new IllegalArgumentException("Unsupported Mixed Target Groups: " + targetString);
-        } else if (targetString.contains("|")) {
-            return "OR";
-        } else {
-            return "AND"; // this is the less dangerous version (=less recipients).
-        }
-    }
-
-    private String getTargetExpression(int mailingId) {
-        return selectStringDefaultNull("SELECT target_expression FROM mailing_tbl WHERE mailing_id = ?", mailingId);
-    }
-
-    /**
-     * Retrieve list split ID for mailing ID.
-     *
-     * @param mailingId mailing ID
-     * @return list split ID or 0
-     */
-    private int getListSplitId(int mailingId) {
-        return selectIntWithDefaultValue("SELECT split_id FROM mailing_tbl WHERE mailing_id = ?", 0, mailingId);
-    }
-
-    private String getTargetSql(int targetId) {
-        return selectWithDefaultValue("SELECT target_sql FROM dyn_target_tbl WHERE target_id = ?", String.class, "", targetId);
+    public int getFollowUpRecipientsCount(FollowupRecipientsQuery query, String sqlTargetExpression) {
+        return 0; // overridden in extended class
     }
 
     @Override
@@ -734,7 +523,14 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     public Set<Integer> getRecipientsIds(Mailing mailing) {
         MediatypeEmail mediatype = mailing.getEmailParam();
         if (mediatype != null && StringUtils.isNotBlank(mediatype.getFollowupFor())) {
-            return Set.copyOf(getFollowUpRecipients(mailing.getId(), Integer.parseInt(mediatype.getFollowupFor()), mediatype.getFollowUpMethod(), mailing.getCompanyID()));
+            return Set.copyOf(getFollowUpRecipients(FollowupRecipientsQuery.builder()
+                    .companyId(mailing.getCompanyID())
+                    .followupMailingId(mailing.getId())
+                    .baseMailingId(Integer.parseInt(mediatype.getFollowupFor()))
+                    .followUpType(FollowUpType.fromKey(mediatype.getFollowUpMethod()))
+                    .excludeProxyOpeners(mediatype.isFollowupExcludeProxyOpeners())
+                    .build()
+            ));
         }
 
         Set<Integer> recipientsIds = new HashSet<>();
@@ -757,7 +553,14 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 
 		final MediatypeEmail mediatype = mailing.getEmailParam();
 		if (mediatype != null && StringUtils.isNotBlank(mediatype.getFollowupFor())) {
-			returnMap.put(SEND_STATS_TEXT, getFollowUpRecipientsCount(mailing.getId(), Integer.parseInt(mediatype.getFollowupFor()), mediatype.getFollowUpMethod(), companyId));
+			returnMap.put(SEND_STATS_TEXT, getFollowUpRecipientsCount(FollowupRecipientsQuery.builder()
+                    .companyId(companyId)
+                    .followupMailingId(mailing.getId())
+                    .baseMailingId(Integer.parseInt(mediatype.getFollowupFor()))
+                    .followUpType(FollowUpType.fromKey(mediatype.getFollowUpMethod()))
+                    .excludeProxyOpeners(mediatype.isFollowupExcludeProxyOpeners())
+                    .build()
+            ));
 			return returnMap;
 		}
 

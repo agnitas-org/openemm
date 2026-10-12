@@ -123,17 +123,17 @@
                     </div>
                 </nav>
 
-                <div id="general-tab" class="tile-body form-column js-scrollable">
+                <div id="general-tab" class="tile-body form-column js-scrollable mailing-settings-tab">
                     <jsp:include page="mailing-general-settings.jsp" />
                 </div>
-                <div id="sending-tab" class="tile-body form-column js-scrollable hidden">
+                <div id="sending-tab" class="tile-body form-column js-scrollable hidden mailing-settings-tab">
                     <jsp:include page="mailing-targeting-settings.jsp">
                         <jsp:param name="isTabsView" value="${isTabsView}"/>
                     </jsp:include>
                 </div>
 
                 <c:if test="${not isPostMailing}">
-                    <div id="frame-content-tab" class="tile-body js-scrollable hidden">
+                    <div id="frame-content-tab" class="tile-body js-scrollable hidden mailing-settings-tab">
                         <jsp:include page="../content/mailing-frame-content-tab.jsp">
                             <jsp:param name="showText" value="true"/>
                             <jsp:param name="showHtml" value="${not isMailingGrid}"/>
@@ -144,7 +144,7 @@
                 </c:if>
 
                 <c:if test="${showExtendedTab}">
-                    <div id="extended-tab" class="tile-body form-column js-scrollable hidden">
+                    <div id="extended-tab" class="tile-body form-column js-scrollable hidden mailing-settings-tab">
                         <jsp:include page="mailing-extended-settings.jsp" >
                             <jsp:param name="isTabsView" value="${isTabsView}"/>
                         </jsp:include>

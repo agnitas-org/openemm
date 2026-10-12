@@ -10,14 +10,13 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import org.springframework.stereotype.Component;
-
 import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.MailingBaseService;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.TargetService;
+import org.springframework.stereotype.Component;
 
 @Component
 public class UnsavedChanges implements CalculationRecipients<CalculationRecipientsConfig> {
@@ -36,7 +35,7 @@ public class UnsavedChanges implements CalculationRecipients<CalculationRecipien
     public int calculate(CalculationRecipientsConfig config) {
         if (config.getFollowUpMailing() > 0) {
             String sqlTargetExpression = targetService.getSQLFromTargetExpression(TargetExpressionUtils.makeTargetExpression(config.getTargetGroupIds(), config.isConjunction()), config.getSplitId(), config.getCompanyId());
-            return mailingStatisticsDao.getFollowUpRecipientsCount(config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId(), sqlTargetExpression);
+            return mailingStatisticsDao.getFollowUpRecipientsCount(config.toFollowupRecipientsQuery(), sqlTargetExpression);
         } else {
         	return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingId(), config.getMailingListId(), config.getSplitId(), config.getAltgIds(), config.getTargetGroupIds(), config.isConjunction());
         }

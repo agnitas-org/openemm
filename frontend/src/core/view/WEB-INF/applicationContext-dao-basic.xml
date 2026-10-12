@@ -610,8 +610,6 @@
 
     <bean id="MailingStatisticsDao" class="com.agnitas.dao.impl.MailingStatisticsDaoImpl">
     	<constructor-arg ref="targetService" />
-		
-		
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
     </bean>

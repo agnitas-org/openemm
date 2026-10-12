@@ -20,11 +20,18 @@ import com.agnitas.beans.BindingEntry.UserType;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.commons.dto.DateRange;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mailing.dto.FollowupRecipientsQuery;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import org.apache.commons.lang3.StringUtils;
 
 public interface MailingStatisticsDao {
 
+	int APPLE_PROXY_DEVICE_ID = 1484;
+	int YAHOO_PROXY_DEVICE_ID = 1703;
+	Set<Integer> PROXY_DEVICE_IDS = Set.of(
+			APPLE_PROXY_DEVICE_ID,
+			YAHOO_PROXY_DEVICE_ID
+	);
 	int SEND_STATS_TEXT = 100;
 	int SEND_STATS_HTML = 101;
 	int SEND_STATS_OFFLINE = 102;
@@ -43,9 +50,9 @@ public interface MailingStatisticsDao {
 	/**
 	 * This method returns the Follow-up statistics for the given mailing.
 	 */
-	int getFollowUpRecipientsCount(int mailingID, int baseMailing, String followUpType, int companyID);
+	int getFollowUpRecipientsCount(FollowupRecipientsQuery query);
 
-	int getFollowUpRecipientsCount(int followUpFor, String followUpType, int companyID, String sqlTargetExpression);
+	int getFollowUpRecipientsCount(FollowupRecipientsQuery query, String sqlTargetExpression);
 
 	Map<Integer, Integer> getSendStats(Mailing mailing, int companyId);
 

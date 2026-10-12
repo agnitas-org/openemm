@@ -14,7 +14,8 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
     '#assignTargetGroups',
     '#targetGroupIds',
     '#altgIds',
-    '#followUpType'
+    '#followUpType',
+    '#followup-exclude-proxy-openers'
   ];
 
   let config;
@@ -156,11 +157,12 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
 
     selectors.forEach(selector => {
       const $input = $(selector);
-      if ($input.exists() && $input.is(':visible') && !$input.prop('disabled')) {
+      const hiddenByOtherSettings = $input.closest('.hidden', $input.closest('.mailing-settings-tab')[0]).length > 0;
+      if ($input.exists() && !hiddenByOtherSettings && !$input.prop('disabled')) {
         const name = $input.prop('name');
 
         if (name) {
-          data[name] = $input.val();
+          data[name] = data[name] = $input.is(':checkbox') ? $input.prop('checked') : $input.val();
         }
       }
     });
@@ -250,6 +252,7 @@ AGN.Lib.Controller.newExtended('mailing-settings-view', 'mailing-settings-base-v
         $container.removeClass('hidden');
         $container.show();
       } else {
+        $container.addClass('hidden');
         $container.hide();
       }
     }

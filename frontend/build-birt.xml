@@ -279,8 +279,12 @@
 			<replacetoken>${birtSpecificFontsPath}</replacetoken>
 		</replace>
 
+		<copy todir="${deploydir}${appname}/WEB-INF/reportdesigns">
+			<fileset dir="${emmEtcPath}/reportdesigns" includes="**/*.rptdesign" />
+		</copy>
+
 		<copy todir="${deploydir}${appname}">
-			<fileset dir="${emmEtcPath}/reportdesigns" includes="**/*.rptdesign **/styles.css" />
+			<fileset dir="${emmEtcPath}/reportdesigns" includes="**/styles.css" />
 		</copy>
 
 		<copy todir="${deploydir}${appname}/styles">
@@ -423,6 +427,10 @@
 				<![CDATA[${birt.viewer.working.path}/WEB-INF/documents]]>
 			</replace>
 
+			<replace path="/*[local-name()='web-app']/*[local-name()='context-param'][*[local-name()='param-name']/text()='BIRT_VIEWER_WORKING_FOLDER']/*[local-name()='param-value']">
+				<![CDATA[<param-value>${birt.viewer.working.path}/WEB-INF/reportdesigns</param-value>]]>
+			</replace>
+
 			<!-- See https://bugs.eclipse.org/bugs/show_bug.cgi?id=538142 -->
 			<insert path="/*[local-name()='web-app']/*[local-name()='context-param'][last()]" position="after">
 				<![CDATA[&#09;
@@ -455,6 +463,10 @@
 	<filter-mapping>
 		<filter-name>BirtSecurityInterceptor</filter-name>
 		<servlet-name>ViewerServlet</servlet-name>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>BirtSecurityInterceptor</filter-name>
+		<servlet-name>EngineServlet</servlet-name>
 	</filter-mapping>
 				]]>
 			</insert>

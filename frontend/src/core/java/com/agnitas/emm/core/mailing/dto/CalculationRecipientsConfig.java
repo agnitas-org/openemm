@@ -12,6 +12,8 @@ package com.agnitas.emm.core.mailing.dto;
 
 import java.util.Collection;
 
+import com.agnitas.emm.common.FollowUpType;
+
 public class CalculationRecipientsConfig {
 
     private int companyId;
@@ -20,6 +22,7 @@ public class CalculationRecipientsConfig {
     private int mailingListId;
     private int followUpMailing;
     private String followUpType;
+    private boolean followupExcludeProxyOpeners;
     private boolean conjunction;
     private boolean changeMailing;
     private Collection<Integer> targetGroupIds;
@@ -65,6 +68,14 @@ public class CalculationRecipientsConfig {
         this.followUpType = followUpType;
     }
 
+    public boolean isFollowupExcludeProxyOpeners() {
+        return followupExcludeProxyOpeners;
+    }
+
+    public void setFollowupExcludeProxyOpeners(boolean followupExcludeProxyOpeners) {
+        this.followupExcludeProxyOpeners = followupExcludeProxyOpeners;
+    }
+
     public boolean isConjunction() {
         return conjunction;
     }
@@ -103,5 +114,15 @@ public class CalculationRecipientsConfig {
 
     public void setChangeMailing(boolean changeMailing) {
         this.changeMailing = changeMailing;
+    }
+
+    public FollowupRecipientsQuery toFollowupRecipientsQuery() {
+        return FollowupRecipientsQuery.builder()
+                .companyId(getCompanyId())
+                .followupMailingId(getMailingId())
+                .baseMailingId(getFollowUpMailing())
+                .followUpType(FollowUpType.fromKey(getFollowUpType()))
+                .excludeProxyOpeners(isFollowupExcludeProxyOpeners())
+                .build();
     }
 }

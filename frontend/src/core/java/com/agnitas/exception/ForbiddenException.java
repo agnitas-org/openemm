@@ -10,10 +10,16 @@
 
 package com.agnitas.exception;
 
+import com.agnitas.messages.Message;
+
 public class ForbiddenException extends UiMessageException {
 
     public ForbiddenException(String... keys) {
         super(keys);
+    }
+
+    public ForbiddenException(Message error) {
+        super(error);
     }
 
 }

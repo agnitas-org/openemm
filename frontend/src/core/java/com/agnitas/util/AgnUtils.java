@@ -111,6 +111,9 @@ public class AgnUtils {
 	public static final String APPLICATION_VERSION_REGEX = "(\\d){2}\\.(\\d){2}\\.(\\d){3}(((-hf)(\\d){1,3})|(\\.(\\d){3}))?";
 	public static final Pattern APPLICATION_VERSION_PATTERN = Pattern.compile(APPLICATION_VERSION_REGEX);
 
+	public static final String URL_REGEX = "^https?://(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{1,10}\\b([-a-zA-Z0-9()@:%_+.,~#?&/=!$]*)$";
+	public static final Pattern URL_PATTERN = Pattern.compile(URL_REGEX);
+
 	private static final Logger logger = LogManager.getLogger(AgnUtils.class);
 
 	public static final String DEFAULT_MAILING_HTML_DYNNAME = Const.DynName.DEFAULT_MAILING_HTML_DYNNAME;
@@ -1480,6 +1483,13 @@ public class AgnUtils {
 		}
 
 		return !required;
+	}
+
+	/**
+	 * Check if a given URL is valid (http/https, optionally with path, query string, and fragment/anchor).
+	 */
+	public static boolean isValidUrl(String url) {
+		return url != null && URL_PATTERN.matcher(url).matches();
 	}
 
 	public static String getPythonVersion() {

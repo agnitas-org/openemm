@@ -73,7 +73,6 @@ import com.agnitas.util.DateUtilities;
 import com.agnitas.util.DbColumnType;
 import com.agnitas.util.FileUtils;
 import com.agnitas.util.Tuple;
-import com.helger.commons.url.URLValidator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -141,7 +140,7 @@ public class UserformServiceImpl implements UserformService {
     private List<Message> validateSettings(ResultSettings settings) throws ScriptValidationException {
         List<Message> errors = new ArrayList<>();
 
-        if (settings.isUseUrl() && !URLValidator.isValid(settings.getUrl())) {
+        if (settings.isUseUrl() && !AgnUtils.isValidUrl(settings.getUrl())) {
             errors.add(Message.of("error.userform." + (settings.isSuccess() ? "success" : "error") + ".url.missing"));
         }
 

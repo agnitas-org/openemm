@@ -30,7 +30,7 @@ public class DefaultCalculation implements CalculationRecipients<CalculationReci
     @Override
     public int calculate(CalculationRecipientsConfig config) {
         if (config.getFollowUpMailing() > 0) {
-            return mailingStatisticsDao.getFollowUpRecipientsCount(config.getMailingId(), config.getFollowUpMailing(), config.getFollowUpType(), config.getCompanyId());
+            return mailingStatisticsDao.getFollowUpRecipientsCount(config.toFollowupRecipientsQuery());
         }
         return mailingBaseService.calculateRecipients(config.getCompanyId(), config.getMailingId());
     }

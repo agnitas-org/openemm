@@ -333,6 +333,37 @@ If you want to open manual with specified helpKey, you can use it like this `AGN
       return html;
     },
 
+    escapeVelocityDirectives: function (html) {
+      try {
+        if (html) {
+          return html.replace(
+            /(?<!EMM_VELOCITY:)#(?:if|elseif)\s*\(((?:[^()]|\([^()]*\))*)\)|(?<!EMM_VELOCITY:)#(?:else|end)\b/g,
+            function (whole) {
+              return `<!--EMM_VELOCITY:${_.escape(whole)}-->`;
+            }
+          );
+        }
+      } catch (e) {
+        // Do nothing.
+      }
+
+      return html;
+    },
+
+    unescapeVelocityDirectives: function (html) {
+      try {
+        if (html) {
+          return html.replace(/<!--EMM_VELOCITY:([\s\S]*?)-->/g, function (whole, escaped) {
+            return _.unescape(escaped);
+          });
+        }
+      } catch (e) {
+        // Do nothing.
+      }
+
+      return html;
+    },
+
     isDarkTheme: function ($body = $('body')) {
       const theme = $body.data('bs-theme');
       return theme === 'dark' || theme === 'dark-contrast';

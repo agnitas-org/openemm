@@ -193,6 +193,7 @@ public class AdminServiceImpl implements AdminService {
 		if (isNew) {
 			savingAdmin = new AdminImpl();
 			savingAdmin.setCompany(companyDao.getCompany(savingCompanyID));
+			savingAdmin.setAltgIds(editorAdmin.getAltgIds());
 			savingAdminPreferences = new AdminPreferencesImpl();
 		} else {
 			savingAdmin = adminDao.getAdmin(savingAdminID, savingCompanyID);
@@ -253,7 +254,15 @@ public class AdminServiceImpl implements AdminService {
 			systemMailMessageService.sendEmailChangedMail(savingAdmin, oldEmail);
         }
 
+		if (isNew) {
+			passAlml(editorAdmin, savingAdmin);
+		}
+
 		return AdminSavingResult.success(savingAdmin, isPasswordChanged);
+	}
+
+	protected void passAlml(Admin editorAdmin, Admin savingAdmin) {
+		// overridden in extended class
 	}
 
     @Override

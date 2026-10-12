@@ -226,7 +226,11 @@ public interface MediatypeEmail extends Mediatype {
 	 * @param followupFor	The mailing_id of the referenced mailing.
 	 */
 	void setFollowupFor(String followupFor);
-	
+
+    boolean isFollowupExcludeProxyOpeners();
+
+    void setFollowupExcludeProxyOpeners(boolean followupExcludeProxyOpeners);
+
 	boolean isDoublechecking();
 
 	void setDoublechecking(boolean doublechecking);

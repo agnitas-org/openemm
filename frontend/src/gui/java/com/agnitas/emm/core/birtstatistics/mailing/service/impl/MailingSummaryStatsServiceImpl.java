@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.service.impl;
 
+import static com.agnitas.dao.MailingStatisticsDao.PROXY_DEVICE_IDS;
 import static com.agnitas.emm.core.birtstatistics.service.MailingStatisticsService.ALL_SUBSCRIBERS_TARGETGROUP_ID;
 import static com.agnitas.messages.I18nString.t;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -45,11 +46,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class MailingSummaryStatsServiceImpl implements MailingSummaryStatsService {
-
-    private static final Set<Integer> PROXY_DEVICE_IDS = Set.of(
-            1484, // apple proxy device id
-            1703  // yahoo proxy device id
-    );
 
     private final MailingStatisticsService mailingStatsService;
     private final TargetService targetService;

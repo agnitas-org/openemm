@@ -8186,9 +8186,17 @@
             "type" : "string",
             "description" : "Mailing sender address"
           },
+          "sender_fullname" : {
+            "type" : "string",
+            "description" : "Sender full name"
+          },
           "reply_address" : {
             "type" : "string",
             "description" : "Mailing reply address"
+          },
+          "reply_fullname" : {
+            "type" : "string",
+            "description" : "Reply-to full name"
           },
           "parameters" : {
             "description" : "Mailingparameters as JsonArray of JsonObjects",

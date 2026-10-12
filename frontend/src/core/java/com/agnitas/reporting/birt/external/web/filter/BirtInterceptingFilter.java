@@ -32,7 +32,9 @@ import org.apache.logging.log4j.Logger;
 public class BirtInterceptingFilter implements Filter {
 
 	private static final Logger logger = LogManager.getLogger(BirtInterceptingFilter.class);
-	
+
+	private static final String PARAM_REPORT = "__report";
+
 	protected ConfigService configService;
 
 	@Override
@@ -51,6 +53,11 @@ public class BirtInterceptingFilter implements Filter {
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+		if (StringUtils.isBlank(request.getParameter(PARAM_REPORT))) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
 		String securityToken = request.getParameter("sec");
 		String companyIDStr = request.getParameter("companyID");
 

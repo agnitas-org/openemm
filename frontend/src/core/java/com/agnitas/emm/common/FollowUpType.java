@@ -28,4 +28,13 @@ public enum FollowUpType {
 	public String getKey() {
 		return key;
 	}
+
+    public static FollowUpType fromKey(String key) {
+        for (FollowUpType type : values()) {
+            if (type.key.equalsIgnoreCase(key)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown FollowUpType key: " + key);
+    }
 }

@@ -539,11 +539,23 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 								} else {
 									throw new RestfulClientException("Invalid data type for 'sender_address'. String expected");
 								}
+							} else if ("sender_fullname".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String senderFullname) {
+									mailing.getEmailParam().setFromFullname(senderFullname);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'sender_fullname'. String expected");
+								}
 							} else if ("reply_address".equals(entry.getKey())) {
 								if (entry.getValue() instanceof String replyAddress) {
 									mailing.getEmailParam().setReplyEmail(replyAddress);
 								} else {
 									throw new RestfulClientException("Invalid data type for 'sender_address'. String expected");
+								}
+							} else if ("reply_fullname".equals(entry.getKey())) {
+								if (entry.getValue() instanceof String replyFullname) {
+									mailing.getEmailParam().setReplyFullname(replyFullname);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'reply_fullname'. String expected");
 								}
 							} else if ("target_expression".equals(entry.getKey())) {
 								if (entry.getValue() instanceof String targetExpression) {

@@ -127,7 +127,8 @@
       }
 
       content = processUrls(content, mailingId);
-      return AGN.Lib.Helpers.unescapeAgnTags(content);
+      content = AGN.Lib.Helpers.unescapeAgnTags(content);
+      return AGN.Lib.Helpers.unescapeVelocityDirectives(content);
     }
 
     if (editor.options.editHTMLDocumentMode) {
@@ -189,7 +190,10 @@
             el.remove();
           });
 
-          data.value = AGN.Lib.Helpers.unescapeAgnTags(`${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`);
+          let newValue = `${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
+          newValue = AGN.Lib.Helpers.prettifyHtml(newValue);
+          newValue = AGN.Lib.Helpers.unescapeAgnTags(newValue);
+          data.value = AGN.Lib.Helpers.unescapeVelocityDirectives(newValue);
         }
 
         const bodyHtml = doc.body.innerHTML.trim();
@@ -251,7 +255,9 @@
       }
 
       function parseHtml(html) {
-        return new DOMParser().parseFromString(AGN.Lib.Helpers.escapeAgnTags(html), "text/html");
+        html = AGN.Lib.Helpers.escapeAgnTags(html);
+        html = AGN.Lib.Helpers.escapeVelocityDirectives(html);
+        return new DOMParser().parseFromString(html, "text/html");
       }
     } else {
       editor.events.on('afterGetValueFromEditor', data => {
@@ -279,7 +285,8 @@
         return html;
       }
 
-      return AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+      html = AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+      return AGN.Lib.Helpers.escapeVelocityDirectives(html);
     }
 
     editor.events.on('beforeSetValueToEditor', function (html) {

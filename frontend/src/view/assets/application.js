@@ -53571,7 +53571,7 @@ EndlessScroll = function() {
                 typeAttribute = get_type_attribute(raw_token) || typeAttribute;
                 if (typeAttribute.search("text/css") > -1) {
                     result = "css";
-                } else if (typeAttribute.search(/module|((text|application|dojo)\/(x-)?(javascript|ecmascript|jscript|livescript|(ld\+)?json|method|aspect))/) > -1) {
+                } else if (typeAttribute.search(/module|importmap|((text|application|dojo)\/(x-)?(javascript|ecmascript|jscript|livescript|(ld\+)?json|method|aspect))/) > -1) {
                     result = "javascript";
                 } else if (typeAttribute.search(/(text|application|dojo)\/(x-)?(html)/) > -1) {
                     result = "html";
@@ -102956,7 +102956,8 @@ if (window.agnTimeZoneId) {
                 return content;
             }
             content = processUrls(content, mailingId);
-            return AGN.Lib.Helpers.unescapeAgnTags(content);
+            content = AGN.Lib.Helpers.unescapeAgnTags(content);
+            return AGN.Lib.Helpers.unescapeVelocityDirectives(content);
         }
         if (editor.options.editHTMLDocumentMode) {
             editor.events.on("beforeGetNativeEditorValue", function(options) {
@@ -102995,7 +102996,10 @@ if (window.agnTimeZoneId) {
                         }
                         el.remove();
                     });
-                    data.value = AGN.Lib.Helpers.unescapeAgnTags(`${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`);
+                    let newValue = `${editor.o.iframeDoctype}\n${doc.documentElement.outerHTML}`;
+                    newValue = AGN.Lib.Helpers.prettifyHtml(newValue);
+                    newValue = AGN.Lib.Helpers.unescapeAgnTags(newValue);
+                    data.value = AGN.Lib.Helpers.unescapeVelocityDirectives(newValue);
                 }
                 const bodyHtml = doc.body.innerHTML.trim();
                 if (editor._initialRawValue.trim() === "" && isBodyEmpty(bodyHtml)) {
@@ -103041,7 +103045,9 @@ if (window.agnTimeZoneId) {
                 return !!(doc.documentElement && doc.head && doc.body);
             }
             function parseHtml(html) {
-                return (new DOMParser).parseFromString(AGN.Lib.Helpers.escapeAgnTags(html), "text/html");
+                html = AGN.Lib.Helpers.escapeAgnTags(html);
+                html = AGN.Lib.Helpers.escapeVelocityDirectives(html);
+                return (new DOMParser).parseFromString(html, "text/html");
             }
         } else {
             editor.events.on("afterGetValueFromEditor", data => {
@@ -103061,7 +103067,8 @@ if (window.agnTimeZoneId) {
             if (!html) {
                 return html;
             }
-            return AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+            html = AGN.Lib.Helpers.escapeAgnTags(replaceAgnImageTags(html, mailingId));
+            return AGN.Lib.Helpers.escapeVelocityDirectives(html);
         }
         editor.events.on("beforeSetValueToEditor", function(html) {
             return escapeForNativeWrite(html);
@@ -110212,6 +110219,26 @@ if (window.agnTimeZoneId) {
                 if (html) {
                     return html.replace(/\[agn[A-Z0-9]+(?:(?!&#39;|&quot;)[^'"\]]|=\s*&#39;.*?&#39;|=\s*&quot;.*?&quot;)*]/g, function(whole) {
                         return _.unescape(whole);
+                    });
+                }
+            } catch (e) {}
+            return html;
+        },
+        escapeVelocityDirectives: function(html) {
+            try {
+                if (html) {
+                    return html.replace(/(?<!EMM_VELOCITY:)#(?:if|elseif)\s*\(((?:[^()]|\([^()]*\))*)\)|(?<!EMM_VELOCITY:)#(?:else|end)\b/g, function(whole) {
+                        return `\x3c!--EMM_VELOCITY:${_.escape(whole)}--\x3e`;
+                    });
+                }
+            } catch (e) {}
+            return html;
+        },
+        unescapeVelocityDirectives: function(html) {
+            try {
+                if (html) {
+                    return html.replace(/<!--EMM_VELOCITY:([\s\S]*?)-->/g, function(whole, escaped) {
+                        return _.unescape(escaped);
                     });
                 }
             } catch (e) {}
@@ -143536,7 +143563,7 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
     const Modal = AGN.Lib.Modal;
     const Messages = AGN.Lib.Messages;
     const Messaging = AGN.Lib.Messaging;
-    const recipientsCountRelatedFields = [ "#settingsGeneralMailingList", "#settingsTargetgroupsListSplit", "#settingsTargetgroupsListSplitPart", "#lightWeightMailingList", "#assignTargetGroups", "#targetGroupIds", "#altgIds", "#followUpType" ];
+    const recipientsCountRelatedFields = [ "#settingsGeneralMailingList", "#settingsTargetgroupsListSplit", "#settingsTargetgroupsListSplitPart", "#lightWeightMailingList", "#assignTargetGroups", "#targetGroupIds", "#altgIds", "#followUpType", "#followup-exclude-proxy-openers" ];
     let config;
     let isChangeMailing = false;
     let lastSelectedTargetsIds = [];
@@ -143655,10 +143682,11 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
         const data = {};
         selectors.forEach(selector => {
             const $input = $(selector);
-            if ($input.exists() && $input.is(":visible") && !$input.prop("disabled")) {
+            const hiddenByOtherSettings = $input.closest(".hidden", $input.closest(".mailing-settings-tab")[0]).length > 0;
+            if ($input.exists() && !hiddenByOtherSettings && !$input.prop("disabled")) {
                 const name = $input.prop("name");
                 if (name) {
-                    data[name] = $input.val();
+                    data[name] = data[name] = $input.is(":checkbox") ? $input.prop("checked") : $input.val();
                 }
             }
         });
@@ -143739,6 +143767,7 @@ AGN.Lib.Controller.newExtended("mailing-settings-view", "mailing-settings-base-v
                 $container.removeClass("hidden");
                 $container.show();
             } else {
+                $container.addClass("hidden");
                 $container.hide();
             }
         }

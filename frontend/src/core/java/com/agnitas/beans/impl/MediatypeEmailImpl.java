@@ -63,6 +63,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	/** Holds value of property envelopeAdr. */
 	protected String followupFor = "";
 
+	protected boolean followupExcludeProxyOpeners;
+
 	/** holds the follow-Up Method, eg. non-opener, opener, non-clicker, clicker */
 	protected String followUpMethod = "";
 
@@ -123,6 +125,16 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	@Override
 	public void setFollowupFor(String followupFor) {
 		this.followupFor = followupFor;
+	}
+
+	@Override
+	public boolean isFollowupExcludeProxyOpeners() {
+		return followupExcludeProxyOpeners;
+	}
+
+	@Override
+	public void setFollowupExcludeProxyOpeners(boolean followupExcludeProxyOpeners) {
+		this.followupExcludeProxyOpeners = followupExcludeProxyOpeners;
 	}
 
 	@Override
@@ -485,6 +497,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		// they all have to be lowercase!
 		followUpMethod = StringUtils.defaultString(parameters.get("followup_method"));
 
+		followupExcludeProxyOpeners = BooleanUtils.toBoolean(parameters.get("followup_exclude_proxy_openers"));
+
 		doublechecking = StringUtils.isNotEmpty(parameters.get("remove_dups"));
 
 		String skip = parameters.get("skipempty");
@@ -577,6 +591,10 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append(ParameterParser.escapeValue(followUpMethod));
 			result.append("\"");
 		}
+
+		result
+				.append(", followup_exclude_proxy_openers=")
+				.append(followupExcludeProxyOpeners ? "\"true\"" : "\"false\"");
 
 		if (isEncryptedSend) {
 			result.append(", ");
